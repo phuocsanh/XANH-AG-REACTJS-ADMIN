@@ -38,7 +38,7 @@ export const Header = () => {
 
   return (
     <header className="fixed top-0 right-0 bg-white py-3 z-[100] flex items-center justify-between px-4">
-      <SearchBox />
+      {/* <SearchBox /> */}
       <div className="ml-auto part2">
         <ul className="flex items-center gap-3">
           <li>

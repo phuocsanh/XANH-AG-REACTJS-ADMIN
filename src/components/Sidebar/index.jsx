@@ -14,7 +14,8 @@ import { TbBrandProducthunt } from "react-icons/tb";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { AiTwotoneMessage } from "react-icons/ai";
 import { useAppStore } from "@/stores";
-
+import { BiCategory } from "react-icons/bi";
+import { TbCategoryMinus } from "react-icons/tb";
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [isToggleSubmenu, setIsToggleSubmenu] = useState(false);
@@ -57,7 +58,7 @@ const Sidebar = () => {
                 <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
                   <TbBrandProducthunt />
                 </span>
-                Products
+                Sản phẩm
                 <span
                   className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
                     activeTab === 1 && isToggleSubmenu === true ? "rotate" : ""
@@ -75,13 +76,13 @@ const Sidebar = () => {
               >
                 <div className="submenu">
                   <Link to="/products/list">
-                    <Button className="w-100">Products List</Button>
+                    <Button className="w-100">Danh sách sản phẩm</Button>
                   </Link>
-                  <Link to="/">
+                  {/* <Link to="/">
                     <Button className="w-100">Products Details</Button>
-                  </Link>
-                  <Link to="/product/create">
-                    <Button className="w-100">Products Upload</Button>
+                  </Link> */}
+                  <Link to="/product">
+                    <Button className="w-100">Thêm sản phẩm</Button>
                   </Link>
                 </div>
               </div>
@@ -95,19 +96,44 @@ const Sidebar = () => {
                 <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
                   <HiOutlineShoppingCart />
                 </span>
-                Orders
+                Đơn đặt hàng
               </Button>
             </li>
-
+            <li>
+              <Link to="/category/list">
+                <Button
+                  className={`w-100 ${activeTab === 3 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(3)}
+                >
+                  <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
+                    <BiCategory />
+                  </span>
+                  Loại sản phẩm
+                </Button>
+              </Link>
+            </li>
+            <li>
+              <Link to="/sub-category/list">
+                <Button
+                  className={`w-100 ${activeTab === 4 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(4)}
+                >
+                  <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
+                    <TbCategoryMinus />
+                  </span>
+                  Loại phụ sản phẩm
+                </Button>
+              </Link>
+            </li>
             <li>
               <Button
-                className={`w-100 ${activeTab === 3 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(3)}
+                className={`w-100 ${activeTab === 5 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(5)}
               >
                 <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
                   <MdNotificationsNone />
                 </span>
-                Notifications
+                Thông báo
               </Button>
             </li>
 
@@ -121,18 +147,18 @@ const Sidebar = () => {
                 <li>
                   <Link to="/signIn">
                     <Button
-                      className={`w-100 ${activeTab === 5 ? "active" : ""}`}
-                      onClick={() => isOpenSubmenu(5)}
+                      className={`w-100 ${activeTab === 6 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(6)}
                     >
                       <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
                         <FiUser />
                       </span>
-                      Login
+                      Đăng nhập
                     </Button>
                   </Link>
                 </li>
 
-                <li>
+                {/* <li>
                   <Link to="/signUp">
                     <Button
                       className={`w-100 ${activeTab === 6 ? "active" : ""}`}
@@ -144,7 +170,7 @@ const Sidebar = () => {
                       Sign Up
                     </Button>
                   </Link>
-                </li>
+                </li> */}
               </>
             )}
 
@@ -156,11 +182,11 @@ const Sidebar = () => {
                 <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
                   <RiLockPasswordLine />
                 </span>
-                Forgot Password
+                Quên mật khẩu
               </Button>
             </li>
 
-            <li>
+            {/* <li>
               <Link to="/otp">
                 <Button
                   className={`w-100 ${activeTab === 8 ? "active" : ""}`}
@@ -172,17 +198,17 @@ const Sidebar = () => {
                   OTP Page
                 </Button>
               </Link>
-            </li>
+            </li> */}
 
             <li>
               <Button
-                className={`w-100 ${activeTab === 9 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(9)}
+                className={`w-100 ${activeTab === 8 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(8)}
               >
                 <span className="icon w-[30px] h-[30px] flex items-center justify-center rounded-md">
                   <IoSettingsOutline />
                 </span>
-                Settings
+                Cài đặt
               </Button>
             </li>
           </ul>

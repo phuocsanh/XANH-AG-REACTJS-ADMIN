@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { SearchBox } from "../../components/SearchBox";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -884,12 +884,16 @@ rounded-md duration-300"
         </div>
       </div>
 
-      <Drawer open={open} onClose={() => toggleDrawer(false)} anchor={"right"} className="sidepanel">
-
+      <Drawer
+        open={open}
+        onClose={() => toggleDrawer(false)}
+        anchor={"right"}
+        className="sidepanel"
+      >
         <form className="form w-[100%] mt-4 relative">
-
-        <Button className="close_ " onClick={() => toggleDrawer(false)}><IoMdClose/></Button>
-
+          <Button className="close_ " onClick={() => toggleDrawer(false)}>
+            <IoMdClose />
+          </Button>
 
           <div className="card shadow  border-0 flex-center p-3">
             <h2 className="font-weight-bold text-black/70 mb-4">

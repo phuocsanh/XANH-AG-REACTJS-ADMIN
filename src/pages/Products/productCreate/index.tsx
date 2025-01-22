@@ -1,15 +1,10 @@
 import { useEffect, useState, useContext } from "react";
 
-import { emphasize, styled } from "@mui/material/styles";
-import Breadcrumbs from "@mui/material/Breadcrumbs";
-import Chip from "@mui/material/Chip";
-import HomeIcon from "@mui/icons-material/Home";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import Rating from "@mui/material/Rating";
 import { IoCloseSharp } from "react-icons/io5";
-
+import { IoIosAddCircle } from "react-icons/io";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -18,28 +13,10 @@ import { Navigation } from "swiper/modules";
 import { FaImage } from "react-icons/fa";
 import Button from "@mui/material/Button";
 
-import { MyContext } from "../../App";
+import { MyContext } from "../../../App";
 import { TextField } from "@mui/material";
-
-const StyledBreadcrumb = styled(Chip)(({ theme }) => {
-  const backgroundColor =
-    theme.palette.mode === "light"
-      ? theme.palette.grey[100]
-      : theme.palette.grey[800];
-  return {
-    backgroundColor,
-    height: theme.spacing(3),
-    color: theme.palette.text.primary,
-    fontWeight: theme.typography.fontWeightRegular,
-    "&:hover, &:focus": {
-      backgroundColor: emphasize(backgroundColor, 0.06),
-    },
-    "&:active": {
-      boxShadow: theme.shadows[1],
-      backgroundColor: emphasize(backgroundColor, 0.12),
-    },
-  };
-}); // TypeScript only: need a type cast here because https://github.com/Microsoft/TypeScript/issues/26591
+import ItemLinkVideo from "./ItemLinkVideo";
+// TypeScript only: need a type cast here because https://github.com/Microsoft/TypeScript/issues/26591
 
 // function handleClick(event) {
 //   event.preventDefault();
@@ -48,8 +25,8 @@ const StyledBreadcrumb = styled(Chip)(({ theme }) => {
 
 export const ProductCreate = () => {
   const [categoryVal, setCategoryVal] = useState("");
+  const [videos, setVideos] = useState([""]);
   const [subCategoryVal, setSubCategoryVal] = useState("");
-  const [isFeatured, setIsFeatured] = useState("None");
 
   const context = useContext(MyContext);
 
@@ -62,9 +39,9 @@ export const ProductCreate = () => {
     <>
       <div className="card shadow my-4 border-0 flex-center p-3">
         <div className="flex items-center justify-between">
-          <h1 className="font-weight-bold mb-0">Product Upload</h1>
+          <h1 className="font-weight-bold mb-0">Thêm Sản phẩm</h1>
 
-          <div className="ml-auto flex items-center gap-3">
+          {/* <div className="ml-auto flex items-center gap-3">
             <Breadcrumbs aria-label="breadcrumb">
               <StyledBreadcrumb
                 component="a"
@@ -75,19 +52,19 @@ export const ProductCreate = () => {
               <StyledBreadcrumb component="a" href="#" label="Product" />
               <StyledBreadcrumb label="Create" />
             </Breadcrumbs>
-          </div>
+          </div> */}
         </div>
       </div>
 
       <form className="form w-[100%] mt-4">
         <div className="card shadow my-4 border-0 flex-center p-3">
           <h2 className="font-weight-bold text-black/70 mb-4">
-            Basic Information
+            Thông tin sản phẩm
           </h2>
 
           <div className="row">
-            <div className="col-md-12 col_">
-              <h4>Product Name</h4>
+            <div className="col-md-12 col_ mb-3">
+              <h4>Tên sản phẩm</h4>
               <div>
                 <TextField
                   variant="outlined"
@@ -109,15 +86,8 @@ export const ProductCreate = () => {
               </div>
             </div>
 
-            <div className="col-md-12 col_ mt-3">
-              <h4>Product Description</h4>
-              <div className="form-group">
-                <textarea className="input" />
-              </div>
-            </div>
-
-            <div className="col-md-4 col_">
-              <h4>Category</h4>
+            <div className="col-md-4 col_ ">
+              <h4>Loại </h4>
               <div className="form-group">
                 <FormControl size="small" className="w-100">
                   <Select
@@ -129,7 +99,7 @@ export const ProductCreate = () => {
                     className="w-100"
                   >
                     <MenuItem value="">
-                      <em>None</em>
+                      <em>Chọn</em>
                     </MenuItem>
                     <MenuItem value={"Men"}>Men</MenuItem>
                     <MenuItem value={"Woman"}>Woman</MenuItem>
@@ -140,7 +110,7 @@ export const ProductCreate = () => {
             </div>
 
             <div className="col-md-4 col_">
-              <h4>Sub Category</h4>
+              <h4>Loại phụ</h4>
               <div className="form-group">
                 <FormControl size="small" className="w-100">
                   <Select
@@ -152,7 +122,7 @@ export const ProductCreate = () => {
                     className="w-100"
                   >
                     <MenuItem value="">
-                      <em>None</em>
+                      <em>Chọn</em>
                     </MenuItem>
                     <MenuItem value={"Shirts"}>Shirts</MenuItem>
                     <MenuItem value={"T-Shirts"}>T-Shirts</MenuItem>
@@ -162,85 +132,85 @@ export const ProductCreate = () => {
             </div>
 
             <div className="col-md-4 col_">
-              <h4>Price</h4>
-              <div className="form-group">
-                <input type="text" className="input" />
-              </div>
-            </div>
-          </div>
-
-          <div className="row">
-            <div className="col-md-4 col_">
-              <h4>Old Price</h4>
-              <div className="form-group">
-                <input type="text" className="input" />
-              </div>
-            </div>
-
-            <div className="col-md-4 col_">
-              <h4>Is Featured</h4>
-              <div className="form-group">
-                <FormControl size="small" className="w-100">
-                  <Select
-                    value={isFeatured}
-                    onChange={(e) => setIsFeatured(e.target.value)}
-                    displayEmpty
-                    inputProps={{ "aria-label": "Without label" }}
-                    labelId="demo-select-small-label"
-                    className="w-100"
-                  >
-                    <MenuItem value="None">
-                      <em>None</em>
-                    </MenuItem>
-                    <MenuItem value={"True"}>True</MenuItem>
-                    <MenuItem value={"False"}>False</MenuItem>
-                  </Select>
-                </FormControl>
-              </div>
-            </div>
-
-            <div className="col-md-4 col_">
-              <h4>Product Stock</h4>
-              <div className="form-group">
-                <input type="text" className="input" />
-              </div>
-            </div>
-          </div>
-
-          <div className="row">
-            <div className="col-md-4 col_">
               <h4>Brand</h4>
-              <div className="form-group">
-                <input type="text" className="input" />
-              </div>
+              <TextField
+                variant="outlined"
+                fullWidth
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: 15,
+                    height: 25,
+                    paddingX: 2,
+                    paddingY: 1,
+                  },
+                }}
+                // error={!!errors.email?.message || false}
+                // onChange={(e) => setValue("email", e.target.value)}
+              />
             </div>
+          </div>
 
+          <div className="row">
             <div className="col-md-4 col_">
-              <h4>Discount</h4>
-              <div className="form-group">
-                <input type="text" className="input" />
-              </div>
+              <h4>Giá</h4>
+              <TextField
+                variant="outlined"
+                fullWidth
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: 15,
+                    height: 25,
+                    paddingX: 2,
+                    paddingY: 1,
+                  },
+                }}
+                // error={!!errors.email?.message || false}
+                // onChange={(e) => setValue("email", e.target.value)}
+              />
             </div>
-
             <div className="col-md-4 col_">
-              <h4>Rating</h4>
-              <div className="form-group">
-                <Rating
-                  name="read-only"
-                  value={1}
-                  precision={0.5}
-                  size="small"
-                  readOnly
-                />
-              </div>
+              <h4>Giá giảm</h4>
+              <TextField
+                variant="outlined"
+                fullWidth
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: 15,
+                    height: 25,
+                    paddingX: 2,
+                    paddingY: 1,
+                  },
+                }}
+                // error={!!errors.email?.message || false}
+                // onChange={(e) => setValue("email", e.target.value)}
+              />
+            </div>
+            <div className="col-md-4 col_">
+              <h4>Số lượng</h4>
+              <TextField
+                variant="outlined"
+                fullWidth
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: 15,
+                    height: 25,
+                    paddingX: 2,
+                    paddingY: 1,
+                  },
+                }}
+                // error={!!errors.email?.message || false}
+                // onChange={(e) => setValue("email", e.target.value)}
+              />
             </div>
           </div>
         </div>
-
         <div className="card shadow my-4 border-0 flex-center p-3">
-          <h2 className="font-weight-bold text-black/70">
-            Upload new product images
-          </h2>
+          <h2 className="font-weight-bold text-black/70">Thuộc tính</h2>
+
+          <br />
+        </div>
+        <div className="card shadow my-4 border-0 flex-center p-3">
+          <h4 className="font-weight-bold text-black/70">Hình sản phẩm</h4>
 
           <div className="flex items-center imageUploadingWrapperSlider">
             <div className="slider">
@@ -334,7 +304,51 @@ export const ProductCreate = () => {
               </div>
             </div>
           </div>
+          <div className=" col_">
+            <h4 className="flex items-center mr-3">
+              Mã Videos Youtube{" "}
+              <button
+                className="ml-2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (videos.length > 2) return;
 
+                  setVideos((pre) => [...pre, ""]);
+                }}
+              >
+                <IoIosAddCircle color="" size={25} />
+              </button>
+            </h4>
+            <div className="flex flex-row">
+              {videos.map((i, idx) => (
+                <ItemLinkVideo
+                  idx={idx}
+                  key={idx}
+                  setVideos={setVideos}
+                  videos={videos}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className=" col_ mt-3 mb-3">
+            <h4>Mô tả</h4>
+            <TextField
+              variant="outlined"
+              fullWidth
+              multiline
+              sx={{
+                "& .MuiInputBase-input": {
+                  fontSize: 15,
+
+                  paddingX: 2,
+                  paddingY: 1,
+                },
+              }}
+              // error={!!errors.email?.message || false}
+              // onChange={(e) => setValue("email", e.target.value)}
+            />
+          </div>
           <Button className="btn-blue btn-lg">Create Product</Button>
 
           <br />

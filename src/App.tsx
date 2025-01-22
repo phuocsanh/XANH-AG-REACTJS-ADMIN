@@ -4,11 +4,13 @@ import { createContext, Dispatch, SetStateAction, useState } from "react";
 import { Dashboard } from "./pages/Dashboard";
 import { Header } from "./components/Header";
 import { ProductsList } from "./pages/Products/productsList";
-import { ProductCreate } from "./pages/Products/productCreate";
 import { SignUp } from "./pages/signUp";
 import { SignIn } from "./pages/signIn";
 import { ForgotPassword } from "./pages/forgotPassword";
 import { OtpPage } from "./pages/otp";
+import { ProductCreate } from "./pages/Products/productCreate";
+import ListCategory from "./pages/Categories/ListCategory";
+import ListSubCategory from "./pages/SubCategories/ListSubCategory";
 
 type TypeMyContext = {
   isLogin: boolean;
@@ -61,7 +63,12 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/products/list" element={<ProductsList />} />
-                <Route path="/product/create" element={<ProductCreate />} />
+                <Route path="/product/:id?" element={<ProductCreate />} />
+                <Route path="/category/list" element={<ListCategory />} />
+                <Route
+                  path="/sub-category/list"
+                  element={<ListSubCategory />}
+                />
                 <Route path="/signUp" element={<SignUp />} />
                 <Route path="/signIn" element={<SignIn />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
