@@ -2,9 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import persistStorage from "./persistStorage";
 
+import { UserResponse } from '@/models/auth.model';
+
 type Store = {
   isLogin?: boolean;
   userToken: string | undefined;
+  userInfo?: UserResponse | null;
 };
 
 export const useAppStore = create<Store>()(
