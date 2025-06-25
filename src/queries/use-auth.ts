@@ -1,84 +1,72 @@
-import { LoginRequest, LoginResponse } from '@/models/auth.model';
-import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/stores';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
-import authService from '@/services/auth.service';
+import { LoginApiPayload, LoginResponse } from "@/models/auth.model"
+import { useNavigate } from "react-router-dom"
+import { useAppStore } from "@/stores"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "react-toastify"
+import authService from "@/services/auth.service"
 
 // Hook đăng nhập
 export const useLoginMutation = () => {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (credentials: LoginRequest) => {
-      return await authService.login(credentials);
+    mutationFn: async (credentials: LoginApiPayload) => {
+      return await authService.login(credentials)
     },
     onError: (error: any) => {
-      console.error('Lỗi đăng nhập:', error);
+      console.error("Lỗi đăng nhập:", error)
       // Không hiển thị toast ở đây nữa vì đã xử lý trong interceptor
     },
     onSuccess: (data: LoginResponse) => {
       // Cập nhật cache
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      
-      // Lưu token vào localStorage
-      if (data.token?.accessToken) {
-        localStorage.setItem('accessToken', data.token.accessToken);
-      }
-      if (data.token?.refreshToken) {
-        localStorage.setItem('refreshToken', data.token.refreshToken);
-      }
-      
+      queryClient.invalidateQueries({ queryKey: ["user"] })
+
       // Cập nhật trạng thái đăng nhập trong store
-      useAppStore.setState({ 
-        isLogin: true, 
-        userToken: data.token?.accessToken 
-      });
-      
+
       // Hiển thị thông báo và chuyển hướng
-      toast.success('Đăng nhập thành công!');
-      
+      toast.success("Đăng nhập thành công!")
+
       // Lấy đường dẫn trước đó từ state hoặc mặc định là '/'
-      const from = window.history.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
-    }
-  });
-};
+      const from = window.history.state?.from?.pathname || "/"
+      navigate(from, { replace: true })
+    },
+  })
+}
 
 // Hook đăng xuất
 export const useLogoutMutation = () => {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async () => {
-      return await authService.logout();
+      return await authService.logout()
     },
     onSuccess: () => {
       // Xóa cache và state
-      queryClient.clear();
-      
-      navigate('/signIn');
-      toast.success('Đăng xuất thành công!');
+      queryClient.clear()
+
+      navigate("/signIn")
+      toast.success("Đăng xuất thành công!")
     },
     onError: (error: any) => {
-      console.error('Lỗi đăng xuất:', error);
-      toast.error('Đã xảy ra lỗi khi đăng xuất.');
-    }
-  });
-};
+      console.error("Lỗi đăng xuất:", error)
+      toast.error("Đã xảy ra lỗi khi đăng xuất.")
+    },
+  })
+}
 
 // Hook kiểm tra trạng thái đăng nhập
 export const useAuthStatus = () => {
-  const isLogin = useAppStore((state) => state.isLogin);
-  const userToken = useAppStore((state) => state.userToken);
-  
+  const isLogin = useAppStore((state) => state.isLogin)
+  const userToken = useAppStore((state) => state.accessToken)
+
   return {
     isAuthenticated: isLogin && !!userToken,
-    token: userToken
-  };
-};
+    token: userToken,
+  }
+}
 
 // export const useUpdatePassRegisterMutation = () => {
 //   return useMutation<ResponseData<UpdatePassType>, Error, UpdatePassBodyType>({

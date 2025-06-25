@@ -1,21 +1,23 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import persistStorage from "./persistStorage";
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+import persistStorage from "./persistStorage"
 
-import { UserResponse } from '@/models/auth.model';
+import { UserResponse } from "@/models/auth.model"
 
 type Store = {
-  isLogin?: boolean;
-  userToken: string | undefined;
-  userInfo?: UserResponse | null;
-};
+  isLogin?: boolean
+  accessToken: string | undefined
+  refreshToken: string | undefined
+  userInfo?: UserResponse | null
+}
 
 export const useAppStore = create<Store>()(
   persist(
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     (_set, _get) => ({
       isLogin: false,
-      userToken: undefined,
+      accessToken: undefined,
+      refreshToken: undefined,
     }),
     {
       name: "app-storage",
@@ -26,4 +28,4 @@ export const useAppStore = create<Store>()(
       }),
     }
   )
-);
+)

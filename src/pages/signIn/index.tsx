@@ -42,11 +42,8 @@ export const SignIn = () => {
 
   const onSubmit = async (values: FormField) => {
     try {
-      // Sử dụng trực tiếp values từ form
-      await loginMutation.mutateAsync({
-        userAccount: values.userAccount || values.email, // Hỗ trợ cả 2 trường hợp
-        userPassword: values.userPassword || values.password, // Hỗ trợ cả 2 trường hợp
-      });
+      // Sử dụng trực tiếp values từ form với validation đã được thực hiện - theo pattern của example
+      await loginMutation.mutateAsync(values);
     } catch (error) {
       // Lỗi đã được xử lý trong useLoginMutation
       console.error("Lỗi đăng nhập:", error);
@@ -79,15 +76,15 @@ export const SignIn = () => {
           <div className='mt-20'>
             <CustomTextField
               id='outlined-basic'
-              label='Email'
+              label='Tài khoản (Email hoặc Username)'
               variant='outlined'
               required
               className='w-full'
-              error={!!errors.email?.message || false}
-              onChange={(e) => setValue("email", e.target.value)}
+              error={!!errors.user_account?.message || false}
+              {...register("user_account")}
             />
-            {errors.email && (
-              <p className='mt-1 text-red-600'>{errors.email.message}</p>
+            {errors.user_account && (
+              <p className='mt-1 text-red-600'>{errors.user_account.message}</p>
             )}
           </div>
 
@@ -99,8 +96,8 @@ export const SignIn = () => {
               className='w-full'
               required
               type={showPassword ? undefined : "password"}
-              error={!!errors.password?.message || false}
-              onChange={(e) => setValue("password", e.target.value)}
+              error={!!errors.user_password?.message || false}
+              {...register("user_password")}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -117,8 +114,8 @@ export const SignIn = () => {
               }}
             />
 
-            {errors.password && (
-              <p className='mt-1 text-red-600'>{errors.password.message}</p>
+            {errors.user_password && (
+              <p className='mt-1 text-red-600'>{errors.user_password.message}</p>
             )}
           </div>
 

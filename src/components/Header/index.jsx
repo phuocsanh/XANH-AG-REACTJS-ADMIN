@@ -33,7 +33,7 @@ export const Header = () => {
   const handleLogout = () => {
     // Logout logic here
     handleClose();
-    useAppStore.setState({ userToken: undefined, isLogin: false });
+    useAppStore.setState({ accessToken: undefined, isLogin: false });
   };
 
   return (

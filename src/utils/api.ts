@@ -1,61 +1,61 @@
-import axios, { AxiosInstance, CreateAxiosDefaults } from "axios";
-import queryString from "query-string";
-import { isFile, isFileArray, isObjectLike } from "./checkType";
-import { AnyObject, ApiResponse } from "@/models/common";
-import { useAppStore } from "@/stores";
+import axios, { AxiosInstance, CreateAxiosDefaults } from "axios"
+import queryString from "query-string"
+import { isFile, isFileArray, isObjectLike } from "./checkType"
+import { AnyObject, ApiResponse } from "@/models/common"
+import { useAppStore } from "@/stores"
 
-export const URL = "http://localhost:8080";
-export const BASE_URL = URL;
+export const URL = "http://localhost:8002/v1"
+export const BASE_URL = URL
 
-export const URL_UPLOAD = BASE_URL + "/media/api/uploads/";
+export const URL_UPLOAD = BASE_URL + "/media/api/uploads/"
 
 const transformPostFormData = (object: AnyObject | FormData = {}) => {
   if (object instanceof FormData) {
-    return object;
+    return object
   }
-  const formData = new FormData();
+  const formData = new FormData()
   for (const [key, value] of Object.entries(object)) {
     if (isObjectLike(value)) {
       if (Array.isArray(value) && isFileArray(value)) {
         value.forEach((v) => {
-          formData.append(key, v as unknown as Blob);
-        });
+          formData.append(key, v as unknown as Blob)
+        })
       } else if (isFile(value)) {
-        formData.append(key, value as unknown as Blob);
+        formData.append(key, value as unknown as Blob)
       } else {
-        formData.append(key, JSON.stringify(value));
+        formData.append(key, JSON.stringify(value))
       }
     } else if (value != null) {
-      formData.append(key, value);
+      formData.append(key, value)
     }
   }
-  return formData;
-};
+  return formData
+}
 
 const transformPostData = (object: AnyObject = {}) => {
-  const newObject: AnyObject = {};
+  const newObject: AnyObject = {}
   for (const [key, value] of Object.entries(object)) {
     if (isObjectLike(value)) {
-      newObject[key] = JSON.stringify(value);
+      newObject[key] = JSON.stringify(value)
     } else {
-      newObject[key] = value;
+      newObject[key] = value
     }
   }
-  return queryString.stringify(newObject);
-};
+  return queryString.stringify(newObject)
+}
 
 export class Api {
-  instance: AxiosInstance;
+  instance: AxiosInstance
   constructor(config?: CreateAxiosDefaults) {
-    this.instance = axios.create(config);
+    this.instance = axios.create(config)
   }
 
   async get<T = void>(
     url: string & (T extends void ? "Bạn chưa khai báo kiểu trả về" : string),
     params?: unknown
   ): Promise<T> {
-    const response = await this.instance.get<T>(url, { params });
-    return response.data;
+    const response = await this.instance.get<T>(url, { params })
+    return response.data
   }
 
   /** form-urlencoded */
@@ -64,9 +64,9 @@ export class Api {
     body?: AnyObject,
     params?: unknown
   ): Promise<T> {
-    const data = transformPostData(body);
-    const response = await this.instance.post<T>(url, data, { params });
-    return response.data;
+    const data = transformPostData(body)
+    const response = await this.instance.post<T>(url, data, { params })
+    return response.data
   }
 
   /** form-data */
@@ -75,9 +75,9 @@ export class Api {
     body?: AnyObject | FormData,
     params?: unknown
   ): Promise<T> {
-    const data = transformPostFormData(body);
-    const response = await this.instance.postForm<T>(url, data, { params });
-    return response.data;
+    const data = transformPostFormData(body)
+    const response = await this.instance.postForm<T>(url, data, { params })
+    return response.data
   }
 
   /** raw-JSON */
@@ -86,12 +86,12 @@ export class Api {
     body?: AnyObject,
     params?: unknown
   ): Promise<T> {
-    const data = JSON.stringify(body);
+    const data = JSON.stringify(body)
     const response = await this.instance.post<T>(url, data, {
       params,
       headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
+    })
+    return response.data
   }
 
   /** form-urlencoded */
@@ -100,9 +100,9 @@ export class Api {
     body?: AnyObject,
     params?: unknown
   ): Promise<T> {
-    const data = transformPostData(body);
-    const response = await this.instance.put<T>(url, data, { params });
-    return response.data;
+    const data = transformPostData(body)
+    const response = await this.instance.put<T>(url, data, { params })
+    return response.data
   }
 
   /** form-data */
@@ -111,9 +111,9 @@ export class Api {
     body?: AnyObject | FormData,
     params?: unknown
   ): Promise<T> {
-    const data = transformPostFormData(body);
-    const response = await this.instance.putForm<T>(url, data, { params });
-    return response.data;
+    const data = transformPostFormData(body)
+    const response = await this.instance.putForm<T>(url, data, { params })
+    return response.data
   }
 
   /** raw-JSON */
@@ -122,12 +122,12 @@ export class Api {
     body?: AnyObject,
     params?: unknown
   ): Promise<T> {
-    const data = JSON.stringify(body);
+    const data = JSON.stringify(body)
     const response = await this.instance.put<T>(url, data, {
       params,
       headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
+    })
+    return response.data
   }
 
   /** form-urlencoded */
@@ -136,9 +136,9 @@ export class Api {
     body?: AnyObject,
     params?: unknown
   ): Promise<T> {
-    const data = transformPostData(body);
-    const response = await this.instance.patch<T>(url, data, { params });
-    return response.data;
+    const data = transformPostData(body)
+    const response = await this.instance.patch<T>(url, data, { params })
+    return response.data
   }
 
   /** form-data */
@@ -147,9 +147,9 @@ export class Api {
     body?: AnyObject | FormData,
     params?: unknown
   ): Promise<T> {
-    const data = transformPostFormData(body);
-    const response = await this.instance.patchForm<T>(url, data, { params });
-    return response.data;
+    const data = transformPostFormData(body)
+    const response = await this.instance.patchForm<T>(url, data, { params })
+    return response.data
   }
 
   /** raw-JSON */
@@ -158,21 +158,21 @@ export class Api {
     body?: AnyObject,
     params?: unknown
   ): Promise<T> {
-    const data = JSON.stringify(body);
+    const data = JSON.stringify(body)
     const response = await this.instance.patch<T>(url, data, {
       params,
       headers: { "Content-Type": "application/json" },
-    });
-    return response.data;
+    })
+    return response.data
   }
 
   async delete<T = ApiResponse>(url: string, params?: unknown): Promise<T> {
-    const response = await this.instance.delete<T>(url, { params });
-    return response.data;
+    const response = await this.instance.delete<T>(url, { params })
+    return response.data
   }
 }
 
-const api = new Api({ baseURL: BASE_URL, timeout: 30000 });
+const api = new Api({ baseURL: BASE_URL, timeout: 30000 })
 api.instance.interceptors.request.use(
   (config) => {
     if (import.meta.env.MODE === "development") {
@@ -180,18 +180,22 @@ api.instance.interceptors.request.use(
         `%c__REQUEST__${config.url}: %o`,
         "color: blue;font-weight: bold",
         config
-      );
+      )
     }
-    const token = useAppStore.getState().userToken;
+
+    // Lấy token từ localStorage hoặc store
+    let token = useAppStore.getState().accessToken
+    console.log("🚀 ~ token:", token)
+
     if (token) {
-      config.headers.setAuthorization(`Bearer ${token}`);
+      config.headers.setAuthorization(`Bearer ${token}`)
     }
-    return config;
+    return config
   },
   (error) => {
-    throw error;
+    throw error
   }
-);
+)
 
 api.instance.interceptors.response.use(
   (response) => {
@@ -200,12 +204,12 @@ api.instance.interceptors.response.use(
         `%c__RESPONSE__${response.config.url}: %o`,
         "color: green;font-weight: bold",
         response
-      );
+      )
     }
     if (response.data.code && response.data.code !== 200) {
-      throw { response };
+      throw { response }
     }
-    return response;
+    return response
   },
   (error) => {
     if (import.meta.env.MODE === "development") {
@@ -213,12 +217,12 @@ api.instance.interceptors.response.use(
         `%c__ERROR__${error.response?.config?.url}: %o`,
         "color: red;font-weight: bold",
         error.response || error
-      );
+      )
     }
     if (error.response?.status === 401) {
-      useAppStore.setState({ userToken: undefined });
+      useAppStore.setState({ accessToken: undefined })
     }
-    throw error;
+    throw error
   }
-);
-export default api;
+)
+export default api

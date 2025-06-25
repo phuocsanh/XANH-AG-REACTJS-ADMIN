@@ -1,102 +1,108 @@
-import api from './api';
-import { ApiResponse, LoginRequest, LoginResponse, RefreshTokenRequest, TokenResponse } from '@/models/auth.model';
-import { useAppStore } from '@/stores';
+import api from "@/utils/api"
+import {
+  ApiResponse,
+  LoginResponse,
+  RefreshTokenRequest,
+  TokenResponse,
+  loginApiPayloadSchema,
+  LoginApiPayload,
+} from "@/models/auth.model"
+import { useAppStore } from "@/stores"
 
 // Service xử lý các chức năng liên quan đến xác thực
 export const authService = {
   /**
    * Đăng nhập người dùng
-   * @param credentials Thông tin đăng nhập
+   * @param credentials Thông tin đăng nhập (snake_case format)
    * @returns Thông tin đăng nhập thành công
    * @throws Lỗi nếu đăng nhập thất bại
    */
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+  login: async (credentials: LoginApiPayload): Promise<LoginResponse> => {
     try {
-      const response = await api.post<ApiResponse<LoginResponse>>('/user/login', {
-        userAccount: credentials.userAccount,
-        userPassword: credentials.userPassword
-      });
-      
+      // Validate dữ liệu đầu vào với type safety - theo pattern của example
+
+      const response = await api.postRaw<ApiResponse<LoginResponse>>(
+        "/user/login",
+        credentials
+      )
+
       // Kiểm tra response hợp lệ
       if (!response?.data) {
-        throw new Error('Dữ liệu phản hồi không hợp lệ');
+        throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
-      
-      const { token, user } = response.data;
-      
-      if (token) {
+
+      const { tokens, user } = response.data
+
+      if (tokens) {
         // Lưu token vào localStorage và state
-        localStorage.setItem('accessToken', token.accessToken);
-        localStorage.setItem('refreshToken', token.refreshToken);
-        
+
         // Cập nhật trạng thái đăng nhập
-        useAppStore.setState(prev => ({
+        useAppStore.setState((prev) => ({
           ...prev,
-          userToken: token.accessToken,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
           isLogin: true,
-          userInfo: user
-        }));
-        
+          userInfo: user,
+        }))
+
         // Lưu thông tin user vào localStorage
-        localStorage.setItem('userData', JSON.stringify(user));
       }
-      
-      return response.data;
+
+      return response.data
     } catch (error: any) {
-      console.error('Lỗi đăng nhập:', error);
-      
+      console.error("Lỗi đăng nhập:", error)
+
       // Ném lỗi để interceptor xử lý
-      throw error;
+      throw error
     }
   },
-  
+
   // Đăng xuất
   logout: async (): Promise<void> => {
     try {
-      await api.post('/user/logout');
+      await api.post("/user/logout")
     } catch (error) {
-      console.error('Lỗi đăng xuất:', error);
+      console.error("Lỗi đăng xuất:", error)
     } finally {
-      // Xóa token khỏi localStorage và state
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('userData');
-      
       useAppStore.setState({
-        userToken: '',
-        isLogin: false
-      });
+        accessToken: "",
+        refreshToken: "",
+        isLogin: false,
+      })
     }
   },
-  
+
   // Làm mới token
   refreshToken: async (refreshToken: string): Promise<TokenResponse> => {
-    const response = await api.post<ApiResponse<TokenResponse>>('/user/refresh-token', { refreshToken });
-    
-    if (response.data && response.data.accessToken) {
+    const response = await api.post<ApiResponse<TokenResponse>>(
+      "/user/refresh-token",
+      { refreshToken }
+    )
+
+    if (response.data && response.data.access_token) {
       // Cập nhật token mới
-      localStorage.setItem('accessToken', response.data.accessToken);
-      useAppStore.setState({ userToken: response.data.accessToken });
+      useAppStore.setState({ accessToken: response.data.access_token })
     }
-    
-    return response.data;
+
+    return response.data
   },
-  
+
   // Kiểm tra trạng thái đăng nhập
   checkAuthStatus: (): boolean => {
-    const token = localStorage.getItem('accessToken');
-    const isLoggedIn = !!token;
-    
+    const token = useAppStore.getState().accessToken
+
+    const isLoggedIn = !!token
+
     // Cập nhật state nếu có token nhưng state chưa được cập nhật
     if (isLoggedIn && !useAppStore.getState().isLogin) {
       useAppStore.setState({
-        userToken: token,
-        isLogin: true
-      });
+        accessToken: token,
+        isLogin: true,
+      })
     }
-    
-    return isLoggedIn;
-  }
-};
 
-export default authService;
+    return isLoggedIn
+  },
+}
+
+export default authService

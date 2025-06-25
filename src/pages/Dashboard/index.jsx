@@ -192,7 +192,7 @@ export const Dashboard = () => {
   const [categoryVal, setCategoryVal] = useState("");
   const [subCategoryVal, setSubCategoryVal] = useState("");
   const [isFeatured, setIsFeatured] = useState("None");
-  const userToken = useAppStore((state) => state.userToken);
+  const userToken = useAppStore((state) => state.accessToken);
   const context = useContext(MyContext);
 
   const handleChange = (event) => {
