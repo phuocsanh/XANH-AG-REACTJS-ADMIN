@@ -42,8 +42,7 @@ export type PagingResponseData<D> = ApiResponse & {
 export type Timeout = ReturnType<typeof setTimeout>;
 
 export type Interval = ReturnType<typeof setInterval>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyObject = { [key: string]: any };
+export type AnyObject = { [key: string]: unknown };
 export type UploadFile = {
   uri: string;
   name: string;

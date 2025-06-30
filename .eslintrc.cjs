@@ -36,6 +36,13 @@ module.exports = {
     ],
     "react-hooks/rules-of-hooks": "error", // Kiểm tra đúng cách dùng hooks
     "react-hooks/exhaustive-deps": "warn", // Cảnh báo dependencies thiếu
+    "no-unused-vars": "off", // Tắt rule mặc định để tránh conflict với TypeScript rule
+    "@typescript-eslint/no-empty-object-type": [
+      "error",
+      {
+        "allowInterfaces": "with-single-extends"
+      }
+    ], // Cho phép interface rỗng khi extends từ một interface khác
   },
   overrides: [
     {
@@ -43,7 +50,14 @@ module.exports = {
       rules: {
         "@typescript-eslint/explicit-module-boundary-types": "off",
         "no-unused-vars": "off",
-        "@typescript-eslint/no-unused-vars": ["error"],
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      },
+    },
+    {
+      files: ["*.jsx", "*.js"],
+      rules: {
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "@typescript-eslint/no-unused-vars": "off",
       },
     },
   ],

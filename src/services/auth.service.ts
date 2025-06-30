@@ -2,9 +2,7 @@ import api from "@/utils/api"
 import {
   ApiResponse,
   LoginResponse,
-  RefreshTokenRequest,
   TokenResponse,
-  loginApiPayloadSchema,
   LoginApiPayload,
 } from "@/models/auth.model"
 import { useAppStore } from "@/stores"
@@ -39,8 +37,8 @@ export const authService = {
         // Cập nhật trạng thái đăng nhập
         useAppStore.setState((prev) => ({
           ...prev,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
           isLogin: true,
           userInfo: user,
         }))
@@ -49,7 +47,7 @@ export const authService = {
       }
 
       return response.data
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi đăng nhập:", error)
 
       // Ném lỗi để interceptor xử lý
@@ -79,9 +77,9 @@ export const authService = {
       { refreshToken }
     )
 
-    if (response.data && response.data.access_token) {
+    if (response.data && response.data.accessToken) {
       // Cập nhật token mới
-      useAppStore.setState({ accessToken: response.data.access_token })
+      useAppStore.setState({ accessToken: response.data.accessToken })
     }
 
     return response.data
@@ -89,19 +87,31 @@ export const authService = {
 
   // Kiểm tra trạng thái đăng nhập
   checkAuthStatus: (): boolean => {
-    const token = useAppStore.getState().accessToken
+    const state = useAppStore.getState()
+    const { accessToken, isLogin } = state
 
-    const isLoggedIn = !!token
+    const hasValidToken = !!accessToken && accessToken !== ""
 
-    // Cập nhật state nếu có token nhưng state chưa được cập nhật
-    if (isLoggedIn && !useAppStore.getState().isLogin) {
+    // Đồng bộ state nếu có token nhưng isLogin = false
+    if (hasValidToken && !isLogin) {
       useAppStore.setState({
-        accessToken: token,
         isLogin: true,
       })
+      return true
     }
 
-    return isLoggedIn
+    // Nếu không có token nhưng isLogin = true, reset state
+    if (!hasValidToken && isLogin) {
+      useAppStore.setState({
+        isLogin: false,
+        accessToken: undefined,
+        refreshToken: undefined,
+        userInfo: null,
+      })
+      return false
+    }
+
+    return hasValidToken
   },
 }
 

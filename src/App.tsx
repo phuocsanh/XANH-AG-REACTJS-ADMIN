@@ -3,7 +3,7 @@ import Sidebar from "./components/Sidebar";
 import { createContext, Dispatch, SetStateAction, useState, useEffect } from "react";
 import { Dashboard } from "./pages/Dashboard";
 import { Header } from "./components/Header";
-import { ProductsList } from "./pages/Products/productsList";
+import ProductsList from "./pages/Products/productsList";
 import { SignIn } from "./pages/signIn";
 import { ForgotPassword } from "./pages/forgotPassword";
 import { OtpPage } from "./pages/otp";
@@ -15,46 +15,25 @@ import { useAppStore } from "./stores";
 import authService from "./services/auth.service";
 
 type TypeMyContext = {
-  isLogin: boolean;
-  setIsLogin: Dispatch<SetStateAction<boolean>>;
   isHeaderFooterShow: boolean;
   setIsHeaderFooterShow: Dispatch<SetStateAction<boolean>>;
 };
 
 const MyContext = createContext<TypeMyContext>({
-  isLogin: false,
-  setIsLogin: () => {},
   isHeaderFooterShow: false,
   setIsHeaderFooterShow: () => {},
 });
 
 function App() {
-  const [isLogin, setIsLogin] = useState(false);
   const [isHeaderFooterShow, setIsHeaderFooterShow] = useState(false);
+  const isLogin = useAppStore((state) => state.isLogin);
 
   // Kiểm tra trạng thái đăng nhập khi ứng dụng khởi động
   useEffect(() => {
-    const isLoggedIn = authService.checkAuthStatus();
-    setIsLogin(!!isLoggedIn);
-    
-    // Cập nhật store nếu cần
-    if (isLoggedIn) {
-      useAppStore.setState({ isLogin: true });
-    }
-  }, []);
-
-  // Đồng bộ trạng thái đăng nhập với store
-  useEffect(() => {
-    const unsubscribe = useAppStore.subscribe((state) => {
-      setIsLogin(!!state.isLogin);
-    });
-    
-    return () => unsubscribe();
+    authService.checkAuthStatus();
   }, []);
 
   const values = {
-    isLogin,
-    setIsLogin,
     isHeaderFooterShow,
     setIsHeaderFooterShow,
   };

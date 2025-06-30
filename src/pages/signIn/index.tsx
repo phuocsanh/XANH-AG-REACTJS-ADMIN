@@ -1,8 +1,6 @@
 import Logo from "../../assets/images/logo.png"
 import Button from "@mui/material/Button"
-import { LuArrowRightToLine } from "react-icons/lu"
-import { FaRegUser } from "react-icons/fa6"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { CircularProgress, InputAdornment, TextField } from "@mui/material"
 import { useForm } from "react-hook-form"
 import formConfig, { FormField } from "./formConfig"
@@ -11,7 +9,7 @@ import { MyContext } from "@/App"
 import { useLoginMutation } from "@/queries/use-auth"
 import { FaEye, FaEyeSlash } from "react-icons/fa"
 import styled from "styled-components"
-import { toast } from "react-toastify"
+
 const CustomTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
     borderRadius: "100px", // Đặt border-radius tại đây
@@ -19,11 +17,6 @@ const CustomTextField = styled(TextField)({
 })
 export const SignIn = () => {
   const context = useContext(MyContext)
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  // Lấy đường dẫn redirect sau khi đăng nhập thành công (nếu có)
-  const from = location.state?.from || "/"
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -32,7 +25,6 @@ export const SignIn = () => {
 
   const {
     handleSubmit,
-    setValue,
     formState: { errors },
     register,
   } = useForm<FormField>(formConfig)
@@ -80,11 +72,11 @@ export const SignIn = () => {
               variant='outlined'
               required
               className='w-full'
-              error={!!errors.user_account?.message || false}
-              {...register("user_account")}
+              error={!!errors.userAccount?.message || false}
+              {...register("userAccount")}
             />
-            {errors.user_account && (
-              <p className='mt-1 text-red-600'>{errors.user_account.message}</p>
+            {errors.userAccount && (
+              <p className='mt-1 text-red-600'>{errors.userAccount.message}</p>
             )}
           </div>
 
@@ -96,8 +88,8 @@ export const SignIn = () => {
               className='w-full'
               required
               type={showPassword ? undefined : "password"}
-              error={!!errors.user_password?.message || false}
-              {...register("user_password")}
+              error={!!errors.userPassword?.message || false}
+              {...register("userPassword")}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -114,8 +106,8 @@ export const SignIn = () => {
               }}
             />
 
-            {errors.user_password && (
-              <p className='mt-1 text-red-600'>{errors.user_password.message}</p>
+            {errors.userPassword && (
+              <p className='mt-1 text-red-600'>{errors.userPassword.message}</p>
             )}
           </div>
 

@@ -1,19 +1,16 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { MyContext } from "../../App";
 import Logo from "../../assets/images/logo.png";
 import Button from "@mui/material/Button";
 import { LuArrowRightToLine } from "react-icons/lu";
 import { FaRegUser } from "react-icons/fa6";
-import { IoLogoGoogleplus } from "react-icons/io";
-import { FaFacebook } from "react-icons/fa6";
-import { FaRegEye } from "react-icons/fa";
-import { FaEyeSlash } from "react-icons/fa6";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
+
+
+
 import { Link } from "react-router-dom";
 
 export const ForgotPassword = () => {
-  const [isShowPassword, setIsShowPassword] = useState(false);
+
 
   const context = useContext(MyContext);
 

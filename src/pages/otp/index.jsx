@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useState } from "react"
+import { useContext, useEffect } from "react"
 import { MyContext } from "../../App"
 import Logo from "../../assets/images/logo.png"
 import Button from "@mui/material/Button"
 import { LuArrowRightToLine } from "react-icons/lu"
-import { FaRegUser } from "react-icons/fa6"
+
 import { Link } from "react-router-dom"
 
 export const OtpPage = () => {
@@ -53,25 +53,25 @@ export const OtpPage = () => {
             <div className='flex items-center justify-center otpBox w-[400px] m-auto pb-5 gap-4'>
               <input
                 type='text'
-                maxlength='1'
+                maxLength='1'
                 onChange={onChangeOtpInput}
                 id='otp1'
               />
               <input
                 type='text'
-                maxlength='1'
+                maxLength='1'
                 onChange={onChangeOtpInput}
                 id='otp2'
               />
               <input
                 type='text'
-                maxlength='1'
+                maxLength='1'
                 onChange={onChangeOtpInput}
                 id='otp3'
               />
               <input
                 type='text'
-                maxlength='1'
+                maxLength='1'
                 onChange={onChangeOtpInput}
                 id='otp4'
               />

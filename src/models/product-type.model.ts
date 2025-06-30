@@ -18,16 +18,19 @@ export interface ProductSubtype {
 }
 
 export interface ProductTypeRequest {
+  [key: string]: unknown;
   name: string;
   description?: string;
 }
 
 export interface ProductSubtypeRequest {
+  [key: string]: unknown;
   name: string;
   description?: string;
 }
 
 export interface ProductSubtypeMappingRequest {
+  [key: string]: unknown;
   typeId: number;
   subtypeId: number;
 }

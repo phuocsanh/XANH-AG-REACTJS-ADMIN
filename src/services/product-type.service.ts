@@ -1,10 +1,8 @@
 import api from "@/utils/api"
 import {
-  ProductType,
   ProductTypeRequest,
   ProductTypeResponse,
   ProductTypesListResponse,
-  ProductSubtype,
   ProductSubtypeRequest,
   ProductSubtypeResponse,
   ProductSubtypesListResponse,

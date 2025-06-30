@@ -1,46 +1,41 @@
-import React, { useState } from "react";
-import Button from "@mui/material/Button";
-import { FaRegBell } from "react-icons/fa";
-import { MdOutlineEmail } from "react-icons/md";
+import { useState } from "react"
+import Button from "@mui/material/Button"
+import { FaRegBell } from "react-icons/fa"
+import { MdOutlineEmail } from "react-icons/md"
 
-import { UserImage } from "../userImage";
+import { UserImage } from "../userImage"
 
-import Box from "@mui/material/Box";
-import Avatar from "@mui/material/Avatar";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import Tooltip from "@mui/material/Tooltip";
-import PersonAdd from "@mui/icons-material/PersonAdd";
-import Settings from "@mui/icons-material/Settings";
-import Logout from "@mui/icons-material/Logout";
-import { SearchBox } from "../SearchBox/index";
-import { useAppStore } from "@/stores";
+import Avatar from "@mui/material/Avatar"
+import Menu from "@mui/material/Menu"
+import MenuItem from "@mui/material/MenuItem"
+import ListItemIcon from "@mui/material/ListItemIcon"
+import Divider from "@mui/material/Divider"
+import PersonAdd from "@mui/icons-material/PersonAdd"
+import Settings from "@mui/icons-material/Settings"
+import Logout from "@mui/icons-material/Logout"
+import { useAppStore } from "@/stores"
 
 export const Header = () => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
   const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+    setAnchorEl(event.currentTarget)
+  }
   const handleClose = () => {
-    setAnchorEl(null);
-  };
+    setAnchorEl(null)
+  }
 
   const handleLogout = () => {
     // Logout logic here
-    handleClose();
-    useAppStore.setState({ accessToken: undefined, isLogin: false });
-  };
+    handleClose()
+    useAppStore.setState({ accessToken: undefined, isLogin: false })
+  }
 
   return (
-    <header className="fixed top-0 right-0 bg-white py-3 z-[100] flex items-center justify-between px-4">
+    <header className='fixed top-0 right-0 bg-white py-3 z-[100] flex items-center justify-between px-4'>
       {/* <SearchBox /> */}
-      <div className="ml-auto part2">
-        <ul className="flex items-center gap-3">
+      <div className='ml-auto part2'>
+        <ul className='flex items-center gap-3'>
           <li>
             <Button>
               <FaRegBell />
@@ -53,13 +48,13 @@ export const Header = () => {
           </li>
 
           <li>
-            <div className="myAcc" onClick={handleClick}>
+            <div className='myAcc' onClick={handleClick}>
               <UserImage />
             </div>
 
             <Menu
               anchorEl={anchorEl}
-              id="account-menu"
+              id='account-menu'
               open={open}
               onClose={handleClose}
               onClick={handleClose}
@@ -101,19 +96,19 @@ export const Header = () => {
               <Divider />
               <MenuItem onClick={handleClose}>
                 <ListItemIcon>
-                  <PersonAdd fontSize="small" />
+                  <PersonAdd fontSize='small' />
                 </ListItemIcon>
                 Add another account
               </MenuItem>
               <MenuItem onClick={handleClose}>
                 <ListItemIcon>
-                  <Settings fontSize="small" />
+                  <Settings fontSize='small' />
                 </ListItemIcon>
                 Settings
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon>
-                  <Logout fontSize="small" />
+                  <Logout fontSize='small' />
                 </ListItemIcon>
                 Logout
               </MenuItem>
@@ -122,5 +117,5 @@ export const Header = () => {
         </ul>
       </div>
     </header>
-  );
-};
+  )
+}

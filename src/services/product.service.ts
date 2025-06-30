@@ -1,21 +1,20 @@
 import {
   CreateProductRequest,
-  Product,
-  ProductListParams,
+  ExtendedProductListParams,
   ProductListResponse,
   ProductResponse,
   UpdateProductRequest,
-  ProductType,
   ProductTypeResponse,
   ProductTypeListResponse,
   CreateProductTypeRequest,
   UpdateProductTypeRequest,
-  ProductSubtype,
   ProductSubtypeResponse,
   ProductSubtypeListResponse,
   CreateProductSubtypeRequest,
   UpdateProductSubtypeRequest,
   ProductStatsResponse,
+  Product,
+  mapApiResponseToProduct,
 } from "@/models/product.model"
 import api from "@/utils/api"
 
@@ -23,13 +22,23 @@ import api from "@/utils/api"
 export const productService = {
   // Lấy danh sách sản phẩm
   getProducts: async (
-    params?: ProductListParams
-  ): Promise<ProductListResponse> => {
+    params?: ExtendedProductListParams
+  ): Promise<{ data: { items: Product[]; total: number }; code: number; message: string }> => {
     try {
       const response = await api.get<ProductListResponse>("/manage/product", {
-        params,
+        params: { params },
       })
-      return response
+      
+      // Map API response to Product model
+      const mappedProducts = response.data.items.map(mapApiResponseToProduct)
+      
+      return {
+        ...response,
+        data: {
+          items: mappedProducts,
+          total: response.data.total
+        }
+      }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm:", error)
       throw error
@@ -112,7 +121,7 @@ export const productService = {
 
   // Lọc sản phẩm theo các tiêu chí
   filterProducts: async (
-    filters: Record<string, any>
+    filters: Record<string, unknown>
   ): Promise<ProductListResponse> => {
     try {
       const response = await api.get<ProductListResponse>(
@@ -257,7 +266,7 @@ export const productService = {
   addProductToSubtype: async (
     productId: number,
     subtypeId: number
-  ): Promise<any> => {
+  ): Promise<unknown> => {
     try {
       const response = await api.post(
         `/manage/product-subtype/${subtypeId}/products/${productId}`

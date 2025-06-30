@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosResponse, isAxiosError } from "axios";
 import { AnyObject, ApiResponse, UploadFile } from "@/models/common";
 
@@ -11,12 +10,12 @@ export const isFileArray = (arr: unknown[]): arr is UploadFile[] => {
 };
 
 export const isFile = (params: unknown): params is UploadFile => {
-  const _params = params as any;
+  const _params = params as Record<string, unknown>;
   return !!(_params?.uri && _params?.type && _params?.name);
 };
 
 export const isApiResponse = (params: unknown): params is ApiResponse => {
-  const _params = params as any;
+  const _params = params as Record<string, unknown>;
   return !!(_params?.code && _params?.message);
 };
 
@@ -35,7 +34,7 @@ export const errorHasResponse = (
     }
   >;
 } => {
-  const _err = err as any;
+  const _err = err as Record<string, unknown>;
   return !!_err?.response;
 };
 
@@ -54,7 +53,16 @@ export const isGoongError = (
 ): err is {
   response: { data: { error: { code: string; message: string } } };
 } => {
-  const _err = err as any;
+  const _err = err as {
+    response?: {
+      data?: {
+        error?: {
+          code?: string;
+          message?: string;
+        };
+      };
+    };
+  };
   return !!(
     _err?.response?.data?.error?.code && _err?.response?.data?.error?.message
   );

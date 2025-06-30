@@ -2,9 +2,9 @@
 
 import { z } from "zod"
 
-// Schema cho API payload (snake_case như server expect) - theo pattern của example
+// Schema cho API payload (camelCase như server expect) - theo pattern của example
 export const loginApiPayloadSchema = z.object({
-  user_account: z
+  userAccount: z
     .string()
     .min(1, "Tài khoản không được để trống")
     .trim()
@@ -19,7 +19,7 @@ export const loginApiPayloadSchema = z.object({
         message: "Tài khoản phải là email hợp lệ hoặc username (3-20 ký tự, chỉ chứa chữ, số và _)"
       }
     ),
-  user_password: z
+  userPassword: z
     .string()
     .min(1, "Mật khẩu không được để trống")
     .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
@@ -31,10 +31,10 @@ export const loginApiPayloadSchema = z.object({
 export type LoginApiPayload = z.infer<typeof loginApiPayloadSchema>
 
 export interface TokenResponse {
-  access_token: string
-  refresh_token: string
-  expires_in: number
-  user_id: number
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+  userId: number
 }
 
 export interface UserResponse {
@@ -55,15 +55,16 @@ export interface LoginResponse {
 export interface ErrorResponse {
   code: number
   message: string
-  details?: any
+  details?: unknown
 }
 
 export interface RefreshTokenRequest {
+  [key: string]: unknown
   refreshToken: string
 }
 
 // Định dạng response chung từ server
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T

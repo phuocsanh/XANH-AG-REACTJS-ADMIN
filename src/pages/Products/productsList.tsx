@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -45,7 +45,7 @@ import { useProducts, useDeleteProductMutation } from "../../queries/use-product
 import { useProductTypes } from "../../queries/use-product-type";
 
 // Models
-import { Product } from "../../models/product.model";
+import { Product, ExtendedProductListParams } from "../../models/product.model";
 
 // Interface cho SearchBox component
 interface SearchBoxProps {
@@ -81,35 +81,6 @@ interface ProductType {
   description?: string;
 }
 
-// Interface cho tham số lấy danh sách sản phẩm
-interface ExtendedProductListParams {
-  limit?: number;
-  offset?: number;
-  search?: string;
-  categoryId?: number;
-  subCategoryId?: number;
-  featured?: boolean;
-}
-
-// Interface cho response của API lấy danh sách sản phẩm
-interface ProductListResponse {
-  items: Product[];
-  total: number;
-}
-
-// Interface cho response của API lấy danh sách loại sản phẩm
-interface ProductTypesListResponse {
-  data: ProductType[];
-  total: number;
-}
-
-interface ProductTypesResponse {
-  data: {
-    items: ProductType[];
-    total: number;
-  };
-}
-
 // Định nghĩa component TooltipBox
 const TooltipBox: React.FC<{
   children: React.ReactElement;
@@ -123,7 +94,7 @@ const TooltipBox: React.FC<{
   );
 };
 
-const label = { inputProps: { "aria-label": "Checkbox demo" } };
+
 
 export const ProductsList = () => {
   const navigate = useNavigate();
@@ -148,7 +119,6 @@ export const ProductsList = () => {
   
   // State cho drawer
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   // Lấy danh sách sản phẩm từ API
   const { data: productsResponse, isLoading, isError, refetch } = useProducts({
@@ -165,8 +135,23 @@ export const ProductsList = () => {
   const totalItems = productsData?.total || 0;
 
   // Lấy danh sách loại sản phẩm từ API
-  const { data: productTypesResponse } = useProductTypes();
-  const productTypes = (productTypesResponse as unknown as ProductTypesListResponse)?.data || [];
+  const { data: productTypesResponse, error: productTypesError } = useProductTypes();
+  
+  // Đảm bảo productTypes luôn là một mảng, với fallback data nếu API lỗi
+  let productTypes: ProductType[] = [];
+  
+  if (productTypesError) {
+    // Dữ liệu mock tạm thời khi API lỗi
+    productTypes = [
+      { id: 1, name: 'Rau củ', description: 'Các loại rau củ tươi' },
+      { id: 2, name: 'Trái cây', description: 'Các loại trái cây tươi' },
+      { id: 3, name: 'Thịt cá', description: 'Thịt và hải sản tươi sống' }
+    ];
+  } else if (Array.isArray(productTypesResponse?.data)) {
+    productTypes = productTypesResponse.data;
+  } else {
+    productTypes = [];
+  }
   
   // Mutation để xóa sản phẩm
   const deleteProductMutation = useDeleteProductMutation();
@@ -232,17 +217,7 @@ export const ProductsList = () => {
     });
   };
 
-  // Xử lý khi nhấn nút xóa sản phẩm
-  const handleDeleteProduct = (productId: number): void => {
-    setProductToDelete(productId);
-    setOpenDeleteDialog(true);
-  };
 
-  // Xử lý khi hủy xóa sản phẩm
-  const cancelDeleteProduct = (): void => {
-    setOpenDeleteDialog(false);
-    setProductToDelete(null);
-  };
 
   // Xử lý xác nhận xóa sản phẩm
   const confirmDeleteProduct = async (): Promise<void> => {
@@ -252,7 +227,7 @@ export const ProductsList = () => {
       await deleteProductMutation.mutateAsync(productToDelete);
       toast.success("Xóa sản phẩm thành công!");
       refetch();
-    } catch (error) {
+    } catch {
       toast.error("Có lỗi xảy ra khi xóa sản phẩm!");
     } finally {
       setOpenDeleteDialog(false);
@@ -260,29 +235,13 @@ export const ProductsList = () => {
     }
   };
 
-// ...
-
   // Xử lý mở/đóng drawer
-  const toggleDrawer = (newOpen: boolean, productId?: number): void => {
+  const toggleDrawer = (newOpen: boolean): void => {
     setIsDrawerOpen(newOpen);
-    if (productId) {
-      setSelectedProductId(productId);
-    } else if (!newOpen) {
-      setSelectedProductId(null);
-    }
   };
-
-  // Xử lý khi đóng drawer
-  const handleCloseDrawer = (): void => {
-    toggleDrawer(false);
-  };
-
-  // Tính tổng số trang
-  const totalPages = productsData?.total ? Math.ceil(productsData.total / perPage) : 0;
 
   // Xử lý khi nhấn nút thêm sản phẩm mới
   const handleAddProduct = (): void => {
-    setSelectedProductId(null);
     toggleDrawer(true);
   };
 
@@ -473,7 +432,7 @@ return (
                             size="small"
                             variant="outlined"
                             color="primary"
-                            onClick={() => toggleDrawer(true, product.id)}
+                            onClick={() => toggleDrawer(true)}
                           >
                             <FiEdit3 />
                           </Button>
@@ -556,3 +515,5 @@ return (
     </Box>
   );
 };
+
+export default ProductsList;

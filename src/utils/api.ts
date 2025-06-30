@@ -184,7 +184,7 @@ api.instance.interceptors.request.use(
     }
 
     // Lấy token từ localStorage hoặc store
-    let token = useAppStore.getState().accessToken
+    const token = useAppStore.getState().accessToken
     console.log("🚀 ~ token:", token)
 
     if (token) {
