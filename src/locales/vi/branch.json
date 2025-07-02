@@ -1,0 +1,30 @@
+{
+  "model": "Danh mục chi nhánh cty",
+  "page": {
+    "header": "Chi nhánh cty",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm chi nhánh cty",
+    "form": {
+      "edit": "Chỉnh sửa",
+      "addNew": "Thêm",
+      "description": "Thực hiện các thay đổi đối với chi nhánh cty tại đây. Nhấp vào lưu khi bạn hoàn tất."     
+    }    
+  },
+  "fields": {    
+    "name": "Tên",
+    "phone": "Điện thoại",
+    "email": "Email",
+    "address": "Địa chỉ",
+    "isDefault": "Mặc định",
+    "isActive": "Hoạt động",
+    "sort": "Thứ tự",
+    "description": "Mô tả",
+    "lat": "Tọa độ lat",
+    "lng": "Tọa độ lng",
+    "languageCode": "Ngôn ngữ"
+
+  },  
+  "description": {
+    "name": "Đây là tên chi nhánh cty",
+    "isActive": "Dùng để quản lý xem trạng thái hoạt động"    
+  }
+}

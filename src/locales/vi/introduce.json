@@ -1,0 +1,35 @@
+{
+  "model": "Giới thiệu đại lý",
+  "page": {
+    "header": "Danh sách giới thiệu  đại lý",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm thông tin giới thiệu đại lý mới",
+    "form": {
+      "edit": "Chỉnh sửa giới thiệu đại lý",
+      "addNew": "Thêm giới thiệu đại lý mới",
+      "description": "Thực hiện các thay đổi đối với thông tin giới thiệu đại lý tại đây. Nhấp vào lưu khi bạn hoàn tất.",
+      "introduceInformation": "Thông tin giới thiệu đại lý",
+      "introduceDescriptionInformation": "Mô tả thông tin giới thiệu",
+      "stepRegisterInformation": "Bước đăng ký"
+    }
+  },
+  "fields": { 
+    "isActive": "Hoạt động",
+    "title": "Tên giới thiệu đại lý",
+    "shortDescription": "Mô tả giới thiệu", 
+    "giftTitle": "Tiêu đề quà tặng",
+    "giftDescription": "Nội dung chương trình",
+    "moneyTitle": "Tiêu đề giá trị",    
+    "titleDescription": "Mô tả giá trị nhận",
+    "registerIcon": "Icon đăng ký",
+    "introduceIcon": "Icon giới thiệu",
+    "giftIcon": "Icon quà tặng",
+    "registerShort": "Mô tả đăng ký",
+    "introduceShort": "Mô tả giới thiệu",
+    "giftShort": "Mô tả nhận tiền",
+    "warringDescription": "Thông tin ghi chú",
+    "titleStepRegister": "Tiêu đề bước đăng ký",
+    "discountImageLink": "Hình giảm giá",
+    "discountImageAlt": "Tên thay thế",
+    "discountImageMobile": "Hình ảnh mobile"
+  }
+}

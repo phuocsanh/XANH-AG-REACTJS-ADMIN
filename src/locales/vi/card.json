@@ -1,0 +1,38 @@
+{
+  "model": "Danh mục card",
+  "page": {
+    "header": "Danh sách danh mục card",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm danh mục card",
+    "form": {
+      "edit": "Chỉnh sửa danh mục card",
+      "addNew": "Thêm danh mục card",
+      "description": "Thực hiện các thay đổi đối với danh mục card tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "title": "Tên",
+    "description": "Mô tả",
+    "icon": "Icon",
+    "imageLink": "Ảnh",
+    "imageAlt": "Mô tả ảnh",
+    "isActive": "Hoạt động",
+    "languageCode": "Ngôn ngữ",
+    "type": "Loại",
+    "color": "Mã màu base",
+    "imageLinkMobile": "Ảnh mobile"
+  },
+  "description": {
+    "title": "Đây là tên danh mục card",
+    "isActive": "Dùng để quản lý xem trạng thái hoạt động của danh mục này"
+  },
+  "dialog": {
+    "text1": "Thông tin danh mục",
+    "text2": "Chi tiết card",
+    "text3": "card",
+    "inputTitle": "Tiêu đề",
+    "inputSort": "Thứ tự",
+    "inputType": "Phân loại",
+    "inputIcon": "Tên icon",
+    "inputColor": "Mã màu base"
+  }
+}

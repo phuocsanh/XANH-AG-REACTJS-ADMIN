@@ -1,0 +1,22 @@
+{
+  "model": "AgentRegister",
+  "page": {
+    "header": "Quản lý khách hàng đăng ký đại lý",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm khách hàng đăng ký đại lý",
+    "form": {
+      "edit": "Chỉnh sửa khách hàng đăng ký đại lý",
+      "addNew": "Thêm khách hàng đăng ký đại lý",
+      "description": "Thay đổi thông tin khách hàng đăng ký đại lý tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "nameAgent": "Tên khách hàng",
+    "phoneAgent": "Số điện thoại",
+    "emailAgent": "Email đăng ký",
+    "contentAgent": "Nội dung",
+    "isCheck": "Đã kiểm tra",
+    "uncheck": "Chưa kiểm tra",
+    "isSpam": "Tin spam",
+    "notSpam": "Tin không spam"
+  }
+}

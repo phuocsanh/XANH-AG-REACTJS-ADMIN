@@ -1,0 +1,20 @@
+{
+  "page": {
+    "header": "Company Information",
+    "description": "Manage and set up company and business information",
+    "businessFieldsGroup": "Business Information",
+    "representativeFieldsGroup": "Representative information"
+  },
+  "fields": {
+    "code": "Company code",
+    "name": "Company name",
+    "taxCode": "Tax code",
+    "phone": "Contact phone number",
+    "fax": "Fax",
+    "representative": "Name of representative",
+    "position": "position",
+    "bankAccount": "Bank name",
+    "bankNumber": "Account Number",
+    "description": "Description"
+  }
+}

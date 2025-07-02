@@ -1,0 +1,53 @@
+{
+  "action": {
+    "save": "Lưu",
+    "create": "Tạo mới",
+    "update": "Cập nhật",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "copy": "copy",
+    "back": "Quay về",
+    "close": "Đóng",
+    "select": "Chọn",
+    "enter": "Nhập",
+    "cancel": "Hủy",
+    "continue": "Tiếp tục",
+    "search": "Tìm kiếm",
+    "import": "Import",
+    "export": "Export",
+    "ok": "Đồng ý",
+    "scan": "Quét",
+    "apply": "Áp dụng",
+    "add": "Thêm"
+  },
+  "notFound": "Không tìm thấy dữ liệu nào",
+  "validation": {
+    "required": "Vui lòng {{action }} {{fieldName}}",
+    "max": "Đã vượt quá số ký tự cho phép ({{max}}",
+    "min": "Phải có ít nhật {{min}} ký tự"
+  },
+  "notification": {
+    "success": "Thành công",
+    "fail": "Thất bại"
+  },
+  "delete": {
+    "areYouSure": "Bạn có hoàn toàn chắc chắn không?",
+    "actionCannotUndone": "Hành động này không thể hoàn tác. Thao tác này sẽ xóa vĩnh viễn dữ liệu {{model}} <0>{{data}}</0> khỏi hệ thống."
+  },
+  "content": {
+    "male": "Nam",
+    "female": "Nữ",
+    "otherGender": "Giới tính khác",
+    "isActive": "Đang hoạt động",
+    "isInActive": "Ngưng hoạt động",
+    "news": "Tin tức",
+    "media": "Đa phương tiện (Video)",
+    "file": "Tập tin",
+    "data": "Dữ liệu",
+    "useOriginalImage": "Sử dụng ảnh gốc",
+    "privateRouteState": "Ứng dụng xảy ra sự cố",
+    "publicRouteState": "Ứng dụng xảy ra sự cố",
+    "menuTop": "Top menu",
+    "menuFooter": "Footer menu"
+  }
+}

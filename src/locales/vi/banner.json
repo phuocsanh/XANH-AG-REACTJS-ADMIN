@@ -1,0 +1,37 @@
+{
+  "model": "Banner",
+  "page": {
+    "header": "Quản lý banner",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm banner",
+    "form": {
+      "edit": "Chỉnh sửa banner",
+      "addNew": "Thêm banner",
+      "description": "Thay đổi thông tin banner tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "isActive": "Hoạt động",
+    "isInvert": "Ảnh sáng",
+    "isAds": "Quảng cáo",
+    "name": "Tên hình ảnh",
+    "title": "Tên hiển thị trên hình (nếu có)",
+    "nameButton1": "Button 1 (nếu có)",
+    "linkButton1": "Liên kết buttons 1 (nếu có)",
+    "nameButton2": "Button 2 (nếu có)",
+    "linkButton2": "Liên kết buttons 2 (nếu có)",
+    "imageButton1": "Hình icon button 1",
+    "imageButton2": "Hình icon button 2",
+    "imageButtonAlt1": "Tên thay thế icon button 1",
+    "imageButtonAlt2": "Tên thay thế icon button 2",
+    "description": "Mô tả",
+    "timeStartActive": "Ngày hiển thị",
+    "timeEndActive": "Ngày hiển thị",
+    "imageLink": "Hình ảnh",
+    "imageLinkMobile": "Hình ảnh (mobile)",
+    "widthDesk": "Độ rộng ảnh banner",
+    "heightDesk": "Chiều cao ảnh banner", 
+    "widthMobile": "Độ rộng ảnh banner (mobile)",
+    "heightMobile": "Chiều cao ảnh banner (mobile)",
+    "menuId": "Menu"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "model": "Cấu hình link footer",
+  "page": {
+    "header": "Quản lý cấu hình link footer",
+    "description": "Quản lý, tìm kiếm, thiết lập cấu hình link footer",
+    "form": {
+      "edit": "Chỉnh sửa cấu hình link footer",
+      "addNew": "Thêm cấu hình link footer mới",
+      "description": "Thực hiện các thay đổi đối với cấu hình footer tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "isActive": "Hoạt động",
+    "title": "Tiêu đề",
+    "link": "Liên kết",
+    "target": "Cách hiển thị",
+    "languageCode": "Ngôn ngữ",
+    "categoryName": "Danh mục"
+  }
+}

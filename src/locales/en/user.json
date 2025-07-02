@@ -1,0 +1,25 @@
+{
+  "page": {
+    "header": "System User Administration",
+    "description": "Manage, set up and add new users to the system"
+  },
+  "fields": {
+    "password": "Password",
+    "userName": "Account",
+    "name": "Full name",
+    "images": "Images",
+    "uri": "Default Page",
+    "phone": "Contact phone number",
+    "district": "District",
+    "province": "Province, city",
+    "nation": "Country",
+    "email": "Email",
+    "gender": "Gender",
+    "birthday": "Birthday",
+    "position": "Position",
+    "hourlyWages": "Hourly Wages",
+    "address": "Address",
+    "isActive": "Active Status",
+    "department": "Department"
+  }
+}

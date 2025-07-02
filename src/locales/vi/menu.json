@@ -1,0 +1,39 @@
+{
+  "model": "Menu",
+  "page": {
+    "header": "Danh sách menu",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm thông tin menu mới",
+    "form": {
+      "edit": "Chỉnh sửa menu",
+      "addNew": "Thêm menu mới",
+      "description": "Thực hiện các thay đổi đối với thông tin menu tại đây. Nhấp vào lưu khi bạn hoàn tất.",
+      "menuInformation": "Thông tin menu",
+      "seoInformation": "Thuộc tính hổ trợ SEO",
+      "additionInformation": "Thông tin bổ sung"
+    }
+  },
+  "fields": {
+    "isActive": "Hoạt động",
+    "title": "Tên menu",
+    "ogTitle": "Tiêu đề SEO (Og-title)",
+    "desc": "Mô tả",
+    "uri": "uri",
+    "sort": "Thứ tự",
+    "headTitle": "Tiêu đề (trong thẻ <head>)",
+    "metaKeywords": "Meta-keywords",
+    "metaDescription": "Meta-description",
+    "ogDescription": "Og-description",
+    "ogUrl": "Og-url",
+    "ogImage": "Og-image",
+    "ogImageAlt": "Og-image-alt",
+    "parentId": "Menu cha",
+    "description": "Mô tả nội dung menu",
+    "imageMegaLink": "Hình ảnh mega"
+  },
+  "validation": {
+    "maxLength": {
+      "metaDescription": "meta-description không thể nhiều hơn {{maxLength}} ký tự",
+      "ogDescription": "og-description không thể nhiều hơn {{maxLength}} ký tự"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "action": {
+    "save": "Save changes",
+    "create": "Create new",
+    "update": "update",
+    "delete": "Delete",
+    "copy": "copy",
+    "back": "Go back",
+    "close": "Close",
+    "select": "Select",
+    "enter": "Enter"
+  },
+  "validation": {
+    "required": "Please {{action }} {{fieldName}}",
+    "max": "The allowed number of characters has been exceeded ({{max}}",
+    "min": "Must contain at least {{min}} characters"
+  },
+  "notification": {
+    "success": "Successful",
+    "fail": "failure"
+  }
+}

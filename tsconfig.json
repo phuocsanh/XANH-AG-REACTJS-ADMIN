@@ -10,12 +10,13 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",  // Sử dụng react-jsx thay vì preserve
+    "jsx": "react-jsx", // Sử dụng react-jsx thay vì preserve
     "incremental": true,
+    "target": "es6",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*","declarations.d.ts"],
+  "include": ["src/**/*", "declarations.d.ts"],
   "exclude": ["node_modules"]
 }

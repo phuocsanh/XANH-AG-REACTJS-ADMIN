@@ -1,0 +1,39 @@
+{
+  "content": {
+    "noResult": "Không có dữ liệu"
+  },
+  "rowSelection": "Đã chọn {{selectedRows}} trên {{rows}} dòng",
+  "pagination": {
+    "perPage": "Số dòng trên trang",
+    "pageIndex": "Trang {{index}} / {{total}}"
+  },
+  "column": {
+    "sortAsc": "Sắp xếp tăng dần",
+    "sortDesc": "Sắp xếp giảm dần",
+    "hide": "Ẩn cột",
+    "pinToLeft": "Ghim trái",
+    "pinToRight": "Ghim phải",
+    "unpin": "Bỏ ghim"
+  },
+  "viewOptions": {
+    "columnName": "Tên cột",
+    "showAllColumns": "Hiển thị tất cả",
+    "hideAllColumns": "Ẩn tất cả"
+  },
+  "filter": {
+    "number": {
+      "value": "Giá trị",
+      "operators": {
+        "equalTo": "Bằng (=)",
+        "notEqualTo": "Khác (!=)",
+        "lessThan": "Nhỏ hơn (<)",
+        "lessThanOrEqualTo": "Nhỏ hơn hoặc bằng (<=)",
+        "greaterThan": "Lớn hơn (>)",
+        "greaterThanOrEqualTo": "Lớn hơn hoặc bằng (>=)"
+      }
+    },
+    "date": {
+      "noData": "Chưa chọn ngày"
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "model": "Người dùng",
+  "page": {
+    "header": "Danh sách người dùng hệ thống",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm người dùng mới vào hệ thống",
+    "form": {
+      "edit": "Chỉnh sửa nhân viên",
+      "addNew": "Thêm nhân viên mới",
+      "description": "Thực hiện các thay đổi đối với hồ sơ của nhân viên bạn tại đây. Nhấp vào lưu khi bạn hoàn tất.",
+      "individualFields": "Thông tin cá nhân",
+      "systemFields": "Thông tin hệ thống",
+      "contactFields": "Thông tin liên lạc và địa chỉ liên hệ"
+    },
+    "userPermission": {
+      "model": "Quyền",
+      "header": "Phân quyền cho nhân viên {{name}}",
+      "description": "Thực hiện các thay đổi đối với quyền truy cập của nhân viên <0>{{name}}</0> tại đây. Nhấp vào <1>áp dụng</1> khi bạn hoàn tất.",
+      "table": {
+        "order": "STT",
+        "id": "ID",
+        "name": "Quyền",
+        "show": "Xem",
+        "create": "Thêm",
+        "update": "Sửa",
+        "delete": "Xóa",
+        "import": "Import",
+        "export": "Export",
+        "print": "In",
+        "toggleRow": "Tất cả (on/off)"
+      }
+    },
+    "headerAvatar": {
+      "profile": "Hồ sơ",
+      "logout": "Đăng xuất",
+      "changePass": "Đổi mật khẩu"
+    },
+    "changePassDialog": {
+      "model": "Mật khẩu",
+      "header": "Mật khẩu và bảo mật",
+      "description": "Thực hiện thay đổi mật khẩu tài khoản của bạn tại đây. Nhấp vào áp dụng khi bạn hoàn tất.",
+      "fields": {
+        "oldPassword": "Mật khẩu cũ",
+        "newPassword": "Mật khẩu mới",
+        "confirmPassword": "Xác nhận mật khẩu"
+      }
+    }
+  },
+  "fields": {
+    "password": "Mật khẩu",
+    "userName": "Tài khoản",
+    "name": "Họ tên",
+    "images": "Hình ảnh",
+    "uri": "Trang mặc định",
+    "phone": "Số điện thoại liên lạc",
+    "district": "Quận, huyện",
+    "province": "Tỉnh, thành",
+    "nation": "Quốc gia",
+    "email": "Email",
+    "gender": "Giới tính",
+    "birthday": "Ngày sinh",
+    "position": "Chức vụ",
+    "hourlyWages": "Tiền lương theo giờ",
+    "address": "Địa chỉ",
+    "isActive": "Hoạt động",
+    "department": "Phòng ban",
+    "isAdmin": "Là quản trị"
+  },
+  "validation": {
+    "email": "Vui lòng nhập đúng định dạng email"
+  },
+  "description": {
+    "userName": "Bạn không thể tự ý thay đổi tên tài khoản của mình.",
+    "name": "Đây là tên hiển thị công khai của bạn. Nó có thể là tên thật hoặc là bút danh của bạn",
+    "isActive": "Dùng để quản lý xem trạng thái hoạt động của nhân viên này",
+    "isAdmin": "Dùng để hiển thị thông tin thống kê trên dashboard mobile"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "system": {
+    "name": "System Administration",
+    "company": "Company",
+    "users": "Users",
+    "changePassword": "Change Password"
+  },
+  "base": {
+    "name": "Basic data",
+    "vehicles": "Vehicles",
+    "employees": "Employees",
+    "shippingAddress": "Shipping location",
+    "customers": "Customers",
+    "sms": "Set up SMS",
+    "routes": "Routes"
+  }
+}

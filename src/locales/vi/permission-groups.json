@@ -1,0 +1,21 @@
+{
+  "model": "Nhóm quyền",
+  "page": {
+    "header": "Danh sách nhóm quyền",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm nhóm quyền mới vào hệ thống",
+    "form": {
+      "edit": "Chỉnh sửa nhóm quyền",
+      "addNew": "Thêm nhóm quyền mới",
+      "description": "Thực hiện các thay đổi đối với nhóm quyền bạn tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "isActive": "Hoạt động",
+    "name": "Tên nhóm quyền",
+    "description": "Mô tả",
+    "permission": {
+      "name": "Tên quyền",
+      "use": "Sử dụng"
+    }
+  }
+}

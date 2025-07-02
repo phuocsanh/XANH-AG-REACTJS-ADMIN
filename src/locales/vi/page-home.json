@@ -1,0 +1,42 @@
+{
+    "model": "Trang chủ",
+    "page": {
+      "header": "Danh sách trang chủ",
+      "description": "Quản lý, tìm kiếm, thiết lập và thêm thông tin bài viết mới",
+      "form": {
+        "edit": "Chỉnh sửa trang chủ",
+        "addNew": "Thêm trang chủ",
+        "description": "Thực hiện các thay đổi đối với thông tin trang chủ tại đây. Nhấp vào lưu khi bạn hoàn tất.",
+        "postInformation": "Thông tin trang chủ",
+        "seoInformation": "Thuộc tính hổ trợ SEO",
+        "additionInformation": "Thông tin bổ sung"
+      }
+    },
+    "fields": {
+      "isActive": "Hoạt động", 
+      "name": "Tên trang chủ",
+      "contentPmv": "Nội dung Phần Mềm Việt",
+      "imageLinkLogo1": "Hình logo Phần Mềm Việt",
+      "imageAltLogo1": "Tên thay thế logo Phần Mềm Việt",
+      "imageLinkLogo2": "Hình logo MekongSoft",
+      "imageAltLogo2": "Tên thay thế logo MekongSoft",
+      "contentMekongsoft": "Nội dung MekongSoft",
+      "linkButton1": "Link button PMV",
+      "nameButton1": "Tên button PMV",
+      "linkButton2": "Link button MKS",
+      "nameButton2": "Tên button MKS",
+      "imageLinkMobile1": "Hình logo Phần Mềm Việt (mobile)",
+      "imageAltLogoMobile1": "Tên thay thế logo Phần Mềm Việt (Mobile)",
+      "imageLinkMobile2": "Hình logo MekongSoft (Mobile)",
+      "imageAltLogoMobile2": "Tên thay thế logo MekongSoft  (Mobile)",
+      "imageAltMobile1": "Tên thay thế hình mobile 1",
+      "imageAltMobile2": "Tên thay thế hình mobile 2"
+    },
+    "validation": {
+      "maxLength": {
+        "metaDescription": "meta-description không nên dài hơn {{maxLength}} ký tự",
+        "ogDescription": "og-description không nên dài hơn {{maxLength}} ký tự",
+        "ogUrl": "og-url nên ngắn gọn và không nên dài hơn {{maxLength}} ký tự"
+      }
+    }
+  }

@@ -1,0 +1,41 @@
+{
+  "model": "Danh mục dự án",
+  "page": {
+    "header": "Danh sách danh mục dự án",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm danh mục dự án",
+    "form": {
+      "edit": "Chỉnh sửa",
+      "addNew": "Thêm",
+      "description": "Thực hiện các thay đổi đối với danh mục dự án tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "name": "Tên",
+    "description": "Mô tả",
+    "slug": "Slug",
+    "ogTitle": "Open graph - tiêu đề",
+    "ogDescription": "Open graph - mô tả",
+    "ogUrl": "Open graph -   URL",
+    "ogImage": "Open graph - ảnh",
+    "ogImageAlt": "Open graph - mô tả ảnh",
+    "headTitle": "Tiêu đề",
+    "metaKeywords": "Từ khoá",
+    "metaDescription": "Mô tả",
+    "imageOg": "Ảnh",
+    "isActive": "Hoạt động",
+    "languageCode": "Ngôn ngữ",
+    "image": "Ảnh",
+    "menuId": "Menu"
+  },
+  "description": {
+    "name": "Đây là tên danh mục dự án",
+    "isActive": "Dùng để quản lý xem trạng thái hoạt động của danh mục này"
+  },
+  "dialog": {
+    "text1": "Thông tin danh mục",
+    "text2": "Tính năng",
+    "inputImageAlt": "Mô tả hình ảnh",
+    "inputImageHeight": "Chiều rộng",
+    "inputImageWidth": "Chiều cao"
+  }
+}

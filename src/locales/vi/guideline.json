@@ -1,0 +1,20 @@
+{
+  "model": "Danh mục hướng dẫn sử dụng",
+  "page": {
+    "header": "Danh sách danh mục hướng dẫn sử dụng",
+    "description": "Quản lý, tìm kiếm, thiết lập và thêm danh mục hướng dẫn sử dụng",
+    "form": {
+      "edit": "Chỉnh sửa",
+      "addNew": "Thêm",
+      "description": "Thực hiện các thay đổi đối với danh mục hướng dẫn sử dụng tại đây. Nhấp vào lưu khi bạn hoàn tất."
+    }
+  },
+  "fields": {
+    "title": "Tên danh mục",
+    "categorySoftId": "Danh mục phần mềm",
+    "levelId": "Cấp",
+    "parentId": "Danh mục cha",
+    "isActive": "Hoạt động",
+    "sort": "Thứ tự"
+  }
+}

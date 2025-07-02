@@ -1,0 +1,11 @@
+{
+  "model": "Ngôn ngữ",
+  "fields": {
+    "isActive": "Hoạt động",
+    "code": "Mã ngôn ngữ",
+    "name": "Ngôn ngữ",
+    "icon": "Icon",
+    "isDefault": "Ngôn ngữ mặc định",
+    "sort": "Sắp xếp"
+  }
+}
