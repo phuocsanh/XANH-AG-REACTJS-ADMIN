@@ -1,26 +1,7 @@
 // Định nghĩa các kiểu dữ liệu cho sản phẩm
 import { ApiResponse } from "./auth.model"
 
-export interface Product {
-  id: number
-  name: string
-  price: string
-  type: number
-  thumb: string
-  pictures: string[]
-  videos: string[]
-  description: string
-  quantity: number
-  subTypes: number[]
-  discount: string
-  attributes: Record<string, unknown>
-  isDraft: boolean
-  isPublished: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-// API Response interface - matches the actual API response structure
+// Interface cho dữ liệu sản phẩm từ API
 export interface ProductApiResponse {
   id: number
   productName: string
@@ -30,7 +11,7 @@ export interface ProductApiResponse {
   productPictures: string[]
   productVideos: string[]
   productRatingsAverage: number | null
-  productVariations: unknown
+  productVariations: Record<string, unknown>
   productDescription: string
   productSlug: string | null
   productQuantity: number
@@ -46,27 +27,88 @@ export interface ProductApiResponse {
   updatedAt: string
 }
 
+// Interface cho dữ liệu sản phẩm đã được chuyển đổi
+export interface Product {
+  id: number
+  name: string
+  price: string
+  type: number
+  productType: number // Thêm trường này để tương thích với dữ liệu từ API
+  thumb: string
+  pictures: string[]
+  videos: string[]
+  description: string
+  quantity: number
+  subTypes: number[]
+  subProductType: number[] // Thêm trường này để tương thích với dữ liệu từ API
+  discount: string
+  attributes: Record<string, unknown>
+  isDraft: boolean
+  isPublished: boolean
+  createdAt: string
+  updatedAt: string
+  productName?: string // Thêm các trường tùy chọn từ API
+  productPrice?: string
+  productStatus?: number
+  productThumb?: string
+  productPictures?: string[]
+  productVideos?: string[]
+  productDescription?: string
+  productQuantity?: number
+  productDiscountedPrice?: string
+}
+
+// Interface cho phân trang
+export interface PaginationResponse {
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
+}
+
+// Interface cho response từ API
+export interface ProductApiResponseData {
+  items: ProductApiResponse[]
+  pagination: PaginationResponse
+}
+
+// Using the ProductApiResponse interface defined above
+
 // Mapper function to convert API response to Product model
-export const mapApiResponseToProduct = (
+export function mapApiResponseToProduct(
   apiProduct: ProductApiResponse
-): Product => {
+): Product {
   return {
     id: apiProduct.id,
     name: apiProduct.productName,
     price: apiProduct.productPrice,
     type: apiProduct.productType,
+    productType: apiProduct.productType, // Giữ nguyên giá trị từ API
     thumb: apiProduct.productThumb,
-    pictures: apiProduct.productPictures,
-    videos: apiProduct.productVideos,
-    description: apiProduct.productDescription,
-    quantity: apiProduct.productQuantity,
-    subTypes: apiProduct.subProductType,
-    discount: apiProduct.discount,
-    attributes: apiProduct.productAttributes,
+    pictures: apiProduct.productPictures || [],
+    videos: apiProduct.productVideos || [],
+    description: apiProduct.productDescription || '',
+    quantity: apiProduct.productQuantity || 0,
+    subTypes: apiProduct.subProductType || [],
+    subProductType: apiProduct.subProductType || [], // Giữ nguyên giá trị từ API
+    discount: apiProduct.discount || '0',
+    attributes: apiProduct.productAttributes || {},
     isDraft: apiProduct.isDraft,
     isPublished: apiProduct.isPublished,
     createdAt: apiProduct.createdAt,
     updatedAt: apiProduct.updatedAt,
+    // Thêm các trường từ API để đảm bảo tương thích ngược
+    productName: apiProduct.productName,
+    productPrice: apiProduct.productPrice,
+    productStatus: apiProduct.productStatus,
+    productThumb: apiProduct.productThumb,
+    productPictures: apiProduct.productPictures,
+    productVideos: apiProduct.productVideos,
+    productDescription: apiProduct.productDescription,
+    productQuantity: apiProduct.productQuantity,
+    productDiscountedPrice: apiProduct.productDiscountedPrice
   }
 }
 
