@@ -75,12 +75,8 @@ const Sidebar = () => {
                   <Link to='/products/list'>
                     <Button className='w-100'>Danh sách sản phẩm</Button>
                   </Link>
-                  {/* <Link to="/">
-                    <Button className="w-100">Products Details</Button>
-                  </Link> */}
-                  <Link to='/product'>
-                    <Button className='w-100'>Thêm sản phẩm</Button>
-                  </Link>
+                 
+                 
                 </div>
               </div>
             </li>

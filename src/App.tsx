@@ -8,6 +8,7 @@ import { SignIn } from "./pages/signIn";
 import { ForgotPassword } from "./pages/forgotPassword";
 import { OtpPage } from "./pages/otp";
 import { ProductCreate } from "./pages/Products/productCreate";
+import { ProductEdit } from "./pages/Products/productEdit";
 import ListCategory from "./pages/Categories/ListCategory";
 import ListSubCategory from "./pages/SubCategories/ListSubCategory";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -65,6 +66,8 @@ function App() {
                 {/* Các trang yêu cầu đăng nhập */}
                 <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/products/list" element={<ProtectedRoute><ProductsList /></ProtectedRoute>} />
+                <Route path="/products/new" element={<ProtectedRoute><ProductCreate /></ProtectedRoute>} />
+                <Route path="/products/edit/:id" element={<ProtectedRoute><ProductEdit /></ProtectedRoute>} />
                 <Route path="/product/:id?" element={<ProtectedRoute><ProductCreate /></ProtectedRoute>} />
                 <Route path="/category/list" element={<ProtectedRoute><ListCategory /></ProtectedRoute>} />
                 <Route path="/sub-category/list" element={<ProtectedRoute><ListSubCategory /></ProtectedRoute>} />
