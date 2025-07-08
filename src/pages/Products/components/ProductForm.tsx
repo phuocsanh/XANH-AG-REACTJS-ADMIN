@@ -4,6 +4,7 @@ import { Form, Input, Button, Select, Upload, message, Card, Space } from "antd"
 import { UploadOutlined, SaveOutlined } from "@ant-design/icons"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic"
+import { UploadFile, UploadFileStatus } from "antd/lib/upload/interface"
 
 import { productService } from "../../../services/product.service"
 import { productTypeService } from "../../../services/product-type.service"
@@ -26,6 +27,13 @@ function isProductApiResponseWithItemWrapper(
   return (data as { item: ProductApiResponse }).item !== undefined
 }
 import { ProductType } from "../../../models/product-type.model"
+
+// Mở rộng CreateProductRequest để chấp nhận UploadFile[] cho thumb và pictures
+interface ProductFormValues
+  extends Omit<CreateProductRequest, "thumb" | "pictures"> {
+  thumb?: UploadFile[]
+  pictures?: UploadFile[]
+}
 
 interface ProductFormProps {
   isEdit?: boolean
@@ -186,8 +194,24 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Sử dụng hàm mapApiResponseToProduct để chuyển đổi dữ liệu
         const mappedProduct = mapApiResponseToProduct(productData)
 
+        // Hàm tiện ích để chuẩn hóa một URL thành đối tượng file cho Upload component
+        const normalizeFile = (url: string, index: number): UploadFile => ({
+          uid: `${index}-${url}`,
+          name: url.substring(url.lastIndexOf("/") + 1),
+          status: "done" as UploadFileStatus,
+          url: url,
+        })
+
+        // Hàm tiện ích để chuẩn hóa một mảng các URL thành mảng các đối tượng file
+        const normalizeFileList = (
+          urls: string[] | undefined
+        ): UploadFile[] => {
+          if (!urls) return []
+          return urls.map((url, index) => normalizeFile(url, index))
+        }
+
         // Tạo đối tượng form values từ dữ liệu đã được chuyển đổi
-        const formValues: Partial<CreateProductRequest> = {
+        const formValues: Partial<ProductFormValues> = {
           name: mappedProduct.name,
           price: mappedProduct.price,
           type: mappedProduct.type,
@@ -196,8 +220,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           isPublished: mappedProduct.isPublished,
           attributes: mappedProduct.attributes,
           subTypes: mappedProduct.subTypes,
-          thumb: mappedProduct.thumb,
-          pictures: mappedProduct.pictures,
+          thumb: mappedProduct.thumb
+            ? [normalizeFile(mappedProduct.thumb, 0)]
+            : [],
+          pictures: normalizeFileList(mappedProduct.pictures),
           videos: mappedProduct.videos,
           description: mappedProduct.description,
         }
@@ -226,22 +252,33 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     }
   }, [id, isEdit, form, productId])
 
-  const onFinish = async (values: CreateProductRequest) => {
+  const onFinish = async (values: ProductFormValues) => {
     try {
       setLoading(true)
-      const productData = {
+
+      // Chuyển đổi UploadFile[] về string và string[] cho API
+      const convertedValues = {
         ...values,
         description: description,
+        thumb:
+          values.thumb && values.thumb.length > 0
+            ? values.thumb[0].url || ""
+            : "",
+        pictures: values.pictures
+          ? values.pictures.map((file) => file.url || "").filter((url) => url)
+          : [],
       }
 
       if (isEdit && id) {
         await productService.updateProduct(
           parseInt(id),
-          productData as UpdateProductRequest
+          convertedValues as UpdateProductRequest
         )
         message.success("Cập nhật sản phẩm thành công")
       } else {
-        await productService.createProduct(productData as CreateProductRequest)
+        await productService.createProduct(
+          convertedValues as CreateProductRequest
+        )
         message.success("Thêm sản phẩm thành công")
       }
 
@@ -351,10 +388,34 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               `}</style>
             </Form.Item>
 
-            <Form.Item label='Hình ảnh sản phẩm' name='thumb'>
+            <Form.Item
+              label='Hình ảnh sản phẩm'
+              name='thumb'
+              valuePropName='fileList'
+              getValueFromEvent={(e) => e && e.fileList}
+            >
               <Upload
                 listType='picture-card'
-                maxCount={1}
+                maxCount={5}
+                beforeUpload={() => false}
+              >
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Tải lên</div>
+                </div>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item
+              label='Ảnh chi tiết sản phẩm'
+              name='pictures'
+              valuePropName='fileList'
+              getValueFromEvent={(e) => e && e.fileList}
+            >
+              <Upload
+                listType='picture-card'
+                maxCount={5}
+                multiple
                 beforeUpload={() => false}
               >
                 <div>
