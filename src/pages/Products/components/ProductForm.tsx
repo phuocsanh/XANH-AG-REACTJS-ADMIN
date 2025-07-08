@@ -1,42 +1,31 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import {
-  Form,
-  Input,
-  Button,
-  Select,
-  Upload,
-  message,
-  Card,
-  Typography,
-  Space,
-} from "antd"
-import {
-  UploadOutlined,
-  ArrowLeftOutlined,
-  SaveOutlined,
-} from "@ant-design/icons"
+import { Form, Input, Button, Select, Upload, message, Card, Space } from "antd"
+import { UploadOutlined, SaveOutlined } from "@ant-design/icons"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic"
+
 import { productService } from "../../../services/product.service"
 import { productTypeService } from "../../../services/product-type.service"
 import {
-  Product,
   CreateProductRequest,
   UpdateProductRequest,
-  ProductApiResponse
+  ProductApiResponse,
+  mapApiResponseToProduct, // Import mapApiResponseToProduct
 } from "../../../models/product.model"
 
 interface ProductApiResponseWithItem {
-  code: number;
-  message: string;
-  data: {
-    item: ProductApiResponse;
-  };
+  code: number
+  message: string
+  data: ProductApiResponse | { item: ProductApiResponse }
+}
+
+function isProductApiResponseWithItemWrapper(
+  data: ProductApiResponse | { item: ProductApiResponse }
+): data is { item: ProductApiResponse } {
+  return (data as { item: ProductApiResponse }).item !== undefined
 }
 import { ProductType } from "../../../models/product-type.model"
-
-const { Title } = Typography
 
 interface ProductFormProps {
   isEdit?: boolean
@@ -51,6 +40,115 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const [loading, setLoading] = useState(false)
   const [productTypes, setProductTypes] = useState<ProductType[]>([])
   const [description, setDescription] = useState("")
+  const [selectedProductType, setSelectedProductType] = useState<
+    number | undefined
+  >(undefined)
+
+  const renderProductAttributes = () => {
+    const productType = form.getFieldValue("type")
+    const selectedType = productTypes.find((type) => type.id === productType)
+
+    if (!selectedType) return null
+
+    switch (selectedType.name) {
+      case "Nấm":
+        return (
+          <div className='grid grid-cols-2 gap-4'>
+            <Form.Item label='Xuất xứ' name={["attributes", "origin"]}>
+              <Input placeholder='Nhập xuất xứ' />
+            </Form.Item>
+            <Form.Item label='Trọng lượng (g)' name={["attributes", "weight"]}>
+              <Input type='number' min={0} placeholder='Ví dụ: 500' />
+            </Form.Item>
+            <Form.Item label='Độ tươi' name={["attributes", "freshness"]}>
+              <Select placeholder='Chọn độ tươi'>
+                <Select.Option value='Tươi'>Tươi</Select.Option>
+                <Select.Option value='Khô'>Khô</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item label='Hữu cơ' name={["attributes", "organic"]}>
+              <Select placeholder='Chọn trạng thái'>
+                <Select.Option value={true}>Có</Select.Option>
+                <Select.Option value={false}>Không</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
+        )
+      case "Phân bón":
+        return (
+          <div className='grid grid-cols-2 gap-4'>
+            <Form.Item
+              label='Thành phần chính'
+              name={["attributes", "main_ingredient"]}
+            >
+              <Input placeholder='Nhập thành phần' />
+            </Form.Item>
+            <Form.Item label='Khối lượng (kg)' name={["attributes", "weight"]}>
+              <Input type='number' min={0} placeholder='Ví dụ: 5' />
+            </Form.Item>
+            <Form.Item
+              label='Loại phân'
+              name={["attributes", "fertilizer_type"]}
+            >
+              <Select placeholder='Chọn loại phân'>
+                <Select.Option value='Hữu cơ'>Hữu cơ</Select.Option>
+                <Select.Option value='Vô cơ'>Vô cơ</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
+        )
+      case "Thuốc bảo vệ thực vật":
+        return (
+          <div className='grid grid-cols-2 gap-4'>
+            <Form.Item
+              label='Hoạt chất'
+              name={["attributes", "active_ingredient"]}
+            >
+              <Input placeholder='Nhập hoạt chất' />
+            </Form.Item>
+            <Form.Item label='Thể tích (ml)' name={["attributes", "volume"]}>
+              <Input type='number' min={0} placeholder='Ví dụ: 100' />
+            </Form.Item>
+            <Form.Item label='Độ độc' name={["attributes", "toxicity"]}>
+              <Select placeholder='Chọn độ độc'>
+                <Select.Option value='Nhóm I'>Nhóm I</Select.Option>
+                <Select.Option value='Nhóm II'>Nhóm II</Select.Option>
+                <Select.Option value='Nhóm III'>Nhóm III</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
+        )
+      case "Cây trồng":
+        return (
+          <div className='grid grid-cols-2 gap-4'>
+            <Form.Item label='Tuổi thọ (tháng)' name={["attributes", "age"]}>
+              <Input type='number' min={0} placeholder='Ví dụ: 12' />
+            </Form.Item>
+            <Form.Item label='Chiều cao (cm)' name={["attributes", "height"]}>
+              <Input type='number' min={0} placeholder='Ví dụ: 30' />
+            </Form.Item>
+            <Form.Item
+              label='Mức độ chăm sóc'
+              name={["attributes", "care_level"]}
+            >
+              <Select placeholder='Chọn mức độ chăm sóc'>
+                <Select.Option value='Dễ'>Dễ</Select.Option>
+                <Select.Option value='Trung bình'>Trung bình</Select.Option>
+                <Select.Option value='Khó'>Khó</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item label='Kèm chậu' name={["attributes", "pot_included"]}>
+              <Select placeholder='Chọn trạng thái'>
+                <Select.Option value={true}>Có</Select.Option>
+                <Select.Option value={false}>Không</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
+        )
+      default:
+        return null
+    }
+  }
 
   useEffect(() => {
     const fetchProductTypes = async () => {
@@ -68,41 +166,52 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       if (!currentProductId) return
       try {
         setLoading(true)
-        const response = await productService.getProductById(parseInt(currentProductId)) as unknown as ProductApiResponseWithItem
-        
+        const response = (await productService.getProductById(
+          parseInt(currentProductId)
+        )) as unknown as ProductApiResponseWithItem
+
         // Lấy dữ liệu từ response.data.item hoặc response.data nếu không có .item
-        const productData = response?.data?.item || response?.data
-        console.log('Product data from API:', productData)
-        
+        let productData: ProductApiResponse
+        if (isProductApiResponseWithItemWrapper(response.data)) {
+          productData = response.data.item
+        } else {
+          productData = response.data
+        }
+        console.log("Product data from API:", productData)
+
         if (!productData) {
-          throw new Error('Không tìm thấy thông tin sản phẩm')
+          throw new Error("Không tìm thấy thông tin sản phẩm")
         }
-        
-        // Tạo đối tượng form values từ dữ liệu API
+
+        // Sử dụng hàm mapApiResponseToProduct để chuyển đổi dữ liệu
+        const mappedProduct = mapApiResponseToProduct(productData)
+
+        // Tạo đối tượng form values từ dữ liệu đã được chuyển đổi
         const formValues: Partial<CreateProductRequest> = {
-          name: productData.productName,
-          price: productData.productPrice,
-          type: productData.productType,
-          quantity: productData.productQuantity,
-          discount: productData.discount,
-          isPublished: productData.isPublished,
-          attributes: productData.productAttributes || {},
-          subTypes: productData.subProductType || [],
-          thumb: productData.productThumb,
-          pictures: productData.productPictures || [],
-          videos: productData.productVideos || [],
-          description: productData.productDescription || ""
+          name: mappedProduct.name,
+          price: mappedProduct.price,
+          type: mappedProduct.type,
+          quantity: mappedProduct.quantity,
+          discount: mappedProduct.discount,
+          isPublished: mappedProduct.isPublished,
+          attributes: mappedProduct.attributes,
+          subTypes: mappedProduct.subTypes,
+          thumb: mappedProduct.thumb,
+          pictures: mappedProduct.pictures,
+          videos: mappedProduct.videos,
+          description: mappedProduct.description,
         }
-        
-        console.log('Mapped form values:', formValues)
-        
+
+        console.log("Mapped form values:", formValues)
+
         // Đặt giá trị cho form
         form.setFieldsValue(formValues)
-        
+        setSelectedProductType(mappedProduct.type) // Set selected product type
+
         // Đặt giá trị cho mô tả
         setDescription(productData.productDescription || "")
-        
-        console.log('Form values after set:', form.getFieldsValue())
+
+        console.log("Form values after set:", form.getFieldsValue())
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
@@ -115,9 +224,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     if (isEdit) {
       fetchProduct()
     }
-  }, [id, isEdit, form])
+  }, [id, isEdit, form, productId])
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: CreateProductRequest) => {
     try {
       setLoading(true)
       const productData = {
@@ -148,19 +257,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   return (
     <div className='p-4'>
       <Space direction='vertical' size='middle' style={{ width: "100%" }}>
-        <Space>
-          <Button
-            type='text'
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/products")}
-          >
-            Quay lại
-          </Button>
-          <Title level={3} style={{ margin: 0 }}>
-            {isEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
-          </Title>
-        </Space>
-
         <Card loading={loading}>
           <Form
             form={form}
@@ -193,6 +289,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 <Select
                   placeholder='Chọn loại sản phẩm'
                   loading={!productTypes.length}
+                  onChange={(value) => setSelectedProductType(value)}
                 >
                   {productTypes.map((type) => (
                     <Select.Option key={type.id} value={type.id}>
@@ -239,7 +336,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             >
               <div className='ckeditor-container'>
                 <CKEditor
-                  editor={ClassicEditor as any}
+                  editor={ClassicEditor}
                   data={description}
                   onChange={(event, editor) => {
                     const data = editor.getData()
@@ -247,7 +344,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   }}
                 />
               </div>
-              <style jsx global>{`
+              <style>{`
                 .ck-editor__editable {
                   min-height: 200px;
                 }
@@ -267,45 +364,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </Upload>
             </Form.Item>
 
-            <div className='mb-4'>
-              <h3 className='text-lg font-medium mb-2'>Thuộc tính sản phẩm</h3>
-              <div className='grid grid-cols-2 gap-4'>
-                <Form.Item
-                  label='Tuổi thọ (tháng)'
-                  name={["attributes", "age"]}
-                >
-                  <Input type='number' min={0} placeholder='Ví dụ: 12' />
-                </Form.Item>
-
-                <Form.Item
-                  label='Chiều cao (cm)'
-                  name={["attributes", "height"]}
-                >
-                  <Input type='number' min={0} placeholder='Ví dụ: 30' />
-                </Form.Item>
-
-                <Form.Item
-                  label='Mức độ chăm sóc'
-                  name={["attributes", "care_level"]}
-                >
-                  <Select placeholder='Chọn mức độ chăm sóc'>
-                    <Select.Option value='Dễ'>Dễ</Select.Option>
-                    <Select.Option value='Trung bình'>Trung bình</Select.Option>
-                    <Select.Option value='Khó'>Khó</Select.Option>
-                  </Select>
-                </Form.Item>
-
-                <Form.Item
-                  label='Kèm chậu'
-                  name={["attributes", "pot_included"]}
-                >
-                  <Select placeholder='Chọn trạng thái'>
-                    <Select.Option value={true}>Có</Select.Option>
-                    <Select.Option value={false}>Không</Select.Option>
-                  </Select>
-                </Form.Item>
+            {selectedProductType && (
+              <div className='mb-4'>
+                <h3 className='text-lg font-medium mb-2'>
+                  Thuộc tính sản phẩm
+                </h3>
+                {renderProductAttributes()}
               </div>
-            </div>
+            )}
 
             <Form.Item style={{ textAlign: "right", marginTop: "24px" }}>
               <Button

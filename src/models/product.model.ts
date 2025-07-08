@@ -1,4 +1,13 @@
 // Định nghĩa các kiểu dữ liệu cho sản phẩm
+
+export enum ProductStatus {
+  INACTIVE = 0,
+  ACTIVE = 1,
+  DRAFT = 2,
+  OUT_OF_STOCK = 3,
+  DISCONTINUED = 4
+}
+
 import { ApiResponse } from "./auth.model"
 
 // Interface cho dữ liệu sản phẩm từ API
@@ -33,7 +42,10 @@ export interface Product {
   name: string
   price: string
   type: number
-  productType: number // Thêm trường này để tương thích với dữ liệu từ API
+  productType: {
+    id: number;
+    name: string;
+  }
   thumb: string
   pictures: string[]
   videos: string[]
@@ -80,12 +92,19 @@ export interface ProductApiResponseData {
 export function mapApiResponseToProduct(
   apiProduct: ProductApiResponse
 ): Product {
+  // Xử lý productType: từ API là number, cần chuyển sang đối tượng có id và name
+  const productTypeId = apiProduct.productType;
+  const productType = {
+    id: productTypeId,
+    name: `Loại ${productTypeId}` // Tạm thời đặt tên mặc định, có thể cập nhật sau khi lấy dữ liệu từ API
+  };
+
   return {
     id: apiProduct.id,
     name: apiProduct.productName,
     price: apiProduct.productPrice,
-    type: apiProduct.productType,
-    productType: apiProduct.productType, // Giữ nguyên giá trị từ API
+    type: productTypeId, // Giữ nguyên kiểu number cho trường type
+    productType: productType,
     thumb: apiProduct.productThumb,
     pictures: apiProduct.productPictures || [],
     videos: apiProduct.productVideos || [],

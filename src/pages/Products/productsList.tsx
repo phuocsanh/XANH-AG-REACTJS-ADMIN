@@ -1,31 +1,15 @@
 import * as React from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
-// Helper function to convert file to base64
-const convertFileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = (error) => reject(error)
-  })
-}
-import {
-  Product,
-  CreateProductRequest,
-  UpdateProductRequest,
-  ProductApiResponseData,
-} from "../../models/product.model"
+import { Product, ProductApiResponseData } from "../../models/product.model"
 import { productService } from "../../services/product.service"
 import { productTypeService } from "../../services/product-type.service"
 import { ProductType } from "../../models/product-type.model"
 import { PaginationData } from "../../models/pagination.model"
 import {
   Button,
-  Form,
   Input,
-  message,
   Modal,
   Select,
   Table,
@@ -34,7 +18,6 @@ import {
   Space,
   Popconfirm,
   Descriptions,
-  Upload,
 } from "antd"
 import {
   PlusOutlined,
@@ -44,18 +27,12 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons"
-import type { UploadFile } from "antd/es/upload/interface"
 
 // Type for product form values
-interface ProductFormValues extends Omit<Partial<Product>, "id" | "thumb"> {
-  thumb?: File | string
-}
-
 const ProductsList: React.FC = () => {
   // State quản lý UI
   const [searchTerm, setSearchTerm] = React.useState<string>("")
   const [filterType, setFilterType] = React.useState<string>("")
-  const [isModalVisible, setIsModalVisible] = React.useState<boolean>(false)
   const [isViewModalVisible, setIsViewModalVisible] =
     React.useState<boolean>(false)
   // State for image preview (commented out until needed)
@@ -67,90 +44,15 @@ const ProductsList: React.FC = () => {
   const [currentProduct, setCurrentProduct] = React.useState<Product | null>(
     null
   )
-  const [fileList] = React.useState<UploadFile[]>([])
-
-  // Khởi tạo form và query client
-  const [form] = Form.useForm()
-  const queryClient = useQueryClient()
 
   // Hàm xử lý submit form
-
-  const handleSubmit = async (values: ProductFormValues) => {
-    try {
-      const formData = new FormData()
-
-      // Append all form values to FormData
-      Object.entries(values).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (key === "attributes" && typeof value === "object") {
-            formData.append(key, JSON.stringify(value))
-          } else if (key !== "thumb") {
-            formData.append(key, String(value))
-          }
-        }
-      })
-
-      // Handle file upload if exists
-      // Handle file upload if exists
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append("thumb", fileList[0].originFileObj as File)
-      }
-
-      // Create proper request objects from form data
-      const formDataObj = Object.fromEntries(formData.entries())
-
-      if (currentProduct) {
-        // Update product
-        const updateData: UpdateProductRequest = {
-          id: currentProduct.id,
-          ...formDataObj,
-          price: String(formDataObj.price || "0"),
-          quantity: Number(formDataObj.quantity) || 0,
-          type: Number(formDataObj.type) || 0,
-          name: String(formDataObj.name || ""),
-          description: String(formDataObj.description || ""),
-        }
-
-        await productService.updateProduct(currentProduct.id, updateData)
-        message.success("Cập nhật sản phẩm thành công")
-      } else {
-        // Add new product
-        const thumbBase64 = fileList[0]?.originFileObj
-          ? await convertFileToBase64(fileList[0].originFileObj as File)
-          : ""
-
-        const createData: CreateProductRequest = {
-          name: String(formDataObj.name || ""),
-          type: Number(formDataObj.type) || 0,
-          description: String(formDataObj.description || ""),
-          price: String(formDataObj.price || "0"),
-          quantity: Number(formDataObj.quantity) || 0,
-          thumb: thumbBase64,
-          isPublished: formDataObj.isPublished === "true",
-          discount: formDataObj.discount ? String(formDataObj.discount) : "0",
-          attributes: formDataObj.attributes
-            ? JSON.parse(String(formDataObj.attributes))
-            : {},
-        }
-
-        await productService.createProduct(createData)
-        message.success("Thêm sản phẩm thành công")
-      }
-
-      setIsModalVisible(false)
-      queryClient.invalidateQueries({ queryKey: ["products"] })
-    } catch (error) {
-      message.error("Có lỗi xảy ra khi lưu sản phẩm")
-      console.error(error)
-    }
-  }
 
   const navigate = useNavigate()
 
   // Hàm xử lý chỉnh sửa sản phẩm
   const handleEditProduct = (product: Product) => {
     if (!product) return
-    
+
     // Điều hướng đến trang chỉnh sửa với ID sản phẩm
     navigate(`/products/edit/${product.id}`)
   }
