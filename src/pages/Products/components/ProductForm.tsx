@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Form, Input, Button, Select, Upload, message, Card, Space } from "antd"
 import { UploadOutlined, SaveOutlined } from "@ant-design/icons"
+import ImageUpload from "@/components/ImageUpload/ImageUpload"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic"
 import { UploadFile, UploadFileStatus } from "antd/lib/upload/interface"
@@ -410,19 +411,20 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               label='Ảnh chi tiết sản phẩm'
               name='pictures'
               valuePropName='fileList'
-              getValueFromEvent={(e) => e && e.fileList}
+              getValueFromEvent={(e) => {
+                if (Array.isArray(e)) {
+                  return e
+                }
+                return e?.fileList
+              }}
             >
-              <Upload
-                listType='picture-card'
+              <ImageUpload
+                value={form.getFieldValue("pictures") || []}
+                onChange={(urls) => form.setFieldsValue({ pictures: urls })}
                 maxCount={5}
                 multiple
-                beforeUpload={() => false}
-              >
-                <div>
-                  <UploadOutlined />
-                  <div style={{ marginTop: 8 }}>Tải lên</div>
-                </div>
-              </Upload>
+                folder='products'
+              />
             </Form.Item>
 
             {selectedProductType && (
