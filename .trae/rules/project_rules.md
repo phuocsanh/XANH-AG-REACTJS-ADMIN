@@ -1,0 +1,4 @@
+- Luôn kiểm lỗi eslint và typescript sau khi code xong 1 file hoặc 1 chức năng.
+- Luôn tìm kiếm giải pháp tốt nhất trước khi thực hiện 1 chức năng theo yêu cầu.
+- Luôn comment code bằng tiếng việt chức năng của file, hàm, code hay biến.
+- Hàm, code, hay file nào sau khi thêm chức năng mới hoặc chỉnh sửa xong mà không dùng nữa xóa đi.

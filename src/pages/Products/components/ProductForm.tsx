@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Form, Input, Button, Select, Upload, message, Card, Space } from "antd"
 import { UploadOutlined, SaveOutlined } from "@ant-design/icons"
 import ImageUpload from "@/components/ImageUpload/ImageUpload"
-import { CKEditor } from "@ckeditor/ckeditor5-react"
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic"
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
 import { UploadFile, UploadFileStatus } from "antd/lib/upload/interface"
 
 import { productService } from "../../../services/product.service"
@@ -39,6 +40,103 @@ interface ProductFormValues
 interface ProductFormProps {
   isEdit?: boolean
   productId?: string
+}
+
+// TiptapEditor component
+const TiptapEditor: React.FC<{ content: string; onChange: (content: string) => void }> = ({ content, onChange }) => {
+  const editor = useEditor({
+    extensions: [StarterKit, Underline],
+    content: content,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML())
+    },
+  })
+
+  if (!editor) {
+    return null
+  }
+
+  return (
+    <div style={{ border: '1px solid #d9d9d9', borderRadius: '6px' }}>
+      {/* Toolbar */}
+      <div style={{ 
+        borderBottom: '1px solid #d9d9d9', 
+        padding: '8px 12px', 
+        display: 'flex', 
+        gap: '8px',
+        backgroundColor: '#fafafa'
+      }}>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+            backgroundColor: editor.isActive('bold') ? '#1890ff' : '#fff',
+            color: editor.isActive('bold') ? '#fff' : '#000',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+        >
+          B
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+            backgroundColor: editor.isActive('italic') ? '#1890ff' : '#fff',
+            color: editor.isActive('italic') ? '#fff' : '#000',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontStyle: 'italic'
+          }}
+        >
+          I
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+            backgroundColor: editor.isActive('underline') ? '#1890ff' : '#fff',
+            color: editor.isActive('underline') ? '#fff' : '#000',
+            cursor: 'pointer',
+            fontSize: '12px',
+            textDecoration: 'underline'
+          }}
+        >
+          U
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+            backgroundColor: editor.isActive('strike') ? '#1890ff' : '#fff',
+            color: editor.isActive('strike') ? '#fff' : '#000',
+            cursor: 'pointer',
+            fontSize: '12px',
+            textDecoration: 'line-through'
+          }}
+        >
+          S
+        </button>
+      </div>
+      {/* Editor Content */}
+      <div style={{ minHeight: '200px', padding: '12px' }}>
+        <EditorContent editor={editor} />
+      </div>
+    </div>
+  )
 }
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
@@ -372,21 +470,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 { required: true, message: "Vui lòng nhập mô tả sản phẩm" },
               ]}
             >
-              <div className='ckeditor-container'>
-                <CKEditor
-                  editor={ClassicEditor}
-                  data={description}
-                  onChange={(event, editor) => {
-                    const data = editor.getData()
-                    setDescription(data)
-                  }}
-                />
-              </div>
-              <style>{`
-                .ck-editor__editable {
-                  min-height: 200px;
-                }
-              `}</style>
+              <TiptapEditor
+                content={description}
+                onChange={(content) => {
+                  setDescription(content)
+                }}
+              />
             </Form.Item>
 
             <Form.Item
