@@ -9,6 +9,7 @@ import { FiUser } from "react-icons/fi"
 import { HiOutlineShoppingCart } from "react-icons/hi"
 import { TbBrandProducthunt } from "react-icons/tb"
 import { RiLockPasswordLine } from "react-icons/ri"
+import { MdInventory } from "react-icons/md"
 import { useAppStore } from "@/stores"
 import { BiCategory } from "react-icons/bi"
 import { TbCategoryMinus } from "react-icons/tb"
@@ -118,10 +119,46 @@ const Sidebar = () => {
                 </Button>
               </Link>
             </li>
+            
+            {/* Quản lý nhập hàng */}
             <li>
               <Button
                 className={`w-100 ${activeTab === 5 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(5)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdInventory />
+                </span>
+                Quản lý nhập hàng
+                <span
+                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                    activeTab === 5 && isToggleSubmenu === true ? "rotate" : ""
+                  }`}
+                >
+                  <FaAngleRight />
+                </span>
+              </Button>
+              <div
+                className={`submenuWrapper ${
+                  activeTab === 5 && isToggleSubmenu === true
+                    ? "colapse"
+                    : "colapsed"
+                }`}
+              >
+                <div className='submenu'>
+                  <Link to='/inventory/receipts'>
+                    <Button className='w-100'>Danh sách phiếu nhập</Button>
+                  </Link>
+                  <Link to='/inventory/receipts/create'>
+                    <Button className='w-100'>Tạo phiếu nhập</Button>
+                  </Link>
+                </div>
+              </div>
+            </li>
+            <li>
+              <Button
+                className={`w-100 ${activeTab === 6 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(6)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <MdNotificationsNone />
@@ -140,8 +177,8 @@ const Sidebar = () => {
                 <li>
                   <Link to='/signIn'>
                     <Button
-                      className={`w-100 ${activeTab === 6 ? "active" : ""}`}
-                      onClick={() => isOpenSubmenu(6)}
+                      className={`w-100 ${activeTab === 7 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(7)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                         <FiUser />
@@ -155,8 +192,8 @@ const Sidebar = () => {
 
             <li>
               <Button
-                className={`w-100 ${activeTab === 7 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(7)}
+                className={`w-100 ${activeTab === 8 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(8)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <RiLockPasswordLine />
@@ -181,8 +218,8 @@ const Sidebar = () => {
 
             <li>
               <Button
-                className={`w-100 ${activeTab === 8 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(8)}
+                className={`w-100 ${activeTab === 9 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(9)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <IoSettingsOutline />

@@ -12,6 +12,11 @@ import { ProductEdit } from "./pages/Products/productEdit";
 import ListCategory from "./pages/Categories/ListCategory";
 import ListSubCategory from "./pages/SubCategories/ListSubCategory";
 import ProtectedRoute from "./components/ProtectedRoute";
+import {
+  InventoryReceiptsList,
+  InventoryReceiptDetail,
+  InventoryReceiptCreate
+} from "./pages/Inventory";
 import { useAppStore } from "./stores";
 import authService from "./services/auth.service";
 
@@ -71,6 +76,12 @@ function App() {
                 <Route path="/product/:id?" element={<ProtectedRoute><ProductCreate /></ProtectedRoute>} />
                 <Route path="/category/list" element={<ProtectedRoute><ListCategory /></ProtectedRoute>} />
                 <Route path="/sub-category/list" element={<ProtectedRoute><ListSubCategory /></ProtectedRoute>} />
+                
+                {/* Quản lý nhập hàng - Inventory Management */}
+                <Route path="/inventory/receipts" element={<ProtectedRoute><InventoryReceiptsList /></ProtectedRoute>} />
+                <Route path="/inventory/receipts/create" element={<ProtectedRoute><InventoryReceiptCreate /></ProtectedRoute>} />
+                <Route path="/inventory/receipts/:id" element={<ProtectedRoute><InventoryReceiptDetail /></ProtectedRoute>} />
+                <Route path="/inventory/receipts/edit/:id" element={<ProtectedRoute><InventoryReceiptCreate /></ProtectedRoute>} />
                 
                 {/* Các trang công khai */}
                 <Route path="/signIn" element={<SignIn />} />

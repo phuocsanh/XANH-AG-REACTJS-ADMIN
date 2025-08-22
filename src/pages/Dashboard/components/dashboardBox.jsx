@@ -7,6 +7,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useState } from "react";
 import { IoIosTimer } from "react-icons/io";
+import PropTypes from 'prop-types';
 
 
 const DashboardBox = (props) => {
@@ -104,5 +105,11 @@ const DashboardBox = (props) => {
         </Button >
     )
 }
+
+DashboardBox.propTypes = {
+  color: PropTypes.arrayOf(PropTypes.string),
+  grow: PropTypes.bool,
+  icon: PropTypes.node
+};
 
 export default DashboardBox;

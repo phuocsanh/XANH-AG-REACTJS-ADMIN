@@ -2,9 +2,7 @@
  * Utils functions
  */
 
-import { UploadImageRef } from '@/components/upload-images';
 import { clsx, type ClassValue } from 'clsx';
-import { MutableRefObject, RefObject } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 /**
@@ -15,7 +13,7 @@ import { twMerge } from 'tailwind-merge';
 export const parseJson = <T>(value: string) => {
   try {
     return JSON.parse(value) as T;
-  } catch (error) {
+  } catch {
     return value;
   }
 };
@@ -65,37 +63,4 @@ export const atBottom = (eventTarget: HTMLElement) => {
     return true;
   }
   return scrollTop === scrollHeight - offsetHeight;
-};
-
-/**
- * Gets image paths from a reference to an UploadImageRef.
- *
- * @param ref - The reference to an UploadImageRef.
- * @returns An array of image paths or undefined if the reference is not valid.
- */
-export const getImagePathsFromRef = (
-  ref: RefObject<UploadImageRef> | MutableRefObject<UploadImageRef[]>,
-  index?: number
-) => {
-  if ((Array.isArray(ref.current) && ref.current.length === 0) || !ref.current) {
-    return;
-  }
-
-  if (Array.isArray(ref.current) && typeof index === 'number') {
-    const paths = ref.current[index]?.getJustUploadedImagePaths();
-
-    if (paths.length === 0) {
-      return;
-    }
-
-    return paths;
-  }
-
-  const paths = (ref.current as UploadImageRef).getJustUploadedImagePaths();
-
-  if (paths.length === 0) {
-    return;
-  }
-
-  return paths;
 };

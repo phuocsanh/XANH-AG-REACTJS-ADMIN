@@ -28,7 +28,11 @@ export const useFormNavigate: FormNavigateHook = featurePatch => {
   const location = useLocation();
 
   const goBackToList = () => {
-    location.state === featurePatch ? navigate(-1) : navigate(featurePatch);
+    if (location.state === featurePatch) {
+      navigate(-1);
+    } else {
+      navigate(featurePatch);
+    }
   };
 
   const goToUpdate = (createdId: number) => {

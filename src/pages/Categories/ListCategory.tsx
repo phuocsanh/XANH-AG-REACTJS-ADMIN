@@ -93,7 +93,7 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
 
 type Order = "asc" | "desc";
 
-function getComparator<Key extends keyof any>(
+function getComparator<Key extends string | number | symbol>(
   order: Order,
   orderBy: Key
 ): (

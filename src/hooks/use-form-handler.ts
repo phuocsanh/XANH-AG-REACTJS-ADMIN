@@ -49,7 +49,7 @@ interface UseFormHandlerOptions<
   /**
    * A function to format the response data obtained from the server.
    */
-  formatResponseFn?: (
+  _formatResponseFn?: (
     data: FormValues
   ) => FormValues | DefaultValues<FormValues> | undefined
 
@@ -128,7 +128,7 @@ export const useFormHandler = <
   invalidateKey,
   queryId = 0,
   formOptions,
-  formatResponseFn,
+  _formatResponseFn,
   formatPayloadFn,
   readFn,
   createFn,
