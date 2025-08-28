@@ -14,7 +14,19 @@ import {
   mapApiResponseToInventoryReceiptItem,
   mapApiResponseToInventoryHistory,
   InventoryReceiptApiResponse,
-  InventoryReceiptItemApiResponse
+  InventoryReceiptItemApiResponse,
+  // Thêm các interface mới từ backend NestJS
+  InventoryBatch,
+  InventoryTransaction,
+  CreateInventoryBatchRequest,
+  CreateInventoryTransactionRequest,
+  StockOutRequest,
+  InventorySummary,
+  InventoryValueReport,
+  LowStockAlert,
+  ExpiringBatchAlert,
+  FifoCalculation,
+  BatchTrackingInfo,
 } from "@/models/inventory.model"
 import api from "@/utils/api"
 
@@ -227,9 +239,21 @@ export const inventoryService = {
    */
   processStockIn: async (stockInData: StockInRequest): Promise<void> => {
     try {
-      await api.post("/manage/inventory/stock-in", stockInData)
+      await api.post("/manage/inventory/stock-in", stockInData as unknown as Record<string, unknown>)
     } catch (error) {
       console.error("Lỗi khi xử lý nhập kho:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Xử lý xuất kho (stock-out)
+   */
+  processStockOut: async (stockOutData: StockOutRequest): Promise<void> => {
+    try {
+      await api.post("/manage/inventory/stock-out", stockOutData as unknown as Record<string, unknown>)
+    } catch (error) {
+      console.error("Lỗi khi xử lý xuất kho:", error)
       throw error
     }
   },
@@ -328,6 +352,260 @@ export const inventoryService = {
       }
     } catch (error) {
       console.error("Lỗi khi lấy thống kê tồn kho:", error)
+      throw error
+    }
+  },
+
+  // ========== QUẢN LÝ LÔ HÀNG (BATCH) ==========
+
+  /**
+   * Tạo lô hàng tồn kho mới
+   */
+  createBatch: async (batchData: CreateInventoryBatchRequest): Promise<InventoryBatch> => {
+    try {
+      const response = await api.post<InventoryBatch>("/inventory/batches", batchData as unknown as Record<string, unknown>)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi tạo lô hàng:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy danh sách tất cả lô hàng tồn kho
+   */
+  getAllBatches: async (): Promise<InventoryBatch[]> => {
+    try {
+      const response = await api.get<InventoryBatch[]>("/inventory/batches")
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách lô hàng:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy lô hàng theo ID sản phẩm
+   */
+  getBatchesByProduct: async (productId: number): Promise<InventoryBatch[]> => {
+    try {
+      const response = await api.get<InventoryBatch[]>(`/inventory/batches/product/${productId}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy lô hàng sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy lô hàng theo ID
+   */
+  getBatchById: async (id: number): Promise<InventoryBatch> => {
+    try {
+      const response = await api.get<InventoryBatch>(`/inventory/batches/${id}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy lô hàng ID ${id}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Cập nhật lô hàng
+   */
+  updateBatch: async (id: number, batchData: Partial<CreateInventoryBatchRequest>): Promise<InventoryBatch> => {
+    try {
+      const response = await api.patch<InventoryBatch>(`/inventory/batches/${id}`, batchData as unknown as Record<string, unknown>)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi cập nhật lô hàng ID ${id}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Xóa lô hàng
+   */
+  deleteBatch: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/inventory/batches/${id}`)
+    } catch (error) {
+      console.error(`Lỗi khi xóa lô hàng ID ${id}:`, error)
+      throw error
+    }
+  },
+
+  // ========== QUẢN LÝ GIAO DỊCH KHO ==========
+
+  /**
+   * Tạo giao dịch kho mới
+   */
+  createTransaction: async (transactionData: CreateInventoryTransactionRequest): Promise<InventoryTransaction> => {
+    try {
+      const response = await api.post<InventoryTransaction>("/inventory/transactions", transactionData as unknown as Record<string, unknown>)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi tạo giao dịch kho:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy danh sách tất cả giao dịch kho
+   */
+  getAllTransactions: async (): Promise<InventoryTransaction[]> => {
+    try {
+      const response = await api.get<InventoryTransaction[]>("/inventory/transactions")
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách giao dịch kho:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy giao dịch kho theo ID sản phẩm
+   */
+  getTransactionsByProduct: async (productId: number): Promise<InventoryTransaction[]> => {
+    try {
+      const response = await api.get<InventoryTransaction[]>(`/inventory/transactions/product/${productId}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy giao dịch kho sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  // ========== BÁO CÁO VÀ TỔNG HỢP TỒN KHO ==========
+
+  /**
+   * Lấy tổng hợp tồn kho theo ID sản phẩm
+   */
+  getInventorySummary: async (productId: number): Promise<InventorySummary> => {
+    try {
+      const response = await api.get<InventorySummary>(`/inventory/summary/product/${productId}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy tổng hợp tồn kho sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy báo cáo giá trị tồn kho
+   */
+  getInventoryValueReport: async (productIds?: number[]): Promise<InventoryValueReport[]> => {
+    try {
+      const params = productIds ? `?productIds=${productIds.join(',')}` : ''
+      const response = await api.get<InventoryValueReport[]>(`/inventory/value-report${params}`)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy báo cáo giá trị tồn kho:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy cảnh báo tồn kho thấp
+   */
+  getLowStockAlert: async (threshold: number = 10): Promise<LowStockAlert[]> => {
+    try {
+      const response = await api.get<LowStockAlert[]>(`/inventory/low-stock-alert?threshold=${threshold}`)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy cảnh báo tồn kho thấp:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy cảnh báo lô hàng sắp hết hạn
+   */
+  getExpiringBatchesAlert: async (days: number = 30): Promise<ExpiringBatchAlert[]> => {
+    try {
+      const response = await api.get<ExpiringBatchAlert[]>(`/inventory/expiring-batches-alert?days=${days}`)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy cảnh báo lô hàng sắp hết hạn:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Tính giá vốn FIFO cho số lượng cụ thể
+   */
+  calculateFifoCost: async (productId: number, quantity: number): Promise<FifoCalculation> => {
+    try {
+      const response = await api.get<FifoCalculation>(`/inventory/fifo-cost/product/${productId}?quantity=${quantity}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi tính giá vốn FIFO sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy thông tin batch tracking
+   */
+  getBatchTrackingInfo: async (productId?: number): Promise<BatchTrackingInfo[]> => {
+    try {
+      const params = productId ? `?productId=${productId}` : ''
+      const response = await api.get<BatchTrackingInfo[]>(`/inventory/batch-tracking${params}`)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin batch tracking:", error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy batch tracking theo sản phẩm
+   */
+  getBatchTrackingByProduct: async (productId: number): Promise<BatchTrackingInfo> => {
+    try {
+      const response = await api.get<BatchTrackingInfo>(`/inventory/batch-tracking/product/${productId}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy batch tracking sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy giá trị FIFO của sản phẩm
+   */
+  getFifoValue: async (productId: number): Promise<{ fifoValue: number; totalQuantity: number }> => {
+    try {
+      const response = await api.get<{ fifoValue: number; totalQuantity: number }>(`/inventory/fifo/product/${productId}` as "Bạn chưa khai báo kiểu trả về")
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy giá trị FIFO sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy giá vốn trung bình gia quyền
+   */
+  getWeightedAverageCost: async (productId: number): Promise<{ averageCost: number; totalQuantity: number }> => {
+    try {
+      const response = await api.get<{ averageCost: number; totalQuantity: number }>(`/inventory/weighted-average-cost/product/${productId}` as "Bạn chưa khai báo kiểu trả về")
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy giá vốn trung bình gia quyền sản phẩm ID ${productId}:`, error)
+      throw error
+    }
+  },
+
+  /**
+   * Tính lại giá vốn trung bình gia quyền
+   */
+  recalculateWeightedAverageCost: async (productId: number): Promise<{ newAverageCost: number; success: boolean }> => {
+    try {
+      const response = await api.post<{ newAverageCost: number; success: boolean }>(`/inventory/recalculate-weighted-average/${productId}`)
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi tính lại giá vốn trung bình gia quyền sản phẩm ID ${productId}:`, error)
       throw error
     }
   }

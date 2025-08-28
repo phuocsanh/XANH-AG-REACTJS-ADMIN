@@ -4,6 +4,9 @@ import {
   LoginResponse,
   TokenResponse,
   LoginApiPayload,
+  RegisterApiPayload,
+  ChangePasswordApiPayload,
+  UserResponse,
 } from "@/models/auth.model"
 import { useAppStore } from "@/stores"
 
@@ -20,7 +23,7 @@ export const authService = {
       // Validate dữ liệu đầu vào với type safety - theo pattern của example
 
       const response = await api.postRaw<ApiResponse<LoginResponse>>(
-        "/user/login",
+        "/auth/login",
         credentials
       )
 
@@ -29,21 +32,17 @@ export const authService = {
         throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
 
-      const { tokens, user } = response.data
+      const { access_token, user } = response.data
 
-      if (tokens) {
-        // Lưu token vào localStorage và state
-
-        // Cập nhật trạng thái đăng nhập
+      if (access_token) {
+        // Cập nhật trạng thái đăng nhập với token từ server
         useAppStore.setState((prev) => ({
           ...prev,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
+          accessToken: access_token,
+          refreshToken: "", // Server chưa có refresh token
           isLogin: true,
           userInfo: user,
         }))
-
-        // Lưu thông tin user vào localStorage
       }
 
       return response.data
@@ -58,7 +57,8 @@ export const authService = {
   // Đăng xuất
   logout: async (): Promise<void> => {
     try {
-      await api.post("/user/logout")
+      // Server không có endpoint logout, chỉ xóa token ở client
+      // await api.post("/auth/logout")
     } catch (error) {
       console.error("Lỗi đăng xuất:", error)
     } finally {
@@ -71,18 +71,58 @@ export const authService = {
   },
 
   // Làm mới token
-  refreshToken: async (refreshToken: string): Promise<TokenResponse> => {
-    const response = await api.post<ApiResponse<TokenResponse>>(
-      "/user/refresh-token",
-      { refreshToken }
-    )
+  refreshToken: async (_refreshToken: string): Promise<TokenResponse> => {
+    // Server chưa có endpoint refresh token, cần implement sau
+    // const response = await api.post<ApiResponse<TokenResponse>>(
+    //   "/auth/refresh-token",
+    //   { refreshToken: _refreshToken }
+    // )
+    // if (response.data && response.data.accessToken) {
+    //   useAppStore.setState({ accessToken: response.data.accessToken })
+    // }
+    // return response.data
+    
+    throw new Error("Refresh token chưa được implement trên server")
+  },
 
-    if (response.data && response.data.accessToken) {
-      // Cập nhật token mới
-      useAppStore.setState({ accessToken: response.data.accessToken })
+  // Đăng ký người dùng mới
+  register: async (userData: RegisterApiPayload): Promise<UserResponse> => {
+    try {
+      const response = await api.post<ApiResponse<UserResponse>>(
+        "/auth/register",
+        userData
+      )
+
+      // Kiểm tra response hợp lệ
+      if (!response?.data) {
+        throw new Error("Dữ liệu phản hồi không hợp lệ")
+      }
+
+      return response.data
+    } catch (error: unknown) {
+      console.error("Lỗi đăng ký:", error)
+      throw error
     }
+  },
 
-    return response.data
+  // Đổi mật khẩu
+  changePassword: async (passwordData: ChangePasswordApiPayload): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await api.put<ApiResponse<{ success: boolean; message: string }>>(
+        "/auth/change-password",
+        passwordData
+      )
+
+      // Kiểm tra response hợp lệ
+      if (!response?.data) {
+        throw new Error("Dữ liệu phản hồi không hợp lệ")
+      }
+
+      return response.data
+    } catch (error: unknown) {
+      console.error("Lỗi đổi mật khẩu:", error)
+      throw error
+    }
   },
 
   // Kiểm tra trạng thái đăng nhập

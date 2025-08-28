@@ -15,7 +15,7 @@ export const productTypeService = {
   getProductTypes: async (): Promise<ProductTypesListResponse> => {
     try {
       const response = await api.get<ProductTypesListResponse>(
-        "/manage/product/type"
+        "/products/type"
       )
       return response
     } catch (error) {
@@ -28,7 +28,7 @@ export const productTypeService = {
   getProductTypeById: async (id: number): Promise<ProductTypeResponse> => {
     try {
       const response = await api.get<ProductTypeResponse>(
-        `/manage/product/type/${id}`
+        `/products/type/${id}`
       )
       return response
     } catch (error) {
@@ -43,7 +43,7 @@ export const productTypeService = {
   ): Promise<ProductTypeResponse> => {
     try {
       const response = await api.post<ProductTypeResponse>(
-        "/manage/product/type",
+        "/products/type",
         productType
       )
       return response
@@ -59,8 +59,8 @@ export const productTypeService = {
     productType: ProductTypeRequest
   ): Promise<ProductTypeResponse> => {
     try {
-      const response = await api.put<ProductTypeResponse>(
-        `/manage/product/type/${id}`,
+      const response = await api.patch<ProductTypeResponse>(
+        `/products/type/${id}`,
         productType
       )
       return response
@@ -73,7 +73,7 @@ export const productTypeService = {
   // Xóa loại sản phẩm
   deleteProductType: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/product/type/${id}`)
+      await api.delete(`/products/type/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa loại sản phẩm ID ${id}:`, error)
       throw error
@@ -84,7 +84,7 @@ export const productTypeService = {
   getProductSubtypes: async (): Promise<ProductSubtypesListResponse> => {
     try {
       const response = await api.get<ProductSubtypesListResponse>(
-        "/manage/product/subtype"
+        "/products/subtype"
       )
       return response
     } catch (error) {
@@ -99,7 +99,7 @@ export const productTypeService = {
   ): Promise<ProductSubtypesListResponse> => {
     try {
       const response = await api.get<ProductSubtypesListResponse>(
-        `/manage/product/type/${typeId}/subtypes`
+        `/products/type/${typeId}/subtypes`
       )
       return response
     } catch (error) {
@@ -117,7 +117,7 @@ export const productTypeService = {
   ): Promise<ProductSubtypeResponse> => {
     try {
       const response = await api.get<ProductSubtypeResponse>(
-        `/manage/product/subtype/${id}`
+        `/products/subtype/${id}`
       )
       return response
     } catch (error) {
@@ -132,7 +132,7 @@ export const productTypeService = {
   ): Promise<ProductSubtypeResponse> => {
     try {
       const response = await api.post<ProductSubtypeResponse>(
-        "/manage/product/subtype",
+        "/products/subtype",
         productSubtype
       )
       return response
@@ -148,8 +148,8 @@ export const productTypeService = {
     productSubtype: ProductSubtypeRequest
   ): Promise<ProductSubtypeResponse> => {
     try {
-      const response = await api.put<ProductSubtypeResponse>(
-        `/manage/product/subtype/${id}`,
+      const response = await api.patch<ProductSubtypeResponse>(
+        `/products/subtype/${id}`,
         productSubtype
       )
       return response
@@ -162,31 +162,33 @@ export const productTypeService = {
   // Xóa loại phụ sản phẩm
   deleteProductSubtype: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/product/subtype/${id}`)
+      await api.delete(`/products/subtype/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa loại phụ sản phẩm ID ${id}:`, error)
       throw error
     }
   },
 
-  // Thêm mapping giữa loại và loại phụ
+  // Thêm mapping giữa loại và loại phụ (deprecated - sử dụng product service)
   addProductSubtypeMapping: async (
     mapping: ProductSubtypeMappingRequest
   ): Promise<void> => {
     try {
-      await api.post("/manage/product/subtype/mapping", mapping)
+      // Sử dụng endpoint mới từ product service
+      await api.post(`/products/${mapping.typeId}/subtype/${mapping.subtypeId}`)
     } catch (error) {
       console.error("Lỗi khi thêm mapping loại phụ sản phẩm:", error)
       throw error
     }
   },
 
-  // Xóa mapping giữa loại và loại phụ
+  // Xóa mapping giữa loại và loại phụ (deprecated - sử dụng product service)
   removeProductSubtypeMapping: async (
     mapping: ProductSubtypeMappingRequest
   ): Promise<void> => {
     try {
-      await api.delete("/manage/product/subtype/mapping", { data: mapping })
+      // Sử dụng endpoint mới từ product service
+      await api.delete(`/products/${mapping.typeId}/subtype/${mapping.subtypeId}`)
     } catch (error) {
       console.error("Lỗi khi xóa mapping loại phụ sản phẩm:", error)
       throw error

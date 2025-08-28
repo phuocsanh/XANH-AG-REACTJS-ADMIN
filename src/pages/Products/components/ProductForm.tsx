@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Form, Input, Button, Select, Upload, message, Card, Space } from "antd"
-import { UploadOutlined, SaveOutlined } from "@ant-design/icons"
-import ImageUpload from "@/components/ImageUpload/ImageUpload"
+import { Button, message, Card, Space } from "antd"
+import { SaveOutlined } from "@ant-design/icons"
+import { useForm } from "react-hook-form"
+import { FormField, FormComboBox, FormImageUpload } from "@/components/Form"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -141,19 +142,28 @@ const TiptapEditor: React.FC<{ content: string; onChange: (content: string) => v
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const [form] = Form.useForm()
+  const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
+    defaultValues: {
+      isPublished: true,
+      discount: "0",
+      quantity: 1,
+    }
+  })
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [loading, setLoading] = useState(false)
   const [productTypes, setProductTypes] = useState<ProductType[]>([])
   const [description, setDescription] = useState("")
-  const [selectedProductType, setSelectedProductType] = useState<
-    number | undefined
-  >(undefined)
+
+  
+  // Watch form values
+  const watchedType = watch("type")
+
+  // Xác định ID sản phẩm để sử dụng: ưu tiên productId từ props, sau đó mới đến id từ params
+  const currentProductId = productId || id
 
   const renderProductAttributes = () => {
-    const productType = form.getFieldValue("type")
-    const selectedType = productTypes.find((type) => type.id === productType)
+    const selectedType = productTypes.find((type) => type.id === Number(watchedType))
 
     if (!selectedType) return null
 
@@ -161,95 +171,136 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       case "Nấm":
         return (
           <div className='grid grid-cols-2 gap-4'>
-            <Form.Item label='Xuất xứ' name={["attributes", "origin"]}>
-              <Input placeholder='Nhập xuất xứ' />
-            </Form.Item>
-            <Form.Item label='Trọng lượng (g)' name={["attributes", "weight"]}>
-              <Input type='number' min={0} placeholder='Ví dụ: 500' />
-            </Form.Item>
-            <Form.Item label='Độ tươi' name={["attributes", "freshness"]}>
-              <Select placeholder='Chọn độ tươi'>
-                <Select.Option value='Tươi'>Tươi</Select.Option>
-                <Select.Option value='Khô'>Khô</Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.Item label='Hữu cơ' name={["attributes", "organic"]}>
-              <Select placeholder='Chọn trạng thái'>
-                <Select.Option value={true}>Có</Select.Option>
-                <Select.Option value={false}>Không</Select.Option>
-              </Select>
-            </Form.Item>
+            <FormField
+              name="attributes.origin"
+              control={control}
+              label="Xuất xứ"
+              placeholder="Nhập xuất xứ"
+            />
+            <FormField
+              name="attributes.weight"
+              control={control}
+              label="Trọng lượng (g)"
+              type="number"
+              placeholder="Ví dụ: 500"
+            />
+            <FormComboBox
+              name="attributes.freshness"
+              control={control}
+              label="Độ tươi"
+              placeholder="Chọn độ tươi"
+              options={[
+                { label: "Tươi", value: "Tươi" },
+                { label: "Khô", value: "Khô" }
+              ]}
+            />
+            <FormComboBox
+              name="attributes.organic"
+              control={control}
+              label="Hữu cơ"
+              placeholder="Chọn trạng thái"
+              options={[
+                { label: "Có", value: "true" },
+                { label: "Không", value: "false" }
+              ]}
+            />
           </div>
         )
       case "Phân bón":
         return (
           <div className='grid grid-cols-2 gap-4'>
-            <Form.Item
-              label='Thành phần chính'
-              name={["attributes", "main_ingredient"]}
-            >
-              <Input placeholder='Nhập thành phần' />
-            </Form.Item>
-            <Form.Item label='Khối lượng (kg)' name={["attributes", "weight"]}>
-              <Input type='number' min={0} placeholder='Ví dụ: 5' />
-            </Form.Item>
-            <Form.Item
-              label='Loại phân'
-              name={["attributes", "fertilizer_type"]}
-            >
-              <Select placeholder='Chọn loại phân'>
-                <Select.Option value='Hữu cơ'>Hữu cơ</Select.Option>
-                <Select.Option value='Vô cơ'>Vô cơ</Select.Option>
-              </Select>
-            </Form.Item>
+            <FormField
+              name="attributes.main_ingredient"
+              control={control}
+              label="Thành phần chính"
+              placeholder="Nhập thành phần"
+            />
+            <FormField
+              name="attributes.weight"
+              control={control}
+              label="Khối lượng (kg)"
+              type="number"
+              placeholder="Ví dụ: 5"
+            />
+            <FormComboBox
+              name="attributes.fertilizer_type"
+              control={control}
+              label="Loại phân"
+              placeholder="Chọn loại phân"
+              options={[
+                { label: "Hữu cơ", value: "Hữu cơ" },
+                { label: "Vô cơ", value: "Vô cơ" }
+              ]}
+            />
           </div>
         )
       case "Thuốc bảo vệ thực vật":
         return (
           <div className='grid grid-cols-2 gap-4'>
-            <Form.Item
-              label='Hoạt chất'
-              name={["attributes", "active_ingredient"]}
-            >
-              <Input placeholder='Nhập hoạt chất' />
-            </Form.Item>
-            <Form.Item label='Thể tích (ml)' name={["attributes", "volume"]}>
-              <Input type='number' min={0} placeholder='Ví dụ: 100' />
-            </Form.Item>
-            <Form.Item label='Độ độc' name={["attributes", "toxicity"]}>
-              <Select placeholder='Chọn độ độc'>
-                <Select.Option value='Nhóm I'>Nhóm I</Select.Option>
-                <Select.Option value='Nhóm II'>Nhóm II</Select.Option>
-                <Select.Option value='Nhóm III'>Nhóm III</Select.Option>
-              </Select>
-            </Form.Item>
+            <FormField
+              name="attributes.active_ingredient"
+              control={control}
+              label="Hoạt chất"
+              placeholder="Nhập hoạt chất"
+            />
+            <FormField
+              name="attributes.volume"
+              control={control}
+              label="Thể tích (ml)"
+              type="number"
+              placeholder="Ví dụ: 100"
+            />
+            <FormComboBox
+              name="attributes.toxicity"
+              control={control}
+              label="Độ độc"
+              placeholder="Chọn độ độc"
+              options={[
+                { label: "Nhóm I", value: "Nhóm I" },
+                { label: "Nhóm II", value: "Nhóm II" },
+                { label: "Nhóm III", value: "Nhóm III" }
+              ]}
+            />
           </div>
         )
       case "Cây trồng":
         return (
           <div className='grid grid-cols-2 gap-4'>
-            <Form.Item label='Tuổi thọ (tháng)' name={["attributes", "age"]}>
-              <Input type='number' min={0} placeholder='Ví dụ: 12' />
-            </Form.Item>
-            <Form.Item label='Chiều cao (cm)' name={["attributes", "height"]}>
-              <Input type='number' min={0} placeholder='Ví dụ: 30' />
-            </Form.Item>
-            <Form.Item
-              label='Mức độ chăm sóc'
-              name={["attributes", "care_level"]}
-            >
-              <Select placeholder='Chọn mức độ chăm sóc'>
-                <Select.Option value='Dễ'>Dễ</Select.Option>
-                <Select.Option value='Trung bình'>Trung bình</Select.Option>
-                <Select.Option value='Khó'>Khó</Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.Item label='Kèm chậu' name={["attributes", "pot_included"]}>
-              <Select placeholder='Chọn trạng thái'>
-                <Select.Option value={true}>Có</Select.Option>
-                <Select.Option value={false}>Không</Select.Option>
-              </Select>
-            </Form.Item>
+            <FormField
+              name="attributes.age"
+              control={control}
+              label="Tuổi thọ (tháng)"
+              type="number"
+              placeholder="Ví dụ: 12"
+            />
+            <FormField
+              name="attributes.height"
+              control={control}
+              label="Chiều cao (cm)"
+              type="number"
+              placeholder="Ví dụ: 30"
+            />
+            <FormComboBox
+              name="attributes.care_level"
+              control={control}
+              label="Mức độ chăm sóc"
+              placeholder="Chọn mức độ chăm sóc"
+              options={[
+                { label: "Dễ", value: "Dễ" },
+                { label: "Trung bình", value: "Trung bình" },
+                { label: "Khó", value: "Khó" }
+              ]}
+            />
+            <FormComboBox
+              name="attributes.pot_included"
+              control={control}
+              label="Kèm chậu"
+              placeholder="Chọn trạng thái"
+              options={[
+                { label: "Có", value: "true" },
+                { label: "Không", value: "false" }
+              ]}
+            />
           </div>
         )
       default:
@@ -269,7 +320,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     }
 
     const fetchProduct = async () => {
-      const currentProductId = id || productId
       if (!currentProductId) return
       try {
         setLoading(true)
@@ -330,13 +380,13 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         console.log("Mapped form values:", formValues)
 
         // Đặt giá trị cho form
-        form.setFieldsValue(formValues)
-        setSelectedProductType(mappedProduct.type) // Set selected product type
+        reset(formValues)
+        // Product type will be watched through watchedType
 
         // Đặt giá trị cho mô tả
         setDescription(productData.productDescription || "")
 
-        console.log("Form values after set:", form.getFieldsValue())
+        console.log("Form values after set:", formValues)
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
@@ -349,9 +399,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     if (isEdit) {
       fetchProduct()
     }
-  }, [id, isEdit, form, productId])
+  }, [currentProductId, isEdit, reset])
 
-  const onFinish = async (values: ProductFormValues) => {
+  const onSubmit = async (values: ProductFormValues) => {
     try {
       setLoading(true)
 
@@ -368,9 +418,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           : [],
       }
 
-      if (isEdit && id) {
+      if (isEdit && currentProductId) {
         await productService.updateProduct(
-          parseInt(id),
+          parseInt(currentProductId),
           convertedValues as UpdateProductRequest
         )
         message.success("Cập nhật sản phẩm thành công")
@@ -394,138 +444,111 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     <div className='p-4'>
       <Space direction='vertical' size='middle' style={{ width: "100%" }}>
         <Card loading={loading}>
-          <Form
-            form={form}
-            layout='vertical'
-            onFinish={onFinish}
-            initialValues={{
-              isPublished: true,
-              discount: "0",
-              quantity: 1,
-            }}
-          >
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className='grid grid-cols-2 gap-4'>
-              <Form.Item
-                label='Tên sản phẩm'
-                name='name'
-                rules={[
-                  { required: true, message: "Vui lòng nhập tên sản phẩm" },
+              <FormField
+                name="name"
+                control={control}
+                label="Tên sản phẩm"
+                placeholder="Nhập tên sản phẩm"
+                required
+                rules={{ required: "Vui lòng nhập tên sản phẩm" }}
+              />
+
+              <FormComboBox
+                name="type"
+                control={control}
+                label="Loại sản phẩm"
+                placeholder="Chọn loại sản phẩm"
+                required
+                rules={{ required: "Vui lòng chọn loại sản phẩm" }}
+                options={productTypes.map((type) => ({
+                  label: type.name,
+                  value: type.id
+                }))}
+              />
+
+              <FormField
+                name="price"
+                control={control}
+                label="Giá bán (VNĐ)"
+                type="number"
+                placeholder="Nhập giá bán"
+                required
+                rules={{ required: "Vui lòng nhập giá bán" }}
+                suffix="VNĐ"
+              />
+
+              <FormField
+                name="quantity"
+                control={control}
+                label="Số lượng"
+                type="number"
+                placeholder="Nhập số lượng"
+                required
+                rules={{ required: "Vui lòng nhập số lượng" }}
+              />
+
+              <FormField
+                name="discount"
+                control={control}
+                label="Giảm giá (%)"
+                type="number"
+                placeholder="Nhập giảm giá"
+                suffix="%"
+              />
+
+              <FormComboBox
+                name="isPublished"
+                control={control}
+                label="Trạng thái"
+                placeholder="Chọn trạng thái"
+                options={[
+                  { label: "Đang bán", value: "true" },
+                  { label: "Nháp", value: "false" }
                 ]}
-              >
-                <Input placeholder='Nhập tên sản phẩm' />
-              </Form.Item>
-
-              <Form.Item
-                label='Loại sản phẩm'
-                name='type'
-                rules={[
-                  { required: true, message: "Vui lòng chọn loại sản phẩm" },
-                ]}
-              >
-                <Select
-                  placeholder='Chọn loại sản phẩm'
-                  loading={!productTypes.length}
-                  onChange={(value) => setSelectedProductType(value)}
-                >
-                  {productTypes.map((type) => (
-                    <Select.Option key={type.id} value={type.id}>
-                      {type.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                label='Giá bán (VNĐ)'
-                name='price'
-                rules={[{ required: true, message: "Vui lòng nhập giá bán" }]}
-              >
-                <Input type='number' min={0} addonAfter='VNĐ' />
-              </Form.Item>
-
-              <Form.Item
-                label='Số lượng'
-                name='quantity'
-                rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
-              >
-                <Input type='number' min={0} />
-              </Form.Item>
-
-              <Form.Item label='Giảm giá (%)' name='discount'>
-                <Input type='number' min={0} max={100} addonAfter='%' />
-              </Form.Item>
-
-              <Form.Item label='Trạng thái' name='isPublished'>
-                <Select>
-                  <Select.Option value={true}>Đang bán</Select.Option>
-                  <Select.Option value={false}>Nháp</Select.Option>
-                </Select>
-              </Form.Item>
+              />
             </div>
 
-            <Form.Item
-              label='Mô tả sản phẩm'
-              name='description'
-              rules={[
-                { required: true, message: "Vui lòng nhập mô tả sản phẩm" },
-              ]}
-            >
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mô tả sản phẩm <span className="text-red-500">*</span>
+              </label>
               <TiptapEditor
                 content={description}
                 onChange={(content) => {
                   setDescription(content)
                 }}
               />
-            </Form.Item>
+            </div>
 
-            <Form.Item
-              label='Hình ảnh sản phẩm'
-              name='thumb'
-              valuePropName='fileList'
-              getValueFromEvent={(e) => e && e.fileList}
-            >
-              <Upload
-                listType='picture-card'
-                maxCount={5}
-                beforeUpload={() => false}
-              >
-                <div>
-                  <UploadOutlined />
-                  <div style={{ marginTop: 8 }}>Tải lên</div>
-                </div>
-              </Upload>
-            </Form.Item>
+            <FormImageUpload
+              name="thumb"
+              control={control}
+              label="Hình ảnh sản phẩm"
+              maxCount={1}
+              folder="products"
+            />
 
-            <Form.Item
-              label='Ảnh chi tiết sản phẩm'
-              name='pictures'
-              valuePropName='fileList'
-              getValueFromEvent={(e) => {
-                if (Array.isArray(e)) {
-                  return e
-                }
-                return e?.fileList
-              }}
-            >
-              <ImageUpload
-                value={form.getFieldValue("pictures") || []}
-                onChange={(urls) => form.setFieldsValue({ pictures: urls })}
-                maxCount={5}
-                multiple
-                folder='products'
-              />
-            </Form.Item>
+            <FormImageUpload
+              name="pictures"
+              control={control}
+              label="Ảnh chi tiết sản phẩm"
+              maxCount={5}
+              multiple
+              folder="products"
+            />
 
-            {selectedProductType && (
-              <div className='mb-4'>
-                <h3 className='text-lg font-medium mb-2'>
-                  Thuộc tính sản phẩm
-                </h3>
-                {renderProductAttributes()}
-              </div>
-            )}
+            {Number(watchedType) && (
+               <div className='mb-4'>
+                 <h3 className='text-lg font-medium mb-2'>
+                   Thuộc tính sản phẩm
+                 </h3>
+                 {renderProductAttributes()}
+               </div>
+             )}
 
-            <Form.Item style={{ textAlign: "right", marginTop: "24px" }}>
+            <div style={{ textAlign: "right", marginTop: "24px" }}>
               <Button
                 style={{ marginRight: "8px" }}
                 onClick={() => navigate("/products")}
@@ -540,8 +563,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               >
                 {isEdit ? "Cập nhật" : "Thêm mới"}
               </Button>
-            </Form.Item>
-          </Form>
+            </div>
+          </form>
         </Card>
       </Space>
     </div>

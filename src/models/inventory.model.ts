@@ -301,8 +301,144 @@ export interface InventoryHistoryListParams {
   endDate?: string
 }
 
-// Stock-in request interface
+// Inventory models and interfaces
+export interface InventoryBatch {
+  id: number;
+  productId: number;
+  batchCode?: string;
+  unitCostPrice: string;
+  originalQuantity: number;
+  remainingQuantity: number;
+  expiryDate?: Date;
+  manufacturingDate?: Date;
+  supplierId?: number;
+  notes?: string;
+  receiptItemId?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InventoryTransaction {
+  id: number;
+  productId: number;
+  transactionType: string;
+  quantity: number;
+  unitCostPrice: string;
+  totalCostValue: string;
+  remainingQuantity: number;
+  newAverageCost: string;
+  receiptItemId?: number;
+  referenceType?: string;
+  referenceId?: number;
+  notes?: string;
+  createdByUserId: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Request DTOs
+export interface CreateInventoryBatchRequest {
+  productId: number;
+  batchCode?: string;
+  unitCostPrice: string;
+  originalQuantity: number;
+  remainingQuantity: number;
+  expiryDate?: Date;
+  manufacturingDate?: Date;
+  supplierId?: number;
+  notes?: string;
+  receiptItemId?: number;
+}
+
+export interface CreateInventoryTransactionRequest {
+  productId: number;
+  transactionType: string;
+  quantity: number;
+  unitCostPrice: string;
+  totalCostValue: string;
+  remainingQuantity: number;
+  newAverageCost: string;
+  receiptItemId?: number;
+  referenceType?: string;
+  referenceId?: number;
+  notes?: string;
+  createdByUserId: number;
+}
+
+// Stock operation interfaces
 export interface StockInRequest {
-  [key: string]: unknown
-  receiptId: number
+  productId: number;
+  quantity: number;
+  unitCost: number;
+  receiptItemId?: number;
+  batchCode?: string;
+  expiryDate?: Date;
+}
+
+export interface StockOutRequest {
+  productId: number;
+  quantity: number;
+  referenceType: string;
+  referenceId?: number;
+  notes?: string;
+}
+
+// Inventory summary and reports
+export interface InventorySummary {
+  productId: number;
+  totalQuantity: number;
+  totalValue: string;
+  averageCost: string;
+  batches: InventoryBatch[];
+}
+
+export interface InventoryValueReport {
+  productId: number;
+  productName: string;
+  quantity: number;
+  averageCost: string;
+  totalValue: string;
+}
+
+export interface LowStockAlert {
+  productId: number;
+  productName: string;
+  currentQuantity: number;
+  threshold: number;
+}
+
+export interface ExpiringBatchAlert {
+  batchId: number;
+  productId: number;
+  productName: string;
+  batchCode?: string;
+  expiryDate: Date;
+  remainingQuantity: number;
+  daysUntilExpiry: number;
+}
+
+export interface FifoCalculation {
+  totalCost: string;
+  averageCost: string;
+  batches: {
+    batchId: number;
+    quantity: number;
+    unitCost: string;
+    totalCost: string;
+  }[];
+}
+
+export interface BatchTrackingInfo {
+  productId: number;
+  productName: string;
+  batches: {
+    id: number;
+    batchCode?: string;
+    originalQuantity: number;
+    remainingQuantity: number;
+    unitCostPrice: string;
+    expiryDate?: Date;
+    manufacturingDate?: Date;
+    createdAt: Date;
+  }[];
 }

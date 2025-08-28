@@ -27,7 +27,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const files = value.map((url, index) => ({
         uid: `-${index}`,
         name: `image-${index}.jpg`,
-        status: "done",
+        status: "done" as const,
         url: url,
       }))
       setFileList(files)
@@ -68,7 +68,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           if (item.uid === uploadedFile.uid) {
             return {
               ...item,
-              url: response.url,
+              url: response.fileUrl,
               status: "done" as const,
             }
           }

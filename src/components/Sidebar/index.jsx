@@ -13,6 +13,7 @@ import { MdInventory } from "react-icons/md"
 import { useAppStore } from "@/stores"
 import { BiCategory } from "react-icons/bi"
 import { TbCategoryMinus } from "react-icons/tb"
+import { FaUsers } from "react-icons/fa"
 import { useState } from "react"
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0)
@@ -72,13 +73,18 @@ const Sidebar = () => {
                     : "colapsed"
                 }`}
               >
-                <div className='submenu'>
-                  <Link to='/products/list'>
-                    <Button className='w-100'>Danh sách sản phẩm</Button>
-                  </Link>
-                 
-                 
-                </div>
+                <ul className='submenu'>
+                  <li>
+                    <Link to='/products'>
+                      <Button className='w-100'>Danh sách sản phẩm</Button>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to='/products/new'>
+                      <Button className='w-100'>Thêm sản phẩm</Button>
+                    </Link>
+                  </li>
+                </ul>
               </div>
             </li>
 
@@ -116,6 +122,20 @@ const Sidebar = () => {
                     <TbCategoryMinus />
                   </span>
                   Loại phụ sản phẩm
+                </Button>
+              </Link>
+            </li>
+            
+            <li>
+              <Link to='/users'>
+                <Button
+                  className={`w-100 ${activeTab === 10 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(10)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <FaUsers />
+                  </span>
+                  Quản lý người dùng
                 </Button>
               </Link>
             </li>

@@ -25,7 +25,7 @@ export const productService = {
     params?: ExtendedProductListParams
   ): Promise<{ data: { items: Product[]; total: number }; code: number; message: string }> => {
     try {
-      const response = await api.get<ProductListResponse>("/manage/product", {
+      const response = await api.get<ProductListResponse>("/products", {
         params: { params },
       })
       
@@ -48,7 +48,7 @@ export const productService = {
   // Lấy chi tiết sản phẩm theo ID
   getProductById: async (id: number): Promise<ProductResponse> => {
     try {
-      const response = await api.get<ProductResponse>(`/manage/product/${id}`)
+      const response = await api.get<ProductResponse>(`/products/${id}`)
       return response
     } catch (error) {
       console.error(`Lỗi khi lấy sản phẩm ID ${id}:`, error)
@@ -62,7 +62,7 @@ export const productService = {
   ): Promise<ProductResponse> => {
     try {
       const response = await api.post<ProductResponse>(
-        "/manage/product",
+        "/products",
         product
       )
       return response
@@ -78,8 +78,8 @@ export const productService = {
     product: UpdateProductRequest
   ): Promise<ProductResponse> => {
     try {
-      const response = await api.put<ProductResponse>(
-        `/manage/product/${id}`,
+      const response = await api.patch<ProductResponse>(
+        `/products/${id}`,
         product
       )
       return response
@@ -92,7 +92,7 @@ export const productService = {
   // Xóa sản phẩm
   deleteProduct: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/product/${id}`)
+      await api.delete(`/products/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa sản phẩm ID ${id}:`, error)
       throw error
@@ -107,9 +107,9 @@ export const productService = {
   ): Promise<ProductListResponse> => {
     try {
       const response = await api.get<ProductListResponse>(
-        "/manage/product/search",
+        "/products/search",
         {
-          params: { query, limit, offset },
+          params: { q: query, limit, offset },
         }
       )
       return response
@@ -119,25 +119,22 @@ export const productService = {
     }
   },
 
-  // Lọc sản phẩm theo các tiêu chí
-  filterProducts: async (
-    filters: Record<string, unknown>
+  // Lọc sản phẩm theo loại sản phẩm
+  getProductsByType: async (
+    productType: number
   ): Promise<ProductListResponse> => {
     try {
       const response = await api.get<ProductListResponse>(
-        "/manage/product/filter",
-        {
-          params: filters,
-        }
+        `/products/type/${productType}`
       )
       return response
     } catch (error) {
-      console.error("Lỗi khi lọc sản phẩm:", error)
+      console.error("Lỗi khi lọc sản phẩm theo loại:", error)
       throw error
     }
   },
 
-  // Lấy thống kê sản phẩm
+  // Lấy thống kê sản phẩm (giữ nguyên endpoint cũ vì server chưa có)
   getProductStats: async (): Promise<ProductStatsResponse> => {
     try {
       const response = await api.get<ProductStatsResponse>(
@@ -154,7 +151,7 @@ export const productService = {
   getProductTypes: async (): Promise<ProductTypeListResponse> => {
     try {
       const response = await api.get<ProductTypeListResponse>(
-        "/manage/product-type"
+        "/products/type"
       )
       return response
     } catch (error) {
@@ -169,7 +166,7 @@ export const productService = {
   ): Promise<ProductTypeResponse> => {
     try {
       const response = await api.post<ProductTypeResponse>(
-        "/manage/product-type",
+        "/products/type",
         productType
       )
       return response
@@ -185,8 +182,8 @@ export const productService = {
     productType: UpdateProductTypeRequest
   ): Promise<ProductTypeResponse> => {
     try {
-      const response = await api.put<ProductTypeResponse>(
-        `/manage/product-type/${id}`,
+      const response = await api.patch<ProductTypeResponse>(
+        `/products/type/${id}`,
         productType
       )
       return response
@@ -199,7 +196,7 @@ export const productService = {
   // Xóa loại sản phẩm
   deleteProductType: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/product-type/${id}`)
+      await api.delete(`/products/type/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa loại sản phẩm ID ${id}:`, error)
       throw error
@@ -210,7 +207,7 @@ export const productService = {
   getProductSubtypes: async (): Promise<ProductSubtypeListResponse> => {
     try {
       const response = await api.get<ProductSubtypeListResponse>(
-        "/manage/product-subtype"
+        "/products/subtype"
       )
       return response
     } catch (error) {
@@ -225,7 +222,7 @@ export const productService = {
   ): Promise<ProductSubtypeResponse> => {
     try {
       const response = await api.post<ProductSubtypeResponse>(
-        "/manage/product-subtype",
+        "/products/subtype",
         productSubtype
       )
       return response
@@ -241,8 +238,8 @@ export const productService = {
     productSubtype: UpdateProductSubtypeRequest
   ): Promise<ProductSubtypeResponse> => {
     try {
-      const response = await api.put<ProductSubtypeResponse>(
-        `/manage/product-subtype/${id}`,
+      const response = await api.patch<ProductSubtypeResponse>(
+        `/products/subtype/${id}`,
         productSubtype
       )
       return response
@@ -255,37 +252,74 @@ export const productService = {
   // Xóa phân loại sản phẩm
   deleteProductSubtype: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/product-subtype/${id}`)
+      await api.delete(`/products/subtype/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa phân loại sản phẩm ID ${id}:`, error)
       throw error
     }
   },
 
-  // Thêm sản phẩm vào phân loại
-  addProductToSubtype: async (
+  // Lấy danh sách phân loại sản phẩm theo loại sản phẩm
+  getProductSubtypesByType: async (typeId: number): Promise<ProductSubtypeListResponse> => {
+    try {
+      const response = await api.get<ProductSubtypeListResponse>(
+        `/products/type/${typeId}/subtypes`
+      )
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy phân loại sản phẩm theo loại ${typeId}:`, error)
+      throw error
+    }
+  },
+
+  // Lấy danh sách mối quan hệ loại phụ sản phẩm của một sản phẩm
+  getProductSubtypeRelations: async (productId: number): Promise<ProductSubtypeListResponse> => {
+    try {
+      const response = await api.get<ProductSubtypeListResponse>(
+        `/products/${productId}/subtypes`
+      )
+      return response
+    } catch (error) {
+      console.error(`Lỗi khi lấy mối quan hệ phân loại của sản phẩm ${productId}:`, error)
+      throw error
+    }
+  },
+
+  // Thêm mối quan hệ loại phụ sản phẩm cho sản phẩm
+  addProductSubtypeRelation: async (
     productId: number,
     subtypeId: number
   ): Promise<unknown> => {
     try {
       const response = await api.post(
-        `/manage/product-subtype/${subtypeId}/products/${productId}`
+        `/products/${productId}/subtype/${subtypeId}`
       )
       return response
     } catch (error) {
       console.error(
-        `Lỗi khi thêm sản phẩm ${productId} vào phân loại ${subtypeId}:`,
+        `Lỗi khi thêm mối quan hệ sản phẩm ${productId} với phân loại ${subtypeId}:`,
         error
       )
       throw error
     }
   },
-  // Xóa sản phẩm khỏi phân loại
-  removeProductFromSubtype: async (productId: number, subtypeId: number): Promise<void> => {
+
+  // Xóa mối quan hệ loại phụ sản phẩm của sản phẩm
+  removeProductSubtypeRelation: async (productId: number, subtypeId: number): Promise<void> => {
     try {
-      await api.delete(`/manage/product-subtype/${subtypeId}/products/${productId}`);
+      await api.delete(`/products/${productId}/subtype/${subtypeId}`);
     } catch (error) {
-      console.error(`Lỗi khi xóa sản phẩm ${productId} khỏi phân loại ${subtypeId}:`, error);
+      console.error(`Lỗi khi xóa mối quan hệ sản phẩm ${productId} với phân loại ${subtypeId}:`, error);
+      throw error;
+    }
+  },
+
+  // Xóa tất cả mối quan hệ loại phụ sản phẩm của sản phẩm
+  removeAllProductSubtypeRelations: async (productId: number): Promise<void> => {
+    try {
+      await api.delete(`/products/${productId}/subtypes`);
+    } catch (error) {
+      console.error(`Lỗi khi xóa tất cả mối quan hệ phân loại của sản phẩm ${productId}:`, error);
       throw error;
     }
   }

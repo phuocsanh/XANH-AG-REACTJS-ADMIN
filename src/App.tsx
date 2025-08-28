@@ -11,6 +11,8 @@ import { ProductCreate } from "./pages/Products/productCreate";
 import { ProductEdit } from "./pages/Products/productEdit";
 import ListCategory from "./pages/Categories/ListCategory";
 import ListSubCategory from "./pages/SubCategories/ListSubCategory";
+import Users from "./pages/Users";
+import Products from "./pages/Products";
 import ProtectedRoute from "./components/ProtectedRoute";
 import {
   InventoryReceiptsList,
@@ -76,6 +78,8 @@ function App() {
                 <Route path="/product/:id?" element={<ProtectedRoute><ProductCreate /></ProtectedRoute>} />
                 <Route path="/category/list" element={<ProtectedRoute><ListCategory /></ProtectedRoute>} />
                 <Route path="/sub-category/list" element={<ProtectedRoute><ListSubCategory /></ProtectedRoute>} />
+                <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+                <Route path="/products/*" element={<ProtectedRoute><Products /></ProtectedRoute>} />
                 
                 {/* Quản lý nhập hàng - Inventory Management */}
                 <Route path="/inventory/receipts" element={<ProtectedRoute><InventoryReceiptsList /></ProtectedRoute>} />
