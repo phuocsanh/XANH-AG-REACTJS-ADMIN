@@ -32,17 +32,20 @@ export const authService = {
         throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
 
-      const { access_token, user } = response.data
+      const { access_token, refresh_token, user } = response.data
 
-      if (access_token) {
+      if (access_token && refresh_token) {
         // Cập nhật trạng thái đăng nhập với token từ server
         useAppStore.setState((prev) => ({
           ...prev,
           accessToken: access_token,
-          refreshToken: "", // Server chưa có refresh token
+          refreshToken: refresh_token,
           isLogin: true,
           userInfo: user,
         }))
+
+        // Lưu refresh token vào localStorage
+        localStorage.setItem("refreshToken", refresh_token)
       }
 
       return response.data
@@ -67,22 +70,49 @@ export const authService = {
         refreshToken: "",
         isLogin: false,
       })
+      localStorage.removeItem("refreshToken")
     }
   },
 
   // Làm mới token
-  refreshToken: async (_refreshToken: string): Promise<TokenResponse> => {
-    // Server chưa có endpoint refresh token, cần implement sau
-    // const response = await api.post<ApiResponse<TokenResponse>>(
-    //   "/auth/refresh-token",
-    //   { refreshToken: _refreshToken }
-    // )
-    // if (response.data && response.data.accessToken) {
-    //   useAppStore.setState({ accessToken: response.data.accessToken })
-    // }
-    // return response.data
-    
-    throw new Error("Refresh token chưa được implement trên server")
+  refreshToken: async (): Promise<TokenResponse> => {
+    try {
+      const refreshToken =
+        useAppStore.getState().refreshToken ||
+        localStorage.getItem("refreshToken")
+
+      if (!refreshToken) {
+        throw new Error("No refresh token available")
+      }
+
+      const response = await api.postRaw<ApiResponse<TokenResponse>>(
+        "/auth/refresh",
+        { refresh_token: refreshToken }
+      )
+
+      if (
+        response.data &&
+        response.data.access_token &&
+        response.data.refresh_token
+      ) {
+        // Cập nhật token mới vào store và localStorage
+        useAppStore.setState({
+          accessToken: response.data.access_token,
+          refreshToken: response.data.refresh_token,
+        })
+
+        localStorage.setItem("refreshToken", response.data.refresh_token)
+
+        return response.data
+      }
+
+      throw new Error("Invalid refresh token response")
+    } catch (error) {
+      console.error("Lỗi refresh token:", error)
+      // Nếu refresh token thất bại, đăng xuất người dùng
+      authService.logout()
+      throw error
+    }
   },
 
   // Đăng ký người dùng mới
@@ -106,12 +136,13 @@ export const authService = {
   },
 
   // Đổi mật khẩu
-  changePassword: async (passwordData: ChangePasswordApiPayload): Promise<{ success: boolean; message: string }> => {
+  changePassword: async (
+    passwordData: ChangePasswordApiPayload
+  ): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await api.put<ApiResponse<{ success: boolean; message: string }>>(
-        "/auth/change-password",
-        passwordData
-      )
+      const response = await api.put<
+        ApiResponse<{ success: boolean; message: string }>
+      >("/auth/change-password", passwordData)
 
       // Kiểm tra response hợp lệ
       if (!response?.data) {

@@ -1,13 +1,37 @@
 import axios, { AxiosInstance, CreateAxiosDefaults } from "axios"
 import queryString from "query-string"
 import { isFile, isFileArray, isObjectLike } from "./checkType"
-import { AnyObject, ApiResponse } from "@/models/common"
-import { useAppStore } from "@/stores"
+import { AnyObject, ApiResponse } from "../models/common"
+import { useAppStore } from "../stores"
+import { authService } from "../services"
 
-export const URL = "http://localhost:8002/v1"
+export const URL = "http://localhost:3000/v1"
 export const BASE_URL = URL
 
 export const URL_UPLOAD = BASE_URL + "/media/api/uploads/"
+
+let isRefreshing = false
+let failedQueue: {
+  resolve: (value: unknown) => void
+  reject: (reason?: unknown) => void
+}[] = []
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach(
+    (prom: {
+      resolve: (value: unknown) => void
+      reject: (reason?: unknown) => void
+    }) => {
+      if (error) {
+        prom.reject(error)
+      } else {
+        prom.resolve(token)
+      }
+    }
+  )
+
+  failedQueue = []
+}
 
 const transformPostFormData = (object: AnyObject | FormData = {}) => {
   if (object instanceof FormData) {
@@ -211,7 +235,9 @@ api.instance.interceptors.response.use(
     }
     return response
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+
     if (import.meta.env.MODE === "development") {
       console.log(
         `%c__ERROR__${error.response?.config?.url}: %o`,
@@ -219,10 +245,48 @@ api.instance.interceptors.response.use(
         error.response || error
       )
     }
-    if (error.response?.status === 401) {
-      useAppStore.setState({ accessToken: undefined })
+
+    // Xử lý lỗi 401 Unauthorized
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Nếu đang refresh token, thêm promise vào queue
+        return new Promise<unknown>((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token: unknown) => {
+            originalRequest.headers["Authorization"] = "Bearer " + token
+            return api.instance(originalRequest)
+          })
+          .catch((err: unknown) => {
+            return Promise.reject(err)
+          })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        const tokenResponse = await authService.refreshToken()
+        const newAccessToken = tokenResponse.access_token
+
+        // Cập nhật header cho request gốc
+        originalRequest.headers["Authorization"] = "Bearer " + newAccessToken
+
+        // Xử lý các request trong queue
+        processQueue(null, newAccessToken)
+
+        // Gử lại request gốc
+        return api.instance(originalRequest)
+      } catch (refreshError) {
+        // Xử lý lỗi refresh token
+        processQueue(refreshError, null)
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
     }
-    throw error
+
+    return Promise.reject(error)
   }
 )
 export default api

@@ -16,7 +16,8 @@ export const loginApiPayloadSchema = z.object({
         return emailRegex.test(value) || usernameRegex.test(value)
       },
       {
-        message: "Tài khoản phải là email hợp lệ hoặc username (3-20 ký tự, chỉ chứa chữ, số và _)"
+        message:
+          "Tài khoản phải là email hợp lệ hoặc username (3-20 ký tự, chỉ chứa chữ, số và _)",
       }
     ),
   userPassword: z
@@ -24,7 +25,7 @@ export const loginApiPayloadSchema = z.object({
     .min(1, "Mật khẩu không được để trống")
     .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
     .max(50, "Mật khẩu không được quá 50 ký tự")
-    .trim()
+    .trim(),
 })
 
 // Type được infer từ schema - theo pattern của example
@@ -44,7 +45,8 @@ export const registerApiPayloadSchema = z.object({
         return emailRegex.test(value) || usernameRegex.test(value)
       },
       {
-        message: "Tài khoản phải là email hợp lệ hoặc username (3-20 ký tự, chỉ chứa chữ, số và _)"
+        message:
+          "Tài khoản phải là email hợp lệ hoặc username (3-20 ký tự, chỉ chứa chữ, số và _)",
       }
     ),
   userPassword: z
@@ -55,30 +57,31 @@ export const registerApiPayloadSchema = z.object({
     .trim(),
   userSalt: z.string().optional(), // Salt sẽ được tạo tự động ở server
   userEmail: z.string().email("Email không hợp lệ").optional(),
-  userState: z.number().optional()
+  userState: z.number().optional(),
 })
 
 // Schema cho đổi mật khẩu
 export const changePasswordApiPayloadSchema = z.object({
-  oldPassword: z
-    .string()
-    .min(1, "Mật khẩu cũ không được để trống")
-    .trim(),
+  oldPassword: z.string().min(1, "Mật khẩu cũ không được để trống").trim(),
   newPassword: z
     .string()
     .min(1, "Mật khẩu mới không được để trống")
     .min(6, "Mật khẩu mới phải có ít nhất 6 ký tự")
     .max(50, "Mật khẩu mới không được quá 50 ký tự")
-    .trim()
+    .trim(),
 })
 
 // Types được infer từ schema
 export type RegisterApiPayload = z.infer<typeof registerApiPayloadSchema>
-export type ChangePasswordApiPayload = z.infer<typeof changePasswordApiPayloadSchema>
+export type ChangePasswordApiPayload = z.infer<
+  typeof changePasswordApiPayloadSchema
+>
 
 export interface TokenResponse {
   accessToken: string
   refreshToken: string
+  access_token: string
+  refresh_token: string
   expiresIn: number
   userId: number
 }
@@ -92,6 +95,7 @@ export interface UserResponse {
 // Response từ API login thành công từ server NestJS
 export interface LoginResponse {
   access_token: string
+  refresh_token: string
   user: UserResponse
 }
 
