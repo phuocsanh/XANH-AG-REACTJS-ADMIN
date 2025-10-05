@@ -30,7 +30,7 @@ export const uploadService = {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await api.post<UploadResponse>('/upload/image', formData as unknown as Record<string, unknown>, {
+      const response = await api.post<UploadResponse>('/upload/images', formData as unknown as Record<string, unknown>, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -53,7 +53,7 @@ export const uploadService = {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await api.post<UploadResponse>('/upload/file', formData as unknown as Record<string, unknown>, {
+      const response = await api.post<UploadResponse>('/upload/files', formData as unknown as Record<string, unknown>, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -76,7 +76,7 @@ export const uploadService = {
    */
   deleteFile: async (folder: string, filename: string): Promise<{ data: DeleteFileResponse }> => {
     try {
-      const response = await api.delete<DeleteFileResponse>(`/upload/${folder}/${filename}`)
+      const response = await api.delete<DeleteFileResponse>(`/upload/files/${folder}/${filename}`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi xóa file ${folder}/${filename}:`, error)
@@ -92,7 +92,7 @@ export const uploadService = {
   markFileAsUsed: async (publicId: string): Promise<{ data: MarkFileUsedResponse }> => {
     try {
       const requestData: MarkFileUsedRequest = { publicId }
-      const response = await api.patch<MarkFileUsedResponse>('/upload/mark-used', requestData as unknown as Record<string, unknown>)
+      const response = await api.patch<MarkFileUsedResponse>('/upload/files/mark-used', requestData as unknown as Record<string, unknown>)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi đánh dấu file ${publicId} đã sử dụng:`, error)
@@ -106,7 +106,7 @@ export const uploadService = {
    */
   cleanupUnusedFiles: async (): Promise<{ data: CleanupUnusedFilesResponse }> => {
     try {
-      const response = await api.post<CleanupUnusedFilesResponse>('/upload/cleanup')
+      const response = await api.post<CleanupUnusedFilesResponse>('/upload/files/cleanup')
       return { data: response }
     } catch (error) {
       console.error('Lỗi khi dọn dẹp file không sử dụng:', error)
@@ -123,7 +123,7 @@ export const uploadService = {
   getUploadStats: async (): Promise<{ data: UploadStats }> => {
     try {
       // Giả lập API endpoint cho thống kê (có thể cần thêm vào backend)
-      const response = await api.get<UploadStats>('/upload/stats')
+      const response = await api.get<UploadStats>('/upload/files/stats')
       return { data: response }
     } catch (error) {
       console.error('Lỗi khi lấy thống kê upload:', error)
@@ -149,7 +149,7 @@ export const uploadService = {
   getFileList: async (params?: FileSearchParams): Promise<{ data: FileListResponse }> => {
     try {
       // Giả lập API endpoint cho danh sách file (có thể cần thêm vào backend)
-      const response = await api.get<FileListResponse>('/upload/files', { params })
+      const response = await api.get<FileListResponse>('/upload/files/list', { params })
       return { data: response }
     } catch (error) {
       console.error('Lỗi khi lấy danh sách file:', error)
@@ -173,7 +173,7 @@ export const uploadService = {
   getFileDetails: async (fileId: string): Promise<{ data: FileDetails }> => {
     try {
       // Giả lập API endpoint cho chi tiết file (có thể cần thêm vào backend)
-      const response = await api.get<FileDetails>(`/upload/files/${fileId}`)
+      const response = await api.get<FileDetails>(`/upload/files/details/${fileId}`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi lấy chi tiết file ${fileId}:`, error)

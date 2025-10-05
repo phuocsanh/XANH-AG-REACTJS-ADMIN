@@ -1,5 +1,4 @@
 import api from "@/utils/api"
-import { ApiResponse } from "@/models/auth.model"
 
 // Interface cho User từ server
 export interface User {
@@ -44,8 +43,9 @@ export const userService = {
    * @returns Danh sách người dùng
    */
   getAll: async (): Promise<User[]> => {
-    const response = await api.get<ApiResponse<User[]>>("/users")
-    return response.data
+    const apiData = await api.get<User[]>("/users")
+    console.log("Raw API response for users:", apiData)
+    return apiData
   },
 
   /**
@@ -54,8 +54,9 @@ export const userService = {
    * @returns Thông tin người dùng
    */
   getById: async (id: number): Promise<User> => {
-    const response = await api.get<ApiResponse<User>>(`/users/${id}`)
-    return response.data
+    const apiData = await api.get<User>(`/users/${id}`)
+    console.log("Raw API response for user by id:", apiData)
+    return apiData
   },
 
   /**
@@ -63,8 +64,9 @@ export const userService = {
    * @returns Thông tin profile người dùng
    */
   getProfile: async (): Promise<User> => {
-    const response = await api.get<ApiResponse<User>>("/users/profile")
-    return response.data
+    const apiData = await api.get<User>("/users/profile")
+    console.log("Raw API response for user profile:", apiData)
+    return apiData
   },
 
   /**
@@ -73,8 +75,9 @@ export const userService = {
    * @returns Thông tin người dùng đã tạo
    */
   create: async (userData: CreateUserDto): Promise<User> => {
-    const response = await api.post<ApiResponse<User>>("/users", userData)
-    return response.data
+    const apiData = await api.post<User>("/users", userData)
+    console.log("Raw API response for create user:", apiData)
+    return apiData
   },
 
   /**
@@ -84,8 +87,9 @@ export const userService = {
    * @returns Thông tin người dùng đã cập nhật
    */
   update: async (id: number, userData: UpdateUserDto): Promise<User> => {
-    const response = await api.patch<ApiResponse<User>>(`/users/${id}`, userData)
-    return response.data
+    const apiData = await api.patch<User>(`/users/${id}`, userData)
+    console.log("Raw API response for update user:", apiData)
+    return apiData
   },
 
   /**
@@ -94,8 +98,9 @@ export const userService = {
    * @returns Kết quả xóa
    */
   delete: async (id: number): Promise<{ message: string }> => {
-    const response = await api.delete<ApiResponse<{ message: string }>>(`/users/${id}`)
-    return response.data
+    const apiData = await api.delete<{ message: string }>(`/users/${id}`)
+    console.log("Raw API response for delete user:", apiData)
+    return apiData
   },
 
   /**
@@ -104,8 +109,9 @@ export const userService = {
    * @returns Kết quả thay đổi mật khẩu
    */
   changePassword: async (changePasswordData: ChangePasswordDto): Promise<{ success: boolean; message: string }> => {
-    const response = await api.put<ApiResponse<{ success: boolean; message: string }>>("/auth/change-password", changePasswordData)
-    return response.data
+    const apiData = await api.patch<{ success: boolean; message: string }>("/users/change-password", changePasswordData)
+    console.log("Raw API response for change password:", apiData)
+    return apiData
   },
 }
 

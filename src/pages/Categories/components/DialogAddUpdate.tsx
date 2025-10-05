@@ -1,154 +1,218 @@
-import { Button, TextField } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import React from "react";
-import { RiCloseLargeLine } from "react-icons/ri";
-import { IoCloseCircleSharp } from "react-icons/io5";
-import DialogCustom from "@/components/Dialog";
-import { useForm } from "react-hook-form";
-import formConfig, { FormField } from "./formConfig";
-const VisuallyHiddenInput = styled("input")({
-  clip: "rect(0 0 0 0)",
-  clipPath: "inset(50%)",
-  height: 1,
-  overflow: "hidden",
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  whiteSpace: "nowrap",
-  width: 1,
-});
+import { Button, TextField, Switch, FormControlLabel } from "@mui/material"
+import { useEffect } from "react"
+import { IoCloseCircleSharp } from "react-icons/io5"
+import DialogCustom from "@/components/Dialog"
+import { useForm } from "react-hook-form"
+import formConfig, { FormField } from "./formConfig"
+import {
+  useCreateProductTypeMutation,
+  useUpdateProductTypeMutation,
+} from "../../../queries/use-product-type"
+import { toast } from "react-toastify"
+import { ProductType } from "@/models/product-type.model"
+import { Status } from "@/models/common"
 
 function DialogAddUpdate({
-  id,
+  editingRow,
   openDialog,
   setOpenDialog,
 }: {
-  id: number | null;
-  openDialog: boolean;
-  setOpenDialog: (is: boolean) => void;
+  editingRow: ProductType | null
+  openDialog: boolean
+  setOpenDialog: (is: boolean) => void
 }) {
   const {
     handleSubmit,
     setValue,
     watch,
-
+    reset,
     formState: { errors },
-  } = useForm<FormField>(formConfig);
-  const imagePreview = watch("picture");
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setValue("picture", imageUrl);
+  } = useForm<FormField>(formConfig)
+
+  // Sử dụng React Query mutations
+  const createProductTypeMutation = useCreateProductTypeMutation()
+  const updateProductTypeMutation = useUpdateProductTypeMutation()
+
+  // Theo dõi các giá trị form
+  const typeName = watch("typeName")
+  const typeCode = watch("typeCode")
+  const description = watch("description")
+  const status = watch("status")
+
+  // Load dữ liệu khi edit
+  useEffect(() => {
+    if (editingRow) {
+      const data = editingRow
+      setValue("typeName", data.typeName)
+      setValue("typeCode", data.typeCode || "")
+      setValue("description", data.description || "")
+      setValue("status", data.status)
+    } else if (!editingRow) {
+      // Reset form khi thêm mới
+      console.log("Resetting form for new product type")
+      reset({
+        typeName: "",
+        typeCode: "",
+        description: "",
+        status: Status.ACTIVE,
+      })
     }
-  };
-  const onSubmit = () => {};
+  }, [editingRow, reset, setValue])
+
+  // Xử lý submit form
+  const onSubmit = async (data: FormField) => {
+    try {
+      if (editingRow?.id) {
+        // Cập nhật - toast sẽ được hiển thị trong mutation hook
+        await updateProductTypeMutation.mutateAsync({
+          id: editingRow.id,
+          productType: {
+            typeName: data.typeName,
+            typeCode: data.typeCode,
+            description: data.description,
+            status: data.status,
+          },
+        })
+      } else {
+        // Thêm mới - toast sẽ được hiển thị trong mutation hook
+        await createProductTypeMutation.mutateAsync({
+          typeName: data.typeName,
+          typeCode: data.typeCode,
+          description: data.description,
+          status: data.status,
+        })
+      }
+      setOpenDialog(false)
+    } catch (error) {
+      console.error("Lỗi khi lưu loại sản phẩm:", error)
+      // Toast error vẫn giữ lại vì mutation hook không handle error toast
+      toast.error("Có lỗi xảy ra khi lưu loại sản phẩm!")
+    }
+  }
+
+  const isLoading =
+    createProductTypeMutation.isPending || updateProductTypeMutation.isPending
+
   return (
     <DialogCustom open={openDialog} setOpen={setOpenDialog}>
-      <div className=" relative w-[600px] min-h-min[400px] max-h-max-[800px] px-10 py-4 flex flex-col">
+      <div className='relative w-[600px] min-h-[400px] max-h-[800px] px-10 py-4 flex flex-col'>
         <IoCloseCircleSharp
-          className="absolute right-4 "
+          className='absolute right-4 cursor-pointer'
           size={30}
           onClick={() => setOpenDialog(false)}
         />
-        <div className="relative flex items-center justify-center h-[50px]">
-          <span className="font-bold text-lg ">
-            {id ? "Cập nhật" : "Thêm"} loại sản phẩm
+
+        <div className='relative flex items-center justify-center h-[50px]'>
+          <span className='font-bold text-lg'>
+            {editingRow?.id ? "Cập nhật" : "Thêm"} loại sản phẩm
           </span>
         </div>
 
-        <div className="mt-3">
-          <h4 className="font-semibold mb-2">Tên*</h4>
-          <TextField
-            variant="outlined"
-            fullWidth
-            sx={{
-              "& .MuiInputBase-input": {
-                fontSize: 15,
-                height: 25,
-                paddingX: 2,
-                paddingY: 1,
-              },
-            }}
-            error={!!errors.name?.message || false}
-            onChange={(e) => setValue("name", e.target.value)}
-          />
-          {errors.name && (
-            <p className="mt-1 text-red-600">{errors.name.message}</p>
-          )}
-        </div>
-        <div className="mt-3">
-          <h4 className="font-semibold mb-2">Tiêu đề*</h4>
-          <TextField
-            variant="outlined"
-            fullWidth
-            sx={{
-              "& .MuiInputBase-input": {
-                fontSize: 15,
-                height: 25,
-                paddingX: 2,
-                paddingY: 1,
-              },
-            }}
-            error={!!errors.title?.message || false}
-            onChange={(e) => setValue("title", e.target.value.toUpperCase())}
-          />
-          {errors.title && (
-            <p className="mt-1 text-red-600">{errors.title.message}</p>
-          )}
-        </div>
-
-        {imagePreview && (
-          <div className="mt-3">
-            <h4 className="font-semibold mb-2">Hình ảnh đã chọn:</h4>
-            <div className="relative w-[200px] h-[200px]">
-              <div
-                onClick={() => setValue("picture", "")}
-                className="p-1 absolute right-1 top-1 self-start rounded-full  bg-gray-500 bg-opacity-75"
-              >
-                <RiCloseLargeLine color="white" size={13} />
-              </div>
-
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className=" w-[200px] h-[200px] border rounded"
-              />
-            </div>
+        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col'>
+          {/* Tên loại sản phẩm */}
+          <div className='mt-3'>
+            <h4 className='font-semibold mb-2'>Tên loại sản phẩm *</h4>
+            <TextField
+              variant='outlined'
+              fullWidth
+              value={typeName || ""}
+              sx={{
+                "& .MuiInputBase-input": {
+                  fontSize: 15,
+                  height: 25,
+                  paddingX: 2,
+                  paddingY: 1,
+                },
+              }}
+              error={!!errors.typeName?.message}
+              onChange={(e) => setValue("typeName", e.target.value)}
+            />
+            {errors.typeName && (
+              <p className='mt-1 text-red-600'>{errors.typeName.message}</p>
+            )}
           </div>
-        )}
-        <Button
-          className="mt-4 self-start"
-          role={undefined}
-          variant="contained"
-          component="label"
-          tabIndex={-1}
-          startIcon={<CloudUploadIcon />}
-        >
-          Chọn hình ảnh *
-          <VisuallyHiddenInput
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-          />
-        </Button>
-        {errors.picture && (
-          <p className="mt-1 text-red-600">{errors.picture.message}</p>
-        )}
 
-        <Button
-          onClick={handleSubmit(onSubmit)}
-          className="mt-4"
-          component="label"
-          role={undefined}
-          variant="contained"
-        >
-          <span>{id ? "Cập nhật" : "Thêm"}</span>
-        </Button>
+          {/* Mã loại sản phẩm */}
+          <div className='mt-3'>
+            <h4 className='font-semibold mb-2'>Mã loại sản phẩm *</h4>
+            <TextField
+              variant='outlined'
+              fullWidth
+              value={typeCode || ""}
+              sx={{
+                "& .MuiInputBase-input": {
+                  fontSize: 15,
+                  height: 25,
+                  paddingX: 2,
+                  paddingY: 1,
+                },
+              }}
+              error={!!errors.typeCode?.message}
+              onChange={(e) =>
+                setValue("typeCode", e.target.value.toUpperCase())
+              }
+            />
+            {errors.typeCode && (
+              <p className='mt-1 text-red-600'>{errors.typeCode.message}</p>
+            )}
+          </div>
+
+          {/* Mô tả */}
+          <div className='mt-3'>
+            <h4 className='font-semibold mb-2'>Mô tả</h4>
+            <TextField
+              variant='outlined'
+              fullWidth
+              multiline
+              rows={3}
+              value={description || ""}
+              sx={{
+                "& .MuiInputBase-input": {
+                  fontSize: 15,
+                  paddingX: 2,
+                  paddingY: 1,
+                },
+              }}
+              error={!!errors.description?.message}
+              onChange={(e) => setValue("description", e.target.value)}
+            />
+            {errors.description && (
+              <p className='mt-1 text-red-600'>{errors.description.message}</p>
+            )}
+          </div>
+
+          {/* Trạng thái hoạt động */}
+          <div className='mt-3'>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={status === Status.ACTIVE}
+                  onChange={(e) => setValue("status", e.target.checked ? Status.ACTIVE : Status.INACTIVE)}
+                />
+              }
+              label='Hoạt động'
+            />
+          </div>
+
+          {/* Nút submit */}
+          <Button
+            type='submit'
+            className='mt-4'
+            variant='contained'
+            disabled={isLoading}
+          >
+            <span>
+              {isLoading
+                ? "Đang xử lý..."
+                : editingRow?.id
+                ? "Cập nhật"
+                : "Thêm"}
+            </span>
+          </Button>
+        </form>
       </div>
     </DialogCustom>
-  );
+  )
 }
 
-export default DialogAddUpdate;
+export default DialogAddUpdate

@@ -4,6 +4,14 @@ enum Role {
 }
 export const RoleValues = [Role.ADMIN, Role.CUSTOMMER] as const;
 
+// Enum Status chung để sử dụng cho tất cả các bảng
+export enum Status {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  ARCHIVED = 'archived'
+}
+export const StatusValues = [Status.ACTIVE, Status.INACTIVE, Status.ARCHIVED] as const;
+
 export enum API_CODE {
   SUCCESS = 200,
   FAILURE = 400,

@@ -5,10 +5,11 @@ export enum ProductStatus {
   ACTIVE = 1,
   DRAFT = 2,
   OUT_OF_STOCK = 3,
-  DISCONTINUED = 4
+  DISCONTINUED = 4,
 }
 
 import { ApiResponse } from "./auth.model"
+import { ProductType } from "./product-type.model"
 
 // Interface cho dữ liệu sản phẩm từ API
 export interface ProductApiResponse {
@@ -43,8 +44,8 @@ export interface Product {
   price: string
   type: number
   productType: {
-    id: number;
-    name: string;
+    id: number
+    name: string
   }
   thumb: string
   pictures: string[]
@@ -93,11 +94,11 @@ export function mapApiResponseToProduct(
   apiProduct: ProductApiResponse
 ): Product {
   // Xử lý productType: từ API là number, cần chuyển sang đối tượng có id và name
-  const productTypeId = apiProduct.productType;
+  const productTypeId = apiProduct.productType
   const productType = {
     id: productTypeId,
-    name: `Loại ${productTypeId}` // Tạm thời đặt tên mặc định, có thể cập nhật sau khi lấy dữ liệu từ API
-  };
+    name: `Loại ${productTypeId}`, // Tạm thời đặt tên mặc định, có thể cập nhật sau khi lấy dữ liệu từ API
+  }
 
   return {
     id: apiProduct.id,
@@ -108,11 +109,11 @@ export function mapApiResponseToProduct(
     thumb: apiProduct.productThumb,
     pictures: apiProduct.productPictures || [],
     videos: apiProduct.productVideos || [],
-    description: apiProduct.productDescription || '',
+    description: apiProduct.productDescription || "",
     quantity: apiProduct.productQuantity || 0,
     subTypes: apiProduct.subProductType || [],
     subProductType: apiProduct.subProductType || [], // Giữ nguyên giá trị từ API
-    discount: apiProduct.discount || '0',
+    discount: apiProduct.discount || "0",
     attributes: apiProduct.productAttributes || {},
     isDraft: apiProduct.isDraft,
     isPublished: apiProduct.isPublished,
@@ -127,7 +128,7 @@ export function mapApiResponseToProduct(
     productVideos: apiProduct.productVideos,
     productDescription: apiProduct.productDescription,
     productQuantity: apiProduct.productQuantity,
-    productDiscountedPrice: apiProduct.productDiscountedPrice
+    productDiscountedPrice: apiProduct.productDiscountedPrice,
   }
 }
 
@@ -174,15 +175,6 @@ export interface ProductListResponse
 
 export interface ProductResponse extends ApiResponse<Product> {
   // Additional product response properties can be added here if needed
-}
-
-// Product Type interfaces
-export interface ProductType {
-  id: number
-  name: string
-  description?: string
-  createdAt: string
-  updatedAt: string
 }
 
 export interface CreateProductTypeRequest {

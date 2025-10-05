@@ -2,8 +2,6 @@ import {
   InventoryReceipt,
   InventoryReceiptItem,
   InventoryHistory,
-  InventoryReceiptListResponse,
-  InventoryHistoryListResponse,
   CreateInventoryReceiptRequest,
   UpdateInventoryReceiptRequest,
   UpdateInventoryReceiptItemRequest,
@@ -15,6 +13,7 @@ import {
   mapApiResponseToInventoryHistory,
   InventoryReceiptApiResponse,
   InventoryReceiptItemApiResponse,
+  InventoryHistoryApiResponse,
   // Thêm các interface mới từ backend NestJS
   InventoryBatch,
   InventoryTransaction,
@@ -41,17 +40,19 @@ export const inventoryService = {
     params?: InventoryReceiptListParams
   ): Promise<{ data: { items: InventoryReceipt[]; total: number }; code: number; message: string }> => {
     try {
-      const response = await api.get<InventoryReceiptListResponse>("/manage/inventory/receipts", {
+      const apiData = await api.get<InventoryReceiptApiResponse[]>("/inventory/receipts", {
         params
       })
       
+      console.log("Raw API response for inventory receipts:", apiData)
+      
       // Map API response to InventoryReceipt model
-      const mappedReceipts = response.items.map(mapApiResponseToInventoryReceipt)
+      const mappedReceipts = apiData.map(mapApiResponseToInventoryReceipt)
       
       return {
         data: {
           items: mappedReceipts,
-          total: response.pagination?.total || 0
+          total: apiData.length
         },
         code: 200,
         message: "Lấy danh sách phiếu nhập hàng thành công"
@@ -67,7 +68,7 @@ export const inventoryService = {
    */
   getInventoryReceiptById: async (id: number): Promise<InventoryReceipt> => {
     try {
-      const response = await api.get<InventoryReceiptApiResponse>(`/manage/inventory/receipt/${id}`)
+      const response = await api.get<InventoryReceiptApiResponse>(`/inventory/receipts/${id}`)
       return mapApiResponseToInventoryReceipt(response)
     } catch (error) {
       console.error(`Lỗi khi lấy phiếu nhập hàng ID ${id}:`, error)
@@ -80,7 +81,7 @@ export const inventoryService = {
    */
   getInventoryReceiptByCode: async (code: string): Promise<InventoryReceipt> => {
     try {
-      const response = await api.get<InventoryReceiptApiResponse>(`/manage/inventory/receipt/code/${code}`)
+      const response = await api.get<InventoryReceiptApiResponse>(`/inventory/receipts/code/${code}`)
       return mapApiResponseToInventoryReceipt(response)
     } catch (error) {
       console.error(`Lỗi khi lấy phiếu nhập hàng mã ${code}:`, error)
@@ -96,7 +97,7 @@ export const inventoryService = {
   ): Promise<InventoryReceipt> => {
     try {
       const response = await api.post<InventoryReceiptApiResponse>(
-        "/manage/inventory/receipt",
+        "/inventory/receipts",
         receipt
       )
       return mapApiResponseToInventoryReceipt(response)
@@ -114,8 +115,8 @@ export const inventoryService = {
     receipt: UpdateInventoryReceiptRequest
   ): Promise<InventoryReceipt> => {
     try {
-      const response = await api.put<InventoryReceiptApiResponse>(
-        `/manage/inventory/receipt/${id}`,
+      const response = await api.patch<InventoryReceiptApiResponse>(
+        `/inventory/receipts/${id}`,
         receipt
       )
       return mapApiResponseToInventoryReceipt(response)
@@ -130,7 +131,7 @@ export const inventoryService = {
    */
   deleteInventoryReceipt: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/inventory/receipt/${id}`)
+      await api.delete(`/inventory/receipts/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa phiếu nhập hàng ID ${id}:`, error)
       throw error
@@ -144,8 +145,8 @@ export const inventoryService = {
    */
   approveInventoryReceipt: async (id: number): Promise<InventoryReceipt> => {
     try {
-      const response = await api.post<InventoryReceiptApiResponse>(
-        `/manage/inventory/receipt/${id}/approve`
+      const response = await api.patch<InventoryReceiptApiResponse>(
+        `/inventory/receipts/${id}/approve`
       )
       return mapApiResponseToInventoryReceipt(response)
     } catch (error) {
@@ -159,8 +160,8 @@ export const inventoryService = {
    */
   completeInventoryReceipt: async (id: number): Promise<InventoryReceipt> => {
     try {
-      const response = await api.post<InventoryReceiptApiResponse>(
-        `/manage/inventory/receipt/${id}/complete`
+      const response = await api.patch<InventoryReceiptApiResponse>(
+        `/inventory/receipts/${id}/complete`
       )
       return mapApiResponseToInventoryReceipt(response)
     } catch (error) {
@@ -174,8 +175,8 @@ export const inventoryService = {
    */
   cancelInventoryReceipt: async (id: number): Promise<InventoryReceipt> => {
     try {
-      const response = await api.post<InventoryReceiptApiResponse>(
-        `/manage/inventory/receipt/${id}/cancel`
+      const response = await api.patch<InventoryReceiptApiResponse>(
+        `/inventory/receipts/${id}/cancel`
       )
       return mapApiResponseToInventoryReceipt(response)
     } catch (error) {
@@ -192,7 +193,7 @@ export const inventoryService = {
   getInventoryReceiptItems: async (receiptId: number): Promise<InventoryReceiptItem[]> => {
     try {
       const response = await api.get<InventoryReceiptItemApiResponse[]>(
-        `/manage/inventory/receipt/${receiptId}/items`
+        `/inventory/receipts/${receiptId}/items`
       )
       return response.map(mapApiResponseToInventoryReceiptItem)
     } catch (error) {
@@ -209,8 +210,8 @@ export const inventoryService = {
     item: UpdateInventoryReceiptItemRequest
   ): Promise<InventoryReceiptItem> => {
     try {
-      const response = await api.put<InventoryReceiptItemApiResponse>(
-        `/manage/inventory/receipt/item/${id}`,
+      const response = await api.patch<InventoryReceiptItemApiResponse>(
+        `/inventory/receipts/items/${id}`,
         item as unknown as Record<string, unknown>
       )
       return mapApiResponseToInventoryReceiptItem(response)
@@ -225,7 +226,7 @@ export const inventoryService = {
    */
   deleteInventoryReceiptItem: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/manage/inventory/receipt/item/${id}`)
+      await api.delete(`/inventory/receipts/items/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa chi tiết phiếu nhập ID ${id}:`, error)
       throw error
@@ -239,7 +240,7 @@ export const inventoryService = {
    */
   processStockIn: async (stockInData: StockInRequest): Promise<void> => {
     try {
-      await api.post("/manage/inventory/stock-in", stockInData as unknown as Record<string, unknown>)
+      await api.post("/inventory/stock-in", stockInData as unknown as Record<string, unknown>)
     } catch (error) {
       console.error("Lỗi khi xử lý nhập kho:", error)
       throw error
@@ -251,7 +252,7 @@ export const inventoryService = {
    */
   processStockOut: async (stockOutData: StockOutRequest): Promise<void> => {
     try {
-      await api.post("/manage/inventory/stock-out", stockOutData as unknown as Record<string, unknown>)
+      await api.post("/inventory/stock-out", stockOutData as unknown as Record<string, unknown>)
     } catch (error) {
       console.error("Lỗi khi xử lý xuất kho:", error)
       throw error
@@ -267,17 +268,19 @@ export const inventoryService = {
     params?: InventoryHistoryListParams
   ): Promise<{ data: { items: InventoryHistory[]; total: number }; code: number; message: string }> => {
     try {
-      const response = await api.get<InventoryHistoryListResponse>("/manage/inventory/product-history", {
+      const apiData = await api.get<InventoryHistoryApiResponse[]>("/inventory/product-history", {
         params
       })
       
+      console.log("Raw API response for inventory history:", apiData)
+      
       // Map API response to InventoryHistory model
-      const mappedHistory = response.items.map(mapApiResponseToInventoryHistory)
+      const mappedHistory = apiData.map(mapApiResponseToInventoryHistory)
       
       return {
         data: {
           items: mappedHistory,
-          total: response.pagination?.total || 0
+          total: apiData.length
         },
         code: 200,
         message: "Lấy lịch sử tồn kho thành công"
@@ -296,18 +299,20 @@ export const inventoryService = {
     params?: Omit<InventoryHistoryListParams, 'productId'>
   ): Promise<{ data: { items: InventoryHistory[]; total: number }; code: number; message: string }> => {
     try {
-      const response = await api.get<InventoryHistoryListResponse>(
-        `/manage/inventory/product-history/${productId}`,
+      const apiData = await api.get<InventoryHistoryApiResponse[]>(
+        `/inventory/product-history/${productId}`,
         { params }
       )
       
+      console.log("Raw API response for inventory history by product:", apiData)
+      
       // Map API response to InventoryHistory model
-      const mappedHistory = response.items.map(mapApiResponseToInventoryHistory)
+      const mappedHistory = apiData.map(mapApiResponseToInventoryHistory)
       
       return {
         data: {
           items: mappedHistory,
-          total: response.pagination?.total || 0
+          total: apiData.length
         },
         code: 200,
         message: "Lấy lịch sử tồn kho theo sản phẩm thành công"
@@ -331,17 +336,16 @@ export const inventoryService = {
   }> => {
     try {
       // Gọi API lấy danh sách phiếu nhập để tính toán thống kê
-      const receiptsResponse = await api.get<InventoryReceiptListResponse>("/manage/inventory/receipts")
+      const receipts = await api.get<InventoryReceiptApiResponse[]>("/inventory/receipts")
       
-      const receipts = receiptsResponse.items
       const totalReceipts = receipts.length
-      const pendingReceipts = receipts.filter(r => r.status === 1).length // PENDING
-      const completedReceipts = receipts.filter(r => r.status === 3).length // COMPLETED
+      const pendingReceipts = receipts.filter((r: InventoryReceiptApiResponse) => r.status === 1).length // PENDING
+      const completedReceipts = receipts.filter((r: InventoryReceiptApiResponse) => r.status === 3).length // COMPLETED
       
       // Tính tổng giá trị (chỉ các phiếu đã hoàn thành)
       const totalValue = receipts
-        .filter(r => r.status === 3)
-        .reduce((sum, r) => sum + parseFloat(r.totalAmount || '0'), 0)
+        .filter((r: InventoryReceiptApiResponse) => r.status === 3)
+        .reduce((sum: number, r: InventoryReceiptApiResponse) => sum + parseFloat(r.totalAmount || '0'), 0)
         .toString()
 
       return {
@@ -483,7 +487,7 @@ export const inventoryService = {
    */
   getInventorySummary: async (productId: number): Promise<InventorySummary> => {
     try {
-      const response = await api.get<InventorySummary>(`/inventory/summary/product/${productId}`)
+      const response = await api.get<InventorySummary>(`/inventory/reports/summary/${productId}`)
       return response
     } catch (error) {
       console.error(`Lỗi khi lấy tổng hợp tồn kho sản phẩm ID ${productId}:`, error)
@@ -496,8 +500,9 @@ export const inventoryService = {
    */
   getInventoryValueReport: async (productIds?: number[]): Promise<InventoryValueReport[]> => {
     try {
-      const params = productIds ? `?productIds=${productIds.join(',')}` : ''
-      const response = await api.get<InventoryValueReport[]>(`/inventory/value-report${params}`)
+      const response = await api.get<InventoryValueReport[]>("/inventory/reports/value", {
+        params: productIds ? { productIds } : undefined
+      })
       return response
     } catch (error) {
       console.error("Lỗi khi lấy báo cáo giá trị tồn kho:", error)
@@ -510,7 +515,9 @@ export const inventoryService = {
    */
   getLowStockAlert: async (threshold: number = 10): Promise<LowStockAlert[]> => {
     try {
-      const response = await api.get<LowStockAlert[]>(`/inventory/low-stock-alert?threshold=${threshold}`)
+      const response = await api.get<LowStockAlert[]>("/inventory/reports/low-stock", {
+        params: { threshold }
+      })
       return response
     } catch (error) {
       console.error("Lỗi khi lấy cảnh báo tồn kho thấp:", error)
@@ -523,7 +530,9 @@ export const inventoryService = {
    */
   getExpiringBatchesAlert: async (days: number = 30): Promise<ExpiringBatchAlert[]> => {
     try {
-      const response = await api.get<ExpiringBatchAlert[]>(`/inventory/expiring-batches-alert?days=${days}`)
+      const response = await api.get<ExpiringBatchAlert[]>("/inventory/reports/expiring-batches", {
+        params: { days }
+      })
       return response
     } catch (error) {
       console.error("Lỗi khi lấy cảnh báo lô hàng sắp hết hạn:", error)
@@ -536,7 +545,9 @@ export const inventoryService = {
    */
   calculateFifoCost: async (productId: number, quantity: number): Promise<FifoCalculation> => {
     try {
-      const response = await api.get<FifoCalculation>(`/inventory/fifo-cost/product/${productId}?quantity=${quantity}`)
+      const response = await api.get<FifoCalculation>("/inventory/reports/fifo", {
+        params: { productId, quantity }
+      })
       return response
     } catch (error) {
       console.error(`Lỗi khi tính giá vốn FIFO sản phẩm ID ${productId}:`, error)
@@ -549,8 +560,9 @@ export const inventoryService = {
    */
   getBatchTrackingInfo: async (productId?: number): Promise<BatchTrackingInfo[]> => {
     try {
-      const params = productId ? `?productId=${productId}` : ''
-      const response = await api.get<BatchTrackingInfo[]>(`/inventory/batch-tracking${params}`)
+      const response = await api.get<BatchTrackingInfo[]>("/inventory/reports/batch-tracking", {
+        params: productId ? { productId } : undefined
+      })
       return response
     } catch (error) {
       console.error("Lỗi khi lấy thông tin batch tracking:", error)
@@ -563,7 +575,7 @@ export const inventoryService = {
    */
   getBatchTrackingByProduct: async (productId: number): Promise<BatchTrackingInfo> => {
     try {
-      const response = await api.get<BatchTrackingInfo>(`/inventory/batch-tracking/product/${productId}`)
+      const response = await api.get<BatchTrackingInfo>(`/inventory/reports/batch-tracking/${productId}`)
       return response
     } catch (error) {
       console.error(`Lỗi khi lấy batch tracking sản phẩm ID ${productId}:`, error)

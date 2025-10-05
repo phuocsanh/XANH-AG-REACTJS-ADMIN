@@ -1,6 +1,5 @@
 import api from "@/utils/api"
 import {
-  ApiResponse,
   LoginResponse,
   TokenResponse,
   LoginApiPayload,
@@ -14,41 +13,50 @@ import { useAppStore } from "@/stores"
 export const authService = {
   /**
    * Đăng nhập người dùng
-   * @param credentials Thông tin đăng nhập (snake_case format)
+   * @param credentials Thông tin đăng nhập (userAccount và userPassword)
    * @returns Thông tin đăng nhập thành công
    * @throws Lỗi nếu đăng nhập thất bại
    */
   login: async (credentials: LoginApiPayload): Promise<LoginResponse> => {
     try {
-      // Validate dữ liệu đầu vào với type safety - theo pattern của example
-
-      const response = await api.postRaw<ApiResponse<LoginResponse>>(
+      // Gửi request đến endpoint /auth/login với userAccount và userPassword
+      const response = await api.postRaw<LoginResponse>(
         "/auth/login",
-        credentials
+        {
+          userAccount: credentials.userAccount,
+          userPassword: credentials.userPassword
+        }
       )
 
+      console.log("Raw response từ API:", response)
+
       // Kiểm tra response hợp lệ
-      if (!response?.data) {
+      if (!response) {
         throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
 
-      const { access_token, refresh_token, user } = response.data
+      const { access_token, refresh_token, user } = response
 
       if (access_token && refresh_token) {
+        console.log("Đăng nhập thành công, cập nhật state:", { access_token, refresh_token, user })
+        
         // Cập nhật trạng thái đăng nhập với token từ server
-        useAppStore.setState((prev) => ({
-          ...prev,
+        useAppStore.setState({
           accessToken: access_token,
           refreshToken: refresh_token,
           isLogin: true,
           userInfo: user,
-        }))
+        })
 
         // Lưu refresh token vào localStorage
         localStorage.setItem("refreshToken", refresh_token)
+        
+        // Kiểm tra state sau khi cập nhật
+        const currentState = useAppStore.getState()
+        console.log("State sau khi cập nhật:", currentState)
       }
 
-      return response.data
+      return response
     } catch (error: unknown) {
       console.error("Lỗi đăng nhập:", error)
 
@@ -77,40 +85,49 @@ export const authService = {
   // Làm mới token
   refreshToken: async (): Promise<TokenResponse> => {
     try {
-      const refreshToken =
-        useAppStore.getState().refreshToken ||
-        localStorage.getItem("refreshToken")
-
+      const refreshToken = localStorage.getItem("refreshToken")
       if (!refreshToken) {
-        throw new Error("No refresh token available")
+        throw new Error("Không tìm thấy refresh token")
       }
 
-      const response = await api.postRaw<ApiResponse<TokenResponse>>(
+      // Gửi refresh_token trong body theo API backend
+      const apiData = await api.postRaw<TokenResponse>(
         "/auth/refresh",
         { refresh_token: refreshToken }
       )
 
-      if (
-        response.data &&
-        response.data.access_token &&
-        response.data.refresh_token
-      ) {
-        // Cập nhật token mới vào store và localStorage
-        useAppStore.setState({
-          accessToken: response.data.access_token,
-          refreshToken: response.data.refresh_token,
-        })
+      console.log("Raw API response for refresh token:", apiData)
 
-        localStorage.setItem("refreshToken", response.data.refresh_token)
-
-        return response.data
+      if (!apiData) {
+        throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
 
-      throw new Error("Invalid refresh token response")
+      const { access_token, refresh_token } = apiData
+
+      if (access_token && refresh_token) {
+        // Cập nhật token mới
+        useAppStore.setState((prev) => ({
+          ...prev,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        }))
+
+        // Lưu refresh token mới vào localStorage
+        localStorage.setItem("refreshToken", refresh_token)
+      }
+
+      return apiData
     } catch (error) {
-      console.error("Lỗi refresh token:", error)
-      // Nếu refresh token thất bại, đăng xuất người dùng
-      authService.logout()
+      console.error("Lỗi khi refresh token:", error)
+      // Xóa token cũ và chuyển về trang đăng nhập
+       localStorage.removeItem("refreshToken")
+       useAppStore.setState((prev) => ({
+         ...prev,
+         accessToken: undefined,
+         refreshToken: undefined,
+         isLogin: false,
+         userInfo: undefined,
+       }))
       throw error
     }
   },
@@ -118,17 +135,19 @@ export const authService = {
   // Đăng ký người dùng mới
   register: async (userData: RegisterApiPayload): Promise<UserResponse> => {
     try {
-      const response = await api.post<ApiResponse<UserResponse>>(
+      const apiData = await api.post<UserResponse>(
         "/auth/register",
         userData
       )
 
+      console.log("Raw API response for register:", apiData)
+
       // Kiểm tra response hợp lệ
-      if (!response?.data) {
+      if (!apiData) {
         throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
 
-      return response.data
+      return apiData
     } catch (error: unknown) {
       console.error("Lỗi đăng ký:", error)
       throw error
@@ -140,18 +159,21 @@ export const authService = {
     passwordData: ChangePasswordApiPayload
   ): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await api.put<
-        ApiResponse<{ success: boolean; message: string }>
-      >("/auth/change-password", passwordData)
+      // Gửi request đến endpoint /auth/change-password với oldPassword và newPassword
+      const apiData = await api.putRaw<{ success: boolean; message: string }>("/auth/change-password", {
+        oldPassword: passwordData.oldPassword,
+        newPassword: passwordData.newPassword
+      })
 
-      // Kiểm tra response hợp lệ
-      if (!response?.data) {
+      console.log("Raw API response for change password:", apiData)
+
+      if (!apiData) {
         throw new Error("Dữ liệu phản hồi không hợp lệ")
       }
 
-      return response.data
-    } catch (error: unknown) {
-      console.error("Lỗi đổi mật khẩu:", error)
+      return apiData
+    } catch (error) {
+      console.error("Lỗi khi thay đổi mật khẩu:", error)
       throw error
     }
   },

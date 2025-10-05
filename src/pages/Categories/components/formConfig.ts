@@ -1,15 +1,14 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UseFormProps } from "react-hook-form";
+import { Status } from "../../../models/common";
 
-// Sử dụng Zod để định nghĩa schema
+// Schema cho ProductType theo cấu trúc backend
 const schema = z.object({
-  name: z.string().nonempty("Tên sản phẩm không được để trống!").trim(),
-  title: z.string().nonempty("Loại sản phẩm không được để trống!").trim(),
-  picture: z
-    .string()
-    .nonempty("Vui lòng thêm hình ảnh")
-    .url("Hình ảnh phải là URL hợp lệ"),
+  typeName: z.string().nonempty("Tên loại sản phẩm không được để trống!").trim(),
+  typeCode: z.string().nonempty("Mã loại sản phẩm không được để trống!").trim(),
+  description: z.string().optional(),
+  status: z.nativeEnum(Status).default(Status.ACTIVE),
 });
 
 export type FormField = z.infer<typeof schema>;
@@ -18,9 +17,10 @@ export type FormField = z.infer<typeof schema>;
 const formConfig: UseFormProps<FormField> = {
   resolver: zodResolver(schema),
   defaultValues: {
-    name: "",
-    title: "",
-    picture: "",
+    typeName: "",
+    typeCode: "",
+    description: "",
+    status: Status.ACTIVE,
   },
 };
 

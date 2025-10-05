@@ -5,7 +5,7 @@ import { AnyObject, ApiResponse } from "../models/common"
 import { useAppStore } from "../stores"
 import { authService } from "../services"
 
-export const URL = "http://localhost:3000/v1"
+export const URL = "http://localhost:3003/"
 export const BASE_URL = URL
 
 export const URL_UPLOAD = BASE_URL + "/media/api/uploads/"
@@ -50,7 +50,15 @@ const transformPostFormData = (object: AnyObject | FormData = {}) => {
         formData.append(key, JSON.stringify(value))
       }
     } else if (value != null) {
-      formData.append(key, value)
+      // Handle different value types for FormData
+      if (typeof value === "string" || value instanceof Blob) {
+        formData.append(key, value)
+      } else if (typeof value === "number" || typeof value === "boolean") {
+        formData.append(key, String(value))
+      } else {
+        // For other types, convert to string
+        formData.append(key, JSON.stringify(value))
+      }
     }
   }
   return formData
@@ -248,6 +256,11 @@ api.instance.interceptors.response.use(
 
     // Xử lý lỗi 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Không thử refresh token cho endpoint đăng nhập
+      if (originalRequest.url?.includes('/auth/login')) {
+        return Promise.reject(error)
+      }
+
       if (isRefreshing) {
         // Nếu đang refresh token, thêm promise vào queue
         return new Promise<unknown>((resolve, reject) => {

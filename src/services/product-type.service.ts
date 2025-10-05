@@ -1,5 +1,6 @@
 import api from "@/utils/api"
 import {
+  ProductType,
   ProductTypeRequest,
   ProductTypeResponse,
   ProductTypesListResponse,
@@ -14,10 +15,27 @@ export const productTypeService = {
   // Lấy danh sách loại sản phẩm
   getProductTypes: async (): Promise<ProductTypesListResponse> => {
     try {
-      const response = await api.get<ProductTypesListResponse>(
-        "/products/type"
+      const apiData = await api.get<ProductType[]>(
+        "/product-types"
       )
-      return response
+      
+      console.log("Raw API response for product types:", apiData)
+      
+      // API trả về array trực tiếp, cần wrap thành cấu trúc mong đợi
+      return {
+        data: {
+          items: apiData,
+          total: apiData.length,
+          page: 1,
+          limit: apiData.length,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false
+        },
+        status: 200,
+        message: "Success",
+        success: true
+      }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách loại sản phẩm:", error)
       throw error
@@ -28,7 +46,7 @@ export const productTypeService = {
   getProductTypeById: async (id: number): Promise<ProductTypeResponse> => {
     try {
       const response = await api.get<ProductTypeResponse>(
-        `/products/type/${id}`
+        `/product-types/${id}`
       )
       return response
     } catch (error) {
@@ -43,7 +61,7 @@ export const productTypeService = {
   ): Promise<ProductTypeResponse> => {
     try {
       const response = await api.post<ProductTypeResponse>(
-        "/products/type",
+        "/product-types",
         productType
       )
       return response
@@ -60,7 +78,7 @@ export const productTypeService = {
   ): Promise<ProductTypeResponse> => {
     try {
       const response = await api.patch<ProductTypeResponse>(
-        `/products/type/${id}`,
+        `/product-types/${id}`,
         productType
       )
       return response
@@ -73,7 +91,7 @@ export const productTypeService = {
   // Xóa loại sản phẩm
   deleteProductType: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/products/type/${id}`)
+      await api.delete(`/product-types/${id}`)
     } catch (error) {
       console.error(`Lỗi khi xóa loại sản phẩm ID ${id}:`, error)
       throw error

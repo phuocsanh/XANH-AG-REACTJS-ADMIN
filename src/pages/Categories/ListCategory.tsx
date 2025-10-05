@@ -1,160 +1,121 @@
-import { useEffect, useState, useContext } from "react";
-import { SearchBox } from "../../components/SearchBox";
+import { useEffect, useState, useContext } from "react"
+import { SearchBox } from "../../components/SearchBox"
 
-import Button from "@mui/material/Button";
-import { PiExport } from "react-icons/pi";
-import { IoMdAdd } from "react-icons/io";
-import { Link } from "react-router-dom";
-import "swiper/css";
-import "swiper/css/navigation";
-import { MyContext } from "../../App";
+import Button from "@mui/material/Button"
+import { PiExport } from "react-icons/pi"
+import { IoMdAdd } from "react-icons/io"
+
+import "swiper/css"
+import "swiper/css/navigation"
+import { MyContext } from "../../App"
 
 ////
 
-import * as React from "react";
-import { alpha } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TablePagination from "@mui/material/TablePagination";
-import TableRow from "@mui/material/TableRow";
-import TableSortLabel from "@mui/material/TableSortLabel";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Paper from "@mui/material/Paper";
-import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import { visuallyHidden } from "@mui/utils";
-import { RiEdit2Fill } from "react-icons/ri";
-import DialogAddUpdate from "./components/DialogAddUpdate";
+import * as React from "react"
+import { alpha } from "@mui/material/styles"
+import Box from "@mui/material/Box"
+import Table from "@mui/material/Table"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableContainer from "@mui/material/TableContainer"
+import TableHead from "@mui/material/TableHead"
+import TablePagination from "@mui/material/TablePagination"
+import TableRow from "@mui/material/TableRow"
+import TableSortLabel from "@mui/material/TableSortLabel"
+import Toolbar from "@mui/material/Toolbar"
+import Typography from "@mui/material/Typography"
+import Paper from "@mui/material/Paper"
+import Checkbox from "@mui/material/Checkbox"
+import IconButton from "@mui/material/IconButton"
+import Tooltip from "@mui/material/Tooltip"
+import FormControlLabel from "@mui/material/FormControlLabel"
+import Switch from "@mui/material/Switch"
+import DeleteIcon from "@mui/icons-material/Delete"
+import FilterListIcon from "@mui/icons-material/FilterList"
+import { visuallyHidden } from "@mui/utils"
+import { RiEdit2Fill, RiDeleteBin6Line } from "react-icons/ri"
+import DialogAddUpdate from "./components/DialogAddUpdate"
+import {
+  useProductTypes,
+  useDeleteProductTypeMutation,
+} from "../../queries/use-product-type"
+import { ProductType } from "../../models/product-type.model"
+import { Status } from "../../models/common"
+import { toast } from "react-toastify"
 
 ///
 
-interface Data {
-  id: number;
-  calories: number;
-  carbs: number;
-  fat: number;
-  name: string;
-  protein: number;
-}
-
-function createData(
-  id: number,
-  name: string,
-  calories: number,
-  fat: number,
-  carbs: number,
-  protein: number
-): Data {
-  return {
-    id,
-    name,
-    calories,
-    fat,
-    carbs,
-    protein,
-  };
-}
-
-const rows = [
-  createData(1, "Cupcake", 305, 3.7, 67, 4.3),
-  createData(2, "Donut", 452, 25.0, 51, 4.9),
-  createData(3, "Eclair", 262, 16.0, 24, 6.0),
-  createData(4, "Frozen yoghurt", 159, 6.0, 24, 4.0),
-  createData(5, "Gingerbread", 356, 16.0, 49, 3.9),
-  createData(6, "Honeycomb", 408, 3.2, 87, 6.5),
-  createData(7, "Ice cream sandwich", 237, 9.0, 37, 4.3),
-  createData(8, "Jelly Bean", 375, 0.0, 94, 0.0),
-  createData(9, "KitKat", 518, 26.0, 65, 7.0),
-  createData(10, "Lollipop", 392, 0.2, 98, 0.0),
-  createData(11, "Marshmallow", 318, 0, 81, 2.0),
-  createData(12, "Nougat", 360, 19.0, 9, 37.0),
-  createData(13, "Oreo", 437, 18.0, 63, 4.0),
-];
-
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
-    return -1;
+    return -1
   }
   if (b[orderBy] > a[orderBy]) {
-    return 1;
+    return 1
   }
-  return 0;
+  return 0
 }
 
-type Order = "asc" | "desc";
+type Order = "asc" | "desc"
 
-function getComparator<Key extends string | number | symbol>(
+function getComparator<Key extends keyof ProductType>(
   order: Order,
   orderBy: Key
-): (
-  a: { [key in Key]: number | string },
-  b: { [key in Key]: number | string }
-) => number {
+): (a: ProductType, b: ProductType) => number {
   return order === "desc"
     ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
+    : (a, b) => -descendingComparator(a, b, orderBy)
 }
 
 interface HeadCell {
-  disablePadding: boolean;
-  id: keyof Data;
-  label: string;
-  numeric: boolean;
+  disablePadding: boolean
+  id: keyof ProductType
+  label: string
+  numeric: boolean
 }
 
 const headCells: readonly HeadCell[] = [
   {
-    id: "name",
+    id: "typeName",
     numeric: false,
     disablePadding: true,
-    label: "Dessert (100g serving)",
+    label: "Tên loại sản phẩm",
   },
   {
-    id: "calories",
-    numeric: true,
+    id: "typeCode",
+    numeric: false,
     disablePadding: false,
-    label: "Calories",
+    label: "Mã loại",
   },
   {
-    id: "fat",
-    numeric: true,
+    id: "description",
+    numeric: false,
     disablePadding: false,
-    label: "Fat (g)",
+    label: "Mô tả",
   },
   {
-    id: "carbs",
-    numeric: true,
+    id: "status",
+    numeric: false,
     disablePadding: false,
-    label: "Carbs (g)",
+    label: "Trạng thái",
   },
   {
-    id: "protein",
-    numeric: true,
+    id: "createdAt",
+    numeric: false,
     disablePadding: false,
-    label: "Protein (g)",
+    label: "Ngày tạo",
   },
-];
+]
 
 interface EnhancedTableProps {
-  numSelected: number;
+  numSelected: number
   onRequestSort: (
     event: React.MouseEvent<unknown>,
-    property: keyof Data
-  ) => void;
-  onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  order: Order;
-  orderBy: string;
-  rowCount: number;
+    property: keyof ProductType
+  ) => void
+  onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void
+  order: Order
+  orderBy: string
+  rowCount: number
 }
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -165,18 +126,18 @@ function EnhancedTableHead(props: EnhancedTableProps) {
     numSelected,
     rowCount,
     onRequestSort,
-  } = props;
+  } = props
   const createSortHandler =
-    (property: keyof Data) => (event: React.MouseEvent<unknown>) => {
-      onRequestSort(event, property);
-    };
+    (property: keyof ProductType) => (event: React.MouseEvent<unknown>) => {
+      onRequestSort(event, property)
+    }
 
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox">
+        <TableCell padding='checkbox'>
           <Checkbox
-            color="primary"
+            color='primary'
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
@@ -199,23 +160,27 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             >
               {headCell.label}
               {orderBy === headCell.id ? (
-                <Box component="span" sx={visuallyHidden}>
+                <Box component='span' sx={visuallyHidden}>
                   {order === "desc" ? "sorted descending" : "sorted ascending"}
                 </Box>
               ) : null}
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell align='center'>Hành động</TableCell>
       </TableRow>
     </TableHead>
-  );
+  )
 }
+
 interface EnhancedTableToolbarProps {
-  numSelected: number;
-  setOpenDialog: (isShow: boolean) => void;
+  numSelected: number
+  onDelete: () => void
 }
+
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-  const { numSelected, setOpenDialog } = props;
+  const { numSelected, onDelete } = props
+
   return (
     <Toolbar
       sx={[
@@ -235,142 +200,218 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
       {numSelected > 0 ? (
         <Typography
           sx={{ flex: "1 1 100%" }}
-          color="inherit"
-          variant="subtitle1"
-          component="div"
+          color='inherit'
+          variant='subtitle1'
+          component='div'
         >
-          {numSelected} selected
+          {numSelected} đã chọn
         </Typography>
       ) : (
         <Typography
           sx={{ flex: "1 1 100%" }}
-          variant="h6"
-          id="tableTitle"
-          component="div"
+          variant='h6'
+          id='tableTitle'
+          component='div'
         >
-          Loại sản phẩm
+          Quản lý loại sản phẩm
         </Typography>
       )}
-      {numSelected > 0 && numSelected < 2 && (
-        <Tooltip title="Chỉnh sửa">
-          <IconButton>
-            <RiEdit2Fill onClick={() => setOpenDialog(true)} className="mr-3" />
-          </IconButton>
-        </Tooltip>
-      )}
       {numSelected > 0 ? (
-        <Tooltip title="Xóa">
-          <IconButton>
+        <Tooltip title='Xóa'>
+          <IconButton onClick={onDelete}>
             <DeleteIcon />
           </IconButton>
         </Tooltip>
       ) : (
-        <Tooltip title="Lọc danh sách">
+        <Tooltip title='Filter list'>
           <IconButton>
             <FilterListIcon />
           </IconButton>
         </Tooltip>
       )}
     </Toolbar>
-  );
+  )
 }
 
 const ListCategory = () => {
-  const context = useContext(MyContext);
+  const context = useContext(MyContext)
+
+  // Sử dụng React Query để lấy dữ liệu loại sản phẩm
+  const { data: productTypesProductType, isLoading, error } = useProductTypes()
+  const deleteProductTypeMutation = useDeleteProductTypeMutation()
+
   useEffect(() => {
-    window.scrollTo(0, 0);
-    context.setIsHeaderFooterShow(false);
-  }, []);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof Data>("calories");
-  const [selected, setSelected] = React.useState<readonly number[]>([]);
-  console.log("🚀 ~ ListCategory ~ selected:", selected);
-  const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+    window.scrollTo(0, 0)
+    context.setIsHeaderFooterShow(false)
+  }, [context])
+
+  const [openDialog, setOpenDialog] = useState(false)
+  const [editingRow, setEditingRow] = useState<ProductType | null>(null)
+  const [order, setOrder] = React.useState<Order>("asc")
+  const [orderBy, setOrderBy] = React.useState<keyof ProductType>("typeName")
+  const [selected, setSelected] = React.useState<readonly number[]>([])
+  const [page, setPage] = React.useState(0)
+  const [dense, setDense] = React.useState(false)
+  const [rowsPerPage, setRowsPerPage] = React.useState(5)
+  const [searchTerm] = React.useState("")
+
+  // Chuyển đổi dữ liệu từ API thành format phù hợp với table
+  const rows: ProductType[] = React.useMemo(() => {
+    if (!productTypesProductType?.data?.items) return []
+    return productTypesProductType.data.items.map((item: ProductType) => ({
+      id: item.id,
+      typeName: item.typeName,
+      typeCode: item.typeCode,
+      description: item.description || "",
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }))
+  }, [productTypesProductType])
+
+  // Lọc dữ liệu theo từ khóa tìm kiếm
+  const filteredRows = React.useMemo(() => {
+    if (!searchTerm) return rows
+    return rows.filter(
+      (row) =>
+        row.typeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.typeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (row.description &&
+          row.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+  }, [rows, searchTerm])
+
+  // Xử lý xóa nhiều loại sản phẩm
+  const handleDelete = async () => {
+    if (selected.length === 0) return
+
+    if (
+      window.confirm(
+        `Bạn có chắc chắn muốn xóa ${selected.length} loại sản phẩm đã chọn?`
+      )
+    ) {
+      try {
+        await Promise.all(
+          selected.map((id) => deleteProductTypeMutation.mutateAsync(id))
+        )
+        setSelected([])
+        // Toast sẽ được hiển thị trong mutation hook
+      } catch (error) {
+        console.error("Lỗi khi xóa loại sản phẩm:", error)
+        toast.error("Có lỗi xảy ra khi xóa loại sản phẩm!")
+      }
+    }
+  }
+
+  // Xử lý xóa từng loại sản phẩm
+  const handleDeleteSingle = async (id: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa loại sản phẩm này?")) {
+      try {
+        await deleteProductTypeMutation.mutateAsync(id)
+        // Toast sẽ được hiển thị trong mutation hook
+      } catch (error) {
+        console.error("Lỗi khi xóa loại sản phẩm:", error)
+        toast.error("Có lỗi xảy ra khi xóa loại sản phẩm!")
+      }
+    }
+  }
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
-    property: keyof Data
+    property: keyof ProductType
   ) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
+    const isAsc = orderBy === property && order === "asc"
+    setOrder(isAsc ? "desc" : "asc")
+    setOrderBy(property)
+  }
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelected = rows.map((n) => n.id);
-      setSelected(newSelected);
-      return;
+      const newSelected = filteredRows.map((n) => n.id)
+      setSelected(newSelected)
+      return
     }
-    setSelected([]);
-  };
+    setSelected([])
+  }
 
   const handleClick = (event: React.MouseEvent<unknown>, id: number) => {
-    const selectedIndex = selected.indexOf(id);
+    const selectedIndex = selected.indexOf(id)
 
-    let newSelected: readonly number[] = [];
+    let newSelected: readonly number[] = []
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
+      newSelected = newSelected.concat(selected, id)
     } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
+      newSelected = newSelected.concat(selected.slice(1))
     } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
+      newSelected = newSelected.concat(selected.slice(0, -1))
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
         selected.slice(selectedIndex + 1)
-      );
+      )
     }
 
-    setSelected(newSelected);
-  };
+    setSelected(newSelected)
+  }
 
   const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+    setPage(newPage)
+  }
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
   const handleChangeDense = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDense(event.target.checked);
-  };
+    setDense(event.target.checked)
+  }
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredRows.length) : 0
 
   const visibleRows = React.useMemo(
     () =>
-      [...rows]
+      [...filteredRows]
         .sort(getComparator(order, orderBy))
         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage]
-  );
+    [order, orderBy, page, rowsPerPage, filteredRows]
+  )
+
+  if (isLoading) {
+    return (
+      <div className='flex justify-center items-center h-64'>Đang tải...</div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className='flex justify-center items-center h-64 text-red-500'>
+        Có lỗi xảy ra khi tải dữ liệu
+      </div>
+    )
+  }
 
   return (
     <>
-      <div className="card shadow my-4 border-0 flex-center p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex w-full items-center justify-between ">
-            <div className="flex">
+      <div className='card shadow my-4 border-0 flex-center p-3'>
+        <div className='flex items-center justify-between'>
+          <div className='flex w-full items-center justify-between '>
+            <div className='flex'>
               <SearchBox />
             </div>
-            <div className="flex gap-3">
-              <Link to="/product/create">
-                <Button className="btn-blue btn-sm h-full">
-                  <IoMdAdd /> Thêm
-                </Button>
-              </Link>
-              <Button className="btn-border btn-sm">
+            <div className='flex gap-3'>
+              <Button
+                className='btn-blue btn-sm h-full'
+                onClick={() => setOpenDialog(true)}
+              >
+                <IoMdAdd /> Thêm loại sản phẩm
+              </Button>
+              <Button className='btn-border btn-sm'>
                 <PiExport /> Export
               </Button>
             </div>
@@ -382,12 +423,12 @@ const ListCategory = () => {
         <Paper sx={{ width: "100%", mb: 2 }}>
           <EnhancedTableToolbar
             numSelected={selected.length}
-            setOpenDialog={setOpenDialog}
+            onDelete={handleDelete}
           />
           <TableContainer>
             <Table
               sx={{ minWidth: 750 }}
-              aria-labelledby="tableTitle"
+              aria-labelledby='tableTitle'
               size={dense ? "small" : "medium"}
             >
               <EnhancedTableHead
@@ -396,52 +437,97 @@ const ListCategory = () => {
                 orderBy={orderBy}
                 onSelectAllClick={handleSelectAllClick}
                 onRequestSort={handleRequestSort}
-                rowCount={rows.length}
+                rowCount={filteredRows.length}
               />
               <TableBody>
                 {visibleRows.map((row, index) => {
-                  const isItemSelected = selected.includes(row.id);
-                  const labelId = `enhanced-table-checkbox-${index}`;
+                  const isItemSelected = selected.includes(row.id)
+                  const labelId = `enhanced-table-checkbox-${index}`
 
                   return (
                     <TableRow
                       hover
                       onClick={(event) => {
-                        handleClick(event, row.id);
+                        handleClick(event, row.id)
                       }}
-                      role="checkbox"
+                      role='checkbox'
                       aria-checked={isItemSelected}
                       tabIndex={-1}
                       key={row.id}
                       selected={isItemSelected}
                       sx={{ cursor: "pointer" }}
                     >
-                      <TableCell padding="checkbox">
+                      <TableCell padding='checkbox'>
                         <Checkbox
-                          color="primary"
+                          color='primary'
                           checked={isItemSelected}
                           inputProps={{
                             "aria-labelledby": labelId,
                           }}
                         />
                       </TableCell>
-                      {/* <TableCell>
-                        <AiOutlineMenuUnfold />
-                      </TableCell> */}
                       <TableCell
-                        component="th"
+                        component='th'
                         id={labelId}
-                        scope="row"
-                        padding="none"
+                        scope='row'
+                        padding='none'
                       >
-                        {row.name}
+                        {row.typeName}
                       </TableCell>
-                      <TableCell align="right">{row.calories}</TableCell>
-                      <TableCell align="right">{row.fat}</TableCell>
-                      <TableCell align="right">{row.carbs}</TableCell>
-                      <TableCell align="right">{row.protein}</TableCell>
+                      <TableCell>{row.typeCode}</TableCell>
+                      <TableCell>
+                        {row.description || "Không có mô tả"}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            row.status === Status.ACTIVE
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {row.status === Status.ACTIVE ? "Hoạt động" : "Không hoạt động"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(row.createdAt).toLocaleDateString("vi-VN")}
+                      </TableCell>
+                      <TableCell align='center'>
+                        <div className='flex gap-1 justify-center'>
+                          <IconButton
+                            size='small'
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingRow({
+                                id: row.id,
+                                typeName: row.typeName,
+                                typeCode: row.typeCode,
+                                description: row.description || "",
+                                status: row.status,
+                                createdAt: row.createdAt,
+                                updatedAt: row.updatedAt,
+                              })
+                              setOpenDialog(true)
+                            }}
+                            title='Chỉnh sửa'
+                          >
+                            <RiEdit2Fill />
+                          </IconButton>
+                          <IconButton
+                            size='small'
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteSingle(row.id)
+                            }}
+                            title='Xóa'
+                            color='error'
+                          >
+                            <RiDeleteBin6Line />
+                          </IconButton>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  );
+                  )
                 })}
                 {emptyRows > 0 && (
                   <TableRow
@@ -449,7 +535,7 @@ const ListCategory = () => {
                       height: (dense ? 33 : 53) * emptyRows,
                     }}
                   >
-                    <TableCell colSpan={6} />
+                    <TableCell colSpan={7} />
                   </TableRow>
                 )}
               </TableBody>
@@ -457,8 +543,8 @@ const ListCategory = () => {
           </TableContainer>
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={rows.length}
+            component='div'
+            count={filteredRows.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -467,16 +553,22 @@ const ListCategory = () => {
         </Paper>
         <FormControlLabel
           control={<Switch checked={dense} onChange={handleChangeDense} />}
-          label="Dense padding"
+          label='Dense padding'
         />
       </Box>
 
       <DialogAddUpdate
-        id={selected[0]}
-        setOpenDialog={setOpenDialog}
+        editingRow={editingRow}
+        setOpenDialog={(isOpen) => {
+          setOpenDialog(isOpen)
+          if (!isOpen) {
+            setEditingRow(null)
+          }
+        }}
         openDialog={openDialog}
       />
     </>
-  );
-};
-export default ListCategory;
+  )
+}
+
+export default ListCategory

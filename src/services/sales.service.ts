@@ -27,7 +27,7 @@ export const salesService = {
     invoiceData: CreateSalesInvoiceRequest
   ): Promise<{ data: SalesInvoice }> => {
     try {
-      const response = await api.post<SalesInvoice>('/sales/invoice', invoiceData as unknown as Record<string, unknown>)
+      const response = await api.post<SalesInvoice>('/sales/invoices', invoiceData as unknown as Record<string, unknown>)
       return { data: response }
     } catch (error) {
       console.error('Lỗi khi tạo hóa đơn bán hàng:', error)
@@ -56,7 +56,7 @@ export const salesService = {
    */
   getInvoiceById: async (id: number): Promise<{ data: SalesInvoice }> => {
     try {
-      const response = await api.get<SalesInvoice>(`/sales/invoice/${id}`)
+      const response = await api.get<SalesInvoice>(`/sales/invoices/${id}`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi lấy hóa đơn bán hàng ID ${id}:`, error)
@@ -71,7 +71,7 @@ export const salesService = {
    */
   getInvoiceByCode: async (code: string): Promise<{ data: SalesInvoice }> => {
     try {
-      const response = await api.get<SalesInvoice>(`/sales/invoice/code/${code}`)
+      const response = await api.get<SalesInvoice>(`/sales/invoices/code/${code}`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi lấy hóa đơn bán hàng mã ${code}:`, error)
@@ -90,7 +90,7 @@ export const salesService = {
     invoiceData: UpdateSalesInvoiceRequest
   ): Promise<{ data: SalesInvoice }> => {
     try {
-      const response = await api.patch<SalesInvoice>(`/sales/invoice/${id}`, invoiceData as unknown as Record<string, unknown>)
+      const response = await api.patch<SalesInvoice>(`/sales/invoices/${id}`, invoiceData as unknown as Record<string, unknown>)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi cập nhật hóa đơn bán hàng ID ${id}:`, error)
@@ -105,7 +105,7 @@ export const salesService = {
    */
   deleteInvoice: async (id: number): Promise<{ data: object }> => {
     try {
-      const response = await api.delete(`/sales/invoice/${id}`)
+      const response = await api.delete(`/sales/invoices/${id}`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi xóa hóa đơn bán hàng ID ${id}:`, error)
@@ -124,7 +124,7 @@ export const salesService = {
     paymentStatus: 'PENDING' | 'PAID' | 'CANCELLED'
   ): Promise<{ data: SalesInvoice }> => {
     try {
-      const response = await api.patch<SalesInvoice>(`/sales/invoice/${id}/payment-status`, {
+      const response = await api.patch<SalesInvoice>(`/sales/invoices/${id}/payment-status`, {
         paymentStatus,
       })
       return { data: response }
@@ -143,7 +143,7 @@ export const salesService = {
    */
   getInvoiceItems: async (invoiceId: number): Promise<{ data: SalesInvoiceItem[] }> => {
     try {
-      const response = await api.get<SalesInvoiceItem[]>(`/sales/invoice/${invoiceId}/items`)
+      const response = await api.get<SalesInvoiceItem[]>(`/sales/invoices/${invoiceId}/items`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi lấy chi tiết hóa đơn ID ${invoiceId}:`, error)
@@ -163,7 +163,7 @@ export const salesService = {
   ): Promise<{ data: SalesInvoiceItem }> => {
     try {
       const response = await api.patch<SalesInvoiceItem>(
-        `/sales/invoice/item/${itemId}`,
+        `/sales/invoices/items/${itemId}`,
         itemData as unknown as Record<string, unknown>
       )
       return { data: response }
@@ -180,7 +180,7 @@ export const salesService = {
    */
   deleteInvoiceItem: async (itemId: number): Promise<{ data: object }> => {
     try {
-      const response = await api.delete(`/sales/invoice/item/${itemId}`)
+      const response = await api.delete(`/sales/invoices/items/${itemId}`)
       return { data: response }
     } catch (error) {
       console.error(`Lỗi khi xóa chi tiết hóa đơn ID ${itemId}:`, error)
@@ -195,6 +195,20 @@ export const salesService = {
    * @returns Promise chứa thống kê bán hàng
    */
   getSalesStats: async (): Promise<{ data: SalesStats }> => {
+    try {
+      const response = await api.get<SalesStats>('/sales/reports/stats')
+      return { data: response }
+    } catch (error) {
+      console.error('Lỗi khi lấy thống kê bán hàng:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy thống kê bán hàng chi tiết (phương thức cũ)
+   * @returns Promise chứa thống kê bán hàng
+   */
+  getSalesStatsDetailed: async (): Promise<{ data: SalesStats }> => {
     try {
       // Lấy danh sách hóa đơn để tính toán thống kê
       const invoicesResponse = await api.get<SalesInvoice[]>('/sales/invoices')
@@ -253,6 +267,30 @@ export const salesService = {
     endDate: string
   ): Promise<{ data: SalesReport[] }> => {
     try {
+      const response = await api.get<SalesReport[]>('/sales/reports/daily', {
+        params: {
+          startDate,
+          endDate
+        }
+      })
+      return { data: response }
+    } catch (error) {
+      console.error('Lỗi khi lấy báo cáo bán hàng theo ngày:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy báo cáo bán hàng theo ngày (phương thức cũ)
+   * @param startDate - Ngày bắt đầu (YYYY-MM-DD)
+   * @param endDate - Ngày kết thúc (YYYY-MM-DD)
+   * @returns Promise chứa báo cáo bán hàng theo ngày
+   */
+  getDailySalesReportDetailed: async (
+    startDate: string,
+    endDate: string
+  ): Promise<{ data: SalesReport[] }> => {
+    try {
       // Lấy danh sách hóa đơn trong khoảng thời gian
       const invoicesResponse = await api.get<SalesInvoice[]>('/sales/invoices')
       const invoices = invoicesResponse.filter((inv: SalesInvoice) => {
@@ -300,6 +338,25 @@ export const salesService = {
    * @returns Promise chứa danh sách sản phẩm bán chạy
    */
   getTopSellingProducts: async (limit: number = 10): Promise<{ data: TopSellingProduct[] }> => {
+    try {
+      const response = await api.get<TopSellingProduct[]>('/sales/reports/top-selling', {
+        params: {
+          limit
+        }
+      })
+      return { data: response }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách sản phẩm bán chạy:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Lấy danh sách sản phẩm bán chạy (phương thức cũ)
+   * @param limit - Số lượng sản phẩm trả về (mặc định 10)
+   * @returns Promise chứa danh sách sản phẩm bán chạy
+   */
+  getTopSellingProductsDetailed: async (limit: number = 10): Promise<{ data: TopSellingProduct[] }> => {
     try {
       // Lấy danh sách hóa đơn đã thanh toán
       const invoicesResponse = await api.get<SalesInvoice[]>('/sales/invoices')

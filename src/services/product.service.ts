@@ -14,6 +14,7 @@ import {
   UpdateProductSubtypeRequest,
   ProductStatsResponse,
   Product,
+  ProductApiResponse,
   mapApiResponseToProduct,
 } from "@/models/product.model"
 import api from "@/utils/api"
@@ -25,22 +26,36 @@ export const productService = {
     params?: ExtendedProductListParams
   ): Promise<{ data: { items: Product[]; total: number }; code: number; message: string }> => {
     try {
-      const response = await api.get<ProductListResponse>("/products", {
+      const apiData = await api.get<ProductApiResponse[]>("/products", {
         params: { params },
       })
       
-      // Map API response to Product model
-      const mappedProducts = response.data.items.map(mapApiResponseToProduct)
+      console.log("Raw API response:", apiData)
+      
+      // api.get trả về data trực tiếp (ProductApiResponse[])
+      const mappedProducts = apiData.map(mapApiResponseToProduct)
       
       return {
-        ...response,
         data: {
           items: mappedProducts,
-          total: response.data.total
-        }
+          total: apiData.length // Sử dụng length của array làm total
+        },
+        code: 200,
+        message: "Success"
       }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm:", error)
+      throw error
+    }
+  },
+
+  // Endpoint test để kiểm tra chuyển đổi ngày tháng
+  testDate: async (testData: Record<string, unknown>): Promise<{ success: boolean; data: Record<string, unknown> }> => {
+    try {
+      const response = await api.post<{ success: boolean; data: Record<string, unknown> }>("/products/test-date", testData)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi test date:", error)
       throw error
     }
   },
@@ -119,17 +134,17 @@ export const productService = {
     }
   },
 
-  // Lọc sản phẩm theo loại sản phẩm
+  // Lấy sản phẩm theo loại sản phẩm
   getProductsByType: async (
-    productType: number
+    productType: string
   ): Promise<ProductListResponse> => {
     try {
       const response = await api.get<ProductListResponse>(
-        `/products/type/${productType}`
+        `/products/type/${productType}/products`
       )
       return response
     } catch (error) {
-      console.error("Lỗi khi lọc sản phẩm theo loại:", error)
+      console.error("Lỗi khi lấy sản phẩm theo loại:", error)
       throw error
     }
   },
@@ -150,12 +165,21 @@ export const productService = {
   // Lấy danh sách loại sản phẩm
   getProductTypes: async (): Promise<ProductTypeListResponse> => {
     try {
-      const response = await api.get<ProductTypeListResponse>(
-        "/products/type"
-      )
+      const response = await api.get<ProductTypeListResponse>("/products/type")
       return response
     } catch (error) {
       console.error("Lỗi khi lấy danh sách loại sản phẩm:", error)
+      throw error
+    }
+  },
+
+  // Lấy chi tiết loại sản phẩm theo ID
+  getProductTypeById: async (id: number): Promise<ProductTypeResponse> => {
+    try {
+      const response = await api.get<ProductTypeResponse>(`/products/type/${id}`)
+      return response
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết loại sản phẩm:", error)
       throw error
     }
   },
