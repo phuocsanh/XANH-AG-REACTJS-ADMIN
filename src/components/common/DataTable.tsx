@@ -1,8 +1,12 @@
-import React from 'react';
-import { Table, TableProps, Button, Space, Tooltip } from 'antd';
-import type { ColumnType } from 'antd/es/table';
-import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import React, { useState, useMemo } from 'react';
+import { Table, TableProps, Button, Space, Tooltip, Input, Select, Card } from 'antd';
+import type { ColumnType, TablePaginationConfig } from 'antd/es/table';
+import type { FilterValue, SorterResult } from 'antd/es/table/interface';
+import { EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import LoadingSpinner from './LoadingSpinner';
+
+const { Search } = Input;
+const { Option } = Select;
 
 interface ActionButton<T = Record<string, unknown>> {
   key: string;
@@ -14,7 +18,19 @@ interface ActionButton<T = Record<string, unknown>> {
   disabled?: (record: T) => boolean;
 }
 
-interface DataTableProps<T = Record<string, unknown>> extends Omit<TableProps<T>, 'columns'> {
+interface FilterOption {
+  label: string;
+  value: string | number;
+}
+
+interface ColumnFilter {
+  key: string;
+  label: string;
+  options: FilterOption[];
+  placeholder?: string;
+}
+
+interface DataTableProps<T = Record<string, unknown>> extends Omit<TableProps<T>, 'columns' | 'onChange'> {
   columns: ColumnType<T>[];
   data: T[];
   loading?: boolean;
@@ -26,12 +42,33 @@ interface DataTableProps<T = Record<string, unknown>> extends Omit<TableProps<T>
   actionColumnWidth?: number;
   actionColumnTitle?: string;
   emptyText?: string;
+  // Tính năng search
+  showSearch?: boolean;
+  searchPlaceholder?: string;
+  searchableColumns?: string[]; // Các column có thể search
+  // Tính năng filter
+  showFilters?: boolean;
+  columnFilters?: ColumnFilter[];
+  // Pagination config
+  paginationConfig?: {
+    pageSize?: number;
+    showSizeChanger?: boolean;
+    showQuickJumper?: boolean;
+    showTotal?: (total: number, range: [number, number]) => string;
+  };
+  // Callbacks
+  onChange?: (
+    pagination: TablePaginationConfig,
+    filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<T> | SorterResult<T>[],
+    extra: { currentDataSource: T[]; action: 'paginate' | 'sort' | 'filter' }
+  ) => void;
 }
 
 /**
- * Component DataTable tái sử dụng
+ * Component DataTable tái sử dụng với đầy đủ tính năng
  * Tích hợp sẵn các action buttons (Edit, Delete, View)
- * Hỗ trợ custom action buttons và loading state
+ * Hỗ trợ search, filter, pagination, sorting
  * Responsive và có thể tùy chỉnh hoàn toàn
  */
 const DataTable = <T extends Record<string, unknown>>({
@@ -46,8 +83,52 @@ const DataTable = <T extends Record<string, unknown>>({
   actionColumnWidth = 120,
   actionColumnTitle = 'Thao tác',
   emptyText = 'Không có dữ liệu',
+  showSearch = false,
+  searchPlaceholder = 'Tìm kiếm...',
+  searchableColumns = [],
+  showFilters = false,
+  columnFilters = [],
+  paginationConfig = {
+    pageSize: 10,
+    showSizeChanger: true,
+    showQuickJumper: true,
+    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+  },
+  onChange,
   ...tableProps
 }: DataTableProps<T>) => {
+  // State cho search và filter
+  const [searchText, setSearchText] = useState('');
+  const [filterValues, setFilterValues] = useState<Record<string, string | number | undefined>>({});
+
+  // Lọc dữ liệu dựa trên search text
+  const filteredData = useMemo(() => {
+    let filtered = [...data];
+
+    // Áp dụng search
+    if (searchText && searchableColumns.length > 0) {
+      filtered = filtered.filter((item) =>
+        searchableColumns.some((column) => {
+          const value = item[column];
+          return value && 
+            value.toString().toLowerCase().includes(searchText.toLowerCase());
+        })
+      );
+    }
+
+    // Áp dụng column filters
+    Object.entries(filterValues).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        filtered = filtered.filter((item) => {
+          const itemValue = item[key];
+          return itemValue === value;
+        });
+      }
+    });
+
+    return filtered;
+  }, [data, searchText, searchableColumns, filterValues]);
+
   // Tạo default action buttons
   const defaultActionButtons: ActionButton<T>[] = [];
 
@@ -125,8 +206,66 @@ const DataTable = <T extends Record<string, unknown>>({
     ? [...columns, actionColumn] 
     : columns;
 
+  // Handle filter change
+  const handleFilterChange = (key: string, value: string | number | undefined) => {
+    setFilterValues(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Handle table change (pagination, sorting, filtering)
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    filters: Record<string, FilterValue | null>,
+    sorter: SorterResult<T> | SorterResult<T>[],
+    extra: { currentDataSource: T[]; action: 'paginate' | 'sort' | 'filter' }
+  ) => {
+    if (onChange) {
+      onChange(pagination, filters, sorter, extra);
+    }
+  };
+
   return (
     <div className="data-table-wrapper">
+      {/* Search và Filter Controls */}
+      {(showSearch || showFilters) && (
+        <Card className="mb-4" size="small">
+          <Space wrap>
+            {/* Search Input */}
+            {showSearch && (
+              <Search
+                placeholder={searchPlaceholder}
+                allowClear
+                style={{ width: 300 }}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                prefix={<SearchOutlined />}
+              />
+            )}
+            
+            {/* Column Filters */}
+            {showFilters && columnFilters.map((filter) => (
+              <Select
+                key={filter.key}
+                placeholder={filter.placeholder || `Lọc ${filter.label}`}
+                allowClear
+                style={{ width: 200 }}
+                value={filterValues[filter.key]}
+                onChange={(value) => handleFilterChange(filter.key, value)}
+              >
+                {filter.options.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            ))}
+          </Space>
+        </Card>
+      )}
+
+      {/* Table */}
       {loading ? (
         <LoadingSpinner tip="Đang tải dữ liệu...">
           <Table
@@ -140,9 +279,14 @@ const DataTable = <T extends Record<string, unknown>>({
       ) : (
         <Table
           columns={finalColumns}
-          dataSource={data}
+          dataSource={filteredData}
           locale={{ emptyText }}
           scroll={{ x: 'max-content' }}
+          pagination={{
+            ...paginationConfig,
+            total: filteredData.length,
+          }}
+          onChange={handleTableChange}
           {...tableProps}
         />
       )}

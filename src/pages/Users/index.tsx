@@ -2,26 +2,16 @@ import { useState } from "react"
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
   CircularProgress,
   Chip,
 } from "@mui/material"
-import { Add, Edit, Delete } from "@mui/icons-material"
+import { Add } from "@mui/icons-material"
 import { useForm } from "react-hook-form"
 import {
   useUsersQuery,
@@ -30,6 +20,10 @@ import {
   useDeleteUserMutation,
 } from "@/queries/use-user"
 import { CreateUserDto, UpdateUserDto, User } from "@/services/user.service"
+import DataTable from "@/components/common/DataTable"
+
+// Extend User interface để tương thích với DataTable
+interface ExtendedUser extends User, Record<string, unknown> {}
 
 // Component chính quản lý người dùng
 export const Users = () => {
@@ -150,59 +144,62 @@ export const Users = () => {
       </Box>
 
       {/* Bảng danh sách người dùng */}
-      <Card>
-        <CardContent>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Tài khoản</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Trạng thái</TableCell>
-                  <TableCell>Ngày tạo</TableCell>
-                  <TableCell align="center">Thao tác</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users?.map((user) => (
-                  <TableRow key={user.userId} hover>
-                    <TableCell>{user.userId}</TableCell>
-                    <TableCell>{user.userAccount}</TableCell>
-                    <TableCell>{user.userEmail || "N/A"}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={user.userState === 1 ? "Hoạt động" : "Không hoạt động"}
-                        color={user.userState === 1 ? "success" : "default"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "N/A"}
-                    </TableCell>
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditUser(user)}
-                        color="primary"
-                      >
-                        <Edit />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteUser(user)}
-                        color="error"
-                      >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+      <DataTable<ExtendedUser>
+        columns={[
+          {
+            title: "ID",
+            dataIndex: "userId",
+            key: "userId",
+            sorter: true,
+          },
+          {
+            title: "Tài khoản",
+            dataIndex: "userAccount",
+            key: "userAccount",
+            sorter: true,
+          },
+          {
+            title: "Email",
+            dataIndex: "userEmail",
+            key: "userEmail",
+            render: (email: string) => email || "N/A",
+          },
+          {
+            title: "Trạng thái",
+            dataIndex: "userState",
+            key: "userState",
+            render: (state: number) => (
+              <Chip
+                label={state === 1 ? "Hoạt động" : "Không hoạt động"}
+                color={state === 1 ? "success" : "default"}
+                size="small"
+              />
+            ),
+          },
+          {
+            title: "Ngày tạo",
+            dataIndex: "createdAt",
+            key: "createdAt",
+            render: (date: string) => 
+              date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
+            sorter: true,
+          },
+        ]}
+        data={(users || []) as ExtendedUser[]}
+        loading={isLoading}
+        showSearch={true}
+        searchPlaceholder="Tìm kiếm người dùng..."
+        searchableColumns={["userAccount", "userEmail"]}
+        onEdit={handleEditUser}
+        onDelete={handleDeleteUser}
+        paginationConfig={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => 
+            `${range[0]}-${range[1]} của ${total} người dùng`,
+        }}
+      />
 
       {/* Dialog thêm/sửa người dùng */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>

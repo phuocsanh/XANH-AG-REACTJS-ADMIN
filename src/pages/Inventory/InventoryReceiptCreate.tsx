@@ -12,7 +12,6 @@ import {
   Typography,
   Alert,
   InputNumber,
-  DatePicker,
   Select,
   Popconfirm,
   message,
@@ -28,7 +27,6 @@ import {
   CloseOutlined
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
 
 import {
   CreateInventoryReceiptRequest,
@@ -43,7 +41,6 @@ const { TextArea } = Input
 interface InventoryReceiptItemForm extends CreateInventoryReceiptItemRequest {
   key: string
   productName?: string
-  totalPrice?: string
 }
 
 const InventoryReceiptCreate: React.FC = () => {
@@ -72,9 +69,8 @@ const InventoryReceiptCreate: React.FC = () => {
       key: newKey,
       productId: 0,
       quantity: 1,
-      unitPrice: '0',
-      expiryDate: '',
-      batchNumber: '',
+      unitCost: 0,
+      totalPrice: 0,
       notes: ''
     }
     setItems([...items, newItem])
@@ -105,13 +101,13 @@ const InventoryReceiptCreate: React.FC = () => {
       message.error('Vui lòng nhập số lượng hợp lệ')
       return
     }
-    if (!item.unitPrice || parseFloat(item.unitPrice) <= 0) {
+    if (!item.unitCost || item.unitCost <= 0) {
       message.error('Vui lòng nhập đơn giá hợp lệ')
       return
     }
 
     // Calculate total price
-    const totalPrice = (item.quantity * parseFloat(item.unitPrice)).toString()
+    const totalPrice = item.quantity * item.unitCost
     const updatedItem = { ...item, totalPrice }
 
     setItems(items.map(i => i.key === key ? updatedItem : i))
@@ -128,17 +124,17 @@ const InventoryReceiptCreate: React.FC = () => {
         const updatedItem = { ...item, [field]: value }
         
         // Tự động tính tổng tiền khi thay đổi số lượng hoặc đơn giá
-        if (field === 'quantity' || field === 'unitPrice') {
+        if (field === 'quantity' || field === 'unitCost') {
           const quantity = field === 'quantity' ? (value as number) : item.quantity
-          const unitPrice = field === 'unitPrice' ? (value as string) : item.unitPrice
-          updatedItem.totalPrice = (quantity * parseFloat(unitPrice || '0')).toString()
+          const unitCost = field === 'unitCost' ? (value as number) : item.unitCost
+          updatedItem.totalPrice = quantity * unitCost
         }
 
         // Tự động cập nhật tên sản phẩm khi chọn sản phẩm
         if (field === 'productId') {
           const product = products.find(p => p.id === value)
           if (product) {
-            updatedItem.productName = product.name || product.productName
+            updatedItem.productName = product.productName
           }
         }
 
@@ -162,8 +158,8 @@ const InventoryReceiptCreate: React.FC = () => {
         item.productId === 0 || 
         !item.quantity || 
         item.quantity <= 0 || 
-        !item.unitPrice || 
-        parseFloat(item.unitPrice) <= 0
+        !item.unitCost || 
+        item.unitCost <= 0
       )
 
       if (hasIncompleteItems) {
@@ -171,17 +167,25 @@ const InventoryReceiptCreate: React.FC = () => {
         return
       }
 
-      // Tạo request data
+      // Tạo mã phiếu nhập tự động
+      const receiptCode = `PN${Date.now()}`
+      
+      // Tính tổng tiền
+      const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0)
+
+      // Tạo request data theo đúng cấu trúc backend
       const requestData: CreateInventoryReceiptRequest = {
-        description: values.description as string | undefined,
+        receiptCode,
         supplierName: values.supplierName as string | undefined,
         supplierContact: values.supplierContact as string | undefined,
+        totalAmount,
+        notes: values.description as string | undefined,
+        status: 'PENDING',
         items: items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          expiryDate: item.expiryDate || undefined,
-          batchNumber: item.batchNumber || undefined,
+          unitCost: item.unitCost,
+          totalPrice: item.totalPrice,
           notes: item.notes || undefined
         }))
       }
@@ -196,7 +200,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Tính tổng tiền của tất cả sản phẩm
   const totalAmount = items.reduce((sum, item) => {
-    return sum + (item.quantity * parseFloat(item.unitPrice || '0'))
+    return sum + item.totalPrice
   }, 0)
 
   // Cấu hình cột cho bảng sản phẩm
@@ -226,12 +230,12 @@ const InventoryReceiptCreate: React.FC = () => {
             }
             options={products.map(product => ({
               value: product.id,
-              label: product.name || product.productName
+              label: product.productName
             }))}
             onChange={(value) => handleItemChange(record.key, 'productId', value)}
           />
         ) : (
-          record.productName || products.find(p => p.id === productId)?.name || '-'
+          record.productName || products.find(p => p.id === productId)?.productName || '-'
         )
       }
     },
@@ -257,27 +261,27 @@ const InventoryReceiptCreate: React.FC = () => {
     },
     {
       title: 'Đơn giá *',
-      dataIndex: 'unitPrice',
-      key: 'unitPrice',
+      dataIndex: 'unitCost',
+      key: 'unitCost',
       width: 150,
       align: 'right',
-      render: (price: string, record: InventoryReceiptItemForm) => {
+      render: (price: number, record: InventoryReceiptItemForm) => {
         const isEditing = editingKey === record.key
         return isEditing ? (
           <InputNumber
-            value={parseFloat(price || '0')}
+            value={price || 0}
             min={0}
             step={1000}
             formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
             parser={(value) => parseFloat(value!.replace(/\$\s?|(,*)/g, '')) || 0}
             style={{ width: '100%' }}
-            onChange={(value) => handleItemChange(record.key, 'unitPrice', value?.toString() || '0')}
+            onChange={(value) => handleItemChange(record.key, 'unitCost', value || 0)}
           />
         ) : (
           new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
-          }).format(parseFloat(price || '0'))
+          }).format(price || 0)
         )
       }
     },
@@ -288,53 +292,13 @@ const InventoryReceiptCreate: React.FC = () => {
       width: 150,
       align: 'right',
       render: (_, record: InventoryReceiptItemForm) => {
-        const total = record.quantity * parseFloat(record.unitPrice || '0')
         return (
           <Text strong style={{ color: '#52c41a' }}>
             {new Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND'
-            }).format(total)}
+            }).format(record.totalPrice || 0)}
           </Text>
-        )
-      }
-    },
-    {
-      title: 'Hạn sử dụng',
-      dataIndex: 'expiryDate',
-      key: 'expiryDate',
-      width: 150,
-      render: (date: string, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
-          <DatePicker
-            value={date ? dayjs(date) : null}
-            format="DD/MM/YYYY"
-            style={{ width: '100%' }}
-            onChange={(dateValue) => 
-              handleItemChange(record.key, 'expiryDate', dateValue?.format('YYYY-MM-DD') || '')
-            }
-          />
-        ) : (
-          date ? dayjs(date).format('DD/MM/YYYY') : '-'
-        )
-      }
-    },
-    {
-      title: 'Số lô',
-      dataIndex: 'batchNumber',
-      key: 'batchNumber',
-      width: 120,
-      render: (batch: string, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
-          <Input
-            value={batch}
-            placeholder="Nhập số lô"
-            onChange={(e) => handleItemChange(record.key, 'batchNumber', e.target.value)}
-          />
-        ) : (
-          batch || '-'
         )
       }
     },

@@ -74,6 +74,7 @@ export interface FileReference {
  * Interface định nghĩa request tạo file upload mới
  */
 export interface CreateFileUploadRequest {
+  [key: string]: unknown  // Index signature để tương thích với AnyObject
   /** ID công khai của file */
   publicId: string;
   /** URL truy cập file */
@@ -115,6 +116,7 @@ export interface UpdateFileUploadRequest extends Partial<CreateFileUploadRequest
  * Interface định nghĩa request tạo file reference
  */
 export interface CreateFileReferenceRequest {
+  [key: string]: unknown  // Index signature để tương thích với AnyObject
   /** ID của file upload */
   fileId: number;
   /** Loại thực thể */
@@ -241,9 +243,10 @@ export interface FileDetails extends FileUpload {
  * Interface định nghĩa request đánh dấu file để xóa
  */
 export interface MarkFileForDeletionRequest {
-  /** ID của file cần đánh dấu */
+  [key: string]: unknown  // Index signature để tương thích với AnyObject
+  /** ID của file */
   fileId: number;
-  /** Thời gian đánh dấu (tùy chọn, mặc định là hiện tại) */
+  /** Thời gian đánh dấu */
   markedAt?: Date;
 }
 

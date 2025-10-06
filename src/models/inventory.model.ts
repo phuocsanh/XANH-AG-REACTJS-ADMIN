@@ -4,79 +4,27 @@ import { ApiResponse } from "./auth.model"
 
 // Enum cho trạng thái phiếu nhập hàng
 export enum InventoryReceiptStatus {
-  DRAFT = 0,        // Nháp
-  PENDING = 1,      // Chờ duyệt
-  APPROVED = 2,     // Đã duyệt
-  COMPLETED = 3,    // Hoàn thành (đã nhập kho)
-  CANCELLED = 4     // Đã hủy
+  DRAFT = 1,
+  PENDING = 2,
+  APPROVED = 3,
+  COMPLETED = 4,
+  CANCELLED = 5
 }
 
 // Enum cho loại giao dịch kho
 export enum InventoryTransactionType {
-  STOCK_IN = 1,     // Nhập kho
-  STOCK_OUT = 2,    // Xuất kho
-  ADJUSTMENT = 3    // Điều chỉnh
+  IMPORT = 1,
+  EXPORT = 2,
+  ADJUSTMENT = 3
 }
 
-// Interface cho phiếu nhập hàng từ API
-export interface InventoryReceiptApiResponse {
-  id: number
-  code: string
-  description?: string
-  status: number
-  totalAmount: string
-  supplierName?: string
-  supplierContact?: string
-  createdBy: number
-  approvedBy?: number
-  completedBy?: number
-  createdAt: string
-  updatedAt: string
-  approvedAt?: string
-  completedAt?: string
-  items?: InventoryReceiptItemApiResponse[]
-}
-
-// Interface cho chi tiết phiếu nhập hàng (items) từ API
-export interface InventoryReceiptItemApiResponse {
-  id: number
-  receiptId: number
-  productId: number
-  productName: string
-  quantity: number
-  unitPrice: string
-  totalPrice: string
-  expiryDate?: string
-  batchNumber?: string
-  notes?: string
-  createdAt: string
-  updatedAt: string
-}
-
-// Interface cho lịch sử kho từ API
-export interface InventoryHistoryApiResponse {
-  id: number
-  productId: number
-  productName: string
-  transactionType: number
-  quantity: number
-  unitPrice: string
-  totalPrice: string
-  balanceAfter: number
-  receiptId?: number
-  receiptCode?: string
-  description?: string
-  createdBy: number
-  createdAt: string
-}
-
-// Interface cho phiếu nhập hàng đã được chuyển đổi
+// Interface cho phiếu nhập hàng - sử dụng trực tiếp từ API với các trường bổ sung
 export interface InventoryReceipt {
   id: number
   code: string
   description?: string
-  status: InventoryReceiptStatus
-  statusText: string
+  status: number
+  statusText: string  // Trường bổ sung để hiển thị text trạng thái
   totalAmount: string
   supplierName?: string
   supplierContact?: string
@@ -90,7 +38,7 @@ export interface InventoryReceipt {
   items?: InventoryReceiptItem[]
 }
 
-// Interface cho chi tiết phiếu nhập hàng
+// Interface cho chi tiết phiếu nhập hàng (items)
 export interface InventoryReceiptItem {
   id: number
   receiptId: number
@@ -111,8 +59,8 @@ export interface InventoryHistory {
   id: number
   productId: number
   productName: string
-  transactionType: InventoryTransactionType
-  transactionTypeText: string
+  transactionType: number
+  transactionTypeText: string  // Trường bổ sung để hiển thị text loại giao dịch
   quantity: number
   unitPrice: string
   totalPrice: string
@@ -123,6 +71,11 @@ export interface InventoryHistory {
   createdBy: number
   createdAt: string
 }
+
+// Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
+export interface InventoryReceiptApiResponse extends InventoryReceipt {}
+export interface InventoryReceiptItemApiResponse extends InventoryReceiptItem {}
+export interface InventoryHistoryApiResponse extends InventoryHistory {}
 
 // Interface cho phân trang
 export interface PaginationResponse {
@@ -210,7 +163,8 @@ export function mapApiResponseToInventoryHistory(
 }
 
 // Helper functions
-export function getInventoryReceiptStatusText(status: number): string {
+// Hàm helper để lấy text trạng thái
+export const getInventoryReceiptStatusText = (status: number): string => {
   switch (status) {
     case InventoryReceiptStatus.DRAFT:
       return 'Nháp'
@@ -227,11 +181,12 @@ export function getInventoryReceiptStatusText(status: number): string {
   }
 }
 
-export function getInventoryTransactionTypeText(type: number): string {
+// Hàm helper để lấy text loại giao dịch
+export const getInventoryTransactionTypeText = (type: number): string => {
   switch (type) {
-    case InventoryTransactionType.STOCK_IN:
+    case InventoryTransactionType.IMPORT:
       return 'Nhập kho'
-    case InventoryTransactionType.STOCK_OUT:
+    case InventoryTransactionType.EXPORT:
       return 'Xuất kho'
     case InventoryTransactionType.ADJUSTMENT:
       return 'Điều chỉnh'
@@ -241,21 +196,25 @@ export function getInventoryTransactionTypeText(type: number): string {
 }
 
 // Request interfaces
+// Interface cho request tạo phiếu nhập hàng mới (khớp với backend DTO)
 export interface CreateInventoryReceiptRequest {
-  [key: string]: unknown
-  description?: string
-  supplierName?: string
-  supplierContact?: string
-  items: CreateInventoryReceiptItemRequest[]
+  [key: string]: unknown                                 // Index signature để tương thích với AnyObject
+  receiptCode: string                                    // Mã phiếu nhập hàng (bắt buộc)
+  supplierName?: string                                  // Tên nhà cung cấp (tùy chọn)
+  supplierContact?: string                               // Liên hệ nhà cung cấp (tùy chọn)
+  totalAmount: number                                    // Tổng tiền (bắt buộc)
+  notes?: string                                         // Ghi chú (tùy chọn)
+  status: string                                         // Trạng thái (bắt buộc)
+  items: CreateInventoryReceiptItemRequest[]             // Danh sách sản phẩm (bắt buộc)
 }
 
+// Interface cho request tạo chi tiết phiếu nhập hàng (khớp với backend DTO)
 export interface CreateInventoryReceiptItemRequest {
-  productId: number
-  quantity: number
-  unitPrice: string
-  expiryDate?: string
-  batchNumber?: string
-  notes?: string
+  productId: number                                      // ID sản phẩm (bắt buộc)
+  quantity: number                                       // Số lượng (bắt buộc)
+  unitCost: number                                       // Giá vốn đơn vị (bắt buộc)
+  totalPrice: number                                     // Tổng giá tiền (bắt buộc)
+  notes?: string                                         // Ghi chú (tùy chọn)
 }
 
 export interface UpdateInventoryReceiptRequest extends Partial<CreateInventoryReceiptRequest> {
@@ -263,6 +222,7 @@ export interface UpdateInventoryReceiptRequest extends Partial<CreateInventoryRe
 }
 
 export interface UpdateInventoryReceiptItemRequest extends Partial<CreateInventoryReceiptItemRequest> {
+  [key: string]: unknown  // Index signature để tương thích với AnyObject
   id: number
 }
 

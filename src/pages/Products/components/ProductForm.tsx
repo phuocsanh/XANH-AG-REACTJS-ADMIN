@@ -15,7 +15,6 @@ import {
   CreateProductRequest,
   UpdateProductRequest,
   ProductApiResponse,
-  mapApiResponseToProduct, // Import mapApiResponseToProduct
 } from "../../../models/product.model"
 
 interface ProductApiResponseWithItem {
@@ -167,7 +166,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
     if (!selectedType) return null
 
-    switch (selectedType.name) {
+    switch (selectedType.typeName) {
       case "Nấm":
         return (
           <div className='grid grid-cols-2 gap-4'>
@@ -340,8 +339,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           throw new Error("Không tìm thấy thông tin sản phẩm")
         }
 
-        // Sử dụng hàm mapApiResponseToProduct để chuyển đổi dữ liệu
-        const mappedProduct = mapApiResponseToProduct(productData)
+        // Sử dụng trực tiếp productData vì Product interface đã giống ProductApiResponse
+        const mappedProduct = productData
 
         // Hàm tiện ích để chuẩn hóa một URL thành đối tượng file cho Upload component
         const normalizeFile = (url: string, index: number): UploadFile => ({
@@ -359,22 +358,22 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           return urls.map((url, index) => normalizeFile(url, index))
         }
 
-        // Tạo đối tượng form values từ dữ liệu đã được chuyển đổi
+        // Tạo đối tượng form values từ dữ liệu API response
         const formValues: Partial<ProductFormValues> = {
-          name: mappedProduct.name,
-          price: mappedProduct.price,
-          type: mappedProduct.type,
-          quantity: mappedProduct.quantity,
+          name: mappedProduct.productName,
+          price: mappedProduct.productPrice,
+          type: mappedProduct.productType,
+          quantity: mappedProduct.productQuantity,
           discount: mappedProduct.discount,
           isPublished: mappedProduct.isPublished,
-          attributes: mappedProduct.attributes,
-          subTypes: mappedProduct.subTypes,
-          thumb: mappedProduct.thumb
-            ? [normalizeFile(mappedProduct.thumb, 0)]
+          attributes: mappedProduct.productAttributes,
+          subTypes: mappedProduct.subProductType,
+          thumb: mappedProduct.productThumb
+            ? [normalizeFile(mappedProduct.productThumb, 0)]
             : [],
-          pictures: normalizeFileList(mappedProduct.pictures),
-          videos: mappedProduct.videos,
-          description: mappedProduct.description,
+          pictures: normalizeFileList(mappedProduct.productPictures),
+          videos: mappedProduct.productVideos,
+          description: mappedProduct.productDescription,
         }
 
         console.log("Mapped form values:", formValues)
@@ -463,7 +462,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 required
                 rules={{ required: "Vui lòng chọn loại sản phẩm" }}
                 options={productTypes.map((type) => ({
-                  label: type.name,
+                  label: type.typeName,
                   value: type.id
                 }))}
               />

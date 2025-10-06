@@ -12,7 +12,6 @@ import {
   Input,
   Modal,
   Select,
-  Table,
   Tag,
   Image,
   Space,
@@ -27,6 +26,10 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons"
+import DataTable from "../../components/common/DataTable"
+
+// Extend Product interface để tương thích với DataTable
+interface ExtendedProduct extends Product, Record<string, unknown> {}
 
 // Type for product form values
 const ProductsList: React.FC = () => {
@@ -61,7 +64,6 @@ const ProductsList: React.FC = () => {
   const {
     data: productsData,
     isLoading: isLoadingProducts,
-    error: productsError,
   } = useQuery<PaginationData<Product>, Error>({
     queryKey: ["products"],
     queryFn: async () => {
@@ -76,40 +78,27 @@ const ProductsList: React.FC = () => {
 
         const apiData = response.data as unknown as ProductApiResponseData
 
-        // Trả về dữ liệu đã được định dạng đúng
+        // Kiểm tra cấu trúc dữ liệu
+        if (!apiData || typeof apiData !== "object") {
+          throw new Error("Cấu trúc dữ liệu không hợp lệ")
+        }
+
+        // Sử dụng trực tiếp items từ API response vì Product interface đã giống ProductApiResponse
+        const convertedItems = (apiData.items || []) as Product[]
+
+        // Trả về dữ liệu theo định dạng PaginationData
         return {
-          items: apiData.items.map((item) => ({
-            id: item.id,
-            name: item.productName,
-            price: item.productPrice,
-            type: item.productType,
-            thumb: item.productThumb,
-            pictures: item.productPictures || [],
-            videos: item.productVideos || [],
-            description: item.productDescription,
-            quantity: item.productQuantity,
-            subTypes: item.subProductType || [],
-            discount: item.discount,
-            attributes: item.productAttributes || {},
-            isDraft: item.isDraft,
-            isPublished: item.isPublished,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-          })),
+          items: convertedItems,
           total: apiData.pagination?.total || 0,
           page: apiData.pagination?.page || 1,
           limit: apiData.pagination?.page_size || 10,
           totalPages: apiData.pagination?.total_pages || 1,
           hasNext: apiData.pagination?.has_next || false,
           hasPrev: apiData.pagination?.has_prev || false,
-        } as PaginationData<Product>
-      } catch (error: unknown) {
-        console.error("Lỗi khi tải danh sách sản phẩm:", error)
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Không thể tải danh sách sản phẩm"
-        throw new Error(errorMessage)
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error)
+        throw error
       }
     },
   })
@@ -118,12 +107,31 @@ const ProductsList: React.FC = () => {
   const {
     data: productTypesData,
     isLoading: isLoadingTypes,
-    error: productTypesError,
   } = useQuery<PaginationData<ProductType>, Error>({
     queryKey: ["productTypes"],
     queryFn: async () => {
-      const response = await productTypeService.getProductTypes()
-      return response.data
+      try {
+        const response = await productTypeService.getProductTypes()
+        console.log("Product Types Response:", response)
+
+        if (!response?.data) {
+          throw new Error("Dữ liệu loại sản phẩm không hợp lệ")
+        }
+
+        // Trả về dữ liệu theo định dạng PaginationData
+        return {
+          items: response.data.items || [],
+          total: response.data.total || 0,
+          page: response.data.page || 1,
+          limit: response.data.limit || 10,
+          totalPages: response.data.totalPages || 1,
+          hasNext: response.data.hasNext || false,
+          hasPrev: response.data.hasPrev || false,
+        }
+      } catch (error) {
+        console.error("Error fetching product types:", error)
+        throw error
+      }
     },
   })
 
@@ -163,10 +171,10 @@ const ProductsList: React.FC = () => {
         if (!product) return false
 
         const name = String(
-          product.name || product.productName || ""
+          product.productName || ""
         ).toLowerCase()
         const description = String(
-          product.description || product.productDescription || ""
+          product.productDescription || ""
         ).toLowerCase()
 
         return (
@@ -179,7 +187,7 @@ const ProductsList: React.FC = () => {
     // Lọc theo loại sản phẩm
     if (filterType) {
       result = result.filter((product: Product) => {
-        const productType = product.productType || product.type
+        const productType = product.productType
         return productType?.toString() === filterType
       })
     }
@@ -188,7 +196,7 @@ const ProductsList: React.FC = () => {
   }, [productsData, searchTerm, filterType])
 
   // Sử dụng filteredProducts trong giao diện
-  const displayProducts = filteredProducts as Product[]
+  const displayProducts = filteredProducts as ExtendedProduct[]
   console.log("Displaying products:", displayProducts.length)
 
   // Function to handle file change (commented out until needed)
@@ -198,52 +206,136 @@ const ProductsList: React.FC = () => {
   // };
 
   const loading = isLoadingProducts || isLoadingTypes
-  const error = productsError || productTypesError
 
-  // Kiểm tra nếu đang tải
-  if (loading) {
-    return <div>Đang tải sản phẩm...</div>
-  }
-
-  // Kiểm tra nếu có lỗi
-  if (error) {
-    const errorResponse = error as Error
-    return <div>Lỗi khi tải dữ liệu sản phẩm: {errorResponse.message}</div>
-  }
+  // Cấu hình columns cho DataTable
+  const columns = [
+    {
+      key: "thumb",
+      title: "Hình ảnh",
+      width: 100,
+      render: (record: ExtendedProduct) => (
+        <Image
+          src={record.productThumb || "https://via.placeholder.com/80"}
+          width={80}
+          height={80}
+          style={{ objectFit: "cover", borderRadius: "4px" }}
+          alt=""
+        />
+      ),
+    },
+    {
+      key: "name",
+      title: "Tên sản phẩm",
+      render: (record: ExtendedProduct) => (
+        <div>
+          <div className="font-medium">{record.productName}</div>
+          <div className="text-gray-500 text-sm">
+            {record.productDescription
+              ? `${record.productDescription.substring(0, 50)}${
+                  record.productDescription.length > 50 ? "..." : ""
+                }`
+              : "Không có mô tả"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "price",
+      title: "Giá",
+      width: 150,
+      render: (record: ExtendedProduct) => (
+        <div className="font-medium text-right">
+          {new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(Number(record.productPrice || 0))}
+        </div>
+      ),
+    },
+    {
+      key: "quantity",
+      title: "Số lượng",
+      width: 100,
+      render: (record: ExtendedProduct) => (
+        <Tag color={record.productQuantity && record.productQuantity > 0 ? "green" : "red"}>
+          {record.productQuantity || 0}
+        </Tag>
+      ),
+    },
+    {
+      key: "status",
+      title: "Trạng thái",
+      width: 120,
+      render: (record: ExtendedProduct) => (
+        <Tag color={record.isPublished ? "green" : "default"}>
+          {record.isPublished ? "Đang bán" : "Nháp"}
+        </Tag>
+      ),
+    },
+    {
+      key: "action",
+      title: "Hành động",
+      width: 150,
+      render: (record: ExtendedProduct) => (
+        <Space size="middle">
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => {
+              setCurrentProduct(record)
+              setIsViewModalVisible(true)
+            }}
+            title="Xem chi tiết"
+          />
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => handleEditProduct(record)}
+            title="Chỉnh sửa"
+          />
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa sản phẩm này?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Đồng ý"
+            cancelText="Hủy"
+          >
+            <Button danger icon={<DeleteOutlined />} title="Xóa" />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ]
 
   return (
-    <div className='p-4'>
-      <div className='flex justify-between items-center mb-6'>
-        <h1 className='text-2xl font-bold'>Danh sách sản phẩm</h1>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Danh sách sản phẩm</h1>
         <Button
-          type='primary'
-          onClick={() => navigate("/products/new")}
+          type="primary"
           icon={<PlusOutlined />}
+          onClick={() => navigate("/products/add")}
         >
-          Thêm sản phẩm mới
+          Thêm sản phẩm
         </Button>
       </div>
 
-      {/* Thanh tìm kiếm và bộ lọc */}
-      <div className='flex gap-2 mb-6'>
+      {/* Thanh tìm kiếm và lọc */}
+      <div className="mb-6 flex gap-4">
         <Input
-          placeholder='Tìm kiếm sản phẩm...'
+          placeholder="Tìm kiếm sản phẩm..."
+          prefix={<SearchOutlined />}
           value={searchTerm}
           onChange={handleSearch}
-          style={{ width: 300 }}
-          prefix={<SearchOutlined />}
-          allowClear
+          className="flex-1"
         />
         <Select
-          onChange={handleFilter}
+          placeholder="Lọc theo loại sản phẩm"
           value={filterType}
-          style={{ width: 200 }}
-          placeholder='Tất cả loại'
+          onChange={handleFilter}
           allowClear
+          className="w-64"
         >
-          {productTypes?.map((type: ProductType) => (
-            <Select.Option key={type.id} value={type.id.toString()}>
-              {type.name}
+          {productTypes.map((type) => (
+            <Select.Option key={type.id} value={type.id?.toString()}>
+              {type.typeName}
             </Select.Option>
           ))}
         </Select>
@@ -251,132 +343,32 @@ const ProductsList: React.FC = () => {
 
       {/* Danh sách sản phẩm */}
       {!displayProducts.length ? (
-        <div className='text-center py-12 bg-gray-50 rounded'>
+        <div className="text-center py-12 bg-gray-50 rounded">
           <FileSearchOutlined
             style={{ fontSize: "48px", color: "#999", marginBottom: "16px" }}
           />
-          <p className='text-gray-500 text-lg'>
+          <p className="text-gray-500 text-lg">
             Không tìm thấy sản phẩm nào phù hợp
           </p>
         </div>
       ) : (
-        <div className='bg-white rounded shadow'>
-          <Table
-            dataSource={displayProducts}
-            rowKey='id'
-            columns={[
-              {
-                title: "Hình ảnh",
-                dataIndex: "thumb",
-                key: "thumb",
-                width: 100,
-                render: (thumb) => (
-                  <Image
-                    src={thumb || "https://via.placeholder.com/80"}
-                    width={80}
-                    height={80}
-                    style={{ objectFit: "cover", borderRadius: "4px" }}
-                    alt=''
-                  />
-                ),
-              },
-              {
-                title: "Tên sản phẩm",
-                dataIndex: "name",
-                key: "name",
-                render: (text, record) => (
-                  <div>
-                    <div className='font-medium'>{text}</div>
-                    <div className='text-gray-500 text-sm'>
-                      {record.description
-                        ? `${record.description.substring(0, 50)}${
-                            record.description.length > 50 ? "..." : ""
-                          }`
-                        : "Không có mô tả"}
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                title: "Giá",
-                dataIndex: "price",
-                key: "price",
-                width: 150,
-                render: (price) => (
-                  <div className='font-medium text-right'>
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(Number(price || 0))}
-                  </div>
-                ),
-              },
-              {
-                title: "Số lượng",
-                dataIndex: "quantity",
-                key: "quantity",
-                width: 100,
-                render: (quantity) => (
-                  <Tag color={quantity > 0 ? "green" : "red"}>
-                    {quantity || 0}
-                  </Tag>
-                ),
-              },
-              {
-                title: "Trạng thái",
-                dataIndex: "isPublished",
-                key: "status",
-                width: 120,
-                render: (isPublished) => (
-                  <Tag color={isPublished ? "green" : "default"}>
-                    {isPublished ? "Đang bán" : "Nháp"}
-                  </Tag>
-                ),
-              },
-              {
-                title: "Hành động",
-                key: "action",
-                width: 150,
-                render: (_, record) => (
-                  <Space size='middle'>
-                    <Button
-                      icon={<EyeOutlined />}
-                      onClick={() => {
-                        setCurrentProduct(record)
-                        setIsViewModalVisible(true)
-                      }}
-                      title='Xem chi tiết'
-                    />
-                    <Button
-                      icon={<EditOutlined />}
-                      onClick={() => handleEditProduct(record)}
-                      title='Chỉnh sửa'
-                    />
-                    <Popconfirm
-                      title='Bạn có chắc chắn muốn xóa sản phẩm này?'
-                      onConfirm={() => handleDelete(record.id)}
-                      okText='Đồng ý'
-                      cancelText='Hủy'
-                    >
-                      <Button danger icon={<DeleteOutlined />} title='Xóa' />
-                    </Popconfirm>
-                  </Space>
-                ),
-              },
-            ]}
+        <div className="bg-white rounded shadow">
+          <DataTable
+            data={displayProducts}
+            columns={columns}
+            loading={loading}
             pagination={{
               current: productsData?.page || 1,
               pageSize: productsData?.limit || 10,
               total: productsData?.total || 0,
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
-              showTotal: (total) => `Tổng ${total} sản phẩm`,
-              onChange: (page, pageSize) => {
+              showTotal: (total: number) => `Tổng ${total} sản phẩm`,
+              onChange: (page: number, pageSize: number) => {
                 // Xử lý phân trang
                 console.log("Page changed:", page, "Page size:", pageSize)
               },
             }}
-            loading={isLoadingProducts}
           />
         </div>
       )}
@@ -410,25 +402,25 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Hình ảnh'>
               <Image
                 width={200}
-                src={currentProduct.thumb || "https://via.placeholder.com/200"}
-                alt={currentProduct.name}
+                src={currentProduct.productThumb || "https://via.placeholder.com/200"}
+                alt={currentProduct.productName}
                 fallback='https://via.placeholder.com/200'
               />
             </Descriptions.Item>
             <Descriptions.Item label='Tên sản phẩm'>
-              {currentProduct.name}
+              {currentProduct.productName}
             </Descriptions.Item>
             <Descriptions.Item label='Mô tả'>
-              {currentProduct.description || "Không có mô tả"}
+              {currentProduct.productDescription || "Không có mô tả"}
             </Descriptions.Item>
             <Descriptions.Item label='Giá'>
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(Number(currentProduct.price || 0))}
+              }).format(Number(currentProduct.productPrice || 0))}
             </Descriptions.Item>
             <Descriptions.Item label='Số lượng'>
-              {currentProduct.quantity || 0}
+              {currentProduct.productQuantity || 0}
             </Descriptions.Item>
             <Descriptions.Item label='Trạng thái'>
               <Tag color={currentProduct.isPublished ? "green" : "default"}>
@@ -441,25 +433,25 @@ const ProductsList: React.FC = () => {
               </Descriptions.Item>
             )}
             <Descriptions.Item label='Thuộc tính'>
-              {currentProduct.attributes && (
+              {currentProduct.productAttributes && (
                 <div>
-                  {currentProduct.attributes.age !== undefined && (
-                    <div>Tuổi thọ: {String(currentProduct.attributes.age)}</div>
+                  {(currentProduct.productAttributes as Record<string, unknown>).age !== undefined && (
+                    <div>Tuổi thọ: {String((currentProduct.productAttributes as Record<string, unknown>).age)}</div>
                   )}
-                  {currentProduct.attributes.height !== undefined && (
+                  {(currentProduct.productAttributes as Record<string, unknown>).height !== undefined && (
                     <div>
-                      Chiều cao: {String(currentProduct.attributes.height)}
+                      Chiều cao: {String((currentProduct.productAttributes as Record<string, unknown>).height)}
                     </div>
                   )}
-                  {currentProduct.attributes.care_level !== undefined && (
+                  {(currentProduct.productAttributes as Record<string, unknown>).care_level !== undefined && (
                     <div>
                       Mức độ chăm sóc:{" "}
-                      {String(currentProduct.attributes.care_level)}
+                      {String((currentProduct.productAttributes as Record<string, unknown>).care_level)}
                     </div>
                   )}
                   <div>
                     Có kèm chậu:{" "}
-                    {currentProduct.attributes.pot_included ? "Có" : "Không"}
+                    {(currentProduct.productAttributes as Record<string, unknown>).pot_included ? "Có" : "Không"}
                   </div>
                 </div>
               )}

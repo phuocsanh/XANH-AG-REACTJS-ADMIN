@@ -104,7 +104,7 @@ export const useSearchProducts = (
 export const useFilterProducts = (filters: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["products", "filter", filters],
-    queryFn: () => productService.filterProducts(filters),
+    queryFn: () => productService.getProducts(filters as ExtendedProductListParams),
     enabled: Object.keys(filters).length > 0, // Chỉ gọi API khi có filter
   })
 }

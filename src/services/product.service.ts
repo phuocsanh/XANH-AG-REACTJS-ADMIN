@@ -15,7 +15,6 @@ import {
   ProductStatsResponse,
   Product,
   ProductApiResponse,
-  mapApiResponseToProduct,
 } from "@/models/product.model"
 import api from "@/utils/api"
 
@@ -33,7 +32,7 @@ export const productService = {
       console.log("Raw API response:", apiData)
       
       // api.get trả về data trực tiếp (ProductApiResponse[])
-      const mappedProducts = apiData.map(mapApiResponseToProduct)
+      const mappedProducts = apiData as Product[]
       
       return {
         data: {
