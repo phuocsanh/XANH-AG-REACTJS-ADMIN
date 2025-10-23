@@ -43,7 +43,7 @@ export const Header = () => {
 
   const toggleDesktopSidebar = () => {
     // Toggle sidebar trên desktop
-    setIsSidebarOpen(prev => !prev)
+    setIsSidebarOpen((prev) => !prev)
   }
 
   return (
