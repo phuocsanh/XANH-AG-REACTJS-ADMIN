@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useState, useContext } from "react"
 import Button from "@mui/material/Button"
 import { FaRegBell } from "react-icons/fa"
 import { MdOutlineEmail } from "react-icons/md"
+import { FiMenu } from "react-icons/fi"
 
 import { UserImage } from "../user-image"
 
@@ -13,11 +14,14 @@ import Divider from "@mui/material/Divider"
 import PersonAdd from "@mui/icons-material/PersonAdd"
 import Settings from "@mui/icons-material/Settings"
 import Logout from "@mui/icons-material/Logout"
-import { useAppStore } from "@/stores"
+import { useAppStore } from "../../stores"
+import { MyContext } from "../../App"
 
 export const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null)
   const open = Boolean(anchorEl)
+  const { setIsSidebarOpen } = useContext(MyContext)
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget)
   }
@@ -31,9 +35,33 @@ export const Header = () => {
     useAppStore.setState({ accessToken: undefined, isLogin: false })
   }
 
+  const toggleMobileSidebar = () => {
+    // Chỉ mở mobile sidebar, không ẩn header
+    const event = new CustomEvent("toggleMobileSidebar")
+    window.dispatchEvent(event)
+  }
+
+  const toggleDesktopSidebar = () => {
+    // Toggle sidebar trên desktop
+    setIsSidebarOpen(prev => !prev)
+  }
+
   return (
-    <header className='fixed top-0 right-0 bg-white py-3 z-[100] flex items-center justify-between px-4'>
-      {/* <SearchBox /> */}
+    <header className='w-full fixed top-0 right-0 bg-white py-3 z-[100] flex items-center justify-between px-4 shadow-sm'>
+      {/* Mobile menu button */}
+      <div className='md:hidden'>
+        <Button onClick={toggleMobileSidebar}>
+          <FiMenu className='text-xl' />
+        </Button>
+      </div>
+
+      {/* Desktop sidebar toggle button */}
+      <div className='hidden md:block'>
+        <Button onClick={toggleDesktopSidebar}>
+          <FiMenu className='text-xl' />
+        </Button>
+      </div>
+
       <div className='ml-auto part2'>
         <ul className='flex items-center gap-3'>
           <li>
