@@ -1,5 +1,5 @@
-import Dialog from "@mui/material/Dialog";
-import { ReactElement } from "react";
+import Dialog from "@mui/material/Dialog"
+import { ReactElement } from "react"
 
 export default function DialogCustom({
   open,
@@ -7,14 +7,14 @@ export default function DialogCustom({
   children,
   disableBackdropClick = false,
 }: {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  children: ReactElement;
-  disableBackdropClick?: boolean; // Các thành phần của DialogContent thêm vào đây  // TypeScript only: need a type cast here because https://github.com/Microsoft/TypeScript/issues/26591
+  open: boolean
+  setOpen: (open: boolean) => void
+  children: ReactElement
+  disableBackdropClick?: boolean // Các thành phần của DialogContent thêm vào đây  // TypeScript only: need a type cast here because https://github.com/Microsoft/TypeScript/issues/26591
 }) {
   const handleClose = () => {
-    setOpen(false);
-  };
+    setOpen(false)
+  }
 
   return (
     <>
@@ -22,14 +22,14 @@ export default function DialogCustom({
         open={open}
         onClose={(event, reason) => {
           if (reason !== "backdropClick" && !disableBackdropClick) {
-            handleClose();
+            handleClose()
           }
         }}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
       >
         {children}
       </Dialog>
     </>
-  );
+  )
 }

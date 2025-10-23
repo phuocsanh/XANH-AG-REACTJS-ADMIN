@@ -31,7 +31,7 @@ export const OtpPage = () => {
             </Link>
           </div>
           <div className='ml-auto flex items-center justify-end gap-3'>
-            <Link to='/signIn'>
+            <Link to='/sign-in'>
               <Button className='btn-border btn-round'>
                 <LuArrowRightToLine /> Login
               </Button>
@@ -88,7 +88,7 @@ export const OtpPage = () => {
             </div>
 
             <p className='text-center text'>
-              Don’t want to reset? <Link to='/signIn'>Sign In</Link>
+              Don’t want to reset? <Link to='/sign-in'>Sign In</Link>
             </p>
           </form>
         </div>

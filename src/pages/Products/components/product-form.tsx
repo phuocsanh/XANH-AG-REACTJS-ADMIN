@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button, message, Card, Space } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
-import { FormField, FormComboBox, FormImageUpload } from "@/components/Form"
+import { FormField, FormComboBox, FormImageUpload } from "@/components/form"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, CreateAxiosDefaults } from "axios"
 import queryString from "query-string"
-import { isFile, isFileArray, isObjectLike } from "./checkType"
+import { isFile, isFileArray, isObjectLike } from "./check-type"
 import { AnyObject, ApiResponse } from "../models/common"
 import { useAppStore } from "../stores"
 import { authService } from "../services"
@@ -257,7 +257,7 @@ api.instance.interceptors.response.use(
     // Xử lý lỗi 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Không thử refresh token cho endpoint đăng nhập
-      if (originalRequest.url?.includes('/auth/login')) {
+      if (originalRequest.url?.includes("/auth/login")) {
         return Promise.reject(error)
       }
 

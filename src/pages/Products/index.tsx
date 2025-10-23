@@ -1,8 +1,8 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import ProductsList from './productsList'
-import ProductCreate from './productCreate'
-import ProductEdit from './productEdit'
+import React from "react"
+import { Routes, Route } from "react-router-dom"
+import ProductsList from "./products-list"
+import ProductCreate from "./product-create"
+import ProductEdit from "./product-edit"
 
 /**
  * Component chính quản lý routing cho module Products
@@ -13,12 +13,12 @@ const Products: React.FC = () => {
     <Routes>
       {/* Trang danh sách sản phẩm */}
       <Route index element={<ProductsList />} />
-      
+
       {/* Trang tạo sản phẩm mới */}
-      <Route path="new" element={<ProductCreate />} />
-      
+      <Route path='new' element={<ProductCreate />} />
+
       {/* Trang chỉnh sửa sản phẩm */}
-      <Route path="edit/:id" element={<ProductEdit />} />
+      <Route path='edit/:id' element={<ProductEdit />} />
     </Routes>
   )
 }

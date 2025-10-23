@@ -3,7 +3,7 @@ import Button from "@mui/material/Button"
 import { Link } from "react-router-dom"
 import { CircularProgress, InputAdornment, TextField } from "@mui/material"
 import { useForm } from "react-hook-form"
-import formConfig, { FormField } from "./formConfig"
+import formConfig, { FormField } from "./form-config"
 import { useContext, useEffect, useState } from "react"
 import { MyContext } from "@/App"
 import { useLoginMutation } from "@/queries/use-auth"
@@ -35,10 +35,10 @@ export const SignIn = () => {
   const onSubmit = async (values: FormField) => {
     try {
       // Sử dụng trực tiếp values từ form với validation đã được thực hiện - theo pattern của example
-      await loginMutation.mutateAsync(values);
+      await loginMutation.mutateAsync(values)
     } catch (error) {
       // Lỗi đã được xử lý trong useLoginMutation
-      console.error("Lỗi đăng nhập:", error);
+      console.error("Lỗi đăng nhập:", error)
     }
   }
   return (
@@ -51,7 +51,7 @@ export const SignIn = () => {
             </Link>
           </div>
           <div className='ml-auto flex items-center justify-end gap-3'>
-            {/* <Link to='/signIn'>
+            {/* <Link to='/sign-in'>
               <Button className='btn-border btn-round'>
                 <LuArrowRightToLine /> Login
               </Button>

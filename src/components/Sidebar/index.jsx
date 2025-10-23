@@ -125,7 +125,7 @@ const Sidebar = () => {
                 </Button>
               </Link>
             </li>
-            
+
             <li>
               <Link to='/users'>
                 <Button
@@ -139,7 +139,7 @@ const Sidebar = () => {
                 </Button>
               </Link>
             </li>
-            
+
             {/* Quản lý nhập hàng */}
             <li>
               <Button
@@ -195,7 +195,7 @@ const Sidebar = () => {
             {!isLogin && (
               <>
                 <li>
-                  <Link to='/signIn'>
+                  <Link to='/sign-in'>
                     <Button
                       className={`w-100 ${activeTab === 7 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(7)}

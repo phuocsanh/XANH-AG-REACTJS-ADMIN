@@ -17,15 +17,21 @@ export const useLoginMutation = () => {
     },
     onError: (error: unknown) => {
       console.error("Lỗi đăng nhập:", error)
-      
+
       // Hiển thị thông báo lỗi phù hợp dựa trên status code
-      const axiosError = error as { response?: { status?: number }; message?: string }
-      
+      const axiosError = error as {
+        response?: { status?: number }
+        message?: string
+      }
+
       if (axiosError?.response?.status === 401) {
         toast.error("Tài khoản hoặc mật khẩu không chính xác!")
       } else if (axiosError?.response?.status === 429) {
         toast.error("Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau!")
-      } else if (axiosError?.response?.status && axiosError.response.status >= 500) {
+      } else if (
+        axiosError?.response?.status &&
+        axiosError.response.status >= 500
+      ) {
         toast.error("Lỗi máy chủ. Vui lòng thử lại sau!")
       } else if (axiosError?.message) {
         toast.error(axiosError.message)
@@ -61,7 +67,7 @@ export const useLogoutMutation = () => {
       // Xóa cache và state
       queryClient.clear()
 
-      navigate("/signIn")
+      navigate("/sign-in")
       toast.success("Đăng xuất thành công!")
     },
     onError: (error: Error) => {

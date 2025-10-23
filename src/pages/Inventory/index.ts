@@ -1,4 +1,4 @@
 // Export tất cả các components của Inventory
-export { default as InventoryReceiptsList } from './InventoryReceiptsList'
-export { default as InventoryReceiptDetail } from './InventoryReceiptDetail'
-export { default as InventoryReceiptCreate } from './InventoryReceiptCreate'
+export { default as InventoryReceiptsList } from "./inventory-receipts-list"
+export { default as InventoryReceiptDetail } from "./inventory-receipt-detail"
+export { default as InventoryReceiptCreate } from "./inventory-receipt-create"

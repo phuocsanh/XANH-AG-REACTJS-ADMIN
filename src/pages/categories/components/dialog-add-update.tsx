@@ -1,9 +1,9 @@
 import { Button, TextField, Switch, FormControlLabel } from "@mui/material"
 import { useEffect } from "react"
 import { IoCloseCircleSharp } from "react-icons/io5"
-import DialogCustom from "@/components/Dialog"
+import DialogCustom from "@/components/dialog"
 import { useForm } from "react-hook-form"
-import formConfig, { FormField } from "./formConfig"
+import formConfig, { FormField } from "./form-config"
 import {
   useCreateProductTypeMutation,
   useUpdateProductTypeMutation,
@@ -187,7 +187,12 @@ function DialogAddUpdate({
               control={
                 <Switch
                   checked={status === Status.ACTIVE}
-                  onChange={(e) => setValue("status", e.target.checked ? Status.ACTIVE : Status.INACTIVE)}
+                  onChange={(e) =>
+                    setValue(
+                      "status",
+                      e.target.checked ? Status.ACTIVE : Status.INACTIVE
+                    )
+                  }
                 />
               }
               label='Hoạt động'

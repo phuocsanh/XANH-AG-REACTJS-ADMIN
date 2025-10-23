@@ -150,18 +150,12 @@ function ComboBox({
     ? displayOptions
     : displayOptions.map((option) => {
         const mappedOption = { ...option }
-        if (
-          valueField !== "value" &&
-          valueField in option
-        ) {
-          mappedOption.value = (option as Record<string, unknown>)[valueField] as
-            | string
-            | number
+        if (valueField !== "value" && valueField in option) {
+          mappedOption.value = (option as Record<string, unknown>)[
+            valueField
+          ] as string | number
         }
-        if (
-          labelField !== "label" &&
-          labelField in option
-        ) {
+        if (labelField !== "label" && labelField in option) {
           mappedOption.label = (option as Record<string, unknown>)[
             labelField
           ] as string
@@ -198,7 +192,10 @@ function ComboBox({
 
   // Xử lý change
   const handleChange = React.useCallback(
-    (newValue: string | number | (string | number)[], option?: DefaultOptionType | DefaultOptionType[]) => {
+    (
+      newValue: string | number | (string | number)[],
+      option?: DefaultOptionType | DefaultOptionType[]
+    ) => {
       // Gọi onChange của Select
       if (onChange) {
         onChange(newValue as string | number, option)
@@ -254,5 +251,5 @@ function ComboBox({
   return selectComponent
 }
 
-export default ComboBox;
-export type { ComboBoxProps, ComboBoxOption, ApiResponse, ApiFunction };
+export default ComboBox
+export type { ComboBoxProps, ComboBoxOption, ApiResponse, ApiFunction }

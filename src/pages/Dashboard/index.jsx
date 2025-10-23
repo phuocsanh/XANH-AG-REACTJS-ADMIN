@@ -1,5 +1,5 @@
 import { useEffect, useContext, useState } from "react"
-import DashboardBox from "./components/dashboardBox"
+import DashboardBox from "./components/dashboard-box"
 import { FaUserCircle } from "react-icons/fa"
 import { IoMdCart } from "react-icons/io"
 import { MdShoppingBag } from "react-icons/md"
@@ -45,7 +45,7 @@ import {
   Legend,
   Scatter,
 } from "recharts"
-import { SearchBox } from "../../components/SearchBox"
+import { SearchBox } from "../../components/search-box"
 
 const data = [
   {

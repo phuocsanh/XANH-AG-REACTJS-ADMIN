@@ -8,15 +8,20 @@ import "swiper/css/navigation"
 import { MyContext } from "../../App"
 
 import * as React from "react"
-import { ProductSubtype, productSubtypeService } from "../../services/product-subtype.service"
+import {
+  ProductSubtype,
+  productSubtypeService,
+} from "../../services/product-subtype.service"
 import { toast } from "react-toastify"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import DialogAddUpdate from "./components/DialogAddUpdate"
-import DataTable from "../../components/common/DataTable"
+import DialogAddUpdate from "./components/dialog-add-update"
+import DataTable from "../../components/common/data-table"
 import { Tag } from "antd"
 
 // Extend ProductSubtype interface để tương thích với DataTable
-interface ExtendedProductSubtype extends ProductSubtype, Record<string, unknown> {}
+interface ExtendedProductSubtype
+  extends ProductSubtype,
+    Record<string, unknown> {}
 
 const ListSubCategory = () => {
   const context = useContext(MyContext)
@@ -72,7 +77,11 @@ const ListSubCategory = () => {
 
   // Xử lý xóa loại phụ sản phẩm
   const handleDelete = async (record: ExtendedProductSubtype) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa loại phụ sản phẩm "${record.subtypeName}"?`)) {
+    if (
+      window.confirm(
+        `Bạn có chắc chắn muốn xóa loại phụ sản phẩm "${record.subtypeName}"?`
+      )
+    ) {
       try {
         await deleteProductSubtypeMutation.mutateAsync(record.id)
       } catch (error) {
@@ -94,28 +103,28 @@ const ListSubCategory = () => {
       inactive: { color: "red", text: "Không hoạt động" },
       archived: { color: "orange", text: "Lưu trữ" },
     }
-    const config = statusConfig[status as keyof typeof statusConfig] || { color: "default", text: status }
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      color: "default",
+      text: status,
+    }
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
   return (
     <>
-      <div className="right-content w-100">
-        <div className="card shadow border-0 w-100 flex-row p-4">
-          <h5 className="mb-0">Danh sách loại phụ sản phẩm</h5>
-          <div className="ml-auto d-flex align-items-center">
-            <div className="ml-auto d-flex align-items-center">
-              <Button
-                className="btn-blue ml-3 pl-3 pr-3"
-                onClick={handleAdd}
-              >
+      <div className='right-content w-100'>
+        <div className='card shadow border-0 w-100 flex-row p-4'>
+          <h5 className='mb-0'>Danh sách loại phụ sản phẩm</h5>
+          <div className='ml-auto d-flex align-items-center'>
+            <div className='ml-auto d-flex align-items-center'>
+              <Button className='btn-blue ml-3 pl-3 pr-3' onClick={handleAdd}>
                 <IoMdAdd /> &nbsp; Thêm loại phụ sản phẩm
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="card shadow border-0 p-3 mt-4">
+        <div className='card shadow border-0 p-3 mt-4'>
           <DataTable<ExtendedProductSubtype>
             columns={[
               {
@@ -152,7 +161,7 @@ const ListSubCategory = () => {
                 title: "Ngày tạo",
                 dataIndex: "createdAt",
                 key: "createdAt",
-                render: (date: string) => 
+                render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
                 sorter: true,
               },
@@ -160,7 +169,7 @@ const ListSubCategory = () => {
             data={rows}
             loading={isLoading}
             showSearch={true}
-            searchPlaceholder="Tìm kiếm loại phụ sản phẩm..."
+            searchPlaceholder='Tìm kiếm loại phụ sản phẩm...'
             searchableColumns={["subtypeName", "subtypeCode", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -168,7 +177,7 @@ const ListSubCategory = () => {
               pageSize: 10,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) => 
+              showTotal: (total, range) =>
                 `${range[0]}-${range[1]} của ${total} loại phụ sản phẩm`,
             }}
           />

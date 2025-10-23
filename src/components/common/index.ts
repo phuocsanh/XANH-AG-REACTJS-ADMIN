@@ -1,18 +1,18 @@
 // Export tất cả common components
-export { default as FormField } from "../Form/FormField"
-export { default as RichTextEditor } from "./RichTextEditor"
-export { default as LoadingSpinner } from "./LoadingSpinner"
-export { default as ConfirmDialog, useConfirmDialog } from "./ConfirmDialog"
-export { default as DataTable } from "./DataTable"
-export { default as SearchFilter } from "./SearchFilter"
-export { default as StatusBadge } from "./StatusBadge"
-export { default as FormComboBox } from "../Form/FormComboBox"
+export { default as FormField } from "../form/form-field"
+export { default as RichTextEditor } from "./rich-text-editor"
+export { default as LoadingSpinner } from "./loading-spinner"
+export { default as ConfirmDialog, useConfirmDialog } from "./confirm-dialog"
+export { default as DataTable } from "./data-table"
+export { default as SearchFilter } from "./search-filter"
+export { default as StatusBadge } from "./status-badge"
+export { default as FormComboBox } from "../form/form-combo-box"
 
 // Export types
-export type { DataTableProps, ActionButton } from "./DataTable"
-export type { SearchFilterProps, FilterField } from "./SearchFilter"
-export type { StatusBadgeProps } from "./StatusBadge"
-export type { FormComboBoxProps, ComboBoxOption } from "../Form/FormComboBox"
+export type { DataTableProps, ActionButton } from "./data-table"
+export type { SearchFilterProps, FilterField } from "./search-filter"
+export type { StatusBadgeProps } from "./status-badge"
+export type { FormComboBoxProps, ComboBoxOption } from "../form/form-combo-box"
 
 /**
  * Common Components Library

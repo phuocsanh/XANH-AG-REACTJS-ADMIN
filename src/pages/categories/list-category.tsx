@@ -8,7 +8,7 @@ import "swiper/css/navigation"
 import { MyContext } from "../../App"
 
 import * as React from "react"
-import DialogAddUpdate from "./components/DialogAddUpdate"
+import DialogAddUpdate from "./components/dialog-add-update"
 import {
   useProductTypes,
   useDeleteProductTypeMutation,
@@ -16,7 +16,7 @@ import {
 import { ProductType } from "../../models/product-type.model"
 import { Status } from "../../models/common"
 import { toast } from "react-toastify"
-import DataTable from "../../components/common/DataTable"
+import DataTable from "../../components/common/data-table"
 import { Tag } from "antd"
 
 // Extend ProductType interface để tương thích với DataTable
@@ -59,7 +59,11 @@ const ListCategory = () => {
 
   // Xử lý xóa loại sản phẩm
   const handleDelete = async (record: ExtendedProductType) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa loại sản phẩm "${record.typeName}"?`)) {
+    if (
+      window.confirm(
+        `Bạn có chắc chắn muốn xóa loại sản phẩm "${record.typeName}"?`
+      )
+    ) {
       try {
         await deleteProductTypeMutation.mutateAsync(record.id as number)
         toast.success("Xóa loại sản phẩm thành công!")
@@ -89,22 +93,19 @@ const ListCategory = () => {
 
   return (
     <>
-      <div className="right-content w-100">
-        <div className="card shadow border-0 w-100 flex-row p-4">
-          <h5 className="mb-0">Danh sách loại sản phẩm</h5>
-          <div className="ml-auto d-flex align-items-center">
-            <div className="ml-auto d-flex align-items-center">
-              <Button
-                className="btn-blue ml-3 pl-3 pr-3"
-                onClick={handleAdd}
-              >
+      <div className='right-content w-100'>
+        <div className='card shadow border-0 w-100 flex-row p-4'>
+          <h5 className='mb-0'>Danh sách loại sản phẩm</h5>
+          <div className='ml-auto d-flex align-items-center'>
+            <div className='ml-auto d-flex align-items-center'>
+              <Button className='btn-blue ml-3 pl-3 pr-3' onClick={handleAdd}>
                 <IoMdAdd /> &nbsp; Thêm loại sản phẩm
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="card shadow border-0 p-3 mt-4">
+        <div className='card shadow border-0 p-3 mt-4'>
           <DataTable<ExtendedProductType>
             columns={[
               {
@@ -135,7 +136,7 @@ const ListCategory = () => {
                 title: "Ngày tạo",
                 dataIndex: "createdAt",
                 key: "createdAt",
-                render: (date: string) => 
+                render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
                 sorter: true,
               },
@@ -143,7 +144,7 @@ const ListCategory = () => {
             data={rows}
             loading={isLoading}
             showSearch={true}
-            searchPlaceholder="Tìm kiếm loại sản phẩm..."
+            searchPlaceholder='Tìm kiếm loại sản phẩm...'
             searchableColumns={["typeName", "typeCode", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -151,7 +152,7 @@ const ListCategory = () => {
               pageSize: 10,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) => 
+              showTotal: (total, range) =>
                 `${range[0]}-${range[1]} của ${total} loại sản phẩm`,
             }}
           />

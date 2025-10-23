@@ -3,7 +3,7 @@ import Button from "@mui/material/Button"
 import { FaRegBell } from "react-icons/fa"
 import { MdOutlineEmail } from "react-icons/md"
 
-import { UserImage } from "../userImage"
+import { UserImage } from "../user-image"
 
 import Avatar from "@mui/material/Avatar"
 import Menu from "@mui/material/Menu"

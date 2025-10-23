@@ -26,7 +26,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from "@ant-design/icons"
-import DataTable from "../../components/common/DataTable"
+import DataTable from "../../components/common/data-table"
 
 // Extend Product interface để tương thích với DataTable
 interface ExtendedProduct extends Product, Record<string, unknown> {}
@@ -61,10 +61,10 @@ const ProductsList: React.FC = () => {
   }
 
   // Sử dụng useQuery để fetch danh sách sản phẩm
-  const {
-    data: productsData,
-    isLoading: isLoadingProducts,
-  } = useQuery<PaginationData<Product>, Error>({
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery<
+    PaginationData<Product>,
+    Error
+  >({
     queryKey: ["products"],
     queryFn: async () => {
       try {
@@ -104,10 +104,10 @@ const ProductsList: React.FC = () => {
   })
 
   // Sử dụng useQuery để fetch danh sách loại sản phẩm
-  const {
-    data: productTypesData,
-    isLoading: isLoadingTypes,
-  } = useQuery<PaginationData<ProductType>, Error>({
+  const { data: productTypesData, isLoading: isLoadingTypes } = useQuery<
+    PaginationData<ProductType>,
+    Error
+  >({
     queryKey: ["productTypes"],
     queryFn: async () => {
       try {
@@ -170,9 +170,7 @@ const ProductsList: React.FC = () => {
       result = result.filter((product: Product) => {
         if (!product) return false
 
-        const name = String(
-          product.productName || ""
-        ).toLowerCase()
+        const name = String(product.productName || "").toLowerCase()
         const description = String(
           product.productDescription || ""
         ).toLowerCase()
@@ -219,7 +217,7 @@ const ProductsList: React.FC = () => {
           width={80}
           height={80}
           style={{ objectFit: "cover", borderRadius: "4px" }}
-          alt=""
+          alt=''
         />
       ),
     },
@@ -228,8 +226,8 @@ const ProductsList: React.FC = () => {
       title: "Tên sản phẩm",
       render: (record: ExtendedProduct) => (
         <div>
-          <div className="font-medium">{record.productName}</div>
-          <div className="text-gray-500 text-sm">
+          <div className='font-medium'>{record.productName}</div>
+          <div className='text-gray-500 text-sm'>
             {record.productDescription
               ? `${record.productDescription.substring(0, 50)}${
                   record.productDescription.length > 50 ? "..." : ""
@@ -244,7 +242,7 @@ const ProductsList: React.FC = () => {
       title: "Giá",
       width: 150,
       render: (record: ExtendedProduct) => (
-        <div className="font-medium text-right">
+        <div className='font-medium text-right'>
           {new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
@@ -257,7 +255,13 @@ const ProductsList: React.FC = () => {
       title: "Số lượng",
       width: 100,
       render: (record: ExtendedProduct) => (
-        <Tag color={record.productQuantity && record.productQuantity > 0 ? "green" : "red"}>
+        <Tag
+          color={
+            record.productQuantity && record.productQuantity > 0
+              ? "green"
+              : "red"
+          }
+        >
           {record.productQuantity || 0}
         </Tag>
       ),
@@ -277,27 +281,27 @@ const ProductsList: React.FC = () => {
       title: "Hành động",
       width: 150,
       render: (record: ExtendedProduct) => (
-        <Space size="middle">
+        <Space size='middle'>
           <Button
             icon={<EyeOutlined />}
             onClick={() => {
               setCurrentProduct(record)
               setIsViewModalVisible(true)
             }}
-            title="Xem chi tiết"
+            title='Xem chi tiết'
           />
           <Button
             icon={<EditOutlined />}
             onClick={() => handleEditProduct(record)}
-            title="Chỉnh sửa"
+            title='Chỉnh sửa'
           />
           <Popconfirm
-            title="Bạn có chắc chắn muốn xóa sản phẩm này?"
+            title='Bạn có chắc chắn muốn xóa sản phẩm này?'
             onConfirm={() => handleDelete(record.id)}
-            okText="Đồng ý"
-            cancelText="Hủy"
+            okText='Đồng ý'
+            cancelText='Hủy'
           >
-            <Button danger icon={<DeleteOutlined />} title="Xóa" />
+            <Button danger icon={<DeleteOutlined />} title='Xóa' />
           </Popconfirm>
         </Space>
       ),
@@ -305,11 +309,11 @@ const ProductsList: React.FC = () => {
   ]
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Danh sách sản phẩm</h1>
+    <div className='p-6'>
+      <div className='flex justify-between items-center mb-6'>
+        <h1 className='text-2xl font-bold'>Danh sách sản phẩm</h1>
         <Button
-          type="primary"
+          type='primary'
           icon={<PlusOutlined />}
           onClick={() => navigate("/products/add")}
         >
@@ -318,20 +322,20 @@ const ProductsList: React.FC = () => {
       </div>
 
       {/* Thanh tìm kiếm và lọc */}
-      <div className="mb-6 flex gap-4">
+      <div className='mb-6 flex gap-4'>
         <Input
-          placeholder="Tìm kiếm sản phẩm..."
+          placeholder='Tìm kiếm sản phẩm...'
           prefix={<SearchOutlined />}
           value={searchTerm}
           onChange={handleSearch}
-          className="flex-1"
+          className='flex-1'
         />
         <Select
-          placeholder="Lọc theo loại sản phẩm"
+          placeholder='Lọc theo loại sản phẩm'
           value={filterType}
           onChange={handleFilter}
           allowClear
-          className="w-64"
+          className='w-64'
         >
           {productTypes.map((type) => (
             <Select.Option key={type.id} value={type.id?.toString()}>
@@ -343,16 +347,16 @@ const ProductsList: React.FC = () => {
 
       {/* Danh sách sản phẩm */}
       {!displayProducts.length ? (
-        <div className="text-center py-12 bg-gray-50 rounded">
+        <div className='text-center py-12 bg-gray-50 rounded'>
           <FileSearchOutlined
             style={{ fontSize: "48px", color: "#999", marginBottom: "16px" }}
           />
-          <p className="text-gray-500 text-lg">
+          <p className='text-gray-500 text-lg'>
             Không tìm thấy sản phẩm nào phù hợp
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded shadow">
+        <div className='bg-white rounded shadow'>
           <DataTable
             data={displayProducts}
             columns={columns}
@@ -402,7 +406,10 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Hình ảnh'>
               <Image
                 width={200}
-                src={currentProduct.productThumb || "https://via.placeholder.com/200"}
+                src={
+                  currentProduct.productThumb ||
+                  "https://via.placeholder.com/200"
+                }
                 alt={currentProduct.productName}
                 fallback='https://via.placeholder.com/200'
               />
@@ -435,23 +442,58 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Thuộc tính'>
               {currentProduct.productAttributes && (
                 <div>
-                  {(currentProduct.productAttributes as Record<string, unknown>).age !== undefined && (
-                    <div>Tuổi thọ: {String((currentProduct.productAttributes as Record<string, unknown>).age)}</div>
-                  )}
-                  {(currentProduct.productAttributes as Record<string, unknown>).height !== undefined && (
+                  {(currentProduct.productAttributes as Record<string, unknown>)
+                    .age !== undefined && (
                     <div>
-                      Chiều cao: {String((currentProduct.productAttributes as Record<string, unknown>).height)}
+                      Tuổi thọ:{" "}
+                      {String(
+                        (
+                          currentProduct.productAttributes as Record<
+                            string,
+                            unknown
+                          >
+                        ).age
+                      )}
                     </div>
                   )}
-                  {(currentProduct.productAttributes as Record<string, unknown>).care_level !== undefined && (
+                  {(currentProduct.productAttributes as Record<string, unknown>)
+                    .height !== undefined && (
+                    <div>
+                      Chiều cao:{" "}
+                      {String(
+                        (
+                          currentProduct.productAttributes as Record<
+                            string,
+                            unknown
+                          >
+                        ).height
+                      )}
+                    </div>
+                  )}
+                  {(currentProduct.productAttributes as Record<string, unknown>)
+                    .care_level !== undefined && (
                     <div>
                       Mức độ chăm sóc:{" "}
-                      {String((currentProduct.productAttributes as Record<string, unknown>).care_level)}
+                      {String(
+                        (
+                          currentProduct.productAttributes as Record<
+                            string,
+                            unknown
+                          >
+                        ).care_level
+                      )}
                     </div>
                   )}
                   <div>
                     Có kèm chậu:{" "}
-                    {(currentProduct.productAttributes as Record<string, unknown>).pot_included ? "Có" : "Không"}
+                    {(
+                      currentProduct.productAttributes as Record<
+                        string,
+                        unknown
+                      >
+                    ).pot_included
+                      ? "Có"
+                      : "Không"}
                   </div>
                 </div>
               )}
