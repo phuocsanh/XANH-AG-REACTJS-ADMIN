@@ -11,7 +11,7 @@ import {
 import { Dashboard } from "./pages/dashboard"
 import ProductsList from "./pages/products/products-list"
 import { SignIn } from "./pages/sign-in"
-import { ForgotPassword } from "./pages/forgot-password"
+
 import { OtpPage } from "./pages/otp"
 import { ProductCreate } from "./pages/products/product-create"
 import { ProductEdit } from "./pages/products/product-edit"
@@ -27,6 +27,7 @@ import {
 } from "./pages/inventory"
 import { useAppStore } from "./stores"
 import authService from "./services/auth.service"
+import { ForgotPassword } from "./pages/forgot-password"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
