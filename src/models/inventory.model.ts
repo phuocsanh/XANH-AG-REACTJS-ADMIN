@@ -18,13 +18,13 @@ export enum InventoryTransactionType {
   ADJUSTMENT = 3,
 }
 
-// Interface cho phiếu nhập hàng - sử dụng trực tiếp từ API với các trường bổ sung
+// Interface cho phiếu nhập hàng
 export interface InventoryReceipt {
   id: number
   code: string
   description?: string
   status: number
-  statusText: string // Trường bổ sung để hiển thị text trạng thái
+  statusText: string
   totalAmount: string
   supplierName?: string
   supplierContact?: string
@@ -60,7 +60,7 @@ export interface InventoryHistory {
   productId: number
   productName: string
   transactionType: number
-  transactionTypeText: string // Trường bổ sung để hiển thị text loại giao dịch
+  transactionTypeText: string
   quantity: number
   unitPrice: string
   totalPrice: string
@@ -165,7 +165,6 @@ export function mapApiResponseToInventoryHistory(
 }
 
 // Helper functions
-// Hàm helper để lấy text trạng thái
 export const getInventoryReceiptStatusText = (status: number): string => {
   switch (status) {
     case InventoryReceiptStatus.DRAFT:
@@ -183,7 +182,6 @@ export const getInventoryReceiptStatusText = (status: number): string => {
   }
 }
 
-// Hàm helper để lấy text loại giao dịch
 export const getInventoryTransactionTypeText = (type: number): string => {
   switch (type) {
     case InventoryTransactionType.IMPORT:

@@ -1,7 +1,8 @@
 // Định nghĩa các kiểu dữ liệu cho loại sản phẩm
 import { ApiResponse } from "./auth.model"
-import { PaginationData, PaginationResponse } from "./pagination.model"
+import { PaginationData, PaginationResponse } from "./pagination"
 import { Status, AnyObject } from "./common"
+import { ProductSubtype } from "./product-subtype.model"
 
 export interface ProductType {
   id: number
@@ -22,15 +23,6 @@ export interface ExtendedProductType
 export interface ExtendedProductSubtype
   extends ProductSubtype,
     Record<string, unknown> {}
-
-export interface ProductSubtype extends Record<string, unknown> {
-  id: number
-  name: string
-  description?: string
-  productTypeId: number
-  createdAt: string
-  updatedAt: string
-}
 
 export interface ProductTypeRequest {
   [key: string]: unknown

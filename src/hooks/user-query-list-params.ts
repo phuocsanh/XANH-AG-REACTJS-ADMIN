@@ -1,8 +1,8 @@
-import { FILTER_DATE } from '@/constant/const';
-import { capitalizeFirstLetter } from '@/lib/text';
-import { FieldColumn, QueryListPayloadType } from '@/types';
-import { format, startOfMonth } from 'date-fns';
-import { useCallback, useState } from 'react';
+import { FILTER_DATE } from "@/constant/const"
+import { capitalizeFirstLetter } from "@/lib/text"
+import { FieldColumn, QueryListPayloadType } from "@/models"
+import { format, startOfMonth } from "date-fns"
+import { useCallback, useState } from "react"
 
 /**
  * Creates a filter date column object based on the specified time frame.
@@ -12,13 +12,17 @@ import { useCallback, useState } from 'react';
  * @param to - The end date of the time frame.
  * @returns A filter date column object.
  */
-export const createFilterDateColumn = (field: string, from: Date, to: Date): FieldColumn => {
+export const createFilterDateColumn = (
+  field: string,
+  from: Date,
+  to: Date
+): FieldColumn => {
   return {
     column: capitalizeFirstLetter(field),
     keySearch: `${format(from, FILTER_DATE)}-${format(to, FILTER_DATE)}`,
-    expression: 'BETWEEN',
-  };
-};
+    expression: "BETWEEN",
+  }
+}
 
 /**
  * Gets the initial filter column for the specified time field (default is 'billTime').
@@ -27,11 +31,11 @@ export const createFilterDateColumn = (field: string, from: Date, to: Date): Fie
  * @returns An array containing the initial filter column.
  */
 const getInitialFilterColumn = (timeField: string) => {
-  const currentDate = new Date();
-  const firstOfMonth = startOfMonth(currentDate);
+  const currentDate = new Date()
+  const firstOfMonth = startOfMonth(currentDate)
 
-  return [createFilterDateColumn(timeField, firstOfMonth, currentDate)];
-};
+  return [createFilterDateColumn(timeField, firstOfMonth, currentDate)]
+}
 
 /**
  * Custom hook for managing query list parameters, including filter columns.
@@ -39,19 +43,23 @@ const getInitialFilterColumn = (timeField: string) => {
  * @param timeField - The name of the time field to use for date filtering (default is 'billTime').
  * @returns An object containing functions and state for managing query list parameters.
  */
-export const useQueryListParams = (timeField = 'billTime') => {
-  const [queryListParams, setQueryListParams] = useState<Partial<QueryListPayloadType>>(() => ({
+export const useQueryListParams = (timeField = "billTime") => {
+  const [queryListParams, setQueryListParams] = useState<
+    Partial<QueryListPayloadType>
+  >(() => ({
     filterColumn: getInitialFilterColumn(timeField),
-  }));
+  }))
 
   /**
    * Sets the filter column in the query list parameters.
    *
    * @param filterColumn - An array of filter column objects.
    */
-  const setFilterColumn = (filterColumn: QueryListPayloadType['filterColumn']) => {
-    setQueryListParams(params => ({ ...params, filterColumn }));
-  };
+  const setFilterColumn = (
+    filterColumn: QueryListPayloadType["filterColumn"]
+  ) => {
+    setQueryListParams((params) => ({ ...params, filterColumn }))
+  }
 
   /**
    * Adds or replaces a filter column in the query list parameters.
@@ -63,19 +71,19 @@ export const useQueryListParams = (timeField = 'billTime') => {
       ...columnFilter,
       column: capitalizeFirstLetter(columnFilter.column),
       keySearch: String(columnFilter.keySearch),
-    };
+    }
 
-    setQueryListParams(params => {
-      const columns = (params.filterColumn || []).filter(item => {
-        return item.column !== newFieldColumn.column;
-      });
+    setQueryListParams((params) => {
+      const columns = (params.filterColumn || []).filter((item) => {
+        return item.column !== newFieldColumn.column
+      })
 
       return {
         ...params,
         filterColumn: [...columns, newFieldColumn],
-      };
-    });
-  }, []);
+      }
+    })
+  }, [])
 
   /**
    * Adds or replaces a filter date column in the query list parameters.
@@ -86,31 +94,37 @@ export const useQueryListParams = (timeField = 'billTime') => {
    */
   const addOrReplaceFilterDateColumn = useCallback(
     (field: string, from: Date, to: Date) => {
-      addOrReplaceFilterColumn(createFilterDateColumn(field, from, to));
+      addOrReplaceFilterColumn(createFilterDateColumn(field, from, to))
     },
     [addOrReplaceFilterColumn]
-  );
+  )
 
   /**
    * Removes a filter column from the query list parameters.
    *
    * @param columnName - The name of the column to remove.
    */
-  const removeFilterColumn = useCallback((columnName: FieldColumn['column']) => {
-    setQueryListParams(params => ({
-      ...params,
-      filterColumn: params.filterColumn?.filter(i => {
-        return i.column !== capitalizeFirstLetter(columnName);
-      }),
-    }));
-  }, []);
+  const removeFilterColumn = useCallback(
+    (columnName: FieldColumn["column"]) => {
+      setQueryListParams((params) => ({
+        ...params,
+        filterColumn: params.filterColumn?.filter((i) => {
+          return i.column !== capitalizeFirstLetter(columnName)
+        }),
+      }))
+    },
+    []
+  )
 
   /**
    * Clears the filter column in the query list parameters and sets it to the initial value.
    */
   const clearFilterColumn = useCallback(() => {
-    setQueryListParams(params => ({ ...params, filterColumn: getInitialFilterColumn(timeField) }));
-  }, [timeField]);
+    setQueryListParams((params) => ({
+      ...params,
+      filterColumn: getInitialFilterColumn(timeField),
+    }))
+  }, [timeField])
 
   return {
     queryListParams,
@@ -120,5 +134,5 @@ export const useQueryListParams = (timeField = 'billTime') => {
     addOrReplaceFilterDateColumn,
     removeFilterColumn,
     clearFilterColumn,
-  };
-};
+  }
+}

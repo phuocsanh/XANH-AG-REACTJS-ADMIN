@@ -1,6 +1,6 @@
 import { getActionLabel } from "@/lib/i18n-utils"
 import { getLocalKeyWithHost } from "@/lib/utils"
-import { QueryListPayloadType } from "@/types"
+import { QueryListPayloadType } from "@/models"
 
 export const LOCAL_STORE_KEYS = {
   USER: getLocalKeyWithHost("USER"),

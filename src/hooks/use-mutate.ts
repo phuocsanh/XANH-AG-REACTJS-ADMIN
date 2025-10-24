@@ -1,5 +1,5 @@
 import notification from "@/lib/notifications"
-import { ResponseFailure } from "@/types"
+import { ResponseFailure } from "@/models"
 
 import {
   MutationFunction,
@@ -8,7 +8,6 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query"
-// Removed import of ResponseFailure due to missing export
 
 /**
  * Options for the `useMutate` hook.
