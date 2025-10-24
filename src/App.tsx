@@ -28,6 +28,7 @@ import {
 import { useAppStore } from "./stores"
 import authService from "./services/auth.service"
 import { ForgotPassword } from "./pages/forgot-password"
+import ListUnits from "./pages/units/list-units"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -171,6 +172,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <Products />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/units'
+                      element={
+                        <ProtectedRoute>
+                          <ListUnits />
                         </ProtectedRoute>
                       }
                     />

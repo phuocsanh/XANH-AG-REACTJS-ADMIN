@@ -168,7 +168,7 @@ const TiptapEditor: React.FC<{
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const { control, handleSubmit, reset } = useForm<ProductFormValues>({
+  const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
     defaultValues: {
       isPublished: true,
       discount: "0",
@@ -182,6 +182,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const [description, setDescription] = useState("")
 
   // Watch form values
+  const watchedType = watch("type")
 
   // Xác định ID sản phẩm để sử dụng: ưu tiên productId từ props, sau đó mới đến id từ params
   const currentProductId = productId || id
@@ -272,6 +273,30 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       fetchProduct()
     }
   }, [currentProductId, isEdit, reset])
+
+  // Render các thuộc tính sản phẩm dựa trên loại sản phẩm được chọn
+  const renderProductAttributes = () => {
+    // Kiểm tra nếu loại sản phẩm được chọn có ID là 1, 2, 3, hoặc 4
+    if (watchedType && [1, 2, 3, 4].includes(Number(watchedType))) {
+      return (
+        <div className='mb-4'>
+          <h3 className='text-lg font-medium mb-2'>Thuộc tính sản phẩm</h3>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='w-full'>
+              <FormField
+                name='attributes.Hoạt chất'
+                control={control}
+                label='Hoạt chất'
+                placeholder='Nhập các hoạt chất, ngăn cách bằng dấu phẩy'
+              />
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return null
+  }
 
   const onSubmit = async (values: ProductFormValues) => {
     try {
@@ -470,6 +495,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 className='w-full'
               />
             </div>
+
+            {renderProductAttributes()}
 
             <div style={{ textAlign: "right", marginTop: "24px" }}>
               <Button
