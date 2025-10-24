@@ -30,6 +30,7 @@ import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import { useProductSubtypesQuery } from "@/queries/product-subtype"
 import { useUnitsQuery } from "@/queries/unit"
 import { BASE_STATUS } from "@/constant/base-status"
+import { ProductType } from "@/models/product-type.model"
 
 function isProductApiResponseWithItemWrapper(
   data: Product | { item: Product }
@@ -381,10 +382,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   placeholder='Chọn loại sản phẩm'
                   required
                   rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                  options={productTypes?.items.map((type) => ({
-                    label: type.typeName,
-                    value: type.id,
-                  }))}
+                  options={
+                    productTypes?.items?.map((type: ProductType) => ({
+                      label: type.typeName,
+                      value: type.id,
+                    })) || []
+                  }
                   className='w-full'
                 />
               </div>
@@ -439,10 +442,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   label='Loại phụ sản phẩm'
                   placeholder='Chọn loại phụ sản phẩm'
                   mode='multiple'
-                  options={productSubtypes?.map((subtype) => ({
-                    label: subtype.name,
-                    value: subtype.id,
-                  }))}
+                  options={
+                    productSubtypes?.map((subtype) => ({
+                      label: (subtype.subtypeName ||
+                        subtype.name ||
+                        "") as string,
+                      value: subtype.id,
+                    })) || []
+                  }
                   className='w-full'
                 />
               </div>

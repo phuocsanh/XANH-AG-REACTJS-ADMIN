@@ -10,6 +10,7 @@ import {
   useProductSubtypesQuery,
   useDeleteProductSubtypeMutation,
 } from "../../queries/product-subtype"
+import { useProductTypesQuery } from "../../queries/product-type"
 import DialogAddUpdate from "./components/dialog-add-update"
 import DataTable from "../../components/common/data-table"
 
@@ -25,7 +26,12 @@ const ListSubCategory = () => {
   const [editingRow, setEditingRow] = useState<ProductSubtype | null>(null)
 
   // Sử dụng React Query để lấy dữ liệu loại phụ sản phẩm
-  const { data: productSubtypes, isLoading } = useProductSubtypesQuery()
+  const { data: productSubtypes, isLoading: isLoadingSubtypes } =
+    useProductSubtypesQuery()
+
+  // Sử dụng React Query để lấy dữ liệu loại sản phẩm
+  const { data: productTypes, isLoading: isLoadingTypes } =
+    useProductTypesQuery()
 
   // Mutation để xóa loại phụ sản phẩm
   const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
@@ -57,6 +63,15 @@ const ListSubCategory = () => {
     setOpenDialog(true)
   }
 
+  // Hàm để lấy tên loại sản phẩm từ ID
+  const getProductTypeName = (productTypeId: number) => {
+    if (!productTypes?.items) return "N/A"
+    const productType = productTypes.items.find(
+      (type) => type.id === productTypeId
+    )
+    return productType ? productType.typeName : "N/A"
+  }
+
   return (
     <>
       <div className='right-content w-100'>
@@ -76,15 +91,18 @@ const ListSubCategory = () => {
             columns={[
               {
                 title: "Tên loại phụ sản phẩm",
-                dataIndex: "name",
-                key: "name",
+                dataIndex: "subtypeName",
+                key: "subtypeName",
                 sorter: true,
+                render: (text: string) => text || "N/A",
               },
               {
-                title: "ID Loại sản phẩm",
+                title: "Loại sản phẩm",
                 dataIndex: "productTypeId",
                 key: "productTypeId",
                 sorter: true,
+                render: (productTypeId: number) =>
+                  getProductTypeName(productTypeId),
               },
               {
                 title: "Mô tả",
@@ -102,10 +120,10 @@ const ListSubCategory = () => {
               },
             ]}
             data={productSubtypes || []}
-            loading={isLoading}
+            loading={isLoadingSubtypes || isLoadingTypes}
             showSearch={true}
             searchPlaceholder='Tìm kiếm loại phụ sản phẩm...'
-            searchableColumns={["name", "description"]}
+            searchableColumns={["subtypeName", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
             scroll={{ x: "100%" }}
