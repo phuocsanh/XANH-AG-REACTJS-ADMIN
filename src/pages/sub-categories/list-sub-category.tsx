@@ -7,7 +7,10 @@ import { MyContext } from "../../App"
 
 import * as React from "react"
 import { ProductSubtype } from "../../models/product-subtype.model"
-import { useProductSubtypesQuery, useDeleteProductSubtypeMutation } from "../../queries/product-subtype"
+import {
+  useProductSubtypesQuery,
+  useDeleteProductSubtypeMutation,
+} from "../../queries/product-subtype"
 import DialogAddUpdate from "./components/dialog-add-update"
 import DataTable from "../../components/common/data-table"
 import { Tag } from "antd"
@@ -36,7 +39,7 @@ const ListSubCategory = () => {
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const rows: ExtendedProductSubtype[] = React.useMemo(() => {
-    if (!productSubtypes || !Array.isArray(productSubtypes)) return []
+    if (!productSubtypes) return []
     return productSubtypes.map((item: ProductSubtype) => ({
       id: item.id,
       subtypeName: item.subtypeName,

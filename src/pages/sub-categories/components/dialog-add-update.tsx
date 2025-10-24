@@ -14,7 +14,7 @@ import {
   useUpdateProductSubtypeMutation,
 } from "@/queries/product-subtype"
 import { ProductType } from "@/models/product-type.model"
-import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
+import { useAllProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import {
   productSubtypeSchema,
   ProductSubtypeFormData,
@@ -34,6 +34,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 }) => {
   const queryClient = useQueryClient()
   const { data: productTypesResponse } = useProductTypes()
+  // useAllProductTypesQuery trả về { items: ProductType[], total: number }
   const productTypes = productTypesResponse?.items || []
 
   // Mutations
@@ -46,7 +47,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ProductSubtypeFormData>({
+  } = useForm<Partial<ProductSubtypeFormData>>({
     resolver: zodResolver(productSubtypeSchema),
     defaultValues: defaultProductSubtypeValues,
   })
@@ -100,7 +101,13 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
   }, [open, editingSubtype, reset])
 
   // Xử lý submit form
-  const onSubmit = (data: ProductSubtypeFormData) => {
+  const onSubmit = (data: Partial<ProductSubtypeFormData>) => {
+    // Kiểm tra các field bắt buộc
+    if (!data.subtypeName || !data.subtypeCode || !data.productTypeId) {
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!")
+      return
+    }
+
     if (editingSubtype) {
       updateMutation.mutate({
         id: editingSubtype.id,

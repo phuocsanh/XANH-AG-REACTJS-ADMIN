@@ -8,7 +8,7 @@ import { MyContext } from "../../App"
 import * as React from "react"
 import DialogAddUpdate from "./components/dialog-add-update"
 import {
-  useProductTypesQuery as useProductTypes,
+  useAllProductTypesQuery as useProductTypes,
   useDeleteProductTypeMutation,
 } from "../../queries/product-type"
 import { ProductType } from "../../models/product-type.model"
@@ -37,8 +37,10 @@ const ListCategory = () => {
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const rows: ExtendedProductType[] = React.useMemo(() => {
-    if (!productTypesProductType?.items) return []
-    return productTypesProductType.items.map((item: ProductType) => ({
+    if (!productTypesProductType) return []
+    // useAllProductTypesQuery trả về { items: ProductType[], total: number }
+    const items = productTypesProductType.items || []
+    return items.map((item: ProductType) => ({
       id: item.id,
       typeName: item.typeName,
       typeCode: item.typeCode,

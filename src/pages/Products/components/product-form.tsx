@@ -307,6 +307,24 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 placeholder='Nhập các hoạt chất, ngăn cách bằng dấu phẩy'
               />
             </div>
+            <div className='w-full'>
+              <FormField
+                type='number'
+                name='attributes.Liều phun bình ml/25 lít'
+                control={control}
+                label='Liều phun bình 25 lít'
+                placeholder='Nhập liều phun bình 25 lít'
+              />
+            </div>
+            <div className='w-full'>
+              <FormField
+                type='number'
+                name='attributes.Liều phun ml/ha'
+                control={control}
+                label='Liều phun 1/ha'
+                placeholder='Nhập liều phun 1/ha'
+              />
+            </div>
           </div>
         </div>
       )
