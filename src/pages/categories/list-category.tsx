@@ -3,8 +3,6 @@ import { useEffect, useState, useContext } from "react"
 import Button from "@mui/material/Button"
 import { IoMdAdd } from "react-icons/io"
 
-import "swiper/css"
-import "swiper/css/navigation"
 import { MyContext } from "../../App"
 
 import * as React from "react"

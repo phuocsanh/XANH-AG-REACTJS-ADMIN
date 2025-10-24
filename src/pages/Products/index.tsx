@@ -1,8 +1,7 @@
 import React from "react"
 import { Routes, Route } from "react-router-dom"
 import ProductsList from "./products-list"
-import ProductCreate from "./product-create"
-import ProductEdit from "./product-edit"
+import ProductFormPage from "./product-form-page"
 
 /**
  * Component chính quản lý routing cho module Products
@@ -15,10 +14,10 @@ const Products: React.FC = () => {
       <Route index element={<ProductsList />} />
 
       {/* Trang tạo sản phẩm mới */}
-      <Route path='new' element={<ProductCreate />} />
+      <Route path='new' element={<ProductFormPage />} />
 
       {/* Trang chỉnh sửa sản phẩm */}
-      <Route path='edit/:id' element={<ProductEdit />} />
+      <Route path='edit/:id' element={<ProductFormPage />} />
     </Routes>
   )
 }

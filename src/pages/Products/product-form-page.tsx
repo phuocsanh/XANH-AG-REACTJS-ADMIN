@@ -7,20 +7,18 @@ import ProductForm from "./components/product-form"
 
 const { Title } = Typography
 
-interface ProductFormPageProps {
-  isEdit: boolean
-  title: string
-}
-
 /**
  * Component chung cho trang tạo và chỉnh sửa sản phẩm
- * @param isEdit - Xác định đây là trang chỉnh sửa hay tạo mới
- * @param title - Tiêu đề của trang
+ * Xử lý cả hai trường hợp dựa trên sự hiện diện của ID
  */
-export const ProductFormPage = ({ isEdit, title }: ProductFormPageProps) => {
+export const ProductFormPage = () => {
   const context = useContext(MyContext)
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+
+  // Xác định xem đây là trang chỉnh sửa hay tạo mới dựa trên sự hiện diện của ID
+  const isEdit = !!id
+  const title = isEdit ? "Chỉnh sửa sản phẩm" : "Thêm Sản phẩm mới"
 
   useEffect(() => {
     window.scrollTo(0, 0)

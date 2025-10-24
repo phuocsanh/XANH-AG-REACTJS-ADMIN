@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import productTypeService from "@/services/product-type.service"
+import { productSubtypeService } from "@/services/product-subtype.service"
 import {
   ProductTypeRequest,
   ProductSubtypeRequest,
@@ -90,7 +91,7 @@ export const useDeleteProductTypeMutation = () => {
 export const useProductSubtypes = () => {
   return useQuery({
     queryKey: ["productSubtypes"],
-    queryFn: () => productTypeService.getProductSubtypes(),
+    queryFn: () => productSubtypeService.getProductSubtypes(),
     staleTime: 5 * 60 * 1000, // 5 phút
   })
 }

@@ -15,8 +15,6 @@ import ProductsList from "./pages/products/products-list"
 import { SignIn } from "./pages/sign-in"
 
 import { OtpPage } from "./pages/otp"
-import { ProductCreate } from "./pages/products/product-create"
-import { ProductEdit } from "./pages/products/product-edit"
 import ListCategory from "./pages/categories/list-category"
 import ListSubCategory from "./pages/sub-categories/list-sub-category"
 import Users from "./pages/users"
@@ -137,26 +135,10 @@ function App() {
                       }
                     />
                     <Route
-                      path='/products/new'
-                      element={
-                        <ProtectedRoute>
-                          <ProductCreate />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path='/products/edit/:id'
-                      element={
-                        <ProtectedRoute>
-                          <ProductEdit />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
                       path='/product/:id?'
                       element={
                         <ProtectedRoute>
-                          <ProductCreate />
+                          <Products />
                         </ProtectedRoute>
                       }
                     />
