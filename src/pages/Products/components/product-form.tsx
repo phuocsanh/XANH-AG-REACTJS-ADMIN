@@ -27,8 +27,10 @@ function isProductApiResponseWithItemWrapper(
   return (data as { item: ProductApiResponse }).item !== undefined
 }
 
-import { useProductSubtypes } from "@/queries/use-product-type"
 import { useProductTypes } from "@/queries/use-product-type"
+import { useProductSubtypes } from "@/queries/use-product-subtype"
+import { useUnits } from "@/queries/use-unit"
+import { BASE_STATUS, BaseStatus } from "@/constant/base-status"
 
 // Mở rộng CreateProductRequest để chấp nhận UploadFile[] cho thumb và pictures
 // và thêm các trường mới
@@ -38,6 +40,7 @@ interface ProductFormValues
   pictures?: UploadFile[]
   unit?: string // Đơn vị tính
   subTypes?: number[] // Loại phụ sản phẩm (multiple selection)
+  isPublished?: BaseStatus // Trạng thái sản phẩm
 }
 
 interface ProductFormProps {
@@ -62,6 +65,7 @@ interface ConvertedValues {
   isPublished?: boolean
   isDraft?: boolean
   videos?: string[]
+  // isPublished sẽ được mapping từ BaseStatus sang boolean trong quá trình submit
 }
 
 // TiptapEditor component
@@ -170,7 +174,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
   const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
     defaultValues: {
-      isPublished: true,
+      isPublished: "active", // hoặc giá trị mặc định phù hợp từ BASE_STATUS
       discount: "0",
       quantity: 0, // Sửa lại giá trị mặc định thành 0
     },
@@ -188,6 +192,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const currentProductId = productId || id
   const { data: productSubtypes } = useProductSubtypes()
   const { data: productTypes } = useProductTypes()
+  const { data: units } = useUnits()
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -230,6 +235,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           return urls.map((url, index) => normalizeFile(url, index))
         }
 
+        // Hàm mapping giữa boolean và BaseStatus
+        const mapBooleanToBaseStatus = (isPublished: boolean): BaseStatus => {
+          return isPublished ? "active" : "inactive"
+        }
+
         // Tạo đối tượng form values từ dữ liệu API response
         const formValues: Partial<ProductFormValues> = {
           name: mappedProduct.productName,
@@ -237,7 +247,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           type: mappedProduct.productType,
           quantity: mappedProduct.productQuantity,
           discount: mappedProduct.discount,
-          isPublished: mappedProduct.isPublished,
+          isPublished: mapBooleanToBaseStatus(mappedProduct.isPublished),
           attributes: mappedProduct.productAttributes,
           subTypes: mappedProduct.subProductType, // Loại phụ sản phẩm
           thumb: mappedProduct.productThumb
@@ -302,6 +312,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     try {
       setLoading(true)
 
+      // Hàm mapping giữa BaseStatus và boolean
+      const mapBaseStatusToBoolean = (status: BaseStatus | undefined): boolean => {
+        // Nếu status là "active" thì trả về true, ngược lại trả về false
+        return status === "active"
+      }
+
       // Chuyển đổi UploadFile[] về string và string[] cho API
       const convertedValues: ConvertedValues = {
         ...(values as unknown as ConvertedValues),
@@ -322,6 +338,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           : {
               unit: values.unit || "",
             },
+        // Mapping BaseStatus về boolean cho isPublished
+        isPublished: mapBaseStatusToBoolean(values.isPublished),
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -404,14 +422,18 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className='w-full'>
-                <FormField
+                <FormComboBox
                   name='unit'
                   control={control}
                   label='Đơn vị tính'
-                  placeholder='Ví dụ: kg, lít, cái, gói...'
+                  placeholder='Chọn đơn vị tính'
+                  options={units?.map((unit) => ({
+                    label: `${unit.unitName} (${unit.unitCode})`,
+                    value: unit.unitName,
+                  }))}
                   className='w-full'
                   required
-                  rules={{ required: "Vui lòng nhập đơn vị tính" }}
+                  rules={{ required: "Vui lòng chọn đơn vị tính" }}
                 />
               </div>
 
@@ -461,10 +483,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   control={control}
                   label='Trạng thái'
                   placeholder='Chọn trạng thái'
-                  options={[
-                    { label: "Đang bán", value: "true" },
-                    { label: "Nháp", value: "false" },
-                  ]}
+                  options={BASE_STATUS.map((status) => ({
+                    label: status.label,
+                    value: status.value,
+                  }))}
                   className='w-full'
                 />
               </div>

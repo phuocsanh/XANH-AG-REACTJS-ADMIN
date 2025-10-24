@@ -1,14 +1,14 @@
 import { LoginApiPayload } from "@/models/auth.model"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useAppStore } from "@/stores"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import authService from "@/services/auth.service"
+import { queryClient } from "@/provider/app-provider-tanstack"
 
 // Hook đăng nhập
 export const useLoginMutation = () => {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const location = useLocation()
 
   return useMutation({
@@ -57,7 +57,6 @@ export const useLoginMutation = () => {
 // Hook đăng xuất
 export const useLogoutMutation = () => {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async () => {

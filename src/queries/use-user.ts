@@ -1,15 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
-import userService, { CreateUserDto, UpdateUserDto, ChangePasswordDto } from "@/services/user.service"
+import userService, {
+  CreateUserDto,
+  UpdateUserDto,
+  ChangePasswordDto,
+} from "@/services/user.service"
+import { queryClient } from "@/provider/app-provider-tanstack"
 
 // Query keys cho user
 export const userKeys = {
-  all: ['users'] as const,
-  lists: () => [...userKeys.all, 'list'] as const,
+  all: ["users"] as const,
+  lists: () => [...userKeys.all, "list"] as const,
   list: (filters: string) => [...userKeys.lists(), { filters }] as const,
-  details: () => [...userKeys.all, 'detail'] as const,
+  details: () => [...userKeys.all, "detail"] as const,
   detail: (id: number) => [...userKeys.details(), id] as const,
-  profile: () => [...userKeys.all, 'profile'] as const,
+  profile: () => [...userKeys.all, "profile"] as const,
 }
 
 /**
@@ -19,7 +24,6 @@ export const useUsersQuery = () => {
   return useQuery({
     queryKey: userKeys.lists(),
     queryFn: () => userService.getAll(),
-    staleTime: 5 * 60 * 1000, // 5 phút
   })
 }
 
@@ -31,7 +35,6 @@ export const useUserQuery = (id: number) => {
     queryKey: userKeys.detail(id),
     queryFn: () => userService.getById(id),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000, // 5 phút
   })
 }
 
@@ -42,7 +45,6 @@ export const useProfileQuery = () => {
   return useQuery({
     queryKey: userKeys.profile(),
     queryFn: () => userService.getProfile(),
-    staleTime: 5 * 60 * 1000, // 5 phút
   })
 }
 
@@ -50,8 +52,6 @@ export const useProfileQuery = () => {
  * Hook tạo người dùng mới
  */
 export const useCreateUserMutation = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (userData: CreateUserDto) => userService.create(userData),
     onSuccess: () => {
@@ -70,10 +70,8 @@ export const useCreateUserMutation = () => {
  * Hook cập nhật thông tin người dùng
  */
 export const useUpdateUserMutation = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, userData }: { id: number; userData: UpdateUserDto }) => 
+    mutationFn: ({ id, userData }: { id: number; userData: UpdateUserDto }) =>
       userService.update(id, userData),
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
@@ -93,8 +91,6 @@ export const useUpdateUserMutation = () => {
  * Hook xóa người dùng
  */
 export const useDeleteUserMutation = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => userService.delete(id),
     onSuccess: () => {
@@ -114,7 +110,7 @@ export const useDeleteUserMutation = () => {
  */
 export const useChangePasswordMutation = () => {
   return useMutation({
-    mutationFn: (changePasswordData: ChangePasswordDto) => 
+    mutationFn: (changePasswordData: ChangePasswordDto) =>
       userService.changePassword(changePasswordData),
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công!")

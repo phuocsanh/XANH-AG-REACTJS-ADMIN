@@ -1,27 +1,27 @@
-import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Button, Space } from "antd";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import React, { useEffect } from "react"
+import { Modal, Form, Input, Select, Button, Space } from "antd"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "react-toastify"
 import {
   ProductSubtype,
   CreateProductSubtypeDto,
   UpdateProductSubtypeDto,
   productSubtypeService,
-} from "@/services/product-subtype.service";
-import { ProductType } from "@/models/product-type.model";
-import { useProductTypes } from "@/queries/use-product-type";
+} from "@/services/product-subtype.service"
+import { ProductType } from "@/models/product-type.model"
+import { useProductTypes } from "@/queries/use-product-type"
 import {
   productSubtypeSchema,
   ProductSubtypeFormData,
   defaultProductSubtypeValues,
-} from "./formConfig";
+} from "./formConfig"
 
 interface DialogAddUpdateProps {
-  open: boolean;
-  onClose: () => void;
-  editingSubtype?: ProductSubtype | null;
+  open: boolean
+  onClose: () => void
+  editingSubtype?: ProductSubtype | null
 }
 
 const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
@@ -29,9 +29,9 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
   onClose,
   editingSubtype,
 }) => {
-  const queryClient = useQueryClient();
-  const { data: productTypesResponse } = useProductTypes();
-  const productTypes = productTypesResponse?.data?.items || [];
+  const queryClient = useQueryClient()
+  const { data: productTypesResponse } = useProductTypes()
+  const productTypes = productTypesResponse?.data?.items || []
 
   // Form configuration
   const {
@@ -42,7 +42,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
   } = useForm<ProductSubtypeFormData>({
     resolver: zodResolver(productSubtypeSchema),
     defaultValues: defaultProductSubtypeValues,
-  });
+  })
 
   // Mutations
   const createMutation = useMutation({
@@ -50,30 +50,30 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
       productSubtypeService.createProductSubtype(data),
     onSuccess: () => {
       // Toast sẽ được hiển thị trong mutation hook
-      queryClient.invalidateQueries({ queryKey: ["productSubtypes"] });
-      onClose();
-      reset();
+      queryClient.invalidateQueries({ queryKey: ["productSubtypes"] })
+      onClose()
+      reset()
     },
     onError: (error: Error) => {
-      toast.error(error?.message || "Có lỗi xảy ra khi tạo loại phụ sản phẩm!");
+      toast.error(error?.message || "Có lỗi xảy ra khi tạo loại phụ sản phẩm!")
     },
-  });
+  })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateProductSubtypeDto }) =>
       productSubtypeService.updateProductSubtype(id, data),
     onSuccess: () => {
       // Toast sẽ được hiển thị trong mutation hook
-      queryClient.invalidateQueries({ queryKey: ["productSubtypes"] });
-      onClose();
-      reset();
+      queryClient.invalidateQueries({ queryKey: ["productSubtypes"] })
+      onClose()
+      reset()
     },
     onError: (error: Error) => {
       toast.error(
         error?.message || "Có lỗi xảy ra khi cập nhật loại phụ sản phẩm!"
-      );
+      )
     },
-  });
+  })
 
   // Reset form khi dialog mở/đóng hoặc khi có dữ liệu chỉnh sửa
   useEffect(() => {
@@ -84,13 +84,13 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
           subtypeCode: editingSubtype.subtypeCode,
           productTypeId: editingSubtype.productTypeId,
           description: editingSubtype.description || "",
-          status: 'active', // Mặc định là active vì backend chỉ hỗ trợ active
-        });
+          status: "active", // Mặc định là active vì backend chỉ hỗ trợ active
+        })
       } else {
-        reset(defaultProductSubtypeValues);
+        reset(defaultProductSubtypeValues)
       }
     }
-  }, [open, editingSubtype, reset]);
+  }, [open, editingSubtype, reset])
 
   // Xử lý submit form
   const onSubmit = (data: ProductSubtypeFormData) => {
@@ -104,7 +104,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
           description: data.description,
           status: data.status,
         },
-      });
+      })
     } else {
       createMutation.mutate({
         subtypeName: data.subtypeName,
@@ -112,11 +112,11 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
         productTypeId: data.productTypeId,
         description: data.description,
         status: data.status,
-      });
+      })
     }
-  };
+  }
 
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending
 
   return (
     <Modal
@@ -130,21 +130,21 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
       footer={null}
       width={600}
     >
-      <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
+      <Form layout='vertical' onFinish={handleSubmit(onSubmit)}>
         {/* Tên loại phụ sản phẩm */}
         <Form.Item
-          label="Tên loại phụ sản phẩm"
+          label='Tên loại phụ sản phẩm'
           validateStatus={errors.subtypeName ? "error" : ""}
           help={errors.subtypeName?.message}
           required
         >
           <Controller
-            name="subtypeName"
+            name='subtypeName'
             control={control}
             render={({ field }) => (
               <Input
                 {...field}
-                placeholder="Nhập tên loại phụ sản phẩm"
+                placeholder='Nhập tên loại phụ sản phẩm'
                 disabled={isLoading}
               />
             )}
@@ -153,18 +153,18 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 
         {/* Mã loại phụ sản phẩm */}
         <Form.Item
-          label="Mã loại phụ sản phẩm"
+          label='Mã loại phụ sản phẩm'
           validateStatus={errors.subtypeCode ? "error" : ""}
           help={errors.subtypeCode?.message}
           required
         >
           <Controller
-            name="subtypeCode"
+            name='subtypeCode'
             control={control}
             render={({ field }) => (
               <Input
                 {...field}
-                placeholder="Nhập mã loại phụ sản phẩm"
+                placeholder='Nhập mã loại phụ sản phẩm'
                 disabled={isLoading}
               />
             )}
@@ -173,18 +173,18 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 
         {/* Loại sản phẩm */}
         <Form.Item
-          label="Loại sản phẩm"
+          label='Loại sản phẩm'
           validateStatus={errors.productTypeId ? "error" : ""}
           help={errors.productTypeId?.message}
           required
         >
           <Controller
-            name="productTypeId"
+            name='productTypeId'
             control={control}
             render={({ field }) => (
               <Select
                 {...field}
-                placeholder="Chọn loại sản phẩm"
+                placeholder='Chọn loại sản phẩm'
                 disabled={isLoading}
                 options={productTypes.map((type: ProductType) => ({
                   label: type.typeName,
@@ -197,17 +197,17 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 
         {/* Mô tả */}
         <Form.Item
-          label="Mô tả"
+          label='Mô tả'
           validateStatus={errors.description ? "error" : ""}
           help={errors.description?.message}
         >
           <Controller
-            name="description"
+            name='description'
             control={control}
             render={({ field }) => (
               <Input.TextArea
                 {...field}
-                placeholder="Nhập mô tả (tùy chọn)"
+                placeholder='Nhập mô tả (tùy chọn)'
                 rows={3}
                 disabled={isLoading}
               />
@@ -217,21 +217,19 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 
         {/* Trạng thái */}
         <Form.Item
-          label="Trạng thái"
+          label='Trạng thái'
           validateStatus={errors.status ? "error" : ""}
           help={errors.status?.message}
         >
           <Controller
-            name="status"
+            name='status'
             control={control}
             render={({ field }) => (
               <Select
                 {...field}
-                placeholder="Chọn trạng thái"
+                placeholder='Chọn trạng thái'
                 disabled={isLoading}
-                options={[
-                  { label: "Hoạt động", value: "active" },
-                ]}
+                options={[{ label: "Hoạt động", value: "active" }]}
               />
             )}
           />
@@ -243,14 +241,14 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
             <Button onClick={onClose} disabled={isLoading}>
               Hủy
             </Button>
-            <Button type="primary" htmlType="submit" loading={isLoading}>
+            <Button type='primary' htmlType='submit' loading={isLoading}>
               {editingSubtype ? "Cập nhật" : "Tạo mới"}
             </Button>
           </Space>
         </Form.Item>
       </Form>
     </Modal>
-  );
-};
+  )
+}
 
-export default DialogAddUpdate;
+export default DialogAddUpdate

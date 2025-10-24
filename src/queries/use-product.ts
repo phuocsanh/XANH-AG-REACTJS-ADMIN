@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import productService from "@/services/product.service"
 import {
@@ -6,13 +6,13 @@ import {
   ExtendedProductListParams,
   UpdateProductRequest,
 } from "@/models/product.model"
+import { queryClient } from "@/provider/app-provider-tanstack"
 
 // Hook lấy danh sách sản phẩm
 export const useProducts = (params?: ExtendedProductListParams) => {
   return useQuery({
     queryKey: ["products", params],
     queryFn: () => productService.getProducts(params),
-    staleTime: 5 * 60 * 1000, // 5 phút
   })
 }
 
@@ -27,8 +27,6 @@ export const useProduct = (id: number) => {
 
 // Hook tạo sản phẩm mới
 export const useCreateProductMutation = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (product: CreateProductRequest) =>
       productService.createProduct(product),
@@ -46,8 +44,6 @@ export const useCreateProductMutation = () => {
 
 // Hook cập nhật sản phẩm
 export const useUpdateProductMutation = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: ({
       id,
@@ -71,8 +67,6 @@ export const useUpdateProductMutation = () => {
 
 // Hook xóa sản phẩm
 export const useDeleteProductMutation = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => productService.deleteProduct(id),
     onSuccess: () => {
@@ -104,7 +98,8 @@ export const useSearchProducts = (
 export const useFilterProducts = (filters: Record<string, unknown>) => {
   return useQuery({
     queryKey: ["products", "filter", filters],
-    queryFn: () => productService.getProducts(filters as ExtendedProductListParams),
+    queryFn: () =>
+      productService.getProducts(filters as ExtendedProductListParams),
     enabled: Object.keys(filters).length > 0, // Chỉ gọi API khi có filter
   })
 }

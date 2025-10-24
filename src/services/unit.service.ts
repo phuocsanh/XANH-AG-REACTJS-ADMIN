@@ -1,5 +1,6 @@
 import api from "@/utils/api"
 import { AnyObject } from "@/models/common"
+import { BaseStatus } from "@/constant/base-status"
 
 // Interface cho Unit entity
 export interface Unit {
@@ -7,7 +8,7 @@ export interface Unit {
   unitName: string
   unitCode: string
   description?: string
-  status: "active" | "inactive" | "archived"
+  status: BaseStatus
   createdAt: string
   updatedAt: string
   deletedAt?: string
@@ -18,7 +19,7 @@ export interface CreateUnitDto extends AnyObject {
   unitName: string
   unitCode: string
   description?: string
-  status?: "active" | "inactive" | "archived"
+  status?: BaseStatus
 }
 
 // Interface cho cập nhật Unit
@@ -26,7 +27,7 @@ export interface UpdateUnitDto extends AnyObject {
   unitName?: string
   unitCode?: string
   description?: string
-  status?: "active" | "inactive" | "archived"
+  status?: BaseStatus
 }
 
 // Service xử lý các chức năng liên quan đến đơn vị tính

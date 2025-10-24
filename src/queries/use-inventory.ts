@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 
 import {
@@ -7,25 +7,29 @@ import {
   UpdateInventoryReceiptItemRequest,
   InventoryReceiptListParams,
   InventoryHistoryListParams,
-  StockInRequest
+  StockInRequest,
+  InventoryReceiptItem,
 } from "@/models/inventory.model"
 import { inventoryService } from "@/services/inventory.service"
+import { queryClient } from "@/provider/app-provider-tanstack"
 
 // ========== QUERY KEYS ==========
 export const inventoryKeys = {
-  all: ['inventory'] as const,
-  receipts: () => [...inventoryKeys.all, 'receipts'] as const,
-  receiptsList: (params?: InventoryReceiptListParams) => 
-    [...inventoryKeys.receipts(), 'list', params] as const,
-  receipt: (id: number) => [...inventoryKeys.receipts(), 'detail', id] as const,
-  receiptByCode: (code: string) => [...inventoryKeys.receipts(), 'code', code] as const,
-  receiptItems: (receiptId: number) => [...inventoryKeys.receipts(), receiptId, 'items'] as const,
-  history: () => [...inventoryKeys.all, 'history'] as const,
-  historyList: (params?: InventoryHistoryListParams) => 
-    [...inventoryKeys.history(), 'list', params] as const,
-  historyByProduct: (productId: number, params?: InventoryHistoryListParams) => 
-    [...inventoryKeys.history(), 'product', productId, params] as const,
-  stats: () => [...inventoryKeys.all, 'stats'] as const,
+  all: ["inventory"] as const,
+  receipts: () => [...inventoryKeys.all, "receipts"] as const,
+  receiptsList: (params?: InventoryReceiptListParams) =>
+    [...inventoryKeys.receipts(), "list", params] as const,
+  receipt: (id: number) => [...inventoryKeys.receipts(), "detail", id] as const,
+  receiptByCode: (code: string) =>
+    [...inventoryKeys.receipts(), "code", code] as const,
+  receiptItems: (receiptId: number) =>
+    [...inventoryKeys.receipts(), receiptId, "items"] as const,
+  history: () => [...inventoryKeys.all, "history"] as const,
+  historyList: (params?: InventoryHistoryListParams) =>
+    [...inventoryKeys.history(), "list", params] as const,
+  historyByProduct: (productId: number, params?: InventoryHistoryListParams) =>
+    [...inventoryKeys.history(), "product", productId, params] as const,
+  stats: () => [...inventoryKeys.all, "stats"] as const,
 }
 
 // ========== HOOKS CHO PHIẾU NHẬP HÀNG ==========
@@ -37,8 +41,6 @@ export const useInventoryReceipts = (params?: InventoryReceiptListParams) => {
   return useQuery({
     queryKey: inventoryKeys.receiptsList(params),
     queryFn: () => inventoryService.getInventoryReceipts(params),
-    staleTime: 5 * 60 * 1000, // 5 phút
-    gcTime: 10 * 60 * 1000, // 10 phút
   })
 }
 
@@ -50,8 +52,6 @@ export const useInventoryReceipt = (id: number) => {
     queryKey: inventoryKeys.receipt(id),
     queryFn: () => inventoryService.getInventoryReceiptById(id),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   })
 }
 
@@ -63,8 +63,6 @@ export const useInventoryReceiptByCode = (code: string) => {
     queryKey: inventoryKeys.receiptByCode(code),
     queryFn: () => inventoryService.getInventoryReceiptByCode(code),
     enabled: !!code,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   })
 }
 
@@ -76,8 +74,6 @@ export const useInventoryReceiptItems = (receiptId: number) => {
     queryKey: inventoryKeys.receiptItems(receiptId),
     queryFn: () => inventoryService.getInventoryReceiptItems(receiptId),
     enabled: !!receiptId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   })
 }
 
@@ -87,10 +83,8 @@ export const useInventoryReceiptItems = (receiptId: number) => {
  * Hook tạo phiếu nhập hàng mới
  */
 export const useCreateInventoryReceipt = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: (data: CreateInventoryReceiptRequest) => 
+    mutationFn: (data: CreateInventoryReceiptRequest) =>
       inventoryService.createInventoryReceipt(data),
     onSuccess: (data) => {
       // Invalidate và refetch danh sách phiếu nhập
@@ -108,11 +102,14 @@ export const useCreateInventoryReceipt = () => {
  * Hook cập nhật phiếu nhập hàng
  */
 export const useUpdateInventoryReceipt = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateInventoryReceiptRequest }) =>
-      inventoryService.updateInventoryReceipt(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number
+      data: UpdateInventoryReceiptRequest
+    }) => inventoryService.updateInventoryReceipt(id, data),
     onSuccess: (data, variables) => {
       // Cập nhật cache cho phiếu cụ thể
       queryClient.setQueryData(inventoryKeys.receipt(variables.id), data)
@@ -131,8 +128,6 @@ export const useUpdateInventoryReceipt = () => {
  * Hook xóa phiếu nhập hàng
  */
 export const useDeleteInventoryReceipt = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => inventoryService.deleteInventoryReceipt(id),
     onSuccess: (_, id) => {
@@ -155,8 +150,6 @@ export const useDeleteInventoryReceipt = () => {
  * Hook duyệt phiếu nhập hàng
  */
 export const useApproveInventoryReceipt = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => inventoryService.approveInventoryReceipt(id),
     onSuccess: (data, id) => {
@@ -176,8 +169,6 @@ export const useApproveInventoryReceipt = () => {
  * Hook hoàn thành phiếu nhập hàng
  */
 export const useCompleteInventoryReceipt = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => inventoryService.completeInventoryReceipt(id),
     onSuccess: (data, id) => {
@@ -199,8 +190,6 @@ export const useCompleteInventoryReceipt = () => {
  * Hook hủy phiếu nhập hàng
  */
 export const useCancelInventoryReceipt = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => inventoryService.cancelInventoryReceipt(id),
     onSuccess: (data, id) => {
@@ -216,32 +205,32 @@ export const useCancelInventoryReceipt = () => {
   })
 }
 
-// ========== MUTATIONS CHO CHI TIẾT PHIẾU NHẬP ==========
-
 /**
  * Hook cập nhật chi tiết phiếu nhập hàng
  */
 export const useUpdateInventoryReceiptItem = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateInventoryReceiptItemRequest }) =>
-      inventoryService.updateInventoryReceiptItem(id, data),
-    onSuccess: (data, _variables) => {
-      // Invalidate cache của items và receipt
-      if (data.receiptId) {
-        queryClient.invalidateQueries({ 
-          queryKey: inventoryKeys.receiptItems(data.receiptId) 
-        })
-        queryClient.invalidateQueries({ 
-          queryKey: inventoryKeys.receipt(data.receiptId) 
-        })
-      }
-      toast.success("Cập nhật chi tiết phiếu nhập thành công!")
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number
+      data: UpdateInventoryReceiptItemRequest
+    }) => inventoryService.updateInventoryReceiptItem(id, data),
+    onSuccess: (data, variables) => {
+      // Cập nhật cache cho phiếu và chi tiết
+      queryClient.setQueryData(
+        inventoryKeys.receiptItems(variables.id),
+        (oldData: InventoryReceiptItem[] | undefined) =>
+          oldData?.map((item) =>
+            item.id === variables.id ? { ...item, ...data } : item
+          ) || []
+      )
+      toast.success("Cập nhật chi tiết phiếu nhập hàng thành công!")
       return data
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi cập nhật chi tiết phiếu nhập: ${error.message}`)
+      toast.error(`Lỗi khi cập nhật chi tiết phiếu nhập hàng: ${error.message}`)
     },
   })
 }
@@ -250,83 +239,80 @@ export const useUpdateInventoryReceiptItem = () => {
  * Hook xóa chi tiết phiếu nhập hàng
  */
 export const useDeleteInventoryReceiptItem = () => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (id: number) => inventoryService.deleteInventoryReceiptItem(id),
-    onSuccess: (_, _id) => {
-      // Invalidate tất cả cache liên quan
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
-      toast.success("Xóa chi tiết phiếu nhập thành công!")
+    onSuccess: (_, id) => {
+      // Cập nhật cache
+      queryClient.setQueryData(
+        inventoryKeys.receiptItems(id),
+        (oldData: InventoryReceiptItem[] | undefined) =>
+          oldData?.filter((item) => item.id !== id) || []
+      )
+      toast.success("Xóa chi tiết phiếu nhập hàng thành công!")
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi xóa chi tiết phiếu nhập: ${error.message}`)
+      toast.error(`Lỗi khi xóa chi tiết phiếu nhập hàng: ${error.message}`)
     },
   })
 }
 
-// ========== MUTATIONS CHO TỒN KHO ==========
+// ========== HOOKS CHO LỊCH SỬ NHẬP HÀNG ==========
 
 /**
- * Hook xử lý nhập kho
- */
-export const useProcessStockIn = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (data: StockInRequest) => inventoryService.processStockIn(data),
-    onSuccess: () => {
-      // Invalidate cache liên quan đến tồn kho
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
-      toast.success("Nhập kho thành công!")
-    },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi nhập kho: ${error.message}`)
-    },
-  })
-}
-
-// ========== HOOKS CHO LỊCH SỬ TỒN KHO ==========
-
-/**
- * Hook lấy lịch sử tồn kho
+ * Hook lấy lịch sử nhập hàng
  */
 export const useInventoryHistory = (params?: InventoryHistoryListParams) => {
   return useQuery({
     queryKey: inventoryKeys.historyList(params),
     queryFn: () => inventoryService.getInventoryHistory(params),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   })
 }
 
 /**
- * Hook lấy lịch sử tồn kho theo sản phẩm
+ * Hook lấy lịch sử nhập hàng theo sản phẩm
  */
 export const useInventoryHistoryByProduct = (
-  productId: number, 
-  params?: Omit<InventoryHistoryListParams, 'productId'>
+  productId: number,
+  params?: InventoryHistoryListParams
 ) => {
   return useQuery({
     queryKey: inventoryKeys.historyByProduct(productId, params),
-    queryFn: () => inventoryService.getInventoryHistoryByProduct(productId, params),
+    queryFn: () =>
+      inventoryService.getInventoryHistoryByProduct(productId, params),
     enabled: !!productId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
   })
 }
 
 // ========== HOOKS CHO THỐNG KÊ ==========
 
 /**
- * Hook lấy thống kê tồn kho
+ * Hook lấy thống kê nhập hàng
  */
 export const useInventoryStats = () => {
   return useQuery({
     queryKey: inventoryKeys.stats(),
     queryFn: () => inventoryService.getInventoryStats(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+  })
+}
+
+// ========== MUTATIONS CHO NHẬP KHO ==========
+
+/**
+ * Hook nhập kho từ phiếu nhập hàng
+ */
+export const useStockIn = () => {
+  return useMutation({
+    mutationFn: (data: StockInRequest) => inventoryService.processStockIn(data),
+    onSuccess: (data) => {
+      // Cập nhật cache
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
+      toast.success("Nhập kho thành công!")
+      return data
+    },
+    onError: (error: Error) => {
+      toast.error(`Lỗi khi nhập kho: ${error.message}`)
+    },
   })
 }

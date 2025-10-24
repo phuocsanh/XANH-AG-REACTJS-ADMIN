@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Button, message, Space, Modal, Form, Input, Select, Tag } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
-import {
-  unitService,
-  CreateUnitDto,
-  UpdateUnitDto,
-} from "../../services/unit.service"
+import { CreateUnitDto, UpdateUnitDto } from "../../services/unit.service"
 import DataTable from "../../components/common/data-table"
+import {
+  useUnits,
+  useDeleteUnitMutation,
+  useCreateUnitMutation,
+  useUpdateUnitMutation,
+} from "../../queries/use-unit"
+import { BaseStatus, BASE_STATUS } from "@/constant/base-status"
 
 const { confirm } = Modal
 const { Option } = Select
@@ -17,40 +20,30 @@ interface UnitRecord extends Record<string, unknown> {
   unitName: string
   unitCode: string
   description?: string
-  status: "active" | "inactive" | "archived"
+  status: BaseStatus
   createdAt: string
   updatedAt: string
   deletedAt?: string
 }
 
 const ListUnits = () => {
-  const [units, setUnits] = useState<UnitRecord[]>([])
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingUnit, setEditingUnit] = useState<UnitRecord | null>(null)
   const [form] = Form.useForm()
 
-  // Lấy danh sách đơn vị tính
-  const fetchUnits = async () => {
-    try {
-      setLoading(true)
-      const data = await unitService.getUnits()
-      // Convert Unit[] to UnitRecord[]
-      const convertedData: UnitRecord[] = data.map((unit) => ({
-        ...unit,
-      }))
-      setUnits(convertedData)
-    } catch (error) {
-      console.error("Error fetching units:", error)
-      message.error("Không thể tải danh sách đơn vị tính")
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Sử dụng React Query hook để lấy danh sách đơn vị tính
+  const { data: units, isLoading } = useUnits()
 
-  useEffect(() => {
-    fetchUnits()
-  }, [])
+  // Mutation hooks
+  const deleteUnitMutation = useDeleteUnitMutation()
+  const createUnitMutation = useCreateUnitMutation()
+  const updateUnitMutation = useUpdateUnitMutation()
+
+  // Chuyển đổi dữ liệu từ API thành format phù hợp với table
+  const unitRows: UnitRecord[] =
+    units?.map((unit) => ({
+      ...unit,
+    })) || []
 
   // Xử lý thêm mới đơn vị tính
   const handleAdd = () => {
@@ -81,9 +74,8 @@ const ListUnits = () => {
       cancelText: "Hủy",
       onOk: async () => {
         try {
-          await unitService.deleteUnit(record.id)
+          await deleteUnitMutation.mutateAsync(record.id)
           message.success("Xóa đơn vị tính thành công")
-          fetchUnits()
         } catch (error) {
           console.error("Error deleting unit:", error)
           message.error("Không thể xóa đơn vị tính")
@@ -103,7 +95,10 @@ const ListUnits = () => {
           description: values.description,
           status: values.status,
         }
-        await unitService.updateUnit(editingUnit.id, updateData)
+        await updateUnitMutation.mutateAsync({
+          id: editingUnit.id,
+          unit: updateData,
+        })
         message.success("Cập nhật đơn vị tính thành công")
       } else {
         // Thêm mới đơn vị tính
@@ -113,12 +108,11 @@ const ListUnits = () => {
           description: values.description,
           status: values.status,
         }
-        await unitService.createUnit(createData)
+        await createUnitMutation.mutateAsync(createData)
         message.success("Thêm đơn vị tính thành công")
       }
       setModalVisible(false)
       form.resetFields()
-      fetchUnits()
     } catch (error) {
       console.error("Error saving unit:", error)
       message.error("Không thể lưu đơn vị tính")
@@ -187,14 +181,14 @@ const ListUnits = () => {
                 sorter: true,
               },
             ]}
-            data={units}
-            loading={loading}
+            data={unitRows}
+            loading={isLoading}
             showSearch={true}
+            scroll={{ x: "100%" }}
             searchPlaceholder='Tìm kiếm đơn vị tính...'
             searchableColumns={["unitName", "unitCode", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            scroll={{ x: "100%" }}
             paginationConfig={{
               pageSize: 10,
               showSizeChanger: true,
@@ -249,9 +243,11 @@ const ListUnits = () => {
 
           <Form.Item name='status' label='Trạng thái' initialValue='active'>
             <Select>
-              <Option value='active'>Hoạt động</Option>
-              <Option value='inactive'>Không hoạt động</Option>
-              <Option value='archived'>Lưu trữ</Option>
+              {BASE_STATUS.map((status) => (
+                <Option key={status.value} value={status.value}>
+                  {status.label}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
