@@ -7,8 +7,8 @@ import {
   ProductTypeRequest,
   ProductSubtypeRequest,
   ProductSubtypeMappingRequest,
-  ProductSubtypesListResponse,
   ProductSubtypeResponse,
+  ProductSubtypeListResponse,
 } from "@/models/product-type.model"
 
 // Query keys cho product type
@@ -52,7 +52,7 @@ export const useAllProductTypesQuery = () => {
     queryKey: productTypeKeys.lists(),
     queryFn: async () => {
       const apiData = await api.get<ProductType[]>("/product-types")
-      
+
       // API trả về array trực tiếp, cần wrap thành cấu trúc mong đợi
       return {
         items: apiData,
@@ -175,7 +175,7 @@ export const useProductSubtypesQuery = () => {
   return useQuery({
     queryKey: productTypeKeys.subtypes.lists(),
     queryFn: async () => {
-      const response = await api.get<ProductSubtypesListResponse>(
+      const response = await api.get<ProductSubtypeListResponse>(
         "/products/subtype"
       )
       return response
@@ -190,7 +190,7 @@ export const useProductSubtypesByTypeQuery = (typeId: number) => {
   return useQuery({
     queryKey: productTypeKeys.subtypes.list(typeId),
     queryFn: async () => {
-      const response = await api.get<ProductSubtypesListResponse>(
+      const response = await api.get<ProductSubtypeListResponse>(
         `/products/type/${typeId}/subtypes`
       )
       return response

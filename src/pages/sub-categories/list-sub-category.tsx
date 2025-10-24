@@ -5,7 +5,6 @@ import { IoMdAdd } from "react-icons/io"
 
 import { MyContext } from "../../App"
 
-import * as React from "react"
 import { ProductSubtype } from "../../models/product-subtype.model"
 import {
   useProductSubtypesQuery,
@@ -13,12 +12,6 @@ import {
 } from "../../queries/product-subtype"
 import DialogAddUpdate from "./components/dialog-add-update"
 import DataTable from "../../components/common/data-table"
-import { Tag } from "antd"
-
-// Extend ProductSubtype interface để tương thích với DataTable
-interface ExtendedProductSubtype
-  extends ProductSubtype,
-    Record<string, unknown> {}
 
 const ListSubCategory = () => {
   const context = useContext(MyContext)
@@ -37,32 +30,17 @@ const ListSubCategory = () => {
   // Mutation để xóa loại phụ sản phẩm
   const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
 
-  // Chuyển đổi dữ liệu từ API thành format phù hợp với table
-  const rows: ExtendedProductSubtype[] = React.useMemo(() => {
-    if (!productSubtypes) return []
-    return productSubtypes.map((item: ProductSubtype) => ({
-      id: item.id,
-      subtypeName: item.subtypeName,
-      subtypeCode: item.subtypeCode,
-      productTypeId: item.productTypeId,
-      description: item.description || "",
-      status: item.status,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    }))
-  }, [productSubtypes])
-
   // Xử lý sửa loại phụ sản phẩm
-  const handleEdit = (record: ExtendedProductSubtype) => {
-    setEditingRow(record as ProductSubtype)
+  const handleEdit = (record: ProductSubtype) => {
+    setEditingRow(record)
     setOpenDialog(true)
   }
 
   // Xử lý xóa loại phụ sản phẩm
-  const handleDelete = async (record: ExtendedProductSubtype) => {
+  const handleDelete = async (record: ProductSubtype) => {
     if (
       window.confirm(
-        `Bạn có chắc chắn muốn xóa loại phụ sản phẩm "${record.subtypeName}"?`
+        `Bạn có chắc chắn muốn xóa loại phụ sản phẩm "${record.name}"?`
       )
     ) {
       try {
@@ -77,20 +55,6 @@ const ListSubCategory = () => {
   const handleAdd = () => {
     setEditingRow(null)
     setOpenDialog(true)
-  }
-
-  // Render trạng thái
-  const renderStatus = (status: string) => {
-    const statusConfig = {
-      active: { color: "green", text: "Hoạt động" },
-      inactive: { color: "red", text: "Không hoạt động" },
-      archived: { color: "orange", text: "Lưu trữ" },
-    }
-    const config = statusConfig[status as keyof typeof statusConfig] || {
-      color: "default",
-      text: status,
-    }
-    return <Tag color={config.color}>{config.text}</Tag>
   }
 
   return (
@@ -108,18 +72,12 @@ const ListSubCategory = () => {
         </div>
 
         <div className='card shadow border-0 p-3 mt-4'>
-          <DataTable<ExtendedProductSubtype>
+          <DataTable<ProductSubtype>
             columns={[
               {
                 title: "Tên loại phụ sản phẩm",
-                dataIndex: "subtypeName",
-                key: "subtypeName",
-                sorter: true,
-              },
-              {
-                title: "Mã loại phụ",
-                dataIndex: "subtypeCode",
-                key: "subtypeCode",
+                dataIndex: "name",
+                key: "name",
                 sorter: true,
               },
               {
@@ -135,12 +93,6 @@ const ListSubCategory = () => {
                 render: (description: string) => description || "N/A",
               },
               {
-                title: "Trạng thái",
-                dataIndex: "status",
-                key: "status",
-                render: (status: string) => renderStatus(status),
-              },
-              {
                 title: "Ngày tạo",
                 dataIndex: "createdAt",
                 key: "createdAt",
@@ -149,11 +101,11 @@ const ListSubCategory = () => {
                 sorter: true,
               },
             ]}
-            data={rows}
+            data={productSubtypes || []}
             loading={isLoading}
             showSearch={true}
             searchPlaceholder='Tìm kiếm loại phụ sản phẩm...'
-            searchableColumns={["subtypeName", "subtypeCode", "description"]}
+            searchableColumns={["name", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
             scroll={{ x: "100%" }}

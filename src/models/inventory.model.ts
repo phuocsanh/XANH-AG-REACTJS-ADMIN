@@ -8,14 +8,14 @@ export enum InventoryReceiptStatus {
   PENDING = 2,
   APPROVED = 3,
   COMPLETED = 4,
-  CANCELLED = 5
+  CANCELLED = 5,
 }
 
 // Enum cho loại giao dịch kho
 export enum InventoryTransactionType {
   IMPORT = 1,
   EXPORT = 2,
-  ADJUSTMENT = 3
+  ADJUSTMENT = 3,
 }
 
 // Interface cho phiếu nhập hàng - sử dụng trực tiếp từ API với các trường bổ sung
@@ -24,7 +24,7 @@ export interface InventoryReceipt {
   code: string
   description?: string
   status: number
-  statusText: string  // Trường bổ sung để hiển thị text trạng thái
+  statusText: string // Trường bổ sung để hiển thị text trạng thái
   totalAmount: string
   supplierName?: string
   supplierContact?: string
@@ -60,7 +60,7 @@ export interface InventoryHistory {
   productId: number
   productName: string
   transactionType: number
-  transactionTypeText: string  // Trường bổ sung để hiển thị text loại giao dịch
+  transactionTypeText: string // Trường bổ sung để hiển thị text loại giao dịch
   quantity: number
   unitPrice: string
   totalPrice: string
@@ -118,7 +118,7 @@ export function mapApiResponseToInventoryReceipt(
     updatedAt: apiReceipt.updatedAt,
     approvedAt: apiReceipt.approvedAt,
     completedAt: apiReceipt.completedAt,
-    items: apiReceipt.items?.map(mapApiResponseToInventoryReceiptItem)
+    items: apiReceipt.items?.map(mapApiResponseToInventoryReceiptItem),
   }
 }
 
@@ -137,7 +137,7 @@ export function mapApiResponseToInventoryReceiptItem(
     batchNumber: apiItem.batchNumber,
     notes: apiItem.notes,
     createdAt: apiItem.createdAt,
-    updatedAt: apiItem.updatedAt
+    updatedAt: apiItem.updatedAt,
   }
 }
 
@@ -149,7 +149,9 @@ export function mapApiResponseToInventoryHistory(
     productId: apiHistory.productId,
     productName: apiHistory.productName,
     transactionType: apiHistory.transactionType as InventoryTransactionType,
-    transactionTypeText: getInventoryTransactionTypeText(apiHistory.transactionType),
+    transactionTypeText: getInventoryTransactionTypeText(
+      apiHistory.transactionType
+    ),
     quantity: apiHistory.quantity,
     unitPrice: apiHistory.unitPrice,
     totalPrice: apiHistory.totalPrice,
@@ -158,7 +160,7 @@ export function mapApiResponseToInventoryHistory(
     receiptCode: apiHistory.receiptCode,
     description: apiHistory.description,
     createdBy: apiHistory.createdBy,
-    createdAt: apiHistory.createdAt
+    createdAt: apiHistory.createdAt,
   }
 }
 
@@ -167,17 +169,17 @@ export function mapApiResponseToInventoryHistory(
 export const getInventoryReceiptStatusText = (status: number): string => {
   switch (status) {
     case InventoryReceiptStatus.DRAFT:
-      return 'Nháp'
+      return "Nháp"
     case InventoryReceiptStatus.PENDING:
-      return 'Chờ duyệt'
+      return "Chờ duyệt"
     case InventoryReceiptStatus.APPROVED:
-      return 'Đã duyệt'
+      return "Đã duyệt"
     case InventoryReceiptStatus.COMPLETED:
-      return 'Hoàn thành'
+      return "Hoàn thành"
     case InventoryReceiptStatus.CANCELLED:
-      return 'Đã hủy'
+      return "Đã hủy"
     default:
-      return 'Không xác định'
+      return "Không xác định"
   }
 }
 
@@ -185,61 +187,74 @@ export const getInventoryReceiptStatusText = (status: number): string => {
 export const getInventoryTransactionTypeText = (type: number): string => {
   switch (type) {
     case InventoryTransactionType.IMPORT:
-      return 'Nhập kho'
+      return "Nhập kho"
     case InventoryTransactionType.EXPORT:
-      return 'Xuất kho'
+      return "Xuất kho"
     case InventoryTransactionType.ADJUSTMENT:
-      return 'Điều chỉnh'
+      return "Điều chỉnh"
     default:
-      return 'Không xác định'
+      return "Không xác định"
   }
 }
 
 // Request interfaces
 // Interface cho request tạo phiếu nhập hàng mới (khớp với backend DTO)
 export interface CreateInventoryReceiptRequest {
-  [key: string]: unknown                                 // Index signature để tương thích với AnyObject
-  receiptCode: string                                    // Mã phiếu nhập hàng (bắt buộc)
-  supplierName?: string                                  // Tên nhà cung cấp (tùy chọn)
-  supplierContact?: string                               // Liên hệ nhà cung cấp (tùy chọn)
-  totalAmount: number                                    // Tổng tiền (bắt buộc)
-  notes?: string                                         // Ghi chú (tùy chọn)
-  status: string                                         // Trạng thái (bắt buộc)
-  items: CreateInventoryReceiptItemRequest[]             // Danh sách sản phẩm (bắt buộc)
+  [key: string]: unknown // Index signature để tương thích với AnyObject
+  receiptCode: string // Mã phiếu nhập hàng (bắt buộc)
+  supplierName?: string // Tên nhà cung cấp (tùy chọn)
+  supplierContact?: string // Liên hệ nhà cung cấp (tùy chọn)
+  totalAmount: number // Tổng tiền (bắt buộc)
+  notes?: string // Ghi chú (tùy chọn)
+  status: string // Trạng thái (bắt buộc)
+  items: CreateInventoryReceiptItemRequest[] // Danh sách sản phẩm (bắt buộc)
 }
 
 // Interface cho request tạo chi tiết phiếu nhập hàng (khớp với backend DTO)
 export interface CreateInventoryReceiptItemRequest {
-  productId: number                                      // ID sản phẩm (bắt buộc)
-  quantity: number                                       // Số lượng (bắt buộc)
-  unitCost: number                                       // Giá vốn đơn vị (bắt buộc)
-  totalPrice: number                                     // Tổng giá tiền (bắt buộc)
-  notes?: string                                         // Ghi chú (tùy chọn)
+  productId: number // ID sản phẩm (bắt buộc)
+  quantity: number // Số lượng (bắt buộc)
+  unitCost: number // Giá vốn đơn vị (bắt buộc)
+  totalPrice: number // Tổng giá tiền (bắt buộc)
+  notes?: string // Ghi chú (tùy chọn)
 }
 
-export interface UpdateInventoryReceiptRequest extends Partial<CreateInventoryReceiptRequest> {
+// Interface cho form chi tiết phiếu nhập hàng - sử dụng trong UI
+export interface InventoryReceiptItemForm
+  extends CreateInventoryReceiptItemRequest {
+  key: string
+  productName?: string
+}
+
+export interface UpdateInventoryReceiptRequest
+  extends Partial<CreateInventoryReceiptRequest> {
   id: number
 }
 
-export interface UpdateInventoryReceiptItemRequest extends Partial<CreateInventoryReceiptItemRequest> {
-  [key: string]: unknown  // Index signature để tương thích với AnyObject
+export interface UpdateInventoryReceiptItemRequest
+  extends Partial<CreateInventoryReceiptItemRequest> {
+  [key: string]: unknown // Index signature để tương thích với AnyObject
   id: number
 }
 
 // Response interfaces
-export interface InventoryReceiptResponse extends ApiResponse<InventoryReceipt> {}
+export interface InventoryReceiptResponse
+  extends ApiResponse<InventoryReceipt> {}
 
-export interface InventoryReceiptListApiResponse extends ApiResponse<{
-  items: InventoryReceipt[]
-  total: number
-}> {}
+export interface InventoryReceiptListApiResponse
+  extends ApiResponse<{
+    items: InventoryReceipt[]
+    total: number
+  }> {}
 
-export interface InventoryHistoryResponse extends ApiResponse<InventoryHistory> {}
+export interface InventoryHistoryResponse
+  extends ApiResponse<InventoryHistory> {}
 
-export interface InventoryHistoryListApiResponse extends ApiResponse<{
-  items: InventoryHistory[]
-  total: number
-}> {}
+export interface InventoryHistoryListApiResponse
+  extends ApiResponse<{
+    items: InventoryHistory[]
+    total: number
+  }> {}
 
 // Query parameters
 export interface InventoryReceiptListParams {
@@ -263,142 +278,142 @@ export interface InventoryHistoryListParams {
 
 // Inventory models and interfaces
 export interface InventoryBatch {
-  id: number;
-  productId: number;
-  batchCode?: string;
-  unitCostPrice: string;
-  originalQuantity: number;
-  remainingQuantity: number;
-  expiryDate?: Date;
-  manufacturingDate?: Date;
-  supplierId?: number;
-  notes?: string;
-  receiptItemId?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  id: number
+  productId: number
+  batchCode?: string
+  unitCostPrice: string
+  originalQuantity: number
+  remainingQuantity: number
+  expiryDate?: Date
+  manufacturingDate?: Date
+  supplierId?: number
+  notes?: string
+  receiptItemId?: number
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface InventoryTransaction {
-  id: number;
-  productId: number;
-  transactionType: string;
-  quantity: number;
-  unitCostPrice: string;
-  totalCostValue: string;
-  remainingQuantity: number;
-  newAverageCost: string;
-  receiptItemId?: number;
-  referenceType?: string;
-  referenceId?: number;
-  notes?: string;
-  createdByUserId: number;
-  createdAt: Date;
-  updatedAt: Date;
+  id: number
+  productId: number
+  transactionType: string
+  quantity: number
+  unitCostPrice: string
+  totalCostValue: string
+  remainingQuantity: number
+  newAverageCost: string
+  receiptItemId?: number
+  referenceType?: string
+  referenceId?: number
+  notes?: string
+  createdByUserId: number
+  createdAt: Date
+  updatedAt: Date
 }
 
 // Request DTOs
 export interface CreateInventoryBatchRequest {
-  productId: number;
-  batchCode?: string;
-  unitCostPrice: string;
-  originalQuantity: number;
-  remainingQuantity: number;
-  expiryDate?: Date;
-  manufacturingDate?: Date;
-  supplierId?: number;
-  notes?: string;
-  receiptItemId?: number;
+  productId: number
+  batchCode?: string
+  unitCostPrice: string
+  originalQuantity: number
+  remainingQuantity: number
+  expiryDate?: Date
+  manufacturingDate?: Date
+  supplierId?: number
+  notes?: string
+  receiptItemId?: number
 }
 
 export interface CreateInventoryTransactionRequest {
-  productId: number;
-  transactionType: string;
-  quantity: number;
-  unitCostPrice: string;
-  totalCostValue: string;
-  remainingQuantity: number;
-  newAverageCost: string;
-  receiptItemId?: number;
-  referenceType?: string;
-  referenceId?: number;
-  notes?: string;
-  createdByUserId: number;
+  productId: number
+  transactionType: string
+  quantity: number
+  unitCostPrice: string
+  totalCostValue: string
+  remainingQuantity: number
+  newAverageCost: string
+  receiptItemId?: number
+  referenceType?: string
+  referenceId?: number
+  notes?: string
+  createdByUserId: number
 }
 
 // Stock operation interfaces
 export interface StockInRequest {
-  productId: number;
-  quantity: number;
-  unitCost: number;
-  receiptItemId?: number;
-  batchCode?: string;
-  expiryDate?: Date;
+  productId: number
+  quantity: number
+  unitCost: number
+  receiptItemId?: number
+  batchCode?: string
+  expiryDate?: Date
 }
 
 export interface StockOutRequest {
-  productId: number;
-  quantity: number;
-  referenceType: string;
-  referenceId?: number;
-  notes?: string;
+  productId: number
+  quantity: number
+  referenceType: string
+  referenceId?: number
+  notes?: string
 }
 
 // Inventory summary and reports
 export interface InventorySummary {
-  productId: number;
-  totalQuantity: number;
-  totalValue: string;
-  averageCost: string;
-  batches: InventoryBatch[];
+  productId: number
+  totalQuantity: number
+  totalValue: string
+  averageCost: string
+  batches: InventoryBatch[]
 }
 
 export interface InventoryValueReport {
-  productId: number;
-  productName: string;
-  quantity: number;
-  averageCost: string;
-  totalValue: string;
+  productId: number
+  productName: string
+  quantity: number
+  averageCost: string
+  totalValue: string
 }
 
 export interface LowStockAlert {
-  productId: number;
-  productName: string;
-  currentQuantity: number;
-  threshold: number;
+  productId: number
+  productName: string
+  currentQuantity: number
+  threshold: number
 }
 
 export interface ExpiringBatchAlert {
-  batchId: number;
-  productId: number;
-  productName: string;
-  batchCode?: string;
-  expiryDate: Date;
-  remainingQuantity: number;
-  daysUntilExpiry: number;
+  batchId: number
+  productId: number
+  productName: string
+  batchCode?: string
+  expiryDate: Date
+  remainingQuantity: number
+  daysUntilExpiry: number
 }
 
 export interface FifoCalculation {
-  totalCost: string;
-  averageCost: string;
+  totalCost: string
+  averageCost: string
   batches: {
-    batchId: number;
-    quantity: number;
-    unitCost: string;
-    totalCost: string;
-  }[];
+    batchId: number
+    quantity: number
+    unitCost: string
+    totalCost: string
+  }[]
 }
 
 export interface BatchTrackingInfo {
-  productId: number;
-  productName: string;
+  productId: number
+  productName: string
   batches: {
-    id: number;
-    batchCode?: string;
-    originalQuantity: number;
-    remainingQuantity: number;
-    unitCostPrice: string;
-    expiryDate?: Date;
-    manufacturingDate?: Date;
-    createdAt: Date;
-  }[];
+    id: number
+    batchCode?: string
+    originalQuantity: number
+    remainingQuantity: number
+    unitCostPrice: string
+    expiryDate?: Date
+    manufacturingDate?: Date
+    createdAt: Date
+  }[]
 }

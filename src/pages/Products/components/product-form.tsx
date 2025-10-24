@@ -15,58 +15,21 @@ import {
   useCreateProductMutation,
 } from "../../../queries/product"
 import {
-  CreateProductRequest,
-  ProductApiResponse,
+  Product,
+  ProductFormValues,
+  ConvertedProductValues,
+  ProductFormProps,
+  ProductApiResponseWithItem,
 } from "../../../models/product.model"
 import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import { useProductSubtypesQuery } from "@/queries/product-subtype"
 import { useUnitsQuery } from "@/queries/unit"
-import { BASE_STATUS, BaseStatus } from "@/constant/base-status"
-
-interface ProductApiResponseWithItem {
-  code: number
-  message: string
-  data: ProductApiResponse | { item: ProductApiResponse }
-}
+import { BASE_STATUS } from "@/constant/base-status"
 
 function isProductApiResponseWithItemWrapper(
-  data: ProductApiResponse | { item: ProductApiResponse }
-): data is { item: ProductApiResponse } {
-  return (data as { item: ProductApiResponse }).item !== undefined
-}
-
-// Mở rộng CreateProductRequest để chấp nhận UploadFile[] cho thumb và pictures
-// và thêm các trường mới
-interface ProductFormValues
-  extends Omit<CreateProductRequest, "thumb" | "pictures"> {
-  thumb?: UploadFile[]
-  pictures?: UploadFile[]
-  unit?: string // Đơn vị tính
-  subTypes?: number[] // Loại phụ sản phẩm (multiple selection)
-  status?: BaseStatus // Trạng thái sản phẩm
-}
-
-interface ProductFormProps {
-  isEdit?: boolean
-  productId?: string
-}
-
-// Interface cho converted values
-interface ConvertedValues {
-  [key: string]: unknown
-  name: string
-  price: string
-  type: number
-  quantity: number
-  description: string
-  thumb: string
-  pictures: string[]
-  attributes: Record<string, unknown>
-  unit?: string
-  subTypes?: number[]
-  discount?: string
-  status?: BaseStatus
-  videos?: string[]
+  data: Product | { item: Product }
+): data is { item: Product } {
+  return (data as { item: Product }).item !== undefined
 }
 
 // TiptapEditor component
@@ -215,7 +178,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             productData as unknown as ProductApiResponseWithItem
 
           // Lấy dữ liệu từ response.data.item hoặc response.data nếu không có .item
-          let productDataItem: ProductApiResponse
+          let productDataItem: Product
           if (isProductApiResponseWithItemWrapper(productApiResponse.data)) {
             productDataItem = productApiResponse.data.item
           } else {
@@ -338,8 +301,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       setLoading(true)
 
       // Chuyển đổi UploadFile[] về string và string[] cho API
-      const convertedValues: ConvertedValues = {
-        ...(values as unknown as ConvertedValues),
+      const convertedValues: ConvertedProductValues = {
+        ...(values as unknown as ConvertedProductValues),
         description: description,
         thumb:
           values.thumb && values.thumb.length > 0
@@ -475,7 +438,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   placeholder='Chọn loại phụ sản phẩm'
                   mode='multiple'
                   options={productSubtypes?.map((subtype) => ({
-                    label: subtype.subtypeName,
+                    label: subtype.name,
                     value: subtype.id,
                   }))}
                   className='w-full'

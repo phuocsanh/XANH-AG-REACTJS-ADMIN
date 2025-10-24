@@ -1,7 +1,7 @@
 import * as React from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Product } from "../../models/product.model"
+import { Product, ExtendedProduct } from "../../models/product.model"
 import { useProductsQuery } from "../../queries/product"
 import { useProductTypesQuery } from "@/queries/product-type"
 import { ProductType } from "../../models/product-type.model"
@@ -27,7 +27,6 @@ import {
 import DataTable from "../../components/common/data-table"
 
 // Extend Product interface để tương thích với DataTable
-interface ExtendedProduct extends Product, Record<string, unknown> {}
 
 // Type for product form values
 const ProductsList: React.FC = () => {

@@ -30,18 +30,13 @@ import type { ColumnsType } from "antd/es/table"
 
 import {
   CreateInventoryReceiptRequest,
-  CreateInventoryReceiptItemRequest,
+  InventoryReceiptItemForm,
 } from "@/models/inventory.model"
 import { useCreateInventoryReceiptMutation } from "@/queries/inventory"
 import { useProductsQuery } from "@/queries/product"
 
 const { Title, Text } = Typography
 const { TextArea } = Input
-
-interface InventoryReceiptItemForm extends CreateInventoryReceiptItemRequest {
-  key: string
-  productName?: string
-}
 
 const InventoryReceiptCreate: React.FC = () => {
   const navigate = useNavigate()

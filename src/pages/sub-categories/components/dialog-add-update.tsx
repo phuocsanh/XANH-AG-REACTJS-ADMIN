@@ -88,8 +88,8 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     if (open) {
       if (editingSubtype) {
         reset({
-          subtypeName: editingSubtype.subtypeName,
-          subtypeCode: editingSubtype.subtypeCode,
+          subtypeName: editingSubtype.name,
+          subtypeCode: editingSubtype.name, // Using name as there's no subtypeCode in ProductSubtype
           productTypeId: editingSubtype.productTypeId,
           description: editingSubtype.description || "",
           status: "active", // Mặc định là active vì backend chỉ hỗ trợ active
@@ -109,24 +109,28 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     }
 
     if (editingSubtype) {
+      // For update, we need to use the DTO format
+      const updateData: UpdateProductSubtypeDto = {
+        subtypeName: data.subtypeName,
+        productTypeId: data.productTypeId,
+        description: data.description,
+      }
+
       updateMutation.mutate({
         id: editingSubtype.id,
-        data: {
-          subtypeName: data.subtypeName,
-          subtypeCode: data.subtypeCode,
-          productTypeId: data.productTypeId,
-          description: data.description,
-          status: data.status,
-        },
+        data: updateData,
       })
     } else {
-      createMutation.mutate({
+      // For create, we need to use the DTO format
+      const createData: CreateProductSubtypeDto = {
         subtypeName: data.subtypeName,
         subtypeCode: data.subtypeCode,
         productTypeId: data.productTypeId,
         description: data.description,
         status: data.status,
-      })
+      }
+
+      createMutation.mutate(createData)
     }
   }
 

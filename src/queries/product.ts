@@ -7,7 +7,6 @@ import {
   CreateProductRequest,
   UpdateProductRequest,
   ExtendedProductListParams,
-  ProductApiResponse,
 } from "@/models/product.model"
 
 // Query keys cho product
@@ -27,7 +26,7 @@ export const useProductsQuery = (params?: ExtendedProductListParams) => {
   return useQuery({
     queryKey: productKeys.list(params || {}),
     queryFn: async () => {
-      const response = await api.get<ProductApiResponse[]>("/products", {
+      const response = await api.get<Product[]>("/products", {
         params: { params },
       })
       return response

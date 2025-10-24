@@ -9,38 +9,10 @@ export enum ProductStatus {
 }
 
 import { ApiResponse } from "./auth.model"
-import { ProductType } from "./product-type.model"
 import { BaseStatus } from "@/constant/base-status"
+import { UploadFile } from "antd/lib/upload/interface"
 
 // Interface cho dữ liệu sản phẩm từ API
-export interface ProductApiResponse {
-  id: number
-  productName: string
-  productPrice: string
-  status: BaseStatus
-  productThumb: string
-  productPictures: string[]
-  productVideos: string[]
-  productRatingsAverage: number | null
-  productVariations: Record<string, unknown>
-  productDescription: string
-  productSlug: string | null
-  productQuantity: number
-  productType: number
-  subProductType: number[]
-  discount: string
-  productDiscountedPrice: string
-  productSelled: number | null
-  productAttributes: Record<string, unknown>
-  profitMarginPercent: string
-  averageCostPrice: string
-  unitId?: number
-  latestPurchasePrice?: number
-  createdAt: string
-  updatedAt: string
-}
-
-// Interface cho dữ liệu sản phẩm - sử dụng tên trường giống API response
 export interface Product {
   id: number
   productName: string
@@ -68,6 +40,9 @@ export interface Product {
   updatedAt: string
 }
 
+// Extend Product interface để tương thích với DataTable
+export interface ExtendedProduct extends Product, Record<string, unknown> {}
+
 // Interface cho phân trang
 export interface PaginationResponse {
   total: number
@@ -78,15 +53,20 @@ export interface PaginationResponse {
   has_prev: boolean
 }
 
-// Interface cho response từ API
-export interface ProductApiResponseData {
-  items: ProductApiResponse[]
-  pagination: PaginationResponse
-}
-
-// Using the ProductApiResponse interface defined above
+// Using the Product interface defined above
 
 import { AnyObject } from "./common"
+
+// Mở rộng CreateProductRequest để chấp nhận UploadFile[] cho thumb và pictures
+// và thêm các trường mới
+export interface ProductFormValues
+  extends Omit<CreateProductRequest, "thumb" | "pictures"> {
+  thumb?: UploadFile[]
+  pictures?: UploadFile[]
+  unit?: string // Đơn vị tính
+  subTypes?: number[] // Loại phụ sản phẩm (multiple selection)
+  status?: BaseStatus // Trạng thái sản phẩm
+}
 
 export interface CreateProductRequest extends AnyObject {
   name: string
@@ -126,66 +106,12 @@ export interface ExtendedProductListParams extends ProductListParams {
 
 export interface ProductListResponse
   extends ApiResponse<{
-    items: ProductApiResponse[]
+    items: Product[]
     total: number
   }> {}
 
 export interface ProductResponse extends ApiResponse<Product> {
   // Additional product response properties can be added here if needed
-}
-
-export interface CreateProductTypeRequest extends AnyObject {
-  name: string
-  description?: string
-}
-
-export interface UpdateProductTypeRequest
-  extends Partial<CreateProductTypeRequest>,
-    AnyObject {
-  id: number
-}
-
-export type ProductTypeResponse = ApiResponse<ProductType>
-
-export interface ProductTypeListResponse
-  extends ApiResponse<{
-    items: ProductType[]
-    total: number
-  }> {
-  // Additional product type list response properties can be added here if needed
-}
-
-export interface ProductSubtype {
-  id: number
-  name: string
-  description?: string
-  productTypeId: number
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CreateProductSubtypeRequest extends AnyObject {
-  name: string
-  description?: string
-  productTypeId: number
-}
-
-export interface UpdateProductSubtypeRequest
-  extends Partial<CreateProductSubtypeRequest>,
-    AnyObject {
-  id: number
-}
-
-export interface ProductSubtypeResponse extends ApiResponse<ProductSubtype> {
-  // Additional product subtype response properties can be added here if needed
-}
-
-export interface ProductSubtypeListResponse
-  extends ApiResponse<{
-    items: ProductSubtype[]
-    total: number
-  }> {
-  // Additional product subtype list response properties can be added here if needed
 }
 
 // Product Stats interface
@@ -201,4 +127,33 @@ export interface ProductStats {
 
 export interface ProductStatsResponse extends ApiResponse<ProductStats> {
   // Additional product stats response properties can be added here if needed
+}
+
+// Interface cho converted values
+export interface ConvertedProductValues {
+  [key: string]: unknown
+  name: string
+  price: string
+  type: number
+  quantity: number
+  description: string
+  thumb: string
+  pictures: string[]
+  attributes: Record<string, unknown>
+  unit?: string
+  subTypes?: number[]
+  discount?: string
+  status?: BaseStatus
+  videos?: string[]
+}
+
+export interface ProductFormProps {
+  isEdit?: boolean
+  productId?: string
+}
+
+export interface ProductApiResponseWithItem {
+  code: number
+  message: string
+  data: Product | { item: Product }
 }

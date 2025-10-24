@@ -1,24 +1,25 @@
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState, useContext, useMemo } from "react"
 
 import Button from "@mui/material/Button"
 import { IoMdAdd } from "react-icons/io"
 
 import { MyContext } from "../../App"
 
-import * as React from "react"
 import DialogAddUpdate from "./components/dialog-add-update"
 import {
   useAllProductTypesQuery as useProductTypes,
   useDeleteProductTypeMutation,
 } from "../../queries/product-type"
-import { ProductType } from "../../models/product-type.model"
+import {
+  ProductType,
+  ExtendedProductType,
+} from "../../models/product-type.model"
 import { Status } from "../../models/common"
 import { toast } from "react-toastify"
 import DataTable from "../../components/common/data-table"
 import { Tag } from "antd"
 
 // Extend ProductType interface để tương thích với DataTable
-interface ExtendedProductType extends ProductType, Record<string, unknown> {}
 
 const ListCategory = () => {
   const context = useContext(MyContext)
@@ -36,7 +37,7 @@ const ListCategory = () => {
   const [editingRow, setEditingRow] = useState<ProductType | null>(null)
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
-  const rows: ExtendedProductType[] = React.useMemo(() => {
+  const rows: ExtendedProductType[] = useMemo(() => {
     if (!productTypesProductType) return []
     // useAllProductTypesQuery trả về { items: ProductType[], total: number }
     const items = productTypesProductType.items || []
