@@ -3,7 +3,7 @@ import { useEffect } from "react"
 import { IoCloseCircleSharp } from "react-icons/io5"
 import DialogCustom from "@/components/dialog"
 import { useForm } from "react-hook-form"
-import formConfig, { FormField } from "./form-config"
+import { zodResolver } from "@hookform/resolvers/zod"
 import {
   useCreateProductTypeMutation,
   useUpdateProductTypeMutation,
@@ -11,6 +11,11 @@ import {
 import { toast } from "react-toastify"
 import { ProductType } from "@/models/product-type.model"
 import { Status } from "@/models/common"
+import {
+  productTypeSchema,
+  ProductTypeFormData,
+  defaultProductTypeValues,
+} from "./form-config"
 
 function DialogAddUpdate({
   editingRow,
@@ -27,7 +32,10 @@ function DialogAddUpdate({
     watch,
     reset,
     formState: { errors },
-  } = useForm<FormField>(formConfig)
+  } = useForm<ProductTypeFormData>({
+    resolver: zodResolver(productTypeSchema),
+    defaultValues: defaultProductTypeValues,
+  })
 
   // Sử dụng React Query mutations
   const createProductTypeMutation = useCreateProductTypeMutation()
@@ -50,17 +58,12 @@ function DialogAddUpdate({
     } else if (!editingRow) {
       // Reset form khi thêm mới
       console.log("Resetting form for new product type")
-      reset({
-        typeName: "",
-        typeCode: "",
-        description: "",
-        status: Status.ACTIVE,
-      })
+      reset(defaultProductTypeValues)
     }
   }, [editingRow, reset, setValue])
 
   // Xử lý submit form
-  const onSubmit = async (data: FormField) => {
+  const onSubmit = async (data: ProductTypeFormData) => {
     try {
       if (editingRow?.id) {
         // Cập nhật - toast sẽ được hiển thị trong mutation hook

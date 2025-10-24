@@ -4,16 +4,43 @@ import Logo from "../../assets/images/logo.png"
 import Button from "@mui/material/Button"
 import { LuArrowRightToLine } from "react-icons/lu"
 import { FaRegUser } from "react-icons/fa6"
-
 import { Link } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  forgotPasswordSchema,
+  ForgotPasswordFormData,
+  defaultForgotPasswordValues,
+} from "./form-config"
+import { TextField } from "@mui/material"
 
 export const ForgotPassword = () => {
   const context = useContext(MyContext)
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: defaultForgotPasswordValues,
+  })
+
   useEffect(() => {
     window.scrollTo(0, 0)
     context.setIsHeaderFooterShow(true)
-  }, [])
+  }, [context])
+
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    try {
+      // Here you would implement the actual forgot password logic
+      console.log("Forgot password request for:", data.userAccount)
+      // Example API call:
+      // await forgotPasswordApi.call(data.userAccount)
+    } catch (error) {
+      console.error("Error requesting password reset:", error)
+    }
+  }
 
   return (
     <>
@@ -45,19 +72,21 @@ export const ForgotPassword = () => {
             Reset your password.
           </h1>
 
-          <form className='form mt-5'>
+          <form className='form mt-5' onSubmit={handleSubmit(onSubmit)}>
             <div className='col_ lg'>
               <h4>Full Name</h4>
-              <div className='form-group'>
-                <input
-                  type='text'
-                  className='input lg'
-                  placeholder='Enter Your Full Name'
-                />
-              </div>
+              <TextField
+                fullWidth
+                label='Tài khoản (Email hoặc Username)'
+                variant='outlined'
+                {...register("userAccount")}
+                error={!!errors.userAccount?.message}
+                helperText={errors.userAccount?.message}
+                className='mb-3'
+              />
             </div>
 
-            <Button className='btn-blue btn-lg w-100 mb-3'>
+            <Button type='submit' className='btn-blue btn-lg w-100 mb-3'>
               Reset Password
             </Button>
 

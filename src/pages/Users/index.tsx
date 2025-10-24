@@ -13,14 +13,20 @@ import {
 } from "@mui/material"
 import { Add } from "@mui/icons-material"
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import {
   useUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
 } from "@/queries/user"
-import { User, CreateUserDto, UpdateUserDto } from "@/models/user.model"
+import { User } from "@/models/user.model"
 import DataTable from "@/components/common/data-table"
+import {
+  createUserSchema,
+  CreateUserData,
+  defaultCreateUserValues,
+} from "./form-config"
 
 // Extend User interface để tương thích với DataTable
 interface ExtendedUser extends User, Record<string, unknown> {}
@@ -44,13 +50,16 @@ export const Users = () => {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CreateUserDto | UpdateUserDto>()
+  } = useForm<CreateUserData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: defaultCreateUserValues,
+  })
 
   // Xử lý mở dialog thêm người dùng
   const handleAddUser = () => {
     setSelectedUser(null)
     setIsEditing(false)
-    reset()
+    reset(defaultCreateUserValues)
     setOpenDialog(true)
   }
 
@@ -73,19 +82,17 @@ export const Users = () => {
   }
 
   // Xử lý submit form
-  const onSubmit = async (data: CreateUserDto | UpdateUserDto) => {
+  const onSubmit = async (data: CreateUserData) => {
     try {
       if (isEditing && selectedUser) {
         // Cập nhật người dùng
         await updateUserMutation.mutateAsync({
           id: selectedUser.userId,
-          userData: data as UpdateUserDto,
+          userData: data,
         })
       } else {
         // Tạo người dùng mới
-        const createData = data as CreateUserDto
-        // Tạo salt đơn giản (trong thực tế nên tạo random)
-        createData.userSalt = "default_salt"
+        const createData = { ...data, userSalt: "default_salt" }
         await createUserMutation.mutateAsync(createData)
       }
       setOpenDialog(false)
@@ -204,6 +211,7 @@ export const Users = () => {
         searchableColumns={["userAccount", "userEmail"]}
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
+        scroll={{ x: "100%" }}
         paginationConfig={{
           pageSize: 10,
           showSizeChanger: true,
@@ -221,89 +229,53 @@ export const Users = () => {
         fullWidth
       >
         <DialogTitle>
-          {isEditing ? "Sửa người dùng" : "Thêm người dùng mới"}
+          {isEditing ? "Chỉnh sửa người dùng" : "Thêm người dùng"}
         </DialogTitle>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogContent>
+        <DialogContent>
+          <Box
+            component='form'
+            onSubmit={handleSubmit(onSubmit)}
+            sx={{ mt: 2 }}
+          >
             <TextField
-              {...register("userAccount", {
-                required: "Tài khoản là bắt buộc",
-                minLength: {
-                  value: 3,
-                  message: "Tài khoản phải có ít nhất 3 ký tự",
-                },
-              })}
-              label='Tài khoản'
               fullWidth
-              margin='normal'
+              label='Tài khoản *'
+              {...register("userAccount")}
               error={!!errors.userAccount}
-              helperText={errors.userAccount?.message}
+              helperText={errors.userAccount?.message as string}
+              margin='normal'
             />
 
             {!isEditing && (
               <TextField
-                {...register("userPassword", {
-                  required: "Mật khẩu là bắt buộc",
-                  minLength: {
-                    value: 6,
-                    message: "Mật khẩu phải có ít nhất 6 ký tự",
-                  },
-                })}
-                label='Mật khẩu'
-                type='password'
                 fullWidth
-                margin='normal'
+                label='Mật khẩu *'
+                type='password'
+                {...register("userPassword")}
                 error={!!errors.userPassword}
-                helperText={errors.userPassword?.message}
+                helperText={errors.userPassword?.message as string}
+                margin='normal'
               />
             )}
 
             <TextField
-              {...register("userEmail", {
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Email không hợp lệ",
-                },
-              })}
+              fullWidth
               label='Email'
               type='email'
-              fullWidth
-              margin='normal'
+              {...register("userEmail")}
               error={!!errors.userEmail}
-              helperText={errors.userEmail?.message}
+              helperText={errors.userEmail?.message as string}
+              margin='normal'
             />
 
-            <TextField
-              {...register("userState", {
-                valueAsNumber: true,
-              })}
-              label='Trạng thái (1: Hoạt động, 0: Không hoạt động)'
-              type='number'
-              fullWidth
-              margin='normal'
-              defaultValue={1}
-              inputProps={{ min: 0, max: 1 }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
-            <Button
-              type='submit'
-              variant='contained'
-              disabled={
-                createUserMutation.isPending || updateUserMutation.isPending
-              }
-            >
-              {createUserMutation.isPending || updateUserMutation.isPending ? (
-                <CircularProgress size={20} />
-              ) : isEditing ? (
-                "Cập nhật"
-              ) : (
-                "Thêm"
-              )}
-            </Button>
-          </DialogActions>
-        </form>
+            <DialogActions sx={{ mt: 3 }}>
+              <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
+              <Button type='submit' variant='contained' color='primary'>
+                {isEditing ? "Cập nhật" : "Thêm"}
+              </Button>
+            </DialogActions>
+          </Box>
+        </DialogContent>
       </Dialog>
 
       {/* Dialog xác nhận xóa */}
@@ -314,8 +286,8 @@ export const Users = () => {
         <DialogTitle>Xác nhận xóa</DialogTitle>
         <DialogContent>
           <Typography>
-            Bạn có chắc chắn muốn xóa người dùng &quot;
-            {selectedUser?.userAccount}&quot;?
+            Bạn có chắc chắn muốn xóa người dùng &#39;
+            {selectedUser?.userAccount}&#39;?
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -324,13 +296,8 @@ export const Users = () => {
             onClick={handleConfirmDelete}
             color='error'
             variant='contained'
-            disabled={deleteUserMutation.isPending}
           >
-            {deleteUserMutation.isPending ? (
-              <CircularProgress size={20} />
-            ) : (
-              "Xóa"
-            )}
+            Xóa
           </Button>
         </DialogActions>
       </Dialog>

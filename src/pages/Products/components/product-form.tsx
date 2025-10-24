@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button, message, Card, Space, Form } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { FormField, FormComboBox, FormImageUpload } from "@/components/form"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -16,11 +17,15 @@ import {
 } from "../../../queries/product"
 import {
   Product,
-  ProductFormValues,
-  ConvertedProductValues,
   ProductFormProps,
   ProductApiResponseWithItem,
 } from "../../../models/product.model"
+import {
+  productFormSchema,
+  ProductFormValues,
+  ConvertedProductValues,
+  defaultProductFormValues,
+} from "./form-config"
 import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import { useProductSubtypesQuery } from "@/queries/product-subtype"
 import { useUnitsQuery } from "@/queries/unit"
@@ -137,11 +142,8 @@ const TiptapEditor: React.FC<{
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
   const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
-    defaultValues: {
-      status: "active",
-      discount: "0",
-      quantity: 0,
-    },
+    resolver: zodResolver(productFormSchema),
+    defaultValues: defaultProductFormValues,
   })
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()

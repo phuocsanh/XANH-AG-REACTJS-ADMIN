@@ -9,27 +9,19 @@ import {
   useCreateUnitMutation,
   useUpdateUnitMutation,
 } from "../../queries/unit"
-import { BaseStatus, BASE_STATUS } from "@/constant/base-status"
+import { Unit, UnitFormData, defaultUnitValues } from "./form-config"
+import { BASE_STATUS } from "@/constant/base-status"
 
 const { confirm } = Modal
 const { Option } = Select
 
 // Create a new interface that extends Unit and satisfies Record<string, unknown>
-interface UnitRecord extends Record<string, unknown> {
-  id: number
-  unitName: string
-  unitCode: string
-  description?: string
-  status: BaseStatus
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
-}
+interface UnitRecord extends Unit, Record<string, unknown> {}
 
 const ListUnits = () => {
   const [modalVisible, setModalVisible] = useState(false)
   const [editingUnit, setEditingUnit] = useState<UnitRecord | null>(null)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<UnitFormData>()
 
   // Sử dụng React Query hook để lấy danh sách đơn vị tính
   const { data: units, isLoading } = useUnitsQuery()
@@ -85,7 +77,7 @@ const ListUnits = () => {
   }
 
   // Xử lý submit form
-  const handleSubmit = async (values: UnitRecord) => {
+  const handleSubmit = async (values: UnitFormData) => {
     try {
       if (editingUnit) {
         // Cập nhật đơn vị tính
@@ -216,6 +208,7 @@ const ListUnits = () => {
           layout='vertical'
           onFinish={handleSubmit}
           autoComplete='off'
+          initialValues={defaultUnitValues}
         >
           <Form.Item
             name='unitName'
@@ -241,7 +234,7 @@ const ListUnits = () => {
             <Input.TextArea placeholder='Nhập mô tả' rows={3} />
           </Form.Item>
 
-          <Form.Item name='status' label='Trạng thái' initialValue='active'>
+          <Form.Item name='status' label='Trạng thái'>
             <Select>
               {BASE_STATUS.map((status) => (
                 <Option key={status.value} value={status.value}>
