@@ -146,7 +146,7 @@ const ListCategory = () => {
             searchableColumns={["typeName", "typeCode", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            scroll={{ x: '100%' }}
+            scroll={{ x: "100%" }}
             paginationConfig={{
               pageSize: 10,
               showSizeChanger: true,

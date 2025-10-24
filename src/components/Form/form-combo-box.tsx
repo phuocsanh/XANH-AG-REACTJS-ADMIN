@@ -133,7 +133,7 @@ function FormComboBox<T extends FieldValues>({
 }: FormComboBoxProps<T>) {
   // State cho search value
   const [searchValue, setSearchValue] = useState("")
-  
+
   // Debounce search value để tránh gọi API quá nhiều
   const [debouncedSearchValue] = useDebounceState(searchValue, searchDebounceMs)
 
@@ -176,12 +176,9 @@ function FormComboBox<T extends FieldValues>({
   }
 
   // Handle search
-  const handleSearch = useCallback(
-    (value: string) => {
-      setSearchValue(value)
-    },
-    []
-  )
+  const handleSearch = useCallback((value: string) => {
+    setSearchValue(value)
+  }, [])
 
   // Handle scroll to load more cho async mode
   const handlePopupScroll = useCallback(
@@ -250,11 +247,16 @@ function FormComboBox<T extends FieldValues>({
               <Spin size='small' /> Đang tải...
             </div>
           )}
-          {!isFetchingNextPage && hasNextPage && enableLoadMore && finalOptions.length > 0 && (
-            <div style={{ padding: "8px", textAlign: "center", color: "#999" }}>
-              Cuộn xuống để tải thêm ({finalOptions.length}/{total})
-            </div>
-          )}
+          {!isFetchingNextPage &&
+            hasNextPage &&
+            enableLoadMore &&
+            finalOptions.length > 0 && (
+              <div
+                style={{ padding: "8px", textAlign: "center", color: "#999" }}
+              >
+                Cuộn xuống để tải thêm ({finalOptions.length}/{total})
+              </div>
+            )}
           {!hasNextPage && finalOptions.length > 0 && (
             <div style={{ padding: "8px", textAlign: "center", color: "#999" }}>
               Đã hiển thị tất cả ({total} mục)
@@ -263,7 +265,14 @@ function FormComboBox<T extends FieldValues>({
         </>
       )
     },
-    [isAsyncMode, isFetchingNextPage, hasNextPage, enableLoadMore, finalOptions.length, total]
+    [
+      isAsyncMode,
+      isFetchingNextPage,
+      hasNextPage,
+      enableLoadMore,
+      finalOptions.length,
+      total,
+    ]
   )
 
   // Xử lý lỗi từ TanStack Query
@@ -279,6 +288,7 @@ function FormComboBox<T extends FieldValues>({
       required={required}
       className={className}
       style={style}
+      layout='vertical'
     >
       <Controller
         name={name}
@@ -323,7 +333,9 @@ function FormComboBox<T extends FieldValues>({
               {finalOptions.map((option) => (
                 <Select.Option
                   key={String(option[valueField as keyof typeof option])}
-                  value={option[valueField as keyof typeof option] as string | number}
+                  value={
+                    option[valueField as keyof typeof option] as string | number
+                  }
                   disabled={option.disabled}
                 >
                   {String(option[labelField as keyof typeof option])}

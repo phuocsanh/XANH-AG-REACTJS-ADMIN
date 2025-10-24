@@ -51,7 +51,12 @@ function FormImageUpload<T extends FieldValues>({
   }
 
   return (
-    <Form.Item label={label} required={required} className={className}>
+    <Form.Item
+      label={label}
+      required={required}
+      className={className}
+      layout='vertical'
+    >
       <Controller
         name={name}
         control={control}

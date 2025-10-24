@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Button, message, Card, Space } from "antd"
+import { Button, message, Card, Space, Form } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
 import { FormField, FormComboBox, FormImageUpload } from "@/components/form"
@@ -168,7 +168,7 @@ const TiptapEditor: React.FC<{
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
+  const { control, handleSubmit, reset } = useForm<ProductFormValues>({
     defaultValues: {
       isPublished: true,
       discount: "0",
@@ -182,159 +182,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const [description, setDescription] = useState("")
 
   // Watch form values
-  const watchedType = watch("type")
 
   // Xác định ID sản phẩm để sử dụng: ưu tiên productId từ props, sau đó mới đến id từ params
   const currentProductId = productId || id
   const { data: productSubtypes } = useProductSubtypes()
   const { data: productTypes } = useProductTypes()
-  const renderProductAttributes = () => {
-    const selectedType = productTypes?.data.items.find(
-      (type) => type.id === Number(watchedType)
-    )
-
-    if (!selectedType) return null
-
-    switch (selectedType.typeName) {
-      case "Nấm":
-        return (
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              name='attributes.origin'
-              control={control}
-              label='Xuất xứ'
-              placeholder='Nhập xuất xứ'
-            />
-            <FormField
-              name='attributes.weight'
-              control={control}
-              label='Trọng lượng (g)'
-              type='number'
-              placeholder='Ví dụ: 500'
-            />
-            <FormComboBox
-              name='attributes.freshness'
-              control={control}
-              label='Độ tươi'
-              placeholder='Chọn độ tươi'
-              options={[
-                { label: "Tươi", value: "Tươi" },
-                { label: "Khô", value: "Khô" },
-              ]}
-            />
-            <FormComboBox
-              name='attributes.organic'
-              control={control}
-              label='Hữu cơ'
-              placeholder='Chọn trạng thái'
-              options={[
-                { label: "Có", value: "true" },
-                { label: "Không", value: "false" },
-              ]}
-            />
-          </div>
-        )
-      case "Phân bón":
-        return (
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              name='attributes.main_ingredient'
-              control={control}
-              label='Thành phần chính'
-              placeholder='Nhập thành phần'
-            />
-            <FormField
-              name='attributes.weight'
-              control={control}
-              label='Khối lượng (kg)'
-              type='number'
-              placeholder='Ví dụ: 5'
-            />
-            <FormComboBox
-              name='attributes.fertilizer_type'
-              control={control}
-              label='Loại phân'
-              placeholder='Chọn loại phân'
-              options={[
-                { label: "Hữu cơ", value: "Hữu cơ" },
-                { label: "Vô cơ", value: "Vô cơ" },
-              ]}
-            />
-          </div>
-        )
-      case "Thuốc bảo vệ thực vật":
-        return (
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              name='attributes.active_ingredient'
-              control={control}
-              label='Hoạt chất'
-              placeholder='Nhập hoạt chất'
-            />
-            <FormField
-              name='attributes.volume'
-              control={control}
-              label='Thể tích (ml)'
-              type='number'
-              placeholder='Ví dụ: 100'
-            />
-            <FormComboBox
-              name='attributes.toxicity'
-              control={control}
-              label='Độ độc'
-              placeholder='Chọn độ độc'
-              options={[
-                { label: "Nhóm I", value: "Nhóm I" },
-                { label: "Nhóm II", value: "Nhóm II" },
-                { label: "Nhóm III", value: "Nhóm III" },
-              ]}
-            />
-          </div>
-        )
-      case "Cây trồng":
-        return (
-          <div className='grid grid-cols-2 gap-4'>
-            <FormField
-              name='attributes.age'
-              control={control}
-              label='Tuổi thọ (tháng)'
-              type='number'
-              placeholder='Ví dụ: 12'
-            />
-            <FormField
-              name='attributes.height'
-              control={control}
-              label='Chiều cao (cm)'
-              type='number'
-              placeholder='Ví dụ: 30'
-            />
-            <FormComboBox
-              name='attributes.care_level'
-              control={control}
-              label='Mức độ chăm sóc'
-              placeholder='Chọn mức độ chăm sóc'
-              options={[
-                { label: "Dễ", value: "Dễ" },
-                { label: "Trung bình", value: "Trung bình" },
-                { label: "Khó", value: "Khó" },
-              ]}
-            />
-            <FormComboBox
-              name='attributes.pot_included'
-              control={control}
-              label='Kèm chậu'
-              placeholder='Chọn trạng thái'
-              options={[
-                { label: "Có", value: "true" },
-                { label: "Không", value: "false" },
-              ]}
-            />
-          </div>
-        )
-      default:
-        return null
-    }
-  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -483,127 +335,141 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       <Space direction='vertical' size='middle' style={{ width: "100%" }}>
         <Card loading={loading}>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className='grid grid-cols-2 gap-4'>
-              <FormField
-                name='name'
-                control={control}
-                label='Tên sản phẩm'
-                placeholder='Nhập tên sản phẩm'
-                required
-                rules={{ required: "Vui lòng nhập tên sản phẩm" }}
-              />
-
-              <FormComboBox
-                name='type'
-                control={control}
-                label='Loại sản phẩm'
-                placeholder='Chọn loại sản phẩm'
-                required
-                rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                options={productTypes?.data.items.map((type) => ({
-                  label: type.typeName,
-                  value: type.id,
-                }))}
-              />
-
-              <FormField
-                name='price'
-                control={control}
-                label='Giá bán (VNĐ)'
-                type='number'
-                placeholder='Nhập giá bán'
-                required
-                rules={{ required: "Vui lòng nhập giá bán" }}
-                suffix='VNĐ'
-              />
-
-              <FormField
-                name='unit'
-                control={control}
-                label='Đơn vị tính'
-                placeholder='Ví dụ: kg, lít, cái, gói...'
-              />
-
-              <FormField
-                name='quantity'
-                control={control}
-                label='Số lượng'
-                type='number'
-                placeholder='Nhập số lượng'
-                required
-                rules={{ required: "Vui lòng nhập số lượng" }}
-              />
-
-              <FormComboBox
-                name='subTypes'
-                control={control}
-                label='Loại phụ sản phẩm'
-                placeholder='Chọn loại phụ sản phẩm'
-                mode='multiple'
-                options={productSubtypes?.map((subtype) => ({
-                  label: subtype.subtypeName,
-                  value: subtype.id,
-                }))}
-              />
-
-              <FormField
-                name='discount'
-                control={control}
-                label='Giảm giá (%)'
-                type='number'
-                placeholder='Nhập giảm giá'
-                suffix='%'
-              />
-
-              <FormComboBox
-                name='isPublished'
-                control={control}
-                label='Trạng thái'
-                placeholder='Chọn trạng thái'
-                options={[
-                  { label: "Đang bán", value: "true" },
-                  { label: "Nháp", value: "false" },
-                ]}
-              />
-            </div>
-
-            <div className='mb-4'>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Mô tả sản phẩm <span className='text-red-500'>*</span>
-              </label>
-              <TiptapEditor
-                content={description}
-                onChange={(content) => {
-                  setDescription(content)
-                }}
-              />
-            </div>
-
-            <FormImageUpload
-              name='thumb'
-              control={control}
-              label='Hình ảnh sản phẩm'
-              maxCount={1}
-              folder='products'
-            />
-
-            <FormImageUpload
-              name='pictures'
-              control={control}
-              label='Ảnh chi tiết sản phẩm'
-              maxCount={5}
-              multiple
-              folder='products'
-            />
-
-            {Number(watchedType) && (
-              <div className='mb-4'>
-                <h3 className='text-lg font-medium mb-2'>
-                  Thuộc tính sản phẩm
-                </h3>
-                {renderProductAttributes()}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='w-full'>
+                <FormField
+                  name='name'
+                  control={control}
+                  label='Tên sản phẩm'
+                  placeholder='Nhập tên sản phẩm'
+                  required
+                  rules={{ required: "Vui lòng nhập tên sản phẩm" }}
+                  className='w-full'
+                />
               </div>
-            )}
+
+              <div className='w-full'>
+                <FormComboBox
+                  name='type'
+                  control={control}
+                  label='Loại sản phẩm'
+                  placeholder='Chọn loại sản phẩm'
+                  required
+                  rules={{ required: "Vui lòng chọn loại sản phẩm" }}
+                  options={productTypes?.data.items.map((type) => ({
+                    label: type.typeName,
+                    value: type.id,
+                  }))}
+                  className='w-full'
+                />
+              </div>
+
+              <div className='w-full'>
+                <FormField
+                  name='price'
+                  control={control}
+                  label='Giá bán (VNĐ)'
+                  type='number'
+                  placeholder='Nhập giá bán'
+                  required
+                  rules={{ required: "Vui lòng nhập giá bán" }}
+                  suffix='VNĐ'
+                  className='w-full'
+                />
+              </div>
+
+              <div className='w-full'>
+                <FormField
+                  name='unit'
+                  control={control}
+                  label='Đơn vị tính'
+                  placeholder='Ví dụ: kg, lít, cái, gói...'
+                  className='w-full'
+                  required
+                  rules={{ required: "Vui lòng nhập đơn vị tính" }}
+                />
+              </div>
+
+              <div className='w-full'>
+                <FormField
+                  name='quantity'
+                  control={control}
+                  label='Số lượng'
+                  type='number'
+                  placeholder='Nhập số lượng'
+                  required
+                  rules={{ required: "Vui lòng nhập số lượng" }}
+                  className='w-full'
+                />
+              </div>
+
+              <div className='w-full'>
+                <FormComboBox
+                  name='subTypes'
+                  control={control}
+                  label='Loại phụ sản phẩm'
+                  placeholder='Chọn loại phụ sản phẩm'
+                  mode='multiple'
+                  options={productSubtypes?.map((subtype) => ({
+                    label: subtype.subtypeName,
+                    value: subtype.id,
+                  }))}
+                  className='w-full'
+                />
+              </div>
+
+              <div className='w-full'>
+                <FormField
+                  name='discount'
+                  control={control}
+                  label='Giảm giá (%)'
+                  type='number'
+                  placeholder='Nhập giảm giá'
+                  suffix='%'
+                  className='w-full'
+                />
+              </div>
+
+              <div className='w-full'>
+                <FormComboBox
+                  name='isPublished'
+                  control={control}
+                  label='Trạng thái'
+                  placeholder='Chọn trạng thái'
+                  options={[
+                    { label: "Đang bán", value: "true" },
+                    { label: "Nháp", value: "false" },
+                  ]}
+                  className='w-full'
+                />
+              </div>
+            </div>
+
+            <Form.Item
+              label='Mô tả sản phẩm'
+              className='w-full'
+              layout='vertical'
+            >
+              <div className='w-full'>
+                <TiptapEditor
+                  content={description}
+                  onChange={(content) => {
+                    setDescription(content)
+                  }}
+                />
+              </div>
+            </Form.Item>
+
+            <div className='w-full'>
+              <FormImageUpload
+                name='thumb'
+                control={control}
+                label='Hình ảnh sản phẩm'
+                maxCount={1}
+                folder='products'
+                className='w-full'
+              />
+            </div>
 
             <div style={{ textAlign: "right", marginTop: "24px" }}>
               <Button
