@@ -107,9 +107,9 @@ function App() {
 
               {/* Main content area */}
               <div className='flex-1'>
-                {/* Space for header on mobile */}
+                {/* Space for header on all devices */}
                 {isHeaderFooterShow === false && isLogin && (
-                  <div className='md:hidden' style={{ height: "70px" }}></div>
+                  <div className='h-[70px]'></div>
                 )}
 
                 <main
