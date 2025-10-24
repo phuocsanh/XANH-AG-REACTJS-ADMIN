@@ -1,12 +1,10 @@
 import * as React from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
-import { Product, ProductApiResponseData } from "../../models/product.model"
-import { productService } from "../../services/product.service"
-import { productTypeService } from "../../services/product-type.service"
+import { Product } from "../../models/product.model"
+import { useProductsQuery } from "../../queries/product"
+import { useProductTypesQuery } from "@/queries/product-type"
 import { ProductType } from "../../models/product-type.model"
-import { PaginationData } from "../../models/pagination.model"
 import {
   Button,
   Input,
@@ -60,80 +58,13 @@ const ProductsList: React.FC = () => {
     navigate(`/products/edit/${product.id}`)
   }
 
-  // Sử dụng useQuery để fetch danh sách sản phẩm
-  const { data: productsData, isLoading: isLoadingProducts } = useQuery<
-    PaginationData<Product>,
-    Error
-  >({
-    queryKey: ["products"],
-    queryFn: async () => {
-      try {
-        const response = await productService.getProducts()
-        console.log("API Response:", response) // Log để kiểm tra dữ liệu từ API
+  // Sử dụng query hook mới để fetch danh sách sản phẩm
+  const { data: productsData, isLoading: isLoadingProducts } =
+    useProductsQuery()
 
-        // Kiểm tra nếu response.data là undefined
-        if (!response?.data) {
-          throw new Error("Dữ liệu sản phẩm không hợp lệ")
-        }
-
-        const apiData = response.data as unknown as ProductApiResponseData
-
-        // Kiểm tra cấu trúc dữ liệu
-        if (!apiData || typeof apiData !== "object") {
-          throw new Error("Cấu trúc dữ liệu không hợp lệ")
-        }
-
-        // Sử dụng trực tiếp items từ API response vì Product interface đã giống ProductApiResponse
-        const convertedItems = (apiData.items || []) as Product[]
-
-        // Trả về dữ liệu theo định dạng PaginationData
-        return {
-          items: convertedItems,
-          total: apiData.pagination?.total || 0,
-          page: apiData.pagination?.page || 1,
-          limit: apiData.pagination?.page_size || 10,
-          totalPages: apiData.pagination?.total_pages || 1,
-          hasNext: apiData.pagination?.has_next || false,
-          hasPrev: apiData.pagination?.has_prev || false,
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error)
-        throw error
-      }
-    },
-  })
-
-  // Sử dụng useQuery để fetch danh sách loại sản phẩm
-  const { data: productTypesData, isLoading: isLoadingTypes } = useQuery<
-    PaginationData<ProductType>,
-    Error
-  >({
-    queryKey: ["productTypes"],
-    queryFn: async () => {
-      try {
-        const response = await productTypeService.getProductTypes()
-        console.log("Product Types Response:", response)
-
-        if (!response?.data) {
-          throw new Error("Dữ liệu loại sản phẩm không hợp lệ")
-        }
-
-        // Trả về dữ liệu theo định dạng PaginationData
-        return {
-          items: response.data.items || [],
-          total: response.data.total || 0,
-          page: response.data.page || 1,
-          limit: response.data.limit || 10,
-          totalPages: response.data.totalPages || 1,
-          hasNext: response.data.hasNext || false,
-          hasPrev: response.data.hasPrev || false,
-        }
-      } catch (error) {
-        console.error("Error fetching product types:", error)
-        throw error
-      }
-    },
-  })
+  // Sử dụng query hook mới để fetch danh sách loại sản phẩm
+  const { data: productTypesData, isLoading: isLoadingTypes } =
+    useProductTypesQuery()
 
   // Lấy danh sách loại sản phẩm
   const productTypes: ProductType[] = productTypesData?.items || []
@@ -158,11 +89,11 @@ const ProductsList: React.FC = () => {
 
   // Filter products based on search term and filter type
   const filteredProducts = React.useMemo(() => {
-    if (!productsData?.items) {
+    if (!productsData) {
       return []
     }
 
-    let result = [...productsData.items]
+    let result = [...productsData]
 
     // Lọc theo từ khóa tìm kiếm
     if (searchTerm.trim()) {
@@ -271,8 +202,8 @@ const ProductsList: React.FC = () => {
       title: "Trạng thái",
       width: 120,
       render: (record: ExtendedProduct) => (
-        <Tag color={record.isPublished ? "green" : "default"}>
-          {record.isPublished ? "Đang bán" : "Nháp"}
+        <Tag color={record.status === "active" ? "green" : "default"}>
+          {record.status === "active" ? "Đang bán" : "Nháp"}
         </Tag>
       ),
     },
@@ -362,9 +293,9 @@ const ProductsList: React.FC = () => {
             columns={columns}
             loading={loading}
             pagination={{
-              current: productsData?.page || 1,
-              pageSize: productsData?.limit || 10,
-              total: productsData?.total || 0,
+              current: 1,
+              pageSize: displayProducts.length,
+              total: displayProducts.length,
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
               showTotal: (total: number) => `Tổng ${total} sản phẩm`,
@@ -430,8 +361,10 @@ const ProductsList: React.FC = () => {
               {currentProduct.productQuantity || 0}
             </Descriptions.Item>
             <Descriptions.Item label='Trạng thái'>
-              <Tag color={currentProduct.isPublished ? "green" : "default"}>
-                {currentProduct.isPublished ? "Đang bán" : "Bản nháp"}
+              <Tag
+                color={currentProduct.status === "active" ? "green" : "default"}
+              >
+                {currentProduct.status === "active" ? "Đang bán" : "Bản nháp"}
               </Tag>
             </Descriptions.Item>
             {currentProduct.discount && currentProduct.discount !== "0" && (

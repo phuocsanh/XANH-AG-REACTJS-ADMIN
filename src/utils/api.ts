@@ -3,7 +3,7 @@ import queryString from "query-string"
 import { isFile, isFileArray, isObjectLike } from "./check-type"
 import { AnyObject, ApiResponse } from "../models/common"
 import { useAppStore } from "../stores"
-import { authService } from "../services"
+import { useRefreshTokenMutation } from "../queries/auth"
 
 export const URL = "http://localhost:3003/"
 export const BASE_URL = URL
@@ -279,7 +279,9 @@ api.instance.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const tokenResponse = await authService.refreshToken()
+        // Use the new refresh token mutation hook
+        const refreshTokenMutation = useRefreshTokenMutation()
+        const tokenResponse = await refreshTokenMutation.mutateAsync()
         const newAccessToken = tokenResponse.access_token
 
         // Cập nhật header cho request gốc

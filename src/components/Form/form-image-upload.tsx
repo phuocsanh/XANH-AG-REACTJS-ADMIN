@@ -11,7 +11,6 @@ interface FormImageUploadProps<T extends FieldValues> {
   disabled?: boolean // Vô hiệu hóa input
   maxCount?: number // Số lượng file tối đa
   multiple?: boolean // Cho phép chọn nhiều file
-  folder?: string // Thư mục lưu trữ
   className?: string // CSS class
   rules?: {
     required?: boolean | string
@@ -35,7 +34,6 @@ function FormImageUpload<T extends FieldValues>({
   disabled: _disabled = false,
   maxCount = 5,
   multiple = true,
-  folder = "temporary",
   className,
   rules = {},
 }: FormImageUploadProps<T>) {
@@ -71,7 +69,6 @@ function FormImageUpload<T extends FieldValues>({
               }}
               maxCount={maxCount}
               multiple={multiple}
-              folder={folder}
             />
             {error && (
               <div

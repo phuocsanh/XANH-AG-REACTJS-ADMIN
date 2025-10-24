@@ -1,14 +1,14 @@
 import { useState } from "react"
 import { Button, message, Space, Modal, Form, Input, Select, Tag } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
-import { CreateUnitDto, UpdateUnitDto } from "../../services/unit.service"
+import { CreateUnitDto, UpdateUnitDto } from "../../models/unit.model"
 import DataTable from "../../components/common/data-table"
 import {
-  useUnits,
+  useUnitsQuery,
   useDeleteUnitMutation,
   useCreateUnitMutation,
   useUpdateUnitMutation,
-} from "../../queries/use-unit"
+} from "../../queries/unit"
 import { BaseStatus, BASE_STATUS } from "@/constant/base-status"
 
 const { confirm } = Modal
@@ -32,7 +32,7 @@ const ListUnits = () => {
   const [form] = Form.useForm()
 
   // Sử dụng React Query hook để lấy danh sách đơn vị tính
-  const { data: units, isLoading } = useUnits()
+  const { data: units, isLoading } = useUnitsQuery()
 
   // Mutation hooks
   const deleteUnitMutation = useDeleteUnitMutation()
@@ -97,7 +97,7 @@ const ListUnits = () => {
         }
         await updateUnitMutation.mutateAsync({
           id: editingUnit.id,
-          unit: updateData,
+          unitData: updateData,
         })
         message.success("Cập nhật đơn vị tính thành công")
       } else {

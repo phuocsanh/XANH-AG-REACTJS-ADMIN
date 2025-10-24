@@ -18,8 +18,8 @@ import {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-} from "@/queries/use-user"
-import { CreateUserDto, UpdateUserDto, User } from "@/services/user.service"
+} from "@/queries/user"
+import { User, CreateUserDto, UpdateUserDto } from "@/models/user.model"
 import DataTable from "@/components/common/data-table"
 
 // Extend User interface để tương thích với DataTable

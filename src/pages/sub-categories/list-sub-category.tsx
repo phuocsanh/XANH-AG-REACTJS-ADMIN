@@ -6,11 +6,8 @@ import { IoMdAdd } from "react-icons/io"
 import { MyContext } from "../../App"
 
 import * as React from "react"
-import { ProductSubtype } from "../../services/product-subtype.service"
-import { productSubtypeService } from "../../services/product-subtype.service"
-import { toast } from "react-toastify"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useProductSubtypes } from "../../queries/use-product-subtype"
+import { ProductSubtype } from "../../models/product-subtype.model"
+import { useProductSubtypesQuery, useDeleteProductSubtypeMutation } from "../../queries/product-subtype"
 import DialogAddUpdate from "./components/dialog-add-update"
 import DataTable from "../../components/common/data-table"
 import { Tag } from "antd"
@@ -22,7 +19,6 @@ interface ExtendedProductSubtype
 
 const ListSubCategory = () => {
   const context = useContext(MyContext)
-  const queryClient = useQueryClient()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -33,20 +29,10 @@ const ListSubCategory = () => {
   const [editingRow, setEditingRow] = useState<ProductSubtype | null>(null)
 
   // Sử dụng React Query để lấy dữ liệu loại phụ sản phẩm
-  const { data: productSubtypes, isLoading } = useProductSubtypes()
+  const { data: productSubtypes, isLoading } = useProductSubtypesQuery()
 
   // Mutation để xóa loại phụ sản phẩm
-  const deleteProductSubtypeMutation = useMutation({
-    mutationFn: (id: number) => productSubtypeService.deleteProductSubtype(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["productSubtypes"] })
-      toast.success("Xóa loại phụ sản phẩm thành công!")
-    },
-    onError: (error) => {
-      console.error("Lỗi khi xóa loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa loại phụ sản phẩm!")
-    },
-  })
+  const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const rows: ExtendedProductSubtype[] = React.useMemo(() => {

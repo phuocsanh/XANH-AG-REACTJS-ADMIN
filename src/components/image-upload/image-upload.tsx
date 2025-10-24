@@ -1,14 +1,13 @@
 import React, { useState } from "react"
 import { Upload, UploadFile, UploadProps, message, Spin } from "antd"
 import { UploadOutlined } from "@ant-design/icons"
-import { uploadFile } from "../../services/upload.service"
+import { useUploadFileMutation } from "../../queries/upload"
 
 interface ImageUploadProps {
   value?: string[]
   onChange?: (urls: string[]) => void
   maxCount?: number
   multiple?: boolean
-  folder: string
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -16,10 +15,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   maxCount = 5,
   multiple = true,
-  folder = "temporary",
 }) => {
   const [loading, setLoading] = useState(false)
   const [fileList, setFileList] = useState<UploadFile[]>([])
+
+  // Upload mutation
+  const uploadFileMutation = useUploadFileMutation()
 
   // Convert URLs to UploadFile objects
   React.useEffect(() => {
@@ -58,9 +59,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (currentFile?.originFileObj) {
       try {
         setLoading(true)
-        const response = await uploadFile(
-          currentFile.originFileObj as File,
-          folder
+        const response = await uploadFileMutation.mutateAsync(
+          currentFile.originFileObj as File
         )
 
         // Update the file in the list with the URL from the server

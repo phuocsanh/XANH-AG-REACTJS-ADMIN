@@ -7,7 +7,7 @@ import formConfig, { FormField } from "./form-config"
 import {
   useCreateProductTypeMutation,
   useUpdateProductTypeMutation,
-} from "../../../queries/use-product-type"
+} from "../../../queries/product-type"
 import { toast } from "react-toastify"
 import { ProductType } from "@/models/product-type.model"
 import { Status } from "@/models/common"
@@ -66,7 +66,7 @@ function DialogAddUpdate({
         // Cập nhật - toast sẽ được hiển thị trong mutation hook
         await updateProductTypeMutation.mutateAsync({
           id: editingRow.id,
-          productType: {
+          productTypeData: {
             typeName: data.typeName,
             typeCode: data.typeCode,
             description: data.description,

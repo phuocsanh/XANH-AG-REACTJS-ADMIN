@@ -4,14 +4,17 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
+import { ProductSubtype } from "@/models/product-subtype.model"
 import {
-  ProductSubtype,
   CreateProductSubtypeDto,
   UpdateProductSubtypeDto,
-  productSubtypeService,
-} from "@/services/product-subtype.service"
+} from "@/models/product-subtype.model"
+import {
+  useCreateProductSubtypeMutation,
+  useUpdateProductSubtypeMutation,
+} from "@/queries/product-subtype"
 import { ProductType } from "@/models/product-type.model"
-import { useProductTypes } from "@/queries/use-product-type"
+import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import {
   productSubtypeSchema,
   ProductSubtypeFormData,
@@ -31,7 +34,11 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 }) => {
   const queryClient = useQueryClient()
   const { data: productTypesResponse } = useProductTypes()
-  const productTypes = productTypesResponse?.data?.items || []
+  const productTypes = productTypesResponse?.items || []
+
+  // Mutations
+  const createProductSubtypeMutation = useCreateProductSubtypeMutation()
+  const updateProductSubtypeMutation = useUpdateProductSubtypeMutation()
 
   // Form configuration
   const {
@@ -47,7 +54,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
   // Mutations
   const createMutation = useMutation({
     mutationFn: (data: CreateProductSubtypeDto) =>
-      productSubtypeService.createProductSubtype(data),
+      createProductSubtypeMutation.mutateAsync(data),
     onSuccess: () => {
       // Toast sẽ được hiển thị trong mutation hook
       queryClient.invalidateQueries({ queryKey: ["productSubtypes"] })
@@ -61,7 +68,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateProductSubtypeDto }) =>
-      productSubtypeService.updateProductSubtype(id, data),
+      updateProductSubtypeMutation.mutateAsync({ id, subtypeData: data }),
     onSuccess: () => {
       // Toast sẽ được hiển thị trong mutation hook
       queryClient.invalidateQueries({ queryKey: ["productSubtypes"] })

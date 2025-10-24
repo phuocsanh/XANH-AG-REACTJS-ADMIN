@@ -1,11 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
-import userService, {
+import api from "@/utils/api"
+import { queryClient } from "@/provider/app-provider-tanstack"
+import {
+  User,
   CreateUserDto,
   UpdateUserDto,
   ChangePasswordDto,
-} from "@/services/user.service"
-import { queryClient } from "@/provider/app-provider-tanstack"
+} from "@/models/user.model"
 
 // Query keys cho user
 export const userKeys = {
@@ -23,7 +25,10 @@ export const userKeys = {
 export const useUsersQuery = () => {
   return useQuery({
     queryKey: userKeys.lists(),
-    queryFn: () => userService.getAll(),
+    queryFn: async () => {
+      const response = await api.get<User[]>("/users")
+      return response
+    },
   })
 }
 
@@ -33,7 +38,10 @@ export const useUsersQuery = () => {
 export const useUserQuery = (id: number) => {
   return useQuery({
     queryKey: userKeys.detail(id),
-    queryFn: () => userService.getById(id),
+    queryFn: async () => {
+      const response = await api.get<User>(`/users/${id}`)
+      return response
+    },
     enabled: !!id,
   })
 }
@@ -44,7 +52,10 @@ export const useUserQuery = (id: number) => {
 export const useProfileQuery = () => {
   return useQuery({
     queryKey: userKeys.profile(),
-    queryFn: () => userService.getProfile(),
+    queryFn: async () => {
+      const response = await api.get<User>("/users/profile")
+      return response
+    },
   })
 }
 
@@ -53,7 +64,10 @@ export const useProfileQuery = () => {
  */
 export const useCreateUserMutation = () => {
   return useMutation({
-    mutationFn: (userData: CreateUserDto) => userService.create(userData),
+    mutationFn: async (userData: CreateUserDto) => {
+      const response = await api.post<User>("/users", userData)
+      return response
+    },
     onSuccess: () => {
       // Invalidate và refetch danh sách users
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
@@ -71,8 +85,16 @@ export const useCreateUserMutation = () => {
  */
 export const useUpdateUserMutation = () => {
   return useMutation({
-    mutationFn: ({ id, userData }: { id: number; userData: UpdateUserDto }) =>
-      userService.update(id, userData),
+    mutationFn: async ({
+      id,
+      userData,
+    }: {
+      id: number
+      userData: UpdateUserDto
+    }) => {
+      const response = await api.patch<User>(`/users/${id}`, userData)
+      return response
+    },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
@@ -92,7 +114,10 @@ export const useUpdateUserMutation = () => {
  */
 export const useDeleteUserMutation = () => {
   return useMutation({
-    mutationFn: (id: number) => userService.delete(id),
+    mutationFn: async (id: number) => {
+      const response = await api.delete<{ message: string }>(`/users/${id}`)
+      return response
+    },
     onSuccess: () => {
       // Invalidate danh sách users
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
@@ -110,8 +135,13 @@ export const useDeleteUserMutation = () => {
  */
 export const useChangePasswordMutation = () => {
   return useMutation({
-    mutationFn: (changePasswordData: ChangePasswordDto) =>
-      userService.changePassword(changePasswordData),
+    mutationFn: async (changePasswordData: ChangePasswordDto) => {
+      const response = await api.patch<{ success: boolean; message: string }>(
+        "/users/change-password",
+        changePasswordData
+      )
+      return response
+    },
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công!")
     },

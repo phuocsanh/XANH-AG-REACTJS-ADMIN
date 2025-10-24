@@ -26,7 +26,7 @@ import {
   InventoryReceiptCreate,
 } from "./pages/inventory"
 import { useAppStore } from "./stores"
-import authService from "./services/auth.service"
+import { useAuthStatus } from "./queries/auth"
 import { ForgotPassword } from "./pages/forgot-password"
 import ListUnits from "./pages/units/list-units"
 
@@ -50,10 +50,12 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true) // State để điều khiển sidebar
   const isLogin = useAppStore((state) => state.isLogin)
   const isHeaderFooterShowRef = useRef(isHeaderFooterShow)
+  useAuthStatus() // Use the hook to initialize auth status
 
   // Kiểm tra trạng thái đăng nhập khi ứng dụng khởi động
   useEffect(() => {
-    authService.checkAuthStatus()
+    // The auth status is now handled by the useAuthStatus hook
+    // We don't need to manually check it here
   }, [])
 
   // Cập nhật ref khi state thay đổi

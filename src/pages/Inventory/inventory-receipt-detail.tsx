@@ -1,44 +1,44 @@
-import React from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React from "react"
+import { useParams, useNavigate } from "react-router-dom"
 import {
   Card,
   Row,
   Col,
   Button,
+  Space,
+  Typography,
   Tag,
   Table,
-  Space,
-  Descriptions,
-  Typography,
   Popconfirm,
   Alert,
   Divider,
-  Spin
-} from 'antd'
+  Spin,
+  Descriptions
+} from "antd"
 import {
   ArrowLeftOutlined,
   EditOutlined,
   CheckOutlined,
   CloseOutlined,
-  DeleteOutlined,
   PrinterOutlined,
-  HistoryOutlined
-} from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
+  HistoryOutlined,
+  DeleteOutlined
+} from "@ant-design/icons"
+import type { ColumnsType } from "antd/es/table"
+import dayjs from "dayjs"
 
 import {
   InventoryReceiptItem,
   InventoryReceiptStatus
 } from '@/models/inventory.model'
 import {
-  useInventoryReceipt,
-  useInventoryReceiptItems,
-  useApproveInventoryReceipt,
-  useCompleteInventoryReceipt,
-  useCancelInventoryReceipt,
-  useDeleteInventoryReceipt
-} from '@/queries/use-inventory'
+  useInventoryReceiptQuery,
+  useInventoryReceiptItemsQuery,
+  useApproveInventoryReceiptMutation,
+  useCompleteInventoryReceiptMutation,
+  useCancelInventoryReceiptMutation,
+  useDeleteInventoryReceiptMutation
+} from '@/queries/inventory'
 
 const { Title, Text } = Typography
 
@@ -52,19 +52,19 @@ const InventoryReceiptDetail: React.FC = () => {
     data: receipt,
     isLoading: isLoadingReceipt,
     error: receiptError
-  } = useInventoryReceipt(receiptId)
+  } = useInventoryReceiptQuery(receiptId)
 
   const {
     data: items,
     isLoading: isLoadingItems,
     error: itemsError
-  } = useInventoryReceiptItems(receiptId)
+  } = useInventoryReceiptItemsQuery(receiptId)
 
   // Mutations
-  const approveReceiptMutation = useApproveInventoryReceipt()
-  const completeReceiptMutation = useCompleteInventoryReceipt()
-  const cancelReceiptMutation = useCancelInventoryReceipt()
-  const deleteReceiptMutation = useDeleteInventoryReceipt()
+  const approveReceiptMutation = useApproveInventoryReceiptMutation()
+  const completeReceiptMutation = useCompleteInventoryReceiptMutation()
+  const cancelReceiptMutation = useCancelInventoryReceiptMutation()
+  const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
 
   // Handlers
   const handleBack = () => {
@@ -75,36 +75,37 @@ const InventoryReceiptDetail: React.FC = () => {
     navigate(`/inventory/receipts/edit/${receiptId}`)
   }
 
-  const handleApprove = () => {
-    approveReceiptMutation.mutate(receiptId, {
-      onSuccess: () => {
-        // Mutation sẽ tự động cập nhật cache và hiển thị toast
-      }
-    })
+  const handleApprove = async () => {
+    try {
+      await approveReceiptMutation.mutateAsync(receiptId)
+    } catch (error) {
+      console.error("Error approving receipt:", error)
+    }
   }
 
-  const handleComplete = () => {
-    completeReceiptMutation.mutate(receiptId, {
-      onSuccess: () => {
-        // Mutation sẽ tự động cập nhật cache và hiển thị toast
-      }
-    })
+  const handleComplete = async () => {
+    try {
+      await completeReceiptMutation.mutateAsync(receiptId)
+    } catch (error) {
+      console.error("Error completing receipt:", error)
+    }
   }
 
-  const handleCancel = () => {
-    cancelReceiptMutation.mutate(receiptId, {
-      onSuccess: () => {
-        // Mutation sẽ tự động cập nhật cache và hiển thị toast
-      }
-    })
+  const handleCancel = async () => {
+    try {
+      await cancelReceiptMutation.mutateAsync(receiptId)
+    } catch (error) {
+      console.error("Error canceling receipt:", error)
+    }
   }
 
-  const handleDelete = () => {
-    deleteReceiptMutation.mutate(receiptId, {
-      onSuccess: () => {
-        navigate('/inventory/receipts')
-      }
-    })
+  const handleDelete = async () => {
+    try {
+      await deleteReceiptMutation.mutateAsync(receiptId)
+      navigate('/inventory/receipts')
+    } catch (error) {
+      console.error("Error deleting receipt:", error)
+    }
   }
 
   const handlePrint = () => {

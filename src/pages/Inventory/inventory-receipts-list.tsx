@@ -1,34 +1,34 @@
-import React, { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useMemo } from "react"
+import { useNavigate } from "react-router-dom"
 import {
-  Table,
-  Button,
-  Input,
-  Select,
-  Space,
-  Tag,
   Card,
   Row,
   Col,
+  Button,
+  Space,
+  Typography,
+  Input,
+  Select,
+  DatePicker,
+  Table,
+  Tag,
   Tooltip,
   Popconfirm,
-  DatePicker,
-  Typography,
   Badge
-} from 'antd'
+} from "antd"
 import {
-  PlusOutlined,
-  SearchOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
+  PlusOutlined,
+  SyncOutlined,
   CheckOutlined,
   CloseOutlined,
-  SyncOutlined,
-  ReloadOutlined
-} from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
-import dayjs from 'dayjs'
+  ReloadOutlined,
+  SearchOutlined
+} from "@ant-design/icons"
+import type { ColumnsType } from "antd/es/table"
+import dayjs from "dayjs"
 
 import {
   InventoryReceipt,
@@ -36,13 +36,13 @@ import {
   InventoryReceiptListParams
 } from '@/models/inventory.model'
 import {
-  useInventoryReceipts,
-  useDeleteInventoryReceipt,
-  useApproveInventoryReceipt,
-  useCompleteInventoryReceipt,
-  useCancelInventoryReceipt,
-  useInventoryStats
-} from '@/queries/use-inventory'
+  useInventoryReceiptsQuery,
+  useDeleteInventoryReceiptMutation,
+  useApproveInventoryReceiptMutation,
+  useCompleteInventoryReceiptMutation,
+  useCancelInventoryReceiptMutation,
+  useInventoryStatsQuery
+} from '@/queries/inventory'
 import { LoadingSpinner } from '@/components/common'
 
 const { Title, Text } = Typography
@@ -94,18 +94,18 @@ const InventoryReceiptsList: React.FC = () => {
     isLoading: isLoadingReceipts,
     error: receiptsError,
     refetch: refetchReceipts
-  } = useInventoryReceipts(queryParams)
+  } = useInventoryReceiptsQuery(queryParams)
 
   const {
     data: statsData,
     isLoading: isLoadingStats
-  } = useInventoryStats()
+  } = useInventoryStatsQuery()
 
   // Mutations
-  const deleteReceiptMutation = useDeleteInventoryReceipt()
-  const approveReceiptMutation = useApproveInventoryReceipt()
-  const completeReceiptMutation = useCompleteInventoryReceipt()
-  const cancelReceiptMutation = useCancelInventoryReceipt()
+  const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
+  const approveReceiptMutation = useApproveInventoryReceiptMutation()
+  const completeReceiptMutation = useCompleteInventoryReceiptMutation()
+  const cancelReceiptMutation = useCancelInventoryReceiptMutation()
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -148,20 +148,36 @@ const InventoryReceiptsList: React.FC = () => {
     navigate('/inventory/receipts/create')
   }
 
-  const handleDeleteReceipt = (id: number) => {
-    deleteReceiptMutation.mutate(id)
+  const handleDeleteReceipt = async (id: number) => {
+    try {
+      await deleteReceiptMutation.mutateAsync(id)
+    } catch (error) {
+      console.error("Error deleting receipt:", error)
+    }
   }
 
-  const handleApproveReceipt = (id: number) => {
-    approveReceiptMutation.mutate(id)
+  const handleApproveReceipt = async (id: number) => {
+    try {
+      await approveReceiptMutation.mutateAsync(id)
+    } catch (error) {
+      console.error("Error approving receipt:", error)
+    }
   }
 
-  const handleCompleteReceipt = (id: number) => {
-    completeReceiptMutation.mutate(id)
+  const handleCompleteReceipt = async (id: number) => {
+    try {
+      await completeReceiptMutation.mutateAsync(id)
+    } catch (error) {
+      console.error("Error completing receipt:", error)
+    }
   }
 
-  const handleCancelReceipt = (id: number) => {
-    cancelReceiptMutation.mutate(id)
+  const handleCancelReceipt = async (id: number) => {
+    try {
+      await cancelReceiptMutation.mutateAsync(id)
+    } catch (error) {
+      console.error("Error canceling receipt:", error)
+    }
   }
 
   // Render trạng thái

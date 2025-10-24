@@ -1,3 +1,5 @@
+import { AnyObject } from "@/models/common"
+
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho chi tiết hóa đơn bán hàng
  */
@@ -69,7 +71,7 @@ export interface SalesInvoice {
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho request tạo chi tiết hóa đơn bán hàng
  */
-export interface CreateSalesInvoiceItemRequest {
+export interface CreateSalesInvoiceItemRequest extends AnyObject {
   /** ID của sản phẩm */
   productId: number
   /** Số lượng sản phẩm */
@@ -85,7 +87,7 @@ export interface CreateSalesInvoiceItemRequest {
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho request tạo hóa đơn bán hàng
  */
-export interface CreateSalesInvoiceRequest {
+export interface CreateSalesInvoiceRequest extends AnyObject {
   /** Mã hóa đơn */
   invoiceCode: string
   /** Tên khách hàng */
@@ -111,7 +113,7 @@ export interface CreateSalesInvoiceRequest {
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho request cập nhật hóa đơn bán hàng
  */
-export interface UpdateSalesInvoiceRequest extends Partial<CreateSalesInvoiceRequest> {}
+export interface UpdateSalesInvoiceRequest extends Partial<CreateSalesInvoiceRequest>, AnyObject {}
 
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho thống kê bán hàng

@@ -10,13 +10,14 @@ export enum ProductStatus {
 
 import { ApiResponse } from "./auth.model"
 import { ProductType } from "./product-type.model"
+import { BaseStatus } from "@/constant/base-status"
 
 // Interface cho dữ liệu sản phẩm từ API
 export interface ProductApiResponse {
   id: number
   productName: string
   productPrice: string
-  productStatus: number
+  status: BaseStatus
   productThumb: string
   productPictures: string[]
   productVideos: string[]
@@ -31,8 +32,10 @@ export interface ProductApiResponse {
   productDiscountedPrice: string
   productSelled: number | null
   productAttributes: Record<string, unknown>
-  isDraft: boolean
-  isPublished: boolean
+  profitMarginPercent: string
+  averageCostPrice: string
+  unitId?: number
+  latestPurchasePrice?: number
   createdAt: string
   updatedAt: string
 }
@@ -42,7 +45,7 @@ export interface Product {
   id: number
   productName: string
   productPrice: string
-  productStatus: number
+  status: BaseStatus
   productThumb: string
   productPictures: string[]
   productVideos: string[]
@@ -57,8 +60,10 @@ export interface Product {
   productDiscountedPrice: string
   productSelled: number | null
   productAttributes: Record<string, unknown>
-  isDraft: boolean
-  isPublished: boolean
+  profitMarginPercent: string
+  averageCostPrice: string
+  unitId?: number
+  latestPurchasePrice?: number
   createdAt: string
   updatedAt: string
 }
@@ -81,8 +86,9 @@ export interface ProductApiResponseData {
 
 // Using the ProductApiResponse interface defined above
 
-export interface CreateProductRequest {
-  [key: string]: unknown // Index signature để tương thích với api.post
+import { AnyObject } from "./common"
+
+export interface CreateProductRequest extends AnyObject {
   name: string
   price: string
   type: number
@@ -94,11 +100,13 @@ export interface CreateProductRequest {
   subTypes?: number[]
   discount?: string
   attributes?: Record<string, unknown>
-  isDraft?: boolean
-  isPublished?: boolean
+  status?: BaseStatus
+  unitId?: number
 }
 
-export interface UpdateProductRequest extends Partial<CreateProductRequest> {
+export interface UpdateProductRequest
+  extends Partial<CreateProductRequest>,
+    AnyObject {
   id: number
 }
 
@@ -126,14 +134,14 @@ export interface ProductResponse extends ApiResponse<Product> {
   // Additional product response properties can be added here if needed
 }
 
-export interface CreateProductTypeRequest {
-  [key: string]: unknown
+export interface CreateProductTypeRequest extends AnyObject {
   name: string
   description?: string
 }
 
 export interface UpdateProductTypeRequest
-  extends Partial<CreateProductTypeRequest> {
+  extends Partial<CreateProductTypeRequest>,
+    AnyObject {
   id: number
 }
 
@@ -156,15 +164,15 @@ export interface ProductSubtype {
   updatedAt: string
 }
 
-export interface CreateProductSubtypeRequest {
-  [key: string]: unknown
+export interface CreateProductSubtypeRequest extends AnyObject {
   name: string
   description?: string
   productTypeId: number
 }
 
 export interface UpdateProductSubtypeRequest
-  extends Partial<CreateProductSubtypeRequest> {
+  extends Partial<CreateProductSubtypeRequest>,
+    AnyObject {
   id: number
 }
 

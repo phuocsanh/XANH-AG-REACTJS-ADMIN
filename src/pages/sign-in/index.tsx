@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import formConfig, { FormField } from "./form-config"
 import { useContext, useEffect, useState } from "react"
 import { MyContext } from "@/App"
-import { useLoginMutation } from "@/queries/use-auth"
+import { useLoginMutation } from "@/queries/auth"
 import { FaEye, FaEyeSlash } from "react-icons/fa"
 import styled from "styled-components"
 

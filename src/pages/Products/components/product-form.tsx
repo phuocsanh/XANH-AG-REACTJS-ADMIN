@@ -9,11 +9,19 @@ import StarterKit from "@tiptap/starter-kit"
 import Underline from "@tiptap/extension-underline"
 import { UploadFile, UploadFileStatus } from "antd/lib/upload/interface"
 
-import { productService } from "../../../services/product.service"
+import {
+  useProductQuery,
+  useUpdateProductMutation,
+  useCreateProductMutation,
+} from "../../../queries/product"
 import {
   CreateProductRequest,
   ProductApiResponse,
 } from "../../../models/product.model"
+import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
+import { useProductSubtypesQuery } from "@/queries/product-subtype"
+import { useUnitsQuery } from "@/queries/unit"
+import { BASE_STATUS, BaseStatus } from "@/constant/base-status"
 
 interface ProductApiResponseWithItem {
   code: number
@@ -27,11 +35,6 @@ function isProductApiResponseWithItemWrapper(
   return (data as { item: ProductApiResponse }).item !== undefined
 }
 
-import { useProductTypes } from "@/queries/use-product-type"
-import { useProductSubtypes } from "@/queries/use-product-subtype"
-import { useUnits } from "@/queries/use-unit"
-import { BASE_STATUS, BaseStatus } from "@/constant/base-status"
-
 // Mở rộng CreateProductRequest để chấp nhận UploadFile[] cho thumb và pictures
 // và thêm các trường mới
 interface ProductFormValues
@@ -40,7 +43,7 @@ interface ProductFormValues
   pictures?: UploadFile[]
   unit?: string // Đơn vị tính
   subTypes?: number[] // Loại phụ sản phẩm (multiple selection)
-  isPublished?: BaseStatus // Trạng thái sản phẩm
+  status?: BaseStatus // Trạng thái sản phẩm
 }
 
 interface ProductFormProps {
@@ -62,10 +65,8 @@ interface ConvertedValues {
   unit?: string
   subTypes?: number[]
   discount?: string
-  isPublished?: boolean
-  isDraft?: boolean
+  status?: BaseStatus
   videos?: string[]
-  // isPublished sẽ được mapping từ BaseStatus sang boolean trong quá trình submit
 }
 
 // TiptapEditor component
@@ -174,14 +175,15 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
   const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
     defaultValues: {
-      isPublished: "active", // hoặc giá trị mặc định phù hợp từ BASE_STATUS
+      status: "active",
       discount: "0",
-      quantity: 0, // Sửa lại giá trị mặc định thành 0
+      quantity: 0,
     },
   })
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(false)
 
   const [description, setDescription] = useState("")
 
@@ -190,99 +192,104 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   // Xác định ID sản phẩm để sử dụng: ưu tiên productId từ props, sau đó mới đến id từ params
   const currentProductId = productId || id
-  const { data: productSubtypes } = useProductSubtypes()
+
+  // Sử dụng query hooks thay vì service
+  const { data: productData, isLoading: productLoading } = useProductQuery(
+    currentProductId ? parseInt(currentProductId) : 0
+  )
+  const updateProductMutation = useUpdateProductMutation()
+  const createProductMutation = useCreateProductMutation()
+
+  const { data: productSubtypes } = useProductSubtypesQuery()
   const { data: productTypes } = useProductTypes()
-  const { data: units } = useUnits()
+  const { data: units } = useUnitsQuery()
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!currentProductId) return
+      if (!currentProductId || !isEdit) return
       try {
-        setLoading(true)
-        const response = (await productService.getProductById(
-          parseInt(currentProductId)
-        )) as unknown as ProductApiResponseWithItem
+        setInitialLoading(true)
+        // productData sẽ được lấy tự động bởi useProductQuery
+        if (productData) {
+          const productApiResponse =
+            productData as unknown as ProductApiResponseWithItem
 
-        // Lấy dữ liệu từ response.data.item hoặc response.data nếu không có .item
-        let productData: ProductApiResponse
-        if (isProductApiResponseWithItemWrapper(response.data)) {
-          productData = response.data.item
-        } else {
-          productData = response.data
+          // Lấy dữ liệu từ response.data.item hoặc response.data nếu không có .item
+          let productDataItem: ProductApiResponse
+          if (isProductApiResponseWithItemWrapper(productApiResponse.data)) {
+            productDataItem = productApiResponse.data.item
+          } else {
+            productDataItem = productApiResponse.data
+          }
+          console.log("Product data from API:", productDataItem)
+
+          if (!productDataItem) {
+            throw new Error("Không tìm thấy thông tin sản phẩm")
+          }
+
+          // Sử dụng trực tiếp productData vì Product interface đã giống ProductApiResponse
+          const mappedProduct = productDataItem
+
+          // Hàm tiện ích để chuẩn hóa một URL thành đối tượng file cho Upload component
+          const normalizeFile = (url: string, index: number): UploadFile => ({
+            uid: `${index}-${url}`,
+            name: url.substring(url.lastIndexOf("/") + 1),
+            status: "done" as UploadFileStatus,
+            url: url,
+          })
+
+          // Hàm tiện ích để chuẩn hóa một mảng các URL thành mảng các đối tượng file
+          const normalizeFileList = (
+            urls: string[] | undefined
+          ): UploadFile[] => {
+            if (!urls) return []
+            return urls.map((url, index) => normalizeFile(url, index))
+          }
+
+          // Tạo đối tượng form values từ dữ liệu API response
+          const formValues: Partial<ProductFormValues> = {
+            name: mappedProduct.productName,
+            price: mappedProduct.productPrice,
+            type: mappedProduct.productType,
+            quantity: mappedProduct.productQuantity,
+            discount: mappedProduct.discount,
+            status: mappedProduct.status,
+            attributes: mappedProduct.productAttributes,
+            subTypes: mappedProduct.subProductType, // Loại phụ sản phẩm
+            thumb: mappedProduct.productThumb
+              ? [normalizeFile(mappedProduct.productThumb, 0)]
+              : [],
+            pictures: normalizeFileList(mappedProduct.productPictures),
+            videos: mappedProduct.productVideos,
+            description: mappedProduct.productDescription,
+            unit:
+              ((mappedProduct.productAttributes as Record<string, unknown>)
+                ?.unit as string) || "", // Đơn vị tính
+          }
+
+          console.log("Mapped form values:", formValues)
+
+          // Đặt giá trị cho form
+          reset(formValues)
+          // Product type will be watched through watchedType
+
+          // Đặt giá trị cho mô tả
+          setDescription(productDataItem.productDescription || "")
+
+          console.log("Form values after set:", formValues)
         }
-        console.log("Product data from API:", productData)
-
-        if (!productData) {
-          throw new Error("Không tìm thấy thông tin sản phẩm")
-        }
-
-        // Sử dụng trực tiếp productData vì Product interface đã giống ProductApiResponse
-        const mappedProduct = productData
-
-        // Hàm tiện ích để chuẩn hóa một URL thành đối tượng file cho Upload component
-        const normalizeFile = (url: string, index: number): UploadFile => ({
-          uid: `${index}-${url}`,
-          name: url.substring(url.lastIndexOf("/") + 1),
-          status: "done" as UploadFileStatus,
-          url: url,
-        })
-
-        // Hàm tiện ích để chuẩn hóa một mảng các URL thành mảng các đối tượng file
-        const normalizeFileList = (
-          urls: string[] | undefined
-        ): UploadFile[] => {
-          if (!urls) return []
-          return urls.map((url, index) => normalizeFile(url, index))
-        }
-
-        // Hàm mapping giữa boolean và BaseStatus
-        const mapBooleanToBaseStatus = (isPublished: boolean): BaseStatus => {
-          return isPublished ? "active" : "inactive"
-        }
-
-        // Tạo đối tượng form values từ dữ liệu API response
-        const formValues: Partial<ProductFormValues> = {
-          name: mappedProduct.productName,
-          price: mappedProduct.productPrice,
-          type: mappedProduct.productType,
-          quantity: mappedProduct.productQuantity,
-          discount: mappedProduct.discount,
-          isPublished: mapBooleanToBaseStatus(mappedProduct.isPublished),
-          attributes: mappedProduct.productAttributes,
-          subTypes: mappedProduct.subProductType, // Loại phụ sản phẩm
-          thumb: mappedProduct.productThumb
-            ? [normalizeFile(mappedProduct.productThumb, 0)]
-            : [],
-          pictures: normalizeFileList(mappedProduct.productPictures),
-          videos: mappedProduct.productVideos,
-          description: mappedProduct.productDescription,
-          unit:
-            ((mappedProduct.productAttributes as Record<string, unknown>)
-              ?.unit as string) || "", // Đơn vị tính
-        }
-
-        console.log("Mapped form values:", formValues)
-
-        // Đặt giá trị cho form
-        reset(formValues)
-        // Product type will be watched through watchedType
-
-        // Đặt giá trị cho mô tả
-        setDescription(productData.productDescription || "")
-
-        console.log("Form values after set:", formValues)
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
       } finally {
-        setLoading(false)
+        setInitialLoading(false)
       }
     }
 
     if (isEdit) {
       fetchProduct()
     }
-  }, [currentProductId, isEdit, reset])
+  }, [currentProductId, isEdit, reset, productData])
 
   // Render các thuộc tính sản phẩm dựa trên loại sản phẩm được chọn
   const renderProductAttributes = () => {
@@ -312,12 +319,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     try {
       setLoading(true)
 
-      // Hàm mapping giữa BaseStatus và boolean
-      const mapBaseStatusToBoolean = (status: BaseStatus | undefined): boolean => {
-        // Nếu status là "active" thì trả về true, ngược lại trả về false
-        return status === "active"
-      }
-
       // Chuyển đổi UploadFile[] về string và string[] cho API
       const convertedValues: ConvertedValues = {
         ...(values as unknown as ConvertedValues),
@@ -338,8 +339,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           : {
               unit: values.unit || "",
             },
-        // Mapping BaseStatus về boolean cho isPublished
-        isPublished: mapBaseStatusToBoolean(values.isPublished),
+        status: values.status,
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -350,17 +350,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
       if (isEdit && currentProductId) {
         // Thêm ID cho update request
-        const updateValues = {
-          ...convertedValues,
+        await updateProductMutation.mutateAsync({
           id: parseInt(currentProductId),
-        }
-        await productService.updateProduct(
-          parseInt(currentProductId),
-          updateValues
-        )
+          productData: {
+            ...convertedValues,
+            id: parseInt(currentProductId),
+          },
+        })
         message.success("Cập nhật sản phẩm thành công")
       } else {
-        await productService.createProduct(convertedValues)
+        await createProductMutation.mutateAsync(convertedValues)
         message.success("Thêm sản phẩm thành công")
       }
 
@@ -376,7 +375,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   return (
     <div className='p-4'>
       <Space direction='vertical' size='middle' style={{ width: "100%" }}>
-        <Card loading={loading}>
+        <Card loading={loading || productLoading || initialLoading}>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div className='w-full'>
@@ -399,7 +398,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   placeholder='Chọn loại sản phẩm'
                   required
                   rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                  options={productTypes?.data.items.map((type) => ({
+                  options={productTypes?.items.map((type) => ({
                     label: type.typeName,
                     value: type.id,
                   }))}
@@ -479,7 +478,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
               <div className='w-full'>
                 <FormComboBox
-                  name='isPublished'
+                  name='status'
                   control={control}
                   label='Trạng thái'
                   placeholder='Chọn trạng thái'
@@ -513,7 +512,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 control={control}
                 label='Hình ảnh sản phẩm'
                 maxCount={1}
-                folder='products'
                 className='w-full'
               />
             </div>
