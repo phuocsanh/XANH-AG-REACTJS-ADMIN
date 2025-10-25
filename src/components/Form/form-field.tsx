@@ -1,5 +1,5 @@
 import React from "react"
-import { Form, Input, Select, InputNumber } from "antd"
+import { Form, Input, Select } from "antd"
 import {
   Controller,
   Control,
@@ -13,7 +13,7 @@ interface FormFieldProps<T extends FieldValues> {
   name: FieldPath<T>
   control: Control<T>
   label: string
-  type?: "text" | "email" | "password" | "number" | "select" | "textarea"
+  type?: "text" | "email" | "password" | "select" | "textarea"
   placeholder?: string
   required?: boolean
   rules?: {
@@ -37,7 +37,7 @@ interface FormFieldProps<T extends FieldValues> {
 
 /**
  * Component FormField tái sử dụng cho các form sử dụng React Hook Form
- * Hỗ trợ nhiều loại input khác nhau: text, email, password, number, select, textarea
+ * Hỗ trợ nhiều loại input khác nhau: text, email, password, select, textarea
  * Tích hợp sẵn validation rules và styling nhất quán với React Hook Form Controller
  */
 function FormField<T extends FieldValues>({
@@ -118,16 +118,6 @@ function FormField<T extends FieldValues>({
             prefix={prefix}
             suffix={suffix}
             allowClear={allowClear}
-          />
-        )
-
-      case "number":
-        return (
-          <InputNumber
-            {...commonProps}
-            min={rules.min}
-            max={rules.max}
-            style={{ width: "100%" }}
           />
         )
 

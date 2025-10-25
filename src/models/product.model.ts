@@ -29,6 +29,9 @@ export interface Product {
   latestPurchasePrice?: number
   createdAt: string
   updatedAt: string
+  // Thêm 2 trường mới
+  symbolId?: number
+  ingredient: string[]
 }
 
 // Extend Product interface để tương thích với DataTable
@@ -47,6 +50,9 @@ export interface ProductFormValues
   unit?: string // Đơn vị tính
   subTypes?: number[] // Loại phụ sản phẩm (multiple selection)
   status?: BaseStatus // Trạng thái sản phẩm
+  // Thêm 2 trường mới
+  symbolId?: number
+  ingredient?: string
 }
 
 export interface CreateProductRequest extends AnyObject {
@@ -63,6 +69,9 @@ export interface CreateProductRequest extends AnyObject {
   attributes?: Record<string, unknown>
   status?: BaseStatus
   unitId?: number
+  // Thêm 2 trường mới
+  symbolId?: number
+  ingredient?: string[]
 }
 
 export interface UpdateProductRequest
@@ -112,6 +121,9 @@ export interface ConvertedProductValues {
   discount?: string
   status?: BaseStatus
   videos?: string[]
+  // Thêm 2 trường mới
+  symbolId?: number
+  ingredient?: string[]
 }
 
 export interface ProductFormProps {

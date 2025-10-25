@@ -4,7 +4,12 @@ import { Button, message, Card, Space, Form } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { FormField, FormComboBox, FormImageUpload } from "@/components/form"
+import {
+  FormField,
+  FormFieldNumber,
+  FormComboBox,
+  FormImageUpload,
+} from "@/components/form"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Underline from "@tiptap/extension-underline"
@@ -26,11 +31,14 @@ import {
   ConvertedProductValues,
   defaultProductFormValues,
 } from "./form-config"
-import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
+import { useAllProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import { useProductSubtypesQuery } from "@/queries/product-subtype"
 import { useUnitsQuery } from "@/queries/unit"
 import { BASE_STATUS } from "@/constant/base-status"
 import { ProductType } from "@/models/product-type.model"
+// Thêm import cho symbol
+import { useSymbolsQuery } from "@/queries/symbol"
+import { Symbol } from "@/models/symbol.model"
 
 function isProductApiResponseWithItemWrapper(
   data: Product | { item: Product }
@@ -169,6 +177,22 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { data: productSubtypes } = useProductSubtypesQuery()
   const { data: productTypes } = useProductTypes()
   const { data: units } = useUnitsQuery()
+  // Thêm query cho symbols
+  const { data: symbols } = useSymbolsQuery()
+
+  // Debug log
+  console.log("Product types data:", productTypes)
+  console.log("Product subtypes data:", productSubtypes)
+  console.log("Units data:", units)
+
+  // Debug log for options
+  console.log(
+    "Product types options:",
+    productTypes?.items?.map((type: ProductType) => ({
+      label: type.typeName,
+      value: type.id,
+    })) || []
+  )
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -231,6 +255,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             unit:
               ((mappedProduct.productAttributes as Record<string, unknown>)
                 ?.unit as string) || "", // Đơn vị tính
+            // Thêm 2 trường mới
+            symbolId: mappedProduct.symbolId,
+            ingredient: mappedProduct.ingredient?.join(", ") || "",
           }
 
           console.log("Mapped form values:", formValues)
@@ -266,29 +293,27 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           <h3 className='text-lg font-medium mb-2'>Thuộc tính sản phẩm</h3>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div className='w-full'>
-              <FormField
-                name='attributes.Hoạt chất'
-                control={control}
-                label='Hoạt chất'
-                placeholder='Nhập các hoạt chất, ngăn cách bằng dấu phẩy'
-              />
-            </div>
-            <div className='w-full'>
-              <FormField
-                type='number'
+              <FormFieldNumber
                 name='attributes.Liều phun bình ml/25 lít'
                 control={control}
-                label='Liều phun bình 25 lít'
-                placeholder='Nhập liều phun bình 25 lít'
+                label='Liều phun bình ml/25 lít'
+                placeholder='Nhập liều phun bình ml/25 lít'
               />
             </div>
             <div className='w-full'>
-              <FormField
-                type='number'
+              <FormFieldNumber
                 name='attributes.Liều phun ml/ha'
                 control={control}
-                label='Liều phun 1/ha'
-                placeholder='Nhập liều phun 1/ha'
+                label='Liều phun ml/ha'
+                placeholder='Nhập liều phun ml/ha'
+              />
+            </div>
+            <div className='w-full'>
+              <FormFieldNumber
+                name='attributes.Lượng nước phun lít/ha'
+                control={control}
+                label='Lượng nước phun lít/ha'
+                placeholder='Lượng nước phun lít/ha'
               />
             </div>
           </div>
@@ -324,26 +349,88 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               unit: values.unit || "",
             },
         status: values.status,
+        // Giữ nguyên giá trị price vì đã được xử lý trong FormField
+        price: values.price,
+        // Xử lý 2 trường mới
+        symbolId: values.symbolId,
+        // Xử lý ingredient: chuyển chuỗi ngăn cách bằng dấu , thành mảng
+        ingredient: values.ingredient
+          ? values.ingredient
+              .split(",")
+              .map((item: string) => item.trim())
+              .filter((item: string) => item.length > 0)
+          : [],
+        // Đảm bảo các trường mảng luôn được khởi tạo đúng kiểu
+        subTypes: values.subTypes || [],
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
       if (!convertedValues.name) convertedValues.name = ""
       if (!convertedValues.price) convertedValues.price = ""
       if (!convertedValues.type) convertedValues.type = 0
-      if (!convertedValues.quantity) convertedValues.quantity = 0 // Sửa lại giá trị mặc định thành 0
+      if (!convertedValues.quantity) convertedValues.quantity = 0
+
+      // Tạo object với tên các trường theo yêu cầu của server
+      // TODO: Cập nhật service API để tự động mapping tên các trường thay vì phải convert thủ công
+      const serverData = {
+        productName: convertedValues.name,
+        productPrice: convertedValues.price,
+        productType: convertedValues.type,
+        productQuantity: convertedValues.quantity,
+        productDescription: convertedValues.description,
+        productThumb: convertedValues.thumb,
+        productPictures: Array.isArray(convertedValues.pictures)
+          ? convertedValues.pictures
+          : [],
+        productAttributes: convertedValues.attributes || {},
+        productDiscountedPrice: convertedValues.discount || "0",
+        averageCostPrice: "0",
+        profitMarginPercent: "0",
+        status: convertedValues.status,
+        subProductType: Array.isArray(convertedValues.subTypes)
+          ? convertedValues.subTypes
+          : [],
+        // Không bao gồm trường videos vì server không mong đợi trường này
+        symbolId: convertedValues.symbolId,
+        ingredient: Array.isArray(convertedValues.ingredient)
+          ? convertedValues.ingredient
+          : [],
+        // Đảm bảo các trường bắt buộc có giá trị
+        unitId: convertedValues.unit
+          ? parseInt(convertedValues.unit) || undefined
+          : undefined,
+      }
+
+      // Log dữ liệu trước khi gửi để kiểm tra
+      console.log("Data being sent to server:", serverData)
+
+      // Đảm bảo các trường mảng luôn là mảng ngay cả khi là null hoặc undefined
+      if (!Array.isArray(serverData.productPictures)) {
+        serverData.productPictures = []
+      }
+
+      if (!Array.isArray(serverData.subProductType)) {
+        serverData.subProductType = []
+      }
+
+      if (!Array.isArray(serverData.ingredient)) {
+        serverData.ingredient = []
+      }
 
       if (isEdit && currentProductId) {
         // Thêm ID cho update request
         await updateProductMutation.mutateAsync({
           id: parseInt(currentProductId),
           productData: {
-            ...convertedValues,
+            ...serverData,
             id: parseInt(currentProductId),
-          },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
         })
         message.success("Cập nhật sản phẩm thành công")
       } else {
-        await createProductMutation.mutateAsync(convertedValues)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await createProductMutation.mutateAsync(serverData as any)
         message.success("Thêm sản phẩm thành công")
       }
 
@@ -393,16 +480,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className='w-full'>
-                <FormField
+                <FormFieldNumber
                   name='price'
                   control={control}
                   label='Giá bán (VNĐ)'
-                  type='number'
                   placeholder='Nhập giá bán'
                   required
                   rules={{ required: "Vui lòng nhập giá bán" }}
-                  suffix='VNĐ'
                   className='w-full'
+                  fixedDecimalScale={false}
+                  // Trường price theo schema là string nên component sẽ tự động trả về string
                 />
               </div>
 
@@ -423,15 +510,44 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className='w-full'>
-                <FormField
+                <FormFieldNumber
                   name='quantity'
                   control={control}
                   label='Số lượng'
-                  type='number'
                   placeholder='Nhập số lượng'
                   required
                   rules={{ required: "Vui lòng nhập số lượng" }}
                   className='w-full'
+                />
+              </div>
+
+              {/* Thêm trường symbol */}
+              <div className='w-full'>
+                <FormComboBox
+                  name='symbolId'
+                  control={control}
+                  label='Ký hiệu'
+                  placeholder='Chọn ký hiệu'
+                  options={
+                    symbols?.map((symbol: Symbol) => ({
+                      label: `${symbol.symbolName}`,
+                      value: symbol.id,
+                    })) || []
+                  }
+                  className='w-full'
+                />
+              </div>
+
+              {/* Thêm trường ingredient với yêu cầu bắt buộc */}
+              <div className='w-full'>
+                <FormField
+                  name='ingredient'
+                  control={control}
+                  label='Thành phần nguyên liệu'
+                  placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
+                  className='w-full'
+                  required
+                  rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
                 />
               </div>
 
@@ -455,11 +571,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className='w-full'>
-                <FormField
+                <FormFieldNumber
                   name='discount'
                   control={control}
                   label='Giảm giá (%)'
-                  type='number'
                   placeholder='Nhập giảm giá'
                   suffix='%'
                   className='w-full'

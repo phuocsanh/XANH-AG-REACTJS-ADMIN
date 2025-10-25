@@ -54,7 +54,7 @@ export const useProductQuery = (id: number) => {
 export const useCreateProductMutation = () => {
   return useMutation({
     mutationFn: async (productData: CreateProductRequest) => {
-      const response = await api.post<Product>("/products", productData)
+      const response = await api.postRaw<Product>("/products", productData)
       return response
     },
     onSuccess: () => {
@@ -81,7 +81,10 @@ export const useUpdateProductMutation = () => {
       id: number
       productData: UpdateProductRequest
     }) => {
-      const response = await api.patch<Product>(`/products/${id}`, productData)
+      const response = await api.patchRaw<Product>(
+        `/products/${id}`,
+        productData
+      )
       return response
     },
     onSuccess: (data, variables) => {

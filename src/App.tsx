@@ -29,6 +29,8 @@ import { useAppStore } from "./stores"
 import { useAuthStatus } from "./queries/auth"
 import { ForgotPassword } from "./pages/forgot-password"
 import ListUnits from "./pages/units/list-units"
+// Thêm import cho trang symbol
+import ListSymbols from "./pages/symbols/list-symbols"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -182,6 +184,15 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <ListUnits />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Thêm route cho trang symbol */}
+                    <Route
+                      path='/symbols'
+                      element={
+                        <ProtectedRoute>
+                          <ListSymbols />
                         </ProtectedRoute>
                       }
                     />
