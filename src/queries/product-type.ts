@@ -37,7 +37,7 @@ export const useProductTypesQuery = () => {
     queryKey: productTypeKeys.lists(),
     queryFn: async () => {
       const response = await api.get<{ items: ProductType[]; total: number }>(
-        "/products/type"
+        "/product-types"
       )
       return response
     },
@@ -69,7 +69,7 @@ export const useProductTypeQuery = (id: number) => {
   return useQuery({
     queryKey: productTypeKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<ProductType>(`/products/type/${id}`)
+      const response = await api.get<ProductType>(`/product-types/${id}`)
       return response
     },
     enabled: !!id,
@@ -97,7 +97,7 @@ export const useCreateProductTypeMutation = () => {
   return useMutation({
     mutationFn: async (productTypeData: ProductTypeRequest) => {
       const response = await api.post<ProductType>(
-        "/products/type",
+        "/product-types",
         productTypeData
       )
       return response
@@ -127,7 +127,7 @@ export const useUpdateProductTypeMutation = () => {
       productTypeData: ProductTypeRequest
     }) => {
       const response = await api.patch<ProductType>(
-        `/products/type/${id}`,
+        `/product-types/${id}`,
         productTypeData
       )
       return response
@@ -153,7 +153,7 @@ export const useUpdateProductTypeMutation = () => {
 export const useDeleteProductTypeMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete<void>(`/products/type/${id}`)
+      const response = await api.delete<void>(`/product-types/${id}`)
       return response
     },
     onSuccess: () => {
@@ -191,7 +191,7 @@ export const useProductSubtypesByTypeQuery = (typeId: number) => {
     queryKey: productTypeKeys.subtypes.list(typeId),
     queryFn: async () => {
       const response = await api.get<ProductSubtypeListResponse>(
-        `/products/type/${typeId}/subtypes`
+        `/product-types/${typeId}/subtypes`
       )
       return response
     },

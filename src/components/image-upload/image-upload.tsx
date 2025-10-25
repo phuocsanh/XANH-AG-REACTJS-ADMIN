@@ -1,6 +1,6 @@
 import React, { useState } from "react"
-import { Upload, UploadFile, UploadProps, message, Spin } from "antd"
-import { UploadOutlined } from "@ant-design/icons"
+import { Upload, message } from "antd"
+import { UploadFile, UploadProps } from "antd/lib/upload/interface"
 import { useUploadFileMutation } from "../../queries/upload"
 
 interface ImageUploadProps {
@@ -9,6 +9,8 @@ interface ImageUploadProps {
   maxCount?: number
   multiple?: boolean
 }
+
+const { Dragger } = Upload
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value = [],
@@ -91,9 +93,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           (item) => item.uid !== uploadedFile.uid
         )
         setFileList(updatedList)
+
+        // Extract URLs and call onChange even when there's an error
+        const urls = updatedList
+          .filter((item) => item.status === "done" && item.url)
+          .map((item) => item.url as string)
+
+        onChange?.(urls)
       } finally {
         setLoading(false)
       }
+    } else {
+      // For files that are already uploaded or in other states,
+      // extract URLs and call onChange
+      const urls = filteredList
+        .filter((item) => item.status === "done" && item.url)
+        .map((item) => item.url as string)
+
+      onChange?.(urls)
     }
   }
 
@@ -110,27 +127,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     return true // Allow the default remove behavior
   }
 
-  const uploadButton = (
-    <div>
-      <UploadOutlined />
-      <div style={{ marginTop: 8 }}>Tải lên</div>
-    </div>
-  )
-
   return (
-    <Spin spinning={loading}>
-      <Upload
-        listType='picture-card'
-        fileList={fileList}
-        onChange={handleChange}
-        onRemove={handleRemove}
-        beforeUpload={() => false} // Prevent default upload
-        multiple={multiple}
-        maxCount={maxCount}
-      >
-        {fileList.length >= maxCount ? null : uploadButton}
-      </Upload>
-    </Spin>
+    <Dragger
+      fileList={fileList}
+      onChange={handleChange}
+      onRemove={handleRemove}
+      multiple={multiple}
+      maxCount={maxCount}
+      beforeUpload={() => false} // Prevent automatic upload
+      listType='picture-card'
+      disabled={loading}
+    >
+      <div className='flex flex-col items-center justify-center p-2'>
+        <div className='text-blue-500 text-lg mb-1'>Tải ảnh lên</div>
+        <div className='text-gray-500 text-sm'>
+          Click hoặc kéo thả ảnh vào đây
+        </div>
+      </div>
+    </Dragger>
   )
 }
 

@@ -22,7 +22,7 @@ export const useUploadImageMutation = () => {
       formData.append("file", file)
 
       const response = await api.post<UploadResponse>(
-        "/upload/images",
+        "/upload/file",
         formData as unknown as Record<string, unknown>,
         {
           headers: {
@@ -52,9 +52,9 @@ export const useUploadFileMutation = () => {
       const formData = new FormData()
       formData.append("file", file)
 
-      const response = await api.post<UploadResponse>(
-        "/upload/files",
-        formData as unknown as Record<string, unknown>,
+      const response = await api.postForm<UploadResponse>(
+        "/upload/file",
+        formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -87,7 +87,7 @@ export const useDeleteFileMutation = () => {
       filename: string
     }) => {
       const response = await api.delete<DeleteFileResponse>(
-        `/upload/files/${folder}/${filename}`
+        `/upload/file/${folder}/${filename}`
       )
       return response
     },
@@ -109,7 +109,7 @@ export const useMarkFileAsUsedMutation = () => {
     mutationFn: async (publicId: string) => {
       const requestData = { publicId }
       const response = await api.patch<MarkFileUsedResponse>(
-        "/upload/files/mark-used",
+        "/upload/file/mark-used",
         requestData as unknown as Record<string, unknown>
       )
       return response
@@ -131,7 +131,7 @@ export const useCleanupUnusedFilesMutation = () => {
   return useMutation({
     mutationFn: async () => {
       const response = await api.post<CleanupUnusedFilesResponse>(
-        "/upload/files/cleanup"
+        "/upload/file/cleanup"
       )
       return response
     },
@@ -152,7 +152,7 @@ export const useUploadStatsQuery = () => {
   return useMutation({
     mutationFn: async () => {
       // Giả lập API endpoint cho thống kê (có thể cần thêm vào backend)
-      const response = await api.get<UploadStats>("/upload/files/stats")
+      const response = await api.get<UploadStats>("/upload/file/stats")
       return response
     },
     onError: (error: Error) => {
@@ -168,7 +168,7 @@ export const useFileListQuery = () => {
   return useMutation({
     mutationFn: async (params?: FileSearchParams) => {
       // Giả lập API endpoint cho danh sách file (có thể cần thêm vào backend)
-      const response = await api.get<FileListResponse>("/upload/files/list", {
+      const response = await api.get<FileListResponse>("/upload/file/list", {
         params,
       })
       return response
@@ -187,7 +187,7 @@ export const useFileDetailsQuery = () => {
     mutationFn: async (fileId: string) => {
       // Giả lập API endpoint cho chi tiết file (có thể cần thêm vào backend)
       const response = await api.get<FileDetails>(
-        `/upload/files/details/${fileId}`
+        `/upload/file/details/${fileId}`
       )
       return response
     },

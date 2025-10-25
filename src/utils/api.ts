@@ -3,7 +3,6 @@ import queryString from "query-string"
 import { isFile, isFileArray, isObjectLike } from "./check-type"
 import { AnyObject, ApiResponse } from "../models/common"
 import { useAppStore } from "../stores"
-import { useRefreshTokenMutation } from "../queries/auth"
 
 export const URL = "http://localhost:3003/"
 export const BASE_URL = URL
@@ -31,6 +30,52 @@ const processQueue = (error: unknown, token: string | null = null) => {
   )
 
   failedQueue = []
+}
+
+// Hàm refresh token không sử dụng hook
+const refreshToken = async (): Promise<string> => {
+  const refreshToken = localStorage.getItem("refreshToken")
+  if (!refreshToken) {
+    throw new Error("Không tìm thấy refresh token")
+  }
+
+  try {
+    // Gọi API refresh token trực tiếp bằng axios
+    const response = await axios.post(`${BASE_URL}/auth/refresh`, {
+      refresh_token: refreshToken,
+    })
+
+    const { access_token, refresh_token: newRefreshToken } = response.data
+
+    if (access_token && newRefreshToken) {
+      // Cập nhật token mới vào store và localStorage
+      useAppStore.setState({
+        accessToken: access_token,
+        refreshToken: newRefreshToken,
+      })
+
+      localStorage.setItem("refreshToken", newRefreshToken)
+      return access_token
+    } else {
+      throw new Error("Không nhận được token mới")
+    }
+  } catch (error) {
+    // Xóa token và chuyển hướng về trang đăng nhập
+    localStorage.removeItem("refreshToken")
+    useAppStore.setState({
+      accessToken: undefined,
+      refreshToken: undefined,
+      isLogin: false,
+      userInfo: undefined,
+    })
+
+    // Chuyển hướng về trang đăng nhập
+    if (typeof window !== "undefined") {
+      window.location.href = "/sign-in"
+    }
+
+    throw error
+  }
 }
 
 const transformPostFormData = (object: AnyObject | FormData = {}) => {
@@ -279,10 +324,8 @@ api.instance.interceptors.response.use(
       isRefreshing = true
 
       try {
-        // Use the new refresh token mutation hook
-        const refreshTokenMutation = useRefreshTokenMutation()
-        const tokenResponse = await refreshTokenMutation.mutateAsync()
-        const newAccessToken = tokenResponse.access_token
+        // Sử dụng hàm refresh token thay vì hook
+        const newAccessToken = await refreshToken()
 
         // Cập nhật header cho request gốc
         originalRequest.headers["Authorization"] = "Bearer " + newAccessToken

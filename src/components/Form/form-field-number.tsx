@@ -110,14 +110,18 @@ function FormFieldNumber<T extends FieldValues>({
             fixedDecimalScale={fixedDecimalScale}
             allowNegative={false}
             customInput={Input}
-            value={field.value || ""}
+            value={
+              field.value !== undefined && field.value !== null
+                ? field.value
+                : ""
+            }
             onValueChange={(values) => {
               // Tự động chuyển đổi kiểu dữ liệu dựa trên tên trường và schema
               // Nếu trường được định nghĩa trong schema là number thì trả về number
               // Nếu không thì trả về string
 
               // Danh sách các trường cần trả về kiểu number (dựa trên schema)
-              const numberFields = ["quantity", "discount", "symbolId"]
+              const numberFields = ["quantity", "symbolId"]
 
               // Kiểm tra xem trường hiện tại có trong danh sách numberFields không
               // Hoặc nếu tên trường chứa các từ khóa thường dùng cho số (attributes.*)

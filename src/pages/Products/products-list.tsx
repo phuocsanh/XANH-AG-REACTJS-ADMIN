@@ -135,21 +135,46 @@ const ProductsList: React.FC = () => {
 
   const loading = isLoadingProducts || isLoadingTypes
 
+  // Hàm tiện ích để xử lý đường dẫn ảnh
+  const getImageUrl = React.useCallback((url: string | undefined): string => {
+    if (!url) return "https://via.placeholder.com/80?text=No+Image"
+
+    // Nếu là đường dẫn đầy đủ thì trả về nguyên gốc
+    if (url.startsWith("http")) return url
+
+    // Nếu là đường dẫn tương đối thì thêm base URL
+    if (url.startsWith("/")) return `http://localhost:3003${url}`
+
+    // Trường hợp còn lại trả về nguyên gốc
+    return url
+  }, [])
+
   // Cấu hình columns cho DataTable
   const columns = [
     {
       key: "thumb",
       title: "Hình ảnh",
       width: 100,
-      render: (record: ExtendedProduct) => (
-        <Image
-          src={record.productThumb || "https://via.placeholder.com/80"}
-          width={80}
-          height={80}
-          style={{ objectFit: "cover", borderRadius: "4px" }}
-          alt=''
-        />
-      ),
+      render: (record: ExtendedProduct) => {
+        // Lấy ảnh từ productThumb hoặc productPictures[0]
+        const imageUrl =
+          record.productThumb ||
+          (record.productPictures && record.productPictures.length > 0
+            ? record.productPictures[0]
+            : undefined)
+
+        return (
+          <Image
+            src={getImageUrl(imageUrl)}
+            width={80}
+            height={80}
+            style={{ objectFit: "cover", borderRadius: "4px" }}
+            alt={record.productName || "Sản phẩm"}
+            fallback='https://via.placeholder.com/80?text=No+Image'
+            preview={false}
+          />
+        )
+      },
     },
     {
       key: "name",
@@ -245,7 +270,7 @@ const ProductsList: React.FC = () => {
         <Button
           type='primary'
           icon={<PlusOutlined />}
-          onClick={() => navigate("/products/add")}
+          onClick={() => navigate("/products/new")}
         >
           Thêm sản phẩm
         </Button>
@@ -336,12 +361,15 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Hình ảnh'>
               <Image
                 width={200}
-                src={
+                src={getImageUrl(
                   currentProduct.productThumb ||
-                  "https://via.placeholder.com/200"
-                }
+                    (currentProduct.productPictures &&
+                    currentProduct.productPictures.length > 0
+                      ? currentProduct.productPictures[0]
+                      : undefined)
+                )}
                 alt={currentProduct.productName}
-                fallback='https://via.placeholder.com/200'
+                fallback='https://via.placeholder.com/200?text=No+Image'
               />
             </Descriptions.Item>
             <Descriptions.Item label='Tên sản phẩm'>

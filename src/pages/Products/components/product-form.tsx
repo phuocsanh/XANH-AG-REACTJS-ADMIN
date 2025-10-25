@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { Button, message, Card, Space, Form } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
@@ -20,11 +20,7 @@ import {
   useUpdateProductMutation,
   useCreateProductMutation,
 } from "../../../queries/product"
-import {
-  Product,
-  ProductFormProps,
-  ProductApiResponseWithItem,
-} from "../../../models/product.model"
+import { Product, ProductFormProps } from "../../../models/product.model"
 import {
   productFormSchema,
   ProductFormValues,
@@ -39,12 +35,6 @@ import { ProductType } from "@/models/product-type.model"
 // Thêm import cho symbol
 import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
-
-function isProductApiResponseWithItemWrapper(
-  data: Product | { item: Product }
-): data is { item: Product } {
-  return (data as { item: Product }).item !== undefined
-}
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -155,7 +145,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     defaultValues: defaultProductFormValues,
   })
   const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(false)
 
@@ -164,13 +153,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   // Watch form values
   const watchedType = watch("type")
 
-  // Xác định ID sản phẩm để sử dụng: ưu tiên productId từ props, sau đó mới đến id từ params
-  const currentProductId = productId || id
+  // Xác định ID sản phẩm để sử dụng từ props
+  const currentProductId = productId ? parseInt(productId) : 0
 
   // Sử dụng query hooks thay vì service
-  const { data: productData, isLoading: productLoading } = useProductQuery(
-    currentProductId ? parseInt(currentProductId) : 0
-  )
+  const { data: productData, isLoading: productLoading } =
+    useProductQuery(currentProductId)
   const updateProductMutation = useUpdateProductMutation()
   const createProductMutation = useCreateProductMutation()
 
@@ -195,82 +183,68 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   )
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!currentProductId || !isEdit) return
+    if (isEdit && productData && !productLoading) {
       try {
         setInitialLoading(true)
-        // productData sẽ được lấy tự động bởi useProductQuery
-        if (productData) {
-          const productApiResponse =
-            productData as unknown as ProductApiResponseWithItem
 
-          // Lấy dữ liệu từ response.data.item hoặc response.data nếu không có .item
-          let productDataItem: Product
-          if (isProductApiResponseWithItemWrapper(productApiResponse.data)) {
-            productDataItem = productApiResponse.data.item
-          } else {
-            productDataItem = productApiResponse.data
-          }
-          console.log("Product data from API:", productDataItem)
+        // Lấy dữ liệu từ response
+        const productItem = productData as Product
+        console.log("Product data from API:", productItem)
 
-          if (!productDataItem) {
-            throw new Error("Không tìm thấy thông tin sản phẩm")
-          }
-
-          // Sử dụng trực tiếp productData vì Product interface đã giống ProductApiResponse
-          const mappedProduct = productDataItem
-
-          // Hàm tiện ích để chuẩn hóa một URL thành đối tượng file cho Upload component
-          const normalizeFile = (url: string, index: number): UploadFile => ({
-            uid: `${index}-${url}`,
-            name: url.substring(url.lastIndexOf("/") + 1),
-            status: "done" as UploadFileStatus,
-            url: url,
-          })
-
-          // Hàm tiện ích để chuẩn hóa một mảng các URL thành mảng các đối tượng file
-          const normalizeFileList = (
-            urls: string[] | undefined
-          ): UploadFile[] => {
-            if (!urls) return []
-            return urls.map((url, index) => normalizeFile(url, index))
-          }
-
-          // Tạo đối tượng form values từ dữ liệu API response
-          const formValues: Partial<ProductFormValues> = {
-            name: mappedProduct.productName,
-            price: mappedProduct.productPrice,
-            type: mappedProduct.productType,
-            quantity: mappedProduct.productQuantity,
-            discount: mappedProduct.discount,
-            status: mappedProduct.status,
-            attributes: mappedProduct.productAttributes,
-            subTypes: mappedProduct.subProductType, // Loại phụ sản phẩm
-            thumb: mappedProduct.productThumb
-              ? [normalizeFile(mappedProduct.productThumb, 0)]
-              : [],
-            pictures: normalizeFileList(mappedProduct.productPictures),
-            videos: mappedProduct.productVideos,
-            description: mappedProduct.productDescription,
-            unit:
-              ((mappedProduct.productAttributes as Record<string, unknown>)
-                ?.unit as string) || "", // Đơn vị tính
-            // Thêm 2 trường mới
-            symbolId: mappedProduct.symbolId,
-            ingredient: mappedProduct.ingredient?.join(", ") || "",
-          }
-
-          console.log("Mapped form values:", formValues)
-
-          // Đặt giá trị cho form
-          reset(formValues)
-          // Product type will be watched through watchedType
-
-          // Đặt giá trị cho mô tả
-          setDescription(productDataItem.productDescription || "")
-
-          console.log("Form values after set:", formValues)
+        if (!productItem) {
+          throw new Error("Không tìm thấy thông tin sản phẩm")
         }
+
+        // Hàm tiện ích để chuẩn hóa một URL thành đối tượng file cho Upload component
+        const normalizeFile = (url: string, index: number): UploadFile => ({
+          uid: `${index}-${url}`,
+          name: url.substring(url.lastIndexOf("/") + 1),
+          status: "done" as UploadFileStatus,
+          url: url,
+        })
+
+        // Hàm tiện ích để chuẩn hóa một mảng các URL thành mảng các đối tượng file
+        const normalizeFileList = (
+          urls: string[] | undefined
+        ): UploadFile[] => {
+          if (!urls) return []
+          return urls.map((url, index) => normalizeFile(url, index))
+        }
+
+        // Tạo đối tượng form values từ dữ liệu API response
+        const formValues: Partial<ProductFormValues> = {
+          name: productItem.productName?.trim() || "",
+          price: productItem.productPrice || "",
+          type: productItem.productType || undefined,
+          quantity: productItem.productQuantity || 0,
+          discount: productItem.discount || "",
+          status: productItem.status || "active",
+          attributes: productItem.productAttributes || {},
+          subTypes: productItem.subProductType || [], // Loại phụ sản phẩm
+          thumb: productItem.productThumb
+            ? [normalizeFile(productItem.productThumb, 0)]
+            : [],
+          pictures: normalizeFileList(productItem.productPictures),
+          videos: productItem.productVideos || [],
+          description: productItem.productDescription || "",
+          unit:
+            ((productItem.productAttributes as Record<string, unknown>)
+              ?.unit as string) || "", // Đơn vị tính
+          // Thêm 2 trường mới
+          symbolId: productItem.symbolId || undefined,
+          ingredient: productItem.ingredient?.join(", ") || "",
+        }
+
+        console.log("Mapped form values:", formValues)
+
+        // Đặt giá trị cho form
+        reset(formValues)
+        // Product type will be watched through watchedType
+
+        // Đặt giá trị cho mô tả
+        setDescription(productItem.productDescription || "")
+
+        console.log("Form values after set:", formValues)
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
@@ -278,11 +252,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         setInitialLoading(false)
       }
     }
-
-    if (isEdit) {
-      fetchProduct()
-    }
-  }, [currentProductId, isEdit, reset, productData])
+  }, [isEdit, productData, productLoading, reset])
 
   // Render các thuộc tính sản phẩm dựa trên loại sản phẩm được chọn
   const renderProductAttributes = () => {
@@ -334,10 +304,20 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         description: description,
         thumb:
           values.thumb && values.thumb.length > 0
-            ? values.thumb[0].url || ""
+            ? typeof values.thumb[0] === "string"
+              ? values.thumb[0]
+              : values.thumb[0].url || ""
             : "",
         pictures: values.pictures
-          ? values.pictures.map((file) => file.url || "").filter((url) => url)
+          ? values.pictures
+              .map((file) => {
+                if (typeof file === "string") {
+                  return file
+                } else {
+                  return (file as UploadFile).url || ""
+                }
+              })
+              .filter((url) => url)
           : [],
         // Thêm đơn vị tính vào attributes
         attributes: values.attributes
@@ -420,10 +400,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       if (isEdit && currentProductId) {
         // Thêm ID cho update request
         await updateProductMutation.mutateAsync({
-          id: parseInt(currentProductId),
+          id: currentProductId,
           productData: {
             ...serverData,
-            id: parseInt(currentProductId),
+            id: currentProductId,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
         })
@@ -571,12 +551,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className='w-full'>
-                <FormFieldNumber
+                <FormField
                   name='discount'
                   control={control}
                   label='Giảm giá (%)'
                   placeholder='Nhập giảm giá'
-                  suffix='%'
                   className='w-full'
                 />
               </div>
@@ -613,10 +592,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
             <div className='w-full'>
               <FormImageUpload
-                name='thumb'
+                name='pictures'
                 control={control}
-                label='Hình ảnh sản phẩm'
-                maxCount={1}
+                label='Hình ảnh chi tiết'
+                maxCount={5}
+                multiple={true}
                 className='w-full'
               />
             </div>
