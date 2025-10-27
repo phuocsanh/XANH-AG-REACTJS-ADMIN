@@ -40,7 +40,7 @@ export interface CreateSymbolDto extends AnyObject {
 
 // Interface cho cập nhật ký hiệu
 export interface UpdateSymbolDto extends Partial<CreateSymbolDto>, AnyObject {
-  id: number
+  // Không bao gồm id trong body request khi cập nhật
 }
 
 // Interface cho tham số tìm kiếm ký hiệu

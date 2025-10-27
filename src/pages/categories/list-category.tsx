@@ -6,6 +6,7 @@ import { IoMdAdd } from "react-icons/io"
 import { MyContext } from "../../App"
 
 import DialogAddUpdate from "./components/dialog-add-update"
+import { ConfirmModal } from "../../components/common" // Cập nhật import
 import {
   useAllProductTypesQuery as useProductTypes,
   useDeleteProductTypeMutation,
@@ -35,6 +36,10 @@ const ListCategory = () => {
 
   const [openDialog, setOpenDialog] = useState(false)
   const [editingRow, setEditingRow] = useState<ProductType | null>(null)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false) // Thêm state cho modal xóa
+  const [deletingCategory, setDeletingCategory] = useState<ProductType | null>(
+    null
+  ) // Thêm state cho danh mục đang xóa
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const rows: ExtendedProductType[] = useMemo(() => {
@@ -58,21 +63,36 @@ const ListCategory = () => {
     setOpenDialog(true)
   }
 
-  // Xử lý xóa loại sản phẩm
-  const handleDelete = async (record: ExtendedProductType) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa loại sản phẩm "${record.typeName}"?`
-      )
-    ) {
-      try {
-        await deleteProductTypeMutation.mutateAsync(record.id as number)
-        toast.success("Xóa loại sản phẩm thành công!")
-      } catch (error) {
-        console.error("Lỗi khi xóa loại sản phẩm:", error)
-        toast.error("Có lỗi xảy ra khi xóa loại sản phẩm!")
-      }
+  // Xử lý xóa loại sản phẩm - cập nhật để set state cho modal
+  const handleDelete = (record: ExtendedProductType) => {
+    // Set state để hiển thị modal xác nhận
+    setDeletingCategory(record as ProductType)
+    setDeleteConfirmVisible(true)
+  }
+
+  // Xử lý xác nhận xóa
+  const handleConfirmDelete = async () => {
+    if (!deletingCategory) return
+
+    try {
+      await deleteProductTypeMutation.mutateAsync(deletingCategory.id as number)
+      toast.success("Xóa loại sản phẩm thành công!")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingCategory(null)
+    } catch (error) {
+      console.error("Lỗi khi xóa loại sản phẩm:", error)
+      toast.error("Có lỗi xảy ra khi xóa loại sản phẩm!")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingCategory(null)
     }
+  }
+
+  // Xử lý hủy bỏ xóa
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false)
+    setDeletingCategory(null)
   }
 
   // Xử lý thêm mới
@@ -166,6 +186,22 @@ const ListCategory = () => {
         openDialog={openDialog}
         setOpenDialog={setOpenDialog}
         editingRow={editingRow}
+      />
+
+      {/* Modal xác nhận xóa loại sản phẩm */}
+      <ConfirmModal
+        title='Xác nhận xóa'
+        content={
+          deletingCategory
+            ? `Bạn có chắc chắn muốn xóa loại sản phẩm "${deletingCategory.typeName}"?`
+            : "Bạn có chắc chắn muốn xóa loại sản phẩm này?"
+        }
+        open={deleteConfirmVisible}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        okText='Xóa'
+        okType='primary'
+        cancelText='Hủy'
       />
     </>
   )

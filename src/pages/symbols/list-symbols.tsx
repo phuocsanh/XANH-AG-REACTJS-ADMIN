@@ -3,6 +3,7 @@ import { Button, message, Space, Modal, Form, Input, Select, Tag } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
 import { CreateSymbolDto, UpdateSymbolDto } from "../../models/symbol.model"
 import DataTable from "../../components/common/data-table"
+import { ConfirmModal } from "../../components/common" // Cập nhật import
 import {
   useSymbolsQuery,
   useDeleteSymbolMutation,
@@ -17,7 +18,6 @@ import {
 import { BASE_STATUS } from "@/constant/base-status"
 import { BaseStatus } from "@/constant/base-status"
 
-const { confirm } = Modal
 const { Option } = Select
 
 // Create a new interface that extends Symbol and satisfies Record<string, unknown>
@@ -26,6 +26,10 @@ interface SymbolRecord extends Symbol, Record<string, unknown> {}
 const ListSymbols = () => {
   const [modalVisible, setModalVisible] = useState(false)
   const [editingSymbol, setEditingSymbol] = useState<SymbolRecord | null>(null)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false)
+  const [deletingSymbol, setDeletingSymbol] = useState<SymbolRecord | null>(
+    null
+  )
   const [form] = Form.useForm<SymbolFormData>()
 
   // Sử dụng React Query hook để lấy danh sách ký hiệu
@@ -64,22 +68,39 @@ const ListSymbols = () => {
 
   // Xử lý xóa ký hiệu
   const handleDelete = (record: SymbolRecord) => {
-    confirm({
-      title: "Xác nhận xóa",
-      content: `Bạn có chắc chắn muốn xóa ký hiệu "${record.symbolName}"?`,
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          await deleteSymbolMutation.mutateAsync(record.id)
-          message.success("Xóa ký hiệu thành công")
-        } catch (error) {
-          console.error("Error deleting symbol:", error)
-          message.error("Không thể xóa ký hiệu")
-        }
-      },
-    })
+    console.log("handleDelete called with record:", record)
+    // Set state để hiển thị modal xác nhận
+    setDeletingSymbol(record)
+    setDeleteConfirmVisible(true)
+  }
+
+  // Xử lý xác nhận xóa
+  const handleConfirmDelete = async () => {
+    if (!deletingSymbol) return
+
+    try {
+      console.log("Deleting symbol with ID:", deletingSymbol.id)
+      await deleteSymbolMutation.mutateAsync(deletingSymbol.id)
+      console.log("Delete symbol successful")
+      message.success("Xóa ký hiệu thành công")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingSymbol(null)
+    } catch (error) {
+      console.error("Error deleting symbol:", error)
+      // Hiển thị thông báo lỗi chi tiết hơn
+      const errorMessage = (error as Error)?.message || "Không thể xóa ký hiệu"
+      message.error(errorMessage)
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingSymbol(null)
+    }
+  }
+
+  // Xử lý hủy bỏ xóa
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false)
+    setDeletingSymbol(null)
   }
 
   // Xử lý submit form
@@ -88,7 +109,7 @@ const ListSymbols = () => {
       if (editingSymbol) {
         // Cập nhật ký hiệu
         const updateData: UpdateSymbolDto = {
-          id: editingSymbol.id, // Thêm id vào updateData
+          // Không cần thêm id vào updateData vì id được truyền qua URL parameter
           symbolCode: values.symbolCode,
           symbolName: values.symbolName,
           description: values.description,
@@ -257,6 +278,22 @@ const ListSymbols = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Modal xác nhận xóa ký hiệu */}
+      <ConfirmModal
+        open={deleteConfirmVisible}
+        title='Xác nhận xóa'
+        content={
+          deletingSymbol
+            ? `Bạn có chắc chắn muốn xóa ký hiệu "${deletingSymbol.symbolName}"?`
+            : ""
+        }
+        okText='Xóa'
+        okType='primary'
+        cancelText='Hủy'
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </>
   )
 }

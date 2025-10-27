@@ -61,7 +61,8 @@ export const useUpdateSymbolMutation = () => {
       id: number
       symbolData: UpdateSymbolDto
     }) => {
-      const response = await api.patch<Symbol>(`/symbols/${id}`, symbolData)
+      // Không truyền ID trong body request, chỉ truyền qua URL
+      const response = await api.put<Symbol>(`/symbols/${id}`, symbolData)
       return response
     },
     onSuccess: () => {
@@ -76,11 +77,17 @@ export const useDeleteSymbolMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
+      console.log("Calling DELETE API for symbol ID:", id)
       const response = await api.delete<void>(`/symbols/${id}`)
+      console.log("DELETE API response:", response)
       return response
     },
     onSuccess: () => {
+      console.log("Delete symbol successful, invalidating queries")
       queryClient.invalidateQueries({ queryKey: ["symbols"] })
+    },
+    onError: (error) => {
+      console.error("Delete symbol error:", error)
     },
   })
 }

@@ -1,21 +1,31 @@
-import { useEffect, useContext, useState } from "react"
+import { useEffect, useState, useContext } from "react"
 
 import Button from "@mui/material/Button"
 import { IoMdAdd } from "react-icons/io"
 
 import { MyContext } from "../../App"
 
-import { ProductSubtype } from "../../models/product-subtype.model"
+import DialogAddUpdate from "./components/dialog-add-update"
+import { ConfirmModal } from "../../components/common" // Cập nhật import
 import {
   useProductSubtypesQuery,
   useDeleteProductSubtypeMutation,
 } from "../../queries/product-subtype"
-import { useProductTypesQuery } from "../../queries/product-type"
-import DialogAddUpdate from "./components/dialog-add-update"
+import { ProductSubtype } from "../../models/product-subtype.model"
+import { useAllProductTypesQuery as useProductTypes } from "../../queries/product-type"
+import { toast } from "react-toastify"
 import DataTable from "../../components/common/data-table"
 
 const ListSubCategory = () => {
   const context = useContext(MyContext)
+
+  const {
+    data: productSubtypes,
+    isLoading: isLoadingSubtypes,
+    refetch: refetchSubtypes,
+  } = useProductSubtypesQuery()
+  const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
+  const { data: productTypes, isLoading: isLoadingTypes } = useProductTypes()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -24,17 +34,9 @@ const ListSubCategory = () => {
 
   const [openDialog, setOpenDialog] = useState(false)
   const [editingRow, setEditingRow] = useState<ProductSubtype | null>(null)
-
-  // Sử dụng React Query để lấy dữ liệu loại phụ sản phẩm
-  const { data: productSubtypes, isLoading: isLoadingSubtypes } =
-    useProductSubtypesQuery()
-
-  // Sử dụng React Query để lấy dữ liệu loại sản phẩm
-  const { data: productTypes, isLoading: isLoadingTypes } =
-    useProductTypesQuery()
-
-  // Mutation để xóa loại phụ sản phẩm
-  const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false) // Thêm state cho modal xóa
+  const [deletingSubCategory, setDeletingSubCategory] =
+    useState<ProductSubtype | null>(null) // Thêm state cho danh mục phụ đang xóa
 
   // Xử lý sửa loại phụ sản phẩm
   const handleEdit = (record: ProductSubtype) => {
@@ -42,19 +44,38 @@ const ListSubCategory = () => {
     setOpenDialog(true)
   }
 
-  // Xử lý xóa loại phụ sản phẩm
-  const handleDelete = async (record: ProductSubtype) => {
-    if (
-      window.confirm(
-        `Bạn có chắc chắn muốn xóa loại phụ sản phẩm "${record.name}"?`
-      )
-    ) {
-      try {
-        await deleteProductSubtypeMutation.mutateAsync(record.id)
-      } catch (error) {
-        console.error("Lỗi khi xóa loại phụ sản phẩm:", error)
-      }
+  // Xử lý xóa loại phụ sản phẩm - cập nhật để set state cho modal
+  const handleDelete = (record: ProductSubtype) => {
+    // Set state để hiển thị modal xác nhận
+    setDeletingSubCategory(record)
+    setDeleteConfirmVisible(true)
+  }
+
+  // Xử lý xác nhận xóa
+  const handleConfirmDelete = async () => {
+    if (!deletingSubCategory) return
+
+    try {
+      await deleteProductSubtypeMutation.mutateAsync(deletingSubCategory.id)
+      toast.success("Xóa loại phụ sản phẩm thành công!")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingSubCategory(null)
+      // Refetch data
+      refetchSubtypes()
+    } catch (error) {
+      console.error("Lỗi khi xóa loại phụ sản phẩm:", error)
+      toast.error("Có lỗi xảy ra khi xóa loại phụ sản phẩm!")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingSubCategory(null)
     }
+  }
+
+  // Xử lý hủy bỏ xóa
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false)
+    setDeletingSubCategory(null)
   }
 
   // Xử lý thêm mới
@@ -143,6 +164,22 @@ const ListSubCategory = () => {
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         editingSubtype={editingRow}
+      />
+
+      {/* Modal xác nhận xóa loại phụ sản phẩm */}
+      <ConfirmModal
+        title='Xác nhận xóa'
+        content={
+          deletingSubCategory
+            ? `Bạn có chắc chắn muốn xóa loại phụ sản phẩm "${deletingSubCategory.name}"?`
+            : "Bạn có chắc chắn muốn xóa loại phụ sản phẩm này?"
+        }
+        open={deleteConfirmVisible}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        okText='Xóa'
+        okType='primary'
+        cancelText='Hủy'
       />
     </>
   )

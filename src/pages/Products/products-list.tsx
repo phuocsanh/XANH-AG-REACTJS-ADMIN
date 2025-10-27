@@ -13,7 +13,6 @@ import {
   Tag,
   Image,
   Space,
-  Popconfirm,
   Descriptions,
 } from "antd"
 import {
@@ -25,6 +24,8 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
+import { ConfirmModal } from "../../components/common" // Cập nhật import
+import { useDeleteProductMutation } from "@/queries/product" // Thêm hook xóa
 
 // Extend Product interface để tương thích với DataTable
 
@@ -35,6 +36,11 @@ const ProductsList: React.FC = () => {
   const [filterType, setFilterType] = React.useState<string>("")
   const [isViewModalVisible, setIsViewModalVisible] =
     React.useState<boolean>(false)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] =
+    React.useState<boolean>(false) // Thêm state cho modal xóa
+  const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(
+    null
+  ) // Thêm state cho sản phẩm đang xóa
   // State for image preview (commented out until needed)
   // const [previewOpen, setPreviewOpen] = React.useState<boolean>(false);
   // const [previewImage, setPreviewImage] = React.useState<string>('');
@@ -48,6 +54,7 @@ const ProductsList: React.FC = () => {
   // Hàm xử lý submit form
 
   const navigate = useNavigate()
+  const deleteProductMutation = useDeleteProductMutation() // Thêm hook xóa
 
   // Hàm xử lý chỉnh sửa sản phẩm
   const handleEditProduct = (product: Product) => {
@@ -77,13 +84,34 @@ const ProductsList: React.FC = () => {
     setFilterType(value)
   }, [])
 
-  const handleDelete = (id: number) => {
-    // Xử lý xóa sản phẩm
-    console.log("Delete product:", id)
-    // Gọi API xóa sản phẩm
-    // productService.deleteProduct(id).then(() => {
-    //   queryClient.invalidateQueries(['products']);
-    // });
+  // Xử lý xóa sản phẩm - cập nhật để set state cho modal
+  const handleDelete = (product: Product) => {
+    // Set state để hiển thị modal xác nhận
+    setDeletingProduct(product)
+    setDeleteConfirmVisible(true)
+  }
+
+  // Xử lý xác nhận xóa
+  const handleConfirmDelete = async () => {
+    if (!deletingProduct) return
+
+    try {
+      await deleteProductMutation.mutateAsync(deletingProduct.id)
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingProduct(null)
+    } catch (error) {
+      console.error("Error deleting product:", error)
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingProduct(null)
+    }
+  }
+
+  // Xử lý hủy bỏ xóa
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false)
+    setDeletingProduct(null)
   }
 
   // Filter products based on search term and filter type
@@ -250,14 +278,12 @@ const ProductsList: React.FC = () => {
             onClick={() => handleEditProduct(record)}
             title='Chỉnh sửa'
           />
-          <Popconfirm
-            title='Bạn có chắc chắn muốn xóa sản phẩm này?'
-            onConfirm={() => handleDelete(record.id)}
-            okText='Đồng ý'
-            cancelText='Hủy'
-          >
-            <Button danger icon={<DeleteOutlined />} title='Xóa' />
-          </Popconfirm>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            title='Xóa'
+            onClick={() => handleDelete(record)} // Gọi handleDelete với toàn bộ record
+          />
         </Space>
       ),
     },
@@ -461,6 +487,22 @@ const ProductsList: React.FC = () => {
           </Descriptions>
         )}
       </Modal>
+
+      {/* Modal xác nhận xóa */}
+      <ConfirmModal
+        title='Xác nhận xóa'
+        content={
+          deletingProduct
+            ? `Bạn có chắc chắn muốn xóa sản phẩm "${deletingProduct.productName}"?`
+            : "Bạn có chắc chắn muốn xóa sản phẩm này?"
+        }
+        open={deleteConfirmVisible}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        okText='Xóa'
+        okType='primary'
+        cancelText='Hủy'
+      />
     </div>
   )
 }

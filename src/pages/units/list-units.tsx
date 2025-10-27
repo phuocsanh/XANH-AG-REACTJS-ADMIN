@@ -3,6 +3,7 @@ import { Button, message, Space, Modal, Form, Input, Select, Tag } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
 import { CreateUnitDto, UpdateUnitDto } from "../../models/unit.model"
 import DataTable from "../../components/common/data-table"
+import { ConfirmModal } from "../../components/common" // Cập nhật import
 import {
   useUnitsQuery,
   useDeleteUnitMutation,
@@ -12,7 +13,6 @@ import {
 import { Unit, UnitFormData, defaultUnitValues } from "./form-config"
 import { BASE_STATUS } from "@/constant/base-status"
 
-const { confirm } = Modal
 const { Option } = Select
 
 // Create a new interface that extends Unit and satisfies Record<string, unknown>
@@ -21,6 +21,8 @@ interface UnitRecord extends Unit, Record<string, unknown> {}
 const ListUnits = () => {
   const [modalVisible, setModalVisible] = useState(false)
   const [editingUnit, setEditingUnit] = useState<UnitRecord | null>(null)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false)
+  const [deletingUnit, setDeletingUnit] = useState<UnitRecord | null>(null)
   const [form] = Form.useForm<UnitFormData>()
 
   // Sử dụng React Query hook để lấy danh sách đơn vị tính
@@ -58,22 +60,34 @@ const ListUnits = () => {
 
   // Xử lý xóa đơn vị tính
   const handleDelete = (record: UnitRecord) => {
-    confirm({
-      title: "Xác nhận xóa",
-      content: `Bạn có chắc chắn muốn xóa đơn vị tính "${record.unitName}"?`,
-      okText: "Xóa",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        try {
-          await deleteUnitMutation.mutateAsync(record.id)
-          message.success("Xóa đơn vị tính thành công")
-        } catch (error) {
-          console.error("Error deleting unit:", error)
-          message.error("Không thể xóa đơn vị tính")
-        }
-      },
-    })
+    // Set state để hiển thị modal xác nhận
+    setDeletingUnit(record)
+    setDeleteConfirmVisible(true)
+  }
+
+  // Xử lý xác nhận xóa
+  const handleConfirmDelete = async () => {
+    if (!deletingUnit) return
+
+    try {
+      await deleteUnitMutation.mutateAsync(deletingUnit.id)
+      message.success("Xóa đơn vị tính thành công")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingUnit(null)
+    } catch (error) {
+      console.error("Error deleting unit:", error)
+      message.error("Không thể xóa đơn vị tính")
+      // Đóng modal xác nhận
+      setDeleteConfirmVisible(false)
+      setDeletingUnit(null)
+    }
+  }
+
+  // Xử lý hủy bỏ xóa
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false)
+    setDeletingUnit(null)
   }
 
   // Xử lý submit form
@@ -254,6 +268,22 @@ const ListUnits = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Modal xác nhận xóa đơn vị tính */}
+      <ConfirmModal
+        open={deleteConfirmVisible}
+        title='Xác nhận xóa'
+        content={
+          deletingUnit
+            ? `Bạn có chắc chắn muốn xóa đơn vị tính "${deletingUnit.unitName}"?`
+            : ""
+        }
+        okText='Xóa'
+        okType='primary'
+        cancelText='Hủy'
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </>
   )
 }
