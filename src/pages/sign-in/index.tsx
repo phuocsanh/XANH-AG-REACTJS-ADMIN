@@ -43,7 +43,7 @@ export const SignIn = () => {
   }
   return (
     <>
-      <div className='signUpSection bg-white min-h-screen'>
+      <div className='min-h-screen'>
         <div className='header flex items-center justify-between'>
           <div className='logo'>
             <Link to='/'>
@@ -59,7 +59,7 @@ export const SignIn = () => {
           </div>
         </div>
 
-        <div className='container signUpPage'>
+        <div className='max-w-md mx-auto p-4 sm:p-6'>
           <h1 className='text-center font-weight-bold'>
             Welcome Back!
             <br />

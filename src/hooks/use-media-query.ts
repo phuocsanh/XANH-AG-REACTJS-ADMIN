@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react"
 
 /**
  * Custom hook for tracking media query matches.
@@ -13,39 +13,45 @@ export const useMediaQuery = (query: string): boolean => {
    */
   const getMatches = (query: string): boolean => {
     // Prevents SSR issues
-    if (typeof window !== 'undefined') {
-      return window.matchMedia(query).matches;
+    if (typeof window !== "undefined") {
+      return window.matchMedia(query).matches
     }
-    return false;
-  };
+    return false
+  }
 
   // Initialize the state with the initial match status.
-  const [matches, setMatches] = useState<boolean>(getMatches(query));
+  const [matches, setMatches] = useState<boolean>(getMatches(query))
 
   /**
    * Event handler function to update the match status when the media query changes.
    */
   function handleChange() {
-    setMatches(getMatches(query));
+    setMatches(getMatches(query))
   }
 
   // Subscribe to changes in the media query.
   useEffect(() => {
-    const matchMedia = window.matchMedia(query);
+    const matchMedia = window.matchMedia(query)
 
     // Triggered at the first client-side load and if the query changes.
-    handleChange();
+    handleChange()
 
     // Listen for changes in the media query.
-    matchMedia.addEventListener('change', handleChange);
+    matchMedia.addEventListener("change", handleChange)
 
     // Clean up the event listener when the component unmounts.
     return () => {
-      matchMedia.removeEventListener('change', handleChange);
-    };
+      matchMedia.removeEventListener("change", handleChange)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query])
 
   // Return the current match status.
-  return matches;
-};
+  return matches
+}
+
+// Common breakpoints
+export const useMobile = () => useMediaQuery("(max-width: 768px)")
+export const useTablet = () =>
+  useMediaQuery("(min-width: 769px) and (max-width: 1024px)")
+export const useDesktop = () => useMediaQuery("(min-width: 1025px)")
