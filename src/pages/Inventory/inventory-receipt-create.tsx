@@ -9,7 +9,6 @@ import {
   Space,
   Typography,
   Alert,
-  InputNumber,
   Select,
   Popconfirm,
   message,
@@ -25,6 +24,9 @@ import {
   CloseOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
+
+// Import NumberInput từ component chung
+import NumberInput from "@/components/common/number-input"
 
 import {
   CreateInventoryReceiptRequest,
@@ -259,11 +261,12 @@ const InventoryReceiptCreate: React.FC = () => {
       render: (quantity: number, record: InventoryReceiptItemForm) => {
         const isEditing = editingKey === record.key
         return isEditing ? (
-          <InputNumber
+          // Sử dụng NumberInput từ component chung
+          <NumberInput
             value={quantity}
             min={1}
             size='small'
-            style={{ width: "100%" }}
+            placeholder='Số lượng'
             onChange={(value) =>
               handleItemChange(record.key, "quantity", value || 1)
             }
@@ -284,18 +287,12 @@ const InventoryReceiptCreate: React.FC = () => {
       render: (price: number, record: InventoryReceiptItemForm) => {
         const isEditing = editingKey === record.key
         return isEditing ? (
-          <InputNumber
+          // Sử dụng NumberInput từ component chung
+          <NumberInput
             value={price || 0}
             min={0}
-            step={1000}
             size='small'
-            formatter={(value) =>
-              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-            }
-            parser={(value) =>
-              parseFloat(value!.replace(/\$\s?|(,*)/g, "")) || 0
-            }
-            style={{ width: "100%" }}
+            placeholder='Đơn giá'
             onChange={(value) =>
               handleItemChange(record.key, "unitCost", value || 0)
             }
@@ -454,11 +451,12 @@ const InventoryReceiptCreate: React.FC = () => {
             <div className='grid grid-cols-2 gap-2'>
               <div>
                 <div className='text-xs text-gray-500 mb-1'>Số lượng</div>
-                <InputNumber
+                {/* Sử dụng NumberInput từ component chung */}
+                <NumberInput
                   value={item.quantity}
                   min={1}
                   size='small'
-                  style={{ width: "100%" }}
+                  placeholder='Số lượng'
                   onChange={(value) =>
                     handleItemChange(item.key, "quantity", value || 1)
                   }
@@ -467,18 +465,12 @@ const InventoryReceiptCreate: React.FC = () => {
 
               <div>
                 <div className='text-xs text-gray-500 mb-1'>Đơn giá</div>
-                <InputNumber
+                {/* Sử dụng NumberInput từ component chung */}
+                <NumberInput
                   value={item.unitCost || 0}
                   min={0}
-                  step={1000}
                   size='small'
-                  formatter={(value) =>
-                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  parser={(value) =>
-                    parseFloat(value!.replace(/\$\s?|(,*)/g, "")) || 0
-                  }
-                  style={{ width: "100%" }}
+                  placeholder='Đơn giá'
                   onChange={(value) =>
                     handleItemChange(item.key, "unitCost", value || 0)
                   }
