@@ -6,27 +6,21 @@ import {
   Form,
   Input,
   Table,
-  Space,
   Typography,
   Alert,
-  Select,
-  Popconfirm,
   message,
   Divider,
 } from "antd"
 import {
   ArrowLeftOutlined,
   PlusOutlined,
-  DeleteOutlined,
   SaveOutlined,
-  CheckOutlined,
-  EditOutlined,
-  CloseOutlined,
 } from "@ant-design/icons"
-import type { ColumnsType } from "antd/es/table"
 
-// Import NumberInput từ component chung
-import NumberInput from "@/components/common/number-input"
+// Import MobileItemCard từ components
+import MobileItemCard from "./components/receipt-create/mobile-item-card"
+// Import itemColumns từ components
+import useItemColumns from "./components/receipt-create/item-columns"
 
 import {
   CreateInventoryReceiptRequest,
@@ -149,6 +143,17 @@ const InventoryReceiptCreate: React.FC = () => {
     )
   }
 
+  // Sử dụng hook để lấy cấu hình cột (phải đặt sau khi các hàm được định nghĩa)
+  const itemColumns = useItemColumns({
+    products,
+    editingKey,
+    handleItemChange,
+    handleSaveItem,
+    handleCancelEdit,
+    handleEditItem,
+    handleDeleteItem,
+  })
+
   const handleSubmit = async (values: Record<string, unknown>) => {
     try {
       // Validate có ít nhất 1 sản phẩm
@@ -208,385 +213,6 @@ const InventoryReceiptCreate: React.FC = () => {
   const totalAmount = items.reduce((sum, item) => {
     return sum + item.totalPrice
   }, 0)
-
-  // Cấu hình cột cho bảng sản phẩm - tối ưu cho mobile
-  const itemColumns: ColumnsType<InventoryReceiptItemForm> = [
-    {
-      title: "STT",
-      key: "index",
-      width: 40,
-      align: "center",
-      render: (_, __, index) => index + 1,
-    },
-    {
-      title: "Sản phẩm",
-      dataIndex: "productId",
-      key: "productId",
-      width: 120,
-      render: (productId: number, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
-          <Select
-            value={productId || undefined}
-            placeholder='Chọn'
-            style={{ width: "100%" }}
-            showSearch
-            size='small'
-            filterOption={(input, option) =>
-              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-            }
-            options={products.map((product) => ({
-              value: product.id,
-              label: product.productName,
-            }))}
-            onChange={(value) =>
-              handleItemChange(record.key, "productId", value)
-            }
-          />
-        ) : (
-          <div className='max-w-[100px] truncate text-sm'>
-            {record.productName ||
-              products.find((p) => p.id === productId)?.productName ||
-              "-"}
-          </div>
-        )
-      },
-    },
-    {
-      title: "SL",
-      dataIndex: "quantity",
-      key: "quantity",
-      width: 60,
-      align: "right",
-      render: (quantity: number, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
-          // Sử dụng NumberInput từ component chung
-          <NumberInput
-            value={quantity}
-            min={1}
-            size='small'
-            placeholder='Số lượng'
-            onChange={(value) =>
-              handleItemChange(record.key, "quantity", value || 1)
-            }
-          />
-        ) : (
-          <div className='truncate text-sm'>
-            {new Intl.NumberFormat("vi-VN").format(quantity || 0)}
-          </div>
-        )
-      },
-    },
-    {
-      title: "Đơn giá",
-      dataIndex: "unitCost",
-      key: "unitCost",
-      width: 90,
-      align: "right",
-      render: (price: number, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
-          // Sử dụng NumberInput từ component chung
-          <NumberInput
-            value={price || 0}
-            min={0}
-            size='small'
-            placeholder='Đơn giá'
-            onChange={(value) =>
-              handleItemChange(record.key, "unitCost", value || 0)
-            }
-          />
-        ) : (
-          <div className='truncate text-sm'>
-            {new Intl.NumberFormat("vi-VN", {
-              style: "currency",
-              currency: "VND",
-            }).format(price || 0)}
-          </div>
-        )
-      },
-    },
-    {
-      title: "Thành tiền",
-      dataIndex: "totalPrice",
-      key: "totalPrice",
-      width: 90,
-      align: "right",
-      render: (_, record: InventoryReceiptItemForm) => {
-        return (
-          <Text
-            strong
-            style={{ color: "#52c41a" }}
-            className='truncate text-sm'
-          >
-            {new Intl.NumberFormat("vi-VN", {
-              style: "currency",
-              currency: "VND",
-            }).format(record.totalPrice || 0)}
-          </Text>
-        )
-      },
-    },
-    {
-      title: "Ghi chú",
-      dataIndex: "notes",
-      key: "notes",
-      width: 80,
-      render: (notes: string, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
-          <Input
-            value={notes}
-            placeholder='Ghi chú'
-            size='small'
-            onChange={(e) =>
-              handleItemChange(record.key, "notes", e.target.value)
-            }
-          />
-        ) : (
-          <div className='max-w-[70px] truncate text-sm'>{notes || "-"}</div>
-        )
-      },
-    },
-    {
-      title: "Thao tác",
-      key: "actions",
-      width: 70,
-      align: "center",
-      render: (_, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-
-        if (isEditing) {
-          return (
-            <Space size='small'>
-              <Button
-                type='text'
-                icon={<CheckOutlined />}
-                onClick={() => handleSaveItem(record.key)}
-                size='small'
-              />
-              <Button
-                type='text'
-                icon={<CloseOutlined />}
-                onClick={handleCancelEdit}
-                size='small'
-              />
-            </Space>
-          )
-        }
-
-        return (
-          <Space size='small'>
-            <Button
-              type='text'
-              icon={<EditOutlined />}
-              onClick={() => handleEditItem(record.key)}
-              size='small'
-            />
-            <Popconfirm
-              title='Xóa'
-              description='Xóa?'
-              onConfirm={() => handleDeleteItem(record.key)}
-              okText='Xóa'
-              cancelText='Hủy'
-              placement='topRight'
-            >
-              <Button
-                type='text'
-                icon={<DeleteOutlined />}
-                danger
-                size='small'
-              />
-            </Popconfirm>
-          </Space>
-        )
-      },
-    },
-  ]
-
-  // Component cho hiển thị dạng card trên mobile
-  const MobileItemCard = ({
-    item,
-    index,
-  }: {
-    item: InventoryReceiptItemForm
-    index: number
-  }) => {
-    const isEditing = editingKey === item.key
-    const productName =
-      item.productName ||
-      products.find((p) => p.id === item.productId)?.productName ||
-      "-"
-
-    if (isEditing) {
-      return (
-        <Card size='small' className='mb-2'>
-          <div className='grid grid-cols-1 gap-2'>
-            <div className='font-medium'>Sản phẩm #{index + 1}</div>
-
-            <div>
-              <div className='text-xs text-gray-500 mb-1'>Sản phẩm</div>
-              <Select
-                value={item.productId || undefined}
-                placeholder='Chọn sản phẩm'
-                style={{ width: "100%" }}
-                showSearch
-                size='small'
-                filterOption={(input, option) =>
-                  (option?.label ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                options={products.map((product) => ({
-                  value: product.id,
-                  label: product.productName,
-                }))}
-                onChange={(value) =>
-                  handleItemChange(item.key, "productId", value)
-                }
-              />
-            </div>
-
-            <div className='grid grid-cols-2 gap-2'>
-              <div>
-                <div className='text-xs text-gray-500 mb-1'>Số lượng</div>
-                {/* Sử dụng NumberInput từ component chung */}
-                <NumberInput
-                  value={item.quantity}
-                  min={1}
-                  size='small'
-                  placeholder='Số lượng'
-                  onChange={(value) =>
-                    handleItemChange(item.key, "quantity", value || 1)
-                  }
-                />
-              </div>
-
-              <div>
-                <div className='text-xs text-gray-500 mb-1'>Đơn giá</div>
-                {/* Sử dụng NumberInput từ component chung */}
-                <NumberInput
-                  value={item.unitCost || 0}
-                  min={0}
-                  size='small'
-                  placeholder='Đơn giá'
-                  onChange={(value) =>
-                    handleItemChange(item.key, "unitCost", value || 0)
-                  }
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className='text-xs text-gray-500 mb-1'>Ghi chú</div>
-              <Input
-                value={item.notes}
-                placeholder='Ghi chú'
-                size='small'
-                onChange={(e) =>
-                  handleItemChange(item.key, "notes", e.target.value)
-                }
-              />
-            </div>
-
-            <div className='flex justify-between items-center pt-2'>
-              <Text strong className='text-green-500'>
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(item.totalPrice || 0)}
-              </Text>
-              <Space size='small'>
-                <Button
-                  type='primary'
-                  icon={<CheckOutlined />}
-                  onClick={() => handleSaveItem(item.key)}
-                  size='small'
-                />
-                <Button
-                  icon={<CloseOutlined />}
-                  onClick={handleCancelEdit}
-                  size='small'
-                />
-              </Space>
-            </div>
-          </div>
-        </Card>
-      )
-    }
-
-    return (
-      <Card size='small' className='mb-2'>
-        <div className='grid grid-cols-1 gap-2'>
-          <div className='flex justify-between items-start'>
-            <div className='font-medium'>
-              #{index + 1}. {productName}
-            </div>
-            <Space size='small'>
-              <Button
-                type='text'
-                icon={<EditOutlined />}
-                onClick={() => handleEditItem(item.key)}
-                size='small'
-              />
-              <Popconfirm
-                title='Xóa'
-                description='Xóa sản phẩm này?'
-                onConfirm={() => handleDeleteItem(item.key)}
-                okText='Xóa'
-                cancelText='Hủy'
-                placement='topRight'
-              >
-                <Button
-                  type='text'
-                  icon={<DeleteOutlined />}
-                  danger
-                  size='small'
-                />
-              </Popconfirm>
-            </Space>
-          </div>
-
-          <div className='grid grid-cols-3 gap-2 text-sm'>
-            <div>
-              <div className='text-xs text-gray-500'>Số lượng</div>
-              <div>
-                {new Intl.NumberFormat("vi-VN").format(item.quantity || 0)}
-              </div>
-            </div>
-
-            <div>
-              <div className='text-xs text-gray-500'>Đơn giá</div>
-              <div>
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(item.unitCost || 0)}
-              </div>
-            </div>
-
-            <div>
-              <div className='text-xs text-gray-500'>Thành tiền</div>
-              <Text strong className='text-green-500'>
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(item.totalPrice || 0)}
-              </Text>
-            </div>
-          </div>
-
-          {item.notes && (
-            <div>
-              <div className='text-xs text-gray-500'>Ghi chú</div>
-              <div>{item.notes}</div>
-            </div>
-          )}
-        </div>
-      </Card>
-    )
-  }
 
   return (
     <div className='p-4 md:p-6'>
@@ -696,7 +322,18 @@ const InventoryReceiptCreate: React.FC = () => {
             // Hiển thị dạng card trên mobile
             <div>
               {items.map((item, index) => (
-                <MobileItemCard key={item.key} item={item} index={index} />
+                <MobileItemCard
+                  key={item.key}
+                  item={item}
+                  index={index}
+                  products={products}
+                  editingKey={editingKey}
+                  handleItemChange={handleItemChange}
+                  handleSaveItem={handleSaveItem}
+                  handleCancelEdit={handleCancelEdit}
+                  handleEditItem={handleEditItem}
+                  handleDeleteItem={handleDeleteItem}
+                />
               ))}
               <div className='mt-4 p-4 bg-gray-50 rounded-lg text-right'>
                 <Text strong className='text-base'>
