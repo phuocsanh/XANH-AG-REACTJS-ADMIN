@@ -68,9 +68,9 @@ export const Users = () => {
     setSelectedUser(user)
     setIsEditing(true)
     reset({
-      userAccount: user.userAccount,
-      userEmail: user.userEmail,
-      userState: user.userState,
+      userAccount: user.account,
+      userEmail: "",
+      userState: user.status === "active" ? 1 : 0,
     })
     setOpenDialog(true)
   }
@@ -87,12 +87,19 @@ export const Users = () => {
       if (isEditing && selectedUser) {
         // Cập nhật người dùng
         await updateUserMutation.mutateAsync({
-          id: selectedUser.userId,
+          id: selectedUser.id,
           userData: data,
         })
       } else {
         // Tạo người dùng mới
-        const createData = { ...data, userSalt: "default_salt" }
+        const createData = {
+          salt: "default_salt",
+          account: data.userAccount,
+          password: data.userPassword,
+          loginIp: data.userEmail,
+          status:
+            data.userState === 1 ? ("active" as const) : ("inactive" as const),
+        }
         await createUserMutation.mutateAsync(createData)
       }
       setOpenDialog(false)
@@ -106,7 +113,7 @@ export const Users = () => {
   const handleConfirmDelete = async () => {
     if (selectedUser) {
       try {
-        await deleteUserMutation.mutateAsync(selectedUser.userId)
+        await deleteUserMutation.mutateAsync(selectedUser.id)
         setOpenDeleteDialog(false)
         setSelectedUser(null)
       } catch (error) {
@@ -167,30 +174,30 @@ export const Users = () => {
         columns={[
           {
             title: "ID",
-            dataIndex: "userId",
-            key: "userId",
+            dataIndex: "id",
+            key: "id",
             sorter: true,
           },
           {
             title: "Tài khoản",
-            dataIndex: "userAccount",
-            key: "userAccount",
+            dataIndex: "account",
+            key: "account",
             sorter: true,
           },
           {
             title: "Email",
-            dataIndex: "userEmail",
-            key: "userEmail",
+            dataIndex: "loginIp",
+            key: "loginIp",
             render: (email: string) => email || "N/A",
           },
           {
             title: "Trạng thái",
-            dataIndex: "userState",
-            key: "userState",
-            render: (state: number) => (
+            dataIndex: "status",
+            key: "status",
+            render: (state: string) => (
               <Chip
-                label={state === 1 ? "Hoạt động" : "Không hoạt động"}
-                color={state === 1 ? "success" : "default"}
+                label={state === "active" ? "Hoạt động" : "Không hoạt động"}
+                color={state === "active" ? "success" : "default"}
                 size='small'
               />
             ),
@@ -287,7 +294,7 @@ export const Users = () => {
         <DialogContent>
           <Typography>
             Bạn có chắc chắn muốn xóa người dùng &#39;
-            {selectedUser?.userAccount}&#39;?
+            {selectedUser?.account}&#39;?
           </Typography>
         </DialogContent>
         <DialogActions>

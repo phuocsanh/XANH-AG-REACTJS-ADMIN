@@ -11,7 +11,6 @@ import {
   InventoryHistoryListParams,
   StockInRequest,
   getInventoryReceiptStatusText,
-  getInventoryTransactionTypeText,
   InventoryReceiptApiResponse,
   InventoryReceiptItemApiResponse,
   InventoryHistoryApiResponse,
@@ -27,6 +26,9 @@ import {
   ExpiringBatchAlert,
   FifoCalculation,
   BatchTrackingInfo,
+  mapApiResponseToInventoryReceipt,
+  mapApiResponseToInventoryReceiptItem,
+  mapApiResponseToInventoryHistory,
 } from "@/models/inventory.model"
 
 // ========== QUERY KEYS ==========
@@ -93,17 +95,12 @@ export const useInventoryReceiptsQuery = (
 
       console.log("Raw API response for inventory receipts:", apiData)
 
-      // Thêm statusText cho mỗi receipt
-      const receiptsWithStatusText = apiData.map(
-        (receipt: InventoryReceiptApiResponse) => ({
-          ...receipt,
-          statusText: getInventoryReceiptStatusText(receipt.status),
-        })
-      )
+      // Map dữ liệu từ API response sang interface mới
+      const mappedReceipts = apiData.map(mapApiResponseToInventoryReceipt)
 
       return {
         data: {
-          items: receiptsWithStatusText,
+          items: mappedReceipts,
           total: apiData.length,
         },
         code: 200,
@@ -123,10 +120,8 @@ export const useInventoryReceiptQuery = (id: number) => {
       const response = await api.get<InventoryReceiptApiResponse>(
         `/inventory/receipt/${id}` // Thay đổi từ /inventory/receipts/${id} thành /inventory/receipt/${id}
       )
-      return {
-        ...response,
-        statusText: getInventoryReceiptStatusText(response.status),
-      }
+      // Map dữ liệu từ API response sang interface mới
+      return mapApiResponseToInventoryReceipt(response)
     },
     enabled: !!id,
   })
@@ -142,10 +137,8 @@ export const useInventoryReceiptByCodeQuery = (code: string) => {
       const response = await api.get<InventoryReceiptApiResponse>(
         `/inventory/receipt/code/${code}` // Thay đổi từ /inventory/receipts/code/${code} thành /inventory/receipt/code/${code}
       )
-      return {
-        ...response,
-        statusText: getInventoryReceiptStatusText(response.status),
-      }
+      // Map dữ liệu từ API response sang interface mới
+      return mapApiResponseToInventoryReceipt(response)
     },
     enabled: !!code,
   })
@@ -334,8 +327,8 @@ export const useInventoryReceiptItemsQuery = (receiptId: number) => {
       const response = await api.get<InventoryReceiptItemApiResponse[]>(
         `/inventory/receipt/${receiptId}/items` // Thay đổi từ /inventory/receipts/${receiptId}/items thành /inventory/receipt/${receiptId}/items
       )
-      // Không cần mapping vì interface đã giống nhau
-      return response
+      // Map dữ liệu từ API response sang interface mới
+      return response.map(mapApiResponseToInventoryReceiptItem)
     },
     enabled: !!receiptId,
   })
@@ -473,19 +466,12 @@ export const useInventoryHistoryQuery = (
 
       console.log("Raw API response for inventory history:", apiData)
 
-      // Thêm transactionTypeText cho mỗi history item
-      const historyWithTypeText = apiData.map(
-        (history: InventoryHistoryApiResponse) => ({
-          ...history,
-          transactionTypeText: getInventoryTransactionTypeText(
-            history.transactionType
-          ),
-        })
-      )
+      // Map dữ liệu từ API response sang interface mới
+      const mappedHistory = apiData.map(mapApiResponseToInventoryHistory)
 
       return {
         data: {
-          items: historyWithTypeText,
+          items: mappedHistory,
           total: apiData.length,
         },
         code: 200,
@@ -512,19 +498,12 @@ export const useInventoryHistoryByProductQuery = (
 
       console.log("Raw API response for inventory history by product:", apiData)
 
-      // Thêm transactionTypeText cho mỗi history item
-      const historyWithTypeText = apiData.map(
-        (history: InventoryHistoryApiResponse) => ({
-          ...history,
-          transactionTypeText: getInventoryTransactionTypeText(
-            history.transactionType
-          ),
-        })
-      )
+      // Map dữ liệu từ API response sang interface mới
+      const mappedHistory = apiData.map(mapApiResponseToInventoryHistory)
 
       return {
         data: {
-          items: historyWithTypeText,
+          items: mappedHistory,
           total: apiData.length,
         },
         code: 200,

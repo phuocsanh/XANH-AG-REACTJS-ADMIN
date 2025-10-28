@@ -89,7 +89,7 @@ export const searchProductsApi = async ({
     // Chuyển đổi dữ liệu sang format của ComboBox
     const data = response.data.map((product: Product) => ({
       value: product.id,
-      label: product.productName?.trim() || `Sản phẩm ${product.id}`,
+      label: product.name?.trim() || `Sản phẩm ${product.id}`,
     }))
 
     // Log để debug

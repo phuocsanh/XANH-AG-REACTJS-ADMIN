@@ -22,12 +22,10 @@ export enum InventoryTransactionType {
 export interface InventoryReceipt {
   id: number
   code: string
-  description?: string
-  status: number
-  statusText: string
-  totalAmount: string
-  supplierName?: string
-  supplierContact?: string
+  notes?: string // Thay description thành notes để khớp với backend
+  status: string // Thay number thành string để khớp với backend
+  totalAmount: number // Thay string thành number để khớp với backend
+  supplierId?: number // Thay supplierName thành supplierId để khớp với backend
   createdBy: number
   approvedBy?: number
   completedBy?: number
@@ -43,16 +41,49 @@ export interface InventoryReceiptItem {
   id: number
   receiptId: number
   productId: number
-  productName: string
   quantity: number
-  unitPrice: string
-  totalPrice: string
-  expiryDate?: string
-  batchNumber?: string
+  unitCost: number // Thay unitPrice thành unitCost và string thành number để khớp với backend
+  totalPrice: number // Thay string thành number để khớp với backend
   notes?: string
   createdAt: string
   updatedAt: string
 }
+
+// Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
+export interface InventoryReceiptApiResponse {
+  id: number
+  code: string
+  description?: string // Giữ nguyên để tương thích với API response
+  status: number // Giữ nguyên để tương thích với API response
+  totalAmount: string // Giữ nguyên để tương thích với API response
+  supplierName?: string // Giữ nguyên để tương thích với API response
+  supplierContact?: string // Giữ nguyên để tương thích với API response
+  createdBy: number
+  approvedBy?: number
+  completedBy?: number
+  createdAt: string
+  updatedAt: string
+  approvedAt?: string
+  completedAt?: string
+  items?: InventoryReceiptItemApiResponse[]
+}
+
+export interface InventoryReceiptItemApiResponse {
+  id: number
+  receiptId: number
+  productId: number
+  productName: string // Giữ nguyên để tương thích với API response
+  quantity: number
+  unitPrice: string // Giữ nguyên để tương thích với API response
+  totalPrice: string // Giữ nguyên để tương thích với API response
+  expiryDate?: string // Giữ nguyên để tương thích với API response
+  batchNumber?: string // Giữ nguyên để tương thích với API response
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InventoryHistoryApiResponse extends InventoryHistory {}
 
 // Interface cho lịch sử kho
 export interface InventoryHistory {
@@ -71,11 +102,6 @@ export interface InventoryHistory {
   createdBy: number
   createdAt: string
 }
-
-// Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
-export interface InventoryReceiptApiResponse extends InventoryReceipt {}
-export interface InventoryReceiptItemApiResponse extends InventoryReceiptItem {}
-export interface InventoryHistoryApiResponse extends InventoryHistory {}
 
 // Interface cho phân trang
 export interface PaginationResponse {
@@ -105,12 +131,10 @@ export function mapApiResponseToInventoryReceipt(
   return {
     id: apiReceipt.id,
     code: apiReceipt.code,
-    description: apiReceipt.description,
-    status: apiReceipt.status as InventoryReceiptStatus,
-    statusText: getInventoryReceiptStatusText(apiReceipt.status),
-    totalAmount: apiReceipt.totalAmount,
-    supplierName: apiReceipt.supplierName,
-    supplierContact: apiReceipt.supplierContact,
+    notes: apiReceipt.description, // Thay description thành notes
+    status: getInventoryReceiptStatusText(apiReceipt.status), // Chuyển status number thành text
+    totalAmount: parseFloat(apiReceipt.totalAmount), // Chuyển string thành number
+    supplierId: 0, // Tạm thời đặt là 0, sẽ cập nhật sau khi có API chính xác
     createdBy: apiReceipt.createdBy,
     approvedBy: apiReceipt.approvedBy,
     completedBy: apiReceipt.completedBy,
@@ -129,12 +153,9 @@ export function mapApiResponseToInventoryReceiptItem(
     id: apiItem.id,
     receiptId: apiItem.receiptId,
     productId: apiItem.productId,
-    productName: apiItem.productName,
     quantity: apiItem.quantity,
-    unitPrice: apiItem.unitPrice,
-    totalPrice: apiItem.totalPrice,
-    expiryDate: apiItem.expiryDate,
-    batchNumber: apiItem.batchNumber,
+    unitCost: parseFloat(apiItem.unitPrice), // Thay unitPrice thành unitCost và chuyển string thành number
+    totalPrice: parseFloat(apiItem.totalPrice), // Chuyển string thành number
     notes: apiItem.notes,
     createdAt: apiItem.createdAt,
     updatedAt: apiItem.updatedAt,
@@ -199,9 +220,8 @@ export const getInventoryTransactionTypeText = (type: number): string => {
 // Interface cho request tạo phiếu nhập hàng mới (khớp với backend DTO)
 export interface CreateInventoryReceiptRequest {
   [key: string]: unknown // Index signature để tương thích với AnyObject
-  receiptCode: string // Mã phiếu nhập hàng (bắt buộc)
-  supplierName?: string // Tên nhà cung cấp (tùy chọn)
-  supplierContact?: string // Liên hệ nhà cung cấp (tùy chọn)
+  code: string // Mã phiếu nhập hàng (bắt buộc) - thay receiptCode thành code
+  supplierId?: number // ID nhà cung cấp (tùy chọn) - thay supplierName thành supplierId
   totalAmount: number // Tổng tiền (bắt buộc)
   notes?: string // Ghi chú (tùy chọn)
   status: string // Trạng thái (bắt buộc)

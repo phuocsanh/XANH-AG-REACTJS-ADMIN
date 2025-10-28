@@ -6,23 +6,23 @@ import { UploadFile } from "antd/lib/upload/interface"
 // Interface cho dữ liệu sản phẩm từ API
 export interface Product {
   id: number
-  productName: string
-  productPrice: string
+  name: string
+  price: string
   status: BaseStatus
-  productThumb: string
-  productPictures: string[]
-  productVideos: string[]
-  productRatingsAverage: number | null
-  productVariations: Record<string, unknown>
-  productDescription: string
-  productSlug: string | null
-  productQuantity: number
-  productType: number
+  thumb: string
+  pictures: string[]
+  videos: string[]
+  ratingsAverage: string | null
+  variations: Record<string, unknown>
+  description: string
+  slug: string | null
+  quantity: number
+  type: number
   subProductType: number[]
   discount: string
-  productDiscountedPrice: string
-  productSelled: number | null
-  productAttributes: Record<string, unknown>
+  discountedPrice: string
+  selled: number | null
+  attributes: Record<string, unknown>
   profitMarginPercent: string
   averageCostPrice: string
   unitId?: number

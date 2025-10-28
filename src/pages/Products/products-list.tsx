@@ -128,10 +128,8 @@ const ProductsList: React.FC = () => {
       result = result.filter((product: Product) => {
         if (!product) return false
 
-        const name = String(product.productName || "").toLowerCase()
-        const description = String(
-          product.productDescription || ""
-        ).toLowerCase()
+        const name = String(product.name || "").toLowerCase()
+        const description = String(product.description || "").toLowerCase()
 
         return (
           name.includes(lowerSearchTerm) ||
@@ -143,7 +141,7 @@ const ProductsList: React.FC = () => {
     // Lọc theo loại sản phẩm
     if (filterType) {
       result = result.filter((product: Product) => {
-        const productType = product.productType
+        const productType = product.type
         return productType?.toString() === filterType
       })
     }
@@ -184,11 +182,11 @@ const ProductsList: React.FC = () => {
       title: "Hình ảnh",
       width: 100,
       render: (record: ExtendedProduct) => {
-        // Lấy ảnh từ productThumb hoặc productPictures[0]
+        // Lấy ảnh từ thumb hoặc pictures[0]
         const imageUrl =
-          record.productThumb ||
-          (record.productPictures && record.productPictures.length > 0
-            ? record.productPictures[0]
+          record.thumb ||
+          (record.pictures && record.pictures.length > 0
+            ? record.pictures[0]
             : undefined)
 
         return (
@@ -197,7 +195,7 @@ const ProductsList: React.FC = () => {
             width={80}
             height={80}
             style={{ objectFit: "cover", borderRadius: "4px" }}
-            alt={record.productName || "Sản phẩm"}
+            alt={record.name || "Sản phẩm"}
             fallback='https://via.placeholder.com/80?text=No+Image'
             preview={false}
           />
@@ -207,15 +205,17 @@ const ProductsList: React.FC = () => {
     {
       key: "name",
       title: "Tên sản phẩm",
-      render: (record: ExtendedProduct) => (
-        <div>
-          <div className='font-medium'>{record.productName}</div>
-          <div className='text-gray-500 text-sm'>
-            {record.productDescription
-              ? `${record.productDescription.substring(0, 50)}${
-                  record.productDescription.length > 50 ? "..." : ""
-                }`
-              : "Không có mô tả"}
+      render: (_: unknown, record: ExtendedProduct) => (
+        <div className='flex items-center space-x-3'>
+          <div>
+            <div className='font-medium'>{record.name}</div>
+            <div className='text-gray-500 text-sm line-clamp-2'>
+              {record.description && record.description.length > 50 ? (
+                `${record.description.substring(0, 50)}...`
+              ) : (
+                <span>{record.description || ""}</span>
+              )}
+            </div>
           </div>
         </div>
       ),
@@ -234,18 +234,16 @@ const ProductsList: React.FC = () => {
       ),
     },
     {
+      title: "Tồn kho",
+      dataIndex: "quantity",
       key: "quantity",
-      title: "Số lượng",
       width: 100,
-      render: (record: ExtendedProduct) => (
+      align: "center" as const,
+      render: (_: unknown, record: ExtendedProduct) => (
         <Tag
-          color={
-            record.productQuantity && record.productQuantity > 0
-              ? "green"
-              : "red"
-          }
+          color={record.quantity && record.quantity > 0 ? "green" : "orange"}
         >
-          {record.productQuantity || 0}
+          {record.quantity || 0}
         </Tag>
       ),
     },
@@ -320,7 +318,7 @@ const ProductsList: React.FC = () => {
         >
           {productTypes.map((type) => (
             <Select.Option key={type.id} value={type.id?.toString()}>
-              {type.typeName}
+              {type.name}
             </Select.Option>
           ))}
         </Select>
@@ -386,32 +384,33 @@ const ProductsList: React.FC = () => {
           <Descriptions bordered column={1}>
             <Descriptions.Item label='Hình ảnh'>
               <Image
-                width={200}
                 src={getImageUrl(
-                  currentProduct.productThumb ||
-                    (currentProduct.productPictures &&
-                    currentProduct.productPictures.length > 0
-                      ? currentProduct.productPictures[0]
+                  currentProduct.thumb ||
+                    (currentProduct.pictures &&
+                    currentProduct.pictures.length > 0
+                      ? currentProduct.pictures[0]
                       : undefined)
                 )}
-                alt={currentProduct.productName}
-                fallback='https://via.placeholder.com/200?text=No+Image'
+                width={80}
+                height={80}
+                style={{ objectFit: "cover", borderRadius: "4px" }}
+                alt={currentProduct.name}
               />
             </Descriptions.Item>
             <Descriptions.Item label='Tên sản phẩm'>
-              {currentProduct.productName}
+              {currentProduct.name}
             </Descriptions.Item>
             <Descriptions.Item label='Mô tả'>
-              {currentProduct.productDescription || "Không có mô tả"}
+              {currentProduct.description || "Không có mô tả"}
             </Descriptions.Item>
-            <Descriptions.Item label='Giá'>
+            <Descriptions.Item label='Giá bán'>
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(Number(currentProduct.productPrice || 0))}
+              }).format(Number(currentProduct.price || 0))}
             </Descriptions.Item>
-            <Descriptions.Item label='Số lượng'>
-              {currentProduct.productQuantity || 0}
+            <Descriptions.Item label='Tồn kho'>
+              {currentProduct.quantity || 0}
             </Descriptions.Item>
             <Descriptions.Item label='Trạng thái'>
               <Tag
@@ -425,65 +424,37 @@ const ProductsList: React.FC = () => {
                 <Tag color='red'>Giảm {currentProduct.discount}%</Tag>
               </Descriptions.Item>
             )}
-            <Descriptions.Item label='Thuộc tính'>
-              {currentProduct.productAttributes && (
-                <div>
-                  {(currentProduct.productAttributes as Record<string, unknown>)
-                    .age !== undefined && (
-                    <div>
-                      Tuổi thọ:{" "}
-                      {String(
-                        (
-                          currentProduct.productAttributes as Record<
-                            string,
-                            unknown
-                          >
-                        ).age
-                      )}
-                    </div>
-                  )}
-                  {(currentProduct.productAttributes as Record<string, unknown>)
-                    .height !== undefined && (
-                    <div>
-                      Chiều cao:{" "}
-                      {String(
-                        (
-                          currentProduct.productAttributes as Record<
-                            string,
-                            unknown
-                          >
-                        ).height
-                      )}
-                    </div>
-                  )}
-                  {(currentProduct.productAttributes as Record<string, unknown>)
-                    .care_level !== undefined && (
-                    <div>
-                      Mức độ chăm sóc:{" "}
-                      {String(
-                        (
-                          currentProduct.productAttributes as Record<
-                            string,
-                            unknown
-                          >
-                        ).care_level
-                      )}
-                    </div>
-                  )}
-                  <div>
-                    Có kèm chậu:{" "}
-                    {(
-                      currentProduct.productAttributes as Record<
-                        string,
-                        unknown
-                      >
-                    ).pot_included
-                      ? "Có"
-                      : "Không"}
-                  </div>
+            {currentProduct.attributes && (
+              <Descriptions.Item label='Thuộc tính'>
+                <div className='grid grid-cols-2 gap-2'>
+                  {(currentProduct.attributes as Record<string, unknown>)
+                    ? Object.entries(
+                        currentProduct.attributes as Record<string, unknown>
+                      ).map(([key, value]) => (
+                        <div key={key} className='flex'>
+                          <span className='font-medium mr-2'>{key}:</span>
+                          <span>
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </span>
+                        </div>
+                      ))
+                    : Object.entries(
+                        currentProduct.attributes as Record<string, unknown>
+                      ).map(([key, value]) => (
+                        <div key={key} className='flex'>
+                          <span className='font-medium mr-2'>{key}:</span>
+                          <span>
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </span>
+                        </div>
+                      ))}
                 </div>
-              )}
-            </Descriptions.Item>
+              </Descriptions.Item>
+            )}
           </Descriptions>
         )}
       </Modal>
@@ -493,8 +464,8 @@ const ProductsList: React.FC = () => {
         title='Xác nhận xóa'
         content={
           deletingProduct
-            ? `Bạn có chắc chắn muốn xóa sản phẩm "${deletingProduct.productName}"?`
-            : "Bạn có chắc chắn muốn xóa sản phẩm này?"
+            ? `Bạn có chắc chắn muốn xóa sản phẩm "${deletingProduct.name}"?`
+            : "Xác nhận xóa"
         }
         open={deleteConfirmVisible}
         onOk={handleConfirmDelete}

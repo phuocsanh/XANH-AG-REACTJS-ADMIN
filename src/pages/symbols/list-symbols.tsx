@@ -58,8 +58,8 @@ const ListSymbols = () => {
   const handleEdit = (record: SymbolRecord) => {
     setEditingSymbol(record)
     form.setFieldsValue({
-      symbolCode: record.symbolCode,
-      symbolName: record.symbolName,
+      code: record.code,
+      name: record.name,
       description: record.description,
       status: record.status as BaseStatus,
     })
@@ -110,8 +110,8 @@ const ListSymbols = () => {
         // Cập nhật ký hiệu
         const updateData: UpdateSymbolDto = {
           // Không cần thêm id vào updateData vì id được truyền qua URL parameter
-          symbolCode: values.symbolCode,
-          symbolName: values.symbolName,
+          code: values.code,
+          name: values.name,
           description: values.description,
           status: values.status,
         }
@@ -123,8 +123,8 @@ const ListSymbols = () => {
       } else {
         // Thêm mới ký hiệu
         const createData: CreateSymbolDto = {
-          symbolCode: values.symbolCode,
-          symbolName: values.symbolName,
+          code: values.code,
+          name: values.name,
           description: values.description,
           status: values.status,
         }
@@ -170,14 +170,14 @@ const ListSymbols = () => {
             columns={[
               {
                 title: "Mã ký hiệu",
-                dataIndex: "symbolCode",
-                key: "symbolCode",
+                dataIndex: "code",
+                key: "code",
                 sorter: true,
               },
               {
                 title: "Tên ký hiệu",
-                dataIndex: "symbolName",
-                key: "symbolName",
+                dataIndex: "name",
+                key: "name",
                 sorter: true,
               },
               {

@@ -51,10 +51,13 @@ function DialogAddUpdate({
   useEffect(() => {
     if (editingRow) {
       const data = editingRow
-      setValue("typeName", data.typeName)
-      setValue("typeCode", data.typeCode || "")
+      setValue("typeName", data.name)
+      setValue("typeCode", data.code || "")
       setValue("description", data.description || "")
-      setValue("status", data.status)
+      setValue(
+        "status",
+        data.status === "active" ? Status.ACTIVE : Status.INACTIVE
+      )
     } else if (!editingRow) {
       // Reset form khi thêm mới
       console.log("Resetting form for new product type")
@@ -70,8 +73,8 @@ function DialogAddUpdate({
         await updateProductTypeMutation.mutateAsync({
           id: editingRow.id,
           productTypeData: {
-            typeName: data.typeName,
-            typeCode: data.typeCode,
+            name: data.typeName,
+            code: data.typeCode,
             description: data.description,
             status: data.status,
           },
@@ -79,8 +82,8 @@ function DialogAddUpdate({
       } else {
         // Thêm mới - toast sẽ được hiển thị trong mutation hook
         await createProductTypeMutation.mutateAsync({
-          typeName: data.typeName,
-          typeCode: data.typeCode,
+          name: data.typeName,
+          code: data.typeCode,
           description: data.description,
           status: data.status,
         })

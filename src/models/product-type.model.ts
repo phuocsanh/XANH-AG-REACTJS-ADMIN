@@ -1,17 +1,19 @@
 // Định nghĩa các kiểu dữ liệu cho loại sản phẩm
 import { ApiResponse } from "./auth.model"
 import { PaginationData, PaginationResponse } from "./pagination"
-import { Status, AnyObject } from "./common"
+import { AnyObject } from "./common"
 import { ProductSubtype } from "./product-subtype.model"
+import { BaseStatus } from "@/constant/base-status"
 
 export interface ProductType {
   id: number
-  typeName: string
-  typeCode: string
+  name: string
+  code: string
   description: string
-  status: Status
+  status: BaseStatus
   createdAt: string
   updatedAt: string
+  deletedAt?: string
 }
 
 // Extend ProductType interface để tương thích với DataTable
@@ -26,10 +28,10 @@ export interface ExtendedProductSubtype
 
 export interface ProductTypeRequest {
   [key: string]: unknown
-  typeName: string
-  typeCode: string
+  name: string
+  code: string
   description?: string
-  status?: Status
+  status?: BaseStatus
 }
 
 export interface ProductSubtypeRequest {
@@ -47,7 +49,9 @@ export interface ProductSubtypeMappingRequest {
 
 export interface CreateProductTypeRequest extends AnyObject {
   name: string
+  code: string
   description?: string
+  status?: BaseStatus
 }
 
 export interface UpdateProductTypeRequest

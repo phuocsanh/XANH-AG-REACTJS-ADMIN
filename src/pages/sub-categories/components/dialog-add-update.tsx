@@ -89,10 +89,10 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
       if (editingSubtype) {
         reset({
           subtypeName: editingSubtype.name,
-          subtypeCode: editingSubtype.name, // Using name as there's no subtypeCode in ProductSubtype
+          subtypeCode: editingSubtype.code,
           productTypeId: editingSubtype.productTypeId,
           description: editingSubtype.description || "",
-          status: "active", // Mặc định là active vì backend chỉ hỗ trợ active
+          status: editingSubtype.status,
         })
       } else {
         reset(defaultProductSubtypeValues)
@@ -111,7 +111,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     if (editingSubtype) {
       // For update, we need to use the DTO format
       const updateData: UpdateProductSubtypeDto = {
-        subtypeName: data.subtypeName,
+        name: data.subtypeName,
         productTypeId: data.productTypeId,
         description: data.description,
       }
@@ -123,8 +123,8 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     } else {
       // For create, we need to use the DTO format
       const createData: CreateProductSubtypeDto = {
-        subtypeName: data.subtypeName,
-        subtypeCode: data.subtypeCode,
+        name: data.subtypeName,
+        code: data.subtypeCode,
         productTypeId: data.productTypeId,
         description: data.description,
         status: data.status,
@@ -205,7 +205,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
                 placeholder='Chọn loại sản phẩm'
                 disabled={isLoading}
                 options={productTypes.map((type: ProductType) => ({
-                  label: type.typeName,
+                  label: type.name,
                   value: type.id,
                 }))}
               />

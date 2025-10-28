@@ -10,6 +10,7 @@ import {
   Alert,
   message,
   Divider,
+  Select,
 } from "antd"
 import {
   ArrowLeftOutlined,
@@ -30,6 +31,7 @@ import { useCreateInventoryReceiptMutation } from "@/queries/inventory"
 import { useMobile, useTablet } from "@/hooks/use-media-query"
 import { useProductSearch } from "@/queries/product"
 import { useMemo } from "react"
+import { useSuppliersQuery } from "@/queries/supplier"
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -91,6 +93,8 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Queries
   const createReceiptMutation = useCreateInventoryReceiptMutation()
+  const { data: suppliersData, isLoading: suppliersLoading } =
+    useSuppliersQuery()
 
   // Handlers
   const handleBack = () => {
@@ -190,9 +194,8 @@ const InventoryReceiptCreate: React.FC = () => {
 
       // Tạo request data theo đúng cấu trúc backend
       const requestData: CreateInventoryReceiptRequest = {
-        receiptCode,
-        supplierName: values.supplierName as string | undefined,
-        supplierContact: values.supplierContact as string | undefined,
+        code: receiptCode, // Thay receiptCode thành code
+        supplierId: values.supplierId as number, // Sử dụng supplierId từ form
         totalAmount,
         notes: values.description as string | undefined,
         status: "PENDING",
@@ -236,29 +239,36 @@ const InventoryReceiptCreate: React.FC = () => {
         <Form form={form} layout='vertical' onFinish={handleSubmit}>
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
             <Form.Item
-              label='Tên nhà cung cấp'
-              name='supplierName'
+              label='Nhà cung cấp'
+              name='supplierId'
               rules={[
                 {
                   required: true,
-                  message: "Vui lòng nhập tên nhà cung cấp",
+                  message: "Vui lòng chọn nhà cung cấp",
                 },
               ]}
             >
-              <Input placeholder='Nhập tên nhà cung cấp' />
-            </Form.Item>
-
-            <Form.Item
-              label='Thông tin liên hệ'
-              name='supplierContact'
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập thông tin liên hệ",
-                },
-              ]}
-            >
-              <Input placeholder='Nhập thông tin liên hệ' />
+              <Select
+                placeholder='Chọn nhà cung cấp'
+                loading={suppliersLoading}
+                showSearch
+                optionFilterProp='children'
+                filterOption={(input, option) =>
+                  String(option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+              >
+                {suppliersData?.items.map((supplier) => (
+                  <Select.Option
+                    key={supplier.id}
+                    value={supplier.id}
+                    label={supplier.name}
+                  >
+                    {supplier.name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
           </div>
 

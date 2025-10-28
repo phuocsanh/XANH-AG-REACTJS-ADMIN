@@ -35,6 +35,7 @@ import { ProductType } from "@/models/product-type.model"
 // Thêm import cho symbol
 import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
+import { Unit } from "@/models/unit.model"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -177,7 +178,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   console.log(
     "Product types options:",
     productTypes?.items?.map((type: ProductType) => ({
-      label: type.typeName,
+      label: type.name,
       value: type.id,
     })) || []
   )
@@ -211,40 +212,31 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           return urls.map((url, index) => normalizeFile(url, index))
         }
 
-        // Tạo đối tượng form values từ dữ liệu API response
-        const formValues: Partial<ProductFormValues> = {
-          name: productItem.productName?.trim() || "",
-          price: productItem.productPrice || "",
-          type: productItem.productType || undefined,
-          quantity: productItem.productQuantity || 0,
+        // Reset form với dữ liệu sản phẩm
+        reset({
+          name: productItem.name?.trim() || "",
+          price: productItem.price || "",
+          type: productItem.type || undefined,
+          quantity: productItem.quantity || 0,
+          attributes: productItem.attributes || {},
+          unit:
+            units?.find((u: Unit) => u.id === productItem.unitId)?.name || "", // Đơn vị tính
+          subTypes: productItem.subProductType || [], // Loại phụ sản phẩm
           discount: productItem.discount || "",
           status: productItem.status || "active",
-          attributes: productItem.productAttributes || {},
-          subTypes: productItem.subProductType || [], // Loại phụ sản phẩm
-          thumb: productItem.productThumb
-            ? [normalizeFile(productItem.productThumb, 0)]
-            : [],
-          pictures: normalizeFileList(productItem.productPictures),
-          videos: productItem.productVideos || [],
-          description: productItem.productDescription || "",
-          unit:
-            ((productItem.productAttributes as Record<string, unknown>)
-              ?.unit as string) || "", // Đơn vị tính
+          thumb: productItem.thumb ? [normalizeFile(productItem.thumb, 0)] : [], // Ảnh đại diện
+          pictures: normalizeFileList(productItem.pictures), // Danh sách ảnh
+          videos: productItem.videos || [], // Danh sách video
+          description: productItem.description || "", // Mô tả
           // Thêm 2 trường mới
           symbolId: productItem.symbolId || undefined,
           ingredient: productItem.ingredient?.join(", ") || "",
-        }
+        })
 
-        console.log("Mapped form values:", formValues)
-
-        // Đặt giá trị cho form
-        reset(formValues)
         // Product type will be watched through watchedType
 
         // Đặt giá trị cho mô tả
-        setDescription(productItem.productDescription || "")
-
-        console.log("Form values after set:", formValues)
+        setDescription(productItem.description || "")
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
@@ -451,7 +443,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   rules={{ required: "Vui lòng chọn loại sản phẩm" }}
                   options={
                     productTypes?.items?.map((type: ProductType) => ({
-                      label: type.typeName,
+                      label: type.name,
                       value: type.id,
                     })) || []
                   }
@@ -480,8 +472,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   label='Đơn vị tính'
                   placeholder='Chọn đơn vị tính'
                   options={units?.map((unit) => ({
-                    label: `${unit.unitName} (${unit.unitCode})`,
-                    value: unit.unitName,
+                    label: `${unit.name} (${unit.code})`,
+                    value: unit.name,
                   }))}
                   className='w-full'
                   required
@@ -510,7 +502,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   placeholder='Chọn ký hiệu'
                   options={
                     symbols?.map((symbol: Symbol) => ({
-                      label: `${symbol.symbolName}`,
+                      label: `${symbol.name}`,
                       value: symbol.id,
                     })) || []
                   }

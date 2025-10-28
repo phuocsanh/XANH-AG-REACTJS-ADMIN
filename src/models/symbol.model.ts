@@ -6,9 +6,10 @@ import { AnyObject } from "./common"
 // Interface cho dữ liệu ký hiệu từ API
 export interface Symbol {
   id: number
-  symbolCode: string
-  symbolName: string
+  code: string
+  name: string
   description?: string
+  status: BaseStatus
   createdAt: string
   updatedAt: string
   deletedAt?: string
@@ -16,24 +17,24 @@ export interface Symbol {
 
 // Interface cho form dữ liệu ký hiệu
 export interface SymbolFormData {
-  symbolCode: string
-  symbolName: string
+  code: string
+  name: string
   description?: string
   status?: BaseStatus
 }
 
 // Giá trị mặc định cho form ký hiệu
 export const defaultSymbolValues: SymbolFormData = {
-  symbolCode: "",
-  symbolName: "",
+  code: "",
+  name: "",
   description: "",
   status: "active",
 }
 
 // Interface cho tạo mới ký hiệu
 export interface CreateSymbolDto extends AnyObject {
-  symbolCode: string
-  symbolName: string
+  code: string
+  name: string
   description?: string
   status?: BaseStatus
 }

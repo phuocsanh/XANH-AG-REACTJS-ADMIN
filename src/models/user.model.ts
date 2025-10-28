@@ -1,31 +1,42 @@
 import { AnyObject } from "./common"
+import { BaseStatus } from "@/constant/base-status"
 
 // Interface cho User từ server
 export interface User {
-  userId: number
-  userAccount: string
-  userEmail?: string
-  userState?: number
-  createdAt?: string
-  updatedAt?: string
+  id: number
+  account: string
+  loginTime?: string
+  logoutTime?: string
+  loginIp?: string
+  status: BaseStatus
+  createdAt: string
+  updatedAt: string
+  isTwoFactorEnabled?: boolean
+  deletedAt?: string
 }
 
 // Interface cho tạo user mới
 export interface CreateUserDto extends AnyObject {
-  userAccount: string
-  userPassword: string
-  userSalt: string
-  userEmail?: string
-  userState?: number
+  account: string
+  password: string
+  salt: string
+  loginTime?: string
+  logoutTime?: string
+  loginIp?: string
+  status?: BaseStatus
+  isTwoFactorEnabled?: boolean
 }
 
 // Interface cho cập nhật user
 export interface UpdateUserDto extends AnyObject {
-  userAccount?: string
-  userPassword?: string
-  userSalt?: string
-  userEmail?: string
-  userState?: number
+  account?: string
+  password?: string
+  salt?: string
+  loginTime?: string
+  logoutTime?: string
+  loginIp?: string
+  status?: BaseStatus
+  isTwoFactorEnabled?: boolean
 }
 
 // Interface cho đổi mật khẩu

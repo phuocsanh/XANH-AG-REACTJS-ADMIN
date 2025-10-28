@@ -1,14 +1,18 @@
 import { AnyObject } from "@/models/common"
 import { ApiResponse } from "./auth.model"
+import { BaseStatus } from "@/constant/base-status"
 
 // Interface cho ProductSubtype
 export interface ProductSubtype extends Record<string, unknown> {
   id: number
   name: string
-  description?: string
+  code: string
   productTypeId: number
+  description?: string
+  status: BaseStatus
   createdAt: string
   updatedAt: string
+  deletedAt?: string
 }
 
 // Extend ProductSubtype interface để tương thích với DataTable
@@ -18,27 +22,29 @@ export interface ExtendedProductSubtype
 
 // Interface cho tạo mới ProductSubtype
 export interface CreateProductSubtypeDto extends AnyObject {
-  subtypeName: string
-  subtypeCode: string
+  name: string
+  code: string
   productTypeId: number
   description?: string
-  status?: "active" | "inactive" | "archived"
+  status?: BaseStatus
 }
 
 // Interface cho cập nhật ProductSubtype
 export interface UpdateProductSubtypeDto extends AnyObject {
-  subtypeName?: string
-  subtypeCode?: string
+  name?: string
+  code?: string
   productTypeId?: number
   description?: string
-  status?: "active" | "inactive" | "archived"
+  status?: BaseStatus
 }
 
 // Interface cho request tạo ProductSubtype
 export interface CreateProductSubtypeRequest extends AnyObject {
   name: string
-  description?: string
+  code: string
   productTypeId: number
+  description?: string
+  status?: BaseStatus
 }
 
 // Interface cho request cập nhật ProductSubtype
