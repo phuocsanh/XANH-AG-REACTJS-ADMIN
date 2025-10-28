@@ -69,6 +69,26 @@ const InventoryReceiptCreate: React.FC = () => {
     })
   }, [data?.pages])
 
+  // Tạo object chứa tất cả props cho ComboBox
+  const comboBoxProps = useMemo(
+    () => ({
+      data: productOptions,
+      isLoading,
+      isFetching,
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage,
+    }),
+    [
+      productOptions,
+      isLoading,
+      isFetching,
+      hasNextPage,
+      isFetchingNextPage,
+      fetchNextPage,
+    ]
+  )
+
   // Queries
   const createReceiptMutation = useCreateInventoryReceiptMutation()
 
@@ -172,13 +192,8 @@ const InventoryReceiptCreate: React.FC = () => {
     handleCancelEdit,
     handleEditItem,
     handleDeleteItem,
-    // Truyền thêm props cho ComboBox
-    productOptions,
-    isLoading,
-    isFetching,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
+    // Truyền props cho ComboBox theo cách mới
+    comboBoxProps,
   })
 
   const handleSubmit = async (values: Record<string, unknown>) => {
@@ -328,13 +343,8 @@ const InventoryReceiptCreate: React.FC = () => {
                   handleCancelEdit={handleCancelEdit}
                   handleEditItem={handleEditItem}
                   handleDeleteItem={handleDeleteItem}
-                  // Truyền props cho ComboBox
-                  productOptions={productOptions}
-                  isLoading={isLoading}
-                  isFetching={isFetching}
-                  hasNextPage={hasNextPage}
-                  isFetchingNextPage={isFetchingNextPage}
-                  fetchNextPage={fetchNextPage}
+                  // Truyền props cho ComboBox theo cách mới
+                  comboBoxProps={comboBoxProps}
                 />
               ))}
             </div>

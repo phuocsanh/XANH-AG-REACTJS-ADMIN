@@ -25,13 +25,15 @@ interface MobileItemCardProps {
   handleCancelEdit: () => void
   handleEditItem: (key: string) => void
   handleDeleteItem: (key: string) => void
-  // Props cho ComboBox
-  productOptions: { value: number; label: string }[]
-  isLoading: boolean
-  isFetching: boolean
-  hasNextPage: boolean | undefined
-  isFetchingNextPage: boolean
-  fetchNextPage: () => void
+  // Props cho ComboBox - gộp thành một object
+  comboBoxProps: {
+    data: { value: number; label: string }[]
+    isLoading: boolean
+    isFetching: boolean
+    hasNextPage: boolean | undefined
+    isFetchingNextPage: boolean
+    fetchNextPage: () => void
+  }
 }
 
 const MobileItemCard: React.FC<MobileItemCardProps> = ({
@@ -43,12 +45,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   handleCancelEdit,
   handleEditItem,
   handleDeleteItem,
-  productOptions,
-  isLoading,
-  isFetching,
-  hasNextPage,
-  isFetchingNextPage,
-  fetchNextPage,
+  comboBoxProps,
 }) => {
   const isEditing = editingKey === item.key
 
@@ -79,12 +76,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
             <ComboBox
               value={item.productId}
               placeholder='Chọn sản phẩm'
-              data={productOptions}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={isFetchingNextPage}
-              fetchNextPage={fetchNextPage}
+              {...comboBoxProps}
               showSearch={true}
               style={{ width: "100%" }}
               onChange={(value) =>
