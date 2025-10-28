@@ -43,9 +43,6 @@ const InventoryReceiptCreate: React.FC = () => {
   // State quản lý danh sách sản phẩm trong phiếu
   const [items, setItems] = useState<InventoryReceiptItemForm[]>([])
   const [editingKey, setEditingKey] = useState<string>("")
-  const [itemErrors, setItemErrors] = useState<
-    Record<string, Record<string, string>>
-  >({})
 
   // Sử dụng hook product search ở cấp cao hơn
   const {
@@ -101,68 +98,21 @@ const InventoryReceiptCreate: React.FC = () => {
   }
 
   const handleAddItem = () => {
-    const newKey = Date.now().toString()
     const newItem: InventoryReceiptItemForm = {
-      key: newKey,
+      key: Date.now().toString(),
       productId: 0,
+      productName: "",
       quantity: 1,
       unitCost: 0,
       totalPrice: 0,
-      notes: "",
     }
-    setItems([...items, newItem])
-    setEditingKey(newKey)
+    // Thêm sản phẩm mới vào đầu mảng thay vì cuối mảng
+    setItems([newItem, ...items])
+    setEditingKey(newItem.key)
   }
 
   const handleDeleteItem = (key: string) => {
     setItems(items.filter((item) => item.key !== key))
-    if (editingKey === key) {
-      setEditingKey("")
-    }
-
-    // Xóa lỗi của item đã xóa
-    const newErrors = { ...itemErrors }
-    delete newErrors[key]
-    setItemErrors(newErrors)
-  }
-
-  const handleEditItem = (key: string) => {
-    setEditingKey(key)
-  }
-
-  const handleSaveItem = (key: string) => {
-    const item = items.find((item) => item.key === key)
-    if (!item) return
-
-    // Validate item
-    if (!item.productId) {
-      message.error("Vui lòng chọn sản phẩm")
-      return
-    }
-    if (!item.quantity || item.quantity < 1) {
-      message.error("Vui lòng nhập số lượng tối thiểu là 1")
-      return
-    }
-    if (item.unitCost < 0) {
-      message.error("Vui lòng nhập đơn giá hợp lệ")
-      return
-    }
-
-    // Calculate total price
-    const totalPrice = item.quantity * item.unitCost
-    const updatedItem = { ...item, totalPrice }
-
-    setItems(items.map((i) => (i.key === key ? updatedItem : i)))
-    setEditingKey("")
-
-    // Xóa lỗi của item đã lưu
-    const newErrors = { ...itemErrors }
-    delete newErrors[key]
-    setItemErrors(newErrors)
-  }
-
-  const handleCancelEdit = () => {
-    setEditingKey("")
   }
 
   const handleItemChange = (
@@ -175,7 +125,7 @@ const InventoryReceiptCreate: React.FC = () => {
         if (item.key === key) {
           const updatedItem = { ...item, [field]: value }
 
-          // Tự động tính tổng tiền khi thay đổi số lượng hoặc đơn giá
+          // Tự động tính toán totalPrice khi quantity hoặc unitCost thay đổi
           if (field === "quantity" || field === "unitCost") {
             const quantity =
               field === "quantity" ? (value as number) : item.quantity
@@ -195,6 +145,10 @@ const InventoryReceiptCreate: React.FC = () => {
         return item
       })
     )
+  }
+
+  const handleEditItem = (key: string) => {
+    setEditingKey(key)
   }
 
   // Sử dụng hook để lấy cấu hình cột (phải đặt sau khi các hàm được định nghĩa)
@@ -347,8 +301,6 @@ const InventoryReceiptCreate: React.FC = () => {
                   index={index}
                   editingKey={editingKey}
                   handleItemChange={handleItemChange}
-                  handleSaveItem={handleSaveItem}
-                  handleCancelEdit={handleCancelEdit}
                   handleEditItem={handleEditItem}
                   handleDeleteItem={handleDeleteItem}
                   // Truyền props cho ComboBox theo cách mới
@@ -368,6 +320,23 @@ const InventoryReceiptCreate: React.FC = () => {
               />
             </div>
           )}
+
+          {/* Hiển thị tổng tiền */}
+          <div className='mt-4 p-4 bg-gray-50 rounded-lg'>
+            <div className='flex justify-between items-center'>
+              <Text strong className='text-lg'>
+                Tổng tiền:
+              </Text>
+              <Text strong className='text-lg' style={{ color: "#52c41a" }}>
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(
+                  items.reduce((sum, item) => sum + item.totalPrice, 0)
+                )}
+              </Text>
+            </div>
+          </div>
 
           <div className='mt-6 flex justify-end'>
             <Button

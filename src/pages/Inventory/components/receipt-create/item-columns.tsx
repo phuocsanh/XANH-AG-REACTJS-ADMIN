@@ -1,11 +1,13 @@
+import React from "react"
 import { ColumnsType } from "antd/es/table"
-import { Input, Button, Popconfirm, Typography } from "antd"
+import { Button, Popconfirm, Typography, Input } from "antd"
 import { DeleteOutlined } from "@ant-design/icons"
 import NumberInput from "@/components/common/number-input"
 import ComboBox from "@/components/common/combo-box"
 import { InventoryReceiptItemForm } from "@/models/inventory.model"
 
 const { Text } = Typography
+const { TextArea } = Input
 
 interface ItemColumnsProps {
   handleItemChange: (
@@ -126,12 +128,13 @@ const useItemColumns = ({
       width: 80,
       render: (notes: string, record: InventoryReceiptItemForm) => {
         return (
-          <Input
+          <TextArea
             value={notes}
             placeholder='Ghi chú'
-            onChange={(e) =>
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               handleItemChange(record.key, "notes", e.target.value)
             }
+            autoSize={{ minRows: 1, maxRows: 3 }}
           />
         )
       },

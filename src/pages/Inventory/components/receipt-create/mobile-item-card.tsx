@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react"
-import { Card, Input, Button, Space, Typography, Popconfirm } from "antd"
-import {
-  CheckOutlined,
-  CloseOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons"
+import { Card, Input, Button, Typography, Popconfirm } from "antd"
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons"
 import NumberInput from "@/components/common/number-input"
 import ComboBox from "@/components/common/combo-box"
 import { InventoryReceiptItemForm } from "@/models/inventory.model"
@@ -21,8 +16,6 @@ interface MobileItemCardProps {
     field: keyof InventoryReceiptItemForm,
     value: unknown
   ) => void
-  handleSaveItem: (key: string) => void
-  handleCancelEdit: () => void
   handleEditItem: (key: string) => void
   handleDeleteItem: (key: string) => void
   // Props cho ComboBox - gộp thành một object
@@ -41,8 +34,6 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   index,
   editingKey,
   handleItemChange,
-  handleSaveItem,
-  handleCancelEdit,
   handleEditItem,
   handleDeleteItem,
   comboBoxProps,
@@ -50,81 +41,63 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   const isEditing = editingKey === item.key
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Validate item khi đang chỉnh sửa
-  useEffect(() => {
-    if (isEditing) {
-      const newErrors: Record<string, string> = {}
-
-      // Validate sản phẩm
-      if (!item.productId || item.productId === 0) {
-        newErrors.productId = "Vui lòng chọn sản phẩm"
-      }
-
-      // Validate số lượng (tối thiểu là 1)
-      if (!item.quantity || item.quantity < 1) {
-        newErrors.quantity = "Vui lòng nhập số lượng tối thiểu là 1"
-      }
-
-      // Validate đơn giá (cho phép nhập 0)
-      if (item.unitCost < 0) {
-        newErrors.unitCost = "Vui lòng nhập đơn giá hợp lệ"
-      }
-
-      setErrors(newErrors)
-    }
-  }, [isEditing, item.productId, item.quantity, item.unitCost])
-
-  // Custom handle change với validation
-  const handleItemChangeWithValidation = (
-    key: string,
+  // Hàm validate cho từng trường
+  const validateField = (
     field: keyof InventoryReceiptItemForm,
     value: unknown
-  ) => {
-    // Gọi hàm xử lý thay đổi gốc
-    handleItemChange(key, field, value)
-
-    // Validate field vừa thay đổi
-    if (isEditing) {
-      const newErrors = { ...errors }
-
-      switch (field) {
-        case "productId":
-          if (!value || value === 0) {
-            newErrors.productId = "Vui lòng chọn sản phẩm"
-          } else {
-            delete newErrors.productId
-          }
-          break
-        case "quantity":
-          if (!value || (value as number) < 1) {
-            newErrors.quantity = "Vui lòng nhập số lượng tối thiểu là 1"
-          } else {
-            delete newErrors.quantity
-          }
-          break
-        case "unitCost":
-          if ((value as number) < 0) {
-            newErrors.unitCost = "Vui lòng nhập đơn giá hợp lệ"
-          } else {
-            delete newErrors.unitCost
-          }
-          break
-      }
-
-      setErrors(newErrors)
+  ): string => {
+    switch (field) {
+      case "productId":
+        return !value || value === 0 ? "Vui lòng chọn sản phẩm" : ""
+      case "quantity":
+        return !value || Number(value) < 1 ? "Số lượng tối thiểu là 1" : ""
+      case "unitCost":
+        return Number(value) < 0 ? "Đơn giá phải lớn hơn hoặc bằng 0" : ""
+      default:
+        return ""
     }
   }
 
-  // Custom handle save với validation
-  const handleSaveItemWithValidation = (key: string) => {
-    // Kiểm tra lỗi trước khi lưu
-    const hasErrors = Object.keys(errors).length > 0
-    if (hasErrors) {
-      return
-    }
+  // Hàm validate tất cả các trường
+  const validateAllFields = (): boolean => {
+    const newErrors: Record<string, string> = {}
+    const fieldsToValidate: (keyof InventoryReceiptItemForm)[] = [
+      "productId",
+      "quantity",
+      "unitCost",
+    ]
 
-    // Gọi hàm lưu gốc
-    handleSaveItem(key)
+    fieldsToValidate.forEach((field) => {
+      const error = validateField(field, item[field])
+      if (error) {
+        newErrors[field] = error
+      }
+    })
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // Validate khi item thay đổi
+  useEffect(() => {
+    if (isEditing) {
+      validateAllFields()
+    }
+  }, [item, isEditing])
+
+  // Hàm xử lý thay đổi có validate
+  const handleItemChangeWithValidation = (
+    field: keyof InventoryReceiptItemForm,
+    value: unknown
+  ) => {
+    handleItemChange(item.key, field, value)
+
+    // Validate field ngay lập tức
+    const error = validateField(field, value)
+    setErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }))
   }
 
   return (
@@ -132,34 +105,34 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
       size='small'
       title={`Sản phẩm ${index + 1}`}
       extra={
-        isEditing ? null : (
+        !isEditing ? (
           <Popconfirm
             title='Xóa'
             description='Xóa?'
             onConfirm={() => handleDeleteItem(item.key)}
             okText='Xóa'
-            cancelText='Hủy'
+            cancelText='Đóng'
             placement='topRight'
           >
-            <Button type='text' icon={<DeleteOutlined />} danger size='small' />
+            <Button type='text' icon={<DeleteOutlined />} danger />
           </Popconfirm>
-        )
+        ) : null
       }
-      className='mb-3 w-full'
+      className='mb-4'
     >
       {isEditing ? (
-        <div className='space-y-3 w-full'>
+        <div className='space-y-3'>
           <div>
-            <label className='block text-xs mb-1'>Sản phẩm</label>
+            <label className='block text-xs mb-1'>Sản phẩm *</label>
             <ComboBox
               value={item.productId}
               placeholder='Chọn sản phẩm'
               {...comboBoxProps}
               showSearch={true}
-              style={{ width: "100%" }}
               onChange={(value) =>
-                handleItemChangeWithValidation(item.key, "productId", value)
+                handleItemChangeWithValidation("productId", value)
               }
+              style={{ width: "100%" }}
             />
             {errors.productId && (
               <div className='text-red-500 text-xs mt-1'>
@@ -168,13 +141,13 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
             )}
           </div>
           <div>
-            <label className='block text-xs mb-1'>Số lượng</label>
+            <label className='block text-xs mb-1'>Số lượng *</label>
             <NumberInput
               value={item.quantity}
               min={1}
               placeholder='Số lượng'
               onChange={(value) =>
-                handleItemChangeWithValidation(item.key, "quantity", value || 1)
+                handleItemChangeWithValidation("quantity", value || 1)
               }
             />
             {errors.quantity && (
@@ -182,13 +155,13 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
             )}
           </div>
           <div>
-            <label className='block text-xs mb-1'>Đơn giá</label>
+            <label className='block text-xs mb-1'>Đơn giá *</label>
             <NumberInput
               value={item.unitCost}
               min={0}
               placeholder='Đơn giá'
               onChange={(value) =>
-                handleItemChangeWithValidation(item.key, "unitCost", value || 0)
+                handleItemChangeWithValidation("unitCost", value || 0)
               }
             />
             {errors.unitCost && (
@@ -197,11 +170,11 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
           </div>
           <div>
             <label className='block text-xs mb-1'>Thành tiền</label>
-            <div className='p-2 bg-gray-100 rounded text-right font-medium'>
+            <div className='p-2 bg-gray-100 rounded'>
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(item.quantity * item.unitCost)}
+              }).format(item.totalPrice)}
             </div>
           </div>
           <div>
@@ -210,27 +183,10 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               value={item.notes}
               placeholder='Ghi chú'
               onChange={(e) =>
-                handleItemChangeWithValidation(
-                  item.key,
-                  "notes",
-                  e.target.value
-                )
+                handleItemChangeWithValidation("notes", e.target.value)
               }
             />
           </div>
-          <Space className='w-full justify-end'>
-            <Button
-              type='primary'
-              icon={<CheckOutlined />}
-              onClick={() => handleSaveItemWithValidation(item.key)}
-              disabled={Object.keys(errors).length > 0}
-            >
-              Lưu
-            </Button>
-            <Button icon={<CloseOutlined />} onClick={handleCancelEdit}>
-              Hủy
-            </Button>
-          </Space>
         </div>
       ) : (
         <div className='space-y-2'>

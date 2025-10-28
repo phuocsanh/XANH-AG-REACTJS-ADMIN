@@ -48,19 +48,29 @@ export const inventoryKeys = {
   stats: () => [...inventoryKeys.all, "stats"] as const,
   batches: () => [...inventoryKeys.all, "batches"] as const,
   batch: (id: number) => [...inventoryKeys.batches(), "detail", id] as const,
-  batchByProduct: (productId: number) => [...inventoryKeys.batches(), "product", productId] as const,
+  batchByProduct: (productId: number) =>
+    [...inventoryKeys.batches(), "product", productId] as const,
   transactions: () => [...inventoryKeys.all, "transactions"] as const,
-  transaction: (id: number) => [...inventoryKeys.transactions(), "detail", id] as const,
-  transactionByProduct: (productId: number) => [...inventoryKeys.transactions(), "product", productId] as const,
+  transaction: (id: number) =>
+    [...inventoryKeys.transactions(), "detail", id] as const,
+  transactionByProduct: (productId: number) =>
+    [...inventoryKeys.transactions(), "product", productId] as const,
   reports: () => [...inventoryKeys.all, "reports"] as const,
-  summary: (productId: number) => [...inventoryKeys.reports(), "summary", productId] as const,
+  summary: (productId: number) =>
+    [...inventoryKeys.reports(), "summary", productId] as const,
   valueReport: () => [...inventoryKeys.reports(), "value"] as const,
-  lowStockAlert: (threshold: number) => [...inventoryKeys.reports(), "low-stock", threshold] as const,
-  expiringBatchesAlert: (days: number) => [...inventoryKeys.reports(), "expiring-batches", days] as const,
-  fifoCost: (productId: number, quantity: number) => [...inventoryKeys.reports(), "fifo", productId, quantity] as const,
-  batchTracking: (productId?: number) => [...inventoryKeys.reports(), "batch-tracking", productId] as const,
-  fifoValue: (productId: number) => [...inventoryKeys.reports(), "fifo-value", productId] as const,
-  weightedAverageCost: (productId: number) => [...inventoryKeys.reports(), "weighted-average-cost", productId] as const,
+  lowStockAlert: (threshold: number) =>
+    [...inventoryKeys.reports(), "low-stock", threshold] as const,
+  expiringBatchesAlert: (days: number) =>
+    [...inventoryKeys.reports(), "expiring-batches", days] as const,
+  fifoCost: (productId: number, quantity: number) =>
+    [...inventoryKeys.reports(), "fifo", productId, quantity] as const,
+  batchTracking: (productId?: number) =>
+    [...inventoryKeys.reports(), "batch-tracking", productId] as const,
+  fifoValue: (productId: number) =>
+    [...inventoryKeys.reports(), "fifo-value", productId] as const,
+  weightedAverageCost: (productId: number) =>
+    [...inventoryKeys.reports(), "weighted-average-cost", productId] as const,
 } as const
 
 // ========== INVENTORY RECEIPT HOOKS ==========
@@ -68,7 +78,9 @@ export const inventoryKeys = {
 /**
  * Hook lấy danh sách phiếu nhập hàng
  */
-export const useInventoryReceiptsQuery = (params?: InventoryReceiptListParams) => {
+export const useInventoryReceiptsQuery = (
+  params?: InventoryReceiptListParams
+) => {
   return useQuery({
     queryKey: inventoryKeys.receiptsList(params),
     queryFn: async () => {
@@ -82,10 +94,12 @@ export const useInventoryReceiptsQuery = (params?: InventoryReceiptListParams) =
       console.log("Raw API response for inventory receipts:", apiData)
 
       // Thêm statusText cho mỗi receipt
-      const receiptsWithStatusText = apiData.map((receipt: InventoryReceiptApiResponse) => ({
-        ...receipt,
-        statusText: getInventoryReceiptStatusText(receipt.status)
-      }))
+      const receiptsWithStatusText = apiData.map(
+        (receipt: InventoryReceiptApiResponse) => ({
+          ...receipt,
+          statusText: getInventoryReceiptStatusText(receipt.status),
+        })
+      )
 
       return {
         data: {
@@ -107,11 +121,11 @@ export const useInventoryReceiptQuery = (id: number) => {
     queryKey: inventoryKeys.receipt(id),
     queryFn: async () => {
       const response = await api.get<InventoryReceiptApiResponse>(
-        `/inventory/receipts/${id}`
+        `/inventory/receipt/${id}` // Thay đổi từ /inventory/receipts/${id} thành /inventory/receipt/${id}
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     enabled: !!id,
@@ -126,11 +140,11 @@ export const useInventoryReceiptByCodeQuery = (code: string) => {
     queryKey: inventoryKeys.receiptByCode(code),
     queryFn: async () => {
       const response = await api.get<InventoryReceiptApiResponse>(
-        `/inventory/receipts/code/${code}`
+        `/inventory/receipt/code/${code}` // Thay đổi từ /inventory/receipts/code/${code} thành /inventory/receipt/code/${code}
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     enabled: !!code,
@@ -143,13 +157,13 @@ export const useInventoryReceiptByCodeQuery = (code: string) => {
 export const useCreateInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (receipt: CreateInventoryReceiptRequest) => {
-      const response = await api.post<InventoryReceiptApiResponse>(
-        "/inventory/receipts",
+      const response = await api.postRaw<InventoryReceiptApiResponse>(
+        "/inventory/receipt", // Thay đổi từ /inventory/receipts thành /inventory/receipt
         receipt
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     onSuccess: (data) => {
@@ -176,13 +190,13 @@ export const useUpdateInventoryReceiptMutation = () => {
       id: number
       receipt: UpdateInventoryReceiptRequest
     }) => {
-      const response = await api.put<InventoryReceiptApiResponse>(
-        `/inventory/receipts/${id}`,
+      const response = await api.putRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}`, // Thay đổi từ /inventory/receipts/${id} thành /inventory/receipt/${id}
         receipt
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     onSuccess: (data, variables) => {
@@ -210,7 +224,9 @@ export const useDeleteInventoryReceiptMutation = () => {
     onSuccess: (_, variables) => {
       // Xóa khỏi cache
       queryClient.removeQueries({ queryKey: inventoryKeys.receipt(variables) })
-      queryClient.removeQueries({ queryKey: inventoryKeys.receiptItems(variables) })
+      queryClient.removeQueries({
+        queryKey: inventoryKeys.receiptItems(variables),
+      })
       // Invalidate danh sách
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Xóa phiếu nhập hàng thành công!")
@@ -229,12 +245,12 @@ export const useDeleteInventoryReceiptMutation = () => {
 export const useApproveInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<InventoryReceiptApiResponse>(
-        `/inventory/receipts/${id}/approve`
+      const response = await api.putRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}/approve` // Thay đổi từ /inventory/receipts/${id}/approve thành /inventory/receipt/${id}/approve
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     onSuccess: (data, variables) => {
@@ -256,12 +272,12 @@ export const useApproveInventoryReceiptMutation = () => {
 export const useCompleteInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<InventoryReceiptApiResponse>(
-        `/inventory/receipts/${id}/complete`
+      const response = await api.putRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}/complete` // Thay đổi từ /inventory/receipts/${id}/complete thành /inventory/receipt/${id}/complete
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     onSuccess: (data, variables) => {
@@ -285,12 +301,12 @@ export const useCompleteInventoryReceiptMutation = () => {
 export const useCancelInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<InventoryReceiptApiResponse>(
-        `/inventory/receipts/${id}/cancel`
+      const response = await api.putRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}/cancel` // Thay đổi từ /inventory/receipts/${id}/cancel thành /inventory/receipt/${id}/cancel
       )
       return {
         ...response,
-        statusText: getInventoryReceiptStatusText(response.status)
+        statusText: getInventoryReceiptStatusText(response.status),
       }
     },
     onSuccess: (data, variables) => {
@@ -316,7 +332,7 @@ export const useInventoryReceiptItemsQuery = (receiptId: number) => {
     queryKey: inventoryKeys.receiptItems(receiptId),
     queryFn: async () => {
       const response = await api.get<InventoryReceiptItemApiResponse[]>(
-        `/inventory/receipts/${receiptId}/items`
+        `/inventory/receipt/${receiptId}/items` // Thay đổi từ /inventory/receipts/${receiptId}/items thành /inventory/receipt/${receiptId}/items
       )
       // Không cần mapping vì interface đã giống nhau
       return response
@@ -442,7 +458,9 @@ export const useStockOutMutation = () => {
 /**
  * Hook lấy lịch sử tồn kho
  */
-export const useInventoryHistoryQuery = (params?: InventoryHistoryListParams) => {
+export const useInventoryHistoryQuery = (
+  params?: InventoryHistoryListParams
+) => {
   return useQuery({
     queryKey: inventoryKeys.historyList(params),
     queryFn: async () => {
@@ -456,10 +474,14 @@ export const useInventoryHistoryQuery = (params?: InventoryHistoryListParams) =>
       console.log("Raw API response for inventory history:", apiData)
 
       // Thêm transactionTypeText cho mỗi history item
-      const historyWithTypeText = apiData.map((history: InventoryHistoryApiResponse) => ({
-        ...history,
-        transactionTypeText: getInventoryTransactionTypeText(history.transactionType)
-      }))
+      const historyWithTypeText = apiData.map(
+        (history: InventoryHistoryApiResponse) => ({
+          ...history,
+          transactionTypeText: getInventoryTransactionTypeText(
+            history.transactionType
+          ),
+        })
+      )
 
       return {
         data: {
@@ -491,10 +513,14 @@ export const useInventoryHistoryByProductQuery = (
       console.log("Raw API response for inventory history by product:", apiData)
 
       // Thêm transactionTypeText cho mỗi history item
-      const historyWithTypeText = apiData.map((history: InventoryHistoryApiResponse) => ({
-        ...history,
-        transactionTypeText: getInventoryTransactionTypeText(history.transactionType)
-      }))
+      const historyWithTypeText = apiData.map(
+        (history: InventoryHistoryApiResponse) => ({
+          ...history,
+          transactionTypeText: getInventoryTransactionTypeText(
+            history.transactionType
+          ),
+        })
+      )
 
       return {
         data: {
