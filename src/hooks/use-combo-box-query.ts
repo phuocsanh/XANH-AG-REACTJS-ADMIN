@@ -53,6 +53,13 @@ export function useComboBoxQuery({
   valueField = "value",
   labelField = "label",
 }: UseComboBoxQueryOptions) {
+  // Log để debug
+  console.log("useComboBoxQuery called with:", {
+    searchValue,
+    enabled,
+    queryKey,
+  })
+
   // Sử dụng useInfiniteQuery để hỗ trợ pagination
   const {
     data,
@@ -73,6 +80,13 @@ export function useComboBoxQuery({
   >({
     queryKey: [...queryKey, searchValue],
     queryFn: async ({ pageParam = 1 }) => {
+      // Log để debug
+      console.log("API function called with:", {
+        pageParam,
+        pageSize,
+        search: searchValue,
+      })
+
       const response = await apiFunction({
         page: pageParam as number,
         limit: pageSize,
@@ -94,15 +108,35 @@ export function useComboBoxQuery({
 
   // Flatten tất cả pages thành một mảng options
   const options = useMemo(() => {
-    if (!data?.pages) return []
+    if (!data?.pages) {
+      console.log("No data pages, returning empty array")
+      return []
+    }
 
-    return data.pages.flatMap((page: ApiResponse) =>
-      page.data.map((item: ComboBoxOption) => ({
-        ...item,
-        value: item[valueField] as string | number,
-        label: item[labelField] as string,
-      }))
-    )
+    const result = data.pages.flatMap((page: ApiResponse) => {
+      // Kiểm tra page.data có tồn tại không
+      if (!page || !page.data) {
+        console.log("Page or page.data is undefined, returning empty array")
+        return []
+      }
+
+      console.log("Processing page data:", page.data)
+
+      return page.data.map((item: ComboBoxOption) => {
+        const mappedItem = {
+          ...item,
+          value: item[valueField] !== undefined ? item[valueField] : item.value,
+          label: item[labelField] !== undefined ? item[labelField] : item.label,
+        }
+        console.log("Mapped item:", mappedItem)
+        return mappedItem
+      })
+    })
+
+    // Log để debug
+    console.log("Final mapped options:", result)
+
+    return result
   }, [data?.pages, valueField, labelField])
 
   // Tổng số items từ tất cả pages

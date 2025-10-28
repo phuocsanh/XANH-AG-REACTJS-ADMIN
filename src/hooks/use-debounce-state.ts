@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
 
 /**
  * Custom hook for managing a state value with debounce functionality.
@@ -10,16 +10,30 @@ export const useDebounceState = <T>(
   initialValue?: T,
   timeout = 500
 ): [T | undefined, Dispatch<SetStateAction<T | undefined>>] => {
-  const [bindingValue, setBindingValue] = useState<T | undefined>(initialValue);
-  const [debounceValue, setDebounceValue] = useState<T | undefined>(initialValue);
+  const [bindingValue, setBindingValue] = useState<T | undefined>(initialValue)
+  const [debounceValue, setDebounceValue] = useState<T | undefined>(
+    initialValue
+  )
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const debounceTimeout = setTimeout(() => {
-      setDebounceValue(bindingValue);
-    }, timeout);
+    // Clear the previous timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
 
-    return () => clearTimeout(debounceTimeout);
-  }, [bindingValue, timeout]);
+    // Set a new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      setDebounceValue(bindingValue)
+    }, timeout)
 
-  return [debounceValue, setBindingValue];
-};
+    // Cleanup function to clear timeout on unmount or when bindingValue/timeout changes
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+    }
+  }, [bindingValue, timeout])
+
+  return [debounceValue, setBindingValue]
+}

@@ -94,7 +94,7 @@ function ComboBox({
   filterOption = true,
   pageSize = 20,
   enableLoadMore = true,
-  searchDebounceMs = 300,
+  searchDebounceMs = 500,
   mode,
   maxTagCount,
   maxTagTextLength,
@@ -113,7 +113,25 @@ function ComboBox({
   ...selectProps
 }: ComboBoxProps) {
   // State cho search
-  const [searchTerm, setSearchTerm] = useDebounceState("", searchDebounceMs)
+  const [searchTerm, setSearchTerm] = useDebounceState<string>(
+    "",
+    searchDebounceMs
+  )
+
+  // Luôn enable query khi có apiFunction (không cần check searchTerm)
+  const isQueryEnabled = enabled && !!apiFunction
+
+  // Log để debug
+  console.log("ComboBox render - Search term:", searchTerm)
+  console.log("ComboBox render - Query enabled:", isQueryEnabled)
+
+  // Sử dụng useMemo để tránh re-render không cần thiết
+  const memoizedQueryKey = React.useMemo(() => {
+    return [...queryKey, searchTerm || ""]
+  }, [queryKey, searchTerm])
+
+  // Log để debug
+  console.log("Memoized query key:", memoizedQueryKey)
 
   // Sử dụng query hook nếu có apiFunction
   const {
@@ -121,14 +139,15 @@ function ComboBox({
     isLoading,
     error,
     isFetching,
+    isFetchingNextPage, // Thêm isFetchingNextPage
     hasNextPage,
     loadMore,
   } = useComboBoxQuery({
     apiFunction: apiFunction!,
-    queryKey: [...queryKey, searchTerm],
+    queryKey: memoizedQueryKey,
     pageSize,
-    searchValue: searchTerm,
-    enabled: enabled && !!apiFunction,
+    searchValue: searchTerm || "",
+    enabled: isQueryEnabled,
     staleTime,
     gcTime,
     valueField,
@@ -145,23 +164,16 @@ function ComboBox({
   // Xác định options để hiển thị
   const displayOptions = apiFunction ? queryOptions : staticOptions
 
-  // Map options theo valueField và labelField (chỉ cho static options vì query options đã được map)
-  const mappedOptions = apiFunction
-    ? displayOptions
-    : displayOptions.map((option) => {
-        const mappedOption = { ...option }
-        if (valueField !== "value" && valueField in option) {
-          mappedOption.value = (option as Record<string, unknown>)[
-            valueField
-          ] as string | number
-        }
-        if (labelField !== "label" && labelField in option) {
-          mappedOption.label = (option as Record<string, unknown>)[
-            labelField
-          ] as string
-        }
-        return mappedOption
-      })
+  // Log để debug
+  console.log("Display options:", displayOptions)
+  console.log("Is apiFunction:", !!apiFunction)
+
+  // Ép kiểu displayOptions thành DefaultOptionType[]
+  const mappedOptions = displayOptions as DefaultOptionType[]
+
+  // Log để debug
+  console.log("Final mapped options:", mappedOptions)
+  console.log("Mapped options length:", mappedOptions.length)
 
   // Xử lý search
   const handleSearch = React.useCallback(
@@ -177,17 +189,39 @@ function ComboBox({
       const { target } = e
       const element = target as HTMLDivElement
 
+      // Log để debug
+      console.log("Scroll event:", {
+        scrollTop: element.scrollTop,
+        offsetHeight: element.offsetHeight,
+        scrollHeight: element.scrollHeight,
+        isAtBottom:
+          element.scrollTop + element.offsetHeight >= element.scrollHeight - 5,
+        enableLoadMore,
+        hasNextPage,
+        isFetching,
+        isFetchingNextPage,
+      })
+
       if (
         enableLoadMore &&
         apiFunction &&
         hasNextPage &&
         !isFetching &&
-        element.scrollTop + element.offsetHeight === element.scrollHeight
+        !isFetchingNextPage &&
+        element.scrollTop + element.offsetHeight >= element.scrollHeight - 5
       ) {
+        console.log("Triggering load more...")
         loadMore()
       }
     },
-    [enableLoadMore, apiFunction, hasNextPage, isFetching, loadMore]
+    [
+      enableLoadMore,
+      apiFunction,
+      hasNextPage,
+      isFetching,
+      isFetchingNextPage,
+      loadMore,
+    ]
   )
 
   // Xử lý change
