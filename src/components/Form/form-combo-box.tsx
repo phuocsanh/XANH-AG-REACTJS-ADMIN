@@ -1,9 +1,7 @@
-import React, { useState, useCallback } from "react"
+import React, { useCallback } from "react"
 import { Select, Form, Spin } from "antd"
 import { Controller, Control, FieldPath, FieldValues } from "react-hook-form"
 import { SelectProps, DefaultOptionType } from "antd/es/select"
-import { useComboBoxQuery } from "@/hooks/use-combo-box-query"
-import { useDebounceState } from "@/hooks/use-debounce-state"
 
 // Interface cho option của ComboBox
 interface ComboBoxOption {
@@ -12,22 +10,6 @@ interface ComboBoxOption {
   disabled?: boolean
   [key: string]: unknown // Cho phép các thuộc tính tùy chỉnh khác
 }
-
-// Interface cho API response
-interface ApiResponse {
-  data: ComboBoxOption[]
-  total: number
-  hasMore: boolean
-  nextPage?: number
-}
-
-// Interface cho API function
-type ApiFunction = (params: {
-  page: number
-  limit: number
-  search?: string
-  [key: string]: unknown
-}) => Promise<ApiResponse>
 
 // Interface cho props của FormComboBox
 interface FormComboBoxProps<T extends FieldValues>
@@ -39,10 +21,17 @@ interface FormComboBoxProps<T extends FieldValues>
   name: FieldPath<T>
   control: Control<T>
 
-  // Props cho data source - có thể là static options hoặc API function
-  options?: ComboBoxOption[] // Cho trường hợp static options
-  apiFunction?: ApiFunction // Cho trường hợp async data
-  queryKey?: (string | number | boolean | undefined)[] // Query key cho TanStack Query
+  // Props cho static options
+  options?: ComboBoxOption[]
+
+  // Props cho async data (giống với ComboBox mới)
+  data?: ComboBoxOption[]
+  isLoading?: boolean
+  isFetching?: boolean
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  fetchNextPage?: () => void
+  onSearch?: (value: string) => void
 
   // Props tùy chọn
   label?: string
@@ -52,19 +41,13 @@ interface FormComboBoxProps<T extends FieldValues>
   showSearch?: boolean
   filterOption?: boolean | ((input: string, option?: ComboBoxOption) => boolean)
 
-  // Props cho pagination (chỉ áp dụng khi có apiFunction)
-  pageSize?: number // Số item mỗi lần load
-  enableLoadMore?: boolean // Bật/tắt load more
-  searchDebounceMs?: number // Thời gian debounce cho search
+  // Props cho pagination
+  enableLoadMore?: boolean
 
   // Props cho multi-select
   mode?: "multiple" | "tags"
   maxTagCount?: number | "responsive"
   maxTagTextLength?: number
-
-  // Props cho tùy chỉnh field mapping
-  valueField?: string // Mặc định là 'value'
-  labelField?: string // Mặc định là 'label'
 
   // Props cho validation
   rules?: {
@@ -82,88 +65,52 @@ interface FormComboBoxProps<T extends FieldValues>
   style?: React.CSSProperties
   size?: "large" | "middle" | "small"
 
-  // Props cho TanStack Query
-  enabled?: boolean // Bật/tắt query
-  staleTime?: number // Thời gian cache
-  gcTime?: number // Thời gian garbage collection
-
   // Callback functions
   onSelectionChange?: (
     value: string | number | (string | number)[],
     option: ComboBoxOption | ComboBoxOption[]
   ) => void
-  onLoadError?: (error: Error) => void // Chỉ áp dụng khi có apiFunction
 }
 
 /**
  * Component FormComboBox tái sử dụng cho React Hook Form
  * Hỗ trợ cả static options và async data loading từ API
  * Tích hợp với Ant Design Select component
+ * Sử dụng pattern giống với component ComboBox mới
  */
 function FormComboBox<T extends FieldValues>({
   name,
   control,
   options: staticOptions = [],
-  apiFunction,
-  queryKey = [],
+  data: externalData,
+  isLoading,
+  isFetching,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  onSearch: externalOnSearch,
   label,
   required = false,
   placeholder,
   allowClear = true,
   showSearch = true,
   filterOption = true,
-  pageSize = 20,
   enableLoadMore = true,
-  searchDebounceMs = 300,
   mode,
   maxTagCount,
   maxTagTextLength,
-  valueField = "value",
-  labelField = "label",
   rules,
   className,
   style,
   size = "middle",
-  enabled = true,
-  staleTime = 5 * 60 * 1000, // 5 phút
-  gcTime = 10 * 60 * 1000, // 10 phút
   onSelectionChange,
-  onLoadError,
   ...selectProps
 }: FormComboBoxProps<T>) {
-  // State cho search value
-  const [searchValue, setSearchValue] = useState("")
-
-  // Debounce search value để tránh gọi API quá nhiều
-  const [debouncedSearchValue] = useDebounceState(searchValue, searchDebounceMs)
-
   // Kiểm tra xem có sử dụng API hay không
-  const isAsyncMode = Boolean(apiFunction)
+  const isAsyncMode = Boolean(externalData)
 
-  // Sử dụng TanStack Query hook cho async mode
-  const {
-    options: queryOptions,
-    total,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    loadMore,
-    isError,
-    error,
-  } = useComboBoxQuery({
-    apiFunction: apiFunction!,
-    queryKey: [...queryKey, name],
-    pageSize,
-    searchValue: debouncedSearchValue || "",
-    enabled: isAsyncMode && enabled,
-    staleTime,
-    gcTime,
-    valueField,
-    labelField,
-  })
-
-  // Chọn options phù hợp (static hoặc từ query)
-  const finalOptions = isAsyncMode ? queryOptions : staticOptions
+  // Chọn options phù hợp (external data hoặc static options)
+  const finalOptions = isAsyncMode ? externalData : staticOptions
 
   // Xử lý validation rules
   const validationRules = {
@@ -175,12 +122,24 @@ function FormComboBox<T extends FieldValues>({
     ...rules,
   }
 
-  // Handle search
-  const handleSearch = useCallback((value: string) => {
-    setSearchValue(value)
-  }, [])
+  // Handle search - sử dụng externalOnSearch nếu có, ngược lại dùng internal state
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (externalOnSearch) {
+        externalOnSearch(value)
+      }
+    },
+    [externalOnSearch]
+  )
 
-  // Handle scroll to load more cho async mode
+  // Function để load more data
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
+      fetchNextPage()
+    }
+  }
+
+  // Handle scroll để load more cho async mode
   const handlePopupScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       if (!isAsyncMode || !enableLoadMore) return
@@ -212,7 +171,7 @@ function FormComboBox<T extends FieldValues>({
     if (typeof filterOption === "function") {
       return (input: string, option?: DefaultOptionType) => {
         const optionData = staticOptions.find(
-          (opt) => opt[valueField] === option?.value
+          (opt) => opt.value === option?.value
         )
         return optionData ? filterOption(input, optionData) : false
       }
@@ -221,20 +180,18 @@ function FormComboBox<T extends FieldValues>({
     if (filterOption === true) {
       return (input: string, option?: DefaultOptionType) => {
         const optionData = staticOptions.find(
-          (opt) => opt[valueField] === option?.value
+          (opt) => opt.value === option?.value
         )
         return optionData
-          ? String(optionData[labelField])
-              .toLowerCase()
-              .includes(input.toLowerCase())
+          ? String(optionData.label).toLowerCase().includes(input.toLowerCase())
           : false
       }
     }
 
     return filterOption
-  }, [isAsyncMode, filterOption, staticOptions, valueField, labelField])
+  }, [isAsyncMode, filterOption, staticOptions])
 
-  // Render dropdown with loading indicator cho async mode
+  // Render dropdown với loading indicator cho async mode
   const dropdownRender = useCallback(
     (menu: React.ReactElement) => {
       if (!isAsyncMode) return menu
@@ -250,18 +207,14 @@ function FormComboBox<T extends FieldValues>({
           {!isFetchingNextPage &&
             hasNextPage &&
             enableLoadMore &&
+            finalOptions &&
             finalOptions.length > 0 && (
               <div
                 style={{ padding: "8px", textAlign: "center", color: "#999" }}
               >
-                Cuộn xuống để tải thêm ({finalOptions.length}/{total})
+                Cuộn xuống để tải thêm ({finalOptions.length}/?)
               </div>
             )}
-          {!hasNextPage && finalOptions.length > 0 && (
-            <div style={{ padding: "8px", textAlign: "center", color: "#999" }}>
-              Đã hiển thị tất cả ({total} mục)
-            </div>
-          )}
         </>
       )
     },
@@ -270,17 +223,9 @@ function FormComboBox<T extends FieldValues>({
       isFetchingNextPage,
       hasNextPage,
       enableLoadMore,
-      finalOptions.length,
-      total,
+      finalOptions?.length,
     ]
   )
-
-  // Xử lý lỗi từ TanStack Query
-  React.useEffect(() => {
-    if (isError && error && onLoadError) {
-      onLoadError(error as Error)
-    }
-  }, [isError, error, onLoadError])
 
   return (
     <Form.Item
@@ -322,26 +267,19 @@ function FormComboBox<T extends FieldValues>({
               maxTagCount={maxTagCount}
               maxTagTextLength={maxTagTextLength}
               size={size}
-              loading={isAsyncMode && isLoading && finalOptions.length === 0}
+              loading={isAsyncMode && (isLoading || isFetching)}
               status={error ? "error" : undefined}
               dropdownRender={isAsyncMode ? dropdownRender : undefined}
               notFoundContent={
-                isLoading ? <Spin size='small' /> : "Không có dữ liệu"
+                isAsyncMode && (isLoading || isFetching) ? (
+                  <Spin size='small' />
+                ) : (
+                  "Không có dữ liệu"
+                )
               }
+              options={finalOptions as DefaultOptionType[]}
               {...selectProps}
-            >
-              {finalOptions.map((option) => (
-                <Select.Option
-                  key={String(option[valueField as keyof typeof option])}
-                  value={
-                    option[valueField as keyof typeof option] as string | number
-                  }
-                  disabled={option.disabled}
-                >
-                  {String(option[labelField as keyof typeof option])}
-                </Select.Option>
-              ))}
-            </Select>
+            />
             {error && (
               <div
                 style={{ color: "#ff4d4f", fontSize: "14px", marginTop: "4px" }}
@@ -357,4 +295,4 @@ function FormComboBox<T extends FieldValues>({
 }
 
 export default FormComboBox
-export type { FormComboBoxProps, ComboBoxOption, ApiResponse, ApiFunction }
+export type { FormComboBoxProps, ComboBoxOption }
