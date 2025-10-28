@@ -1,7 +1,7 @@
 import React from "react"
 import { Select, Form } from "antd"
 import { SelectProps, DefaultOptionType } from "antd/es/select"
-import { useComboBoxQuery } from "@/hooks/use-combo-box-query"
+import { useProductSearch, ProductSearchResponse } from "@/queries/product" // Sử dụng hook mới
 import { useDebounceState } from "@/hooks/use-debounce-state"
 
 // Interface cho option của ComboBox
@@ -12,64 +12,18 @@ interface ComboBoxOption {
   [key: string]: unknown
 }
 
-// Interface cho API response
-interface ApiResponse {
-  data: ComboBoxOption[]
-  total: number
-  hasMore: boolean
-  nextPage?: number
-}
-
-// Interface cho API function
-type ApiFunction = (params: {
-  page: number
-  limit: number
-  search?: string
-  [key: string]: unknown
-}) => Promise<ApiResponse>
-
-// Interface cho props của ComboBox (không cần React Hook Form)
-interface ComboBoxProps
-  extends Omit<
-    SelectProps<string | number, DefaultOptionType>,
-    "filterOption" | "options"
-  > {
-  // Props cho data source
+// Interface cho props của ComboBox
+interface ComboBoxProps extends Omit<SelectProps, "options" | "children"> {
   options?: ComboBoxOption[]
-  apiFunction?: ApiFunction
   queryKey?: (string | number | boolean | undefined)[]
-
-  // Props UI
   label?: string
   required?: boolean
-  showSearch?: boolean
-  filterOption?: boolean
-
-  // Props cho async loading
   pageSize?: number
   enableLoadMore?: boolean
   searchDebounceMs?: number
-
-  // Props cho multiple selection
-  mode?: "multiple" | "tags"
-  maxTagCount?: number | "responsive"
-  maxTagTextLength?: number
-
-  // Props cho field mapping
-  valueField?: string
-  labelField?: string
-
-  // Props cho styling
   className?: string
   style?: React.CSSProperties
-  size?: "large" | "middle" | "small"
-
-  // Props cho query configuration
   enabled?: boolean
-  staleTime?: number
-  gcTime?: number
-
-  // Event handlers
   onSelectionChange?: (
     value: string | number | (string | number)[],
     option: ComboBoxOption | ComboBoxOption[]
@@ -84,7 +38,6 @@ interface ComboBoxProps
  */
 function ComboBox({
   options: staticOptions = [],
-  apiFunction,
   queryKey = [],
   label,
   required = false,
@@ -98,14 +51,10 @@ function ComboBox({
   mode,
   maxTagCount,
   maxTagTextLength,
-  valueField = "value",
-  labelField = "label",
   className,
   style,
   size = "middle",
   enabled = true,
-  staleTime = 5 * 60 * 1000,
-  gcTime = 10 * 60 * 1000,
   onSelectionChange,
   onLoadError,
   value,
@@ -118,12 +67,8 @@ function ComboBox({
     searchDebounceMs
   )
 
-  // Luôn enable query khi có apiFunction (không cần check searchTerm)
-  const isQueryEnabled = enabled && !!apiFunction
-
   // Log để debug
   console.log("ComboBox render - Search term:", searchTerm)
-  console.log("ComboBox render - Query enabled:", isQueryEnabled)
 
   // Sử dụng useMemo để tránh re-render không cần thiết
   const memoizedQueryKey = React.useMemo(() => {
@@ -133,47 +78,65 @@ function ComboBox({
   // Log để debug
   console.log("Memoized query key:", memoizedQueryKey)
 
-  // Sử dụng query hook nếu có apiFunction
+  // Sử dụng hook mới để search sản phẩm
   const {
-    options: queryOptions,
-    isLoading,
+    data,
     error,
-    isFetching,
-    isFetchingNextPage, // Thêm isFetchingNextPage
+    fetchNextPage,
     hasNextPage,
-    loadMore,
-  } = useComboBoxQuery({
-    apiFunction: apiFunction!,
-    queryKey: memoizedQueryKey,
-    pageSize,
-    searchValue: searchTerm || "",
-    enabled: isQueryEnabled,
-    staleTime,
-    gcTime,
-    valueField,
-    labelField,
-  })
+    isFetching,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useProductSearch(searchTerm, pageSize, enabled)
 
-  // Xử lý error
-  React.useEffect(() => {
-    if (error && onLoadError) {
-      onLoadError(error as Error)
+  // Flatten data từ tất cả pages
+  const queryOptions = React.useMemo(() => {
+    if (!data?.pages) {
+      console.log("No data pages found")
+      return []
     }
-  }, [error, onLoadError])
 
-  // Xác định options để hiển thị
-  const displayOptions = apiFunction ? queryOptions : staticOptions
+    // Log để debug
+    console.log("Data pages:", data.pages)
+
+    const result = data.pages.flatMap((page: ProductSearchResponse) => {
+      // Log để debug
+      console.log("Processing page:", page)
+
+      if (!page || !page.data) {
+        console.log("Page is empty or invalid")
+        return []
+      }
+
+      console.log("Page data:", page.data)
+      return page.data
+    })
+
+    // Log để debug
+    console.log("Flattened result:", result)
+    console.log("Flattened result length:", result.length)
+
+    return result
+  }, [data?.pages])
 
   // Log để debug
-  console.log("Display options:", displayOptions)
-  console.log("Is apiFunction:", !!apiFunction)
+  console.log("Query options:", queryOptions)
+  console.log("Query options length:", queryOptions.length)
 
-  // Ép kiểu displayOptions thành DefaultOptionType[]
-  const mappedOptions = displayOptions as DefaultOptionType[]
+  // Function để load more data
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+  }
 
-  // Log để debug
-  console.log("Final mapped options:", mappedOptions)
-  console.log("Mapped options length:", mappedOptions.length)
+  // Xử lý lỗi
+  React.useEffect(() => {
+    if (isError && error && onLoadError) {
+      onLoadError(error)
+    }
+  }, [isError, error, onLoadError])
 
   // Xử lý search
   const handleSearch = React.useCallback(
@@ -204,7 +167,6 @@ function ComboBox({
 
       if (
         enableLoadMore &&
-        apiFunction &&
         hasNextPage &&
         !isFetching &&
         !isFetchingNextPage &&
@@ -214,14 +176,7 @@ function ComboBox({
         loadMore()
       }
     },
-    [
-      enableLoadMore,
-      apiFunction,
-      hasNextPage,
-      isFetching,
-      isFetchingNextPage,
-      loadMore,
-    ]
+    [enableLoadMore, hasNextPage, isFetching, isFetchingNextPage, loadMore]
   )
 
   // Xử lý change
@@ -242,6 +197,23 @@ function ComboBox({
     },
     [onChange, onSelectionChange]
   )
+
+  // Xác định options để hiển thị
+  const displayOptions = queryOptions.length > 0 ? queryOptions : staticOptions
+
+  // Log để debug
+  console.log("Display options:", displayOptions)
+  console.log("Query options length:", queryOptions.length)
+  console.log("Static options length:", staticOptions.length)
+  console.log("Is using query options:", queryOptions.length > 0)
+
+  // Ép kiểu displayOptions thành DefaultOptionType[]
+  const mappedOptions = displayOptions as DefaultOptionType[]
+
+  // Log để debug
+  console.log("Final mapped options:", mappedOptions)
+  console.log("Mapped options length:", mappedOptions.length)
+  console.log("Mapped options type:", typeof mappedOptions)
 
   // Render component
   const selectComponent = (
@@ -286,4 +258,4 @@ function ComboBox({
 }
 
 export default ComboBox
-export type { ComboBoxProps, ComboBoxOption, ApiResponse, ApiFunction }
+export type { ComboBoxProps, ComboBoxOption }

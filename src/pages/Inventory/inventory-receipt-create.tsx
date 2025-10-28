@@ -27,7 +27,6 @@ import {
   InventoryReceiptItemForm,
 } from "@/models/inventory.model"
 import { useCreateInventoryReceiptMutation } from "@/queries/inventory"
-import { useProductsQuery } from "@/queries/product"
 import { useMobile } from "@/hooks/use-media-query"
 
 const { Title, Text } = Typography
@@ -43,11 +42,7 @@ const InventoryReceiptCreate: React.FC = () => {
   const [editingKey, setEditingKey] = useState<string>("")
 
   // Queries
-  const { data: productsData } = useProductsQuery()
   const createReceiptMutation = useCreateInventoryReceiptMutation()
-
-  // Lấy danh sách sản phẩm để hiển thị trong select
-  const products = productsData || []
 
   // Handlers
   const handleBack = () => {
@@ -130,10 +125,8 @@ const InventoryReceiptCreate: React.FC = () => {
 
           // Tự động cập nhật tên sản phẩm khi chọn sản phẩm
           if (field === "productId") {
-            const product = products.find((p) => p.id === value)
-            if (product) {
-              updatedItem.productName = product.productName
-            }
+            // Không cần tìm sản phẩm trong danh sách toàn cục nữa
+            // Tên sản phẩm sẽ được cập nhật từ component ComboBox
           }
 
           return updatedItem
@@ -145,7 +138,6 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Sử dụng hook để lấy cấu hình cột (phải đặt sau khi các hàm được định nghĩa)
   const itemColumns = useItemColumns({
-    products,
     editingKey,
     handleItemChange,
     handleSaveItem,
@@ -326,7 +318,6 @@ const InventoryReceiptCreate: React.FC = () => {
                   key={item.key}
                   item={item}
                   index={index}
-                  products={products}
                   editingKey={editingKey}
                   handleItemChange={handleItemChange}
                   handleSaveItem={handleSaveItem}

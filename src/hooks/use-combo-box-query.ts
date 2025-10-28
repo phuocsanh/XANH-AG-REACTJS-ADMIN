@@ -1,5 +1,5 @@
-import { useInfiniteQuery, InfiniteData } from "@tanstack/react-query"
 import { useMemo } from "react"
+import { useInfiniteQuery, InfiniteData } from "@tanstack/react-query"
 
 // Interface cho option của ComboBox
 interface ComboBoxOption {
@@ -25,9 +25,9 @@ type ApiFunction = (params: {
   [key: string]: unknown
 }) => Promise<ApiResponse>
 
-// Interface cho hook options
+// Interface cho props của useComboBoxQuery
 interface UseComboBoxQueryOptions {
-  apiFunction: ApiFunction
+  apiFunction?: ApiFunction
   queryKey: (string | number | boolean | undefined)[]
   pageSize?: number
   searchValue?: string
@@ -87,6 +87,11 @@ export function useComboBoxQuery({
         search: searchValue,
       })
 
+      // Nếu không có apiFunction, throw error
+      if (!apiFunction) {
+        throw new Error("apiFunction is required")
+      }
+
       const response = await apiFunction({
         page: pageParam as number,
         limit: pageSize,
@@ -99,7 +104,7 @@ export function useComboBoxQuery({
       // Nếu còn dữ liệu thì trả về page tiếp theo
       return lastPage.hasMore ? allPages.length + 1 : undefined
     },
-    enabled,
+    enabled: enabled && !!apiFunction,
     staleTime,
     gcTime,
     // Giữ dữ liệu cũ khi search để tránh loading state

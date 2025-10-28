@@ -8,16 +8,13 @@ import {
 } from "@ant-design/icons"
 import NumberInput from "@/components/common/number-input"
 import ComboBox from "@/components/common/combo-box"
-import { Product } from "@/models/product.model"
 import { InventoryReceiptItemForm } from "@/models/inventory.model"
-import { searchProducts } from "@/api/product-api"
 
 const { Text } = Typography
 
 interface MobileItemCardProps {
   item: InventoryReceiptItemForm
   index: number
-  products: Product[]
   editingKey: string
   handleItemChange: (
     key: string,
@@ -33,7 +30,6 @@ interface MobileItemCardProps {
 const MobileItemCard: React.FC<MobileItemCardProps> = ({
   item,
   index,
-  products,
   editingKey,
   handleItemChange,
   handleSaveItem,
@@ -42,167 +38,125 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   handleDeleteItem,
 }) => {
   const isEditing = editingKey === item.key
-  const productName =
-    item.productName ||
-    products.find((p) => p.id === item.productId)?.productName ||
-    "-"
 
-  if (isEditing) {
-    return (
-      <Card size='small' className='mb-2'>
-        <div className='grid grid-cols-1 gap-2'>
-          <div className='font-medium'>Sản phẩm #{index + 1}</div>
-
-          <div>
-            <div className='text-xs text-gray-500 mb-1'>Sản phẩm</div>
-            <ComboBox
-              value={item.productId || undefined}
-              placeholder='Chọn sản phẩm'
-              apiFunction={searchProducts}
-              queryKey={["products", "search"]}
-              pageSize={20}
-              showSearch={true}
-              filterOption={false}
-              onChange={(value) =>
-                handleItemChange(item.key, "productId", value)
-              }
-            />
-          </div>
-
-          <div className='grid grid-cols-2 gap-2'>
-            <div>
-              <div className='text-xs text-gray-500 mb-1'>Số lượng</div>
-              <NumberInput
-                value={item.quantity}
-                min={1}
-                size='small'
-                placeholder='Số lượng'
-                onChange={(value) =>
-                  handleItemChange(item.key, "quantity", value || 1)
-                }
-              />
-            </div>
-
-            <div>
-              <div className='text-xs text-gray-500 mb-1'>Đơn giá</div>
-              <NumberInput
-                value={item.unitCost || 0}
-                min={0}
-                size='small'
-                placeholder='Đơn giá'
-                onChange={(value) =>
-                  handleItemChange(item.key, "unitCost", value || 0)
-                }
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className='text-xs text-gray-500 mb-1'>Ghi chú</div>
-            <Input
-              value={item.notes}
-              placeholder='Ghi chú'
+  return (
+    <Card
+      size='small'
+      title={`Sản phẩm ${index + 1}`}
+      extra={
+        isEditing ? null : (
+          <Popconfirm
+            title='Xóa'
+            description='Xóa?'
+            onConfirm={() => handleDeleteItem(item.key)}
+            okText='Xóa'
+            cancelText='Hủy'
+            placement='topRight'
+          >
+            <Button type='text' icon={<DeleteOutlined />} danger size='small' />
+          </Popconfirm>
+        )
+      }
+      className='mb-3'
+    >
+      {isEditing ? (
+        <div className='space-y-3 w-full'>
+          <ComboBox
+            value={item.productId}
+            placeholder='Chọn sản phẩm'
+            queryKey={["products", "search"]}
+            pageSize={20}
+            showSearch={true}
+            filterOption={false}
+            style={{ width: "100%" }}
+            onChange={(value) => handleItemChange(item.key, "productId", value)}
+          />
+          <NumberInput
+            value={item.quantity}
+            min={1}
+            placeholder='Số lượng'
+            onChange={(value) =>
+              handleItemChange(item.key, "quantity", value || 1)
+            }
+          />
+          <NumberInput
+            value={item.unitCost}
+            min={0}
+            placeholder='Đơn giá'
+            onChange={(value) =>
+              handleItemChange(item.key, "unitCost", value || 0)
+            }
+          />
+          <Input
+            value={item.notes}
+            placeholder='Ghi chú'
+            onChange={(e) =>
+              handleItemChange(item.key, "notes", e.target.value)
+            }
+          />
+          <Space className='w-full justify-end'>
+            <Button
+              type='primary'
+              icon={<CheckOutlined />}
+              onClick={() => handleSaveItem(item.key)}
               size='small'
-              onChange={(e) =>
-                handleItemChange(item.key, "notes", e.target.value)
-              }
-            />
+            >
+              Lưu
+            </Button>
+            <Button
+              icon={<CloseOutlined />}
+              onClick={handleCancelEdit}
+              size='small'
+            >
+              Hủy
+            </Button>
+          </Space>
+        </div>
+      ) : (
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
+            <Text strong>{item.productName || "-"}</Text>
           </div>
-
-          <div className='flex justify-between items-center pt-2'>
-            <Text strong className='text-green-500'>
+          <div className='flex justify-between text-sm'>
+            <Text type='secondary'>Số lượng:</Text>
+            <Text>{new Intl.NumberFormat("vi-VN").format(item.quantity)}</Text>
+          </div>
+          <div className='flex justify-between text-sm'>
+            <Text type='secondary'>Đơn giá:</Text>
+            <Text>
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(item.totalPrice || 0)}
+              }).format(item.unitCost)}
             </Text>
-            <Space size='small'>
-              <Button
-                type='primary'
-                icon={<CheckOutlined />}
-                onClick={() => handleSaveItem(item.key)}
-                size='small'
-              />
-              <Button
-                icon={<CloseOutlined />}
-                onClick={handleCancelEdit}
-                size='small'
-              />
-            </Space>
           </div>
-        </div>
-      </Card>
-    )
-  }
-
-  return (
-    <Card size='small' className='mb-2'>
-      <div className='grid grid-cols-1 gap-2'>
-        <div className='flex justify-between items-start'>
-          <div className='font-medium'>
-            #{index + 1}. {productName}
+          <div className='flex justify-between text-sm'>
+            <Text type='secondary'>Thành tiền:</Text>
+            <Text strong style={{ color: "#52c41a" }}>
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(item.totalPrice)}
+            </Text>
           </div>
-          <Space size='small'>
+          {item.notes && (
+            <div className='flex justify-between text-sm'>
+              <Text type='secondary'>Ghi chú:</Text>
+              <Text>{item.notes}</Text>
+            </div>
+          )}
+          <div className='flex justify-end pt-2'>
             <Button
               type='text'
               icon={<EditOutlined />}
               onClick={() => handleEditItem(item.key)}
               size='small'
-            />
-            <Popconfirm
-              title='Xóa'
-              description='Xóa sản phẩm này?'
-              onConfirm={() => handleDeleteItem(item.key)}
-              okText='Xóa'
-              cancelText='Hủy'
-              placement='topRight'
             >
-              <Button
-                type='text'
-                icon={<DeleteOutlined />}
-                danger
-                size='small'
-              />
-            </Popconfirm>
-          </Space>
-        </div>
-
-        <div className='grid grid-cols-3 gap-2 text-sm'>
-          <div>
-            <div className='text-xs text-gray-500'>Số lượng</div>
-            <div>
-              {new Intl.NumberFormat("vi-VN").format(item.quantity || 0)}
-            </div>
-          </div>
-
-          <div>
-            <div className='text-xs text-gray-500'>Đơn giá</div>
-            <div>
-              {new Intl.NumberFormat("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              }).format(item.unitCost || 0)}
-            </div>
-          </div>
-
-          <div>
-            <div className='text-xs text-gray-500'>Thành tiền</div>
-            <Text strong className='text-green-500'>
-              {new Intl.NumberFormat("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              }).format(item.totalPrice || 0)}
-            </Text>
+              Sửa
+            </Button>
           </div>
         </div>
-
-        {item.notes && (
-          <div>
-            <div className='text-xs text-gray-500'>Ghi chú</div>
-            <div>{item.notes}</div>
-          </div>
-        )}
-      </div>
+      )}
     </Card>
   )
 }

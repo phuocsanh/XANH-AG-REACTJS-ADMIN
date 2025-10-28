@@ -1,5 +1,5 @@
 import { ColumnsType } from "antd/es/table"
-import { Input, Button, Space, Typography, Popconfirm } from "antd"
+import { Input, Button, Popconfirm, Typography, Space } from "antd"
 import {
   CheckOutlined,
   CloseOutlined,
@@ -8,14 +8,11 @@ import {
 } from "@ant-design/icons"
 import NumberInput from "@/components/common/number-input"
 import ComboBox from "@/components/common/combo-box"
-import { Product } from "@/models/product.model"
 import { InventoryReceiptItemForm } from "@/models/inventory.model"
-import { searchProducts } from "@/api/product-api"
 
 const { Text } = Typography
 
 interface ItemColumnsProps {
-  products: Product[]
   editingKey: string
   handleItemChange: (
     key: string,
@@ -29,7 +26,6 @@ interface ItemColumnsProps {
 }
 
 const useItemColumns = ({
-  products,
   editingKey,
   handleItemChange,
   handleSaveItem,
@@ -53,23 +49,23 @@ const useItemColumns = ({
       render: (productId: number, record: InventoryReceiptItemForm) => {
         const isEditing = editingKey === record.key
         return isEditing ? (
-          <ComboBox
-            value={productId}
-            placeholder='Chọn sản phẩm'
-            apiFunction={searchProducts}
-            queryKey={["products", "search"]}
-            pageSize={20}
-            showSearch={true}
-            filterOption={false}
-            onChange={(value) =>
-              handleItemChange(record.key, "productId", value)
-            }
-          />
+          <div className='w-full'>
+            <ComboBox
+              value={productId}
+              placeholder='Chọn sản phẩm'
+              queryKey={["products", "search"]}
+              pageSize={20}
+              showSearch={true}
+              filterOption={false}
+              onChange={(value) =>
+                handleItemChange(record.key, "productId", value)
+              }
+              style={{ width: "100%" }} // Thêm style để chiếm full width
+            />
+          </div>
         ) : (
           <div className='max-w-[100px] truncate text-sm'>
-            {record.productName ||
-              products.find((p) => p.id === productId)?.productName ||
-              "-"}
+            {record.productName || "-"}
           </div>
         )
       },
