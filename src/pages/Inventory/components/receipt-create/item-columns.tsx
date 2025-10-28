@@ -1,11 +1,6 @@
 import { ColumnsType } from "antd/es/table"
-import { Input, Button, Popconfirm, Typography, Space } from "antd"
-import {
-  CheckOutlined,
-  CloseOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons"
+import { Input, Button, Popconfirm, Typography } from "antd"
+import { DeleteOutlined } from "@ant-design/icons"
 import NumberInput from "@/components/common/number-input"
 import ComboBox from "@/components/common/combo-box"
 import { InventoryReceiptItemForm } from "@/models/inventory.model"
@@ -13,15 +8,11 @@ import { InventoryReceiptItemForm } from "@/models/inventory.model"
 const { Text } = Typography
 
 interface ItemColumnsProps {
-  editingKey: string
   handleItemChange: (
     key: string,
     field: keyof InventoryReceiptItemForm,
     value: unknown
   ) => void
-  handleSaveItem: (key: string) => void
-  handleCancelEdit: () => void
-  handleEditItem: (key: string) => void
   handleDeleteItem: (key: string) => void
   // Props cho ComboBox - gộp thành một object
   comboBoxProps: {
@@ -35,11 +26,7 @@ interface ItemColumnsProps {
 }
 
 const useItemColumns = ({
-  editingKey,
   handleItemChange,
-  handleSaveItem,
-  handleCancelEdit,
-  handleEditItem,
   handleDeleteItem,
   comboBoxProps,
 }: ItemColumnsProps): ColumnsType<InventoryReceiptItemForm> => {
@@ -57,8 +44,7 @@ const useItemColumns = ({
       key: "productId",
       width: 120,
       render: (productId: number, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
+        return (
           <div className='w-full'>
             <ComboBox
               value={productId}
@@ -71,10 +57,6 @@ const useItemColumns = ({
               style={{ width: "100%" }}
             />
           </div>
-        ) : (
-          <div className='max-w-[100px] truncate text-sm'>
-            {record.productName || "-"}
-          </div>
         )
       },
     },
@@ -85,21 +67,15 @@ const useItemColumns = ({
       width: 60,
       align: "right",
       render: (quantity: number, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
+        return (
           <NumberInput
             value={quantity}
             min={1}
-            size='small'
             placeholder='Số lượng'
             onChange={(value) =>
               handleItemChange(record.key, "quantity", value || 1)
             }
           />
-        ) : (
-          <div className='truncate text-sm'>
-            {new Intl.NumberFormat("vi-VN").format(quantity || 0)}
-          </div>
         )
       },
     },
@@ -110,24 +86,15 @@ const useItemColumns = ({
       width: 90,
       align: "right",
       render: (price: number, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
+        return (
           <NumberInput
             value={price || 0}
             min={0}
-            size='small'
             placeholder='Đơn giá'
             onChange={(value) =>
               handleItemChange(record.key, "unitCost", value || 0)
             }
           />
-        ) : (
-          <div className='truncate text-sm'>
-            {new Intl.NumberFormat("vi-VN", {
-              style: "currency",
-              currency: "VND",
-            }).format(price || 0)}
-          </div>
         )
       },
     },
@@ -158,18 +125,14 @@ const useItemColumns = ({
       key: "notes",
       width: 80,
       render: (notes: string, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-        return isEditing ? (
+        return (
           <Input
             value={notes}
             placeholder='Ghi chú'
-            size='small'
             onChange={(e) =>
               handleItemChange(record.key, "notes", e.target.value)
             }
           />
-        ) : (
-          <div className='max-w-[70px] truncate text-sm'>{notes || "-"}</div>
         )
       },
     },
@@ -179,35 +142,8 @@ const useItemColumns = ({
       width: 70,
       align: "center",
       render: (_, record: InventoryReceiptItemForm) => {
-        const isEditing = editingKey === record.key
-
-        if (isEditing) {
-          return (
-            <Space size='small'>
-              <Button
-                type='text'
-                icon={<CheckOutlined />}
-                onClick={() => handleSaveItem(record.key)}
-                size='small'
-              />
-              <Button
-                type='text'
-                icon={<CloseOutlined />}
-                onClick={handleCancelEdit}
-                size='small'
-              />
-            </Space>
-          )
-        }
-
         return (
-          <Space size='small'>
-            <Button
-              type='text'
-              icon={<EditOutlined />}
-              onClick={() => handleEditItem(record.key)}
-              size='small'
-            />
+          <div className='flex justify-center'>
             <Popconfirm
               title='Xóa'
               description='Xóa?'
@@ -223,7 +159,7 @@ const useItemColumns = ({
                 size='small'
               />
             </Popconfirm>
-          </Space>
+          </div>
         )
       },
     },

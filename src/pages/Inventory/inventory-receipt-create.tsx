@@ -43,6 +43,9 @@ const InventoryReceiptCreate: React.FC = () => {
   // State quản lý danh sách sản phẩm trong phiếu
   const [items, setItems] = useState<InventoryReceiptItemForm[]>([])
   const [editingKey, setEditingKey] = useState<string>("")
+  const [itemErrors, setItemErrors] = useState<
+    Record<string, Record<string, string>>
+  >({})
 
   // Sử dụng hook product search ở cấp cao hơn
   const {
@@ -116,6 +119,11 @@ const InventoryReceiptCreate: React.FC = () => {
     if (editingKey === key) {
       setEditingKey("")
     }
+
+    // Xóa lỗi của item đã xóa
+    const newErrors = { ...itemErrors }
+    delete newErrors[key]
+    setItemErrors(newErrors)
   }
 
   const handleEditItem = (key: string) => {
@@ -127,15 +135,15 @@ const InventoryReceiptCreate: React.FC = () => {
     if (!item) return
 
     // Validate item
-    if (!item.productId || item.productId === 0) {
+    if (!item.productId) {
       message.error("Vui lòng chọn sản phẩm")
       return
     }
-    if (!item.quantity || item.quantity <= 0) {
-      message.error("Vui lòng nhập số lượng hợp lệ")
+    if (!item.quantity || item.quantity < 1) {
+      message.error("Vui lòng nhập số lượng tối thiểu là 1")
       return
     }
-    if (!item.unitCost || item.unitCost <= 0) {
+    if (item.unitCost < 0) {
       message.error("Vui lòng nhập đơn giá hợp lệ")
       return
     }
@@ -146,6 +154,11 @@ const InventoryReceiptCreate: React.FC = () => {
 
     setItems(items.map((i) => (i.key === key ? updatedItem : i)))
     setEditingKey("")
+
+    // Xóa lỗi của item đã lưu
+    const newErrors = { ...itemErrors }
+    delete newErrors[key]
+    setItemErrors(newErrors)
   }
 
   const handleCancelEdit = () => {
@@ -186,11 +199,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Sử dụng hook để lấy cấu hình cột (phải đặt sau khi các hàm được định nghĩa)
   const itemColumns = useItemColumns({
-    editingKey,
     handleItemChange,
-    handleSaveItem,
-    handleCancelEdit,
-    handleEditItem,
     handleDeleteItem,
     // Truyền props cho ComboBox theo cách mới
     comboBoxProps,
@@ -210,9 +219,8 @@ const InventoryReceiptCreate: React.FC = () => {
           !item.productId ||
           item.productId === 0 ||
           !item.quantity ||
-          item.quantity <= 0 ||
-          !item.unitCost ||
-          item.unitCost <= 0
+          item.quantity < 1 ||
+          item.unitCost < 0
       )
 
       if (hasIncompleteItems) {

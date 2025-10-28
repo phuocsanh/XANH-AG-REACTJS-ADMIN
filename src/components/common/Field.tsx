@@ -1,9 +1,9 @@
 import React from "react"
-import { Form, Input, Select, InputNumber } from "antd"
+import { Form, Input, Select } from "antd"
 
 interface FieldProps {
   label?: string
-  type?: "text" | "email" | "password" | "number" | "select" | "textarea"
+  type?: "text" | "email" | "password" | "select" | "textarea"
   placeholder?: string
   required?: boolean
   value?: string | number
@@ -17,8 +17,6 @@ interface FieldProps {
   suffix?: React.ReactNode
   size?: "large" | "middle" | "small"
   allowClear?: boolean
-  min?: number // Cho number input
-  max?: number // Cho number input
   status?: "error" | "warning"
   help?: string // Thông báo lỗi hoặc hướng dẫn
 }
@@ -26,7 +24,7 @@ interface FieldProps {
 /**
  * Component Field - Phiên bản đơn giản của FormField không cần React Hook Form
  * Có thể sử dụng như các component Ant Design thông thường
- * Hỗ trợ nhiều loại input: text, email, password, number, select, textarea
+ * Hỗ trợ nhiều loại input: text, email, password, select, textarea
  */
 function Field({
   label,
@@ -44,8 +42,6 @@ function Field({
   suffix,
   size = "middle",
   allowClear = true,
-  min,
-  max,
   status,
   help,
 }: FieldProps) {
@@ -61,16 +57,6 @@ function Field({
   const handleSelectChange = React.useCallback(
     (value: string | number) => {
       onChange?.(value)
-    },
-    [onChange]
-  )
-
-  // Xử lý change cho InputNumber
-  const handleNumberChange = React.useCallback(
-    (value: string | number | null) => {
-      if (value !== null) {
-        onChange?.(value)
-      }
     },
     [onChange]
   )
@@ -95,22 +81,6 @@ function Field({
             prefix={prefix}
             suffix={suffix}
             allowClear={allowClear}
-          />
-        )
-
-      case "number":
-        return (
-          <InputNumber
-            value={value}
-            onChange={handleNumberChange}
-            onBlur={onBlur}
-            placeholder={placeholder}
-            disabled={disabled}
-            size={size}
-            status={status}
-            min={min}
-            max={max}
-            style={{ width: "100%" }}
           />
         )
 

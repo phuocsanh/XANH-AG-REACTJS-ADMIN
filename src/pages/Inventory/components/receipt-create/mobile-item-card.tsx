@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Card, Input, Button, Space, Typography, Popconfirm } from "antd"
 import {
   CheckOutlined,
@@ -48,6 +48,84 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   comboBoxProps,
 }) => {
   const isEditing = editingKey === item.key
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Validate item khi đang chỉnh sửa
+  useEffect(() => {
+    if (isEditing) {
+      const newErrors: Record<string, string> = {}
+
+      // Validate sản phẩm
+      if (!item.productId || item.productId === 0) {
+        newErrors.productId = "Vui lòng chọn sản phẩm"
+      }
+
+      // Validate số lượng (tối thiểu là 1)
+      if (!item.quantity || item.quantity < 1) {
+        newErrors.quantity = "Vui lòng nhập số lượng tối thiểu là 1"
+      }
+
+      // Validate đơn giá (cho phép nhập 0)
+      if (item.unitCost < 0) {
+        newErrors.unitCost = "Vui lòng nhập đơn giá hợp lệ"
+      }
+
+      setErrors(newErrors)
+    }
+  }, [isEditing, item.productId, item.quantity, item.unitCost])
+
+  // Custom handle change với validation
+  const handleItemChangeWithValidation = (
+    key: string,
+    field: keyof InventoryReceiptItemForm,
+    value: unknown
+  ) => {
+    // Gọi hàm xử lý thay đổi gốc
+    handleItemChange(key, field, value)
+
+    // Validate field vừa thay đổi
+    if (isEditing) {
+      const newErrors = { ...errors }
+
+      switch (field) {
+        case "productId":
+          if (!value || value === 0) {
+            newErrors.productId = "Vui lòng chọn sản phẩm"
+          } else {
+            delete newErrors.productId
+          }
+          break
+        case "quantity":
+          if (!value || (value as number) < 1) {
+            newErrors.quantity = "Vui lòng nhập số lượng tối thiểu là 1"
+          } else {
+            delete newErrors.quantity
+          }
+          break
+        case "unitCost":
+          if ((value as number) < 0) {
+            newErrors.unitCost = "Vui lòng nhập đơn giá hợp lệ"
+          } else {
+            delete newErrors.unitCost
+          }
+          break
+      }
+
+      setErrors(newErrors)
+    }
+  }
+
+  // Custom handle save với validation
+  const handleSaveItemWithValidation = (key: string) => {
+    // Kiểm tra lỗi trước khi lưu
+    const hasErrors = Object.keys(errors).length > 0
+    if (hasErrors) {
+      return
+    }
+
+    // Gọi hàm lưu gốc
+    handleSaveItem(key)
+  }
 
   return (
     <Card
@@ -80,9 +158,14 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               showSearch={true}
               style={{ width: "100%" }}
               onChange={(value) =>
-                handleItemChange(item.key, "productId", value)
+                handleItemChangeWithValidation(item.key, "productId", value)
               }
             />
+            {errors.productId && (
+              <div className='text-red-500 text-xs mt-1'>
+                {errors.productId}
+              </div>
+            )}
           </div>
           <div>
             <label className='block text-xs mb-1'>Số lượng</label>
@@ -91,9 +174,12 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               min={1}
               placeholder='Số lượng'
               onChange={(value) =>
-                handleItemChange(item.key, "quantity", value || 1)
+                handleItemChangeWithValidation(item.key, "quantity", value || 1)
               }
             />
+            {errors.quantity && (
+              <div className='text-red-500 text-xs mt-1'>{errors.quantity}</div>
+            )}
           </div>
           <div>
             <label className='block text-xs mb-1'>Đơn giá</label>
@@ -102,9 +188,12 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               min={0}
               placeholder='Đơn giá'
               onChange={(value) =>
-                handleItemChange(item.key, "unitCost", value || 0)
+                handleItemChangeWithValidation(item.key, "unitCost", value || 0)
               }
             />
+            {errors.unitCost && (
+              <div className='text-red-500 text-xs mt-1'>{errors.unitCost}</div>
+            )}
           </div>
           <div>
             <label className='block text-xs mb-1'>Thành tiền</label>
@@ -121,7 +210,11 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               value={item.notes}
               placeholder='Ghi chú'
               onChange={(e) =>
-                handleItemChange(item.key, "notes", e.target.value)
+                handleItemChangeWithValidation(
+                  item.key,
+                  "notes",
+                  e.target.value
+                )
               }
             />
           </div>
@@ -129,16 +222,12 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
             <Button
               type='primary'
               icon={<CheckOutlined />}
-              onClick={() => handleSaveItem(item.key)}
-              size='small'
+              onClick={() => handleSaveItemWithValidation(item.key)}
+              disabled={Object.keys(errors).length > 0}
             >
               Lưu
             </Button>
-            <Button
-              icon={<CloseOutlined />}
-              onClick={handleCancelEdit}
-              size='small'
-            >
+            <Button icon={<CloseOutlined />} onClick={handleCancelEdit}>
               Hủy
             </Button>
           </Space>
@@ -181,7 +270,6 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               type='text'
               icon={<EditOutlined />}
               onClick={() => handleEditItem(item.key)}
-              size='small'
             >
               Sửa
             </Button>

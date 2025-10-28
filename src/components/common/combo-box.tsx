@@ -141,16 +141,15 @@ function ComboBox({
   // Ép kiểu displayOptions thành DefaultOptionType[]
   const mappedOptions = displayOptions as DefaultOptionType[]
 
-  // Log để debug
-  console.log("Final mapped options:", mappedOptions)
-  console.log("Mapped options length:", mappedOptions.length)
-  console.log("Mapped options type:", typeof mappedOptions)
+  // Xử lý giá trị để hiển thị placeholder khi cần thiết
+  const displayValue =
+    value === 0 || value === undefined || value === null ? undefined : value
 
   // Render component
   const selectComponent = (
     <Select
       {...selectProps}
-      value={value}
+      value={displayValue}
       onChange={handleChange}
       placeholder={placeholder}
       allowClear={allowClear}
