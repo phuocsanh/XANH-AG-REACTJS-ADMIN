@@ -25,6 +25,13 @@ interface MobileItemCardProps {
   handleCancelEdit: () => void
   handleEditItem: (key: string) => void
   handleDeleteItem: (key: string) => void
+  // Props cho ComboBox
+  productOptions: { value: number; label: string }[]
+  isLoading: boolean
+  isFetching: boolean
+  hasNextPage: boolean | undefined
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
 }
 
 const MobileItemCard: React.FC<MobileItemCardProps> = ({
@@ -36,6 +43,12 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   handleCancelEdit,
   handleEditItem,
   handleDeleteItem,
+  productOptions,
+  isLoading,
+  isFetching,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
 }) => {
   const isEditing = editingKey === item.key
 
@@ -57,43 +70,69 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
           </Popconfirm>
         )
       }
-      className='mb-3'
+      className='mb-3 w-full'
     >
       {isEditing ? (
         <div className='space-y-3 w-full'>
-          <ComboBox
-            value={item.productId}
-            placeholder='Chọn sản phẩm'
-            queryKey={["products", "search"]}
-            pageSize={20}
-            showSearch={true}
-            filterOption={false}
-            style={{ width: "100%" }}
-            onChange={(value) => handleItemChange(item.key, "productId", value)}
-          />
-          <NumberInput
-            value={item.quantity}
-            min={1}
-            placeholder='Số lượng'
-            onChange={(value) =>
-              handleItemChange(item.key, "quantity", value || 1)
-            }
-          />
-          <NumberInput
-            value={item.unitCost}
-            min={0}
-            placeholder='Đơn giá'
-            onChange={(value) =>
-              handleItemChange(item.key, "unitCost", value || 0)
-            }
-          />
-          <Input
-            value={item.notes}
-            placeholder='Ghi chú'
-            onChange={(e) =>
-              handleItemChange(item.key, "notes", e.target.value)
-            }
-          />
+          <div>
+            <label className='block text-xs mb-1'>Sản phẩm</label>
+            <ComboBox
+              value={item.productId}
+              placeholder='Chọn sản phẩm'
+              data={productOptions}
+              isLoading={isLoading}
+              isFetching={isFetching}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={fetchNextPage}
+              showSearch={true}
+              style={{ width: "100%" }}
+              onChange={(value) =>
+                handleItemChange(item.key, "productId", value)
+              }
+            />
+          </div>
+          <div>
+            <label className='block text-xs mb-1'>Số lượng</label>
+            <NumberInput
+              value={item.quantity}
+              min={1}
+              placeholder='Số lượng'
+              onChange={(value) =>
+                handleItemChange(item.key, "quantity", value || 1)
+              }
+            />
+          </div>
+          <div>
+            <label className='block text-xs mb-1'>Đơn giá</label>
+            <NumberInput
+              value={item.unitCost}
+              min={0}
+              placeholder='Đơn giá'
+              onChange={(value) =>
+                handleItemChange(item.key, "unitCost", value || 0)
+              }
+            />
+          </div>
+          <div>
+            <label className='block text-xs mb-1'>Thành tiền</label>
+            <div className='p-2 bg-gray-100 rounded text-right font-medium'>
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(item.quantity * item.unitCost)}
+            </div>
+          </div>
+          <div>
+            <label className='block text-xs mb-1'>Ghi chú</label>
+            <Input
+              value={item.notes}
+              placeholder='Ghi chú'
+              onChange={(e) =>
+                handleItemChange(item.key, "notes", e.target.value)
+              }
+            />
+          </div>
           <Space className='w-full justify-end'>
             <Button
               type='primary'

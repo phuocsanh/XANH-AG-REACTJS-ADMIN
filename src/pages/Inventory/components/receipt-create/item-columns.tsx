@@ -23,6 +23,13 @@ interface ItemColumnsProps {
   handleCancelEdit: () => void
   handleEditItem: (key: string) => void
   handleDeleteItem: (key: string) => void
+  // Props cho ComboBox
+  productOptions: { value: number; label: string }[]
+  isLoading: boolean
+  isFetching: boolean
+  hasNextPage: boolean | undefined
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
 }
 
 const useItemColumns = ({
@@ -32,6 +39,12 @@ const useItemColumns = ({
   handleCancelEdit,
   handleEditItem,
   handleDeleteItem,
+  productOptions,
+  isLoading,
+  isFetching,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
 }: ItemColumnsProps): ColumnsType<InventoryReceiptItemForm> => {
   return [
     {
@@ -53,14 +66,17 @@ const useItemColumns = ({
             <ComboBox
               value={productId}
               placeholder='Chọn sản phẩm'
-              queryKey={["products", "search"]}
-              pageSize={20}
+              data={productOptions}
+              isLoading={isLoading}
+              isFetching={isFetching}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={fetchNextPage}
               showSearch={true}
-              filterOption={false}
               onChange={(value) =>
                 handleItemChange(record.key, "productId", value)
               }
-              style={{ width: "100%" }} // Thêm style để chiếm full width
+              style={{ width: "100%" }}
             />
           </div>
         ) : (

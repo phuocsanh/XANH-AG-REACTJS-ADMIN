@@ -1,8 +1,6 @@
 import React from "react"
 import { Select, Form } from "antd"
 import { SelectProps, DefaultOptionType } from "antd/es/select"
-import { useProductSearch, ProductSearchResponse } from "@/queries/product" // Sử dụng hook mới
-import { useDebounceState } from "@/hooks/use-debounce-state"
 
 // Interface cho option của ComboBox
 interface ComboBoxOption {
@@ -14,137 +12,79 @@ interface ComboBoxOption {
 
 // Interface cho props của ComboBox
 interface ComboBoxProps extends Omit<SelectProps, "options" | "children"> {
+  // Props cho static options
   options?: ComboBoxOption[]
-  queryKey?: (string | number | boolean | undefined)[]
+
+  // Props cho async data
+  data?: ComboBoxOption[]
+  isLoading?: boolean
+  isFetching?: boolean
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  fetchNextPage?: () => void
+  onSearch?: (value: string) => void
+
   label?: string
   required?: boolean
-  pageSize?: number
   enableLoadMore?: boolean
-  searchDebounceMs?: number
+  // searchDebounceMs?: number  // Đã loại bỏ vì không được sử dụng trong component này
   className?: string
   style?: React.CSSProperties
-  enabled?: boolean
   onSelectionChange?: (
     value: string | number | (string | number)[],
     option: ComboBoxOption | ComboBoxOption[]
   ) => void
-  onLoadError?: (error: Error) => void
 }
 
 /**
- * Component ComboBox - Phiên bản đơn giản của FormComboBox không cần React Hook Form
+ * Component ComboBox - Phiên bản linh hoạt có thể nhận data từ bên ngoài
  * Có thể sử dụng như một component Ant Design Select thông thường
- * Hỗ trợ cả static options và async data loading
+ * Hỗ trợ cả static options và async data loading từ hook truyền từ ngoài vào
  */
 function ComboBox({
+  // Static options
   options: staticOptions = [],
-  queryKey = [],
+
+  // Async data props
+  data: externalData,
+  isLoading,
+  isFetching,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  onSearch: externalOnSearch,
+
   label,
   required = false,
   placeholder,
   allowClear = true,
   showSearch = true,
   filterOption = true,
-  pageSize = 20,
   enableLoadMore = true,
-  searchDebounceMs = 500,
+  // searchDebounceMs = 500,  // Đã loại bỏ vì không được sử dụng trong component này
   mode,
   maxTagCount,
   maxTagTextLength,
   className,
   style,
   size = "middle",
-  enabled = true,
   onSelectionChange,
-  onLoadError,
   value,
   onChange,
   ...selectProps
 }: ComboBoxProps) {
-  // State cho search
-  const [searchTerm, setSearchTerm] = useDebounceState<string>(
-    "",
-    searchDebounceMs
-  )
-
   // Log để debug
-  console.log("ComboBox render - Search term:", searchTerm)
+  console.log("ComboBox render")
 
-  // Sử dụng useMemo để tránh re-render không cần thiết
-  const memoizedQueryKey = React.useMemo(() => {
-    return [...queryKey, searchTerm || ""]
-  }, [queryKey, searchTerm])
-
-  // Log để debug
-  console.log("Memoized query key:", memoizedQueryKey)
-
-  // Sử dụng hook mới để search sản phẩm
-  const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-  } = useProductSearch(searchTerm, pageSize, enabled)
-
-  // Flatten data từ tất cả pages
-  const queryOptions = React.useMemo(() => {
-    if (!data?.pages) {
-      console.log("No data pages found")
-      return []
-    }
-
-    // Log để debug
-    console.log("Data pages:", data.pages)
-
-    const result = data.pages.flatMap((page: ProductSearchResponse) => {
-      // Log để debug
-      console.log("Processing page:", page)
-
-      if (!page || !page.data) {
-        console.log("Page is empty or invalid")
-        return []
-      }
-
-      console.log("Page data:", page.data)
-      return page.data
-    })
-
-    // Log để debug
-    console.log("Flattened result:", result)
-    console.log("Flattened result length:", result.length)
-
-    return result
-  }, [data?.pages])
-
-  // Log để debug
-  console.log("Query options:", queryOptions)
-  console.log("Query options length:", queryOptions.length)
+  // Sử dụng data từ bên ngoài nếu có, ngược lại dùng static options
+  const displayOptions = externalData || staticOptions
 
   // Function để load more data
   const loadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
       fetchNextPage()
     }
   }
-
-  // Xử lý lỗi
-  React.useEffect(() => {
-    if (isError && error && onLoadError) {
-      onLoadError(error)
-    }
-  }, [isError, error, onLoadError])
-
-  // Xử lý search
-  const handleSearch = React.useCallback(
-    (value: string) => {
-      setSearchTerm(value)
-    },
-    [setSearchTerm]
-  )
 
   // Xử lý scroll để load more
   const handlePopupScroll = React.useCallback(
@@ -198,15 +138,6 @@ function ComboBox({
     [onChange, onSelectionChange]
   )
 
-  // Xác định options để hiển thị
-  const displayOptions = queryOptions.length > 0 ? queryOptions : staticOptions
-
-  // Log để debug
-  console.log("Display options:", displayOptions)
-  console.log("Query options length:", queryOptions.length)
-  console.log("Static options length:", staticOptions.length)
-  console.log("Is using query options:", queryOptions.length > 0)
-
   // Ép kiểu displayOptions thành DefaultOptionType[]
   const mappedOptions = displayOptions as DefaultOptionType[]
 
@@ -225,7 +156,7 @@ function ComboBox({
       allowClear={allowClear}
       showSearch={showSearch}
       filterOption={filterOption}
-      onSearch={showSearch ? handleSearch : undefined}
+      onSearch={externalOnSearch}
       onPopupScroll={handlePopupScroll}
       loading={isLoading || isFetching}
       options={mappedOptions}
