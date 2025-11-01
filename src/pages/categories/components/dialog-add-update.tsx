@@ -73,8 +73,8 @@ function DialogAddUpdate({
         await updateProductTypeMutation.mutateAsync({
           id: editingRow.id,
           productTypeData: {
-            name: data.typeName,
-            code: data.typeCode,
+            typeName: data.typeName,
+            typeCode: data.typeCode,
             description: data.description,
             status: data.status,
           },
@@ -82,8 +82,8 @@ function DialogAddUpdate({
       } else {
         // Thêm mới - toast sẽ được hiển thị trong mutation hook
         await createProductTypeMutation.mutateAsync({
-          name: data.typeName,
-          code: data.typeCode,
+          typeName: data.typeName,
+          typeCode: data.typeCode,
           description: data.description,
           status: data.status,
         })

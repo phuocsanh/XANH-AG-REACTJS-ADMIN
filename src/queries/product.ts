@@ -8,6 +8,8 @@ import {
   UpdateProductRequest,
   ExtendedProductListParams,
 } from "@/models/product.model"
+import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // Query keys cho product
 export const productKeys = {
@@ -107,6 +109,7 @@ export const searchProductsApi = async ({
     }
   } catch (error) {
     console.error("Error searching products:", error)
+    handleApiError(error, "Có lỗi xảy ra khi tìm kiếm sản phẩm")
     // Trả về kết quả rỗng khi có lỗi
     return {
       data: [],
@@ -158,15 +161,19 @@ export const useProductSearch = (
  * Hook lấy danh sách sản phẩm
  */
 export const useProductsQuery = (params?: ExtendedProductListParams) => {
-  return useQuery({
-    queryKey: productKeys.list(params || {}),
-    queryFn: async () => {
-      const response = await api.get<Product[]>("/products", {
-        params: { params },
-      })
-      return response
-    },
-  })
+  // Tách riêng các tham số phân trang
+  const paginationParams = params
+    ? {
+        page:
+          params.offset !== undefined
+            ? Math.floor(params.offset / (params.limit || 10)) + 1
+            : 1,
+        limit: params.limit,
+        ...params,
+      }
+    : undefined
+
+  return usePaginationQuery<Product[]>("/products", paginationParams)
 }
 
 /**
@@ -197,9 +204,8 @@ export const useCreateProductMutation = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() })
       toast.success("Tạo sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi tạo sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo sản phẩm")
     },
   })
 }
@@ -230,9 +236,8 @@ export const useUpdateProductMutation = () => {
       })
       toast.success("Cập nhật thông tin sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật thông tin sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật thông tin sản phẩm")
     },
   })
 }
@@ -251,9 +256,8 @@ export const useDeleteProductMutation = () => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() })
       toast.success("Xóa sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa sản phẩm")
     },
   })
 }

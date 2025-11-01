@@ -7,6 +7,7 @@ import {
   CreateProductSubtypeDto,
   UpdateProductSubtypeDto,
 } from "@/models/product-subtype.model"
+import { handleApiError } from "@/utils/error-handler"
 
 // Query keys cho product subtype
 export const productSubtypeKeys = {
@@ -51,7 +52,7 @@ export const useProductSubtypeQuery = (id: number) => {
 export const useCreateProductSubtypeMutation = () => {
   return useMutation({
     mutationFn: async (subtypeData: CreateProductSubtypeDto) => {
-      const response = await api.post<ProductSubtype>(
+      const response = await api.postRaw<ProductSubtype>(
         "/product-subtype",
         subtypeData
       )
@@ -62,9 +63,8 @@ export const useCreateProductSubtypeMutation = () => {
       queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
       toast.success("Tạo loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi tạo loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo loại phụ sản phẩm")
     },
   })
 }
@@ -81,7 +81,7 @@ export const useUpdateProductSubtypeMutation = () => {
       id: number
       subtypeData: UpdateProductSubtypeDto
     }) => {
-      const response = await api.put<ProductSubtype>(
+      const response = await api.putRaw<ProductSubtype>(
         `/product-subtype/${id}`,
         subtypeData
       )
@@ -95,9 +95,8 @@ export const useUpdateProductSubtypeMutation = () => {
       })
       toast.success("Cập nhật loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật loại phụ sản phẩm")
     },
   })
 }
@@ -108,7 +107,7 @@ export const useUpdateProductSubtypeMutation = () => {
 export const useActivateProductSubtypeMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<ProductSubtype>(
+      const response = await api.putRaw<ProductSubtype>(
         `/product-subtype/${id}/activate`
       )
       return response
@@ -121,9 +120,8 @@ export const useActivateProductSubtypeMutation = () => {
       })
       toast.success("Kích hoạt loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi kích hoạt loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi kích hoạt loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi kích hoạt loại phụ sản phẩm")
     },
   })
 }
@@ -134,7 +132,7 @@ export const useActivateProductSubtypeMutation = () => {
 export const useDeactivateProductSubtypeMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<ProductSubtype>(
+      const response = await api.putRaw<ProductSubtype>(
         `/product-subtype/${id}/deactivate`
       )
       return response
@@ -147,9 +145,8 @@ export const useDeactivateProductSubtypeMutation = () => {
       })
       toast.success("Vô hiệu hóa loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi vô hiệu hóa loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi vô hiệu hóa loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi vô hiệu hóa loại phụ sản phẩm")
     },
   })
 }
@@ -160,7 +157,7 @@ export const useDeactivateProductSubtypeMutation = () => {
 export const useArchiveProductSubtypeMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<ProductSubtype>(
+      const response = await api.putRaw<ProductSubtype>(
         `/product-subtype/${id}/archive`
       )
       return response
@@ -173,9 +170,8 @@ export const useArchiveProductSubtypeMutation = () => {
       })
       toast.success("Lưu trữ loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi lưu trữ loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi lưu trữ loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi lưu trữ loại phụ sản phẩm")
     },
   })
 }
@@ -186,7 +182,7 @@ export const useArchiveProductSubtypeMutation = () => {
 export const useRestoreProductSubtypeMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<ProductSubtype>(
+      const response = await api.putRaw<ProductSubtype>(
         `/product-subtype/${id}/restore`
       )
       return response
@@ -199,9 +195,8 @@ export const useRestoreProductSubtypeMutation = () => {
       })
       toast.success("Khôi phục loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi khôi phục loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi khôi phục loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi khôi phục loại phụ sản phẩm")
     },
   })
 }
@@ -220,9 +215,8 @@ export const useDeleteProductSubtypeMutation = () => {
       queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
       toast.success("Xóa loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa loại phụ sản phẩm")
     },
   })
 }
@@ -243,9 +237,8 @@ export const usePermanentDeleteProductSubtypeMutation = () => {
       queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
       toast.success("Xóa vĩnh viễn loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa vĩnh viễn loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa vĩnh viễn loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa vĩnh viễn loại phụ sản phẩm")
     },
   })
 }

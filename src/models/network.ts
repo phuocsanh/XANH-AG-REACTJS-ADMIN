@@ -55,3 +55,32 @@ export type ListComponentResponse = {
   id: number
   _id?: string
 }
+
+// Định nghĩa các interface cho network và error handling
+
+/**
+ * Interface cho error response từ server theo chuẩn mới
+ */
+export interface ErrorResponse {
+  statusCode: number
+  timestamp: string
+  path: string
+  method: string
+  error: string
+  message: string
+  details?: string[] | Record<string, unknown>
+  field?: string
+  resource?: string
+  code?: string
+}
+
+/**
+ * Interface cho response thành công từ server
+ */
+export interface SuccessResponse<T> {
+  statusCode: number
+  message: string
+  data: T
+  timestamp: string
+  path: string
+}

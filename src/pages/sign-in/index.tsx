@@ -36,6 +36,7 @@ export const SignIn = () => {
     try {
       // Sử dụng trực tiếp values từ form với validation đã được thực hiện - theo pattern của example
       await loginMutation.mutateAsync(values)
+      // Redirect sẽ được xử lý trong onSuccess của mutation
     } catch (error) {
       // Lỗi đã được xử lý trong useLoginMutation
       console.error("Lỗi đăng nhập:", error)

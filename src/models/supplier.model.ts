@@ -14,11 +14,11 @@ export interface Supplier {
   status: BaseStatus
   notes?: string
   createdBy: number
-  updatedBy?: number
-  deletedBy?: number
+  updatedBy?: number | null
+  deletedBy?: number | null
   createdAt: string
   updatedAt: string
-  deletedAt?: string
+  deletedAt?: string | null
 }
 
 // Interface cho request tạo nhà cung cấp mới
@@ -38,11 +38,38 @@ export interface UpdateSupplierRequest extends Partial<CreateSupplierRequest> {
   id: number
 }
 
-// Interface cho response từ API
-export interface SupplierApiResponse extends Supplier {}
-
-// Interface cho response danh sách
-export interface SupplierListApiResponse {
-  items: Supplier[]
-  total: number
+// Interface cho metadata trong response
+export interface ResponseMeta {
+  timestamp: string
+  path: string
+  method: string
 }
+
+// Interface cho thông tin phân trang
+export interface PaginationInfo {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+// Interface cho response thành công không phân trang
+export interface SuccessResponse<T> {
+  success: true
+  data: T
+  meta: ResponseMeta
+}
+
+// Interface cho response thành công có phân trang
+export interface PaginatedSuccessResponse<T> {
+  success: true
+  data: T[]
+  meta: ResponseMeta
+  pagination: PaginationInfo
+}
+
+// Interface cho response từ API tạo/cập nhật nhà cung cấp (không phân trang)
+export type SupplierApiResponse = SuccessResponse<Supplier>
+
+// Interface cho response danh sách nhà cung cấp (có phân trang)
+export type SupplierListApiResponse = PaginatedSuccessResponse<Supplier>

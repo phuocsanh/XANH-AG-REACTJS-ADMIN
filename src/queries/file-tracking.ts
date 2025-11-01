@@ -20,19 +20,27 @@ import type {
   MarkFileForDeletionRequest,
   MarkFileForDeletionResponse,
 } from "@/models/file-tracking.model"
+import { handleApiError } from "@/utils/error-handler"
+import type { ErrorResponse } from "@/models/network"
 
 // ========== QUERY KEYS ==========
 export const fileTrackingKeys = {
   all: ["fileTracking"] as const,
   uploads: () => [...fileTrackingKeys.all, "uploads"] as const,
-  uploadsList: (params?: FileSearchParams) => [...fileTrackingKeys.uploads(), "list", params] as const,
-  upload: (id: number) => [...fileTrackingKeys.uploads(), "detail", id] as const,
-  uploadByPublicId: (publicId: string) => [...fileTrackingKeys.uploads(), "public", publicId] as const,
+  uploadsList: (params?: FileSearchParams) =>
+    [...fileTrackingKeys.uploads(), "list", params] as const,
+  upload: (id: number) =>
+    [...fileTrackingKeys.uploads(), "detail", id] as const,
+  uploadByPublicId: (publicId: string) =>
+    [...fileTrackingKeys.uploads(), "public", publicId] as const,
   references: () => [...fileTrackingKeys.all, "references"] as const,
-  reference: (id: number) => [...fileTrackingKeys.references(), "detail", id] as const,
-  referencesByEntity: (entityType: string, entityId: number) => [...fileTrackingKeys.references(), entityType, entityId] as const,
+  reference: (id: number) =>
+    [...fileTrackingKeys.references(), "detail", id] as const,
+  referencesByEntity: (entityType: string, entityId: number) =>
+    [...fileTrackingKeys.references(), entityType, entityId] as const,
   orphaned: () => [...fileTrackingKeys.all, "orphaned"] as const,
-  markedForDeletion: () => [...fileTrackingKeys.all, "markedForDeletion"] as const,
+  markedForDeletion: () =>
+    [...fileTrackingKeys.all, "markedForDeletion"] as const,
   stats: () => [...fileTrackingKeys.all, "stats"] as const,
 } as const
 
@@ -44,16 +52,18 @@ export const fileTrackingKeys = {
 export const useCreateFileUploadMutation = () => {
   return useMutation({
     mutationFn: async (data: CreateFileUploadRequest) => {
-      const response = await api.post<CreateFileUploadResponse>('/file-tracking/uploads', data)
+      const response = await api.postRaw<CreateFileUploadResponse>(
+        "/file-tracking/uploads",
+        data
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Tạo file upload thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo file upload:", error)
-      toast.error("Có lỗi xảy ra khi tạo file upload")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo file upload")
     },
   })
 }
@@ -65,7 +75,10 @@ export const useFileUploadsQuery = (params?: FileSearchParams) => {
   return useQuery({
     queryKey: fileTrackingKeys.uploadsList(params),
     queryFn: async () => {
-      const response = await api.get<FileUploadListResponse>('/file-tracking/uploads', { params })
+      const response = await api.get<FileUploadListResponse>(
+        "/file-tracking/uploads",
+        { params }
+      )
       return response
     },
   })
@@ -92,7 +105,9 @@ export const useFileUploadByPublicIdQuery = (publicId: string) => {
   return useQuery({
     queryKey: fileTrackingKeys.uploadByPublicId(publicId),
     queryFn: async () => {
-      const response = await api.get<FileUpload>(`/file-tracking/uploads/public/${publicId}`)
+      const response = await api.get<FileUpload>(
+        `/file-tracking/uploads/public/${publicId}`
+      )
       return response
     },
     enabled: !!publicId,
@@ -104,8 +119,17 @@ export const useFileUploadByPublicIdQuery = (publicId: string) => {
  */
 export const useUpdateFileUploadMutation = () => {
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: UpdateFileUploadRequest }) => {
-      const response = await api.put<UpdateFileUploadResponse>(`/file-tracking/uploads/${id}`, data)
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number
+      data: UpdateFileUploadRequest
+    }) => {
+      const response = await api.putRaw<UpdateFileUploadResponse>(
+        `/file-tracking/uploads/${id}`,
+        data
+      )
       return response
     },
     onSuccess: (data, variables) => {
@@ -113,9 +137,8 @@ export const useUpdateFileUploadMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Cập nhật file upload thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật file upload:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật file upload")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật file upload")
     },
   })
 }
@@ -126,17 +149,20 @@ export const useUpdateFileUploadMutation = () => {
 export const useDeleteFileUploadMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete<DeleteFileUploadResponse>(`/file-tracking/uploads/${id}`)
+      const response = await api.delete<DeleteFileUploadResponse>(
+        `/file-tracking/uploads/${id}`
+      )
       return response
     },
     onSuccess: (_, variables) => {
-      queryClient.removeQueries({ queryKey: fileTrackingKeys.upload(variables) })
+      queryClient.removeQueries({
+        queryKey: fileTrackingKeys.upload(variables),
+      })
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Xóa file upload thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa file upload:", error)
-      toast.error("Có lỗi xảy ra khi xóa file upload")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa file upload")
     },
   })
 }
@@ -148,7 +174,9 @@ export const useOrphanedFilesQuery = () => {
   return useQuery({
     queryKey: fileTrackingKeys.orphaned(),
     queryFn: async () => {
-      const response = await api.get<OrphanedFilesResponse>('/file-tracking/uploads/orphaned')
+      const response = await api.get<OrphanedFilesResponse>(
+        "/file-tracking/uploads/orphaned"
+      )
       return response
     },
   })
@@ -159,18 +187,28 @@ export const useOrphanedFilesQuery = () => {
  */
 export const useMarkFileForDeletionMutation = () => {
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: MarkFileForDeletionRequest }) => {
-      const response = await api.put<MarkFileForDeletionResponse>(`/file-tracking/uploads/${id}/mark-for-deletion`, data)
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number
+      data: MarkFileForDeletionRequest
+    }) => {
+      const response = await api.putRaw<MarkFileForDeletionResponse>(
+        `/file-tracking/uploads/${id}/mark-for-deletion`,
+        data
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
-      queryClient.invalidateQueries({ queryKey: fileTrackingKeys.markedForDeletion() })
+      queryClient.invalidateQueries({
+        queryKey: fileTrackingKeys.markedForDeletion(),
+      })
       toast.success("Đánh dấu file để xóa thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi đánh dấu file để xóa:", error)
-      toast.error("Có lỗi xảy ra khi đánh dấu file để xóa")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi đánh dấu file để xóa")
     },
   })
 }
@@ -182,7 +220,9 @@ export const useMarkedForDeletionFilesQuery = () => {
   return useQuery({
     queryKey: fileTrackingKeys.markedForDeletion(),
     queryFn: async () => {
-      const response = await api.get<MarkedForDeletionFilesResponse>('/file-tracking/uploads/marked-for-deletion')
+      const response = await api.get<MarkedForDeletionFilesResponse>(
+        "/file-tracking/uploads/marked-for-deletion"
+      )
       return response
     },
   })
@@ -197,7 +237,10 @@ export const useSearchFilesQuery = (params: FileSearchParams) => {
   return useQuery({
     queryKey: fileTrackingKeys.uploadsList(params),
     queryFn: async () => {
-      const response = await api.get<FileUploadListResponse>('/file-tracking/uploads/search', { params })
+      const response = await api.get<FileUploadListResponse>(
+        "/file-tracking/uploads/search",
+        { params }
+      )
       return response
     },
   })
@@ -210,7 +253,9 @@ export const useFileDetailsQuery = (id: number) => {
   return useQuery({
     queryKey: fileTrackingKeys.upload(id),
     queryFn: async () => {
-      const response = await api.get<FileDetails>(`/file-tracking/uploads/${id}/details`)
+      const response = await api.get<FileDetails>(
+        `/file-tracking/uploads/${id}/details`
+      )
       return response
     },
     enabled: !!id,
@@ -223,16 +268,23 @@ export const useFileDetailsQuery = (id: number) => {
 export const useSoftDeleteFileMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<DeleteFileUploadResponse>(`/file-tracking/uploads/${id}/soft-delete`)
+      const response = await api.putRaw<DeleteFileUploadResponse>(
+        `/file-tracking/uploads/${id}/soft-delete`
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Xóa mềm file thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa mềm file:", error)
-      toast.error("Có lỗi xảy ra khi xóa mềm file")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi xóa mềm file"
+      toast.error(errorMessage)
     },
   })
 }
@@ -243,16 +295,23 @@ export const useSoftDeleteFileMutation = () => {
 export const useRestoreFileMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.put<UpdateFileUploadResponse>(`/file-tracking/uploads/${id}/restore`)
+      const response = await api.putRaw<UpdateFileUploadResponse>(
+        `/file-tracking/uploads/${id}/restore`
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Khôi phục file thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi khôi phục file:", error)
-      toast.error("Có lỗi xảy ra khi khôi phục file")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi khôi phục file"
+      toast.error(errorMessage)
     },
   })
 }
@@ -262,11 +321,14 @@ export const useRestoreFileMutation = () => {
  */
 export const useFileByUrlQuery = (fileUrl: string) => {
   return useQuery({
-    queryKey: ['fileByUrl', fileUrl],
+    queryKey: ["fileByUrl", fileUrl],
     queryFn: async () => {
-      const response = await api.get<FileUpload>('/file-tracking/uploads/by-url', {
-        params: { fileUrl },
-      })
+      const response = await api.get<FileUpload>(
+        "/file-tracking/uploads/by-url",
+        {
+          params: { fileUrl },
+        }
+      )
       return response
     },
     enabled: !!fileUrl,
@@ -279,7 +341,9 @@ export const useFileByUrlQuery = (fileUrl: string) => {
 export const useCleanupUnusedFilesMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.post<DeleteFileUploadResponse>('/file-tracking/uploads/cleanup')
+      const response = await api.postRaw<DeleteFileUploadResponse>(
+        "/file-tracking/uploads/cleanup"
+      )
       return response
     },
     onSuccess: () => {
@@ -287,9 +351,14 @@ export const useCleanupUnusedFilesMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.orphaned() })
       toast.success("Dọn dẹp file không sử dụng thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi dọn dẹp file:", error)
-      toast.error("Có lỗi xảy ra khi dọn dẹp file không sử dụng")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi dọn dẹp file không sử dụng"
+      toast.error(errorMessage)
     },
   })
 }
@@ -301,7 +370,9 @@ export const useFileTrackingStatsQuery = () => {
   return useQuery({
     queryKey: fileTrackingKeys.stats(),
     queryFn: async () => {
-      const response = await api.get<FileTrackingStats>('/file-tracking/uploads/stats')
+      const response = await api.get<FileTrackingStats>(
+        "/file-tracking/uploads/stats"
+      )
       return response
     },
   })
@@ -312,10 +383,19 @@ export const useFileTrackingStatsQuery = () => {
  */
 export const useUpdateFileMetadataMutation = () => {
   return useMutation({
-    mutationFn: async ({ id, metadata }: { id: number; metadata: Record<string, unknown> }) => {
-      const response = await api.put<FileUpload>(`/file-tracking/uploads/${id}/metadata`, {
-        metadata,
-      })
+    mutationFn: async ({
+      id,
+      metadata,
+    }: {
+      id: number
+      metadata: Record<string, unknown>
+    }) => {
+      const response = await api.putRaw<FileUpload>(
+        `/file-tracking/uploads/${id}/metadata`,
+        {
+          metadata,
+        }
+      )
       return response
     },
     onSuccess: (data, variables) => {
@@ -323,9 +403,14 @@ export const useUpdateFileMetadataMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Cập nhật metadata file thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật metadata file:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật metadata file")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi cập nhật metadata file"
+      toast.error(errorMessage)
     },
   })
 }
@@ -336,9 +421,12 @@ export const useUpdateFileMetadataMutation = () => {
 export const useUpdateFileTagsMutation = () => {
   return useMutation({
     mutationFn: async ({ id, tags }: { id: number; tags: string[] }) => {
-      const response = await api.put<FileUpload>(`/file-tracking/uploads/${id}/tags`, {
-        tags,
-      })
+      const response = await api.putRaw<FileUpload>(
+        `/file-tracking/uploads/${id}/tags`,
+        {
+          tags,
+        }
+      )
       return response
     },
     onSuccess: (data, variables) => {
@@ -346,9 +434,14 @@ export const useUpdateFileTagsMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Cập nhật tags file thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật tags file:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật tags file")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi cập nhật tags file"
+      toast.error(errorMessage)
     },
   })
 }
@@ -361,16 +454,24 @@ export const useUpdateFileTagsMutation = () => {
 export const useCreateFileReferenceMutation = () => {
   return useMutation({
     mutationFn: async (data: CreateFileReferenceRequest) => {
-      const response = await api.post<FileReference>('/file-tracking/references', data)
+      const response = await api.postRaw<FileReference>(
+        "/file-tracking/references",
+        data
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.references() })
       toast.success("Tạo file reference thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo file reference:", error)
-      toast.error("Có lỗi xảy ra khi tạo file reference")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi tạo file reference"
+      toast.error(errorMessage)
     },
   })
 }
@@ -381,17 +482,26 @@ export const useCreateFileReferenceMutation = () => {
 export const useDeleteFileReferenceMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete<DeleteFileUploadResponse>(`/file-tracking/references/${id}`)
+      const response = await api.delete<DeleteFileUploadResponse>(
+        `/file-tracking/references/${id}`
+      )
       return response
     },
     onSuccess: (_, variables) => {
-      queryClient.removeQueries({ queryKey: fileTrackingKeys.reference(variables) })
+      queryClient.removeQueries({
+        queryKey: fileTrackingKeys.reference(variables),
+      })
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.references() })
       toast.success("Xóa file reference thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa file reference:", error)
-      toast.error("Có lỗi xảy ra khi xóa file reference")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi xóa file reference"
+      toast.error(errorMessage)
     },
   })
 }
@@ -402,7 +512,9 @@ export const useDeleteFileReferenceMutation = () => {
 export const useIncrementReferenceCountMutation = () => {
   return useMutation({
     mutationFn: async (fileUploadId: number) => {
-      const response = await api.put<FileUpload>(`/file-tracking/uploads/${fileUploadId}/increment-reference`)
+      const response = await api.putRaw<FileUpload>(
+        `/file-tracking/uploads/${fileUploadId}/increment-reference`
+      )
       return response
     },
     onSuccess: (data, variables) => {
@@ -410,9 +522,14 @@ export const useIncrementReferenceCountMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Tăng reference count thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tăng reference count:", error)
-      toast.error("Có lỗi xảy ra khi tăng reference count")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi tăng reference count"
+      toast.error(errorMessage)
     },
   })
 }
@@ -423,7 +540,9 @@ export const useIncrementReferenceCountMutation = () => {
 export const useDecrementReferenceCountMutation = () => {
   return useMutation({
     mutationFn: async (fileUploadId: number) => {
-      const response = await api.put<FileUpload>(`/file-tracking/uploads/${fileUploadId}/decrement-reference`)
+      const response = await api.putRaw<FileUpload>(
+        `/file-tracking/uploads/${fileUploadId}/decrement-reference`
+      )
       return response
     },
     onSuccess: (data, variables) => {
@@ -431,9 +550,14 @@ export const useDecrementReferenceCountMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.uploads() })
       toast.success("Giảm reference count thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi giảm reference count:", error)
-      toast.error("Có lỗi xảy ra khi giảm reference count")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi giảm reference count"
+      toast.error(errorMessage)
     },
   })
 }
@@ -441,13 +565,19 @@ export const useDecrementReferenceCountMutation = () => {
 /**
  * Hook lấy danh sách file reference theo entity
  */
-export const useFileReferencesByEntityQuery = (entityType: string, entityId: number) => {
+export const useFileReferencesByEntityQuery = (
+  entityType: string,
+  entityId: number
+) => {
   return useQuery({
     queryKey: fileTrackingKeys.referencesByEntity(entityType, entityId),
     queryFn: async () => {
-      const response = await api.get<FileReference[]>('/file-tracking/references', {
-        params: { entityType, entityId },
-      })
+      const response = await api.get<FileReference[]>(
+        "/file-tracking/references",
+        {
+          params: { entityType, entityId },
+        }
+      )
       return response
     },
     enabled: !!entityType && !!entityId,
@@ -459,7 +589,13 @@ export const useFileReferencesByEntityQuery = (entityType: string, entityId: num
  */
 export const useBatchRemoveEntityFileReferencesMutation = () => {
   return useMutation({
-    mutationFn: async ({ entityType, entityId }: { entityType: string; entityId: number }) => {
+    mutationFn: async ({
+      entityType,
+      entityId,
+    }: {
+      entityType: string
+      entityId: number
+    }) => {
       const response = await api.delete<DeleteFileUploadResponse>(
         `/file-tracking/references/entity/${entityType}/${entityId}`
       )
@@ -469,9 +605,14 @@ export const useBatchRemoveEntityFileReferencesMutation = () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.references() })
       toast.success("Xóa hàng loạt file references thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa hàng loạt file references:", error)
-      toast.error("Có lỗi xảy ra khi xóa hàng loạt file references")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi xóa hàng loạt file references"
+      toast.error(errorMessage)
     },
   })
 }
@@ -481,19 +622,35 @@ export const useBatchRemoveEntityFileReferencesMutation = () => {
  */
 export const useRemoveFileReferenceByUrlMutation = () => {
   return useMutation({
-    mutationFn: async ({ fileUrl, entityType, entityId }: { fileUrl: string; entityType: string; entityId: number }) => {
-      const response = await api.delete<DeleteFileUploadResponse>('/file-tracking/references/by-url', {
-        params: { fileUrl, entityType, entityId },
-      })
+    mutationFn: async ({
+      fileUrl,
+      entityType,
+      entityId,
+    }: {
+      fileUrl: string
+      entityType: string
+      entityId: number
+    }) => {
+      const response = await api.delete<DeleteFileUploadResponse>(
+        "/file-tracking/references/by-url",
+        {
+          params: { fileUrl, entityType, entityId },
+        }
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.references() })
       toast.success("Xóa file reference theo URL thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa file reference theo URL:", error)
-      toast.error("Có lỗi xảy ra khi xóa file reference theo URL")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi xóa file reference theo URL"
+      toast.error(errorMessage)
     },
   })
 }
@@ -503,19 +660,35 @@ export const useRemoveFileReferenceByUrlMutation = () => {
  */
 export const useBatchRemoveFileReferencesByUrlsMutation = () => {
   return useMutation({
-    mutationFn: async ({ fileUrls, entityType, entityId }: { fileUrls: string[]; entityType: string; entityId: number }) => {
-      const response = await api.delete<DeleteFileUploadResponse>('/file-tracking/references/batch-by-urls', {
-        data: { fileUrls, entityType, entityId },
-      })
+    mutationFn: async ({
+      fileUrls,
+      entityType,
+      entityId,
+    }: {
+      fileUrls: string[]
+      entityType: string
+      entityId: number
+    }) => {
+      const response = await api.delete<DeleteFileUploadResponse>(
+        "/file-tracking/references/batch-by-urls",
+        {
+          data: { fileUrls, entityType, entityId },
+        }
+      )
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: fileTrackingKeys.references() })
       toast.success("Xóa hàng loạt file references theo URLs thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa hàng loạt file references theo URLs:", error)
-      toast.error("Có lỗi xảy ra khi xóa hàng loạt file references theo URLs")
+    onError: (error: unknown) => {
+      // Xử lý thông báo lỗi từ server theo chuẩn mới
+      const errorResponse = error as { response?: { data?: ErrorResponse } }
+      const errorMessage =
+        errorResponse?.response?.data?.message ||
+        (error as Error)?.message ||
+        "Có lỗi xảy ra khi xóa hàng loạt file references theo URLs"
+      toast.error(errorMessage)
     },
   })
 }

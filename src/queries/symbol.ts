@@ -8,20 +8,24 @@ import {
   UpdateSymbolDto,
   SymbolListParams,
 } from "@/models/symbol.model"
+import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // Lấy danh sách ký hiệu
 export const useSymbolsQuery = (params?: SymbolListParams) => {
-  return useQuery({
-    queryKey: ["symbols", params],
-    queryFn: async () => {
-      // Thay đổi cách xử lý dữ liệu trả về
-      const response = await api.get<Symbol[]>("/symbols", {
-        params,
-      })
-      // Trả về dữ liệu trực tiếp thay vì PaginationResponse
-      return response
-    },
-  })
+  // Tách riêng các tham số phân trang
+  const paginationParams = params
+    ? {
+        page:
+          params.offset !== undefined
+            ? Math.floor(params.offset / (params.limit || 10)) + 1
+            : 1,
+        limit: params.limit,
+        search: params.search,
+      }
+    : undefined
+
+  return usePaginationQuery<Symbol[]>("/symbols", paginationParams)
 }
 
 // Lấy thông tin ký hiệu theo ID
@@ -41,11 +45,14 @@ export const useCreateSymbolMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (symbolData: CreateSymbolDto) => {
-      const response = await api.post<Symbol>("/symbols", symbolData)
+      const response = await api.postRaw<Symbol>("/symbols", symbolData)
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["symbols"] })
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo ký hiệu")
     },
   })
 }
@@ -62,12 +69,15 @@ export const useUpdateSymbolMutation = () => {
       symbolData: UpdateSymbolDto
     }) => {
       // Không truyền ID trong body request, chỉ truyền qua URL
-      const response = await api.put<Symbol>(`/symbols/${id}`, symbolData)
+      const response = await api.putRaw<Symbol>(`/symbols/${id}`, symbolData)
       return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["symbols"] })
       queryClient.invalidateQueries({ queryKey: ["symbol"] })
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật ký hiệu")
     },
   })
 }
@@ -86,8 +96,8 @@ export const useDeleteSymbolMutation = () => {
       console.log("Delete symbol successful, invalidating queries")
       queryClient.invalidateQueries({ queryKey: ["symbols"] })
     },
-    onError: (error) => {
-      console.error("Delete symbol error:", error)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa ký hiệu")
     },
   })
 }

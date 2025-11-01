@@ -10,6 +10,7 @@ import {
   ProductSubtypeResponse,
   ProductSubtypeListResponse,
 } from "@/models/product-type.model"
+import { handleApiError } from "@/utils/error-handler"
 
 // Query keys cho product type
 export const productTypeKeys = {
@@ -96,7 +97,7 @@ export const useProductTypeByIdQuery = (id: number) => {
 export const useCreateProductTypeMutation = () => {
   return useMutation({
     mutationFn: async (productTypeData: ProductTypeRequest) => {
-      const response = await api.post<ProductType>(
+      const response = await api.postRaw<ProductType>(
         "/product-types",
         productTypeData
       )
@@ -107,9 +108,8 @@ export const useCreateProductTypeMutation = () => {
       queryClient.invalidateQueries({ queryKey: productTypeKeys.lists() })
       toast.success("Tạo loại sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo loại sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi tạo loại sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo loại sản phẩm")
     },
   })
 }
@@ -126,7 +126,7 @@ export const useUpdateProductTypeMutation = () => {
       id: number
       productTypeData: ProductTypeRequest
     }) => {
-      const response = await api.patch<ProductType>(
+      const response = await api.patchRaw<ProductType>(
         `/product-types/${id}`,
         productTypeData
       )
@@ -140,9 +140,11 @@ export const useUpdateProductTypeMutation = () => {
       })
       toast.success("Cập nhật thông tin loại sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật loại sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật thông tin loại sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(
+        error,
+        "Có lỗi xảy ra khi cập nhật thông tin loại sản phẩm"
+      )
     },
   })
 }
@@ -161,9 +163,8 @@ export const useDeleteProductTypeMutation = () => {
       queryClient.invalidateQueries({ queryKey: productTypeKeys.lists() })
       toast.success("Xóa loại sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa loại sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa loại sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa loại sản phẩm")
     },
   })
 }
@@ -237,7 +238,7 @@ export const useProductSubtypeByIdQuery = (id: number) => {
 export const useCreateProductSubtypeMutation = () => {
   return useMutation({
     mutationFn: async (productSubtypeData: ProductSubtypeRequest) => {
-      const response = await api.post<ProductSubtypeResponse>(
+      const response = await api.postRaw<ProductSubtypeResponse>(
         "/products/subtype",
         productSubtypeData
       )
@@ -250,9 +251,8 @@ export const useCreateProductSubtypeMutation = () => {
       })
       toast.success("Tạo loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi tạo loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo loại phụ sản phẩm")
     },
   })
 }
@@ -269,7 +269,7 @@ export const useUpdateProductSubtypeMutation = () => {
       id: number
       productSubtypeData: ProductSubtypeRequest
     }) => {
-      const response = await api.patch<ProductSubtypeResponse>(
+      const response = await api.patchRaw<ProductSubtypeResponse>(
         `/products/subtype/${id}`,
         productSubtypeData
       )
@@ -285,9 +285,8 @@ export const useUpdateProductSubtypeMutation = () => {
       })
       toast.success("Cập nhật loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật loại phụ sản phẩm")
     },
   })
 }
@@ -308,9 +307,8 @@ export const useDeleteProductSubtypeMutation = () => {
       })
       toast.success("Xóa loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa loại phụ sản phẩm")
     },
   })
 }
@@ -321,7 +319,7 @@ export const useDeleteProductSubtypeMutation = () => {
 export const useAddProductSubtypeMappingMutation = () => {
   return useMutation({
     mutationFn: async (mapping: ProductSubtypeMappingRequest) => {
-      const response = await api.post<void>(
+      const response = await api.postRaw<void>(
         `/products/${mapping.typeId}/subtype/${mapping.subtypeId}`
       )
       return response
@@ -329,9 +327,8 @@ export const useAddProductSubtypeMappingMutation = () => {
     onSuccess: () => {
       toast.success("Thêm mapping loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi thêm mapping loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi thêm mapping loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi thêm mapping loại phụ sản phẩm")
     },
   })
 }
@@ -350,9 +347,8 @@ export const useRemoveProductSubtypeMappingMutation = () => {
     onSuccess: () => {
       toast.success("Xóa mapping loại phụ sản phẩm thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa mapping loại phụ sản phẩm:", error)
-      toast.error("Có lỗi xảy ra khi xóa mapping loại phụ sản phẩm")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa mapping loại phụ sản phẩm")
     },
   })
 }

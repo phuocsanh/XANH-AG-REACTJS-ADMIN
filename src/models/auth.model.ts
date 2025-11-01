@@ -99,6 +99,17 @@ export interface LoginResponse {
   user: UserResponse
 }
 
+// Cập nhật lại interface cho response mới từ server
+export interface LoginApiResponse {
+  success: boolean
+  data: LoginResponse
+  meta: {
+    timestamp: string
+    path: string
+    method: string
+  }
+}
+
 // Response từ API khi có lỗi
 export interface ErrorResponse {
   code: number

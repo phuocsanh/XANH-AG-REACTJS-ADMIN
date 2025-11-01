@@ -7,10 +7,43 @@ import {
   MarkFileUsedResponse,
   CleanupUnusedFilesResponse,
   UploadStats,
-  FileDetails,
   FileListResponse,
+  FileDetails,
   FileSearchParams,
 } from "@/models/upload.model"
+import { handleApiError } from "@/utils/error-handler"
+
+// ========== UPLOAD HOOKS ==========
+
+interface UploadFileRequest {
+  file: File
+  type: string
+  folder: string
+}
+
+/**
+ * Hook upload file
+ */
+export const useUploadFileMutation = () => {
+  return useMutation({
+    mutationFn: async (uploadData: UploadFileRequest) => {
+      const formData = new FormData()
+      formData.append("File", uploadData.file)
+      formData.append("Type", uploadData.type)
+      formData.append("Folder", uploadData.folder)
+
+      const response = await api.postForm<UploadResponse>("/uploads", formData)
+      return response
+    },
+    onSuccess: (data) => {
+      console.log("Upload successful:", data)
+      toast.success("Upload file thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Upload file không thành công")
+    },
+  })
+}
 
 /**
  * Hook upload file hình ảnh
@@ -21,7 +54,7 @@ export const useUploadImageMutation = () => {
       const formData = new FormData()
       formData.append("file", file)
 
-      const response = await api.post<UploadResponse>(
+      const response = await api.postRaw<UploadResponse>(
         "/upload/file",
         formData as unknown as Record<string, unknown>,
         {
@@ -36,9 +69,8 @@ export const useUploadImageMutation = () => {
     onSuccess: () => {
       toast.success("Upload hình ảnh thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi upload hình ảnh:", error)
-      toast.error("Có lỗi xảy ra khi upload hình ảnh")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi upload hình ảnh")
     },
   })
 }
@@ -46,7 +78,7 @@ export const useUploadImageMutation = () => {
 /**
  * Hook upload file tài liệu
  */
-export const useUploadFileMutation = () => {
+export const useUploadDocumentMutation = () => {
   return useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData()
@@ -67,9 +99,8 @@ export const useUploadFileMutation = () => {
     onSuccess: () => {
       toast.success("Upload file thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi upload file:", error)
-      toast.error("Có lỗi xảy ra khi upload file")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi upload file")
     },
   })
 }
@@ -94,9 +125,8 @@ export const useDeleteFileMutation = () => {
     onSuccess: () => {
       toast.success("Xóa file thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa file:", error)
-      toast.error("Có lỗi xảy ra khi xóa file")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa file")
     },
   })
 }
@@ -108,7 +138,7 @@ export const useMarkFileAsUsedMutation = () => {
   return useMutation({
     mutationFn: async (publicId: string) => {
       const requestData = { publicId }
-      const response = await api.patch<MarkFileUsedResponse>(
+      const response = await api.patchRaw<MarkFileUsedResponse>(
         "/upload/file/mark-used",
         requestData as unknown as Record<string, unknown>
       )
@@ -117,9 +147,8 @@ export const useMarkFileAsUsedMutation = () => {
     onSuccess: () => {
       toast.success("Đánh dấu file đã sử dụng thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi đánh dấu file đã sử dụng:", error)
-      toast.error("Có lỗi xảy ra khi đánh dấu file đã sử dụng")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi đánh dấu file đã sử dụng")
     },
   })
 }
@@ -130,7 +159,7 @@ export const useMarkFileAsUsedMutation = () => {
 export const useCleanupUnusedFilesMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.post<CleanupUnusedFilesResponse>(
+      const response = await api.postRaw<CleanupUnusedFilesResponse>(
         "/upload/file/cleanup"
       )
       return response
@@ -138,9 +167,8 @@ export const useCleanupUnusedFilesMutation = () => {
     onSuccess: () => {
       toast.success("Dọn dẹp file không sử dụng thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi dọn dẹp file không sử dụng:", error)
-      toast.error("Có lỗi xảy ra khi dọn dẹp file không sử dụng")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi dọn dẹp file không sử dụng")
     },
   })
 }
@@ -155,8 +183,8 @@ export const useUploadStatsQuery = () => {
       const response = await api.get<UploadStats>("/upload/file/stats")
       return response
     },
-    onError: (error: Error) => {
-      console.error("Lỗi khi lấy thống kê upload:", error)
+    onError: (error: unknown) => {
+      handleApiError(error, "Lỗi khi lấy thống kê upload")
     },
   })
 }
@@ -173,8 +201,8 @@ export const useFileListQuery = () => {
       })
       return response
     },
-    onError: (error: Error) => {
-      console.error("Lỗi khi lấy danh sách file:", error)
+    onError: (error: unknown) => {
+      handleApiError(error, "Lỗi khi lấy danh sách file")
     },
   })
 }
@@ -191,8 +219,8 @@ export const useFileDetailsQuery = () => {
       )
       return response
     },
-    onError: (error: Error) => {
-      console.error(`Lỗi khi lấy chi tiết file:`, error)
+    onError: (error: unknown) => {
+      handleApiError(error, "Lỗi khi lấy chi tiết file")
     },
   })
 }

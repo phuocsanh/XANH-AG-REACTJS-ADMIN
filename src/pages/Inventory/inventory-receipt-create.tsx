@@ -259,7 +259,7 @@ const InventoryReceiptCreate: React.FC = () => {
                     .includes(input.toLowerCase())
                 }
               >
-                {suppliersData?.items.map((supplier) => (
+                {suppliersData?.data?.map((supplier) => (
                   <Select.Option
                     key={supplier.id}
                     value={supplier.id}

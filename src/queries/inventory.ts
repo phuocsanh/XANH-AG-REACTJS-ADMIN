@@ -30,6 +30,7 @@ import {
   mapApiResponseToInventoryReceiptItem,
   mapApiResponseToInventoryHistory,
 } from "@/models/inventory.model"
+import { handleApiError } from "@/utils/error-handler"
 
 // ========== QUERY KEYS ==========
 export const inventoryKeys = {
@@ -165,8 +166,8 @@ export const useCreateInventoryReceiptMutation = () => {
       toast.success("Tạo phiếu nhập hàng thành công!")
       return data
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi tạo phiếu nhập hàng: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Lỗi khi tạo phiếu nhập hàng")
     },
   })
 }
@@ -200,8 +201,8 @@ export const useUpdateInventoryReceiptMutation = () => {
       toast.success("Cập nhật phiếu nhập hàng thành công!")
       return data
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi cập nhật phiếu nhập hàng: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Lỗi khi cập nhật phiếu nhập hàng")
     },
   })
 }
@@ -224,8 +225,8 @@ export const useDeleteInventoryReceiptMutation = () => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Xóa phiếu nhập hàng thành công!")
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi xóa phiếu nhập hàng: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Lỗi khi xóa phiếu nhập hàng")
     },
   })
 }
@@ -346,7 +347,7 @@ export const useUpdateInventoryReceiptItemMutation = () => {
       id: number
       item: UpdateInventoryReceiptItemRequest
     }) => {
-      const response = await api.put<InventoryReceiptItemApiResponse>(
+      const response = await api.putRaw<InventoryReceiptItemApiResponse>(
         `/inventory/receipt-items/${id}`,
         item
       )
@@ -365,8 +366,11 @@ export const useUpdateInventoryReceiptItemMutation = () => {
       toast.success("Cập nhật chi tiết phiếu nhập hàng thành công!")
       return data
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi cập nhật chi tiết phiếu nhập hàng: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(
+        error,
+        "Có lỗi xảy ra khi cập nhật chi tiết phiếu nhập hàng"
+      )
     },
   })
 }
@@ -388,8 +392,8 @@ export const useDeleteInventoryReceiptItemMutation = () => {
       )
       toast.success("Xóa chi tiết phiếu nhập hàng thành công!")
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi xóa chi tiết phiếu nhập hàng: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa chi tiết phiếu nhập hàng")
     },
   })
 }
@@ -402,7 +406,7 @@ export const useDeleteInventoryReceiptItemMutation = () => {
 export const useStockInMutation = () => {
   return useMutation({
     mutationFn: async (stockInData: StockInRequest) => {
-      await api.post(
+      await api.postRaw(
         "/inventory/stock-in",
         stockInData as unknown as Record<string, unknown>
       )
@@ -415,8 +419,8 @@ export const useStockInMutation = () => {
       toast.success("Nhập kho thành công!")
       return data
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi nhập kho: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi nhập kho")
     },
   })
 }
@@ -427,7 +431,7 @@ export const useStockInMutation = () => {
 export const useStockOutMutation = () => {
   return useMutation({
     mutationFn: async (stockOutData: StockOutRequest) => {
-      await api.post(
+      await api.postRaw(
         "/inventory/stock-out",
         stockOutData as unknown as Record<string, unknown>
       )
@@ -440,8 +444,112 @@ export const useStockOutMutation = () => {
       toast.success("Xuất kho thành công!")
       return data
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi xuất kho: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xuất kho")
+    },
+  })
+}
+
+// ========== BATCH MANAGEMENT HOOKS ==========
+
+/**
+ * Hook tạo lô hàng tồn kho mới
+ */
+export const useCreateBatchMutation = () => {
+  return useMutation({
+    mutationFn: async (batchData: CreateInventoryBatchRequest) => {
+      const response = await api.postRaw<InventoryBatch>(
+        "/inventory/batches",
+        batchData as unknown as Record<string, unknown>
+      )
+      return response
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.batches() })
+      toast.success("Tạo lô hàng thành công!")
+      return data
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo lô hàng")
+    },
+  })
+}
+
+/**
+ * Hook cập nhật lô hàng
+ */
+export const useUpdateBatchMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      batchData,
+    }: {
+      id: number
+      batchData: Partial<CreateInventoryBatchRequest>
+    }) => {
+      const response = await api.patchRaw<InventoryBatch>(
+        `/inventory/batches/${id}`,
+        batchData as unknown as Record<string, unknown>
+      )
+      return response
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(inventoryKeys.batch(variables.id), data)
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.batches() })
+      toast.success("Cập nhật lô hàng thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật lô hàng")
+    },
+  })
+}
+
+// ========== TRANSACTION MANAGEMENT HOOKS ==========
+
+/**
+ * Hook tạo giao dịch kho mới
+ */
+export const useCreateTransactionMutation = () => {
+  return useMutation({
+    mutationFn: async (transactionData: CreateInventoryTransactionRequest) => {
+      const response = await api.postRaw<InventoryTransaction>(
+        "/inventory/transactions",
+        transactionData as unknown as Record<string, unknown>
+      )
+      return response
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.transactions() })
+      toast.success("Tạo giao dịch kho thành công!")
+      return data
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo giao dịch kho")
+    },
+  })
+}
+
+/**
+ * Hook tính lại giá vốn trung bình gia quyền
+ */
+export const useRecalculateWeightedAverageCostMutation = () => {
+  return useMutation({
+    mutationFn: async (productId: number) => {
+      const response = await api.postRaw<{
+        newAverageCost: number
+        success: boolean
+      }>(`/inventory/recalculate-weighted-average/${productId}`)
+      return response
+    },
+    onSuccess: (data) => {
+      toast.success("Tính lại giá vốn trung bình gia quyền thành công!")
+      return data
+    },
+    onError: (error: unknown) => {
+      handleApiError(
+        error,
+        "Có lỗi xảy ra khi tính lại giá vốn trung bình gia quyền"
+      )
     },
   })
 }
@@ -553,182 +661,6 @@ export const useInventoryStatsQuery = () => {
         totalValue,
       }
     },
-  })
-}
-
-// ========== BATCH MANAGEMENT HOOKS ==========
-
-/**
- * Hook tạo lô hàng tồn kho mới
- */
-export const useCreateBatchMutation = () => {
-  return useMutation({
-    mutationFn: async (batchData: CreateInventoryBatchRequest) => {
-      const response = await api.post<InventoryBatch>(
-        "/inventory/batches",
-        batchData as unknown as Record<string, unknown>
-      )
-      return response
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.batches() })
-      toast.success("Tạo lô hàng thành công!")
-      return data
-    },
-    onError: (error: Error) => {
-      console.error("Lỗi khi tạo lô hàng:", error)
-      toast.error("Có lỗi xảy ra khi tạo lô hàng")
-    },
-  })
-}
-
-/**
- * Hook lấy danh sách tất cả lô hàng tồn kho
- */
-export const useBatchesQuery = () => {
-  return useQuery({
-    queryKey: inventoryKeys.batches(),
-    queryFn: async () => {
-      const response = await api.get<InventoryBatch[]>("/inventory/batches")
-      return response
-    },
-  })
-}
-
-/**
- * Hook lấy lô hàng theo ID sản phẩm
- */
-export const useBatchesByProductQuery = (productId: number) => {
-  return useQuery({
-    queryKey: inventoryKeys.batchByProduct(productId),
-    queryFn: async () => {
-      const response = await api.get<InventoryBatch[]>(
-        `/inventory/batches/product/${productId}`
-      )
-      return response
-    },
-    enabled: !!productId,
-  })
-}
-
-/**
- * Hook lấy lô hàng theo ID
- */
-export const useBatchQuery = (id: number) => {
-  return useQuery({
-    queryKey: inventoryKeys.batch(id),
-    queryFn: async () => {
-      const response = await api.get<InventoryBatch>(`/inventory/batches/${id}`)
-      return response
-    },
-    enabled: !!id,
-  })
-}
-
-/**
- * Hook cập nhật lô hàng
- */
-export const useUpdateBatchMutation = () => {
-  return useMutation({
-    mutationFn: async ({
-      id,
-      batchData,
-    }: {
-      id: number
-      batchData: Partial<CreateInventoryBatchRequest>
-    }) => {
-      const response = await api.patch<InventoryBatch>(
-        `/inventory/batches/${id}`,
-        batchData as unknown as Record<string, unknown>
-      )
-      return response
-    },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(inventoryKeys.batch(variables.id), data)
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.batches() })
-      toast.success("Cập nhật lô hàng thành công!")
-    },
-    onError: (error: Error, variables) => {
-      console.error(`Lỗi khi cập nhật lô hàng ID ${variables.id}:`, error)
-      toast.error("Có lỗi xảy ra khi cập nhật lô hàng")
-    },
-  })
-}
-
-/**
- * Hook xóa lô hàng
- */
-export const useDeleteBatchMutation = () => {
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/inventory/batches/${id}`)
-    },
-    onSuccess: (_, variables) => {
-      queryClient.removeQueries({ queryKey: inventoryKeys.batch(variables) })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.batches() })
-      toast.success("Xóa lô hàng thành công!")
-    },
-    onError: (error: Error, variables) => {
-      console.error(`Lỗi khi xóa lô hàng ID ${variables}:`, error)
-      toast.error("Có lỗi xảy ra khi xóa lô hàng")
-    },
-  })
-}
-
-// ========== TRANSACTION MANAGEMENT HOOKS ==========
-
-/**
- * Hook tạo giao dịch kho mới
- */
-export const useCreateTransactionMutation = () => {
-  return useMutation({
-    mutationFn: async (transactionData: CreateInventoryTransactionRequest) => {
-      const response = await api.post<InventoryTransaction>(
-        "/inventory/transactions",
-        transactionData as unknown as Record<string, unknown>
-      )
-      return response
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.transactions() })
-      toast.success("Tạo giao dịch kho thành công!")
-      return data
-    },
-    onError: (error: Error) => {
-      console.error("Lỗi khi tạo giao dịch kho:", error)
-      toast.error("Có lỗi xảy ra khi tạo giao dịch kho")
-    },
-  })
-}
-
-/**
- * Hook lấy danh sách tất cả giao dịch kho
- */
-export const useTransactionsQuery = () => {
-  return useQuery({
-    queryKey: inventoryKeys.transactions(),
-    queryFn: async () => {
-      const response = await api.get<InventoryTransaction[]>(
-        "/inventory/transactions"
-      )
-      return response
-    },
-  })
-}
-
-/**
- * Hook lấy giao dịch kho theo ID sản phẩm
- */
-export const useTransactionsByProductQuery = (productId: number) => {
-  return useQuery({
-    queryKey: inventoryKeys.transactionByProduct(productId),
-    queryFn: async () => {
-      const response = await api.get<InventoryTransaction[]>(
-        `/inventory/transactions/product/${productId}`
-      )
-      return response
-    },
-    enabled: !!productId,
   })
 }
 
@@ -888,28 +820,5 @@ export const useWeightedAverageCostQuery = (productId: number) => {
       return response
     },
     enabled: !!productId,
-  })
-}
-
-/**
- * Hook tính lại giá vốn trung bình gia quyền
- */
-export const useRecalculateWeightedAverageCostMutation = () => {
-  return useMutation({
-    mutationFn: async (productId: number) => {
-      const response = await api.post<{
-        newAverageCost: number
-        success: boolean
-      }>(`/inventory/recalculate-weighted-average/${productId}`)
-      return response
-    },
-    onSuccess: (data) => {
-      toast.success("Tính lại giá vốn trung bình gia quyền thành công!")
-      return data
-    },
-    onError: (error: Error) => {
-      console.error("Lỗi khi tính lại giá vốn trung bình gia quyền:", error)
-      toast.error("Có lỗi xảy ra khi tính lại giá vốn trung bình gia quyền")
-    },
   })
 }

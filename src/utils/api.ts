@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, CreateAxiosDefaults } from "axios"
-import queryString from "query-string"
 import { isFile, isFileArray, isObjectLike } from "./check-type"
-import { AnyObject, ApiResponse } from "../models/common"
+import { AnyObject, SuccessResponse } from "../models/common"
 import { useAppStore } from "../stores"
 
 export const URL = "http://localhost:3003/"
@@ -34,7 +33,8 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 // Hàm refresh token không sử dụng hook
 const refreshToken = async (): Promise<string> => {
-  const refreshToken = localStorage.getItem("refreshToken")
+  // Sửa lại key để phù hợp với auth.ts
+  const refreshToken = localStorage.getItem("refresh_token")
   if (!refreshToken) {
     throw new Error("Không tìm thấy refresh token")
   }
@@ -54,14 +54,17 @@ const refreshToken = async (): Promise<string> => {
         refreshToken: newRefreshToken,
       })
 
-      localStorage.setItem("refreshToken", newRefreshToken)
+      // Sửa lại key để phù hợp với auth.ts
+      localStorage.setItem("refresh_token", newRefreshToken)
+      localStorage.setItem("access_token", access_token)
       return access_token
     } else {
       throw new Error("Không nhận được token mới")
     }
   } catch (error) {
     // Xóa token và chuyển hướng về trang đăng nhập
-    localStorage.removeItem("refreshToken")
+    localStorage.removeItem("refresh_token")
+    localStorage.removeItem("access_token")
     useAppStore.setState({
       accessToken: undefined,
       refreshToken: undefined,
@@ -109,18 +112,6 @@ const transformPostFormData = (object: AnyObject | FormData = {}) => {
   return formData
 }
 
-const transformPostData = (object: AnyObject = {}) => {
-  const newObject: AnyObject = {}
-  for (const [key, value] of Object.entries(object)) {
-    if (isObjectLike(value)) {
-      newObject[key] = JSON.stringify(value)
-    } else {
-      newObject[key] = value
-    }
-  }
-  return queryString.stringify(newObject)
-}
-
 export class Api {
   instance: AxiosInstance
   constructor(config?: CreateAxiosDefaults) {
@@ -132,22 +123,13 @@ export class Api {
     params?: unknown
   ): Promise<T> {
     const response = await this.instance.get<T>(url, { params })
-    return response.data
-  }
-
-  /** form-urlencoded */
-  async post<T = ApiResponse>(
-    url: string,
-    body?: AnyObject,
-    params?: unknown
-  ): Promise<T> {
-    const data = transformPostData(body)
-    const response = await this.instance.post<T>(url, data, { params })
-    return response.data
+    console.log("__RESPONSE__GET", response)
+    // Trả về response thay vì response.data vì interceptor đã xử lý
+    return response as unknown as T
   }
 
   /** form-data */
-  async postForm<T = ApiResponse>(
+  async postForm<T = SuccessResponse<unknown>>(
     url: string,
     body?: AnyObject | FormData,
     params?: unknown
@@ -158,7 +140,7 @@ export class Api {
   }
 
   /** raw-JSON */
-  async postRaw<T = ApiResponse>(
+  async postRaw<T = SuccessResponse<unknown>>(
     url: string,
     body?: AnyObject,
     params?: unknown
@@ -171,19 +153,8 @@ export class Api {
     return response.data
   }
 
-  /** form-urlencoded */
-  async put<T = ApiResponse>(
-    url: string,
-    body?: AnyObject,
-    params?: unknown
-  ): Promise<T> {
-    const data = transformPostData(body)
-    const response = await this.instance.put<T>(url, data, { params })
-    return response.data
-  }
-
   /** form-data */
-  async putForm<T = ApiResponse>(
+  async putForm<T = SuccessResponse<unknown>>(
     url: string,
     body?: AnyObject | FormData,
     params?: unknown
@@ -194,7 +165,7 @@ export class Api {
   }
 
   /** raw-JSON */
-  async putRaw<T = ApiResponse>(
+  async putRaw<T = SuccessResponse<unknown>>(
     url: string,
     body?: AnyObject,
     params?: unknown
@@ -207,19 +178,8 @@ export class Api {
     return response.data
   }
 
-  /** form-urlencoded */
-  async patch<T = ApiResponse>(
-    url: string,
-    body?: AnyObject,
-    params?: unknown
-  ): Promise<T> {
-    const data = transformPostData(body)
-    const response = await this.instance.patch<T>(url, data, { params })
-    return response.data
-  }
-
   /** form-data */
-  async patchForm<T = ApiResponse>(
+  async patchForm<T = SuccessResponse<unknown>>(
     url: string,
     body?: AnyObject | FormData,
     params?: unknown
@@ -230,7 +190,7 @@ export class Api {
   }
 
   /** raw-JSON */
-  async patchRaw<T = ApiResponse>(
+  async patchRaw<T = SuccessResponse<unknown>>(
     url: string,
     body?: AnyObject,
     params?: unknown
@@ -243,7 +203,10 @@ export class Api {
     return response.data
   }
 
-  async delete<T = ApiResponse>(url: string, params?: unknown): Promise<T> {
+  async delete<T = SuccessResponse<unknown>>(
+    url: string,
+    params?: unknown
+  ): Promise<T> {
     const response = await this.instance.delete<T>(url, { params })
     return response.data
   }
@@ -260,8 +223,9 @@ api.instance.interceptors.request.use(
       )
     }
 
-    // Lấy token từ localStorage hoặc store
-    const token = useAppStore.getState().accessToken
+    // Sửa lại key để phù hợp với auth.ts
+    const token =
+      useAppStore.getState().accessToken || localStorage.getItem("access_token")
     console.log("🚀 ~ token:", token)
 
     if (token) {
@@ -276,6 +240,8 @@ api.instance.interceptors.request.use(
 
 api.instance.interceptors.response.use(
   (response) => {
+    console.log("Interceptor received response:", response)
+
     if (import.meta.env.MODE === "development") {
       console.log(
         `%c__RESPONSE__${response.config.url}: %o`,
@@ -283,10 +249,74 @@ api.instance.interceptors.response.use(
         response
       )
     }
-    if (response.data.code && response.data.code !== 200) {
+
+    // Kiểm tra nếu response có dữ liệu
+    if (!response || !response.data) {
+      console.log("Response is empty or has no data")
+      return response?.data
+    }
+
+    console.log("Response data:", response.data)
+    console.log("Response data type:", typeof response.data)
+    console.log("Response data keys:", Object.keys(response.data))
+
+    // Kiểm tra nếu response có cấu trúc thành công mới (có trường success)
+    if (
+      typeof response.data === "object" &&
+      response.data !== null &&
+      "success" in response.data
+    ) {
+      console.log("Response has success field:", response.data)
+      // Kiểm tra nếu success là boolean
+      if (typeof response.data.success !== "boolean") {
+        console.error("Response success field is not boolean:", response.data)
+        return response.data
+      }
+
+      // Nếu success = true, trả về data
+      if (response.data.success === true) {
+        console.log("Response success is true")
+        // Kiểm tra nếu data tồn tại
+        if ("data" in response.data) {
+          console.log("Returning response.data.data:", response.data.data)
+          return response.data.data
+        } else {
+          console.error("Response data is missing 'data' field:", response.data)
+          return response.data
+        }
+      }
+      // Nếu success = false, ném lỗi
+      else {
+        console.log("Response success is false, throwing error")
+        throw { response }
+      }
+    }
+
+    // Kiểm tra nếu response có cấu trúc lỗi theo chuẩn RFC 7807
+    if (
+      typeof response.data === "object" &&
+      response.data !== null &&
+      "type" in response.data &&
+      "title" in response.data
+    ) {
+      console.log("RFC 7807 Error detected:", response.data)
       throw { response }
     }
-    return response
+
+    // Kiểm tra nếu response có cấu trúc lỗi cũ (có trường code và code !== 200)
+    if (
+      typeof response.data === "object" &&
+      response.data !== null &&
+      "code" in response.data &&
+      response.data.code !== 200
+    ) {
+      console.log("Legacy API Error detected:", response.data)
+      throw { response }
+    }
+
+    // Trả về data như trước cho các response cũ không có cấu trúc đặc biệt
+    console.log("Returning response.data as-is:", response.data)
+    return response.data
   },
   async (error) => {
     const originalRequest = error.config
@@ -297,6 +327,11 @@ api.instance.interceptors.response.use(
         "color: red;font-weight: bold",
         error.response || error
       )
+    }
+
+    // Kiểm tra nếu error có cấu trúc response
+    if (!error || !error.response) {
+      return Promise.reject(error)
     }
 
     // Xử lý lỗi 401 Unauthorized

@@ -8,6 +8,7 @@ import {
   UpdateUserDto,
   ChangePasswordDto,
 } from "@/models/user.model"
+import { handleApiError } from "@/utils/error-handler"
 
 // Query keys cho user
 export const userKeys = {
@@ -65,7 +66,7 @@ export const useProfileQuery = () => {
 export const useCreateUserMutation = () => {
   return useMutation({
     mutationFn: async (userData: CreateUserDto) => {
-      const response = await api.post<User>("/users", userData)
+      const response = await api.postRaw<User>("/users", userData)
       return response
     },
     onSuccess: () => {
@@ -73,9 +74,8 @@ export const useCreateUserMutation = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
       toast.success("Tạo người dùng thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi tạo người dùng:", error)
-      toast.error("Có lỗi xảy ra khi tạo người dùng")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo người dùng")
     },
   })
 }
@@ -92,7 +92,7 @@ export const useUpdateUserMutation = () => {
       id: number
       userData: UpdateUserDto
     }) => {
-      const response = await api.patch<User>(`/users/${id}`, userData)
+      const response = await api.putRaw<User>(`/users/${id}`, userData)
       return response
     },
     onSuccess: (data, variables) => {
@@ -102,9 +102,8 @@ export const useUpdateUserMutation = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.profile() })
       toast.success("Cập nhật thông tin người dùng thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi cập nhật người dùng:", error)
-      toast.error("Có lỗi xảy ra khi cập nhật thông tin người dùng")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật thông tin người dùng")
     },
   })
 }
@@ -123,9 +122,8 @@ export const useDeleteUserMutation = () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
       toast.success("Xóa người dùng thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi xóa người dùng:", error)
-      toast.error("Có lỗi xảy ra khi xóa người dùng")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa người dùng")
     },
   })
 }
@@ -136,18 +134,17 @@ export const useDeleteUserMutation = () => {
 export const useChangePasswordMutation = () => {
   return useMutation({
     mutationFn: async (changePasswordData: ChangePasswordDto) => {
-      const response = await api.patch<{ success: boolean; message: string }>(
-        "/users/change-password",
-        changePasswordData
-      )
+      const response = await api.patchRaw<{
+        success: boolean
+        message: string
+      }>("/users/change-password", changePasswordData)
       return response
     },
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công!")
     },
-    onError: (error: Error) => {
-      console.error("Lỗi đổi mật khẩu:", error)
-      toast.error("Có lỗi xảy ra khi đổi mật khẩu")
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi đổi mật khẩu")
     },
   })
 }

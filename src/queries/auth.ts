@@ -1,275 +1,166 @@
-import { useNavigate, useLocation } from "react-router-dom"
-import { useAppStore } from "@/stores"
+import { useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
-import api from "@/utils/api"
-import { queryClient } from "@/provider/app-provider-tanstack"
-import { 
-  LoginApiPayload, 
-  LoginResponse, 
-  TokenResponse, 
-  RegisterApiPayload, 
-  ChangePasswordApiPayload,
-  UserResponse
-} from "@/models/auth.model"
-
-// ========== QUERY KEYS ==========
-export const authKeys = {
-  all: ["auth"] as const,
-  user: () => [...authKeys.all, "user"] as const,
-} as const
+import { LoginApiPayload, UserResponse } from "@/models/auth.model"
+import { handleApiError } from "@/utils/error-handler"
+import { useAppStore } from "@/stores"
 
 // ========== AUTH HOOKS ==========
+
+/**
+ * Hook để kiểm tra và cập nhật trạng thái xác thực
+ * Tự động kiểm tra token và cập nhật trạng thái đăng nhập
+ */
+export const useAuthStatus = () => {
+  const setIsLogin = useAppStore((state) => state.setIsLogin)
+  const setUserInfo = useAppStore((state) => state.setUserInfo)
+  const setAccessToken = useAppStore((state) => state.setAccessToken)
+  const setRefreshToken = useAppStore((state) => state.setRefreshToken)
+  const accessToken = useAppStore((state) => state.accessToken)
+
+  useEffect(() => {
+    // Chỉ kiểm tra khi có accessToken
+    if (accessToken) {
+      // Trong trường hợp này, chúng ta giả định rằng nếu có accessToken thì người dùng đã đăng nhập
+      // Bạn có thể thêm logic kiểm tra token ở đây nếu cần
+      setIsLogin(true)
+    } else {
+      setIsLogin(false)
+      setUserInfo(null)
+    }
+  }, [accessToken, setIsLogin, setUserInfo, setAccessToken, setRefreshToken])
+}
 
 /**
  * Hook đăng nhập
  */
 export const useLoginMutation = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const setIsLogin = useAppStore((state) => state.setIsLogin)
+  const setUserInfo = useAppStore((state) => state.setUserInfo)
+  const setAccessToken = useAppStore((state) => state.setAccessToken)
+  const setRefreshToken = useAppStore((state) => state.setRefreshToken)
 
   return useMutation({
     mutationFn: async (credentials: LoginApiPayload) => {
-      // Gửi request đến endpoint /auth/login với userAccount và userPassword
-      const response = await api.postRaw<LoginResponse>(
-        "/auth/login",
-        {
-          userAccount: credentials.userAccount,
-          userPassword: credentials.userPassword
-        }
-      )
+      // Import axios trực tiếp để tránh interceptor xử lý
+      const axios = (await import("axios")).default
 
-      console.log("Raw response từ API:", response)
-
-      // Kiểm tra response hợp lệ
-      if (!response) {
-        throw new Error("Dữ liệu phản hồi không hợp lệ")
-      }
-
-      const { access_token, refresh_token, user } = response
-
-      if (access_token && refresh_token) {
-        console.log("Đăng nhập thành công, cập nhật state:", { access_token, refresh_token, user })
-        
-        // Cập nhật trạng thái đăng nhập với token từ server
-        useAppStore.setState({
-          accessToken: access_token,
-          refreshToken: refresh_token,
-          isLogin: true,
-          userInfo: user,
-        })
-
-        // Lưu refresh token vào localStorage
-        localStorage.setItem("refreshToken", refresh_token)
-        
-        // Kiểm tra state sau khi cập nhật
-        const currentState = useAppStore.getState()
-        console.log("State sau khi cập nhật:", currentState)
-      }
-
-      return response
-    },
-    onError: (error: unknown) => {
-      console.error("Lỗi đăng nhập:", error)
-
-      // Hiển thị thông báo lỗi phù hợp dựa trên status code
-      const axiosError = error as {
-        response?: { status?: number }
-        message?: string
-      }
-
-      if (axiosError?.response?.status === 401) {
-        toast.error("Tài khoản hoặc mật khẩu không chính xác!")
-      } else if (axiosError?.response?.status === 429) {
-        toast.error("Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau!")
-      } else if (
-        axiosError?.response?.status &&
-        axiosError.response.status >= 500
-      ) {
-        toast.error("Lỗi máy chủ. Vui lòng thử lại sau!")
-      } else if (axiosError?.message) {
-        toast.error(axiosError.message)
-      } else {
-        toast.error("Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại!")
-      }
-    },
-    onSuccess: () => {
-      // Cập nhật cache
-      queryClient.invalidateQueries({ queryKey: ["user"] })
-
-      // Hiển thị thông báo và chuyển hướng
-      toast.success("Đăng nhập thành công!")
-
-      // Lấy đường dẫn trước đó từ location state hoặc mặc định là '/'
-      const from = (location.state as { from?: string })?.from || "/"
-      console.log("Chuyển hướng đến:", from)
-      navigate(from, { replace: true })
-    },
-  })
-}
-
-/**
- * Hook đăng xuất
- */
-export const useLogoutMutation = () => {
-  const navigate = useNavigate()
-
-  return useMutation({
-    mutationFn: async () => {
-      try {
-        // Server không có endpoint logout, chỉ xóa token ở client
-        // await api.post("/auth/logout")
-      } catch (error) {
-        console.error("Lỗi đăng xuất:", error)
-      } finally {
-        useAppStore.setState({
-          accessToken: "",
-          refreshToken: "",
-          isLogin: false,
-        })
-        localStorage.removeItem("refreshToken")
-      }
-    },
-    onSuccess: () => {
-      // Xóa cache và state
-      queryClient.clear()
-
-      navigate("/sign-in")
-      toast.success("Đăng xuất thành công!")
-    },
-    onError: (error: Error) => {
-      console.error("Lỗi đăng xuất:", error)
-      toast.error("Đã xảy ra lỗi khi đăng xuất.")
-    },
-  })
-}
-
-/**
- * Hook làm mới token
- */
-export const useRefreshTokenMutation = () => {
-  return useMutation({
-    mutationFn: async () => {
-      const refreshToken = localStorage.getItem("refreshToken")
-      if (!refreshToken) {
-        throw new Error("Không tìm thấy refresh token")
-      }
-
-      // Gửi refresh_token trong body theo API backend
-      const apiData = await api.postRaw<TokenResponse>(
-        "/auth/refresh",
-        { refresh_token: refreshToken }
-      )
-
-      console.log("Raw API response for refresh token:", apiData)
-
-      if (!apiData) {
-        throw new Error("Dữ liệu phản hồi không hợp lệ")
-      }
-
-      const { access_token, refresh_token } = apiData
-
-      if (access_token && refresh_token) {
-        // Cập nhật token mới
-        useAppStore.setState((prev) => ({
-          ...prev,
-          accessToken: access_token,
-          refreshToken: refresh_token,
-        }))
-
-        // Lưu refresh token mới vào localStorage
-        localStorage.setItem("refreshToken", refresh_token)
-      }
-
-      return apiData
-    },
-    onError: (error: Error) => {
-      console.error("Lỗi khi refresh token:", error)
-      // Xóa token cũ và chuyển về trang đăng nhập
-      localStorage.removeItem("refreshToken")
-      useAppStore.setState((prev) => ({
-        ...prev,
-        accessToken: undefined,
-        refreshToken: undefined,
-        isLogin: false,
-        userInfo: undefined,
-      }))
-      throw error
-    }
-  })
-}
-
-/**
- * Hook đăng ký người dùng mới
- */
-export const useRegisterMutation = () => {
-  return useMutation({
-    mutationFn: async (userData: RegisterApiPayload) => {
-      const apiData = await api.post<UserResponse>(
-        "/auth/register",
-        userData
-      )
-
-      console.log("Raw API response for register:", apiData)
-
-      // Kiểm tra response hợp lệ
-      if (!apiData) {
-        throw new Error("Dữ liệu phản hồi không hợp lệ")
-      }
-
-      return apiData
-    },
-    onSuccess: () => {
-      toast.success("Đăng ký tài khoản thành công!")
-    },
-    onError: (error: unknown) => {
-      console.error("Lỗi đăng ký:", error)
-      toast.error("Có lỗi xảy ra khi đăng ký tài khoản")
-      throw error
-    }
-  })
-}
-
-/**
- * Hook đổi mật khẩu
- */
-export const useChangePasswordMutation = () => {
-  return useMutation({
-    mutationFn: async (passwordData: ChangePasswordApiPayload) => {
-      // Gửi request đến endpoint /auth/change-password với oldPassword và newPassword
-      const apiData = await api.putRaw<{ success: boolean; message: string }>("/auth/change-password", {
-        oldPassword: passwordData.oldPassword,
-        newPassword: passwordData.newPassword
+      // Gọi trực tiếp axios mà không qua interceptor
+      const response = await axios.post("http://localhost:3003/auth/login", {
+        userAccount: credentials.userAccount,
+        userPassword: credentials.userPassword,
       })
 
-      console.log("Raw API response for change password:", apiData)
+      // Log để debug
+      console.log("Raw axios response:", response.data)
 
-      if (!apiData) {
-        throw new Error("Dữ liệu phản hồi không hợp lệ")
+      // Trả về response.data (đây là phần dữ liệu đầy đủ từ API)
+      return response.data
+    },
+    onSuccess: (response) => {
+      // Xử lý token và user info trong onSuccess callback của component
+      console.log("Login successful - Response received:", response)
+
+      // Kiểm tra response có tồn tại không
+      if (!response) {
+        console.error("Response is undefined or null")
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
       }
 
-      return apiData
-    },
-    onSuccess: () => {
-      toast.success("Đổi mật khẩu thành công!")
+      // Kiểm tra response có cấu trúc đúng không
+      if (typeof response !== "object" || response === null) {
+        console.error("Response is not an object:", response)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu response có trường success
+      if (!("success" in response)) {
+        console.error("Response is missing 'success' field:", response)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu success là boolean
+      if (typeof response.success !== "boolean") {
+        console.error("Response success field is not boolean:", response)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu success = true
+      if (response.success !== true) {
+        console.error("Login failed - success is false:", response)
+        toast.error("Đăng nhập thất bại")
+        return
+      }
+
+      // Kiểm tra nếu response có trường data
+      if (!("data" in response)) {
+        console.error("Response is missing 'data' field:", response)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      const data = response.data
+
+      // Kiểm tra data có cấu trúc đúng không
+      if (typeof data !== "object" || data === null) {
+        console.error("Data is not an object:", data)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu data có các trường cần thiết
+      if (
+        !("access_token" in data) ||
+        !("refresh_token" in data) ||
+        !("user" in data)
+      ) {
+        console.error("Data is missing required fields:", data)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu access_token và refresh_token là string
+      if (
+        typeof data.access_token !== "string" ||
+        typeof data.refresh_token !== "string"
+      ) {
+        console.error("Access token or refresh token is not string:", data)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu user là object
+      if (typeof data.user !== "object" || data.user === null) {
+        console.error("User is not an object:", data.user)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu user có các trường cần thiết
+      if (!("userId" in data.user) || !("userAccount" in data.user)) {
+        console.error("User is missing required fields:", data.user)
+        toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      setAccessToken(data.access_token)
+      setRefreshToken(data.refresh_token)
+      setUserInfo(data.user as UserResponse)
+      setIsLogin(true)
+
+      // Lưu token vào localStorage để đảm bảo persist
+      localStorage.setItem("access_token", data.access_token)
+      localStorage.setItem("refresh_token", data.refresh_token)
+
+      // Redirect đến trang dashboard
+      window.location.href = "/"
     },
     onError: (error: unknown) => {
-      console.error("Lỗi khi thay đổi mật khẩu:", error)
-      toast.error("Có lỗi xảy ra khi đổi mật khẩu")
-      throw error
-    }
+      handleApiError(error, "Đăng nhập không thành công")
+    },
   })
-}
-
-/**
- * Hook kiểm tra trạng thái đăng nhập
- */
-export const useAuthStatus = () => {
-  const isLogin = useAppStore((state) => state.isLogin)
-  const userToken = useAppStore((state) => state.accessToken)
-
-  return {
-    isAuthenticated: isLogin && !!userToken,
-    token: userToken,
-  }
 }

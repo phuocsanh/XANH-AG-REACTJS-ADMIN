@@ -1,25 +1,24 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom"
-import Sidebar from "./components/sidebar"
-import MobileSidebar from "./components/mobile-sidebar"
-import { Header } from "./components/header"
 import {
-  createContext,
-  Dispatch,
-  SetStateAction,
   useState,
   useEffect,
   useRef,
+  createContext,
+  Dispatch,
+  SetStateAction,
 } from "react"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { Header } from "./components/header"
+import Sidebar from "./components/sidebar"
+import Footer from "./components/footer"
 import { Dashboard } from "./pages/dashboard"
+import Products from "./pages/products"
 import ProductsList from "./pages/products/products-list"
-import { SignIn } from "./pages/sign-in"
-
-import { OtpPage } from "./pages/otp"
+import Users from "./pages/users"
 import ListCategory from "./pages/categories/list-category"
 import ListSubCategory from "./pages/sub-categories/list-sub-category"
-import Users from "./pages/users"
-import Products from "./pages/products"
-import ProtectedRoute from "./components/protected-route"
+import { SignIn } from "./pages/sign-in"
+import NotFound from "./pages/not-found"
+import { ProtectedRoute } from "./components/protected-route"
 import {
   InventoryReceiptsList,
   InventoryReceiptDetail,
@@ -31,6 +30,8 @@ import { ForgotPassword } from "./pages/forgot-password"
 import ListUnits from "./pages/units/list-units"
 // Thêm import cho trang symbol
 import ListSymbols from "./pages/symbols/list-symbols"
+// Thêm import cho trang supplier
+import Suppliers from "./pages/suppliers"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -39,7 +40,7 @@ type TypeMyContext = {
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>
 }
 
-const MyContext = createContext<TypeMyContext>({
+export const MyContext = createContext<TypeMyContext>({
   isHeaderFooterShow: false,
   setIsHeaderFooterShow: () => {},
   isSidebarOpen: true,
@@ -196,6 +197,15 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    {/* Thêm route cho trang supplier */}
+                    <Route
+                      path='/suppliers'
+                      element={
+                        <ProtectedRoute>
+                          <Suppliers />
+                        </ProtectedRoute>
+                      }
+                    />
 
                     {/* Quản lý nhập hàng - Inventory Management */}
                     <Route
@@ -215,40 +225,48 @@ function App() {
                       }
                     />
                     <Route
-                      path='/inventory/receipts/:id'
+                      path='/inventory/receipt/:id'
                       element={
                         <ProtectedRoute>
                           <InventoryReceiptDetail />
                         </ProtectedRoute>
                       }
                     />
-                    <Route
-                      path='/inventory/receipts/edit/:id'
-                      element={
-                        <ProtectedRoute>
-                          <InventoryReceiptCreate />
-                        </ProtectedRoute>
-                      }
-                    />
 
-                    {/* Các trang công khai */}
+                    {/* Trang đăng nhập - không yêu cầu xác thực */}
                     <Route path='/sign-in' element={<SignIn />} />
                     <Route
                       path='/forgot-password'
                       element={<ForgotPassword />}
                     />
-                    <Route path='/otp' element={<OtpPage />} />
+
+                    {/* Trang 404 */}
+                    <Route path='*' element={<NotFound />} />
                   </Routes>
                 </main>
               </div>
             </div>
 
-            {/* Mobile sidebar overlay */}
+            {/* Footer */}
             {isHeaderFooterShow === false && isLogin && (
-              <MobileSidebar
-                isOpen={isMobileSidebarOpen}
-                onClose={() => setIsMobileSidebarOpen(false)}
-              />
+              <div className='w-full'>
+                <Footer />
+              </div>
+            )}
+
+            {/* Mobile sidebar overlay */}
+            {isMobileSidebarOpen && (
+              <div
+                className='fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden'
+                onClick={() => setIsMobileSidebarOpen(false)}
+              >
+                <div
+                  className='absolute left-0 top-0 h-full w-64 bg-white'
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Sidebar />
+                </div>
+              </div>
             )}
           </div>
         </MyContext.Provider>
@@ -258,4 +276,3 @@ function App() {
 }
 
 export default App
-export { MyContext }

@@ -6,8 +6,10 @@ import {
   CreateSupplierRequest,
   UpdateSupplierRequest,
   SupplierApiResponse,
-  SupplierListApiResponse,
+  Supplier,
 } from "@/models/supplier.model"
+import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // ========== QUERY KEYS ==========
 export const supplierKeys = {
@@ -25,15 +27,7 @@ export const supplierKeys = {
  * Hook lấy danh sách nhà cung cấp
  */
 export const useSuppliersQuery = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: supplierKeys.list(params),
-    queryFn: async () => {
-      const response = await api.get<SupplierListApiResponse>("/suppliers", {
-        params,
-      })
-      return response
-    },
-  })
+  return usePaginationQuery<Supplier[]>("/suppliers", params)
 }
 
 /**
@@ -44,7 +38,8 @@ export const useSupplierQuery = (id: number) => {
     queryKey: supplierKeys.detail(id),
     queryFn: async () => {
       const response = await api.get<SupplierApiResponse>(`/suppliers/${id}`)
-      return response
+      // Trả về response.data thay vì toàn bộ response để phù hợp với interceptor
+      return response.data
     },
     enabled: !!id,
   })
@@ -56,19 +51,21 @@ export const useSupplierQuery = (id: number) => {
 export const useCreateSupplierMutation = () => {
   return useMutation({
     mutationFn: async (supplier: CreateSupplierRequest) => {
-      const response = await api.post<SupplierApiResponse>(
+      const response = await api.postRaw<SupplierApiResponse>(
         "/suppliers",
         supplier
       )
+      console.log("Create supplier response:", response)
       return response
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Create supplier success:", data)
       // Invalidate và refetch danh sách nhà cung cấp
       queryClient.invalidateQueries({ queryKey: supplierKeys.lists() })
       toast.success("Tạo nhà cung cấp thành công!")
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi tạo nhà cung cấp: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo nhà cung cấp")
     },
   })
 }
@@ -85,7 +82,7 @@ export const useUpdateSupplierMutation = () => {
       id: number
       supplier: UpdateSupplierRequest
     }) => {
-      const response = await api.put<SupplierApiResponse>(
+      const response = await api.putRaw<SupplierApiResponse>(
         `/suppliers/${id}`,
         supplier
       )
@@ -96,8 +93,8 @@ export const useUpdateSupplierMutation = () => {
       queryClient.invalidateQueries({ queryKey: supplierKeys.lists() })
       toast.success("Cập nhật nhà cung cấp thành công!")
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi cập nhật nhà cung cấp: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật nhà cung cấp")
     },
   })
 }
@@ -108,15 +105,16 @@ export const useUpdateSupplierMutation = () => {
 export const useDeleteSupplierMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/suppliers/${id}`)
+      const response = await api.delete(`/suppliers/${id}`)
+      return response
     },
     onSuccess: () => {
       // Invalidate và refetch danh sách nhà cung cấp
       queryClient.invalidateQueries({ queryKey: supplierKeys.lists() })
       toast.success("Xóa nhà cung cấp thành công!")
     },
-    onError: (error: Error) => {
-      toast.error(`Lỗi khi xóa nhà cung cấp: ${error.message}`)
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa nhà cung cấp")
     },
   })
 }

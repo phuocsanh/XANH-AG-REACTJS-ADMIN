@@ -9,15 +9,31 @@ type Store = {
   accessToken: string | undefined
   refreshToken: string | undefined
   userInfo?: UserResponse | null
+  setIsLogin: (isLogin: boolean) => void
+  setAccessToken: (accessToken: string | undefined) => void
+  setRefreshToken: (refreshToken: string | undefined) => void
+  setUserInfo: (userInfo: UserResponse | null | undefined) => void
+  logout: () => void
 }
 
 export const useAppStore = create<Store>()(
   persist(
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
-    (_set, _get) => ({
+    (set) => ({
       isLogin: false,
       accessToken: undefined,
       refreshToken: undefined,
+      userInfo: undefined,
+      setIsLogin: (isLogin) => set({ isLogin }),
+      setAccessToken: (accessToken) => set({ accessToken }),
+      setRefreshToken: (refreshToken) => set({ refreshToken }),
+      setUserInfo: (userInfo) => set({ userInfo }),
+      logout: () =>
+        set({
+          isLogin: false,
+          accessToken: undefined,
+          refreshToken: undefined,
+          userInfo: undefined,
+        }),
     }),
     {
       name: "app-storage",
