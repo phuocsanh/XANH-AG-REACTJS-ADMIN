@@ -28,9 +28,9 @@ export const useUploadFileMutation = () => {
   return useMutation({
     mutationFn: async (uploadData: UploadFileRequest) => {
       const formData = new FormData()
-      formData.append("File", uploadData.file)
-      formData.append("Type", uploadData.type)
-      formData.append("Folder", uploadData.folder)
+      formData.append("file", uploadData.file)
+      formData.append("type", uploadData.type)
+      formData.append("folder", uploadData.folder)
 
       const response = await api.postForm<UploadResponse>("/uploads", formData)
       return response
@@ -50,18 +50,15 @@ export const useUploadFileMutation = () => {
  */
 export const useUploadImageMutation = () => {
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (uploadData: UploadFileRequest) => {
       const formData = new FormData()
-      formData.append("file", file)
+      formData.append("file", uploadData.file)
+      formData.append("type", uploadData.type)
+      formData.append("folder", uploadData.folder)
 
-      const response = await api.postRaw<UploadResponse>(
-        "/upload/file",
-        formData as unknown as Record<string, unknown>,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+      const response = await api.postForm<UploadResponse>(
+        "/upload/image",
+        formData
       )
 
       return response

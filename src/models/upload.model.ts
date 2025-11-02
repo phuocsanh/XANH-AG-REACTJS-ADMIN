@@ -25,10 +25,10 @@ export interface FileUpload {
 export interface UploadResponse {
   id: string
   public_id: string
-  file_url: string
-  file_name: string
-  file_type: string
-  file_size: number
+  url: string
+  name: string
+  type: string
+  size: number
   created_at: string
   updated_at: string
 }

@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Upload, message } from "antd"
 import { UploadFile, UploadProps } from "antd/lib/upload/interface"
-import { useUploadFileMutation } from "../../queries/upload"
+import { useUploadImageMutation } from "../../queries/upload"
 
 interface ImageUploadProps {
   value?: string[]
@@ -22,7 +22,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [fileList, setFileList] = useState<UploadFile[]>([])
 
   // Upload mutation
-  const uploadFileMutation = useUploadFileMutation()
+  const uploadImageMutation = useUploadImageMutation()
 
   // Convert URLs to UploadFile objects
   React.useEffect(() => {
@@ -61,22 +61,23 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (currentFile?.originFileObj) {
       try {
         setLoading(true)
-        // Fix: Create proper UploadFileRequest object with required properties
+        // Create proper UploadFileRequest object with required properties
         const uploadRequest = {
           file: currentFile.originFileObj as File,
           type: "image", // Default to image type
           folder: "images", // Default folder
         }
 
-        const response = await uploadFileMutation.mutateAsync(uploadRequest)
+        const response = await uploadImageMutation.mutateAsync(uploadRequest)
 
         // Update the file in the list with the URL from the server
         const updatedList = newFileList.map((item) => {
           if (item.uid === uploadedFile.uid) {
             return {
               ...item,
-              // Fix: Use correct property name from UploadResponse interface
-              url: response.file_url,
+              // Use correct property name from server response
+              url: response.url,
+              thumbUrl: response.url,
               status: "done" as const,
             }
           }
