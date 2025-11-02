@@ -39,10 +39,13 @@ export const Users = () => {
   const [isEditing, setIsEditing] = useState(false)
 
   // React Query hooks
-  const { data: users, isLoading, error } = useUsersQuery()
+  const { data: usersResponse, isLoading, error } = useUsersQuery()
   const createUserMutation = useCreateUserMutation()
   const updateUserMutation = useUpdateUserMutation()
   const deleteUserMutation = useDeleteUserMutation()
+
+  // Trích xuất dữ liệu người dùng từ response phân trang
+  const users = usersResponse?.data?.items || []
 
   // Form handling
   const {

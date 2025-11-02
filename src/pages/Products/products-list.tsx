@@ -73,7 +73,7 @@ const ProductsList: React.FC = () => {
     useProductTypesQuery()
 
   // Lấy danh sách loại sản phẩm
-  const productTypes: ProductType[] = productTypesData?.items || []
+  const productTypes: ProductType[] = productTypesData?.data?.items || []
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value)

@@ -12,6 +12,7 @@ import {
   TopSellingProduct,
 } from "@/models/sales.model"
 import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // ========== QUERY KEYS ==========
 export const salesKeys = {
@@ -58,14 +59,8 @@ export const useCreateInvoiceMutation = () => {
 /**
  * Hook lấy danh sách tất cả hóa đơn bán hàng
  */
-export const useInvoicesQuery = () => {
-  return useQuery({
-    queryKey: salesKeys.invoicesList(),
-    queryFn: async () => {
-      const response = await api.get<SalesInvoice[]>("/sales/invoices")
-      return response
-    },
-  })
+export const useInvoicesQuery = (params?: Record<string, unknown>) => {
+  return usePaginationQuery<SalesInvoice>("/sales/invoices", params)
 }
 
 /**

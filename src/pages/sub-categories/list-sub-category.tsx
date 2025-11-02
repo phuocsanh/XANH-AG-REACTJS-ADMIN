@@ -6,13 +6,13 @@ import { IoMdAdd } from "react-icons/io"
 import { MyContext } from "../../App"
 
 import DialogAddUpdate from "./components/dialog-add-update"
-import { ConfirmModal } from "../../components/common" // Cập nhật import
+import { ConfirmModal } from "../../components/common" // Import ConfirmModal từ common components
 import {
   useProductSubtypesQuery,
   useDeleteProductSubtypeMutation,
 } from "../../queries/product-subtype"
 import { ProductSubtype } from "../../models/product-subtype.model"
-import { useAllProductTypesQuery as useProductTypes } from "../../queries/product-type"
+import { useProductTypesQuery as useProductTypes } from "../../queries/product-type"
 import { toast } from "react-toastify"
 import DataTable from "../../components/common/data-table"
 
@@ -20,12 +20,13 @@ const ListSubCategory = () => {
   const context = useContext(MyContext)
 
   const {
-    data: productSubtypes,
+    data: productSubtypesResponse,
     isLoading: isLoadingSubtypes,
     refetch: refetchSubtypes,
   } = useProductSubtypesQuery()
   const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
-  const { data: productTypes, isLoading: isLoadingTypes } = useProductTypes()
+  const { data: productTypesResponse, isLoading: isLoadingTypes } =
+    useProductTypes()
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -37,6 +38,10 @@ const ListSubCategory = () => {
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false) // Thêm state cho modal xóa
   const [deletingSubCategory, setDeletingSubCategory] =
     useState<ProductSubtype | null>(null) // Thêm state cho danh mục phụ đang xóa
+
+  // Trích xuất dữ liệu từ response phân trang
+  const productSubtypes = productSubtypesResponse?.data?.items || []
+  const productTypes = productTypesResponse?.data?.items || []
 
   // Xử lý sửa loại phụ sản phẩm
   const handleEdit = (record: ProductSubtype) => {
@@ -86,9 +91,9 @@ const ListSubCategory = () => {
 
   // Hàm để lấy tên loại sản phẩm từ ID
   const getProductTypeName = (productTypeId: number) => {
-    if (!productTypes?.items) return "N/A"
-    const productType = productTypes.items.find(
-      (type) => type.id === productTypeId
+    if (!productTypes) return "N/A"
+    const productType = productTypes.find(
+      (type: { id: number }) => type.id === productTypeId
     )
     return productType ? productType.name : "N/A"
   }

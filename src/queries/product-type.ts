@@ -11,6 +11,7 @@ import {
   ProductSubtypeListResponse,
 } from "@/models/product-type.model"
 import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // Query keys cho product type
 export const productTypeKeys = {
@@ -33,34 +34,8 @@ export const productTypeKeys = {
 /**
  * Hook lấy danh sách loại sản phẩm
  */
-export const useProductTypesQuery = () => {
-  return useQuery({
-    queryKey: productTypeKeys.lists(),
-    queryFn: async () => {
-      const response = await api.get<{ items: ProductType[]; total: number }>(
-        "/product-types"
-      )
-      return response
-    },
-  })
-}
-
-/**
- * Hook lấy danh sách loại sản phẩm (bổ sung từ service với endpoint khác)
- */
-export const useAllProductTypesQuery = () => {
-  return useQuery({
-    queryKey: productTypeKeys.lists(),
-    queryFn: async () => {
-      const apiData = await api.get<ProductType[]>("/product-types")
-
-      // API trả về array trực tiếp, cần wrap thành cấu trúc mong đợi
-      return {
-        items: apiData,
-        total: apiData.length,
-      }
-    },
-  })
+export const useProductTypesQuery = (params?: Record<string, unknown>) => {
+  return usePaginationQuery<ProductType>("/product-types", params)
 }
 
 /**

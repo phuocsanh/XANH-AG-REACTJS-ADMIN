@@ -14,7 +14,7 @@ import {
   useUpdateProductSubtypeMutation,
 } from "@/queries/product-subtype"
 import { ProductType } from "@/models/product-type.model"
-import { useAllProductTypesQuery as useProductTypes } from "@/queries/product-type"
+import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import {
   productSubtypeSchema,
   ProductSubtypeFormData,
@@ -35,7 +35,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
   const queryClient = useQueryClient()
   const { data: productTypesResponse } = useProductTypes()
   // useAllProductTypesQuery trả về { items: ProductType[], total: number }
-  const productTypes = productTypesResponse?.items || []
+  const productTypes = productTypesResponse?.data?.items || []
 
   // Mutations
   const createProductSubtypeMutation = useCreateProductSubtypeMutation()

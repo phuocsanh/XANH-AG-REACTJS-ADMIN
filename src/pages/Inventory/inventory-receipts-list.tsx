@@ -34,6 +34,7 @@ import {
   InventoryReceipt,
   InventoryReceiptStatus,
   InventoryReceiptListParams,
+  mapApiResponseToInventoryReceipt,
 } from "@/models/inventory.model"
 import {
   useInventoryReceiptsQuery,
@@ -99,6 +100,12 @@ const InventoryReceiptsList: React.FC = () => {
     error: receiptsError,
     refetch: refetchReceipts,
   } = useInventoryReceiptsQuery(queryParams)
+
+  // Map API response data to InventoryReceipt type
+  const mappedReceipts = useMemo(() => {
+    if (!receiptsData?.data?.items) return []
+    return receiptsData.data.items.map(mapApiResponseToInventoryReceipt)
+  }, [receiptsData])
 
   const { data: statsData, isLoading: isLoadingStats } =
     useInventoryStatsQuery()
@@ -437,7 +444,7 @@ const InventoryReceiptsList: React.FC = () => {
   ]
 
   // Lấy danh sách phiếu từ API response
-  const receipts = receiptsData?.data?.items || []
+  const receipts = mappedReceipts
   const total = receiptsData?.data?.total || 0
 
   if (receiptsError) {

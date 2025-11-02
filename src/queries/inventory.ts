@@ -31,6 +31,7 @@ import {
   mapApiResponseToInventoryHistory,
 } from "@/models/inventory.model"
 import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // ========== QUERY KEYS ==========
 export const inventoryKeys = {
@@ -84,31 +85,22 @@ export const inventoryKeys = {
 export const useInventoryReceiptsQuery = (
   params?: InventoryReceiptListParams
 ) => {
-  return useQuery({
-    queryKey: inventoryKeys.receiptsList(params),
-    queryFn: async () => {
-      const apiData = await api.get<InventoryReceiptApiResponse[]>(
-        "/inventory/receipts",
-        {
-          params,
-        }
-      )
-
-      console.log("Raw API response for inventory receipts:", apiData)
-
-      // Map dữ liệu từ API response sang interface mới
-      const mappedReceipts = apiData.map(mapApiResponseToInventoryReceipt)
-
-      return {
-        data: {
-          items: mappedReceipts,
-          total: apiData.length,
-        },
-        code: 200,
-        message: "Lấy danh sách phiếu nhập hàng thành công",
+  // Chuyển đổi InventoryReceiptListParams thành PaginationParams
+  const paginationParams = params
+    ? {
+        page:
+          params.offset !== undefined
+            ? Math.floor(params.offset / (params.limit || 10)) + 1
+            : 1,
+        limit: params.limit,
+        ...params,
       }
-    },
-  })
+    : undefined
+
+  return usePaginationQuery<InventoryReceiptApiResponse>(
+    "/inventory/receipts",
+    paginationParams
+  )
 }
 
 /**
@@ -562,31 +554,22 @@ export const useRecalculateWeightedAverageCostMutation = () => {
 export const useInventoryHistoryQuery = (
   params?: InventoryHistoryListParams
 ) => {
-  return useQuery({
-    queryKey: inventoryKeys.historyList(params),
-    queryFn: async () => {
-      const apiData = await api.get<InventoryHistoryApiResponse[]>(
-        "/inventory/product-history",
-        {
-          params,
-        }
-      )
-
-      console.log("Raw API response for inventory history:", apiData)
-
-      // Map dữ liệu từ API response sang interface mới
-      const mappedHistory = apiData.map(mapApiResponseToInventoryHistory)
-
-      return {
-        data: {
-          items: mappedHistory,
-          total: apiData.length,
-        },
-        code: 200,
-        message: "Lấy lịch sử tồn kho thành công",
+  // Chuyển đổi InventoryHistoryListParams thành PaginationParams
+  const paginationParams = params
+    ? {
+        page:
+          params.offset !== undefined
+            ? Math.floor(params.offset / (params.limit || 10)) + 1
+            : 1,
+        limit: params.limit,
+        ...params,
       }
-    },
-  })
+    : undefined
+
+  return usePaginationQuery<InventoryHistoryApiResponse>(
+    "/inventory/product-history",
+    paginationParams
+  )
 }
 
 /**
@@ -649,7 +632,7 @@ export const useInventoryStatsQuery = () => {
         .filter((r: InventoryReceiptApiResponse) => r.status === 3)
         .reduce(
           (sum: number, r: InventoryReceiptApiResponse) =>
-            sum + parseFloat(r.totalAmount || "0"),
+            sum + parseFloat(r.total_amount || "0"),
           0
         )
         .toString()

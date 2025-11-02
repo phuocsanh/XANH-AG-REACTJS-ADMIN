@@ -9,6 +9,7 @@ import {
   ChangePasswordDto,
 } from "@/models/user.model"
 import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // Query keys cho user
 export const userKeys = {
@@ -23,14 +24,8 @@ export const userKeys = {
 /**
  * Hook lấy danh sách tất cả người dùng
  */
-export const useUsersQuery = () => {
-  return useQuery({
-    queryKey: userKeys.lists(),
-    queryFn: async () => {
-      const response = await api.get<User[]>("/users")
-      return response
-    },
-  })
+export const useUsersQuery = (params?: Record<string, unknown>) => {
+  return usePaginationQuery<User>("/users", params)
 }
 
 /**

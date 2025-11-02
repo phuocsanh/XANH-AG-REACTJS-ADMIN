@@ -8,6 +8,7 @@ import {
   UpdateProductSubtypeDto,
 } from "@/models/product-subtype.model"
 import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // Query keys cho product subtype
 export const productSubtypeKeys = {
@@ -22,14 +23,8 @@ export const productSubtypeKeys = {
 /**
  * Hook lấy danh sách tất cả loại phụ sản phẩm
  */
-export const useProductSubtypesQuery = () => {
-  return useQuery({
-    queryKey: productSubtypeKeys.lists(),
-    queryFn: async () => {
-      const response = await api.get<ProductSubtype[]>("/product-subtype")
-      return response
-    },
-  })
+export const useProductSubtypesQuery = (params?: Record<string, unknown>) => {
+  return usePaginationQuery<ProductSubtype>("/product-subtype", params)
 }
 
 /**

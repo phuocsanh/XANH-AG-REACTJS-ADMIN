@@ -22,6 +22,7 @@ import type {
 } from "@/models/file-tracking.model"
 import { handleApiError } from "@/utils/error-handler"
 import type { ErrorResponse } from "@/models/network"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // ========== QUERY KEYS ==========
 export const fileTrackingKeys = {
@@ -72,16 +73,19 @@ export const useCreateFileUploadMutation = () => {
  * Hook lấy danh sách tất cả file upload
  */
 export const useFileUploadsQuery = (params?: FileSearchParams) => {
-  return useQuery({
-    queryKey: fileTrackingKeys.uploadsList(params),
-    queryFn: async () => {
-      const response = await api.get<FileUploadListResponse>(
-        "/file-tracking/uploads",
-        { params }
-      )
-      return response
-    },
-  })
+  // Chuyển đổi FileSearchParams thành PaginationParams
+  const paginationParams = params
+    ? {
+        page: params.page,
+        limit: params.limit,
+        ...params,
+      }
+    : undefined
+
+  return usePaginationQuery<FileUpload>(
+    "/file-tracking/uploads",
+    paginationParams
+  )
 }
 
 /**

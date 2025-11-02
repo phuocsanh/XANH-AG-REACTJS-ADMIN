@@ -27,7 +27,7 @@ import {
   ConvertedProductValues,
   defaultProductFormValues,
 } from "./form-config"
-import { useAllProductTypesQuery as useProductTypes } from "@/queries/product-type"
+import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
 import { useProductSubtypesQuery } from "@/queries/product-subtype"
 import { useUnitsQuery } from "@/queries/unit"
 import { BASE_STATUS } from "@/constant/base-status"
@@ -35,6 +35,7 @@ import { ProductType } from "@/models/product-type.model"
 // Thêm import cho symbol
 import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
+import { ProductSubtype } from "@/models/product-subtype.model"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -177,7 +178,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   // Debug log for options
   console.log(
     "Product types options:",
-    productTypes?.items?.map((type: ProductType) => ({
+    productTypes?.data?.items?.map((type: ProductType) => ({
       label: type.name,
       value: type.id,
     })) || []
@@ -429,7 +430,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   required
                   rules={{ required: "Vui lòng chọn loại sản phẩm" }}
                   options={
-                    productTypes?.items?.map((type: ProductType) => ({
+                    productTypes?.data?.items?.map((type: ProductType) => ({
                       label: type.name,
                       value: type.id,
                     })) || []
@@ -515,12 +516,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   placeholder='Chọn loại phụ sản phẩm'
                   mode='multiple'
                   options={
-                    productSubtypes?.map((subtype) => ({
-                      label: (subtype.subtypeName ||
-                        subtype.name ||
-                        "") as string,
-                      value: subtype.id,
-                    })) || []
+                    productSubtypes?.data?.items?.map(
+                      (subtype: ProductSubtype) => ({
+                        label: (subtype.subtypeName ||
+                          subtype.name ||
+                          "") as string,
+                        value: subtype.id,
+                      })
+                    ) || []
                   }
                   className='w-full'
                 />

@@ -136,7 +136,7 @@ export class Api {
   ): Promise<T> {
     const data = transformPostFormData(body)
     const response = await this.instance.postForm<T>(url, data, { params })
-    return response.data
+    return response as unknown as T
   }
 
   /** raw-JSON */
@@ -150,7 +150,7 @@ export class Api {
       params,
       headers: { "Content-Type": "application/json" },
     })
-    return response.data
+    return response as unknown as T
   }
 
   /** form-data */
@@ -161,7 +161,7 @@ export class Api {
   ): Promise<T> {
     const data = transformPostFormData(body)
     const response = await this.instance.putForm<T>(url, data, { params })
-    return response.data
+    return response as unknown as T
   }
 
   /** raw-JSON */
@@ -175,7 +175,7 @@ export class Api {
       params,
       headers: { "Content-Type": "application/json" },
     })
-    return response.data
+    return response as unknown as T
   }
 
   /** form-data */
@@ -186,7 +186,7 @@ export class Api {
   ): Promise<T> {
     const data = transformPostFormData(body)
     const response = await this.instance.patchForm<T>(url, data, { params })
-    return response.data
+    return response as unknown as T
   }
 
   /** raw-JSON */
@@ -200,7 +200,7 @@ export class Api {
       params,
       headers: { "Content-Type": "application/json" },
     })
-    return response.data
+    return response as unknown as T
   }
 
   async delete<T = SuccessResponse<unknown>>(
@@ -208,7 +208,7 @@ export class Api {
     params?: unknown
   ): Promise<T> {
     const response = await this.instance.delete<T>(url, { params })
-    return response.data
+    return response as unknown as T
   }
 }
 

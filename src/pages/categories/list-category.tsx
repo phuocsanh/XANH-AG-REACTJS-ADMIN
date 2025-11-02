@@ -6,9 +6,9 @@ import { IoMdAdd } from "react-icons/io"
 import { MyContext } from "../../App"
 
 import DialogAddUpdate from "./components/dialog-add-update"
-import { ConfirmModal } from "../../components/common" // Cập nhật import
+import { ConfirmModal } from "../../components/common" // Import ConfirmModal từ common components
 import {
-  useAllProductTypesQuery as useProductTypes,
+  useProductTypesQuery as useProductTypes,
   useDeleteProductTypeMutation,
 } from "../../queries/product-type"
 import {
@@ -26,7 +26,7 @@ const ListCategory = () => {
   const context = useContext(MyContext)
 
   // Sử dụng React Query để lấy dữ liệu loại sản phẩm
-  const { data: productTypesProductType, isLoading } = useProductTypes()
+  const { data: productTypesResponse, isLoading } = useProductTypes()
   const deleteProductTypeMutation = useDeleteProductTypeMutation()
 
   useEffect(() => {
@@ -43,9 +43,9 @@ const ListCategory = () => {
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const rows = useMemo(() => {
-    if (!productTypesProductType) return []
-    // useAllProductTypesQuery trả về { items: ProductType[], total: number }
-    const items = productTypesProductType.items || []
+    if (!productTypesResponse) return []
+    // useProductTypesQuery trả về PaginationResponse<ProductType>
+    const items = productTypesResponse.data?.items || []
     return items.map((item: ProductType) => ({
       ...item,
       name: item.name,
@@ -53,7 +53,7 @@ const ListCategory = () => {
       created_at: item.created_at,
       updated_at: item.updated_at,
     }))
-  }, [productTypesProductType])
+  }, [productTypesResponse])
 
   // Xử lý sửa loại sản phẩm
   const handleEdit = (record: ProductType & Record<string, unknown>) => {

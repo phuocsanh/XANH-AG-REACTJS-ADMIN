@@ -61,16 +61,22 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (currentFile?.originFileObj) {
       try {
         setLoading(true)
-        const response = await uploadFileMutation.mutateAsync(
-          currentFile.originFileObj as File
-        )
+        // Fix: Create proper UploadFileRequest object with required properties
+        const uploadRequest = {
+          file: currentFile.originFileObj as File,
+          type: "image", // Default to image type
+          folder: "images", // Default folder
+        }
+
+        const response = await uploadFileMutation.mutateAsync(uploadRequest)
 
         // Update the file in the list with the URL from the server
         const updatedList = newFileList.map((item) => {
           if (item.uid === uploadedFile.uid) {
             return {
               ...item,
-              url: response.fileUrl,
+              // Fix: Use correct property name from UploadResponse interface
+              url: response.file_url,
               status: "done" as const,
             }
           }
