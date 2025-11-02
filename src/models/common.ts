@@ -6,9 +6,9 @@ export type ArrayElement<ArrayType extends readonly unknown[]> =
   ArrayType extends readonly (infer ElementType)[] ? ElementType : never
 
 export type UploadPayloadType = {
-  File: Blob
-  Type: string
-  Folder: string
+  file: Blob
+  type: string
+  folder: string
 }
 
 export type UploadResponse = {
@@ -20,7 +20,7 @@ export type UploadResponse = {
 
 export type FormInsideModalProps<T extends { id: number }> = {
   role?: UserPermission
-  editId: T["id"]
+  edit_id: T["id"]
 } & BasicDialogChildrenProps
 
 export type FilterColumnOption = { id: number; _id: string; label: string } & {
@@ -40,7 +40,7 @@ export interface PaginationInfo {
   total: number
   page: number
   limit: number
-  totalPages: number
+  total_pages: number
 }
 
 // Interface cho response thành công không phân trang
@@ -112,7 +112,7 @@ export type ResponseData<D> = ApiResponse & {
 }
 export type ApiResponseError = {
   status: number
-  statusText: string
+  status_text: string
 }
 
 type Paging = {
@@ -124,8 +124,8 @@ export type PagingParams<P = void> = P extends void ? Paging | void : Paging & P
 
 export type PagingResponseData<D> = ApiResponse & {
   data: {
-    currentPage: number
-    totalPages: number
+    current_page: number
+    total_pages: number
     total: number
     data: D[]
   }

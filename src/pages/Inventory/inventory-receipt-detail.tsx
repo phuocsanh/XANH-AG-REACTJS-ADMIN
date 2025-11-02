@@ -318,15 +318,18 @@ const InventoryReceiptDetail: React.FC = () => {
     },
     {
       title: "Thành tiền",
-      dataIndex: "totalPrice",
-      key: "totalPrice",
+      dataIndex: "total_price",
+      key: "total_price",
       width: 120,
       align: "right",
-      render: (price: string) =>
-        new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }).format(parseFloat(price || "0")),
+      render: (price: number) => (
+        <Text strong style={{ color: "#52c41a" }}>
+          {new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(price)}
+        </Text>
+      ),
     },
     {
       title: "Hạn sử dụng",
@@ -432,8 +435,8 @@ const InventoryReceiptDetail: React.FC = () => {
                 {renderStatus(receipt.status)}
               </Descriptions.Item>
               <Descriptions.Item label='Nhà cung cấp'>
-                {receipt.supplierId
-                  ? `Nhà cung cấp #${receipt.supplierId}`
+                {receipt.supplier_id
+                  ? `Nhà cung cấp #${receipt.supplier_id}`
                   : "-"}
               </Descriptions.Item>
               <Descriptions.Item label='Liên hệ NCC'>{"-"}</Descriptions.Item>
@@ -442,7 +445,7 @@ const InventoryReceiptDetail: React.FC = () => {
                   {new Intl.NumberFormat("vi-VN", {
                     style: "currency",
                     currency: "VND",
-                  }).format(receipt.totalAmount)}
+                  }).format(receipt.total_amount)}
                 </Text>
               </Descriptions.Item>
               <Descriptions.Item label='Mô tả'>
@@ -460,32 +463,32 @@ const InventoryReceiptDetail: React.FC = () => {
           <Card title='Thông tin thời gian' size='small'>
             <Descriptions column={1} size='small'>
               <Descriptions.Item label='Ngày tạo'>
-                {dayjs(receipt.createdAt).format("DD/MM/YYYY HH:mm:ss")}
+                {dayjs(receipt.created_at).format("DD/MM/YYYY HH:mm:ss")}
               </Descriptions.Item>
               <Descriptions.Item label='Cập nhật lần cuối'>
-                {dayjs(receipt.updatedAt).format("DD/MM/YYYY HH:mm:ss")}
+                {dayjs(receipt.updated_at).format("DD/MM/YYYY HH:mm:ss")}
               </Descriptions.Item>
-              {receipt.approvedAt && (
+              {receipt.approved_at && (
                 <Descriptions.Item label='Ngày duyệt'>
-                  {dayjs(receipt.approvedAt).format("DD/MM/YYYY HH:mm:ss")}
+                  {dayjs(receipt.approved_at).format("DD/MM/YYYY HH:mm:ss")}
                 </Descriptions.Item>
               )}
-              {receipt.completedAt && (
+              {receipt.completed_at && (
                 <Descriptions.Item label='Ngày hoàn thành'>
-                  {dayjs(receipt.completedAt).format("DD/MM/YYYY HH:mm:ss")}
+                  {dayjs(receipt.completed_at).format("DD/MM/YYYY HH:mm:ss")}
                 </Descriptions.Item>
               )}
               <Descriptions.Item label='Người tạo'>
-                ID: {receipt.createdBy}
+                ID: {receipt.created_by}
               </Descriptions.Item>
-              {receipt.approvedBy && (
+              {receipt.approved_by && (
                 <Descriptions.Item label='Người duyệt'>
-                  ID: {receipt.approvedBy}
+                  ID: {receipt.approved_by}
                 </Descriptions.Item>
               )}
-              {receipt.completedBy && (
+              {receipt.completed_by && (
                 <Descriptions.Item label='Người hoàn thành'>
-                  ID: {receipt.completedBy}
+                  ID: {receipt.completed_by}
                 </Descriptions.Item>
               )}
             </Descriptions>
@@ -514,7 +517,7 @@ const InventoryReceiptDetail: React.FC = () => {
               0
             )
             const totalAmount = pageData.reduce(
-              (sum, item) => sum + item.totalPrice,
+              (sum, item) => sum + item.total_price,
               0
             )
 

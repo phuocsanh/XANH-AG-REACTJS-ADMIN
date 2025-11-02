@@ -90,7 +90,7 @@ const ListSubCategory = () => {
     const productType = productTypes.items.find(
       (type) => type.id === productTypeId
     )
-    return productType ? productType.typeName : "N/A"
+    return productType ? productType.name : "N/A"
   }
 
   return (
@@ -112,18 +112,18 @@ const ListSubCategory = () => {
             columns={[
               {
                 title: "Tên loại phụ sản phẩm",
-                dataIndex: "subtypeName",
-                key: "subtypeName",
+                dataIndex: "name",
+                key: "name",
                 sorter: true,
                 render: (text: string) => text || "N/A",
               },
               {
                 title: "Loại sản phẩm",
-                dataIndex: "productTypeId",
-                key: "productTypeId",
+                dataIndex: "product_type_id",
+                key: "product_type_id",
                 sorter: true,
-                render: (productTypeId: number) =>
-                  getProductTypeName(productTypeId),
+                render: (product_type_id: number) =>
+                  getProductTypeName(product_type_id),
               },
               {
                 title: "Mô tả",
@@ -133,8 +133,8 @@ const ListSubCategory = () => {
               },
               {
                 title: "Ngày tạo",
-                dataIndex: "createdAt",
-                key: "createdAt",
+                dataIndex: "created_at",
+                key: "created_at",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
                 sorter: true,
@@ -144,7 +144,7 @@ const ListSubCategory = () => {
             loading={isLoadingSubtypes || isLoadingTypes}
             showSearch={true}
             searchPlaceholder='Tìm kiếm loại phụ sản phẩm...'
-            searchableColumns={["subtypeName", "description"]}
+            searchableColumns={["name", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
             scroll={{ x: "100%" }}

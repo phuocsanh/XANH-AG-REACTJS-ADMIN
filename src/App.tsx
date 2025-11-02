@@ -32,6 +32,8 @@ import ListUnits from "./pages/units/list-units"
 import ListSymbols from "./pages/symbols/list-symbols"
 // Thêm import cho trang supplier
 import Suppliers from "./pages/suppliers"
+// Thêm import cho trang đăng ký
+import { SignUp } from "./pages/sign-up"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -235,6 +237,7 @@ function App() {
 
                     {/* Trang đăng nhập - không yêu cầu xác thực */}
                     <Route path='/sign-in' element={<SignIn />} />
+                    <Route path='/sign-up' element={<SignUp />} />
                     <Route
                       path='/forgot-password'
                       element={<ForgotPassword />}

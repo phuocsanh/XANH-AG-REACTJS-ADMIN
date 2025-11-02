@@ -35,7 +35,6 @@ import { ProductType } from "@/models/product-type.model"
 // Thêm import cho symbol
 import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
-import { Unit } from "@/models/unit.model"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -166,6 +165,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { data: productSubtypes } = useProductSubtypesQuery()
   const { data: productTypes } = useProductTypes()
   const { data: units } = useUnitsQuery()
+  console.log("🚀 ~ ProductForm ~ units:", units)
   // Thêm query cho symbols
   const { data: symbols } = useSymbolsQuery()
 
@@ -219,18 +219,15 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           type: productItem.type || undefined,
           quantity: productItem.quantity || 0,
           attributes: productItem.attributes || {},
-          unit:
-            units?.find((u: Unit) => u.id === productItem.unitId)?.name || "", // Đơn vị tính
-          subTypes: productItem.subProductType || [], // Loại phụ sản phẩm
+          unit_id: productItem.unit_id || undefined, // Đơn vị tính
+          sub_types: productItem.sub_product_type || [], // Loại phụ sản phẩm
+          symbol_id: productItem.symbol_id || undefined,
           discount: productItem.discount || "",
           status: productItem.status || "active",
           thumb: productItem.thumb ? [normalizeFile(productItem.thumb, 0)] : [], // Ảnh đại diện
           pictures: normalizeFileList(productItem.pictures), // Danh sách ảnh
           videos: productItem.videos || [], // Danh sách video
           description: productItem.description || "", // Mô tả
-          // Thêm 2 trường mới
-          symbolId: productItem.symbolId || undefined,
-          ingredient: productItem.ingredient?.join(", ") || "",
         })
 
         // Product type will be watched through watchedType
@@ -315,25 +312,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         attributes: values.attributes
           ? {
               ...values.attributes,
-              unit: values.unit || "",
+              unit: values.unit_id?.toString() || "",
             }
           : {
-              unit: values.unit || "",
+              unit: values.unit_id?.toString() || "",
             },
         status: values.status,
         // Giữ nguyên giá trị price vì đã được xử lý trong FormField
         price: values.price,
-        // Xử lý 2 trường mới
-        symbolId: values.symbolId,
-        // Xử lý ingredient: chuyển chuỗi ngăn cách bằng dấu , thành mảng
-        ingredient: values.ingredient
-          ? values.ingredient
-              .split(",")
-              .map((item: string) => item.trim())
-              .filter((item: string) => item.length > 0)
-          : [],
-        // Đảm bảo các trường mảng luôn được khởi tạo đúng kiểu
-        subTypes: values.subTypes || [],
+        symbol_id: values.symbol_id,
+        sub_types: values.sub_types || [],
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -345,48 +333,47 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       // Tạo object với tên các trường theo yêu cầu của server
       // TODO: Cập nhật service API để tự động mapping tên các trường thay vì phải convert thủ công
       const serverData = {
-        productName: convertedValues.name,
-        productPrice: convertedValues.price,
-        productType: convertedValues.type,
-        productQuantity: convertedValues.quantity,
-        productDescription: convertedValues.description,
-        productThumb: convertedValues.thumb,
-        productPictures: Array.isArray(convertedValues.pictures)
+        name: convertedValues.name,
+        price: convertedValues.price,
+        type: convertedValues.type,
+        quantity: convertedValues.quantity,
+        description: convertedValues.description,
+        thumb: convertedValues.thumb,
+        pictures: Array.isArray(convertedValues.pictures)
           ? convertedValues.pictures
           : [],
-        productAttributes: convertedValues.attributes || {},
-        productDiscountedPrice: convertedValues.discount || "0",
-        averageCostPrice: "0",
-        profitMarginPercent: "0",
+        attributes: convertedValues.attributes || {},
+        discount: convertedValues.discount || "0",
+        discounted_price: "0",
+        average_cost_price: "0",
+        profit_margin_percent: "0",
         status: convertedValues.status,
-        subProductType: Array.isArray(convertedValues.subTypes)
-          ? convertedValues.subTypes
+        sub_product_type: Array.isArray(convertedValues.sub_types)
+          ? convertedValues.sub_types
+          : convertedValues.sub_types
+          ? [convertedValues.sub_types]
           : [],
-        // Không bao gồm trường videos vì server không mong đợi trường này
-        symbolId: convertedValues.symbolId,
+        unit_id: convertedValues.unit_id,
+        symbol_id: convertedValues.symbol_id,
         ingredient: Array.isArray(convertedValues.ingredient)
           ? convertedValues.ingredient
+          : convertedValues.ingredient
+          ? (convertedValues.ingredient as string)
+              .split(",")
+              .map((item: string) => item.trim())
           : [],
-        // Đảm bảo các trường bắt buộc có giá trị
-        unitId: convertedValues.unit
-          ? parseInt(convertedValues.unit) || undefined
-          : undefined,
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
       console.log("Data being sent to server:", serverData)
 
       // Đảm bảo các trường mảng luôn là mảng ngay cả khi là null hoặc undefined
-      if (!Array.isArray(serverData.productPictures)) {
-        serverData.productPictures = []
+      if (!Array.isArray(serverData.pictures)) {
+        serverData.pictures = []
       }
 
-      if (!Array.isArray(serverData.subProductType)) {
-        serverData.subProductType = []
-      }
-
-      if (!Array.isArray(serverData.ingredient)) {
-        serverData.ingredient = []
+      if (!Array.isArray(serverData.sub_product_type)) {
+        serverData.sub_product_type = []
       }
 
       if (isEdit && currentProductId) {
@@ -467,14 +454,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
               <div className='w-full'>
                 <FormComboBox
-                  name='unit'
+                  name='unit_id'
                   control={control}
                   label='Đơn vị tính'
                   placeholder='Chọn đơn vị tính'
-                  options={units?.map((unit) => ({
-                    label: `${unit.name} (${unit.code})`,
-                    value: unit.name,
-                  }))}
+                  options={[]}
                   className='w-full'
                   required
                   rules={{ required: "Vui lòng chọn đơn vị tính" }}
@@ -496,12 +480,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               {/* Thêm trường symbol */}
               <div className='w-full'>
                 <FormComboBox
-                  name='symbolId'
+                  name='symbol_id'
                   control={control}
                   label='Ký hiệu'
                   placeholder='Chọn ký hiệu'
                   options={
-                    symbols?.map((symbol: Symbol) => ({
+                    symbols?.data?.items?.map((symbol: Symbol) => ({
                       label: `${symbol.name}`,
                       value: symbol.id,
                     })) || []
@@ -525,7 +509,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
               <div className='w-full'>
                 <FormComboBox
-                  name='subTypes'
+                  name='sub_types'
                   control={control}
                   label='Loại phụ sản phẩm'
                   placeholder='Chọn loại phụ sản phẩm'

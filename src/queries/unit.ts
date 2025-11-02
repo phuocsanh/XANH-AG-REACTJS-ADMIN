@@ -19,7 +19,7 @@ export const unitKeys = {
  * Hook lấy danh sách tất cả đơn vị tính
  */
 export const useUnitsQuery = () => {
-  return usePaginationQuery<Unit[]>("/units")
+  return usePaginationQuery<Unit>("/units")
 }
 
 /**

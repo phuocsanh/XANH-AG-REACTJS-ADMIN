@@ -104,11 +104,11 @@ const InventoryReceiptCreate: React.FC = () => {
   const handleAddItem = () => {
     const newItem: InventoryReceiptItemForm = {
       key: Date.now().toString(),
-      productId: 0,
-      productName: "",
+      product_id: 0,
+      product_name: "",
       quantity: 1,
-      unitCost: 0,
-      totalPrice: 0,
+      unit_cost: 0,
+      total_price: 0,
     }
     // Thêm sản phẩm mới vào đầu mảng thay vì cuối mảng
     setItems([newItem, ...items])
@@ -129,17 +129,17 @@ const InventoryReceiptCreate: React.FC = () => {
         if (item.key === key) {
           const updatedItem = { ...item, [field]: value }
 
-          // Tự động tính toán totalPrice khi quantity hoặc unitCost thay đổi
-          if (field === "quantity" || field === "unitCost") {
+          // Tự động tính toán total_price khi quantity hoặc unit_cost thay đổi
+          if (field === "quantity" || field === "unit_cost") {
             const quantity =
               field === "quantity" ? (value as number) : item.quantity
-            const unitCost =
-              field === "unitCost" ? (value as number) : item.unitCost
-            updatedItem.totalPrice = quantity * unitCost
+            const unit_cost =
+              field === "unit_cost" ? (value as number) : item.unit_cost
+            updatedItem.total_price = quantity * unit_cost
           }
 
           // Tự động cập nhật tên sản phẩm khi chọn sản phẩm
-          if (field === "productId") {
+          if (field === "product_id") {
             // Không cần tìm sản phẩm trong danh sách toàn cục nữa
             // Tên sản phẩm sẽ được cập nhật từ component ComboBox
           }
@@ -174,11 +174,11 @@ const InventoryReceiptCreate: React.FC = () => {
       // Validate tất cả items đã hoàn thành
       const hasIncompleteItems = items.some(
         (item) =>
-          !item.productId ||
-          item.productId === 0 ||
+          !item.product_id ||
+          item.product_id === 0 ||
           !item.quantity ||
           item.quantity < 1 ||
-          item.unitCost < 0
+          item.unit_cost < 0
       )
 
       if (hasIncompleteItems) {
@@ -190,20 +190,20 @@ const InventoryReceiptCreate: React.FC = () => {
       const receiptCode = `PN${Date.now()}`
 
       // Tính tổng tiền
-      const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0)
+      const totalAmount = items.reduce((sum, item) => sum + item.total_price, 0)
 
       // Tạo request data theo đúng cấu trúc backend
       const requestData: CreateInventoryReceiptRequest = {
         code: receiptCode, // Thay receiptCode thành code
-        supplierId: values.supplierId as number, // Sử dụng supplierId từ form
-        totalAmount,
+        supplier_id: values.supplierId as number, // Sử dụng supplierId từ form
+        total_amount: totalAmount,
         notes: values.description as string | undefined,
         status: "PENDING",
         items: items.map((item) => ({
-          productId: item.productId,
+          product_id: item.product_id,
           quantity: item.quantity,
-          unitCost: item.unitCost,
-          totalPrice: item.totalPrice,
+          unit_cost: item.unit_cost,
+          total_price: item.total_price,
           notes: item.notes || undefined,
         })),
       }
@@ -259,7 +259,7 @@ const InventoryReceiptCreate: React.FC = () => {
                     .includes(input.toLowerCase())
                 }
               >
-                {suppliersData?.data?.map((supplier) => (
+                {suppliersData?.data?.items?.map((supplier) => (
                   <Select.Option
                     key={supplier.id}
                     value={supplier.id}
@@ -342,7 +342,7 @@ const InventoryReceiptCreate: React.FC = () => {
                   style: "currency",
                   currency: "VND",
                 }).format(
-                  items.reduce((sum, item) => sum + item.totalPrice, 0)
+                  items.reduce((sum, item) => sum + item.total_price, 0)
                 )}
               </Text>
             </div>

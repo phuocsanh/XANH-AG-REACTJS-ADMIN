@@ -83,8 +83,8 @@ const useItemColumns = ({
     },
     {
       title: "Đơn giá",
-      dataIndex: "unitCost",
-      key: "unitCost",
+      dataIndex: "unit_cost",
+      key: "unit_cost",
       width: 90,
       align: "right",
       render: (price: number, record: InventoryReceiptItemForm) => {
@@ -94,7 +94,7 @@ const useItemColumns = ({
             min={0}
             placeholder='Đơn giá'
             onChange={(value) =>
-              handleItemChange(record.key, "unitCost", value || 0)
+              handleItemChange(record.key, "unit_cost", value || 0)
             }
           />
         )
@@ -102,8 +102,8 @@ const useItemColumns = ({
     },
     {
       title: "Thành tiền",
-      dataIndex: "totalPrice",
-      key: "totalPrice",
+      dataIndex: "total_price",
+      key: "total_price",
       width: 90,
       align: "right",
       render: (_, record: InventoryReceiptItemForm) => {
@@ -116,7 +116,7 @@ const useItemColumns = ({
             {new Intl.NumberFormat("vi-VN", {
               style: "currency",
               currency: "VND",
-            }).format(record.totalPrice || 0)}
+            }).format(record.total_price || 0)}
           </Text>
         )
       },

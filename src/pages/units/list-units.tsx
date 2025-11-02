@@ -27,6 +27,7 @@ const ListUnits = () => {
 
   // Sử dụng React Query hook để lấy danh sách đơn vị tính
   const { data: units, isLoading } = useUnitsQuery()
+  console.log("🚀 ~ ListUnits ~ units:", units)
 
   // Mutation hooks
   const deleteUnitMutation = useDeleteUnitMutation()
@@ -35,7 +36,7 @@ const ListUnits = () => {
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const unitRows: UnitRecord[] =
-    units?.map((unit) => ({
+    units?.data?.items?.map((unit: Unit) => ({
       ...unit,
     })) || []
 
@@ -50,8 +51,8 @@ const ListUnits = () => {
   const handleEdit = (record: UnitRecord) => {
     setEditingUnit(record)
     form.setFieldsValue({
-      unitName: record.unitName,
-      unitCode: record.unitCode,
+      name: record.name,
+      code: record.code,
       description: record.description,
       status: record.status,
     })
@@ -96,8 +97,8 @@ const ListUnits = () => {
       if (editingUnit) {
         // Cập nhật đơn vị tính
         const updateData: UpdateUnitDto = {
-          unitName: values.unitName,
-          unitCode: values.unitCode,
+          name: values.name,
+          code: values.code,
           description: values.description,
           status: values.status,
         }
@@ -109,8 +110,8 @@ const ListUnits = () => {
       } else {
         // Thêm mới đơn vị tính
         const createData: CreateUnitDto = {
-          unitName: values.unitName,
-          unitCode: values.unitCode,
+          name: values.name,
+          code: values.code,
           description: values.description,
           status: values.status,
         }
@@ -156,14 +157,14 @@ const ListUnits = () => {
             columns={[
               {
                 title: "Tên đơn vị tính",
-                dataIndex: "unitName",
-                key: "unitName",
+                dataIndex: "name",
+                key: "name",
                 sorter: true,
               },
               {
                 title: "Mã đơn vị tính",
-                dataIndex: "unitCode",
-                key: "unitCode",
+                dataIndex: "code",
+                key: "code",
                 sorter: true,
               },
               {
@@ -180,8 +181,8 @@ const ListUnits = () => {
               },
               {
                 title: "Ngày tạo",
-                dataIndex: "createdAt",
-                key: "createdAt",
+                dataIndex: "created_at",
+                key: "created_at",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
                 sorter: true,
@@ -192,7 +193,7 @@ const ListUnits = () => {
             showSearch={true}
             scroll={{ x: "100%" }}
             searchPlaceholder='Tìm kiếm đơn vị tính...'
-            searchableColumns={["unitName", "unitCode", "description"]}
+            searchableColumns={["name", "code", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
             paginationConfig={{
@@ -225,7 +226,7 @@ const ListUnits = () => {
           initialValues={defaultUnitValues}
         >
           <Form.Item
-            name='unitName'
+            name='name'
             label='Tên đơn vị tính'
             rules={[
               { required: true, message: "Vui lòng nhập tên đơn vị tính" },
@@ -235,7 +236,7 @@ const ListUnits = () => {
           </Form.Item>
 
           <Form.Item
-            name='unitCode'
+            name='code'
             label='Mã đơn vị tính'
             rules={[
               { required: true, message: "Vui lòng nhập mã đơn vị tính" },
@@ -275,7 +276,7 @@ const ListUnits = () => {
         title='Xác nhận xóa'
         content={
           deletingUnit
-            ? `Bạn có chắc chắn muốn xóa đơn vị tính "${deletingUnit.unitName}"?`
+            ? `Bạn có chắc chắn muốn xóa đơn vị tính "${deletingUnit.name}"?`
             : ""
         }
         okText='Xóa'

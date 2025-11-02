@@ -116,11 +116,11 @@ const ProductsList: React.FC = () => {
 
   // Filter products based on search term and filter type
   const filteredProducts = React.useMemo(() => {
-    if (!productsData) {
+    if (!productsData || !productsData.data) {
       return []
     }
 
-    let result = [...productsData]
+    let result = [...(productsData.data.items || [])]
 
     // Lọc theo từ khóa tìm kiếm
     if (searchTerm.trim()) {
@@ -229,10 +229,11 @@ const ProductsList: React.FC = () => {
           {new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
-          }).format(Number(record.productPrice || 0))}
+          }).format(Number(record.price || 0))}
         </div>
       ),
     },
+
     {
       title: "Tồn kho",
       dataIndex: "quantity",

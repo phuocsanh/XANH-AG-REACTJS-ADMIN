@@ -10,9 +10,9 @@ export interface Symbol {
   name: string
   description?: string
   status: BaseStatus
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
+  created_at: string
+  updated_at: string
+  deleted_at?: string
 }
 
 // Interface cho form dữ liệu ký hiệu

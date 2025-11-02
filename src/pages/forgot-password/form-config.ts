@@ -2,7 +2,7 @@ import { z } from "zod"
 
 // Schema validation cho form quên mật khẩu
 export const forgotPasswordSchema = z.object({
-  userAccount: z
+  user_account: z
     .string()
     .min(1, "Tài khoản không được để trống")
     .trim()
@@ -25,5 +25,5 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 
 // Giá trị mặc định cho form
 export const defaultForgotPasswordValues: ForgotPasswordFormData = {
-  userAccount: "",
+  user_account: "",
 }

@@ -34,9 +34,9 @@ export const ForgotPassword = () => {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       // Here you would implement the actual forgot password logic
-      console.log("Forgot password request for:", data.userAccount)
+      console.log("Forgot password request for:", data.user_account)
       // Example API call:
-      // await forgotPasswordApi.call(data.userAccount)
+      // await forgotPasswordApi.call(data.user_account)
     } catch (error) {
       console.error("Error requesting password reset:", error)
     }
@@ -79,9 +79,9 @@ export const ForgotPassword = () => {
                 fullWidth
                 label='Tài khoản (Email hoặc Username)'
                 variant='outlined'
-                {...register("userAccount")}
-                error={!!errors.userAccount?.message}
-                helperText={errors.userAccount?.message}
+                {...register("user_account")}
+                error={!!errors.user_account?.message}
+                helperText={errors.user_account?.message}
                 className='mb-3'
               />
             </div>

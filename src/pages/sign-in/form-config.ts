@@ -9,8 +9,8 @@ export type FormField = LoginApiPayload
 const formConfig: UseFormProps<FormField> = {
   resolver: zodResolver(loginApiPayloadSchema),
   defaultValues: {
-    userAccount: "",
-    userPassword: "",
+    user_account: "",
+    user_password: "",
   },
 }
 

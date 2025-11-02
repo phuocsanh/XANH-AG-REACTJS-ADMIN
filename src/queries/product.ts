@@ -173,7 +173,7 @@ export const useProductsQuery = (params?: ExtendedProductListParams) => {
       }
     : undefined
 
-  return usePaginationQuery<Product[]>("/products", paginationParams)
+  return usePaginationQuery<Product>("/products", paginationParams)
 }
 
 /**

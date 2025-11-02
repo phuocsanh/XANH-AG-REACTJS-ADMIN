@@ -7,7 +7,7 @@ export const supplierSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
-  contactPerson: z.string().optional(),
+  contact_person: z.string().optional(),
   status: z.enum(["active", "inactive", "archived"]).default("active"),
   notes: z.string().optional(),
 })
@@ -22,7 +22,7 @@ export const defaultSupplierValues: SupplierFormData = {
   address: "",
   phone: "",
   email: "",
-  contactPerson: "",
+  contact_person: "",
   status: "active",
   notes: "",
 }

@@ -7,9 +7,9 @@ export interface SalesInvoiceItem {
   /** ID của chi tiết hóa đơn */
   id: number
   /** ID của hóa đơn bán hàng */
-  invoiceId: number
+  invoice_id: number
   /** ID của sản phẩm */
-  productId: number
+  product_id: number
   /** Thông tin sản phẩm */
   product?: {
     id: number
@@ -21,17 +21,17 @@ export interface SalesInvoiceItem {
   /** Số lượng sản phẩm */
   quantity: number
   /** Giá đơn vị */
-  unitPrice: number
-  /** Tổng tiền (quantity * unitPrice) */
-  totalPrice: number
+  unit_price: number
+  /** Tổng tiền (quantity * unit_price) */
+  total_price: number
   /** Số tiền giảm giá */
-  discountAmount?: number
+  discount_amount?: number
   /** Ghi chú */
   notes?: string
   /** Ngày tạo */
-  createdAt: string
+  created_at: string
   /** Ngày cập nhật */
-  updatedAt: string
+  updated_at: string
 }
 
 /**
@@ -41,31 +41,31 @@ export interface SalesInvoice {
   /** ID của hóa đơn */
   id: number
   /** Mã hóa đơn */
-  invoiceCode: string
+  invoice_code: string
   /** Tên khách hàng */
-  customerName: string
+  customer_name: string
   /** Số điện thoại khách hàng */
-  customerPhone?: string
+  customer_phone?: string
   /** Email khách hàng */
-  customerEmail?: string
+  customer_email?: string
   /** Địa chỉ khách hàng */
-  customerAddress?: string
+  customer_address?: string
   /** Tổng số tiền */
-  totalAmount: number
+  total_amount: number
   /** Số tiền giảm giá */
-  discountAmount?: number
+  discount_amount?: number
   /** Số tiền cuối cùng */
-  finalAmount: number
+  final_amount: number
   /** Trạng thái thanh toán */
-  paymentStatus: 'PENDING' | 'PAID' | 'CANCELLED'
+  payment_status: "PENDING" | "PAID" | "CANCELLED"
   /** Ghi chú */
   notes?: string
   /** Danh sách chi tiết hóa đơn */
   items?: SalesInvoiceItem[]
   /** Ngày tạo */
-  createdAt: string
+  created_at: string
   /** Ngày cập nhật */
-  updatedAt: string
+  updated_at: string
 }
 
 /**
@@ -73,13 +73,13 @@ export interface SalesInvoice {
  */
 export interface CreateSalesInvoiceItemRequest extends AnyObject {
   /** ID của sản phẩm */
-  productId: number
+  product_id: number
   /** Số lượng sản phẩm */
   quantity: number
   /** Giá đơn vị */
-  unitPrice: number
+  unit_price: number
   /** Số tiền giảm giá */
-  discountAmount?: number
+  discount_amount?: number
   /** Ghi chú */
   notes?: string
 }
@@ -89,21 +89,21 @@ export interface CreateSalesInvoiceItemRequest extends AnyObject {
  */
 export interface CreateSalesInvoiceRequest extends AnyObject {
   /** Mã hóa đơn */
-  invoiceCode: string
+  invoice_code: string
   /** Tên khách hàng */
-  customerName: string
+  customer_name: string
   /** Số điện thoại khách hàng */
-  customerPhone?: string
+  customer_phone?: string
   /** Email khách hàng */
-  customerEmail?: string
+  customer_email?: string
   /** Địa chỉ khách hàng */
-  customerAddress?: string
+  customer_address?: string
   /** Tổng số tiền */
-  totalAmount: number
+  total_amount: number
   /** Số tiền giảm giá */
-  discountAmount?: number
+  discount_amount?: number
   /** Số tiền cuối cùng */
-  finalAmount: number
+  final_amount: number
   /** Ghi chú */
   notes?: string
   /** Danh sách chi tiết hóa đơn */
@@ -113,26 +113,28 @@ export interface CreateSalesInvoiceRequest extends AnyObject {
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho request cập nhật hóa đơn bán hàng
  */
-export interface UpdateSalesInvoiceRequest extends Partial<CreateSalesInvoiceRequest>, AnyObject {}
+export interface UpdateSalesInvoiceRequest
+  extends Partial<CreateSalesInvoiceRequest>,
+    AnyObject {}
 
 /**
  * Interface định nghĩa cấu trúc dữ liệu cho thống kê bán hàng
  */
 export interface SalesStats {
   /** Tổng số hóa đơn */
-  totalInvoices: number
+  total_invoices: number
   /** Số hóa đơn chờ thanh toán */
-  pendingInvoices: number
+  pending_invoices: number
   /** Số hóa đơn đã thanh toán */
-  paidInvoices: number
+  paid_invoices: number
   /** Số hóa đơn đã hủy */
-  cancelledInvoices: number
+  cancelled_invoices: number
   /** Tổng doanh thu */
-  totalRevenue: number
+  total_revenue: number
   /** Doanh thu hôm nay */
-  todayRevenue: number
+  today_revenue: number
   /** Doanh thu tháng này */
-  monthRevenue: number
+  month_revenue: number
 }
 
 /**
@@ -142,11 +144,11 @@ export interface SalesReport {
   /** Ngày */
   date: string
   /** Số lượng hóa đơn */
-  invoiceCount: number
+  invoice_count: number
   /** Tổng doanh thu */
-  totalRevenue: number
+  total_revenue: number
   /** Tổng số lượng sản phẩm bán */
-  totalQuantity: number
+  total_quantity: number
 }
 
 /**
@@ -154,17 +156,17 @@ export interface SalesReport {
  */
 export interface TopSellingProduct {
   /** ID sản phẩm */
-  productId: number
+  product_id: number
   /** Tên sản phẩm */
-  productName: string
+  product_name: string
   /** Mã sản phẩm */
-  productCode: string
+  product_code: string
   /** Hình ảnh sản phẩm */
-  productImage?: string
+  product_image?: string
   /** Tổng số lượng bán */
-  totalQuantitySold: number
+  total_quantity_sold: number
   /** Tổng doanh thu */
-  totalRevenue: number
+  total_revenue: number
   /** Số lần xuất hiện trong hóa đơn */
-  invoiceCount: number
+  invoice_count: number
 }

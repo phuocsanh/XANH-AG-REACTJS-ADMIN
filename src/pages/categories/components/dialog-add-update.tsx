@@ -42,8 +42,8 @@ function DialogAddUpdate({
   const updateProductTypeMutation = useUpdateProductTypeMutation()
 
   // Theo dõi các giá trị form
-  const typeName = watch("typeName")
-  const typeCode = watch("typeCode")
+  const typeName = watch("name")
+  const typeCode = watch("code")
   const description = watch("description")
   const status = watch("status")
 
@@ -51,8 +51,8 @@ function DialogAddUpdate({
   useEffect(() => {
     if (editingRow) {
       const data = editingRow
-      setValue("typeName", data.name)
-      setValue("typeCode", data.code || "")
+      setValue("name", data.name)
+      setValue("code", data.code || "")
       setValue("description", data.description || "")
       setValue(
         "status",
@@ -73,8 +73,8 @@ function DialogAddUpdate({
         await updateProductTypeMutation.mutateAsync({
           id: editingRow.id,
           productTypeData: {
-            typeName: data.typeName,
-            typeCode: data.typeCode,
+            name: data.name,
+            code: data.code,
             description: data.description,
             status: data.status,
           },
@@ -82,8 +82,8 @@ function DialogAddUpdate({
       } else {
         // Thêm mới - toast sẽ được hiển thị trong mutation hook
         await createProductTypeMutation.mutateAsync({
-          typeName: data.typeName,
-          typeCode: data.typeCode,
+          name: data.name,
+          code: data.code,
           description: data.description,
           status: data.status,
         })
@@ -130,11 +130,11 @@ function DialogAddUpdate({
                   paddingY: 1,
                 },
               }}
-              error={!!errors.typeName?.message}
-              onChange={(e) => setValue("typeName", e.target.value)}
+              error={!!errors.name?.message}
+              onChange={(e) => setValue("name", e.target.value)}
             />
-            {errors.typeName && (
-              <p className='mt-1 text-red-600'>{errors.typeName.message}</p>
+            {errors.name && (
+              <p className='mt-1 text-red-600'>{errors.name.message}</p>
             )}
           </div>
 
@@ -153,13 +153,11 @@ function DialogAddUpdate({
                   paddingY: 1,
                 },
               }}
-              error={!!errors.typeCode?.message}
-              onChange={(e) =>
-                setValue("typeCode", e.target.value.toUpperCase())
-              }
+              error={!!errors.code?.message}
+              onChange={(e) => setValue("code", e.target.value.toUpperCase())}
             />
-            {errors.typeCode && (
-              <p className='mt-1 text-red-600'>{errors.typeCode.message}</p>
+            {errors.code && (
+              <p className='mt-1 text-red-600'>{errors.code.message}</p>
             )}
           </div>
 

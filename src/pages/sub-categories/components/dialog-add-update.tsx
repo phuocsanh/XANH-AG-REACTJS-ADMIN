@@ -88,9 +88,9 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     if (open) {
       if (editingSubtype) {
         reset({
-          subtypeName: editingSubtype.name,
-          subtypeCode: editingSubtype.code,
-          productTypeId: editingSubtype.productTypeId,
+          name: editingSubtype.name,
+          code: editingSubtype.code,
+          product_type_id: editingSubtype.product_type_id,
           description: editingSubtype.description || "",
           status: editingSubtype.status,
         })
@@ -103,7 +103,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
   // Xử lý submit form
   const onSubmit = (data: Partial<ProductSubtypeFormData>) => {
     // Kiểm tra các field bắt buộc
-    if (!data.subtypeName || !data.subtypeCode || !data.productTypeId) {
+    if (!data.name || !data.code || !data.product_type_id) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!")
       return
     }
@@ -111,8 +111,8 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     if (editingSubtype) {
       // For update, we need to use the DTO format
       const updateData: UpdateProductSubtypeDto = {
-        name: data.subtypeName,
-        productTypeId: data.productTypeId,
+        name: data.name,
+        product_type_id: data.product_type_id,
         description: data.description,
       }
 
@@ -123,9 +123,9 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     } else {
       // For create, we need to use the DTO format
       const createData: CreateProductSubtypeDto = {
-        name: data.subtypeName,
-        code: data.subtypeCode,
-        productTypeId: data.productTypeId,
+        name: data.name,
+        code: data.code,
+        product_type_id: data.product_type_id,
         description: data.description,
         status: data.status,
       }
@@ -152,12 +152,12 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
         {/* Tên loại phụ sản phẩm */}
         <Form.Item
           label='Tên loại phụ sản phẩm'
-          validateStatus={errors.subtypeName ? "error" : ""}
-          help={errors.subtypeName?.message}
+          validateStatus={errors.name ? "error" : ""}
+          help={errors.name?.message}
           required
         >
           <Controller
-            name='subtypeName'
+            name='name'
             control={control}
             render={({ field }) => (
               <Input
@@ -172,12 +172,12 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
         {/* Mã loại phụ sản phẩm */}
         <Form.Item
           label='Mã loại phụ sản phẩm'
-          validateStatus={errors.subtypeCode ? "error" : ""}
-          help={errors.subtypeCode?.message}
+          validateStatus={errors.code ? "error" : ""}
+          help={errors.code?.message}
           required
         >
           <Controller
-            name='subtypeCode'
+            name='code'
             control={control}
             render={({ field }) => (
               <Input
@@ -192,12 +192,12 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
         {/* Loại sản phẩm */}
         <Form.Item
           label='Loại sản phẩm'
-          validateStatus={errors.productTypeId ? "error" : ""}
-          help={errors.productTypeId?.message}
+          validateStatus={errors.product_type_id ? "error" : ""}
+          help={errors.product_type_id?.message}
           required
         >
           <Controller
-            name='productTypeId'
+            name='product_type_id'
             control={control}
             render={({ field }) => (
               <Select

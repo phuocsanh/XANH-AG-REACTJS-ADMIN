@@ -12,25 +12,25 @@ export interface Product {
   thumb: string
   pictures: string[]
   videos: string[]
-  ratingsAverage: string | null
+  ratings_average: string | null
   variations: Record<string, unknown>
   description: string
   slug: string | null
   quantity: number
   type: number
-  subProductType: number[]
+  sub_product_type: number[]
   discount: string
-  discountedPrice: string
+  discounted_price: string
   selled: number | null
   attributes: Record<string, unknown>
-  profitMarginPercent: string
-  averageCostPrice: string
-  unitId?: number
-  latestPurchasePrice?: number
-  createdAt: string
-  updatedAt: string
+  profit_margin_percent: string
+  average_cost_price: string
+  unit_id?: number
+  latest_purchase_price?: number
+  created_at: string
+  updated_at: string
   // Thêm 2 trường mới
-  symbolId?: number
+  symbol_id?: number
   ingredient: string[]
 }
 
@@ -48,10 +48,10 @@ export interface ProductFormValues
   thumb?: UploadFile[]
   pictures?: UploadFile[]
   unit?: string // Đơn vị tính
-  subTypes?: number[] // Loại phụ sản phẩm (multiple selection)
+  sub_types?: number[] // Loại phụ sản phẩm (multiple selection)
   status?: BaseStatus // Trạng thái sản phẩm
   // Thêm 2 trường mới
-  symbolId?: number
+  symbol_id?: number
   ingredient?: string
 }
 
@@ -64,13 +64,13 @@ export interface CreateProductRequest extends AnyObject {
   videos?: string[]
   description: string
   quantity: number
-  subTypes?: number[]
+  sub_product_type?: number[]
   discount?: string
   attributes?: Record<string, unknown>
   status?: BaseStatus
-  unitId?: number
+  unit_id?: number
   // Thêm 2 trường mới
-  symbolId?: number
+  symbol_id?: number
   ingredient?: string[]
 }
 
@@ -117,12 +117,12 @@ export interface ConvertedProductValues {
   pictures: string[]
   attributes: Record<string, unknown>
   unit?: string
-  subTypes?: number[]
+  sub_types?: number[]
   discount?: string
   status?: BaseStatus
   videos?: string[]
   // Thêm 2 trường mới
-  symbolId?: number
+  symbol_id?: number
   ingredient?: string[]
 }
 

@@ -5,14 +5,14 @@ import { BaseStatus } from "@/constant/base-status"
 export interface User {
   id: number
   account: string
-  loginTime?: string
-  logoutTime?: string
-  loginIp?: string
+  login_time?: string
+  logout_time?: string
+  login_ip?: string
   status: BaseStatus
-  createdAt: string
-  updatedAt: string
-  isTwoFactorEnabled?: boolean
-  deletedAt?: string
+  created_at: string
+  updated_at: string
+  is_two_factor_enabled?: boolean
+  deleted_at?: string
 }
 
 // Interface cho tạo user mới
@@ -20,11 +20,11 @@ export interface CreateUserDto extends AnyObject {
   account: string
   password: string
   salt: string
-  loginTime?: string
-  logoutTime?: string
-  loginIp?: string
+  login_time?: string
+  logout_time?: string
+  login_ip?: string
   status?: BaseStatus
-  isTwoFactorEnabled?: boolean
+  is_two_factor_enabled?: boolean
 }
 
 // Interface cho cập nhật user
@@ -32,11 +32,11 @@ export interface UpdateUserDto extends AnyObject {
   account?: string
   password?: string
   salt?: string
-  loginTime?: string
-  logoutTime?: string
-  loginIp?: string
+  login_time?: string
+  logout_time?: string
+  login_ip?: string
   status?: BaseStatus
-  isTwoFactorEnabled?: boolean
+  is_two_factor_enabled?: boolean
 }
 
 // Interface cho đổi mật khẩu

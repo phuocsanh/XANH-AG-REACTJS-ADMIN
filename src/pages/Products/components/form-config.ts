@@ -13,11 +13,11 @@ export const productFormSchema = z.object({
   pictures: z.array(z.any()).optional(),
   videos: z.array(z.string()).optional(),
   attributes: z.record(z.string(), z.any()).optional(),
-  unit: z.string().min(1, "Vui lòng chọn đơn vị tính"), // Bắt buộc nhập
-  subTypes: z.array(z.number()).optional(),
+  unit_id: z.number().optional(), // Bắt buộc nhập
+  sub_types: z.array(z.number()).optional(),
   status: z.enum(["active", "inactive", "archived"]).optional(),
   // Thêm 2 trường mới
-  symbolId: z.number().optional(),
+  symbol_id: z.number().optional(),
   ingredient: z.string().min(1, "Vui lòng nhập thành phần nguyên liệu"), // Bắt buộc nhập
 })
 
@@ -44,11 +44,11 @@ export interface ProductFormValues {
   pictures?: UploadFile[]
   videos?: string[]
   attributes?: Record<string, unknown>
-  unit: string // Bắt buộc nhập
-  subTypes?: number[]
+  unit_id: number | undefined // Bắt buộc nhập
+  sub_types?: number[]
   status?: "active" | "inactive" | "archived"
   // Thêm 2 trường mới
-  symbolId?: number
+  symbol_id?: number
   ingredient: string // Bắt buộc nhập
 }
 
@@ -63,13 +63,13 @@ export interface ConvertedProductValues {
   thumb: string
   pictures: string[]
   attributes: Record<string, unknown>
-  unit: string // Bắt buộc nhập
-  subTypes?: number[]
+  unit_id: number | undefined // Bắt buộc nhập
+  sub_types?: number[]
   discount?: string
   status?: "active" | "inactive" | "archived"
   videos?: string[]
   // Thêm 2 trường mới
-  symbolId?: number
+  symbol_id?: number
   ingredient: string[] // Chuyển thành mảng khi gửi lên server
 }
 
@@ -81,7 +81,7 @@ export const defaultProductFormValues: ProductFormValues = {
   quantity: 0,
   discount: "0",
   description: "",
-  unit: "", // Bắt buộc nhập
+  unit_id: undefined, // Bắt buộc nhập
   status: "active",
   ingredient: "", // Bắt buộc nhập
   // Các trường optional khác sẽ là undefined theo mặc định

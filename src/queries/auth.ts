@@ -1,7 +1,11 @@
 import { useEffect } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "react-toastify"
-import { LoginApiPayload, UserResponse } from "@/models/auth.model"
+import {
+  LoginApiPayload,
+  UserResponse,
+  RegisterApiPayload,
+} from "@/models/auth.model"
 import { handleApiError } from "@/utils/error-handler"
 import { useAppStore } from "@/stores"
 
@@ -45,14 +49,29 @@ export const useLoginMutation = () => {
       // Import axios trực tiếp để tránh interceptor xử lý
       const axios = (await import("axios")).default
 
+      // Log để debug
+      console.log("Sending login request with credentials:", credentials)
+
       // Gọi trực tiếp axios mà không qua interceptor
-      const response = await axios.post("http://localhost:3003/auth/login", {
-        userAccount: credentials.userAccount,
-        userPassword: credentials.userPassword,
-      })
+      // Sử dụng đúng tên trường mà server expect: 'account' và 'password'
+      const response = await axios.post(
+        "http://localhost:3003/auth/login",
+        {
+          account: credentials.user_account,
+          password: credentials.user_password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
 
       // Log để debug
-      console.log("Raw axios response:", response.data)
+      console.log("Raw axios response:", response)
+      console.log("Raw axios response data:", response.data)
+      console.log("Raw axios response status:", response.status)
+      console.log("Raw axios response headers:", response.headers)
 
       // Trả về response.data (đây là phần dữ liệu đầy đủ từ API)
       return response.data
@@ -141,6 +160,7 @@ export const useLoginMutation = () => {
       }
 
       // Kiểm tra nếu user có các trường cần thiết
+      // Server trả về userId và userAccount (camelCase) thay vì user_id và user_account (snake_case)
       if (!("userId" in data.user) || !("userAccount" in data.user)) {
         console.error("User is missing required fields:", data.user)
         toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
@@ -149,7 +169,11 @@ export const useLoginMutation = () => {
 
       setAccessToken(data.access_token)
       setRefreshToken(data.refresh_token)
-      setUserInfo(data.user as UserResponse)
+      // Sử dụng đúng tên trường từ server response
+      setUserInfo({
+        user_id: data.user.userId,
+        user_account: data.user.userAccount,
+      } as UserResponse)
       setIsLogin(true)
 
       // Lưu token vào localStorage để đảm bảo persist
@@ -160,7 +184,140 @@ export const useLoginMutation = () => {
       window.location.href = "/"
     },
     onError: (error: unknown) => {
+      console.error("Login error:", error)
+      // Log thêm thông tin chi tiết về lỗi
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: unknown; status?: number; headers?: unknown }
+        }
+        console.error("Login error response data:", axiosError.response?.data)
+        console.error(
+          "Login error response status:",
+          axiosError.response?.status
+        )
+        console.error(
+          "Login error response headers:",
+          axiosError.response?.headers
+        )
+      }
       handleApiError(error, "Đăng nhập không thành công")
+    },
+  })
+}
+
+/**
+ * Hook đăng ký người dùng mới
+ */
+export const useRegisterMutation = () => {
+  return useMutation({
+    mutationFn: async (userData: RegisterApiPayload) => {
+      // Import axios trực tiếp để tránh interceptor xử lý
+      const axios = (await import("axios")).default
+
+      // Log để debug
+      console.log("Sending register request with user data:", userData)
+
+      // Chuẩn bị payload - chỉ gửi email nếu có
+      const payload: { account: string; password: string; email?: string } = {
+        account: userData.user_account,
+        password: userData.user_password,
+      }
+
+      // Chỉ thêm email vào payload nếu người dùng đã nhập
+      if (userData.user_email) {
+        payload.email = userData.user_email
+      }
+
+      // Gọi trực tiếp axios mà không qua interceptor
+      const response = await axios.post(
+        "http://localhost:3003/auth/register",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
+
+      // Log để debug
+      console.log("Raw axios response:", response)
+      console.log("Raw axios response data:", response.data)
+      console.log("Raw axios response status:", response.status)
+      console.log("Raw axios response headers:", response.headers)
+
+      // Trả về response.data (đây là phần dữ liệu đầy đủ từ API)
+      return response.data
+    },
+    onSuccess: (response) => {
+      // Xử lý kết quả đăng ký thành công
+      console.log("Register successful - Response received:", response)
+
+      // Kiểm tra response có tồn tại không
+      if (!response) {
+        console.error("Response is undefined or null")
+        toast.error("Đăng ký thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra response có cấu trúc đúng không
+      if (typeof response !== "object" || response === null) {
+        console.error("Response is not an object:", response)
+        toast.error("Đăng ký thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu response có trường success
+      if (!("success" in response)) {
+        console.error("Response is missing 'success' field:", response)
+        toast.error("Đăng ký thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu success là boolean
+      if (typeof response.success !== "boolean") {
+        console.error("Response success field is not boolean:", response)
+        toast.error("Đăng ký thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra nếu success = true
+      if (response.success !== true) {
+        console.error("Register failed - success is false:", response)
+        toast.error("Đăng ký thất bại")
+        return
+      }
+
+      // Kiểm tra nếu response có trường message
+      if ("message" in response) {
+        toast.success(response.message || "Đăng ký tài khoản thành công!")
+      } else {
+        toast.success("Đăng ký tài khoản thành công!")
+      }
+
+      // Trả về response để component có thể xử lý thêm nếu cần
+      return response
+    },
+    onError: (error: unknown) => {
+      console.error("Register error:", error)
+      // Log thêm thông tin chi tiết về lỗi
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: unknown; status?: number; headers?: unknown }
+        }
+        console.error(
+          "Register error response data:",
+          axiosError.response?.data
+        )
+        console.error(
+          "Register error response status:",
+          axiosError.response?.status
+        )
+        console.error(
+          "Register error response headers:",
+          axiosError.response?.headers
+        )
+      }
+      handleApiError(error, "Đăng ký không thành công")
     },
   })
 }

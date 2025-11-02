@@ -42,24 +42,28 @@ const ListCategory = () => {
   ) // Thêm state cho danh mục đang xóa
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
-  const rows: ExtendedProductType[] = useMemo(() => {
+  const rows = useMemo(() => {
     if (!productTypesProductType) return []
     // useAllProductTypesQuery trả về { items: ProductType[], total: number }
     const items = productTypesProductType.items || []
     return items.map((item: ProductType) => ({
-      id: item.id,
-      typeName: item.typeName,
-      typeCode: item.typeCode,
-      description: item.description || "",
-      status: item.status,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
+      ...item,
+      name: item.name,
+      code: item.code,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
     }))
   }, [productTypesProductType])
 
   // Xử lý sửa loại sản phẩm
-  const handleEdit = (record: ExtendedProductType) => {
-    setEditingRow(record as ProductType)
+  const handleEdit = (record: ProductType & Record<string, unknown>) => {
+    setEditingRow({
+      ...record,
+      name: record.name,
+      code: record.code,
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+    } as ProductType)
     setOpenDialog(true)
   }
 
@@ -131,14 +135,14 @@ const ListCategory = () => {
             columns={[
               {
                 title: "Tên loại sản phẩm",
-                dataIndex: "typeName",
-                key: "typeName",
+                dataIndex: "name",
+                key: "name",
                 sorter: true,
               },
               {
                 title: "Mã loại",
-                dataIndex: "typeCode",
-                key: "typeCode",
+                dataIndex: "code",
+                key: "code",
                 sorter: true,
               },
               {
@@ -155,8 +159,8 @@ const ListCategory = () => {
               },
               {
                 title: "Ngày tạo",
-                dataIndex: "createdAt",
-                key: "createdAt",
+                dataIndex: "created_at",
+                key: "created_at",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
                 sorter: true,
@@ -166,7 +170,7 @@ const ListCategory = () => {
             loading={isLoading}
             showSearch={true}
             searchPlaceholder='Tìm kiếm loại sản phẩm...'
-            searchableColumns={["typeName", "typeCode", "description"]}
+            searchableColumns={["name", "code", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
             scroll={{ x: "100%" }}
@@ -193,7 +197,7 @@ const ListCategory = () => {
         title='Xác nhận xóa'
         content={
           deletingCategory
-            ? `Bạn có chắc chắn muốn xóa loại sản phẩm "${deletingCategory.typeName}"?`
+            ? `Bạn có chắc chắn muốn xóa loại sản phẩm "${deletingCategory.name}"?`
             : "Bạn có chắc chắn muốn xóa loại sản phẩm này?"
         }
         open={deleteConfirmVisible}

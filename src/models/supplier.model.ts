@@ -10,15 +10,15 @@ export interface Supplier {
   address?: string
   phone?: string
   email?: string
-  contactPerson?: string
+  contact_person?: string
   status: BaseStatus
   notes?: string
-  createdBy: number
-  updatedBy?: number | null
-  deletedBy?: number | null
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string | null
+  created_by: number
+  updated_by?: number | null
+  deleted_by?: number | null
+  created_at: string
+  updated_at: string
+  deleted_at?: string | null
 }
 
 // Interface cho request tạo nhà cung cấp mới
@@ -29,7 +29,7 @@ export interface CreateSupplierRequest {
   address?: string
   phone?: string
   email?: string
-  contactPerson?: string
+  contact_person?: string
   notes?: string
 }
 

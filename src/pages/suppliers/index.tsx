@@ -100,7 +100,7 @@ export const Suppliers = () => {
       address: supplier.address || "",
       phone: supplier.phone || "",
       email: supplier.email || "",
-      contactPerson: supplier.contactPerson || "",
+      contact_person: supplier.contact_person || "",
       status: supplier.status,
       notes: supplier.notes || "",
     })
@@ -129,7 +129,7 @@ export const Suppliers = () => {
         // Tạo nhà cung cấp mới với createdBy từ userInfo
         await createSupplierMutation.mutateAsync({
           ...data,
-          createdBy: userInfo?.userId || 1, // Sử dụng ID người dùng hiện tại hoặc mặc định là 1
+          created_by: userInfo?.user_id || 1, // Sử dụng ID người dùng hiện tại hoặc mặc định là 1
         })
       }
       setOpenDialog(false)
@@ -190,19 +190,29 @@ export const Suppliers = () => {
     // Kiểm tra cấu trúc dữ liệu thực tế từ API
     if (!suppliers) return []
 
-    // Nếu có trường data (từ hook dùng chung)
-    if (typeof suppliers === "object" && suppliers !== null && "data" in suppliers) {
+    // Nếu có trường data và data có trường items (cấu trúc PaginationResponse mới)
+    if (
+      typeof suppliers === "object" &&
+      suppliers !== null &&
+      "data" in suppliers
+    ) {
       const supplierObj = suppliers as unknown as Record<string, unknown>
-      if (Array.isArray(supplierObj.data)) {
-        console.log("Using pagination hook format")
-        return supplierObj.data as ExtendedSupplier[]
+      if (
+        typeof supplierObj.data === "object" &&
+        supplierObj.data !== null &&
+        "items" in supplierObj.data &&
+        Array.isArray((supplierObj.data as Record<string, unknown>).items)
+      ) {
+        console.log("Using new pagination response format")
+        return (supplierObj.data as Record<string, unknown>)
+          .items as unknown as ExtendedSupplier[]
       }
     }
 
-    // Nếu có trường success và data (cấu trúc mới)
+    // Nếu có trường success và data (cấu trúc cũ)
     if (isPaginatedResponse(suppliers)) {
-      console.log("Using new paginated response format")
-      return suppliers.data as ExtendedSupplier[]
+      console.log("Using old paginated response format")
+      return suppliers.data as unknown as ExtendedSupplier[]
     }
 
     // Nếu có trường items (cấu trúc cũ)
@@ -355,8 +365,8 @@ export const Suppliers = () => {
     },
     {
       title: "Ngày tạo",
-      dataIndex: "createdAt" as const,
-      key: "createdAt",
+      dataIndex: "created_at" as const,
+      key: "created_at",
       width: 120,
       render: (value: unknown) => {
         const date = String(value)
@@ -472,9 +482,9 @@ export const Suppliers = () => {
             <TextField
               fullWidth
               label='Người liên hệ'
-              {...register("contactPerson")}
-              error={!!errors.contactPerson}
-              helperText={errors.contactPerson?.message as string}
+              {...register("contact_person")}
+              error={!!errors.contact_person}
+              helperText={errors.contact_person?.message as string}
               margin='normal'
             />
 

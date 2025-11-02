@@ -42,10 +42,11 @@ const ListSymbols = () => {
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   // Không cần chuyển đổi thành PaginationData nữa
-  const symbolRows: SymbolRecord[] =
-    symbols?.map((symbol: Symbol) => ({
+  const symbolRows: SymbolRecord[] = (symbols?.data?.items || []).map(
+    (symbol: Symbol) => ({
       ...symbol,
-    })) || []
+    })
+  )
 
   // Xử lý thêm mới ký hiệu
   const handleAdd = () => {

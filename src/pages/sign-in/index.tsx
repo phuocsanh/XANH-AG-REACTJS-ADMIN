@@ -73,11 +73,11 @@ export const SignIn = () => {
               variant='outlined'
               required
               className='w-full'
-              error={!!errors.userAccount?.message || false}
-              {...register("userAccount")}
+              error={!!errors.user_account?.message || false}
+              {...register("user_account")}
             />
-            {errors.userAccount && (
-              <p className='mt-1 text-red-600'>{errors.userAccount.message}</p>
+            {errors.user_account && (
+              <p className='mt-1 text-red-600'>{errors.user_account.message}</p>
             )}
           </div>
 
@@ -89,8 +89,8 @@ export const SignIn = () => {
               className='w-full'
               required
               type={showPassword ? undefined : "password"}
-              error={!!errors.userPassword?.message || false}
-              {...register("userPassword")}
+              error={!!errors.user_password?.message || false}
+              {...register("user_password")}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -107,8 +107,10 @@ export const SignIn = () => {
               }}
             />
 
-            {errors.userPassword && (
-              <p className='mt-1 text-red-600'>{errors.userPassword.message}</p>
+            {errors.user_password && (
+              <p className='mt-1 text-red-600'>
+                {errors.user_password.message}
+              </p>
             )}
           </div>
 
@@ -125,6 +127,16 @@ export const SignIn = () => {
               <p className='text-white'>Đăng nhập</p>
             )}
           </Button>
+
+          {/* Thêm nút đăng ký */}
+          <div className='mt-6 text-center'>
+            <p>
+              Chưa có tài khoản?{" "}
+              <Link to='/sign-up' className='text-blue-600 hover:underline'>
+                Đăng ký ngay
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </>

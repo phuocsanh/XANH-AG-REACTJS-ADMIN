@@ -68,9 +68,9 @@ export const Users = () => {
     setSelectedUser(user)
     setIsEditing(true)
     reset({
-      userAccount: user.account,
-      userEmail: "",
-      userState: user.status === "active" ? 1 : 0,
+      account: user.account,
+      email: "",
+      status: user.status === "active" ? 1 : 0,
     })
     setOpenDialog(true)
   }
@@ -88,17 +88,20 @@ export const Users = () => {
         // Cập nhật người dùng
         await updateUserMutation.mutateAsync({
           id: selectedUser.id,
-          userData: data,
+          userData: {
+            account: data.account,
+            status: data.status === 1 ? "active" : "inactive",
+          },
         })
       } else {
         // Tạo người dùng mới
         const createData = {
           salt: "default_salt",
-          account: data.userAccount,
-          password: data.userPassword,
-          loginIp: data.userEmail,
+          account: data.account,
+          password: data.password,
+          login_ip: data.email,
           status:
-            data.userState === 1 ? ("active" as const) : ("inactive" as const),
+            data.status === 1 ? ("active" as const) : ("inactive" as const),
         }
         await createUserMutation.mutateAsync(createData)
       }
@@ -186,8 +189,8 @@ export const Users = () => {
           },
           {
             title: "Email",
-            dataIndex: "loginIp",
-            key: "loginIp",
+            dataIndex: "login_ip",
+            key: "login_ip",
             render: (email: string) => email || "N/A",
           },
           {
@@ -204,8 +207,8 @@ export const Users = () => {
           },
           {
             title: "Ngày tạo",
-            dataIndex: "createdAt",
-            key: "createdAt",
+            dataIndex: "created_at",
+            key: "created_at",
             render: (date: string) =>
               date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
             sorter: true,
@@ -215,7 +218,7 @@ export const Users = () => {
         loading={isLoading}
         showSearch={true}
         searchPlaceholder='Tìm kiếm người dùng...'
-        searchableColumns={["userAccount", "userEmail"]}
+        searchableColumns={["account", "email"]}
         onEdit={handleEditUser}
         onDelete={handleDeleteUser}
         scroll={{ x: "100%" }}
@@ -247,9 +250,9 @@ export const Users = () => {
             <TextField
               fullWidth
               label='Tài khoản *'
-              {...register("userAccount")}
-              error={!!errors.userAccount}
-              helperText={errors.userAccount?.message as string}
+              {...register("account")}
+              error={!!errors.account}
+              helperText={errors.account?.message as string}
               margin='normal'
             />
 
@@ -258,9 +261,9 @@ export const Users = () => {
                 fullWidth
                 label='Mật khẩu *'
                 type='password'
-                {...register("userPassword")}
-                error={!!errors.userPassword}
-                helperText={errors.userPassword?.message as string}
+                {...register("password")}
+                error={!!errors.password}
+                helperText={errors.password?.message as string}
                 margin='normal'
               />
             )}
@@ -269,9 +272,19 @@ export const Users = () => {
               fullWidth
               label='Email'
               type='email'
-              {...register("userEmail")}
-              error={!!errors.userEmail}
-              helperText={errors.userEmail?.message as string}
+              {...register("email")}
+              error={!!errors.email}
+              helperText={errors.email?.message as string}
+              margin='normal'
+            />
+
+            <TextField
+              fullWidth
+              label='Trạng thái'
+              type='number'
+              {...register("status")}
+              error={!!errors.status}
+              helperText={errors.status?.message as string}
               margin='normal'
             />
 

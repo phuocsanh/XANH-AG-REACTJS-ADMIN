@@ -4,41 +4,41 @@
  */
 export interface FileUpload {
   /** ID duy nhất của file upload */
-  id: number;
+  id: number
   /** ID công khai của file */
-  publicId: string;
+  public_id: string
   /** URL truy cập file */
-  fileUrl: string;
+  file_url: string
   /** Tên file */
-  fileName: string;
+  file_name: string
   /** Loại file */
-  fileType: string;
+  file_type: string
   /** Kích thước file (bytes) */
-  fileSize: number;
+  file_size: number
   /** Thư mục chứa file */
-  folder?: string;
+  folder?: string
   /** Loại MIME của file */
-  mimeType?: string;
+  mime_type?: string
   /** Số lượng tham chiếu đến file */
-  referenceCount?: number;
+  reference_count?: number
   /** Trạng thái file tạm thời */
-  isTemporary?: boolean;
+  is_temporary?: boolean
   /** Trạng thái file không được sử dụng */
-  isOrphaned?: boolean;
+  is_orphaned?: boolean
   /** ID của người dùng upload file */
-  uploadedByUserId?: number;
+  uploaded_by_user_id?: number
   /** Mảng tag của file */
-  tags?: string[];
+  tags?: string[]
   /** Metadata của file */
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown>
   /** Thời gian tạo file upload */
-  createdAt: Date;
+  created_at: Date
   /** Thời gian cập nhật gần nhất */
-  updatedAt: Date;
+  updated_at: Date
   /** Thời gian đánh dấu để xóa file */
-  markedForDeletionAt?: Date;
+  marked_for_deletion_at?: Date
   /** Thời gian xóa file */
-  deletedAt?: Date;
+  deleted_at?: Date
 }
 
 /**
@@ -47,88 +47,89 @@ export interface FileUpload {
  */
 export interface FileReference {
   /** ID duy nhất của file reference */
-  id: number;
+  id: number
   /** ID của file upload */
-  fileId: number;
+  file_id: number
   /** Loại thực thể (ví dụ: 'product', 'user') */
-  entityType: string;
+  entity_type: string
   /** ID của thực thể */
-  entityId: number;
+  entity_id: number
   /** Tên trường chứa file */
-  fieldName?: string;
+  field_name?: string
   /** Vị trí trong mảng (nếu có) */
-  arrayIndex?: number;
+  array_index?: number
   /** ID người tạo */
-  createdByUserId?: number;
+  created_by_user_id?: number
   /** Thời gian tạo */
-  createdAt: Date;
+  created_at: Date
   /** Thời gian cập nhật */
-  updatedAt: Date;
+  updated_at: Date
   /** ID người xóa */
-  deletedByUserId?: number;
+  deleted_by_user_id?: number
   /** Thời gian xóa */
-  deletedAt?: Date;
+  deleted_at?: Date
 }
 
 /**
  * Interface định nghĩa request tạo file upload mới
  */
 export interface CreateFileUploadRequest {
-  [key: string]: unknown  // Index signature để tương thích với AnyObject
+  [key: string]: unknown // Index signature để tương thích với AnyObject
   /** ID công khai của file */
-  publicId: string;
+  public_id: string
   /** URL truy cập file */
-  fileUrl: string;
+  file_url: string
   /** Tên file */
-  fileName: string;
+  file_name: string
   /** Loại file */
-  fileType: string;
+  file_type: string
   /** Kích thước file (bytes) */
-  fileSize: number;
+  file_size: number
   /** Thư mục chứa file */
-  folder?: string;
+  folder?: string
   /** Loại MIME của file */
-  mimeType?: string;
+  mime_type?: string
   /** Số lượng tham chiếu đến file */
-  referenceCount?: number;
+  reference_count?: number
   /** Trạng thái file tạm thời */
-  isTemporary?: boolean;
+  is_temporary?: boolean
   /** Trạng thái file không được sử dụng */
-  isOrphaned?: boolean;
+  is_orphaned?: boolean
   /** ID của người dùng upload file */
-  uploadedByUserId?: number;
+  uploaded_by_user_id?: number
   /** Mảng tag của file */
-  tags?: string[];
+  tags?: string[]
   /** Metadata của file */
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown>
   /** Thời gian đánh dấu để xóa file */
-  markedForDeletionAt?: Date;
+  marked_for_deletion_at?: Date
   /** Thời gian xóa file */
-  deletedAt?: Date;
+  deleted_at?: Date
 }
 
 /**
  * Interface định nghĩa request cập nhật file upload
  */
-export interface UpdateFileUploadRequest extends Partial<CreateFileUploadRequest> {}
+export interface UpdateFileUploadRequest
+  extends Partial<CreateFileUploadRequest> {}
 
 /**
  * Interface định nghĩa request tạo file reference
  */
 export interface CreateFileReferenceRequest {
-  [key: string]: unknown  // Index signature để tương thích với AnyObject
+  [key: string]: unknown // Index signature để tương thích với AnyObject
   /** ID của file upload */
-  fileId: number;
+  file_id: number
   /** Loại thực thể */
-  entityType: string;
+  entity_type: string
   /** ID của thực thể */
-  entityId: number;
+  entity_id: number
   /** Tên trường chứa file */
-  fieldName?: string;
+  field_name?: string
   /** Vị trí trong mảng */
-  arrayIndex?: number;
+  array_index?: number
   /** ID người tạo */
-  createdByUserId?: number;
+  created_by_user_id?: number
 }
 
 /**
@@ -146,13 +147,13 @@ export interface UpdateFileUploadResponse extends FileUpload {}
  */
 export interface FileUploadListResponse {
   /** Danh sách file upload */
-  data: FileUpload[];
+  data: FileUpload[]
   /** Tổng số file */
-  total: number;
+  total: number
   /** Trang hiện tại */
-  page?: number;
+  page?: number
   /** Số lượng file trên mỗi trang */
-  limit?: number;
+  limit?: number
 }
 
 /**
@@ -160,9 +161,9 @@ export interface FileUploadListResponse {
  */
 export interface DeleteFileUploadResponse {
   /** Thông báo kết quả */
-  message: string;
+  message: string
   /** Trạng thái thành công */
-  success: boolean;
+  success: boolean
 }
 
 /**
@@ -170,9 +171,9 @@ export interface DeleteFileUploadResponse {
  */
 export interface OrphanedFilesResponse {
   /** Danh sách file orphaned */
-  files: FileUpload[];
+  files: FileUpload[]
   /** Tổng số file orphaned */
-  total: number;
+  total: number
 }
 
 /**
@@ -180,9 +181,9 @@ export interface OrphanedFilesResponse {
  */
 export interface MarkedForDeletionFilesResponse {
   /** Danh sách file đã đánh dấu để xóa */
-  files: FileUpload[];
+  files: FileUpload[]
   /** Tổng số file đã đánh dấu */
-  total: number;
+  total: number
 }
 
 /**
@@ -190,17 +191,17 @@ export interface MarkedForDeletionFilesResponse {
  */
 export interface FileTrackingStats {
   /** Tổng số file */
-  totalFiles: number;
+  total_files: number
   /** Tổng dung lượng file (bytes) */
-  totalSize: number;
+  total_size: number
   /** Số file tạm thời */
-  temporaryFiles: number;
+  temporary_files: number
   /** Số file orphaned */
-  orphanedFiles: number;
+  orphaned_files: number
   /** Số file đã đánh dấu để xóa */
-  markedForDeletionFiles: number;
+  marked_for_deletion_files: number
   /** Số file đã xóa */
-  deletedFiles: number;
+  deleted_files: number
 }
 
 /**
@@ -208,25 +209,25 @@ export interface FileTrackingStats {
  */
 export interface FileSearchParams {
   /** Tìm kiếm theo tên file */
-  fileName?: string;
+  file_name?: string
   /** Tìm kiếm theo loại file */
-  fileType?: string;
+  file_type?: string
   /** Tìm kiếm theo thư mục */
-  folder?: string;
+  folder?: string
   /** Tìm kiếm theo trạng thái tạm thời */
-  isTemporary?: boolean;
+  is_temporary?: boolean
   /** Tìm kiếm theo trạng thái orphaned */
-  isOrphaned?: boolean;
+  is_orphaned?: boolean
   /** Tìm kiếm theo người upload */
-  uploadedByUserId?: number;
+  uploaded_by_user_id?: number
   /** Trang hiện tại */
-  page?: number;
+  page?: number
   /** Số lượng trên mỗi trang */
-  limit?: number;
+  limit?: number
   /** Sắp xếp theo trường */
-  sortBy?: string;
+  sort_by?: string
   /** Thứ tự sắp xếp */
-  sortOrder?: 'ASC' | 'DESC';
+  sort_order?: "ASC" | "DESC"
 }
 
 /**
@@ -234,20 +235,20 @@ export interface FileSearchParams {
  */
 export interface FileDetails extends FileUpload {
   /** Danh sách tham chiếu của file */
-  references: FileReference[];
+  references: FileReference[]
   /** Số lượng tham chiếu hiện tại */
-  currentReferenceCount: number;
+  current_reference_count: number
 }
 
 /**
  * Interface định nghĩa request đánh dấu file để xóa
  */
 export interface MarkFileForDeletionRequest {
-  [key: string]: unknown  // Index signature để tương thích với AnyObject
+  [key: string]: unknown // Index signature để tương thích với AnyObject
   /** ID của file */
-  fileId: number;
+  file_id: number
   /** Thời gian đánh dấu */
-  markedAt?: Date;
+  marked_at?: Date
 }
 
 /**
@@ -255,9 +256,9 @@ export interface MarkFileForDeletionRequest {
  */
 export interface MarkFileForDeletionResponse {
   /** Thông báo kết quả */
-  message: string;
+  message: string
   /** Trạng thái thành công */
-  success: boolean;
+  success: boolean
   /** Thông tin file đã đánh dấu */
-  file: FileUpload;
+  file: FileUpload
 }

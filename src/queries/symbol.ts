@@ -25,7 +25,7 @@ export const useSymbolsQuery = (params?: SymbolListParams) => {
       }
     : undefined
 
-  return usePaginationQuery<Symbol[]>("/symbols", paginationParams)
+  return usePaginationQuery<Symbol>("/symbols", paginationParams)
 }
 
 // Lấy thông tin ký hiệu theo ID

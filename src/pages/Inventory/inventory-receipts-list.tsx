@@ -385,25 +385,25 @@ const InventoryReceiptsList: React.FC = () => {
     },
     {
       title: "Nhà cung cấp",
-      dataIndex: "supplierId",
-      key: "supplierId",
+      dataIndex: "supplier_id",
+      key: "supplier_id",
       width: 200,
-      render: (supplierId: number) => {
+      render: (supplier_id: number) => {
         // Tạm thời hiển thị ID, sau này sẽ cập nhật để hiển thị tên nhà cung cấp
-        return supplierId ? `Nhà cung cấp #${supplierId}` : "-"
+        return supplier_id ? `Nhà cung cấp #${supplier_id}` : "-"
       },
     },
     {
       title: "Tổng tiền",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
+      dataIndex: "total_amount",
+      key: "total_amount",
       width: 120,
       align: "right",
-      render: (amount: string) =>
+      render: (amount: number) =>
         new Intl.NumberFormat("vi-VN", {
           style: "currency",
           currency: "VND",
-        }).format(parseFloat(amount || "0")),
+        }).format(amount),
     },
     {
       title: "Trạng thái",
@@ -415,17 +415,17 @@ const InventoryReceiptsList: React.FC = () => {
     },
     {
       title: "Ngày tạo",
-      dataIndex: "createdAt",
-      key: "createdAt",
+      dataIndex: "created_at",
+      key: "created_at",
       width: 120,
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
       title: "Mô tả",
-      dataIndex: "description",
-      key: "description",
+      dataIndex: "notes",
+      key: "notes",
       ellipsis: true,
-      render: (description: string) => description || "-",
+      render: (notes: string) => notes || "-",
     },
     {
       title: "Thao tác",

@@ -10,13 +10,13 @@
  */
 export interface FileUpload {
   id: string
-  publicId: string
-  fileUrl: string
-  fileName: string
-  fileType: string
-  fileSize: number
-  createdAt: string
-  updatedAt: string
+  public_id: string
+  file_url: string
+  file_name: string
+  file_type: string
+  file_size: number
+  created_at: string
+  updated_at: string
 }
 
 /**
@@ -24,13 +24,13 @@ export interface FileUpload {
  */
 export interface UploadResponse {
   id: string
-  publicId: string
-  fileUrl: string
-  fileName: string
-  fileType: string
-  fileSize: number
-  createdAt: string
-  updatedAt: string
+  public_id: string
+  file_url: string
+  file_name: string
+  file_type: string
+  file_size: number
+  created_at: string
+  updated_at: string
 }
 
 // ========== INTERFACE CHO REQUEST ==========
@@ -39,14 +39,14 @@ export interface UploadResponse {
  * Interface cho request xóa file
  */
 export interface DeleteFileRequest {
-  publicId: string
+  public_id: string
 }
 
 /**
  * Interface cho request đánh dấu file đã sử dụng
  */
 export interface MarkFileUsedRequest {
-  publicId: string
+  public_id: string
 }
 
 /**
@@ -80,7 +80,7 @@ export interface MarkFileUsedResponse {
  */
 export interface CleanupUnusedFilesResponse {
   success: boolean
-  deletedCount: number
+  deleted_count: number
   message: string
 }
 
@@ -90,13 +90,13 @@ export interface CleanupUnusedFilesResponse {
  * Interface cho thống kê file upload
  */
 export interface UploadStats {
-  totalFiles: number
-  totalSize: number
-  imageFiles: number
-  documentFiles: number
-  otherFiles: number
-  usedFiles: number
-  unusedFiles: number
+  total_files: number
+  total_size: number
+  image_files: number
+  document_files: number
+  other_files: number
+  used_files: number
+  unused_files: number
 }
 
 /**
@@ -104,19 +104,19 @@ export interface UploadStats {
  */
 export interface FileDetails {
   id: string
-  publicId: string
-  fileUrl: string
-  fileName: string
-  originalName: string
-  fileType: string
-  mimeType: string
-  fileSize: number
+  public_id: string
+  file_url: string
+  file_name: string
+  original_name: string
+  file_type: string
+  mime_type: string
+  file_size: number
   folder: string
-  isUsed: boolean
-  usageCount: number
-  createdAt: string
-  updatedAt: string
-  lastAccessedAt?: string
+  is_used: boolean
+  usage_count: number
+  created_at: string
+  updated_at: string
+  last_accessed_at?: string
 }
 
 /**
@@ -127,7 +127,7 @@ export interface FileListResponse {
   total: number
   page: number
   limit: number
-  totalPages: number
+  total_pages: number
 }
 
 /**
@@ -137,9 +137,9 @@ export interface FileSearchParams {
   page?: number
   limit?: number
   search?: string
-  fileType?: string
+  file_type?: string
   folder?: string
-  isUsed?: boolean
-  sortBy?: 'createdAt' | 'fileName' | 'fileSize' | 'lastAccessedAt'
-  sortOrder?: 'asc' | 'desc'
+  is_used?: boolean
+  sort_by?: "created_at" | "file_name" | "file_size" | "last_accessed_at"
+  sort_order?: "asc" | "desc"
 }

@@ -7,12 +7,12 @@ export interface ProductSubtype extends Record<string, unknown> {
   id: number
   name: string
   code: string
-  productTypeId: number
+  product_type_id: number
   description?: string
   status: BaseStatus
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
+  created_at: string
+  updated_at: string
+  deleted_at?: string
 }
 
 // Extend ProductSubtype interface để tương thích với DataTable
@@ -24,7 +24,7 @@ export interface ExtendedProductSubtype
 export interface CreateProductSubtypeDto extends AnyObject {
   name: string
   code: string
-  productTypeId: number
+  product_type_id: number
   description?: string
   status?: BaseStatus
 }
@@ -33,7 +33,7 @@ export interface CreateProductSubtypeDto extends AnyObject {
 export interface UpdateProductSubtypeDto extends AnyObject {
   name?: string
   code?: string
-  productTypeId?: number
+  product_type_id?: number
   description?: string
   status?: BaseStatus
 }
@@ -42,7 +42,7 @@ export interface UpdateProductSubtypeDto extends AnyObject {
 export interface CreateProductSubtypeRequest extends AnyObject {
   name: string
   code: string
-  productTypeId: number
+  product_type_id: number
   description?: string
   status?: BaseStatus
 }

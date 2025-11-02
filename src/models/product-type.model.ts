@@ -11,9 +11,9 @@ export interface ProductType {
   code: string
   description: string
   status: BaseStatus
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
+  created_at: string
+  updated_at: string
+  deleted_at?: string
 }
 
 // Extend ProductType interface để tương thích với DataTable
@@ -28,8 +28,8 @@ export interface ExtendedProductSubtype
 
 export interface ProductTypeRequest {
   [key: string]: unknown
-  typeName: string
-  typeCode: string
+  name: string
+  code: string
   description?: string
   status?: BaseStatus
 }
@@ -48,8 +48,8 @@ export interface ProductSubtypeMappingRequest {
 }
 
 export interface CreateProductTypeRequest extends AnyObject {
-  typeName: string
-  typeCode: string
+  name: string
+  code: string
   description?: string
   status?: BaseStatus
 }

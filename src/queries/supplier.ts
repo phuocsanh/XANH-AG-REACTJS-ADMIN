@@ -27,7 +27,7 @@ export const supplierKeys = {
  * Hook lấy danh sách nhà cung cấp
  */
 export const useSuppliersQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<Supplier[]>("/suppliers", params)
+  return usePaginationQuery<Supplier>("/suppliers", params)
 }
 
 /**

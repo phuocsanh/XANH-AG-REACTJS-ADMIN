@@ -1,21 +1,11 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query"
 import api from "@/utils/api"
+import { PaginationResponse, PaginationData } from "@/models/pagination"
 
 interface PaginationParams {
   page?: number
   limit?: number
   [key: string]: unknown
-}
-
-interface PaginationResponse<T> {
-  data: T
-  pagination?: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
-  meta?: Record<string, unknown>
 }
 
 /**
@@ -42,33 +32,81 @@ export const usePaginationQuery = <T>(
   return useQuery<PaginationResponse<T>, Error>({
     queryKey: [url, defaultParams],
     queryFn: async () => {
-      const response = await api.get<T>(url, {
+      const response = await api.get<PaginationData<T>>(url, {
         params: defaultParams,
       })
 
       // Xử lý response theo các định dạng khác nhau
       if (Array.isArray(response)) {
         // Trường hợp response là mảng trực tiếp
+        const paginationData: PaginationData<T> = {
+          items: response as unknown as T[], // Ép kiểu đúng
+          total: response.length,
+          page: 1,
+          limit: response.length,
+          total_pages: 1,
+          has_next: false,
+          has_prev: false,
+        }
+
         return {
-          data: response as unknown as T,
+          data: paginationData,
+          status: 200,
+          message: "Success",
+          success: true,
         } as PaginationResponse<T>
       } else if (typeof response === "object" && response !== null) {
-        // Trường hợp response có cấu trúc {success: boolean, data: T, ...}
-        if ("data" in response) {
+        // Kiểm tra kiểu an toàn hơn
+        if (
+          "items" in response &&
+          Array.isArray((response as unknown as PaginationData<T>).items)
+        ) {
+          // Trường hợp response là PaginationData trực tiếp
           return {
-            data: response.data as T,
-            pagination:
-              "pagination" in response
-                ? (response.pagination as PaginationResponse<T>["pagination"])
-                : undefined,
-            meta: "meta" in response ? response.meta : undefined,
+            data: response as unknown as PaginationData<T>,
+            status: 200,
+            message: "Success",
+            success: true,
+          } as PaginationResponse<T>
+        } else if (
+          "data" in response &&
+          typeof response.data === "object" &&
+          response.data !== null &&
+          "items" in response.data &&
+          Array.isArray((response.data as unknown as PaginationData<T>).items)
+        ) {
+          // Trường hợp response có cấu trúc {success: boolean, data: PaginationData<T>, ...}
+          return {
+            data: response.data as unknown as PaginationData<T>,
+            status: (response as unknown as { status?: number }).status || 200,
+            message:
+              (response as unknown as { message?: string }).message ||
+              "Success",
+            success:
+              (response as unknown as { success?: boolean }).success !==
+              undefined
+                ? (response as unknown as { success?: boolean }).success
+                : true,
           } as PaginationResponse<T>
         }
       }
 
       // Trả về response nguyên gốc nếu không khớp các định dạng trên
+      const paginationData: PaginationData<T> = {
+        items: [] as unknown as T[], // Ép kiểu đúng
+        total: 0,
+        page: 1,
+        limit: 10,
+        total_pages: 1,
+        has_next: false,
+        has_prev: false,
+      }
+
       return {
-        data: response as unknown as T,
+        data: paginationData,
+        status: 200,
+        message: "Success",
+        success: true,
       } as PaginationResponse<T>
     },
     ...options,

@@ -2,9 +2,9 @@ import { z } from "zod"
 
 // Schema validation cho form loại phụ sản phẩm
 export const productSubtypeSchema = z.object({
-  subtypeName: z.string().min(1, "Tên loại phụ sản phẩm là bắt buộc"),
-  subtypeCode: z.string().min(1, "Mã loại phụ sản phẩm là bắt buộc"),
-  productTypeId: z
+  name: z.string().min(1, "Tên loại phụ sản phẩm là bắt buộc"),
+  code: z.string().min(1, "Mã loại phụ sản phẩm là bắt buộc"),
+  product_type_id: z
     .number({
       invalid_type_error: "Loại sản phẩm là bắt buộc",
       required_error: "Loại sản phẩm là bắt buộc",
@@ -20,9 +20,9 @@ export type ProductSubtypeFormData = z.infer<typeof productSubtypeSchema>
 
 // Giá trị mặc định cho form
 export const defaultProductSubtypeValues: ProductSubtypeFormData = {
-  subtypeName: "",
-  subtypeCode: "",
-  productTypeId: undefined, // Không có giá trị mặc định khi chưa chọn
+  name: "",
+  code: "",
+  product_type_id: undefined, // Không có giá trị mặc định khi chưa chọn
   description: "",
   status: "active",
 }

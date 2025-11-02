@@ -7,6 +7,30 @@ import { InventoryReceiptItemForm } from "@/models/inventory.model"
 
 const { Text } = Typography
 
+// Hàm validate số lượng
+const validateQuantity = (value: number): string => {
+  if (!value || value < 1) {
+    return "Số lượng phải lớn hơn 0"
+  }
+  return ""
+}
+
+// Hàm validate đơn giá
+const validateUnitCost = (value: number): string => {
+  if (value < 0) {
+    return "Đơn giá không được âm"
+  }
+  return ""
+}
+
+// Hàm validate ghi chú
+const validateNotes = (value: string): string => {
+  if (value && value.length > 255) {
+    return "Ghi chú không được vượt quá 255 ký tự"
+  }
+  return ""
+}
+
 interface MobileItemCardProps {
   item: InventoryReceiptItemForm
   index: number
@@ -47,12 +71,12 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
     value: unknown
   ): string => {
     switch (field) {
-      case "productId":
-        return !value || value === 0 ? "Vui lòng chọn sản phẩm" : ""
       case "quantity":
-        return !value || Number(value) < 1 ? "Số lượng tối thiểu là 1" : ""
-      case "unitCost":
-        return Number(value) < 0 ? "Đơn giá phải lớn hơn hoặc bằng 0" : ""
+        return validateQuantity(value as number)
+      case "unit_cost":
+        return validateUnitCost(value as number)
+      case "notes":
+        return validateNotes(value as string)
       default:
         return ""
     }
@@ -61,13 +85,9 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
   // Hàm validate tất cả các trường
   const validateAllFields = (): boolean => {
     const newErrors: Record<string, string> = {}
-    const fieldsToValidate: (keyof InventoryReceiptItemForm)[] = [
-      "productId",
-      "quantity",
-      "unitCost",
-    ]
+    const validateFields = ["quantity", "unit_cost", "notes"]
 
-    fieldsToValidate.forEach((field) => {
+    validateFields.forEach((field) => {
       const error = validateField(field, item[field])
       if (error) {
         newErrors[field] = error
@@ -125,18 +145,18 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
           <div>
             <label className='block text-xs mb-1'>Sản phẩm *</label>
             <ComboBox
-              value={item.productId}
+              value={item.product_id}
               placeholder='Chọn sản phẩm'
               {...comboBoxProps}
               showSearch={true}
               onChange={(value) =>
-                handleItemChangeWithValidation("productId", value)
+                handleItemChangeWithValidation("product_id", value)
               }
               style={{ width: "100%" }}
             />
-            {errors.productId && (
+            {errors.product_id && (
               <div className='text-red-500 text-xs mt-1'>
-                {errors.productId}
+                {errors.product_id}
               </div>
             )}
           </div>
@@ -157,15 +177,17 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
           <div>
             <label className='block text-xs mb-1'>Đơn giá *</label>
             <NumberInput
-              value={item.unitCost}
+              value={item.unit_cost}
               min={0}
               placeholder='Đơn giá'
               onChange={(value) =>
-                handleItemChangeWithValidation("unitCost", value || 0)
+                handleItemChangeWithValidation("unit_cost", value || 0)
               }
             />
-            {errors.unitCost && (
-              <div className='text-red-500 text-xs mt-1'>{errors.unitCost}</div>
+            {errors.unit_cost && (
+              <div className='text-red-500 text-xs mt-1'>
+                {errors.unit_cost}
+              </div>
             )}
           </div>
           <div>
@@ -174,7 +196,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(item.totalPrice)}
+              }).format(item.total_price)}
             </div>
           </div>
           <div>
@@ -191,7 +213,9 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
       ) : (
         <div className='space-y-2'>
           <div className='flex justify-between'>
-            <Text strong>{item.productName || "-"}</Text>
+            <Text strong>
+              {item.product_name ? item.product_name.toString() : "-"}
+            </Text>
           </div>
           <div className='flex justify-between text-sm'>
             <Text type='secondary'>Số lượng:</Text>
@@ -203,7 +227,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(item.unitCost)}
+              }).format(item.unit_cost)}
             </Text>
           </div>
           <div className='flex justify-between text-sm'>
@@ -212,7 +236,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(item.totalPrice)}
+              }).format(item.total_price)}
             </Text>
           </div>
           {item.notes && (
