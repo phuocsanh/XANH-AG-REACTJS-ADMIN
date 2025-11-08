@@ -39,7 +39,7 @@ const Sidebar = () => {
         </div>
       </Link>
 
-      <div className='sidebarTabs px-2 mt-4 overflow-y-auto h-[calc(100vh-100px)]'>
+      <div className='sidebarTabs px-2 mt-4'>
         <ul className='flex gap-3 flex-col'>
           <li>
             <Link to='/'>
