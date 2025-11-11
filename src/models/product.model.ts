@@ -32,6 +32,8 @@ export interface Product {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient: string[]
+  // Thêm 2 trường mới từ server
+  suggested_price?: string
 }
 
 // Extend Product interface để tương thích với DataTable

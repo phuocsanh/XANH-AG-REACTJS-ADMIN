@@ -19,6 +19,11 @@ export const productFormSchema = z.object({
   // Thêm 2 trường mới
   symbol_id: z.number().optional(),
   ingredient: z.string().min(1, "Vui lòng nhập thành phần nguyên liệu"), // Bắt buộc nhập
+  // Thêm 2 trường mới từ server
+  profit_margin_percent: z
+    .string()
+    .min(1, "Vui lòng nhập phần trăm lợi nhuận mong muốn"),
+  average_cost_price: z.string().min(1, "Vui lòng nhập giá vốn trung bình"),
 })
 
 // Schema validation cho form tạo sản phẩm mới (yêu cầu thêm một số trường bắt buộc)
@@ -50,6 +55,9 @@ export interface ProductFormValues {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient: string // Bắt buộc nhập
+  // Thêm 2 trường mới từ server
+  profit_margin_percent: string
+  average_cost_price: string
 }
 
 // Interface cho ConvertedProductValues (phù hợp với cấu trúc hiện tại)
@@ -71,6 +79,10 @@ export interface ConvertedProductValues {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient: string[] // Chuyển thành mảng khi gửi lên server
+  // Thêm 2 trường mới từ server
+  profit_margin_percent: string
+  average_cost_price: string
+  suggested_price?: string
 }
 
 // Giá trị mặc định cho form
@@ -84,5 +96,7 @@ export const defaultProductFormValues: ProductFormValues = {
   unit_id: undefined, // Bắt buộc nhập
   status: "active",
   ingredient: "", // Bắt buộc nhập
+  profit_margin_percent: "", // Thêm trường mới
+  average_cost_price: "", // Thêm trường mới
   // Các trường optional khác sẽ là undefined theo mặc định
 }

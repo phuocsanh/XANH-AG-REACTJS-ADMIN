@@ -401,6 +401,9 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Tên sản phẩm'>
               {currentProduct.name}
             </Descriptions.Item>
+            <Descriptions.Item label='Slug'>
+              {currentProduct.slug || "Không có"}
+            </Descriptions.Item>
             <Descriptions.Item label='Mô tả'>
               {currentProduct.description || "Không có mô tả"}
             </Descriptions.Item>
@@ -410,8 +413,20 @@ const ProductsList: React.FC = () => {
                 currency: "VND",
               }).format(Number(currentProduct.price || 0))}
             </Descriptions.Item>
+            <Descriptions.Item label='Giá sau giảm'>
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(currentProduct.discounted_price || 0))}
+            </Descriptions.Item>
             <Descriptions.Item label='Tồn kho'>
               {currentProduct.quantity || 0}
+            </Descriptions.Item>
+            <Descriptions.Item label='Đã bán'>
+              {currentProduct.selled || 0}
+            </Descriptions.Item>
+            <Descriptions.Item label='Đánh giá trung bình'>
+              {currentProduct.ratings_average || "Chưa có đánh giá"}
             </Descriptions.Item>
             <Descriptions.Item label='Trạng thái'>
               <Tag
@@ -425,6 +440,52 @@ const ProductsList: React.FC = () => {
                 <Tag color='red'>Giảm {currentProduct.discount}%</Tag>
               </Descriptions.Item>
             )}
+            <Descriptions.Item label='Phần trăm lợi nhuận'>
+              {currentProduct.profit_margin_percent || "0"}%
+            </Descriptions.Item>
+            <Descriptions.Item label='Giá vốn trung bình'>
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(currentProduct.average_cost_price || 0))}
+            </Descriptions.Item>
+            <Descriptions.Item label='Giá bán đề xuất'>
+              {currentProduct.suggested_price
+                ? new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(Number(currentProduct.suggested_price || 0))
+                : "Chưa tính"}
+            </Descriptions.Item>
+            <Descriptions.Item label='Giá nhập mới nhất'>
+              {currentProduct.latest_purchase_price
+                ? new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(Number(currentProduct.latest_purchase_price || 0))
+                : "Chưa có"}
+            </Descriptions.Item>
+            <Descriptions.Item label='Ngày tạo'>
+              {currentProduct.created_at
+                ? new Date(currentProduct.created_at).toLocaleString("vi-VN")
+                : "Không có"}
+            </Descriptions.Item>
+            <Descriptions.Item label='Ngày cập nhật'>
+              {currentProduct.updated_at
+                ? new Date(currentProduct.updated_at).toLocaleString("vi-VN")
+                : "Chưa cập nhật"}
+            </Descriptions.Item>
+            {currentProduct.symbol_id && (
+              <Descriptions.Item label='Ký hiệu'>
+                {currentProduct.symbol_id}
+              </Descriptions.Item>
+            )}
+            {currentProduct.ingredient &&
+              currentProduct.ingredient.length > 0 && (
+                <Descriptions.Item label='Thành phần'>
+                  {currentProduct.ingredient.join(", ")}
+                </Descriptions.Item>
+              )}
             {currentProduct.attributes && (
               <Descriptions.Item label='Thuộc tính'>
                 <div className='grid grid-cols-2 gap-2'>
@@ -453,6 +514,23 @@ const ProductsList: React.FC = () => {
                           </span>
                         </div>
                       ))}
+                </div>
+              </Descriptions.Item>
+            )}
+            {currentProduct.videos && currentProduct.videos.length > 0 && (
+              <Descriptions.Item label='Videos'>
+                <div className='flex flex-wrap gap-2'>
+                  {currentProduct.videos.map((video, index) => (
+                    <a
+                      key={index}
+                      href={video}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-blue-500 hover:underline'
+                    >
+                      Video {index + 1}
+                    </a>
+                  ))}
                 </div>
               </Descriptions.Item>
             )}

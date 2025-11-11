@@ -229,6 +229,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           pictures: normalizeFileList(productItem.pictures), // Danh sách ảnh
           videos: productItem.videos || [], // Danh sách video
           description: productItem.description || "", // Mô tả
+          profit_margin_percent: productItem.profit_margin_percent || "", // Thêm trường mới
+          average_cost_price: productItem.average_cost_price || "", // Thêm trường mới
         })
 
         // Product type will be watched through watchedType
@@ -323,6 +325,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         price: values.price,
         symbol_id: values.symbol_id,
         sub_types: values.sub_types || [],
+        profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
+        average_cost_price: values.average_cost_price || "", // Thêm trường mới
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -346,8 +350,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         attributes: convertedValues.attributes || {},
         discount: convertedValues.discount || "0",
         discounted_price: "0",
-        average_cost_price: "0",
-        profit_margin_percent: "0",
+        average_cost_price: convertedValues.average_cost_price || "0",
+        profit_margin_percent: convertedValues.profit_margin_percent || "0",
+        suggested_price: "0",
         status: convertedValues.status,
         sub_product_type: Array.isArray(convertedValues.sub_types)
           ? convertedValues.sub_types
@@ -474,6 +479,34 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   placeholder='Nhập số lượng'
                   required
                   rules={{ required: "Vui lòng nhập số lượng" }}
+                  className='w-full'
+                />
+              </div>
+
+              {/* Thêm trường profit_margin_percent */}
+              <div className='w-full'>
+                <FormFieldNumber
+                  name='profit_margin_percent'
+                  control={control}
+                  label='Phần trăm lợi nhuận mong muốn (%)'
+                  placeholder='Nhập phần trăm lợi nhuận mong muốn'
+                  required
+                  rules={{
+                    required: "Vui lòng nhập phần trăm lợi nhuận mong muốn",
+                  }}
+                  className='w-full'
+                />
+              </div>
+
+              {/* Thêm trường average_cost_price */}
+              <div className='w-full'>
+                <FormFieldNumber
+                  name='average_cost_price'
+                  control={control}
+                  label='Giá vốn trung bình (VNĐ)'
+                  placeholder='Nhập giá vốn trung bình'
+                  required
+                  rules={{ required: "Vui lòng nhập giá vốn trung bình" }}
                   className='w-full'
                 />
               </div>
