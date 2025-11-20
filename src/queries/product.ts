@@ -21,6 +21,8 @@ export const productKeys = {
   detail: (id: number) => [...productKeys.details(), id] as const,
   search: (searchTerm: string) =>
     [...productKeys.all, "search", searchTerm] as const,
+  // Thêm key cho multiple products
+  multiple: (ids: number[]) => [...productKeys.all, "multiple", ids] as const,
 }
 
 // Interface cho API response theo đúng format của ComboBox
@@ -118,6 +120,51 @@ export const searchProductsApi = async ({
       nextPage: undefined,
     }
   }
+}
+
+/**
+ * Hàm lấy thông tin chi tiết nhiều sản phẩm theo IDs
+ */
+export const getProductsByIds = async (ids: number[]): Promise<Product[]> => {
+  try {
+    // Tạo search DTO để lấy nhiều sản phẩm theo IDs
+    const searchDto = {
+      page: 1,
+      limit: ids.length,
+      filters: [
+        {
+          field: "id",
+          operator: "in",
+          value: ids,
+        },
+      ],
+      operator: "AND",
+    }
+
+    const response = await api.postRaw<{
+      data: Product[]
+      page: number
+      limit: number
+      total: number
+    }>("/products/search", searchDto)
+
+    return response.data || []
+  } catch (error) {
+    console.error("Error fetching products by IDs:", error)
+    handleApiError(error, "Có lỗi xảy ra khi lấy thông tin sản phẩm")
+    return []
+  }
+}
+
+/**
+ * Hook lấy thông tin chi tiết nhiều sản phẩm theo IDs
+ */
+export const useProductsByIdsQuery = (ids: number[]) => {
+  return useQuery({
+    queryKey: productKeys.multiple(ids),
+    queryFn: () => getProductsByIds(ids),
+    enabled: ids.length > 0,
+  })
 }
 
 /**

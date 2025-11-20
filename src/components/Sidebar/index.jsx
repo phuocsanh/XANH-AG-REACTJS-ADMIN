@@ -20,6 +20,8 @@ import { RiFileListLine } from "react-icons/ri"
 import { FaRegCircle } from "react-icons/fa"
 // Thêm icon cho supplier
 import { MdLocalShipping } from "react-icons/md"
+// Thêm icon cho pesticides
+import { GiPoisonBottle } from "react-icons/gi"
 
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0)
@@ -176,11 +178,26 @@ const Sidebar = () => {
             </Link>
           </li>
 
+          {/* Thêm menu cho pesticides */}
           <li>
-            <Link to='/users'>
+            <Link to='/pesticides'>
               <Button
                 className={`w-full ${activeTab === 8 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(8)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiPoisonBottle />
+                </span>
+                Thuốc BVTV
+              </Button>
+            </Link>
+          </li>
+
+          <li>
+            <Link to='/users'>
+              <Button
+                className={`w-full ${activeTab === 9 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(9)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <FaUsers />
@@ -193,8 +210,8 @@ const Sidebar = () => {
           {/* Quản lý nhập hàng */}
           <li>
             <Button
-              className={`w-full ${activeTab === 9 ? "active" : ""}`}
-              onClick={() => isOpenSubmenu(9)}
+              className={`w-full ${activeTab === 10 ? "active" : ""}`}
+              onClick={() => isOpenSubmenu(10)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                 <MdInventory />
@@ -202,7 +219,7 @@ const Sidebar = () => {
               Quản lý nhập hàng
               <span
                 className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
-                  activeTab === 9 && isToggleSubmenu === true ? "rotate" : ""
+                  activeTab === 10 && isToggleSubmenu === true ? "rotate" : ""
                 }`}
               >
                 <FaAngleRight />
@@ -210,7 +227,7 @@ const Sidebar = () => {
             </Button>
             <div
               className={`submenuWrapper ${
-                activeTab === 9 && isToggleSubmenu === true
+                activeTab === 10 && isToggleSubmenu === true
                   ? "colapse"
                   : "colapsed"
               }`}
@@ -227,8 +244,8 @@ const Sidebar = () => {
           </li>
           <li>
             <Button
-              className={`w-full ${activeTab === 10 ? "active" : ""}`}
-              onClick={() => isOpenSubmenu(10)}
+              className={`w-full ${activeTab === 11 ? "active" : ""}`}
+              onClick={() => isOpenSubmenu(11)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                 <MdNotificationsNone />
@@ -247,8 +264,8 @@ const Sidebar = () => {
               <li>
                 <Link to='/sign-in'>
                   <Button
-                    className={`w-full ${activeTab === 11 ? "active" : ""}`}
-                    onClick={() => isOpenSubmenu(11)}
+                    className={`w-full ${activeTab === 12 ? "active" : ""}`}
+                    onClick={() => isOpenSubmenu(12)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                       <FiUser />
@@ -262,8 +279,8 @@ const Sidebar = () => {
 
           <li>
             <Button
-              className={`w-full ${activeTab === 12 ? "active" : ""}`}
-              onClick={() => isOpenSubmenu(12)}
+              className={`w-full ${activeTab === 13 ? "active" : ""}`}
+              onClick={() => isOpenSubmenu(13)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                 <RiLockPasswordLine />
@@ -274,8 +291,8 @@ const Sidebar = () => {
 
           <li>
             <Button
-              className={`w-full ${activeTab === 13 ? "active" : ""}`}
-              onClick={() => isOpenSubmenu(13)}
+              className={`w-full ${activeTab === 14 ? "active" : ""}`}
+              onClick={() => isOpenSubmenu(14)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                 <IoSettingsOutline />

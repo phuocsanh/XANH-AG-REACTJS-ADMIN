@@ -5,6 +5,8 @@ export const PUBLIC_ROUTES = [
   "/otp",
 ]
 
+export const AI_DEMO_ROUTE = "/ai-demo"
+
 export const isPublicRoute = (pathname: string) => {
   return PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
 }

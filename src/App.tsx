@@ -34,6 +34,8 @@ import ListSymbols from "./pages/symbols/list-symbols"
 import Suppliers from "./pages/suppliers"
 // Thêm import cho trang đăng ký
 import { SignUp } from "./pages/sign-up"
+// Thêm import cho trang pesticides
+import PesticidesPage from "./pages/pesticides"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -205,6 +207,16 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <Suppliers />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang pesticides - AI tư vấn phối trộn & sắp xếp thuốc */}
+                    <Route
+                      path='/pesticides'
+                      element={
+                        <ProtectedRoute>
+                          <PesticidesPage />
                         </ProtectedRoute>
                       }
                     />
