@@ -34,7 +34,16 @@ class FrontendAiService {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY_2
     if (!apiKey) {
       throw new Error(
-        "VITE_GEMINI_API_KEY_1 is not defined in environment variables"
+        "VITE_GEMINI_API_KEY_2 is not defined in environment variables"
+      )
+    }
+    return apiKey
+  }
+  private getApiKey3(): string {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY_3
+    if (!apiKey) {
+      throw new Error(
+        "VITE_GEMINI_API_KEY_3 is not defined in environment variables"
       )
     }
     return apiKey
@@ -287,6 +296,87 @@ class FrontendAiService {
         success: false,
         error:
           (error as Error).message || "Lỗi khi gọi API AI để xử lý câu hỏi.",
+      }
+    }
+  }
+
+  /**
+   * Gọi API Google AI để phân tích thời điểm phun thuốc
+   * @param prompt Prompt đã được tạo sẵn
+   * @returns Promise với kết quả trả về
+   */
+  async analyzeSprayingTime(prompt: string): Promise<AiResponse> {
+    if (!prompt || prompt.trim().length === 0) {
+      return {
+        success: false,
+        error: "Vui lòng cung cấp dữ liệu phân tích.",
+      }
+    }
+
+    try {
+      // Đảm bảo rate limit
+      await this.ensureRateLimit()
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${
+          this.model
+        }:generateContent?key=${this.getApiKey3()}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          error:
+            errorData.error?.message ||
+            `Lỗi khi gọi API AI. Status: ${response.status}`,
+        }
+      }
+
+      const data = await response.json()
+
+      if (
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0]
+      ) {
+        const answer = data.candidates[0].content.parts[0].text || ""
+        return {
+          success: true,
+          answer: answer,
+        }
+      }
+
+      return {
+        success: false,
+        error: "Không tìm thấy câu trả lời trong phản hồi từ AI.",
+      }
+    } catch (error) {
+      console.error("Error calling Gemini API:", error)
+      return {
+        success: false,
+        error:
+          (error as Error).message || "Lỗi khi gọi API AI để phân tích thời điểm.",
       }
     }
   }

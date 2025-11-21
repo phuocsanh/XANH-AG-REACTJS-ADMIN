@@ -55,8 +55,8 @@ class WeatherService {
    */
   private getWeatherDescription(code: number): string {
     const codes: Record<number, string> = {
-      0: 'Bầu trời quang đãng',
-      1: 'Chủ yếu là nắng',
+      0: 'Trời quang đãng',
+      1: 'Trời trong',
       2: 'Có mây',
       3: 'Nhiều mây',
       45: 'Sương mù',
@@ -164,6 +164,42 @@ class WeatherService {
       wind_speed: item.wind.speed,
       humidity: item.main.humidity
     }));
+  }
+
+  /**
+   * Lấy tên địa điểm chi tiết từ tọa độ (Reverse Geocoding)
+   */
+  async getPlaceName(lat: number, lon: number): Promise<string> {
+    try {
+      // Sử dụng Nominatim API của OpenStreetMap (Miễn phí)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=vi`
+      );
+      const data = await response.json();
+      
+      if (data.address) {
+        const addr = data.address;
+        // Ưu tiên lấy các thành phần địa chỉ chi tiết
+        const parts = [];
+        
+        if (addr.road) parts.push(addr.road);
+        if (addr.suburb) parts.push(addr.suburb); // Phường
+        else if (addr.village) parts.push(addr.village); // Xã
+        else if (addr.town) parts.push(addr.town); // Thị trấn
+        
+        if (addr.city_district) parts.push(addr.city_district); // Quận
+        else if (addr.county) parts.push(addr.county); // Huyện
+        
+        if (addr.city) parts.push(addr.city); // Thành phố
+        else if (addr.state) parts.push(addr.state); // Tỉnh
+        
+        return parts.join(', ');
+      }
+      return 'Vị trí đã chọn';
+    } catch (error) {
+      console.error('Lỗi lấy tên địa điểm:', error);
+      return 'Vị trí đã chọn';
+    }
   }
 }
 
