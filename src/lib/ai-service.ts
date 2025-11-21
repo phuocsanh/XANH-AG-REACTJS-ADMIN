@@ -21,11 +21,20 @@ class FrontendAiService {
   /**
    * Lấy API key từ environment variables
    */
-  private getApiKey(): string {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+  private getApiKey1(): string {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY_1
     if (!apiKey) {
       throw new Error(
-        "VITE_GEMINI_API_KEY is not defined in environment variables"
+        "VITE_GEMINI_API_KEY_1 is not defined in environment variables"
+      )
+    }
+    return apiKey
+  }
+  private getApiKey2(): string {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY_2
+    if (!apiKey) {
+      throw new Error(
+        "VITE_GEMINI_API_KEY_1 is not defined in environment variables"
       )
     }
     return apiKey
@@ -128,7 +137,7 @@ class FrontendAiService {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${
           this.model
-        }:generateContent?key=${this.getApiKey()}`,
+        }:generateContent?key=${this.getApiKey1()}`,
         {
           method: "POST",
           headers: {
@@ -216,7 +225,7 @@ class FrontendAiService {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${
           this.model
-        }:generateContent?key=${this.getApiKey()}`,
+        }:generateContent?key=${this.getApiKey2()}`,
         {
           method: "POST",
           headers: {

@@ -106,11 +106,13 @@ class WeatherService {
    */
   filterNextTwoDays(forecastData: WeatherForecastResponse): WeatherData[] {
     const now = new Date();
-    const twoDaysLater = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const endDate = new Date(now);
+    endDate.setDate(now.getDate() + 2);
+    endDate.setHours(23, 59, 59, 999);
     
     return forecastData.list.filter(item => {
       const itemDate = new Date(item.dt * 1000);
-      return itemDate >= now && itemDate <= twoDaysLater;
+      return itemDate >= now && itemDate <= endDate;
     });
   }
 

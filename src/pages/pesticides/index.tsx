@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, Space, Typography, Spin, Alert, Row, Col, List, Tag, Timeline } from 'antd';
 import ComboBox from '@/components/common/combo-box';
 import { useAiService } from '@/hooks/use-ai-service';
@@ -13,11 +13,19 @@ const { Title, Text } = Typography;
  * Trang chính cho chức năng pesticides
  */
 const PesticidesPage: React.FC = () => {
+  interface Recommendation {
+    time: string;
+    temperature: string;
+    rain_prob: string;
+    condition: string;
+    reason: string;
+  }
+
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [mixResult, setMixResult] = useState('');
   const [sortResult, setSortResult] = useState('');
   const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]);
-  const [sprayingRecommendations, setSprayingRecommendations] = useState('');
+  const [sprayingRecommendations, setSprayingRecommendations] = useState<Recommendation[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +78,8 @@ ${productInfo}`;
       `- Thời gian: ${item.time}, Nhiệt độ: ${item.temperature}°C, Trời: ${item.description}, Khả năng mưa: ${item.precipitation_probability}%, Lượng mưa: ${item.rain_amount}mm, Gió: ${item.wind_speed}m/s, Độ ẩm: ${item.humidity}%`
     ).join('\n');
     
-    return `Dựa trên dự báo thời tiết sau, hãy phân tích và đưa ra danh sách tối đa 6 khoảng thời gian phù hợp để phun thuốc bảo vệ thực vật. 
-    Điều kiện: Khoảng thời gian không có mưa ít nhất 1,5 tiếng. Mỗi ngày tối đa 2 khoảng thời gian, nếu ngày nào không có thì bỏ qua.
+    return `Dựa trên dự báo thời tiết sau, hãy phân tích và đưa ra danh sách tối đa 9 khoảng thời gian phù hợp để phun thuốc bảo vệ thực vật. 
+    Điều kiện: Khoảng thời gian không có mưa ít nhất 1,5 tiếng. Mỗi ngày tối đa 3 khoảng thời gian, nếu ngày nào không có thì bỏ qua.
     
     DỮ LIỆU DỰ BÁO THỜI TIẾT:
     ${forecastInfo}
@@ -80,15 +88,45 @@ ${productInfo}`;
     1. Chỉ chọn thời điểm không có mưa hoặc có khả năng mưa thấp (<30%)
     2. Ưu tiên thời điểm có nhiệt độ từ 20-30°C
     3. Tránh thời điểm gió quá mạnh (trên 5m/s)
-    4. Mỗi ngày tối đa 2 khung giờ
-    5. Tổng cộng tối đa 6 khung giờ
-    6. Trình bày kết quả theo định dạng: Ngày - Khung giờ: Lý do`;
+    4. Mỗi ngày tối đa 3 khung giờ
+    5. Tổng cộng tối đa 9 khung giờ
+    6. Trả về kết quả dưới dạng JSON array (không có markdown, không có text dẫn dắt), cấu trúc mỗi item:
+    {
+      "time": "HH:mm dd/MM/yyyy",
+      "temperature": "25°C",
+      "rain_prob": "Khả năng mưa (VD: 0%, 10%)",
+      "condition": "Mô tả ngắn gọn điều kiện thời tiết",
+      "reason": "Lý do chi tiết tại sao nên phun lúc này"
+    }`;
   };
 
   /**
    * Lấy dữ liệu dự báo thời tiết
    */
+  /**
+   * Lấy dữ liệu dự báo thời tiết
+   */
   const fetchWeatherForecast = async () => {
+    // Kiểm tra cache
+    const CACHE_KEY = 'weather_forecast_cache_v5';
+    const CACHE_DURATION = 3600 * 1000; // 1 giờ
+    
+    try {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const { timestamp, forecast, recommendations } = JSON.parse(cachedData);
+        const now = Date.now();
+        
+        if (now - timestamp < CACHE_DURATION) {
+          setWeatherForecast(forecast);
+          setSprayingRecommendations(recommendations);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Lỗi đọc cache:', e);
+    }
+
     setIsWeatherLoading(true);
     setError(null);
     
@@ -100,17 +138,46 @@ ${productInfo}`;
       // Tóm tắt dữ liệu thời tiết cho AI phân tích
       const simplifiedData = weatherService.simplifyWeatherData(filteredData);
       
+      let recommendations: Recommendation[] = [];
       // Phân tích thời điểm phun thuốc với AI
       if (simplifiedData.length > 0) {
         const prompt = createSprayingPrompt(simplifiedData);
         const aiResponse = await frontendAiService.mixPesticides(prompt);
         
         if (aiResponse.success && aiResponse.answer) {
-          setSprayingRecommendations(aiResponse.answer);
+          try {
+            // Clean markdown code blocks if present
+            const cleanJson = aiResponse.answer.replace(/```json/g, '').replace(/```/g, '').trim();
+            recommendations = JSON.parse(cleanJson);
+            if (Array.isArray(recommendations)) {
+              setSprayingRecommendations(recommendations);
+            } else {
+              console.error('AI response is not an array:', recommendations);
+              // Fallback if not array
+              setSprayingRecommendations([]);
+            }
+          } catch (parseError) {
+            console.error('Error parsing AI response:', parseError);
+            // Fallback for parsing error
+            setSprayingRecommendations([]);
+          }
         } else {
           setError(aiResponse.error || 'Không thể phân tích thời điểm phun thuốc');
         }
       }
+
+      // Lưu vào cache
+      try {
+        const cacheData = {
+          timestamp: Date.now(),
+          forecast: filteredData,
+          recommendations: recommendations
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      } catch (e) {
+        console.error('Lỗi lưu cache:', e);
+      }
+
     } catch (err) {
       const errorMessage = (err as Error).message || 'Có lỗi khi lấy dữ liệu thời tiết';
       setError(errorMessage);
@@ -118,6 +185,11 @@ ${productInfo}`;
       setIsWeatherLoading(false);
     }
   };
+
+  // Tự động lấy dữ liệu thời tiết khi vào trang
+  useEffect(() => {
+    fetchWeatherForecast();
+  }, []);
 
   /**
    * Xử lý phân tích cả hai chức năng - gọi tuần tự thay vì song song
@@ -143,16 +215,20 @@ ${productInfo}`;
       const mixPrompt = createMixPrompt(selectedProducts);
       const sortPrompt = createSortPrompt(selectedProducts);
 
-      // Gọi lần lượt từng API để tránh lỗi
-      const mixResponse = await mixPesticides(mixPrompt);
+      // Gọi song song cả hai API
+      const [mixResponse, sortResponse] = await Promise.all([
+        mixPesticides(mixPrompt),
+        sortPesticides(sortPrompt)
+      ]);
+
+      // Xử lý kết quả phối trộn
       if (mixResponse.success && mixResponse.answer) {
         setMixResult(mixResponse.answer);
       } else {
         setError(prev => prev ? `${prev}; Lỗi phân tích phối trộn: ${mixResponse.error}` : `Lỗi phân tích phối trộn: ${mixResponse.error}`);
       }
 
-      // Gọi API sắp xếp sau khi API phối trộn hoàn thành
-      const sortResponse = await sortPesticides(sortPrompt);
+      // Xử lý kết quả sắp xếp
       if (sortResponse.success && sortResponse.answer) {
         setSortResult(sortResponse.answer);
       } else {
@@ -222,12 +298,7 @@ ${productInfo}`;
               Phân tích Phối trộn & Sắp xếp
             </Button>
             
-            <Button 
-              onClick={fetchWeatherForecast}
-              loading={isWeatherLoading}
-            >
-              Phân tích Thời điểm Phun thuốc
-            </Button>
+
           </Space>
         </Space>
       </Card>
@@ -256,8 +327,8 @@ ${productInfo}`;
         />
       )}
 
-      <Row gutter={16} className="results-row">
-        <Col span={24} className="results-col">
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
           <Card 
             title="Kết quả Phân tích Phối trộn" 
             loading={isAnalyzing && !mixResult}
@@ -281,7 +352,7 @@ ${productInfo}`;
           </Card>
         </Col>
         
-        <Col span={24} className="results-col">
+        <Col xs={24} md={12}>
           <Card 
             title="Kết quả Phân tích Sắp xếp" 
             loading={isAnalyzing && !sortResult}
@@ -306,7 +377,7 @@ ${productInfo}`;
         </Col>
         
         {/* Weather Forecast Section */}
-        <Col span={24} className="results-col">
+        <Col span={24}>
           <Card 
             title="Dự báo Thời tiết & Phân tích Thời điểm Phun thuốc" 
             className="scrollable-result-card"
@@ -317,7 +388,7 @@ ${productInfo}`;
                   <Col span={24} md={12}>
                     <Card size="small" title="Dự báo thời tiết 2 ngày tới">
                       <Timeline>
-                        {weatherForecast.slice(0, 10).map((item, index) => (
+                        {weatherForecast.map((item, index) => (
                           <Timeline.Item key={index}>
                             <Text strong>{formatTime(item.dt)}</Text>
                             <div>
@@ -338,16 +409,29 @@ ${productInfo}`;
                   <Col span={24} md={12}>
                     <Card size="small" title="Thời điểm phun thuốc tốt nhất">
                       <div className="scrollable-result-content">
-                        {sprayingRecommendations ? (
-                          <div 
-                            dangerouslySetInnerHTML={{ 
-                              __html: sprayingRecommendations
-                                .replace(/\n\n/g, '</p><p>')
-                                .replace(/\n/g, '<br>')
-                                .replace(/^(<br>)+|(<br>)+$/g, '')
-                                .replace(/^|$/, '<p>')
-                                .replace(/<p><\/p>/g, '')
-                            }} 
+                        {sprayingRecommendations.length > 0 ? (
+                          <List
+                            itemLayout="vertical"
+                            dataSource={sprayingRecommendations}
+                            renderItem={(item) => (
+                              <List.Item className="!p-3 !mb-3 border border-gray-100 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex justify-between items-center">
+                                    <Text strong className="text-green-700 text-lg">🕒 {item.time}</Text>
+                                    <Space>
+                                      <Tag color="blue">{item.temperature}</Tag>
+                                      <Tag color="cyan">☔ {item.rain_prob}</Tag>
+                                    </Space>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Text type="secondary">🌤️ {item.condition}</Text>
+                                  </div>
+                                  <div className="bg-white p-2 rounded border border-green-100">
+                                    <Text className="text-gray-600">💡 {item.reason}</Text>
+                                  </div>
+                                </div>
+                              </List.Item>
+                            )}
                           />
                         ) : (
                           <Text type="secondary">Chưa có phân tích thời điểm phun thuốc</Text>
@@ -359,7 +443,7 @@ ${productInfo}`;
               </div>
             ) : (
               <Text type="secondary">
-                Chưa có dữ liệu thời tiết. Nhấn nút &quot;Phân tích Thời điểm Phun thuốc&quot; để lấy dữ liệu.
+                Đang tải dữ liệu thời tiết...
               </Text>
             )}
           </Card>
@@ -372,49 +456,9 @@ ${productInfo}`;
         }
         
         .scrollable-result-content {
-          max-height: 400px;
-          overflow-y: auto;
           padding: 16px;
           border: 1px solid #f0f0f0;
           border-radius: 4px;
-        }
-        
-        .results-row {
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .results-col {
-          margin-bottom: 16px;
-        }
-        
-        .results-col:last-child {
-          margin-bottom: 0;
-        }
-        
-        @media (min-width: 768px) {
-          .results-row {
-            flex-direction: row;
-          }
-          
-          .results-col {
-            flex: 1;
-            margin-bottom: 0;
-          }
-          
-          .results-col:first-child {
-            margin-right: 8px;
-          }
-          
-          .results-col:last-child {
-            margin-left: 8px;
-          }
-        }
-        
-        @media (max-width: 767px) {
-          .scrollable-result-content {
-            max-height: 300px;
-          }
         }
       `}</style>
     </div>
