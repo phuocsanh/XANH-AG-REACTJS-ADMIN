@@ -108,15 +108,23 @@ ${productInfo}`;
     ${forecastInfo}
     
     YÊU CẦU QUAN TRỌNG VỀ CHỌN KHUNG GIỜ:
-    1. Với MỖI NGÀY có trong dữ liệu, hãy cố gắng chọn ra 3 mốc thời gian đại diện cho 3 buổi:
-       - Buổi Sáng (07:00 - 11:59): Chọn 1 mốc tốt nhất ưu tiên từ 08:00 đến 10:00.
-       - Buổi Trưa/Chiều (12:00 - 16:59): Chọn 1 mốc tốt nhấ ưu tiên hơn từ 15:00 đến 16:59.
-       - Buổi Tối (17:00 - 22:00): Chọn 1 mốc tốt nhất ưu tiên từ 17:00 đến 17:00.
-    2. Nếu thời gian nào đó thời tiết xấu (khả năng mưa > 40%), hãy bỏ qua thời gian đó. Đừng cố chọn.
-    3. Tiêu chí đánh giá "tốt nhất":
-       - Quan trọng nhất: Khả năng mưa thấp (< 40%) và không mưa trong 2 giờ tới.
-       - Quan trọng nhì: Nhiệt độ phù hợp (20-32°C).
-       - Quan trọng ba: Gió nhẹ (< 6m/s).
+    1. Với MỖI NGÀY có trong dữ liệu, hãy chọn ra 3 mốc thời gian đại diện cho 3 buổi:
+       - Buổi Sáng (07:00 - 11:59): Chọn 1 mốc tốt nhất, ưu tiên từ 08:00 đến 10:00.
+       - Buổi Trưa/Chiều (12:00 - 16:59): Chọn 1 mốc tốt nhất, ưu tiên từ 15:00 đến 16:59.
+       - Buổi Tối (17:00 - 22:00): Chọn 1 mốc tốt nhất, ưu tiên từ 17:00 đến 19:00.
+    
+    2. QUAN TRỌNG - Thứ tự ưu tiên khi chọn (từ cao đến thấp):
+       a) Khả năng mưa THẤP NHẤT (< 20% là tốt, < 10% là rất tốt, 0% là hoàn hảo)
+       b) Nhiệt độ phù hợp (20-32°C)
+       c) Gió nhẹ (< 10m/s)
+    
+    3. Khi so sánh các mốc trong cùng khung giờ:
+       - Luôn chọn mốc có khả năng mưa THẤP HƠN, ngay cả khi gió hơi mạnh hơn
+       - VÍ DỤ: Nếu có 2 mốc: A (mưa 5%, gió 10m/s) và B (mưa 22%, gió 3m/s), hãy chọn A
+    
+    4. Nếu một buổi có nhiều mốc cùng khả năng mưa thấp, hãy chọn mốc có gió nhẹ nhất.
+    
+    5. Chỉ bỏ qua một buổi nếu TẤT CẢ các mốc đều có mưa > 40%.
     
     YÊU CẦU VỀ ĐỊNH DẠNG OUTPUT:
     - Trả về kết quả dưới dạng JSON array (tuyệt đối không thêm markdown, không thêm text dẫn dắt).
