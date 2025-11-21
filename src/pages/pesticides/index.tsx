@@ -108,7 +108,7 @@ ${productInfo}`;
    */
   const fetchWeatherForecast = async () => {
     // Kiểm tra cache
-    const CACHE_KEY = 'weather_forecast_cache_v5';
+    const CACHE_KEY = 'weather_forecast_cache_v6';
     const CACHE_DURATION = 3600 * 1000; // 1 giờ
     
     try {
@@ -250,8 +250,8 @@ ${productInfo}`;
   };
 
   return (
-    <div className="p-6">
-      <Title level={2}>Tư vấn Phối trộn & Sắp xếp Thuốc Bảo vệ Thực vật</Title>
+    <>
+      <Title level={2} className="!text-xl md:!text-3xl !mb-4 break-words">Tư vấn Phối trộn & Sắp xếp Thuốc Bảo vệ Thực vật</Title>
       
       <Card title="Chọn sản phẩm để phân tích" className="mb-6">
         <Space direction="vertical" className="w-full">
@@ -288,7 +288,7 @@ ${productInfo}`;
             </Card>
           )}
           
-          <Space>
+          <Space wrap className="w-full">
             <Button 
               type="primary" 
               onClick={handleAnalyze}
@@ -387,22 +387,24 @@ ${productInfo}`;
                 <Row gutter={16}>
                   <Col span={24} md={12}>
                     <Card size="small" title="Dự báo thời tiết 2 ngày tới">
-                      <Timeline>
-                        {weatherForecast.map((item, index) => (
-                          <Timeline.Item key={index}>
-                            <Text strong>{formatTime(item.dt)}</Text>
-                            <div>
-                              <Text>🌡️ {item.main.temp}°C</Text>
-                              <Text style={{ marginLeft: 8 }}>
-                                ☔ {item.weather[0]?.description} ({Math.round(item.pop * 100)}%)
-                              </Text>
-                            </div>
-                            {item.rain && item.rain['1h'] > 0 && (
-                              <Text type="danger">🌧️ Lượng mưa: {item.rain['1h']}mm</Text>
-                            )}
-                          </Timeline.Item>
-                        ))}
-                      </Timeline>
+                      <div className="weather-timeline-scroll">
+                        <Timeline>
+                          {weatherForecast.map((item, index) => (
+                            <Timeline.Item key={index}>
+                              <Text strong>{formatTime(item.dt)}</Text>
+                                <div>
+                                <Text>🌡️ {item.main.temp}°C</Text>
+                                <Text style={{ marginLeft: 8 }} className="whitespace-normal">
+                                  ☔ {item.weather[0]?.description} ({Math.round(item.pop * 100)}%)
+                                </Text>
+                              </div>
+                              {item.rain && item.rain['1h'] > 0 && (
+                                <Text type="danger">🌧️ Lượng mưa: {item.rain['1h']}mm</Text>
+                              )}
+                            </Timeline.Item>
+                          ))}
+                        </Timeline>
+                      </div>
                     </Card>
                   </Col>
                   
@@ -416,9 +418,9 @@ ${productInfo}`;
                             renderItem={(item) => (
                               <List.Item className="!p-3 !mb-3 border border-gray-100 rounded-lg bg-green-50 hover:bg-green-100 transition-colors">
                                 <div className="flex flex-col gap-2">
-                                  <div className="flex justify-between items-center">
+                                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                     <Text strong className="text-green-700 text-lg">🕒 {item.time}</Text>
-                                    <Space>
+                                    <Space wrap>
                                       <Tag color="blue">{item.temperature}</Tag>
                                       <Tag color="cyan">☔ {item.rain_prob}</Tag>
                                     </Space>
@@ -456,12 +458,20 @@ ${productInfo}`;
         }
         
         .scrollable-result-content {
+          max-height: 500px;
+          overflow-y: auto;
           padding: 16px;
           border: 1px solid #f0f0f0;
           border-radius: 4px;
         }
+
+        .weather-timeline-scroll {
+          max-height: 500px;
+          overflow-y: auto;
+          padding: 10px;
+        }
       `}</style>
-    </div>
+    </>
   );
 };
 
