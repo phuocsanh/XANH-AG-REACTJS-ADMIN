@@ -1,164 +1,199 @@
-import React, { useState } from "react"
-import {
-  Button,
-  Card,
-  Space,
-  Typography,
-  Spin,
-  Alert,
-  Row,
-  Col,
-  List,
-  Tag,
-} from "antd"
-import ComboBox from "@/components/common/combo-box"
-import { useAiService } from "@/hooks/use-ai-service"
-import { useProductsQuery } from "@/queries/product"
-import { Product } from "@/models/product.model"
+import React, { useState } from 'react';
+import { Button, Card, Space, Typography, Spin, Alert, Row, Col, List, Tag, Timeline } from 'antd';
+import ComboBox from '@/components/common/combo-box';
+import { useAiService } from '@/hooks/use-ai-service';
+import { useProductsQuery } from '@/queries/product';
+import { Product } from '@/models/product.model';
+import { weatherService, WeatherData, SimplifiedWeatherData } from '@/lib/weather-service';
+import { frontendAiService } from '@/lib/ai-service';
 
-const { Title, Text } = Typography
+const { Title, Text } = Typography;
 
 /**
  * Trang chính cho chức năng pesticides
  */
 const PesticidesPage: React.FC = () => {
-  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([])
-  const [mixResult, setMixResult] = useState("")
-  const [sortResult, setSortResult] = useState("")
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { mixPesticides, sortPesticides } = useAiService()
-  const { data: productsData, isLoading: isLoadingProducts } = useProductsQuery(
-    { limit: 100 }
-  )
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [mixResult, setMixResult] = useState('');
+  const [sortResult, setSortResult] = useState('');
+  const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]);
+  const [sprayingRecommendations, setSprayingRecommendations] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { mixPesticides, sortPesticides } = useAiService();
+  const { data: productsData, isLoading: isLoadingProducts } = useProductsQuery({ limit: 100 });
 
   // Lấy thông tin chi tiết của các sản phẩm đã chọn
-  const selectedProducts = (productsData?.data?.items || []).filter(
-    (product: Product) => selectedProductIds.includes(product.id)
-  )
+  const selectedProducts = (productsData?.data?.items || []).filter((product: Product) => 
+    selectedProductIds.includes(product.id)
+  );
 
   /**
    * Xử lý thay đổi selection của sản phẩm
    */
   const handleProductSelection = (value: number[]) => {
-    setSelectedProductIds(value)
-  }
+    setSelectedProductIds(value);
+  };
 
   /**
    * Tạo prompt cho phân tích phối trộn
    */
   const createMixPrompt = (products: Product[]): string => {
-    const productInfo = products
-      .map(
-        (product: Product) =>
-          `- ${product.name}: ${
-            product.ingredient?.join(", ") || "Không có thông tin thành phần"
-          }`
-      )
-      .join("\n")
-
+    const productInfo = products.map((product: Product) => 
+      `- ${product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
+    ).join('\n');
+    
     return `Phân tích khả năng phối trộn các loại thuốc sau, chỉ trả lời có/không và lưu ý quan trọng:
     
-${productInfo}`
-  }
+${productInfo}`;
+  };
 
   /**
    * Tạo prompt cho phân tích sắp xếp
    */
   const createSortPrompt = (products: Product[]): string => {
-    const productInfo = products
-      .map(
-        (product: Product) =>
-          `- ${product.name}: ${
-            product.ingredient?.join(", ") || "Không có thông tin thành phần"
-          }`
-      )
-      .join("\n")
-
+    const productInfo = products.map((product: Product) => 
+      `- ${product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
+    ).join('\n');
+    
     return `Sắp xếp thứ tự sử dụng các loại thuốc sau để đạt hiệu quả tốt nhất, chỉ trả về tên thuốc theo thứ tự:
     
-${productInfo}`
-  }
+${productInfo}`;
+  };
+
+  /**
+   * Tạo prompt cho phân tích thời điểm phun thuốc
+   */
+  const createSprayingPrompt = (forecastData: SimplifiedWeatherData[]): string => {
+    const forecastInfo = forecastData.map(item => 
+      `- Thời gian: ${item.time}, Nhiệt độ: ${item.temperature}°C, Trời: ${item.description}, Khả năng mưa: ${item.precipitation_probability}%, Lượng mưa: ${item.rain_amount}mm, Gió: ${item.wind_speed}m/s, Độ ẩm: ${item.humidity}%`
+    ).join('\n');
+    
+    return `Dựa trên dự báo thời tiết sau, hãy phân tích và đưa ra danh sách tối đa 6 khoảng thời gian phù hợp để phun thuốc bảo vệ thực vật. 
+    Điều kiện: Khoảng thời gian không có mưa ít nhất 1,5 tiếng. Mỗi ngày tối đa 2 khoảng thời gian, nếu ngày nào không có thì bỏ qua.
+    
+    DỮ LIỆU DỰ BÁO THỜI TIẾT:
+    ${forecastInfo}
+    
+    Yêu cầu:
+    1. Chỉ chọn thời điểm không có mưa hoặc có khả năng mưa thấp (<30%)
+    2. Ưu tiên thời điểm có nhiệt độ từ 20-30°C
+    3. Tránh thời điểm gió quá mạnh (trên 5m/s)
+    4. Mỗi ngày tối đa 2 khung giờ
+    5. Tổng cộng tối đa 6 khung giờ
+    6. Trình bày kết quả theo định dạng: Ngày - Khung giờ: Lý do`;
+  };
+
+  /**
+   * Lấy dữ liệu dự báo thời tiết
+   */
+  const fetchWeatherForecast = async () => {
+    setIsWeatherLoading(true);
+    setError(null);
+    
+    try {
+      const forecastData = await weatherService.getForecast();
+      const filteredData = weatherService.filterNextTwoDays(forecastData);
+      setWeatherForecast(filteredData);
+      
+      // Tóm tắt dữ liệu thời tiết cho AI phân tích
+      const simplifiedData = weatherService.simplifyWeatherData(filteredData);
+      
+      // Phân tích thời điểm phun thuốc với AI
+      if (simplifiedData.length > 0) {
+        const prompt = createSprayingPrompt(simplifiedData);
+        const aiResponse = await frontendAiService.mixPesticides(prompt);
+        
+        if (aiResponse.success && aiResponse.answer) {
+          setSprayingRecommendations(aiResponse.answer);
+        } else {
+          setError(aiResponse.error || 'Không thể phân tích thời điểm phun thuốc');
+        }
+      }
+    } catch (err) {
+      const errorMessage = (err as Error).message || 'Có lỗi khi lấy dữ liệu thời tiết';
+      setError(errorMessage);
+    } finally {
+      setIsWeatherLoading(false);
+    }
+  };
 
   /**
    * Xử lý phân tích cả hai chức năng - gọi tuần tự thay vì song song
    */
   const handleAnalyze = async () => {
     if (selectedProductIds.length === 0) {
-      setError("Vui lòng chọn ít nhất một sản phẩm để phân tích")
-      return
+      setError('Vui lòng chọn ít nhất một sản phẩm để phân tích');
+      return;
     }
 
     if (selectedProducts.length === 0) {
-      setError("Không tìm thấy thông tin sản phẩm đã chọn")
-      return
+      setError('Không tìm thấy thông tin sản phẩm đã chọn');
+      return;
     }
 
-    setIsAnalyzing(true)
-    setError(null)
-    setMixResult("")
-    setSortResult("")
+    setIsAnalyzing(true);
+    setError(null);
+    setMixResult('');
+    setSortResult('');
 
     try {
       // Tạo prompts
-      const mixPrompt = createMixPrompt(selectedProducts)
-      const sortPrompt = createSortPrompt(selectedProducts)
+      const mixPrompt = createMixPrompt(selectedProducts);
+      const sortPrompt = createSortPrompt(selectedProducts);
 
       // Gọi lần lượt từng API để tránh lỗi
-      const mixResponse = await mixPesticides(mixPrompt)
+      const mixResponse = await mixPesticides(mixPrompt);
       if (mixResponse.success && mixResponse.answer) {
-        setMixResult(mixResponse.answer)
+        setMixResult(mixResponse.answer);
       } else {
-        setError((prev) =>
-          prev
-            ? `${prev}; Lỗi phân tích phối trộn: ${mixResponse.error}`
-            : `Lỗi phân tích phối trộn: ${mixResponse.error}`
-        )
+        setError(prev => prev ? `${prev}; Lỗi phân tích phối trộn: ${mixResponse.error}` : `Lỗi phân tích phối trộn: ${mixResponse.error}`);
       }
 
       // Gọi API sắp xếp sau khi API phối trộn hoàn thành
-      const sortResponse = await sortPesticides(sortPrompt)
+      const sortResponse = await sortPesticides(sortPrompt);
       if (sortResponse.success && sortResponse.answer) {
-        setSortResult(sortResponse.answer)
+        setSortResult(sortResponse.answer);
       } else {
-        setError((prev) =>
-          prev
-            ? `${prev}; Lỗi phân tích sắp xếp: ${sortResponse.error}`
-            : `Lỗi phân tích sắp xếp: ${sortResponse.error}`
-        )
+        setError(prev => prev ? `${prev}; Lỗi phân tích sắp xếp: ${sortResponse.error}` : `Lỗi phân tích sắp xếp: ${sortResponse.error}`);
       }
     } catch (err) {
-      const errorMessage =
-        (err as Error).message || "Có lỗi không xác định xảy ra."
-      setError(errorMessage)
+      const errorMessage = (err as Error).message || 'Có lỗi không xác định xảy ra.';
+      setError(errorMessage);
     } finally {
-      setIsAnalyzing(false)
+      setIsAnalyzing(false);
     }
-  }
+  };
+
+  /**
+   * Format thời gian hiển thị
+   */
+  const formatTime = (timestamp: number): string => {
+    return new Date(timestamp * 1000).toLocaleString('vi-VN');
+  };
 
   return (
-    <div className='p-6'>
+    <div className="p-6">
       <Title level={2}>Tư vấn Phối trộn & Sắp xếp Thuốc Bảo vệ Thực vật</Title>
-
-      <Card title='Chọn sản phẩm để phân tích' className='mb-6'>
-        <Space direction='vertical' className='w-full'>
+      
+      <Card title="Chọn sản phẩm để phân tích" className="mb-6">
+        <Space direction="vertical" className="w-full">
           <ComboBox
-            mode='multiple'
-            placeholder='Chọn các sản phẩm thuốc bảo vệ thực vật'
+            mode="multiple"
+            placeholder="Chọn các sản phẩm thuốc bảo vệ thực vật"
             value={selectedProductIds}
             onChange={handleProductSelection}
-            options={(productsData?.data?.items || []).map(
-              (product: Product) => ({
-                value: product.id,
-                label: product.name,
-              })
-            )}
+            options={(productsData?.data?.items || []).map((product: Product) => ({
+              value: product.id,
+              label: product.name
+            }))}
             loading={isLoadingProducts}
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
           />
-
+          
           {selectedProducts.length > 0 && (
-            <Card size='small' title='Sản phẩm đã chọn'>
+            <Card size="small" title="Sản phẩm đã chọn">
               <List
                 dataSource={selectedProducts}
                 renderItem={(product: Product) => (
@@ -166,13 +201,9 @@ ${productInfo}`
                     <div>
                       <Text strong>{product.name}</Text>
                       <div>
-                        {product.ingredient?.map(
-                          (ing: string, index: number) => (
-                            <Tag key={index} color='blue'>
-                              {ing}
-                            </Tag>
-                          )
-                        )}
+                        {product.ingredient?.map((ing: string, index: number) => (
+                          <Tag key={index} color="blue">{ing}</Tag>
+                        ))}
                       </div>
                     </div>
                   </List.Item>
@@ -180,80 +211,156 @@ ${productInfo}`
               />
             </Card>
           )}
-
-          <Button
-            type='primary'
-            onClick={handleAnalyze}
-            disabled={isAnalyzing || selectedProductIds.length === 0}
-            loading={isAnalyzing}
-          >
-            Phân tích Phối trộn & Sắp xếp
-          </Button>
+          
+          <Space>
+            <Button 
+              type="primary" 
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || selectedProductIds.length === 0}
+              loading={isAnalyzing}
+            >
+              Phân tích Phối trộn & Sắp xếp
+            </Button>
+            
+            <Button 
+              onClick={fetchWeatherForecast}
+              loading={isWeatherLoading}
+            >
+              Phân tích Thời điểm Phun thuốc
+            </Button>
+          </Space>
         </Space>
       </Card>
 
       {isAnalyzing && (
-        <div className='text-center mb-6'>
-          <Spin size='large' />
-          <Text className='block mt-2'>Đang phân tích yêu cầu...</Text>
+        <div className="text-center mb-6">
+          <Spin size="large" />
+          <Text className="block mt-2">Đang phân tích yêu cầu...</Text>
+        </div>
+      )}
+
+      {isWeatherLoading && (
+        <div className="text-center mb-6">
+          <Spin size="large" />
+          <Text className="block mt-2">Đang lấy dữ liệu thời tiết và phân tích...</Text>
         </div>
       )}
 
       {error && (
         <Alert
-          message='Lỗi'
+          message="Lỗi"
           description={error}
-          type='error'
+          type="error"
           showIcon
-          className='mb-6'
+          className="mb-6"
         />
       )}
 
-      <Row gutter={16} className='results-row'>
-        <Col span={24} className='results-col'>
-          <Card
-            title='Kết quả Phân tích Phối trộn'
+      <Row gutter={16} className="results-row">
+        <Col span={24} className="results-col">
+          <Card 
+            title="Kết quả Phân tích Phối trộn" 
             loading={isAnalyzing && !mixResult}
-            className='scrollable-result-card'
+            className="scrollable-result-card"
           >
             {mixResult ? (
-              <div
-                className='scrollable-result-content'
-                dangerouslySetInnerHTML={{
+              <div 
+                className="scrollable-result-content"
+                dangerouslySetInnerHTML={{ 
                   __html: mixResult
-                    .replace(/\n\n/g, "</p><p>")
-                    .replace(/\n/g, "<br>")
-                    .replace(/^(<br>)+|(<br>)+$/g, "")
-                    .replace(/^|$/, "<p>")
-                    .replace(/<p><\/p>/g, ""),
-                }}
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/^(<br>)+|(<br>)+$/g, '')
+                    .replace(/^|$/, '<p>')
+                    .replace(/<p><\/p>/g, '')
+                }} 
               />
             ) : (
-              <Text type='secondary'>Chưa có kết quả phân tích phối trộn</Text>
+              <Text type="secondary">Chưa có kết quả phân tích phối trộn</Text>
             )}
           </Card>
         </Col>
-
-        <Col span={24} className='results-col'>
-          <Card
-            title='Kết quả Phân tích Sắp xếp'
+        
+        <Col span={24} className="results-col">
+          <Card 
+            title="Kết quả Phân tích Sắp xếp" 
             loading={isAnalyzing && !sortResult}
-            className='scrollable-result-card'
+            className="scrollable-result-card"
           >
             {sortResult ? (
-              <div
-                className='scrollable-result-content'
-                dangerouslySetInnerHTML={{
+              <div 
+                className="scrollable-result-content"
+                dangerouslySetInnerHTML={{ 
                   __html: sortResult
-                    .replace(/\n\n/g, "</p><p>")
-                    .replace(/\n/g, "<br>")
-                    .replace(/^(<br>)+|(<br>)+$/g, "")
-                    .replace(/^|$/, "<p>")
-                    .replace(/<p><\/p>/g, ""),
-                }}
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>')
+                    .replace(/^(<br>)+|(<br>)+$/g, '')
+                    .replace(/^|$/, '<p>')
+                    .replace(/<p><\/p>/g, '')
+                }} 
               />
             ) : (
-              <Text type='secondary'>Chưa có kết quả phân tích sắp xếp</Text>
+              <Text type="secondary">Chưa có kết quả phân tích sắp xếp</Text>
+            )}
+          </Card>
+        </Col>
+        
+        {/* Weather Forecast Section */}
+        <Col span={24} className="results-col">
+          <Card 
+            title="Dự báo Thời tiết & Phân tích Thời điểm Phun thuốc" 
+            className="scrollable-result-card"
+          >
+            {weatherForecast.length > 0 ? (
+              <div>
+                <Row gutter={16}>
+                  <Col span={24} md={12}>
+                    <Card size="small" title="Dự báo thời tiết 2 ngày tới">
+                      <Timeline>
+                        {weatherForecast.slice(0, 10).map((item, index) => (
+                          <Timeline.Item key={index}>
+                            <Text strong>{formatTime(item.dt)}</Text>
+                            <div>
+                              <Text>🌡️ {item.main.temp}°C</Text>
+                              <Text style={{ marginLeft: 8 }}>
+                                ☔ {item.weather[0]?.description} ({Math.round(item.pop * 100)}%)
+                              </Text>
+                            </div>
+                            {item.rain && item.rain['1h'] > 0 && (
+                              <Text type="danger">🌧️ Lượng mưa: {item.rain['1h']}mm</Text>
+                            )}
+                          </Timeline.Item>
+                        ))}
+                      </Timeline>
+                    </Card>
+                  </Col>
+                  
+                  <Col span={24} md={12}>
+                    <Card size="small" title="Thời điểm phun thuốc tốt nhất">
+                      <div className="scrollable-result-content">
+                        {sprayingRecommendations ? (
+                          <div 
+                            dangerouslySetInnerHTML={{ 
+                              __html: sprayingRecommendations
+                                .replace(/\n\n/g, '</p><p>')
+                                .replace(/\n/g, '<br>')
+                                .replace(/^(<br>)+|(<br>)+$/g, '')
+                                .replace(/^|$/, '<p>')
+                                .replace(/<p><\/p>/g, '')
+                            }} 
+                          />
+                        ) : (
+                          <Text type="secondary">Chưa có phân tích thời điểm phun thuốc</Text>
+                        )}
+                      </div>
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+            ) : (
+              <Text type="secondary">
+                Chưa có dữ liệu thời tiết. Nhấn nút &quot;Phân tích Thời điểm Phun thuốc&quot; để lấy dữ liệu.
+              </Text>
             )}
           </Card>
         </Col>
@@ -311,7 +418,7 @@ ${productInfo}`
         }
       `}</style>
     </div>
-  )
-}
+  );
+};
 
-export default PesticidesPage
+export default PesticidesPage;
