@@ -844,7 +844,7 @@ ${productInfo}`;
             </div>
 
             {printSections.mix && mixResult && (
-              <div className="print-section" style={{ marginBottom: '30px', pageBreakInside: 'avoid' }}>
+              <div className="print-section" style={{ marginBottom: '30px' }}>
                 <Title level={4}>1. Kết quả Phân tích Phối trộn</Title>
                 <div 
                   style={{ 
@@ -866,7 +866,7 @@ ${productInfo}`;
             )}
 
             {printSections.sort && sortResult && (
-              <div className="print-section" style={{ marginBottom: '30px', pageBreakInside: 'avoid' }}>
+              <div className="print-section" style={{ marginBottom: '30px' }}>
                 <Title level={4}>2. Kết quả Phân tích Sắp xếp</Title>
                 <div 
                   style={{ 
@@ -875,56 +875,51 @@ ${productInfo}`;
                     borderRadius: '4px',
                     backgroundColor: '#fafafa'
                   }}
-                  dangerouslySetInnerHTML={{ 
-                    __html: sortResult
-                      .replace(/\n\n/g, '</p><p>')
-                      .replace(/\n/g, '<br>')
-                      .replace(/^(<br>)+|(<br>)+$/g, '')
-                      .replace(/^|$/, '<p>')
-                      .replace(/<p><\/p>/g, '')
-                  }} 
-                />
+                >
+                  {sortResult.split('\n').filter(line => line.trim()).map((line, index) => (
+                    <div key={index} style={{ marginBottom: '8px' }}>
+                      <Text>
+                        <Text strong style={{ color: '#1890ff' }}>{index + 1}. </Text>
+                        {line.trim()}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {printSections.spray && sprayingRecommendations.length > 0 && (
               <div className="print-section" style={{ marginBottom: '30px' }}>
                 <Title level={4}>3. Thời điểm phun thuốc tốt nhất</Title>
-                <div style={{ marginTop: '15px' }}>
+                <div 
+                  style={{ 
+                    marginTop: '15px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '12px'
+                  }}
+                >
                   {sprayingRecommendations.map((item, index) => (
                     <div 
                       key={index}
                       style={{ 
-                        marginBottom: '15px',
-                        padding: '12px',
-                        border: '1px solid #e8e8e8',
-                        borderRadius: '4px',
-                        backgroundColor: '#f6ffed',
-                        pageBreakInside: 'avoid'
+                        padding: '10px 12px',
+                        border: '1px solid #d9d9d9',
+                        borderRadius: '4px'
                       }}
                     >
-                      <div style={{ marginBottom: '8px' }}>
-                        <Text strong style={{ fontSize: '16px' }}>
-                          🕒 {item.time}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <Text strong style={{ fontSize: '15px' }}>
+                          ⏰ {item.time}
+                        </Text>
+                        <Text strong style={{ color: '#52c41a' }}>
+                          ☔ Khả năng mưa: {item.rain_prob}
                         </Text>
                       </div>
-                      <div style={{ marginBottom: '5px' }}>
-                        <Text>🌡️ Nhiệt độ: {item.temperature}</Text>
-                        <Text style={{ marginLeft: '15px' }}>☔ {item.rain_prob}</Text>
-                      </div>
-                      <div style={{ marginBottom: '5px' }}>
-                        <Text type="secondary">🌤️ {item.condition}</Text>
-                      </div>
-                      <div 
-                        style={{ 
-                          marginTop: '8px',
-                          padding: '8px',
-                          backgroundColor: '#fff',
-                          borderRadius: '4px',
-                          border: '1px solid #d9f7be'
-                        }}
-                      >
-                        <Text>💡 {item.reason}</Text>
+                      <div style={{ display: 'flex', gap: '15px', fontSize: '13px', flexWrap: 'wrap' }}>
+                        <span>🌡 Nhiệt độ: {item.temperature}</span>
+                        <span>💨 Tốc độ gió: {item.wind_speed}</span>
+                        <span style={{ color: '#666' }}>☁ {item.condition}</span>
                       </div>
                     </div>
                   ))}
@@ -1010,25 +1005,40 @@ ${productInfo}`;
           
           .print-content {
             position: absolute;
-            left: 0;
+            left: 50%;
             top: 0;
-            width: 100%;
-            padding: 20mm;
+            width: 110%;
+            padding: 3mm;
+            transform: translateX(-50%) scale(0.95);
+            transform-origin: top center;
           }
 
-          /* A4 page setup */
+          /* A4 page setup - margin tối thiểu */
           @page {
             size: A4;
-            margin: 15mm;
+            margin: 3mm;
           }
 
-          /* Ensure proper page breaks */
+          /* FORCE: Tắt tất cả page breaks tự động */
+          * {
+            page-break-before: auto !important;
+            page-break-after: auto !important;
+            page-break-inside: auto !important;
+            orphans: 1 !important;
+            widows: 1 !important;
+          }
+
+          /* Cho phép sections tự nhiên flow qua trang */
           .print-section {
-            page-break-inside: avoid;
+            margin-bottom: 6px !important;
+            page-break-before: avoid !important;
+            page-break-after: avoid !important;
           }
 
           .print-header {
-            page-break-after: avoid;
+            page-break-after: avoid !important;
+            margin-bottom: 6px !important;
+            padding-bottom: 3px !important;
           }
 
           /* Remove borders and backgrounds for cleaner print */
@@ -1041,19 +1051,47 @@ ${productInfo}`;
 
           /* Adjust font sizes for print */
           body {
-            font-size: 12pt;
-            line-height: 1.5;
+            font-size: 9pt;
+            line-height: 1.2;
           }
 
           h3 {
-            font-size: 18pt;
-            margin-bottom: 10pt;
+            font-size: 12pt;
+            margin-bottom: 4pt;
+            margin-top: 0;
+            page-break-after: avoid !important;
           }
 
           h4 {
-            font-size: 14pt;
-            margin-top: 15pt;
-            margin-bottom: 8pt;
+            font-size: 10pt;
+            margin-top: 5pt;
+            margin-bottom: 3pt;
+            page-break-after: avoid !important;
+          }
+
+          /* Giảm padding của các box tối đa */
+          .print-section > div {
+            padding: 4px 6px !important;
+            margin-bottom: 3px !important;
+          }
+
+          /* Dùng grid 2 cột cho danh sách thời điểm phun thuốc (giống modal) */
+          .print-section:last-child > div:last-child {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+
+          /* Chỉ tránh cắt đôi từng item nhỏ */
+          .print-section:last-child > div:last-child > div {
+            break-inside: avoid;
+            padding: 4px 6px !important;
+            font-size: 14pt !important;
+          }
+
+          /* Giảm kích thước text trong items */
+          .print-section:last-child > div:last-child > div * {
+            font-size: 14pt !important;
           }
 
           /* Ensure colors print correctly */
