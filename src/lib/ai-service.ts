@@ -2,6 +2,7 @@ import {
   PESTICIDE_MIXING_DOCUMENT_TEXT,
   PESTICIDE_MIXING_REFERENCE_LINKS,
 } from "@/data/pesticide-mixing-data"
+import { getRemoteConfigValue } from "./firebase"
 
 // Interface cho response data
 export interface AiResponse {
@@ -19,31 +20,31 @@ class FrontendAiService {
   private readonly minRequestInterval: number = 1000 // 1 second between requests
 
   /**
-   * Lấy API key từ environment variables
+   * Lấy API key từ Remote Config
    */
-  private getApiKey1(): string {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY_1
+  private async getApiKey1(): Promise<string> {
+    const apiKey = await getRemoteConfigValue("GEMINI_API_KEY_1")
     if (!apiKey) {
       throw new Error(
-        "VITE_GEMINI_API_KEY_1 is not defined in environment variables"
+        "GEMINI_API_KEY_1 could not be retrieved from Remote Config"
       )
     }
     return apiKey
   }
-  private getApiKey2(): string {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY_2
+  private async getApiKey2(): Promise<string> {
+    const apiKey = await getRemoteConfigValue("GEMINI_API_KEY_2")
     if (!apiKey) {
       throw new Error(
-        "VITE_GEMINI_API_KEY_2 is not defined in environment variables"
+        "GEMINI_API_KEY_2 could not be retrieved from Remote Config"
       )
     }
     return apiKey
   }
-  private getApiKey3(): string {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY_3
+  private async getApiKey3(): Promise<string> {
+    const apiKey = await getRemoteConfigValue("GEMINI_API_KEY_3")
     if (!apiKey) {
       throw new Error(
-        "VITE_GEMINI_API_KEY_3 is not defined in environment variables"
+        "GEMINI_API_KEY_3 could not be retrieved from Remote Config"
       )
     }
     return apiKey
@@ -142,11 +143,12 @@ class FrontendAiService {
       await this.ensureRateLimit()
 
       const prompt = this.createMixPesticidesPrompt(question)
+      const apiKey = await this.getApiKey1()
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${
           this.model
-        }:generateContent?key=${this.getApiKey1()}`,
+        }:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
@@ -230,11 +232,12 @@ class FrontendAiService {
       await this.ensureRateLimit()
 
       const prompt = this.createSortPesticidesPrompt(question)
+      const apiKey = await this.getApiKey2()
 
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${
           this.model
-        }:generateContent?key=${this.getApiKey2()}`,
+        }:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
@@ -317,10 +320,12 @@ class FrontendAiService {
       // Đảm bảo rate limit
       await this.ensureRateLimit()
 
+      const apiKey = await this.getApiKey3()
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${
           this.model
-        }:generateContent?key=${this.getApiKey3()}`,
+        }:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {

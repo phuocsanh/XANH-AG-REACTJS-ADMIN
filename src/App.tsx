@@ -36,6 +36,8 @@ import Suppliers from "./pages/suppliers"
 import { SignUp } from "./pages/sign-up"
 // Thêm import cho trang pesticides
 import PesticidesPage from "./pages/pesticides"
+import { requestForToken, onMessageListener } from "./lib/firebase"
+import { toast } from "react-toastify"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -85,6 +87,31 @@ function App() {
       )
     }
   }, [])
+
+  // Firebase Notification Setup
+  useEffect(() => {
+    requestForToken();
+
+    onMessageListener()
+      .then((payload: any) => {
+        toast.info(
+          <div>
+            <h4 className="font-bold">{payload.notification.title}</h4>
+            <p className="text-sm">{payload.notification.body}</p>
+          </div>,
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          }
+        );
+        console.log('Received foreground message: ', payload);
+      })
+      .catch((err: any) => console.log('failed: ', err));
+  }, []);
 
   const values = {
     isHeaderFooterShow,

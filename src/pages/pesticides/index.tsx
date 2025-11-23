@@ -631,7 +631,7 @@ ${productInfo}`;
         
         <Col xs={24} md={12}>
           <Card 
-            title="Kết quả Phân tích Sắp xếp" 
+            title="Sắp xếp thứ tự pha thuốc" 
             loading={isAnalyzing && !sortResult}
             className="scrollable-result-card"
             bodyStyle={{ padding: '8px 12px' }}
@@ -641,14 +641,14 @@ ${productInfo}`;
                 {sortResult.split('\n').filter(line => line.trim()).map((line, index) => (
                   <div key={index} className="mb-2">
                     <Text>
-                      <Text strong className="text-blue-600">{index + 1}. </Text>
+                      <Text strong className="text-blue-600"></Text>
                       {line.trim()}
                     </Text>
                   </div>
                 ))}
               </div>
             ) : (
-              <Text type="secondary">Chưa có kết quả phân tích sắp xếp</Text>
+              <Text type="secondary">Chưa có kết quả sắp xếp</Text>
             )}
           </Card>
         </Col>
@@ -787,7 +787,7 @@ ${productInfo}`;
                 onChange={() => handlePrintSectionChange('sort')}
                 disabled={!sortResult}
               >
-                Kết quả Phân tích Sắp xếp
+                Kết quả Sắp xếp
               </Checkbox>
             </div>
             <div>
@@ -845,7 +845,7 @@ ${productInfo}`;
 
             {printSections.mix && mixResult && (
               <div className="print-section" style={{ marginBottom: '30px' }}>
-                <Title level={4}>1. Kết quả Phân tích Phối trộn</Title>
+                <Title level={4}>Kết quả Phân tích Phối trộn</Title>
                 <div 
                   style={{ 
                     padding: '15px', 
@@ -867,7 +867,7 @@ ${productInfo}`;
 
             {printSections.sort && sortResult && (
               <div className="print-section" style={{ marginBottom: '30px' }}>
-                <Title level={4}>2. Kết quả Phân tích Sắp xếp</Title>
+                <Title level={4}>Sắp xếp thứ tự pha thuốc</Title>
                 <div 
                   style={{ 
                     padding: '15px', 
@@ -879,18 +879,18 @@ ${productInfo}`;
                   {sortResult.split('\n').filter(line => line.trim()).map((line, index) => (
                     <div key={index} style={{ marginBottom: '8px' }}>
                       <Text>
-                        <Text strong style={{ color: '#1890ff' }}>{index + 1}. </Text>
                         {line.trim()}
                       </Text>
                     </div>
                   ))}
+                  <Text>Lưu ý: Pha riêng từng thuốc vào thùng nhỏ khoáy tan đều mới đổ vào bình lớn</Text>
                 </div>
               </div>
             )}
 
             {printSections.spray && sprayingRecommendations.length > 0 && (
               <div className="print-section" style={{ marginBottom: '30px' }}>
-                <Title level={4}>3. Thời điểm phun thuốc tốt nhất</Title>
+                <Title level={4}>Thời điểm phun thuốc tốt nhất</Title>
                 <div 
                   style={{ 
                     marginTop: '15px',
