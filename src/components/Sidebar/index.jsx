@@ -1,5 +1,5 @@
 import Logo from "../../assets/images/logo.png"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import Button from "@mui/material/Button"
 import { MdOutlineDashboard } from "react-icons/md"
 import { FaAngleRight } from "react-icons/fa6"
@@ -27,6 +27,7 @@ const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0)
   const [isToggleSubmenu, setIsToggleSubmenu] = useState(false)
   const isLogin = useAppStore((state) => state.isLogin)
+  const location = useLocation()
 
   const isOpenSubmenu = (index) => {
     setActiveTab(index)
@@ -84,12 +85,24 @@ const Sidebar = () => {
               <ul className='submenu pl-8'>
                 <li>
                   <Link to='/products'>
-                    <Button className='w-full'>Danh sách sản phẩm</Button>
+                    <Button
+                      className={`w-full ${
+                        location.pathname === "/products" ? "active" : ""
+                      }`}
+                    >
+                      Danh sách sản phẩm
+                    </Button>
                   </Link>
                 </li>
                 <li>
                   <Link to='/products/new'>
-                    <Button className='w-full'>Thêm sản phẩm</Button>
+                    <Button
+                      className={`w-full ${
+                        location.pathname === "/products/new" ? "active" : ""
+                      }`}
+                    >
+                      Thêm sản phẩm
+                    </Button>
                   </Link>
                 </li>
               </ul>
@@ -234,10 +247,26 @@ const Sidebar = () => {
             >
               <div className='submenu pl-8'>
                 <Link to='/inventory/receipts'>
-                  <Button className='w-full'>Danh sách phiếu nhập</Button>
+                  <Button
+                    className={`w-full ${
+                      location.pathname === "/inventory/receipts"
+                        ? "active"
+                        : ""
+                    }`}
+                  >
+                    Danh sách phiếu nhập
+                  </Button>
                 </Link>
                 <Link to='/inventory/receipts/create'>
-                  <Button className='w-full'>Tạo phiếu nhập</Button>
+                  <Button
+                    className={`w-full ${
+                      location.pathname === "/inventory/receipts/create"
+                        ? "active"
+                        : ""
+                    }`}
+                  >
+                    Tạo phiếu nhập
+                  </Button>
                 </Link>
               </div>
             </div>

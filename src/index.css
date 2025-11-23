@@ -154,11 +154,19 @@ body {
 
 .sidebar .sidebarTabs li .submenu button::after {
   content: "";
-  @apply absolute top-[47%] left-[10%] w-1.5 h-1.5 bg-gray-400 rounded-full;
+  @apply absolute top-1/2 -translate-y-1/2 left-4 w-1.5 h-1.5 bg-gray-400 rounded-full;
 }
 
 .sidebar .sidebarTabs li .submenu button {
-  @apply py-1 px-5 font-semibold text-gray-500 justify-start w-full;
+  @apply py-1 pl-9 pr-5 font-semibold text-gray-500 justify-start w-full;
+}
+
+.sidebar .sidebarTabs li .submenu button.active {
+  @apply text-blue-500;
+}
+
+.sidebar .sidebarTabs li .submenu button.active::after {
+  @apply bg-blue-500;
 }
 
 .sidebar .sidebarTabs li .submenuWrapper {
