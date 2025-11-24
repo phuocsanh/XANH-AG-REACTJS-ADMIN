@@ -1,0 +1,97 @@
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { toast } from "react-toastify"
+import api from "@/utils/api"
+import { queryClient } from "@/provider/app-provider-tanstack"
+import { SalesReturn, CreateSalesReturnDto, UpdateSalesReturnStatusDto } from "@/models/sales-return"
+import { handleApiError } from "@/utils/error-handler"
+import { usePaginationQuery } from "@/hooks/use-pagination-query"
+
+// ========== QUERY KEYS ==========
+export const salesReturnKeys = {
+  all: ["sales-returns"] as const,
+  lists: () => [...salesReturnKeys.all, "list"] as const,
+  list: (params?: Record<string, unknown>) =>
+    [...salesReturnKeys.lists(), params] as const,
+  details: () => [...salesReturnKeys.all, "detail"] as const,
+  detail: (id: number) => [...salesReturnKeys.details(), id] as const,
+} as const
+
+// ========== SALES RETURN HOOKS ==========
+
+/**
+ * Hook lấy danh sách phiếu trả hàng
+ */
+export const useSalesReturnsQuery = (params?: Record<string, unknown>) => {
+  return usePaginationQuery<SalesReturn>("/sales-returns", params)
+}
+
+/**
+ * Hook lấy phiếu trả hàng theo ID
+ */
+export const useSalesReturnQuery = (id: number) => {
+  return useQuery({
+    queryKey: salesReturnKeys.detail(id),
+    queryFn: async () => {
+      const response = await api.get<SalesReturn>(`/sales-returns/${id}`)
+      return response
+    },
+    enabled: !!id,
+  })
+}
+
+/**
+ * Hook tạo phiếu trả hàng
+ */
+export const useCreateSalesReturnMutation = () => {
+  return useMutation({
+    mutationFn: async (salesReturn: CreateSalesReturnDto) => {
+      const response = await api.postRaw<SalesReturn>("/sales-returns", salesReturn as any)
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
+      toast.success("Tạo phiếu trả hàng thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo phiếu trả hàng")
+    },
+  })
+}
+
+/**
+ * Hook cập nhật trạng thái phiếu trả hàng
+ */
+export const useUpdateSalesReturnStatusMutation = () => {
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: UpdateSalesReturnStatusDto }) => {
+      const response = await api.patchRaw<any>(`/sales-returns/${id}/status`, data as any)
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
+      toast.success("Cập nhật trạng thái thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật trạng thái")
+    },
+  })
+}
+
+/**
+ * Hook xóa phiếu trả hàng
+ */
+export const useDeleteSalesReturnMutation = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.delete(`/sales-returns/${id}`)
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
+      toast.success("Xóa phiếu trả hàng thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa phiếu trả hàng")
+    },
+  })
+}

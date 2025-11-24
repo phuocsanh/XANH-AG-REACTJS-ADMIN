@@ -22,7 +22,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdCloudQueue } from "react-icons/md"
+import { MdCloudQueue, MdAssignmentReturn } from "react-icons/md"
 
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0)
@@ -302,6 +302,104 @@ const Sidebar = () => {
               </div>
             </div>
           </li>
+
+          {/* Quản lý bán hàng */}
+          <li>
+            <h6 className='text-black/70 capitalize px-3 mt-4'>
+              Quản lý bán hàng
+            </h6>
+          </li>
+
+          {/* Mùa vụ */}
+          <li>
+            <Link to='/seasons'>
+              <Button
+                className={`w-full ${activeTab === 17 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(17)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiGrain />
+                </span>
+                Mùa vụ
+              </Button>
+            </Link>
+          </li>
+
+          {/* Khách hàng */}
+          <li>
+            <Link to='/customers'>
+              <Button
+                className={`w-full ${activeTab === 18 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(18)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <FaUsers />
+                </span>
+                Khách hàng
+              </Button>
+            </Link>
+          </li>
+
+          {/* Hóa đơn bán hàng */}
+          <li>
+            <Link to='/sales-invoices'>
+              <Button
+                className={`w-full ${activeTab === 19 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(19)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <HiOutlineShoppingCart />
+                </span>
+                Hóa đơn bán hàng
+              </Button>
+            </Link>
+          </li>
+
+          {/* Thanh toán */}
+          <li>
+            <Link to='/payments'>
+              <Button
+                className={`w-full ${activeTab === 20 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(20)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdOutlineDashboard />
+                </span>
+                Thanh toán
+              </Button>
+            </Link>
+          </li>
+
+          {/* Công nợ */}
+          <li>
+            <Link to='/debt-notes'>
+              <Button
+                className={`w-full ${activeTab === 21 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(21)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <RiFileListLine />
+                </span>
+                Công nợ
+              </Button>
+            </Link>
+          </li>
+
+          {/* Trả hàng */}
+          <li>
+            <Link to='/sales-returns'>
+              <Button
+                className={`w-full ${activeTab === 22 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(22)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdAssignmentReturn />
+                </span>
+                Trả hàng
+              </Button>
+            </Link>
+          </li>
+
           <li>
             <Button
               className={`w-full ${activeTab === 11 ? "active" : ""}`}

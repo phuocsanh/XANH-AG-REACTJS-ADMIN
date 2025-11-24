@@ -38,6 +38,15 @@ import { SignUp } from "./pages/sign-up"
 import PesticidesPage from "./pages/pesticides"
 import RiceMarketPage from "./pages/rice-market"
 import WeatherForecastPage from "./pages/weather-forecast"
+// Thêm import cho các module quản lý bán hàng
+import Seasons from "./pages/seasons"
+import Customers from "./pages/customers"
+import SalesInvoicesList from "./pages/sales-invoices"
+import CreateSalesInvoice from "./pages/sales-invoices/create"
+import PaymentsList from "./pages/payments"
+import DebtNotesList from "./pages/debt-notes"
+import SalesReturnsList from "./pages/sales-returns"
+import CreateSalesReturn from "./pages/sales-returns/create"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { toast } from "react-toastify"
 
@@ -292,6 +301,72 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <InventoryReceiptDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Quản lý bán hàng - Sales Management */}
+                    <Route
+                      path='/seasons'
+                      element={
+                        <ProtectedRoute>
+                          <Seasons />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/customers'
+                      element={
+                        <ProtectedRoute>
+                          <Customers />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/sales-invoices'
+                      element={
+                        <ProtectedRoute>
+                          <SalesInvoicesList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/sales-invoices/create'
+                      element={
+                        <ProtectedRoute>
+                          <CreateSalesInvoice />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/payments'
+                      element={
+                        <ProtectedRoute>
+                          <PaymentsList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/debt-notes'
+                      element={
+                        <ProtectedRoute>
+                          <DebtNotesList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/sales-returns'
+                      element={
+                        <ProtectedRoute>
+                          <SalesReturnsList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/sales-returns/create'
+                      element={
+                        <ProtectedRoute>
+                          <CreateSalesReturn />
                         </ProtectedRoute>
                       }
                     />
