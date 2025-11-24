@@ -21,7 +21,8 @@ import { FaRegCircle } from "react-icons/fa"
 // Thêm icon cho supplier
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
-import { GiPoisonBottle } from "react-icons/gi"
+import { GiPoisonBottle, GiGrain } from "react-icons/gi"
+import { MdCloudQueue } from "react-icons/md"
 
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0)
@@ -202,6 +203,36 @@ const Sidebar = () => {
                   <GiPoisonBottle />
                 </span>
                 Thuốc BVTV
+              </Button>
+            </Link>
+          </li>
+
+          {/* Thêm menu cho rice market */}
+          <li>
+            <Link to='/rice-market'>
+              <Button
+                className={`w-full ${activeTab === 15 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(15)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiGrain />
+                </span>
+                Thị trường Lúa Gạo
+              </Button>
+            </Link>
+          </li>
+
+          {/* Thêm menu cho weather forecast */}
+          <li>
+            <Link to='/weather-forecast'>
+              <Button
+                className={`w-full ${activeTab === 16 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(16)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdCloudQueue />
+                </span>
+                Dự báo Thời tiết
               </Button>
             </Link>
           </li>

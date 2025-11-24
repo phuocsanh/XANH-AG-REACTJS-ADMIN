@@ -36,6 +36,8 @@ import Suppliers from "./pages/suppliers"
 import { SignUp } from "./pages/sign-up"
 // Thêm import cho trang pesticides
 import PesticidesPage from "./pages/pesticides"
+import RiceMarketPage from "./pages/rice-market"
+import WeatherForecastPage from "./pages/weather-forecast"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { toast } from "react-toastify"
 
@@ -244,6 +246,26 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <PesticidesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang thị trường lúa gạo */}
+                    <Route
+                      path='/rice-market'
+                      element={
+                        <ProtectedRoute>
+                          <RiceMarketPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang dự báo thời tiết */}
+                    <Route
+                      path='/weather-forecast'
+                      element={
+                        <ProtectedRoute>
+                          <WeatherForecastPage />
                         </ProtectedRoute>
                       }
                     />
