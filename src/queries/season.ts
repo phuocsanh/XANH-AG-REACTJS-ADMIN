@@ -23,7 +23,7 @@ export const seasonKeys = {
  * Hook lấy danh sách mùa vụ
  */
 export const useSeasonsQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<Season>("/seasons", params)
+  return usePaginationQuery<Season>("/season", params)
 }
 
 /**
@@ -33,7 +33,7 @@ export const useActiveSeasonQuery = () => {
   return useQuery({
     queryKey: seasonKeys.active(),
     queryFn: async () => {
-      const response = await api.get<Season>("/seasons/active")
+      const response = await api.get<Season>("/season/active")
       return response
     },
   })
@@ -46,7 +46,7 @@ export const useSeasonQuery = (id: number) => {
   return useQuery({
     queryKey: seasonKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<Season>(`/seasons/${id}`)
+      const response = await api.get<Season>(`/season/${id}`)
       return response
     },
     enabled: !!id,
@@ -59,7 +59,7 @@ export const useSeasonQuery = (id: number) => {
 export const useCreateSeasonMutation = () => {
   return useMutation({
     mutationFn: async (season: CreateSeasonDto) => {
-      const response = await api.postRaw<Season>("/seasons", season as any)
+      const response = await api.postRaw<Season>("/season", season as any)
       return response
     },
     onSuccess: () => {
@@ -84,7 +84,7 @@ export const useUpdateSeasonMutation = () => {
       id: number
       season: UpdateSeasonDto
     }) => {
-      const response = await api.patchRaw<Season>(`/seasons/${id}`, season as any)
+      const response = await api.patchRaw<Season>(`/season/${id}`, season as any)
       return response
     },
     onSuccess: () => {
@@ -103,7 +103,7 @@ export const useUpdateSeasonMutation = () => {
 export const useDeleteSeasonMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete(`/seasons/${id}`)
+      const response = await api.delete(`/season/${id}`)
       return response
     },
     onSuccess: () => {
