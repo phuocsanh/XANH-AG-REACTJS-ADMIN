@@ -380,29 +380,103 @@ ${productInfo}`;
     }
   };
 
+  /**
+   * Tính khoảng cách giữa 2 điểm tọa độ (Haversine formula)
+   */
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Bán kính trái đất (km)
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+    return R * c;
+  };
+
+  /**
+   * Lấy tên địa điểm chi tiết từ tọa độ (Reverse Geocoding)
+   */
+  const getPlaceName = async (lat: number, lon: number): Promise<string> => {
+    try {
+      // Sử dụng Nominatim API của OpenStreetMap (Miễn phí)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=vi`
+      );
+      const data = await response.json();
+      
+      if (data.address) {
+        const addr = data.address;
+        // Ưu tiên lấy các thành phần địa chỉ chi tiết
+        const parts = [];
+        
+        if (addr.road) parts.push(addr.road);
+        if (addr.suburb) parts.push(addr.suburb); // Phường
+        else if (addr.village) parts.push(addr.village); // Xã
+        else if (addr.town) parts.push(addr.town); // Thị trấn
+        
+        if (addr.city_district) parts.push(addr.city_district); // Quận
+        else if (addr.county) parts.push(addr.county); // Huyện
+        
+        if (addr.city) parts.push(addr.city); // Thành phố
+        else if (addr.state) parts.push(addr.state); // Tỉnh
+        
+        return parts.join(', ');
+      }
+      return 'Vị trí không xác định';
+    } catch (error) {
+      console.error('Lỗi lấy tên địa điểm:', error);
+      return 'Vị trí hiện tại';
+    }
+  };
+
   const detectUserLocation = () => {
     if (!navigator.geolocation) {
       message.error('Trình duyệt của bạn không hỗ trợ định vị.');
       return;
     }
 
-    const hide = message.loading('Đang xác định vị trí...', 0);
+    const hide = message.loading('Đang xác định vị trí chi tiết...', 0);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        const newLocation: Location = {
-          id: 'current-user-location',
-          name: 'Vị trí hiện tại',
-          latitude: latitude,
-          longitude: longitude,
-          region: '📍 Vị trí của bạn'
-        };
+        try {
+          // Lấy tên địa điểm chi tiết
+          const detailedName = await getPlaceName(latitude, longitude);
+          
+          // Tạo location mới với thông tin chi tiết
+          const newLocation: Location = {
+            id: 'current-user-location',
+            name: detailedName,
+            latitude: latitude,
+            longitude: longitude,
+            region: '📍 Vị trí của bạn'
+          };
 
-        setSelectedLocation(newLocation);
-        hide();
-        message.success('Đã cập nhật vị trí');
+          setSelectedLocation(newLocation);
+          hide();
+          message.success(`Đã cập nhật: ${detailedName}`);
+        } catch (error) {
+          hide();
+          message.error('Không thể lấy tên địa điểm chi tiết.');
+          
+          // Fallback: Tìm địa điểm gần nhất trong danh sách có sẵn
+          let nearestLocation = VIETNAM_LOCATIONS[0];
+          let minDistance = Infinity;
+          
+          VIETNAM_LOCATIONS.forEach(loc => {
+            const distance = calculateDistance(latitude, longitude, loc.latitude, loc.longitude);
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestLocation = loc;
+            }
+          });
+          
+          setSelectedLocation(nearestLocation);
+        }
       },
       (error) => {
         hide();
@@ -415,6 +489,10 @@ ${productInfo}`;
 
   useEffect(() => {
     if (currentTab === 1) {
+      // Nếu chưa có vị trí (hoặc đang là mặc định), thử tự động định vị
+      if (selectedLocation.id === 'hanoi') {
+        detectUserLocation();
+      }
       fetchWeatherForecast();
     }
   }, [currentTab, selectedLocation]);
@@ -827,6 +905,11 @@ ${productInfo}`;
                     </Grid>
 
                     <Grid item xs={12} md={6}>
+                      {/* Spacer to align with "Tổng tiền hàng" on the left */}
+                      <Box display="flex" justifyContent="space-between" mb={1} sx={{ visibility: 'hidden' }}>
+                        <Typography>Spacer</Typography>
+                      </Box>
+
                       <Controller
                         name="partial_payment_amount"
                         control={control}
