@@ -385,6 +385,89 @@ class FrontendAiService {
       }
     }
   }
+
+  /**
+   * Gọi API Google AI để tạo lưu ý quan trọng từ mô tả sản phẩm
+   * @param prompt Prompt đã được tạo sẵn
+   * @returns Promise với kết quả trả về
+   */
+  async generateWarning(prompt: string): Promise<AiResponse> {
+    if (!prompt || prompt.trim().length === 0) {
+      return {
+        success: false,
+        error: "Vui lòng cung cấp thông tin sản phẩm.",
+      }
+    }
+
+    try {
+      // Đảm bảo rate limit
+      await this.ensureRateLimit()
+
+      const apiKey = await this.getApiKey1()
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${
+          this.model
+        }:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          error:
+            errorData.error?.message ||
+            `Lỗi khi gọi API AI. Status: ${response.status}`,
+        }
+      }
+
+      const data = await response.json()
+
+      if (
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0]
+      ) {
+        const answer = data.candidates[0].content.parts[0].text || ""
+        return {
+          success: true,
+          answer: answer,
+        }
+      }
+
+      return {
+        success: false,
+        error: "Không tìm thấy câu trả lời trong phản hồi từ AI.",
+      }
+    } catch (error) {
+      console.error("Error calling Gemini API:", error)
+      return {
+        success: false,
+        error:
+          (error as Error).message || "Lỗi khi gọi API AI để tạo lưu ý.",
+      }
+    }
+  }
 }
 
 // Export instance singleton

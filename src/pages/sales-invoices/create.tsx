@@ -44,7 +44,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateSalesInvoiceMutation } from '@/queries/sales-invoice';
+import { useCreateSalesInvoiceMutation, useLatestInvoiceByCustomerQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery } from '@/queries/product';
@@ -120,6 +120,9 @@ const CreateSalesInvoice = () => {
     spray: true
   });
   const printContentRef = useRef<HTMLDivElement>(null);
+  
+  // AI Warning Generation States
+  const [isGeneratingWarning, setIsGeneratingWarning] = useState(false);
 
   const { mixPesticides, sortPesticides } = useAiService();
 
@@ -144,6 +147,7 @@ const CreateSalesInvoice = () => {
   const { data: activeSeason } = useActiveSeasonQuery();
   const { data: seasons } = useSeasonsQuery();
   const { data: productsData } = useProductsQuery({ limit: 100 });
+  const { data: latestInvoice } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
   const createMutation = useCreateSalesInvoiceMutation();
 
   // Set active season as default
@@ -152,6 +156,8 @@ const CreateSalesInvoice = () => {
       setValue('season_id', activeSeason.id);
     }
   }, [activeSeason, setValue]);
+
+
 
   // Watch items to calculate totals
   const items = watch('items');
@@ -182,6 +188,82 @@ const CreateSalesInvoice = () => {
       setValue('customer_address', '');
     }
   };
+
+
+
+  /**
+   * Generate warning using AI based on product descriptions
+   */
+  /**
+   * Generate warning using AI based on product descriptions
+   */
+  const handleGenerateWarning = async (silent = false) => {
+    if (items.length === 0) {
+      if (!silent) message.warning('Vui lòng thêm sản phẩm vào đơn hàng trước');
+      return;
+    }
+
+    setIsGeneratingWarning(true);
+    
+    try {
+      // Get product details with descriptions
+      const productDescriptions = items
+        .map(item => {
+          const product = (productsData?.data?.items || []).find((p: Product) => p.id === item.product_id);
+          if (product) {
+            return `- ${product.name}: ${product.description || 'Không có mô tả'}`;
+          }
+          return null;
+        })
+        .filter(Boolean)
+        .join('\n');
+
+      if (!productDescriptions) {
+        if (!silent) message.warning('Không tìm thấy mô tả sản phẩm');
+        setIsGeneratingWarning(false);
+        return;
+      }
+
+      const prompt = `Dựa trên danh sách sản phẩm và mô tả sau, hãy tạo một lưu ý quan trọng ngắn gọn (1-2 câu) cho đơn hàng. Lưu ý nên tập trung vào:
+- Cách sử dụng an toàn
+- Thời gian sử dụng tối ưu
+- Lưu ý khi phối trộn (nếu có)
+- Điều kiện bảo quản
+
+Danh sách sản phẩm:
+${productDescriptions}
+
+Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.`;
+
+      const response = await frontendAiService.generateWarning(prompt);
+      
+      if (response.success && response.answer) {
+        setValue('warning', response.answer.trim());
+        if (!silent) message.success('Đã tạo lưu ý bằng AI');
+      } else {
+        if (!silent) message.error('Không thể tạo lưu ý. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Error generating warning:', error);
+      if (!silent) message.error('Có lỗi xảy ra khi tạo lưu ý');
+    } finally {
+      setIsGeneratingWarning(false);
+    }
+  };
+
+  // Auto-generate warning when items change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Create a unique key for current items to check changes
+      const currentItemsKey = items.map(i => i.product_id).join(',');
+      
+      if (items.length > 0) {
+        handleGenerateWarning(true);
+      }
+    }, 2000); // Debounce 2s
+
+    return () => clearTimeout(timer);
+  }, [items]); // Re-run when items change
 
   const handleAddProduct = (product: Product) => {
     append({
@@ -705,19 +787,62 @@ ${productInfo}`;
                     )}
                   />
 
-                  <Controller
-                    name="warning"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Lưu ý quan trọng"
-                        placeholder="VD: Giao hàng trước 9h sáng"
-                        sx={{ mb: 2 }}
-                      />
-                    )}
-                  />
+                  <Box sx={{ mb: 2 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={1}>
+                      <Typography variant="body2" color="text.secondary">
+                        Lưu ý quan trọng
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleGenerateWarning(false)}
+                        disabled={isGeneratingWarning || items.length === 0}
+                        startIcon={
+                          isGeneratingWarning ? (
+                            <Spin size="small" />
+                          ) : (
+                            <SyncOutlined />
+                          )
+                        }
+                        sx={{ ml: 'auto' }}
+                      >
+                        {isGeneratingWarning ? 'Đang tạo...' : 'Tạo bằng AI'}
+                      </Button>
+                    </Box>
+                    <Controller
+                      name="warning"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          multiline
+                          rows={2}
+                          placeholder="AI sẽ tự động tạo lưu ý dựa trên mô tả sản phẩm, hoặc bạn có thể nhập thủ công"
+                          helperText="Lưu ý này sẽ được lưu lại và tự động hiển thị khi tạo đơn hàng tiếp theo cho khách hàng này"
+                        />
+                      )}
+                    />
+                  </Box>
+
+                  {latestInvoice?.warning && (
+                    <Alert 
+                      severity="info" 
+                      sx={{ mb: 2 }}
+                      action={
+                        <Button color="inherit" size="small" onClick={() => setValue('warning', latestInvoice.warning)}>
+                          Sử dụng
+                        </Button>
+                      }
+                    >
+                      <Typography variant="caption" display="block" fontWeight="bold">
+                        Lưu ý từ đơn hàng trước ({new Date(latestInvoice.created_at).toLocaleDateString('vi-VN')}):
+                      </Typography>
+                      <Typography variant="body2">
+                        {latestInvoice.warning}
+                      </Typography>
+                    </Alert>
+                  )}
 
                   <Controller
                     name="notes"

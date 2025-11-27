@@ -14,6 +14,8 @@ export const salesInvoiceKeys = {
     [...salesInvoiceKeys.lists(), params] as const,
   details: () => [...salesInvoiceKeys.all, "detail"] as const,
   detail: (id: number) => [...salesInvoiceKeys.details(), id] as const,
+  latestByCustomer: (customerId: number) => 
+    [...salesInvoiceKeys.all, "latest-by-customer", customerId] as const,
 } as const
 
 // ========== SALES INVOICE HOOKS ==========
@@ -118,5 +120,27 @@ export const useDeleteSalesInvoiceMutation = () => {
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi xóa hóa đơn")
     },
+  })
+}
+
+/**
+ * Hook lấy hóa đơn gần nhất của khách hàng
+ */
+export const useLatestInvoiceByCustomerQuery = (customerId: number | undefined) => {
+  return useQuery({
+    queryKey: customerId ? salesInvoiceKeys.latestByCustomer(customerId) : [],
+    queryFn: async () => {
+      if (!customerId) return null
+      
+      try {
+        const response = await api.get<SalesInvoice>(`/sales/invoice/customer/${customerId}/latest`)
+        return response
+      } catch (error) {
+        // Nếu không tìm thấy đơn hàng trước đó, trả về null thay vì throw error
+        console.log(`No previous invoice found for customer ${customerId}`)
+        return null
+      }
+    },
+    enabled: !!customerId,
   })
 }

@@ -269,7 +269,7 @@ export const useUpdateProductMutation = () => {
       id: number
       productData: UpdateProductRequest
     }) => {
-      const response = await api.patchRaw<Product>(
+      const response = await api.putRaw<Product>(
         `/products/${id}`,
         productData
       )
