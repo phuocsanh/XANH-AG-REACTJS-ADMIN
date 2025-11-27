@@ -32,9 +32,11 @@ export type SalesInvoiceItemFormData = z.infer<typeof salesInvoiceItemSchema>;
 export type SalesInvoiceFormData = z.infer<typeof salesInvoiceSchema>;
 
 export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
+  customer_id: undefined,
   customer_name: '',
   customer_phone: '',
   customer_address: '',
+  invoice_code: '',
   notes: '',
   warning: '',
   payment_method: 'cash',

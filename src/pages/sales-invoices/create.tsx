@@ -123,6 +123,8 @@ const CreateSalesInvoice = () => {
   
   // AI Warning Generation States
   const [isGeneratingWarning, setIsGeneratingWarning] = useState(false);
+  const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [isCheckingConflict, setIsCheckingConflict] = useState(false);
 
   const { mixPesticides, sortPesticides } = useAiService();
 
@@ -251,6 +253,58 @@ Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.
     }
   };
 
+  /**
+   * Kiểm tra xung đột giữa lưu ý đơn hàng cũ và sản phẩm hiện tại
+   */
+  const checkProductConflict = async (previousWarning: string, currentProducts: Product[]) => {
+    if (!previousWarning || currentProducts.length === 0) {
+      setConflictWarning(null);
+      return;
+    }
+
+    setIsCheckingConflict(true);
+    
+    try {
+      const productInfo = currentProducts
+        .map(product => `- ${product.name}: ${product.description || product.ingredient?.join(', ') || 'Không có thông tin'}`)
+        .join('\n');
+
+      const prompt = `Phân tích xem có xung đột giữa lưu ý đơn hàng trước và sản phẩm hiện tại không.
+
+LƯU Ý ĐƠN HÀNG TRƯỚC:
+${previousWarning}
+
+SẢN PHẨM HIỆN TẠI:
+${productInfo}
+
+YÊU CẦU:
+- Nếu có xung đột hoặc cảnh báo quan trọng: Trả về cảnh báo ngắn gọn (1-2 câu)
+- Nếu KHÔNG có vấn đề gì: Trả về chính xác chuỗi "OK"
+
+Ví dụ xung đột:
+- Lưu ý cũ cảnh báo không dùng lưu huỳnh, nhưng sản phẩm mới có lưu huỳnh
+- Lưu ý cũ yêu cầu khoảng cách thời gian, nhưng đơn mới vi phạm
+
+Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.`;
+
+      const response = await frontendAiService.generateWarning(prompt);
+      
+      if (response.success && response.answer) {
+        const result = response.answer.trim();
+        if (result !== 'OK' && result.toLowerCase() !== 'ok') {
+          setConflictWarning(result);
+          message.warning('⚠️ Phát hiện xung đột với đơn hàng trước!');
+        } else {
+          setConflictWarning(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking conflict:', error);
+    } finally {
+      setIsCheckingConflict(false);
+    }
+  };
+
   // Auto-generate warning when items change
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -264,6 +318,32 @@ Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.
 
     return () => clearTimeout(timer);
   }, [items]); // Re-run when items change
+
+  // Auto-check conflict when previous warning or selected products change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (latestInvoice?.warning && selectedProductIdsForAdvisory.length > 0) {
+        // Chỉ phân tích các sản phẩm được chọn
+        const selectedProducts = items
+          .filter(item => selectedProductIdsForAdvisory.includes(item.product_id))
+          .map(item => {
+            const product = (productsData?.data?.items || []).find((p: Product) => p.id === item.product_id);
+            return product;
+          })
+          .filter((p): p is Product => p !== undefined);
+        
+        if (selectedProducts.length > 0) {
+          checkProductConflict(latestInvoice.warning, selectedProducts);
+        } else {
+          setConflictWarning(null);
+        }
+      } else {
+        setConflictWarning(null);
+      }
+    }, 1500); // Debounce 1.5s
+
+    return () => clearTimeout(timer);
+  }, [latestInvoice?.warning, selectedProductIdsForAdvisory, items]); // Re-run when warning, selected products, or items change
 
   const handleAddProduct = (product: Product) => {
     append({
@@ -290,7 +370,12 @@ Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.
     const submitData = {
       ...data,
       remaining_amount: remainingAmount,
+      // Đảm bảo customer_id được gửi đúng (null nếu là khách vãng lai)
+      customer_id: data.customer_id || null,
     };
+
+    console.log('📤 Dữ liệu gửi đi:', submitData);
+    console.log('👤 Customer ID:', submitData.customer_id);
 
     createMutation.mutate(submitData as any, {
       onSuccess: () => {
@@ -844,6 +929,21 @@ ${productInfo}`;
                     </Alert>
                   )}
 
+                  {conflictWarning && (
+                    <Alert 
+                      severity="error" 
+                      sx={{ mb: 2 }}
+                      icon={isCheckingConflict ? <Spin size="small" /> : undefined}
+                    >
+                      <Typography variant="caption" display="block" fontWeight="bold">
+                        ⚠️ Cảnh báo xung đột:
+                      </Typography>
+                      <Typography variant="body2">
+                        {conflictWarning}
+                      </Typography>
+                    </Alert>
+                  )}
+
                   <Controller
                     name="notes"
                     control={control}
@@ -889,6 +989,12 @@ ${productInfo}`;
                     sx={{ mb: 2 }}
                   />
 
+                  {latestInvoice?.warning && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                      💡 Tích chọn sản phẩm cần kiểm tra xung đột với lưu ý đơn hàng trước
+                    </Typography>
+                  )}
+
                   {errors.items && (
                     <Alert severity="error" sx={{ mb: 2 }}>
                       {errors.items.message}
@@ -905,6 +1011,7 @@ ${productInfo}`;
                           <TableCell align="right">Giảm giá</TableCell>
                           <TableCell align="right">Thành tiền</TableCell>
                           <TableCell align="center">Xóa</TableCell>
+                          <TableCell align="center">Phân tích</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -978,6 +1085,19 @@ ${productInfo}`;
                                 >
                                   <DeleteIcon />
                                 </IconButton>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Checkbox
+                                  checked={selectedProductIdsForAdvisory.includes(field.product_id)}
+                                  onChange={() => {
+                                    const productId = field.product_id;
+                                    setSelectedProductIdsForAdvisory(prev =>
+                                      prev.includes(productId)
+                                        ? prev.filter(id => id !== productId)
+                                        : [...prev, productId]
+                                    );
+                                  }}
+                                />
                               </TableCell>
                             </TableRow>
                           );

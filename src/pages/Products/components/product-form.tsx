@@ -50,6 +50,13 @@ const TiptapEditor: React.FC<{
     },
   })
 
+  // Update editor content when content prop changes
+  useEffect(() => {
+    if (editor && content && editor.getHTML() !== content) {
+      editor.commands.setContent(content)
+    }
+  }, [content, editor])
+
   if (!editor) {
     return null
   }
@@ -231,6 +238,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           description: productItem.description || "", // Mô tả
           profit_margin_percent: productItem.profit_margin_percent || "", // Thêm trường mới
           average_cost_price: productItem.average_cost_price || "", // Thêm trường mới
+          ingredient: Array.isArray(productItem.ingredient)
+            ? productItem.ingredient.join(", ")
+            : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
         })
 
         // Product type will be watched through watchedType
