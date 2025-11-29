@@ -375,7 +375,7 @@ const DebtNotesList: React.FC = () => {
                   formatter={(value) =>
                     `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
-                  parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
+                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, "") : "") as any}
                   placeholder='Nhập số tiền'
                 />
               </Form.Item>

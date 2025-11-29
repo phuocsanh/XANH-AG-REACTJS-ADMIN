@@ -38,6 +38,7 @@ import { SignUp } from "./pages/sign-up"
 import PesticidesPage from "./pages/pesticides"
 import RiceMarketPage from "./pages/rice-market"
 import WeatherForecastPage from "./pages/weather-forecast"
+import RiceBlastWarningPage from "./pages/rice-blast-warning"
 // Thêm import cho các module quản lý bán hàng
 import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
@@ -275,6 +276,16 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <WeatherForecastPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang cảnh báo bệnh đạo ôn lúa */}
+                    <Route
+                      path='/rice-blast-warning'
+                      element={
+                        <ProtectedRoute>
+                          <RiceBlastWarningPage />
                         </ProtectedRoute>
                       }
                     />

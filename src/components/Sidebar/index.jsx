@@ -22,7 +22,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdCloudQueue, MdAssignmentReturn } from "react-icons/md"
+import { MdCloudQueue, MdAssignmentReturn, MdWarning } from "react-icons/md"
 
 const Sidebar = () => {
   const [activeTab, setActiveTab] = useState(0)
@@ -233,6 +233,21 @@ const Sidebar = () => {
                   <MdCloudQueue />
                 </span>
                 Dự báo Thời tiết
+              </Button>
+            </Link>
+          </li>
+
+          {/* Thêm menu cho rice blast warning */}
+          <li>
+            <Link to='/rice-blast-warning'>
+              <Button
+                className={`w-full ${activeTab === 23 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(23)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdWarning />
+                </span>
+                Cảnh báo Đạo Ôn
               </Button>
             </Link>
           </li>

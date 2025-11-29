@@ -437,7 +437,7 @@ const SalesReturnsList: React.FC = () => {
         onOk={handleConfirmReject}
         onCancel={handleCancelReject}
         okText='Từ chối'
-        okType='danger'
+        okType='primary'
         cancelText='Hủy'
         confirmLoading={updateStatusMutation.isPending}
       />
