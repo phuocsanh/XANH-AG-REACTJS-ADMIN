@@ -21,7 +21,7 @@ export const useLocationQuery = () => {
   return useQuery({
     queryKey: riceBlastKeys.location(),
     queryFn: async () => {
-      const response = await api.get<Location>("/ai-rice-blast/location")
+      const response = await api.get<Location>("/location")
       return response
     },
   })
@@ -29,19 +29,19 @@ export const useLocationQuery = () => {
 
 /**
  * Hook cập nhật vị trí ruộng lúa
- * Lưu ý: Sau khi cập nhật, backend sẽ tự động chạy phân tích
+ * Lưu ý: Sau khi cập nhật, cần gọi riêng run-now cho từng bệnh
  */
 export const useUpdateLocationMutation = () => {
   return useMutation({
     mutationFn: async (location: UpdateLocationDto) => {
-      const response = await api.postRaw<Location>("/ai-rice-blast/location", location as any)
+      const response = await api.postRaw<Location>("/location", location as any)
       return response
     },
     onSuccess: () => {
-      // Invalidate cả location và warning vì backend tự động chạy phân tích
+      // Invalidate location và cả 2 warning vì có thể cần phân tích lại
       queryClient.invalidateQueries({ queryKey: riceBlastKeys.location() })
       queryClient.invalidateQueries({ queryKey: riceBlastKeys.warning() })
-      toast.success("Cập nhật vị trí thành công! Đang phân tích...")
+      toast.success("Cập nhật vị trí thành công!")
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi cập nhật vị trí")

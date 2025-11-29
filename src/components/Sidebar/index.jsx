@@ -263,10 +263,10 @@ const Sidebar = () => {
             </Link>
           </li>
 
-          {/* Thêm menu cho rice blast warning */}
+          {/* Thêm menu cho disease warning */}
           {hasPermission(userInfo, 'RICE_BLAST_VIEW') && (
             <li>
-              <Link to='/rice-blast-warning'>
+              <Link to='/disease-warning'>
                 <Button
                   className={`w-full ${activeTab === 23 ? "active" : ""}`}
                   onClick={() => isOpenSubmenu(23)}
@@ -274,7 +274,7 @@ const Sidebar = () => {
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                     <MdWarning />
                   </span>
-                  Cảnh báo Đạo Ôn
+                  Cảnh báo Bệnh/Sâu hại
                 </Button>
               </Link>
             </li>

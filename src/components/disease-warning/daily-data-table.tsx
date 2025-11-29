@@ -2,10 +2,12 @@ import React from 'react';
 import { Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { DailyRiskData, RiskLevel } from '@/models/rice-blast';
+import { BacterialBlightDailyData } from '@/queries/bacterial-blight';
 
 interface DailyDataTableProps {
-  data: DailyRiskData[];
+  data: DailyRiskData[] | BacterialBlightDailyData[];
   loading?: boolean;
+  diseaseType?: 'rice-blast' | 'bacterial-blight';
 }
 
 /**
@@ -26,14 +28,21 @@ const getRiskColor = (riskLevel: string): string => {
 /**
  * Component hiển thị bảng dữ liệu nguy cơ hàng ngày
  */
-export const DailyDataTable: React.FC<DailyDataTableProps> = ({ data, loading = false }) => {
-  const columns: ColumnsType<DailyRiskData> = [
+export const DailyDataTable: React.FC<DailyDataTableProps> = ({ 
+  data, 
+  loading = false,
+  diseaseType = 'rice-blast'
+}) => {
+  const isRiceBlast = diseaseType === 'rice-blast';
+  
+  // Common columns
+  const commonColumns: ColumnsType<any> = [
     {
       title: 'Ngày',
       dataIndex: 'date',
       key: 'date',
       width: 100,
-      render: (date: string, record: DailyRiskData) => (
+      render: (date: string, record: any) => (
         <div>
           <div style={{ fontWeight: 500 }}>{date}</div>
           <div style={{ fontSize: 12, color: '#888' }}>{record.dayOfWeek}</div>
@@ -44,7 +53,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({ data, loading = 
       title: 'Nhiệt độ (°C)',
       key: 'temp',
       width: 150,
-      render: (_, record: DailyRiskData) => (
+      render: (_, record: any) => (
         <div>
           <div style={{ fontSize: 12 }}>
             {record.tempMin.toFixed(1)} - {record.tempMax.toFixed(1)}
@@ -62,6 +71,10 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({ data, loading = 
       width: 100,
       render: (value: number) => `${value.toFixed(1)}%`,
     },
+  ];
+
+  // Rice Blast specific columns
+  const riceBlastColumns: ColumnsType<DailyRiskData> = [
     {
       title: 'Lá ướt (giờ)',
       dataIndex: 'lwdHours',
@@ -98,6 +111,54 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({ data, loading = 
       width: 100,
       render: (hours: number) => `${hours} giờ`,
     },
+  ];
+
+  // Bacterial Blight specific columns
+  const bacterialBlightColumns: ColumnsType<BacterialBlightDailyData> = [
+    {
+      title: 'Mưa',
+      key: 'rain',
+      width: 120,
+      render: (_, record: BacterialBlightDailyData) => (
+        <div>
+          <div style={{ fontSize: 12 }}>{record.rainTotal.toFixed(1)} mm</div>
+          <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Gió (km/h)',
+      key: 'wind',
+      width: 120,
+      render: (_, record: BacterialBlightDailyData) => (
+        <div>
+          <div style={{ fontSize: 12 }}>Max: {record.windSpeedMax.toFixed(1)}</div>
+          <div style={{ fontSize: 12, color: '#888' }}>TB: {record.windSpeedAvg.toFixed(1)}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Mưa 3 ngày',
+      dataIndex: 'rain3Days',
+      key: 'rain3days',
+      width: 120,
+      render: (value: number) => (
+        <Tooltip title="Tổng mưa 3 ngày - Nguy cơ ngập úng">
+          <span
+            style={{
+              fontWeight: value >= 100 ? 'bold' : 'normal',
+              color: value >= 100 ? '#ff4d4f' : 'inherit',
+            }}
+          >
+            {value.toFixed(1)} mm
+          </span>
+        </Tooltip>
+      ),
+    },
+  ];
+
+  // Risk columns (common for both)
+  const riskColumns: ColumnsType<any> = [
     {
       title: 'Điểm nguy cơ',
       dataIndex: 'riskScore',
@@ -125,6 +186,12 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({ data, loading = 
         <Tag color={getRiskColor(level)}>{level}</Tag>
       ),
     },
+  ];
+
+  const columns = [
+    ...commonColumns,
+    ...(isRiceBlast ? riceBlastColumns : bacterialBlightColumns),
+    ...riskColumns,
   ];
 
   return (

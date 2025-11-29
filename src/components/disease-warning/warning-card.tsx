@@ -7,12 +7,13 @@ import {
   CalendarOutlined 
 } from '@ant-design/icons';
 import { RiceBlastWarning, RiskLevel } from '@/models/rice-blast';
+import { BacterialBlightWarning } from '@/queries/bacterial-blight';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 
 interface WarningCardProps {
-  warning: RiceBlastWarning;
+  warning: RiceBlastWarning | BacterialBlightWarning;
   loading?: boolean;
 }
 
@@ -47,8 +48,8 @@ const getRiskIcon = (riskLevel: RiskLevel) => {
  * Component hiển thị cảnh báo bệnh đạo ôn
  */
 export const WarningCard: React.FC<WarningCardProps> = ({ warning, loading = false }) => {
-  const riskColor = getRiskColor(warning.risk_level);
-  const riskIcon = getRiskIcon(warning.risk_level);
+  const riskColor = getRiskColor(warning.risk_level as RiskLevel);
+  const riskIcon = getRiskIcon(warning.risk_level as RiskLevel);
 
   return (
     <Card
