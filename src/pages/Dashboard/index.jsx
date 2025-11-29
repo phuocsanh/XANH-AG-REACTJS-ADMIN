@@ -28,6 +28,7 @@ import { FaImage } from "react-icons/fa"
 import { IoMdClose } from "react-icons/io"
 
 import { MyContext } from "../../App"
+import { useAppStore } from "../../stores"
 
 const label = { inputProps: { "aria-label": "Checkbox demo" } }
 
@@ -102,6 +103,8 @@ export const Dashboard = () => {
   const [subCategoryVal, setSubCategoryVal] = useState("")
   const [isFeatured, setIsFeatured] = useState("None")
   const context = useContext(MyContext)
+  const userInfo = useAppStore((state) => state.userInfo)
+  const isLogin = useAppStore((state) => state.isLogin)
 
   const handleChange = (event) => {
     setPerPage(event.target.value)
@@ -118,6 +121,16 @@ export const Dashboard = () => {
   useEffect(() => {
     window.scrollTo(0, 0)
     context.setIsHeaderFooterShow(false)
+    
+    // Debug: Log user info on Dashboard load
+    console.log('=== DASHBOARD DEBUG ===');
+    console.log('Is Login:', isLogin);
+    console.log('User Info:', userInfo);
+    console.log('User Role:', userInfo?.role);
+    console.log('Role Code:', userInfo?.role?.code);
+    console.log('Is SUPER_ADMIN?', userInfo?.role?.code === 'SUPER_ADMIN');
+    console.log('Permissions:', userInfo?.role?.permissions);
+    console.log('=======================');
   }, [])
 
   const toggleDrawer = (newOpen) => {

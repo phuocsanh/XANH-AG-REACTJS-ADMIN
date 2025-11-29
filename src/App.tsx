@@ -18,7 +18,7 @@ import ListCategory from "./pages/categories/list-category"
 import ListSubCategory from "./pages/sub-categories/list-sub-category"
 import { SignIn } from "./pages/sign-in"
 import NotFound from "./pages/not-found"
-import { ProtectedRoute } from "./components/protected-route"
+import ProtectedRoute from "./components/ProtectedRoute"
 import {
   InventoryReceiptsList,
   InventoryReceiptDetail,
@@ -178,7 +178,7 @@ function App() {
                     <Route
                       path='/products/list'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_VIEW">
                           <ProductsList />
                         </ProtectedRoute>
                       }
@@ -186,7 +186,7 @@ function App() {
                     <Route
                       path='/product/:id?'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
                           <Products />
                         </ProtectedRoute>
                       }
@@ -194,7 +194,7 @@ function App() {
                     <Route
                       path='/category/list'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
                           <ListCategory />
                         </ProtectedRoute>
                       }
@@ -202,7 +202,7 @@ function App() {
                     <Route
                       path='/sub-category/list'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
                           <ListSubCategory />
                         </ProtectedRoute>
                       }
@@ -210,7 +210,7 @@ function App() {
                     <Route
                       path='/users'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="USER_VIEW">
                           <Users />
                         </ProtectedRoute>
                       }
@@ -218,7 +218,7 @@ function App() {
                     <Route
                       path='/products/*'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_VIEW">
                           <Products />
                         </ProtectedRoute>
                       }
@@ -226,7 +226,7 @@ function App() {
                     <Route
                       path='/units'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
                           <ListUnits />
                         </ProtectedRoute>
                       }
@@ -235,7 +235,7 @@ function App() {
                     <Route
                       path='/symbols'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
                           <ListSymbols />
                         </ProtectedRoute>
                       }
@@ -244,7 +244,7 @@ function App() {
                     <Route
                       path='/suppliers'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
                           <Suppliers />
                         </ProtectedRoute>
                       }
@@ -284,7 +284,7 @@ function App() {
                     <Route
                       path='/rice-blast-warning'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="RICE_BLAST_VIEW">
                           <RiceBlastWarningPage />
                         </ProtectedRoute>
                       }
@@ -294,7 +294,7 @@ function App() {
                     <Route
                       path='/inventory/receipts'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="INVENTORY_VIEW">
                           <InventoryReceiptsList />
                         </ProtectedRoute>
                       }
@@ -302,7 +302,7 @@ function App() {
                     <Route
                       path='/inventory/receipts/create'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
                           <InventoryReceiptCreate />
                         </ProtectedRoute>
                       }
@@ -310,7 +310,7 @@ function App() {
                     <Route
                       path='/inventory/receipt/:id'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="INVENTORY_VIEW">
                           <InventoryReceiptDetail />
                         </ProtectedRoute>
                       }
@@ -320,7 +320,7 @@ function App() {
                     <Route
                       path='/seasons'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_MANAGE">
                           <Seasons />
                         </ProtectedRoute>
                       }
@@ -328,7 +328,7 @@ function App() {
                     <Route
                       path='/customers'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_VIEW">
                           <Customers />
                         </ProtectedRoute>
                       }
@@ -336,7 +336,7 @@ function App() {
                     <Route
                       path='/sales-invoices'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_VIEW">
                           <SalesInvoicesList />
                         </ProtectedRoute>
                       }
@@ -344,7 +344,7 @@ function App() {
                     <Route
                       path='/sales-invoices/create'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_CREATE">
                           <CreateSalesInvoice />
                         </ProtectedRoute>
                       }
@@ -352,7 +352,7 @@ function App() {
                     <Route
                       path='/payments'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_VIEW">
                           <PaymentsList />
                         </ProtectedRoute>
                       }
@@ -360,7 +360,7 @@ function App() {
                     <Route
                       path='/debt-notes'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_VIEW">
                           <DebtNotesList />
                         </ProtectedRoute>
                       }
@@ -368,7 +368,7 @@ function App() {
                     <Route
                       path='/sales-returns'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_VIEW">
                           <SalesReturnsList />
                         </ProtectedRoute>
                       }
@@ -376,7 +376,7 @@ function App() {
                     <Route
                       path='/sales-returns/create'
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredPermission="SALES_MANAGE">
                           <CreateSalesReturn />
                         </ProtectedRoute>
                       }

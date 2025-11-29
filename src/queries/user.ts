@@ -1,145 +1,125 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { toast } from "react-toastify"
-import api from "@/utils/api"
-import { queryClient } from "@/provider/app-provider-tanstack"
-import {
-  User,
-  CreateUserDto,
-  UpdateUserDto,
-  ChangePasswordDto,
-} from "@/models/user.model"
-import { handleApiError } from "@/utils/error-handler"
-import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { useQuery, useMutation } from "@tanstack/react-query";
+import api from "@/utils/api";
+import { queryClient } from "@/provider/app-provider-tanstack";
+import { toast } from "react-toastify";
+import { handleApiError } from "@/utils/error-handler";
+import { UserResponse } from "@/models/auth.model";
 
-// Query keys cho user
 export const userKeys = {
-  all: ["users"] as const,
-  lists: () => [...userKeys.all, "list"] as const,
-  list: (filters: string) => [...userKeys.lists(), { filters }] as const,
-  details: () => [...userKeys.all, "detail"] as const,
-  detail: (id: number) => [...userKeys.details(), id] as const,
-  profile: () => [...userKeys.all, "profile"] as const,
+  all: () => ["users"] as const,
+  pending: () => ["users", "pending"] as const,
+} as const;
+
+export interface CreateUserByAdminDto {
+  account: string;
+  password: string;
+  nickname: string;
+  role_id: number;
+  email?: string;
+  mobile?: string;
+  [key: string]: any; // Index signature for compatibility
 }
 
-/**
- * Hook lấy danh sách tất cả người dùng
- */
-export const useUsersQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<User>("/users", params)
-}
-
-/**
- * Hook lấy thông tin chi tiết một người dùng
- */
-export const useUserQuery = (id: number) => {
+export const usePendingUsersQuery = () => {
   return useQuery({
-    queryKey: userKeys.detail(id),
+    queryKey: userKeys.pending(),
     queryFn: async () => {
-      const response = await api.get<User>(`/users/${id}`)
-      return response
+      const response = await api.get<UserResponse[]>("/users/admin/pending");
+      return response;
     },
-    enabled: !!id,
-  })
-}
+  });
+};
 
-/**
- * Hook lấy thông tin profile người dùng hiện tại
- */
-export const useProfileQuery = () => {
+export const useAllUsersQuery = () => {
   return useQuery({
-    queryKey: userKeys.profile(),
+    queryKey: userKeys.all(),
     queryFn: async () => {
-      const response = await api.get<User>("/users/profile")
-      return response
+      const response = await api.get<UserResponse[]>("/users");
+      return response;
     },
-  })
-}
+  });
+};
 
-/**
- * Hook tạo người dùng mới
- */
-export const useCreateUserMutation = () => {
+export const useApproveUserMutation = () => {
   return useMutation({
-    mutationFn: async (userData: CreateUserDto) => {
-      const response = await api.postRaw<User>("/users", userData)
-      return response
+    mutationFn: async (userId: number) => {
+      const response = await api.postRaw("/users/admin/approve", { user_id: userId });
+      return response;
     },
     onSuccess: () => {
-      // Invalidate và refetch danh sách users
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() })
-      toast.success("Tạo người dùng thành công!")
+      queryClient.invalidateQueries({ queryKey: userKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: userKeys.all() });
+      toast.success("Duyệt người dùng thành công!");
     },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi tạo người dùng")
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi duyệt người dùng");
     },
-  })
-}
+  });
+};
 
-/**
- * Hook cập nhật thông tin người dùng
- */
-export const useUpdateUserMutation = () => {
+export const useCreateUserByAdminMutation = () => {
   return useMutation({
-    mutationFn: async ({
-      id,
-      userData,
-    }: {
-      id: number
-      userData: UpdateUserDto
-    }) => {
-      const response = await api.putRaw<User>(`/users/${id}`, userData)
-      return response
+    mutationFn: async (data: CreateUserByAdminDto) => {
+      const response = await api.postRaw("/users/admin/create", data);
+      return response;
     },
-    onSuccess: (data, variables) => {
-      // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) })
-      queryClient.invalidateQueries({ queryKey: userKeys.profile() })
-      toast.success("Cập nhật thông tin người dùng thành công!")
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all() });
+      toast.success("Tạo tài khoản thành công!");
     },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi cập nhật thông tin người dùng")
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi tạo tài khoản");
     },
-  })
-}
+  });
+};
 
-/**
- * Hook xóa người dùng
- */
+export const useActivateUserMutation = () => {
+  return useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await api.postRaw(`/users/${userId}/activate`, {});
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: userKeys.all() });
+      toast.success("Kích hoạt tài khoản thành công!");
+    },
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi kích hoạt tài khoản");
+    },
+  });
+};
+
+export const useDeactivateUserMutation = () => {
+  return useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await api.postRaw(`/users/${userId}/deactivate`, {});
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: userKeys.all() });
+      toast.success("Vô hiệu hóa tài khoản thành công!");
+    },
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi vô hiệu hóa tài khoản");
+    },
+  });
+};
+
 export const useDeleteUserMutation = () => {
   return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await api.delete<{ message: string }>(`/users/${id}`)
-      return response
+    mutationFn: async (userId: number) => {
+      const response = await api.delete(`/users/${userId}`);
+      return response;
     },
     onSuccess: () => {
-      // Invalidate danh sách users
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() })
-      toast.success("Xóa người dùng thành công!")
+      queryClient.invalidateQueries({ queryKey: userKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: userKeys.all() });
+      toast.success("Xóa tài khoản thành công!");
     },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi xóa người dùng")
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi xóa tài khoản");
     },
-  })
-}
-
-/**
- * Hook thay đổi mật khẩu
- */
-export const useChangePasswordMutation = () => {
-  return useMutation({
-    mutationFn: async (changePasswordData: ChangePasswordDto) => {
-      const response = await api.patchRaw<{
-        success: boolean
-        message: string
-      }>("/users/change-password", changePasswordData)
-      return response
-    },
-    onSuccess: () => {
-      toast.success("Đổi mật khẩu thành công!")
-    },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi đổi mật khẩu")
-    },
-  })
-}
+  });
+};

@@ -21,7 +21,7 @@ export const useLocationQuery = () => {
   return useQuery({
     queryKey: riceBlastKeys.location(),
     queryFn: async () => {
-      const response = await api.get<Location>("/api/location")
+      const response = await api.get<Location>("/ai-rice-blast/location")
       return response
     },
   })
@@ -34,7 +34,7 @@ export const useLocationQuery = () => {
 export const useUpdateLocationMutation = () => {
   return useMutation({
     mutationFn: async (location: UpdateLocationDto) => {
-      const response = await api.postRaw<Location>("/api/location", location as any)
+      const response = await api.postRaw<Location>("/ai-rice-blast/location", location as any)
       return response
     },
     onSuccess: () => {
@@ -58,7 +58,7 @@ export const useWarningQuery = () => {
   return useQuery({
     queryKey: riceBlastKeys.warning(),
     queryFn: async () => {
-      const response = await api.get<RiceBlastWarning>("/api/warning")
+      const response = await api.get<RiceBlastWarning>("/ai-rice-blast/warning")
       return response
     },
     // Tự động refetch mỗi 5 phút
@@ -73,7 +73,7 @@ export const useWarningQuery = () => {
 export const useRunAnalysisMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.postRaw<RiceBlastWarning>("/api/run-now", {})
+      const response = await api.postRaw<RiceBlastWarning>("/ai-rice-blast/run-now", {})
       return response
     },
     onSuccess: () => {
@@ -85,3 +85,4 @@ export const useRunAnalysisMutation = () => {
     },
   })
 }
+

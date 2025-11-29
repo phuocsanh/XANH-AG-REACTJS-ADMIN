@@ -161,7 +161,11 @@ export const useLoginMutation = () => {
 
       // Kiểm tra nếu user có các trường cần thiết
       // Server trả về userId và userAccount (camelCase) thay vì user_id và user_account (snake_case)
-      if (!("userId" in data.user) || !("userAccount" in data.user)) {
+      // RBAC update: Server might return 'id', 'account', 'role'
+      const userId = data.user.id || data.user.userId
+      const userAccount = data.user.account || data.user.userAccount
+
+      if (!userId || !userAccount) {
         console.error("User is missing required fields:", data.user)
         toast.error("Đăng nhập thất bại: Dữ liệu không hợp lệ")
         return
@@ -171,8 +175,12 @@ export const useLoginMutation = () => {
       setRefreshToken(data.refresh_token)
       // Sử dụng đúng tên trường từ server response
       setUserInfo({
-        user_id: data.user.userId,
-        user_account: data.user.userAccount,
+        user_id: userId,
+        user_account: userAccount,
+        id: userId,
+        account: userAccount,
+        nickname: data.user.nickname,
+        role: data.user.role,
       } as UserResponse)
       setIsLogin(true)
 

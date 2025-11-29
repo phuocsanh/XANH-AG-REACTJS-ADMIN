@@ -84,10 +84,28 @@ export interface TokenResponse {
   user_id: number
 }
 
+export interface Permission {
+  code: string
+  name?: string
+}
+
+export interface Role {
+  id: number
+  code: string
+  name: string
+  permissions: Permission[]
+}
+
 // Response user từ server NestJS
 export interface UserResponse {
-  user_id: number
-  user_account: string
+  user_id: number // Keep for backward compatibility if needed, or map 'id' to this
+  user_account: string // Keep for backward compatibility
+  id?: number // New field from RBAC spec
+  account?: string // New field from RBAC spec
+  nickname?: string
+  role?: Role
+  status?: string // PENDING, ACTIVE, INACTIVE
+  created_at?: string
 }
 
 // Response từ API login thành công từ server NestJS
