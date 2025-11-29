@@ -61,7 +61,16 @@ export const DiseaseWarningPage: React.FC = () => {
 
   // Handlers
   const handleUpdateLocation = (values: UpdateLocationDto) => {
-    updateLocationMutation.mutate(values);
+    updateLocationMutation.mutate(values, {
+      onSuccess: () => {
+        // Tự động chạy phân tích cho cả 3 loại sau khi cập nhật vị trí
+        setTimeout(() => {
+          runRiceBlastMutation.mutate();
+          runBacterialBlightMutation.mutate();
+          runPestMutation.mutate();
+        }, 500); // Delay nhỏ để đảm bảo location đã được cập nhật
+      }
+    });
   };
 
   const handleRunRiceBlastAnalysis = () => {
