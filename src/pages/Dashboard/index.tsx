@@ -357,7 +357,7 @@ export const Dashboard = () => {
                       {warning.name}
                     </Typography>
                     <Typography variant="caption">
-                      Mức độ: {warning.data.risk_level} ({(warning.data as any).probability || 0}%)
+                      Mức độ: {warning.data.risk_level}
                     </Typography>
                   </Alert>
                 </Grid>

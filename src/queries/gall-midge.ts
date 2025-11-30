@@ -26,6 +26,7 @@ export interface GallMidgeWarning {
   generated_at: string
   risk_level: string // Enum: AN TOÀN | TRUNG BÌNH | CAO | ĐANG CHỜ CẬP NHẬT
   message: string
+  peak_days: string | null
   daily_data: GallMidgeDailyData[]
   updated_at: string
 }

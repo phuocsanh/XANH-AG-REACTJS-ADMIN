@@ -43,7 +43,6 @@ export interface RiceBlastWarning {
   id: number; // Luôn = 1
   generated_at: string; // ISO timestamp
   risk_level: RiskLevel; // Mức độ nguy cơ
-  probability: number; // Xác suất nhiễm bệnh (0-100%)
   message: string; // Tin nhắn cảnh báo chi tiết
   peak_days: string | null; // Ngày cao điểm (VD: "30/11 – 02/12")
   daily_data: DailyRiskData[]; // Dữ liệu chi tiết 7 ngày

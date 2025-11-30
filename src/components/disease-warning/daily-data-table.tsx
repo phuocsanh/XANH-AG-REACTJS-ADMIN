@@ -5,9 +5,9 @@ import { DailyRiskData, RiskLevel } from '@/models/rice-blast';
 import { BacterialBlightDailyData } from '@/queries/bacterial-blight';
 
 interface DailyDataTableProps {
-  data: DailyRiskData[] | BacterialBlightDailyData[];
+  data: any[];
   loading?: boolean;
-  diseaseType?: 'rice-blast' | 'bacterial-blight';
+  diseaseType?: 'rice-blast' | 'bacterial-blight' | 'stem-borer' | 'gall-midge' | 'brown-plant-hopper' | 'sheath-blight' | 'grain-discoloration';
 }
 
 /**
@@ -33,7 +33,6 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
   loading = false,
   diseaseType = 'rice-blast'
 }) => {
-  const isRiceBlast = diseaseType === 'rice-blast';
   
   // Common columns
   const commonColumns: ColumnsType<any> = [
@@ -56,11 +55,15 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
       render: (_, record: any) => (
         <div>
           <div style={{ fontSize: 12 }}>
-            {record.tempMin.toFixed(1)} - {record.tempMax.toFixed(1)}
+            {record.tempMin !== undefined && record.tempMax !== undefined 
+              ? `${record.tempMin.toFixed(1)} - ${record.tempMax.toFixed(1)}`
+              : `TB: ${record.tempAvg?.toFixed(1)}`}
           </div>
-          <div style={{ fontSize: 12, color: '#888' }}>
-            TB: {record.tempAvg.toFixed(1)}
-          </div>
+          {record.tempMin !== undefined && (
+            <div style={{ fontSize: 12, color: '#888' }}>
+              TB: {record.tempAvg?.toFixed(1)}
+            </div>
+          )}
         </div>
       ),
     },
@@ -69,95 +72,154 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
       dataIndex: 'humidityAvg',
       key: 'humidity',
       width: 100,
-      render: (value: number) => `${value.toFixed(1)}%`,
+      render: (value: number) => value ? `${value.toFixed(1)}%` : '-',
     },
   ];
 
-  // Rice Blast specific columns
-  const riceBlastColumns: ColumnsType<DailyRiskData> = [
-    {
-      title: 'Lá ướt (giờ)',
-      dataIndex: 'lwdHours',
-      key: 'lwd',
-      width: 120,
-      render: (hours: number) => (
-        <Tooltip title="Số giờ lá ướt - Chỉ số quan trọng nhất">
-          <span
-            style={{
-              fontWeight: hours >= 14 ? 'bold' : 'normal',
-              color: hours >= 14 ? '#ff4d4f' : 'inherit',
-            }}
-          >
-            {hours} giờ
-          </span>
-        </Tooltip>
-      ),
-    },
-    {
-      title: 'Mưa',
-      key: 'rain',
-      width: 120,
-      render: (_, record: DailyRiskData) => (
-        <div>
-          <div style={{ fontSize: 12 }}>{record.rainTotal.toFixed(1)} mm</div>
-          <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Sương mù',
-      dataIndex: 'fogHours',
-      key: 'fog',
-      width: 100,
-      render: (hours: number) => `${hours} giờ`,
-    },
-  ];
+  // Specific columns based on disease type
+  const getSpecificColumns = (): ColumnsType<any> => {
+    switch (diseaseType) {
+      case 'rice-blast':
+        return [
+          {
+            title: 'Lá ướt (giờ)',
+            dataIndex: 'lwdHours',
+            key: 'lwd',
+            width: 120,
+            render: (hours: number) => (
+              <Tooltip title="Số giờ lá ướt - Chỉ số quan trọng nhất">
+                <span style={{ fontWeight: hours >= 14 ? 'bold' : 'normal', color: hours >= 14 ? '#ff4d4f' : 'inherit' }}>
+                  {hours} giờ
+                </span>
+              </Tooltip>
+            ),
+          },
+          {
+            title: 'Mưa',
+            key: 'rain',
+            width: 120,
+            render: (_, record: any) => (
+              <div>
+                <div style={{ fontSize: 12 }}>{record.rainTotal?.toFixed(1)} mm</div>
+                <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
+              </div>
+            ),
+          },
+          {
+            title: 'Sương mù',
+            dataIndex: 'fogHours',
+            key: 'fog',
+            width: 100,
+            render: (hours: number) => `${hours} giờ`,
+          },
+        ];
+      
+      case 'bacterial-blight':
+        return [
+          {
+            title: 'Mưa',
+            key: 'rain',
+            width: 120,
+            render: (_, record: any) => (
+              <div>
+                <div style={{ fontSize: 12 }}>{record.rainTotal?.toFixed(1)} mm</div>
+                <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
+              </div>
+            ),
+          },
+          {
+            title: 'Gió (km/h)',
+            key: 'wind',
+            width: 120,
+            render: (_, record: any) => (
+              <div>
+                <div style={{ fontSize: 12 }}>Max: {record.windSpeedMax?.toFixed(1)}</div>
+                <div style={{ fontSize: 12, color: '#888' }}>TB: {record.windSpeedAvg?.toFixed(1)}</div>
+              </div>
+            ),
+          },
+          {
+            title: 'Mưa 3 ngày',
+            dataIndex: 'rain3Days',
+            key: 'rain3days',
+            width: 120,
+            render: (value: number) => (
+              <Tooltip title="Tổng mưa 3 ngày - Nguy cơ ngập úng">
+                <span style={{ fontWeight: value >= 100 ? 'bold' : 'normal', color: value >= 100 ? '#ff4d4f' : 'inherit' }}>
+                  {value?.toFixed(1)} mm
+                </span>
+              </Tooltip>
+            ),
+          },
+        ];
 
-  // Bacterial Blight specific columns
-  const bacterialBlightColumns: ColumnsType<BacterialBlightDailyData> = [
-    {
-      title: 'Mưa',
-      key: 'rain',
-      width: 120,
-      render: (_, record: BacterialBlightDailyData) => (
-        <div>
-          <div style={{ fontSize: 12 }}>{record.rainTotal.toFixed(1)} mm</div>
-          <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Gió (km/h)',
-      key: 'wind',
-      width: 120,
-      render: (_, record: BacterialBlightDailyData) => (
-        <div>
-          <div style={{ fontSize: 12 }}>Max: {record.windSpeedMax.toFixed(1)}</div>
-          <div style={{ fontSize: 12, color: '#888' }}>TB: {record.windSpeedAvg.toFixed(1)}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Mưa 3 ngày',
-      dataIndex: 'rain3Days',
-      key: 'rain3days',
-      width: 120,
-      render: (value: number) => (
-        <Tooltip title="Tổng mưa 3 ngày - Nguy cơ ngập úng">
-          <span
-            style={{
-              fontWeight: value >= 100 ? 'bold' : 'normal',
-              color: value >= 100 ? '#ff4d4f' : 'inherit',
-            }}
-          >
-            {value.toFixed(1)} mm
-          </span>
-        </Tooltip>
-      ),
-    },
-  ];
+      case 'stem-borer':
+        return [
+          {
+            title: 'Nắng (giờ)',
+            dataIndex: 'sunHours',
+            key: 'sun',
+            width: 100,
+            render: (hours: number) => `${hours} giờ`,
+          },
+        ];
 
-  // Risk columns (common for both)
+      case 'gall-midge':
+        return [
+          {
+            title: 'Mây che phủ (%)',
+            dataIndex: 'cloudAvg',
+            key: 'cloud',
+            width: 120,
+            render: (value: number) => `${value}%`,
+          },
+        ];
+
+      case 'brown-plant-hopper':
+        return [
+          {
+            title: 'Gió TB (km/h)',
+            dataIndex: 'windSpeedAvg',
+            key: 'wind',
+            width: 120,
+            render: (value: number) => `${value} km/h`,
+          },
+          {
+            title: 'Mưa (mm)',
+            dataIndex: 'rainTotal',
+            key: 'rain',
+            width: 100,
+            render: (value: number) => `${value} mm`,
+          },
+        ];
+
+      case 'sheath-blight':
+        return []; // Chỉ cần nhiệt độ và độ ẩm (đã có trong common columns)
+
+      case 'grain-discoloration':
+        return [
+          {
+            title: 'Mưa (mm)',
+            dataIndex: 'rainTotal',
+            key: 'rain',
+            width: 100,
+            render: (value: number) => `${value} mm`,
+          },
+          {
+            title: 'Gió TB (km/h)',
+            dataIndex: 'windSpeedAvg',
+            key: 'wind',
+            width: 120,
+            render: (value: number) => `${value} km/h`,
+          },
+        ];
+
+      default:
+        return [];
+    }
+  };
+
+  // Risk columns (common for all)
   const riskColumns: ColumnsType<any> = [
     {
       title: 'Điểm nguy cơ',
@@ -190,7 +252,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
 
   const columns = [
     ...commonColumns,
-    ...(isRiceBlast ? riceBlastColumns : bacterialBlightColumns),
+    ...getSpecificColumns(),
     ...riskColumns,
   ];
 

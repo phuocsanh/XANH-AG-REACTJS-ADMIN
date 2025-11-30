@@ -944,7 +944,7 @@ ${productInfo}`;
             <div class="disease-warning-item">
               <div class="disease-title">
                 <span class="risk-badge risk-${w.data?.risk_level}">${w.data?.risk_level === 'CAO' ? 'CAO' : 'TRUNG BÌNH'}</span>
-                ${w.name} (${(w.data as any)?.probability || 0}%)
+                ${w.name}
               </div>
               <div class="disease-content">
                 ${messageHtml.replace(/\n/g, '<br>')}
@@ -1831,7 +1831,7 @@ ${productInfo}`;
                   <Box sx={{ pt: 2 }}>
                     {riceBlastWarning ? (
                       <>
-                        <WarningCard warning={riceBlastWarning} loading={runRiceBlastMutation.isPending} />
+                        <WarningCard warning={riceBlastWarning} title="Bệnh Đạo Ôn" loading={runRiceBlastMutation.isPending} />
                         {riceBlastWarning.daily_data && riceBlastWarning.daily_data.length > 0 && (
                           <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
                             <DailyDataTable 
@@ -1854,7 +1854,7 @@ ${productInfo}`;
                   <Box sx={{ pt: 2 }}>
                     {bacterialBlightWarning ? (
                       <>
-                        <WarningCard warning={bacterialBlightWarning} loading={runBacterialBlightMutation.isPending} />
+                        <WarningCard warning={bacterialBlightWarning} title="Bệnh Cháy Bìa Lá" loading={runBacterialBlightMutation.isPending} />
                         {bacterialBlightWarning.daily_data && bacterialBlightWarning.daily_data.length > 0 && (
                           <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
                             <DailyDataTable 
@@ -1877,12 +1877,23 @@ ${productInfo}`;
                 <TabPane tab="🐛 Sâu Đục Thân" key="stem-borer">
                   <Box sx={{ pt: 2 }}>
                     {stemBorerWarning ? (
-                      <DiseaseWarningCard 
-                        warning={stemBorerWarning} 
-                        loading={runStemBorerMutation.isPending}
-                        title="SÂU ĐỤC THÂN"
-                        borderColor="#fa8c16"
-                      />
+                      <>
+                        <DiseaseWarningCard 
+                          warning={stemBorerWarning} 
+                          loading={runStemBorerMutation.isPending}
+                          title="SÂU ĐỤC THÂN"
+                          borderColor="#fa8c16"
+                        />
+                        {stemBorerWarning.daily_data && stemBorerWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={stemBorerWarning.daily_data} 
+                              loading={runStemBorerMutation.isPending}
+                              diseaseType="stem-borer"
+                            />
+                          </AntCard>
+                        )}
+                      </>
                     ) : (
                       <Alert severity="warning">
                         Chưa có dữ liệu cảnh báo Sâu Đục Thân. Vui lòng cập nhật vị trí ruộng lúa.
@@ -1895,12 +1906,23 @@ ${productInfo}`;
                 <TabPane tab="🦟 Muỗi Hành" key="gall-midge">
                   <Box sx={{ pt: 2 }}>
                     {gallMidgeWarning ? (
-                      <DiseaseWarningCard 
-                        warning={gallMidgeWarning} 
-                        loading={runGallMidgeMutation.isPending}
-                        title="MUỖI HÀNH"
-                        borderColor="#722ed1"
-                      />
+                      <>
+                        <DiseaseWarningCard 
+                          warning={gallMidgeWarning} 
+                          loading={runGallMidgeMutation.isPending}
+                          title="MUỖI HÀNH"
+                          borderColor="#722ed1"
+                        />
+                        {gallMidgeWarning.daily_data && gallMidgeWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={gallMidgeWarning.daily_data} 
+                              loading={runGallMidgeMutation.isPending}
+                              diseaseType="gall-midge"
+                            />
+                          </AntCard>
+                        )}
+                      </>
                     ) : (
                       <Alert severity="warning">
                         Chưa có dữ liệu cảnh báo Muỗi Hành. Vui lòng cập nhật vị trí ruộng lúa.
@@ -1913,12 +1935,23 @@ ${productInfo}`;
                 <TabPane tab="🦗 Rầy Nâu" key="brown-plant-hopper">
                   <Box sx={{ pt: 2 }}>
                     {brownPlantHopperWarning ? (
-                      <DiseaseWarningCard 
-                        warning={brownPlantHopperWarning} 
-                        loading={runBrownPlantHopperMutation.isPending}
-                        title="RẦY NÂU"
-                        borderColor="#13c2c2"
-                      />
+                      <>
+                        <DiseaseWarningCard 
+                          warning={brownPlantHopperWarning} 
+                          loading={runBrownPlantHopperMutation.isPending}
+                          title="RẦY NÂU"
+                          borderColor="#13c2c2"
+                        />
+                        {brownPlantHopperWarning.daily_data && brownPlantHopperWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={brownPlantHopperWarning.daily_data} 
+                              loading={runBrownPlantHopperMutation.isPending}
+                              diseaseType="brown-plant-hopper"
+                            />
+                          </AntCard>
+                        )}
+                      </>
                     ) : (
                       <Alert severity="warning">
                         Chưa có dữ liệu cảnh báo Rầy Nâu. Vui lòng cập nhật vị trí ruộng lúa.
@@ -1931,12 +1964,23 @@ ${productInfo}`;
                 <TabPane tab="🍂 Bệnh Khô Vằn" key="sheath-blight">
                   <Box sx={{ pt: 2 }}>
                     {sheathBlightWarning ? (
-                      <DiseaseWarningCard 
-                        warning={sheathBlightWarning} 
-                        loading={runSheathBlightMutation.isPending}
-                        title="BỆNH KHÔ VẰN"
-                        borderColor="#eb2f96"
-                      />
+                      <>
+                        <DiseaseWarningCard 
+                          warning={sheathBlightWarning} 
+                          loading={runSheathBlightMutation.isPending}
+                          title="BỆNH KHÔ VẰN"
+                          borderColor="#eb2f96"
+                        />
+                        {sheathBlightWarning.daily_data && sheathBlightWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={sheathBlightWarning.daily_data} 
+                              loading={runSheathBlightMutation.isPending}
+                              diseaseType="sheath-blight"
+                            />
+                          </AntCard>
+                        )}
+                      </>
                     ) : (
                       <Alert severity="warning">
                         Chưa có dữ liệu cảnh báo Bệnh Khô Vằn. Vui lòng cập nhật vị trí ruộng lúa.
@@ -1949,12 +1993,23 @@ ${productInfo}`;
                 <TabPane tab="🌾 Bệnh Lem Lép Hạt" key="grain-discoloration">
                   <Box sx={{ pt: 2 }}>
                     {grainDiscolorationWarning ? (
-                      <DiseaseWarningCard 
-                        warning={grainDiscolorationWarning} 
-                        loading={runGrainDiscolorationMutation.isPending}
-                        title="BỆNH LEM LÉP HẠT"
-                        borderColor="#a0d911"
-                      />
+                      <>
+                        <DiseaseWarningCard 
+                          warning={grainDiscolorationWarning} 
+                          loading={runGrainDiscolorationMutation.isPending}
+                          title="BỆNH LEM LÉP HẠT"
+                          borderColor="#a0d911"
+                        />
+                        {grainDiscolorationWarning.daily_data && grainDiscolorationWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={grainDiscolorationWarning.daily_data} 
+                              loading={runGrainDiscolorationMutation.isPending}
+                              diseaseType="grain-discoloration"
+                            />
+                          </AntCard>
+                        )}
+                      </>
                     ) : (
                       <Alert severity="warning">
                         Chưa có dữ liệu cảnh báo Bệnh Lem Lép Hạt. Vui lòng cập nhật vị trí ruộng lúa.

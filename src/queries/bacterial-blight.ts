@@ -32,7 +32,6 @@ export interface BacterialBlightWarning {
   id: number
   generated_at: string
   risk_level: string
-  probability: number
   message: string
   peak_days: string
   daily_data: BacterialBlightDailyData[]

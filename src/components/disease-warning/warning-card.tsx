@@ -14,6 +14,7 @@ const { Title, Text, Paragraph } = Typography;
 
 interface WarningCardProps {
   warning: RiceBlastWarning | BacterialBlightWarning;
+  title: string; // Tên bệnh/sâu hại
   loading?: boolean;
 }
 
@@ -47,7 +48,7 @@ const getRiskIcon = (riskLevel: RiskLevel) => {
 /**
  * Component hiển thị cảnh báo bệnh đạo ôn
  */
-export const WarningCard: React.FC<WarningCardProps> = ({ warning, loading = false }) => {
+export const WarningCard: React.FC<WarningCardProps> = ({ warning, title, loading = false }) => {
   const riskColor = getRiskColor(warning.risk_level as RiskLevel);
   const riskIcon = getRiskIcon(warning.risk_level as RiskLevel);
 
@@ -62,17 +63,26 @@ export const WarningCard: React.FC<WarningCardProps> = ({ warning, loading = fal
       {/* Header */}
       <Space direction="vertical" size="small" style={{ width: '100%' }}>
         <Space size="middle" style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space size="middle">
+          <Space size="small">
             <Tag
               icon={riskIcon}
               color={riskColor}
-              style={{ fontSize: 16, padding: '4px 12px' }}
+              style={{ fontSize: 14, padding: '4px 12px', fontWeight: 'bold' }}
+            >
+              {title.toUpperCase()}
+            </Tag>
+            <Tag
+              style={{ 
+                fontSize: 13, 
+                padding: '2px 10px',
+                backgroundColor: riskColor,
+                color: '#fff',
+                border: 'none',
+                fontWeight: 'bold'
+              }}
             >
               {warning.risk_level}
             </Tag>
-            <Text strong style={{ fontSize: 18 }}>
-              {warning.probability}%
-            </Text>
           </Space>
           
           {warning.peak_days && (

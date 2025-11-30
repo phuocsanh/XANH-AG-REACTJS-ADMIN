@@ -25,6 +25,7 @@ export interface SheathBlightWarning {
   generated_at: string
   risk_level: string // Enum: AN TOÀN | TRUNG BÌNH | CAO | ĐANG CHỜ CẬP NHẬT
   message: string
+  peak_days: string | null
   daily_data: SheathBlightDailyData[]
   updated_at: string
 }

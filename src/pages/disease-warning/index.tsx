@@ -230,7 +230,7 @@ export const DiseaseWarningPage: React.FC = () => {
 
                       {riceBlastWarning ? (
                         <>
-                          <WarningCard warning={riceBlastWarning} loading={runRiceBlastMutation.isPending} />
+                          <WarningCard warning={riceBlastWarning} title="Bệnh Đạo Ôn" loading={runRiceBlastMutation.isPending} />
                           {riceBlastWarning.daily_data && riceBlastWarning.daily_data.length > 0 && (
                             <Card title="📊 Dữ liệu chi tiết 7 ngày">
                               <DailyDataTable 
@@ -269,7 +269,7 @@ export const DiseaseWarningPage: React.FC = () => {
 
                       {bacterialBlightWarning ? (
                         <>
-                          <WarningCard warning={bacterialBlightWarning} loading={runBacterialBlightMutation.isPending} />
+                          <WarningCard warning={bacterialBlightWarning} title="Bệnh Cháy Bìa Lá" loading={runBacterialBlightMutation.isPending} />
                           {bacterialBlightWarning.daily_data && bacterialBlightWarning.daily_data.length > 0 && (
                             <Card title="📊 Dữ liệu chi tiết 7 ngày">
                               <DailyDataTable 
@@ -308,12 +308,23 @@ export const DiseaseWarningPage: React.FC = () => {
                       </div>
 
                       {stemBorerWarning ? (
-                        <DiseaseWarningCard 
-                          warning={stemBorerWarning} 
-                          loading={runStemBorerMutation.isPending}
-                          title="SÂU ĐỤC THÂN"
-                          borderColor="#fa8c16"
-                        />
+                        <>
+                          <DiseaseWarningCard 
+                            warning={stemBorerWarning} 
+                            loading={runStemBorerMutation.isPending}
+                            title="SÂU ĐỤC THÂN"
+                            borderColor="#fa8c16"
+                          />
+                          {stemBorerWarning.daily_data && stemBorerWarning.daily_data.length > 0 && (
+                            <Card title="📊 Dữ liệu chi tiết 7 ngày">
+                              <DailyDataTable 
+                                data={stemBorerWarning.daily_data} 
+                                loading={runStemBorerMutation.isPending}
+                                diseaseType="stem-borer"
+                              />
+                            </Card>
+                          )}
+                        </>
                       ) : (
                         <Alert
                           message="Chưa có dữ liệu cảnh báo Sâu Đục Thân"
@@ -342,12 +353,23 @@ export const DiseaseWarningPage: React.FC = () => {
                       </div>
 
                       {gallMidgeWarning ? (
-                        <DiseaseWarningCard 
-                          warning={gallMidgeWarning} 
-                          loading={runGallMidgeMutation.isPending}
-                          title="MUỖI HÀNH"
-                          borderColor="#722ed1"
-                        />
+                        <>
+                          <DiseaseWarningCard 
+                            warning={gallMidgeWarning} 
+                            loading={runGallMidgeMutation.isPending}
+                            title="MUỖI HÀNH"
+                            borderColor="#722ed1"
+                          />
+                          {gallMidgeWarning.daily_data && gallMidgeWarning.daily_data.length > 0 && (
+                            <Card title="📊 Dữ liệu chi tiết 7 ngày">
+                              <DailyDataTable 
+                                data={gallMidgeWarning.daily_data} 
+                                loading={runGallMidgeMutation.isPending}
+                                diseaseType="gall-midge"
+                              />
+                            </Card>
+                          )}
+                        </>
                       ) : (
                         <Alert
                           message="Chưa có dữ liệu cảnh báo Muỗi Hành"
@@ -376,12 +398,23 @@ export const DiseaseWarningPage: React.FC = () => {
                       </div>
 
                       {brownPlantHopperWarning ? (
-                        <DiseaseWarningCard 
-                          warning={brownPlantHopperWarning} 
-                          loading={runBrownPlantHopperMutation.isPending}
-                          title="RẦY NÂU"
-                          borderColor="#13c2c2"
-                        />
+                        <>
+                          <DiseaseWarningCard 
+                            warning={brownPlantHopperWarning} 
+                            loading={runBrownPlantHopperMutation.isPending}
+                            title="RẦY NÂU"
+                            borderColor="#13c2c2"
+                          />
+                          {brownPlantHopperWarning.daily_data && brownPlantHopperWarning.daily_data.length > 0 && (
+                            <Card title="📊 Dữ liệu chi tiết 7 ngày">
+                              <DailyDataTable 
+                                data={brownPlantHopperWarning.daily_data} 
+                                loading={runBrownPlantHopperMutation.isPending}
+                                diseaseType="brown-plant-hopper"
+                              />
+                            </Card>
+                          )}
+                        </>
                       ) : (
                         <Alert
                           message="Chưa có dữ liệu cảnh báo Rầy Nâu"
@@ -410,12 +443,23 @@ export const DiseaseWarningPage: React.FC = () => {
                       </div>
 
                       {sheathBlightWarning ? (
-                        <DiseaseWarningCard 
-                          warning={sheathBlightWarning} 
-                          loading={runSheathBlightMutation.isPending}
-                          title="BỆNH KHÔ VẰN"
-                          borderColor="#eb2f96"
-                        />
+                        <>
+                          <DiseaseWarningCard 
+                            warning={sheathBlightWarning} 
+                            loading={runSheathBlightMutation.isPending}
+                            title="BỆNH KHÔ VẰN"
+                            borderColor="#eb2f96"
+                          />
+                          {sheathBlightWarning.daily_data && sheathBlightWarning.daily_data.length > 0 && (
+                            <Card title="📊 Dữ liệu chi tiết 7 ngày">
+                              <DailyDataTable 
+                                data={sheathBlightWarning.daily_data} 
+                                loading={runSheathBlightMutation.isPending}
+                                diseaseType="sheath-blight"
+                              />
+                            </Card>
+                          )}
+                        </>
                       ) : (
                         <Alert
                           message="Chưa có dữ liệu cảnh báo Bệnh Khô Vằn"
@@ -444,12 +488,23 @@ export const DiseaseWarningPage: React.FC = () => {
                       </div>
 
                       {grainDiscolorationWarning ? (
-                        <DiseaseWarningCard 
-                          warning={grainDiscolorationWarning} 
-                          loading={runGrainDiscolorationMutation.isPending}
-                          title="BỆNH LEM LÉP HẠT"
-                          borderColor="#a0d911"
-                        />
+                        <>
+                          <DiseaseWarningCard 
+                            warning={grainDiscolorationWarning} 
+                            loading={runGrainDiscolorationMutation.isPending}
+                            title="BỆNH LEM LÉP HẠT"
+                            borderColor="#a0d911"
+                          />
+                          {grainDiscolorationWarning.daily_data && grainDiscolorationWarning.daily_data.length > 0 && (
+                            <Card title="📊 Dữ liệu chi tiết 7 ngày">
+                              <DailyDataTable 
+                                data={grainDiscolorationWarning.daily_data} 
+                                loading={runGrainDiscolorationMutation.isPending}
+                                diseaseType="grain-discoloration"
+                              />
+                            </Card>
+                          )}
+                        </>
                       ) : (
                         <Alert
                           message="Chưa có dữ liệu cảnh báo Bệnh Lem Lép Hạt"

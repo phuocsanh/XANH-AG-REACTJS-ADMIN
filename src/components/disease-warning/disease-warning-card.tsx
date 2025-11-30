@@ -4,6 +4,7 @@ import {
   WarningOutlined, 
   CheckCircleOutlined, 
   ClockCircleOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -17,6 +18,7 @@ export interface GenericWarning {
   generated_at: string;
   risk_level: string;
   message: string;
+  peak_days?: string | null; // Optional - chỉ một số bệnh có
   daily_data?: any[];
   updated_at: string;
 }
@@ -80,28 +82,36 @@ export const DiseaseWarningCard: React.FC<DiseaseWarningCardProps> = ({
       {/* Header */}
       <Space direction="vertical" size="small" style={{ width: '100%' }}>
         <Space size="middle" style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space size="middle">
+          <Space size="small">
             <Tag
               icon={riskIcon}
               color={riskColor}
-              style={{ fontSize: 16, padding: '4px 12px' }}
+              style={{ fontSize: 14, padding: '4px 12px', fontWeight: 'bold' }}
             >
-              {title}
+              {title.toUpperCase()}
             </Tag>
             <Tag
-              color={riskColor}
-              style={{ fontSize: 14, padding: '2px 8px' }}
+              style={{ 
+                fontSize: 13, 
+                padding: '2px 10px',
+                backgroundColor: riskColor,
+                color: '#fff',
+                border: 'none',
+                fontWeight: 'bold'
+              }}
             >
               {warning.risk_level}
             </Tag>
           </Space>
-          
-          <Space>
-            <ClockCircleOutlined />
-            <Text type="secondary">
-              Cập nhật: {dayjs(warning.updated_at).format('DD/MM/YYYY HH:mm')}
-            </Text>
-          </Space>
+
+          {warning.peak_days && (
+            <Space>
+              <CalendarOutlined style={{ color: riskColor }} />
+              <Text type="danger" strong style={{ color: riskColor }}>
+                Ngày cao điểm: {warning.peak_days}
+              </Text>
+            </Space>
+          )}
         </Space>
 
         <Divider style={{ margin: '12px 0' }} />
@@ -118,6 +128,16 @@ export const DiseaseWarningCard: React.FC<DiseaseWarningCardProps> = ({
         >
           {warning.message}
         </Paragraph>
+
+        <Divider style={{ margin: '12px 0' }} />
+
+        {/* Footer */}
+        <Space size="middle">
+          <ClockCircleOutlined />
+          <Text type="secondary">
+            Cập nhật: {dayjs(warning.updated_at).format('DD/MM/YYYY HH:mm')}
+          </Text>
+        </Space>
       </Space>
     </Card>
   );
