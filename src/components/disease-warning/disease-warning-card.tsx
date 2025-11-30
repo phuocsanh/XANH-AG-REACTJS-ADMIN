@@ -1,19 +1,32 @@
 import React from 'react';
-import { Card, Tag, Typography, Space, Divider, Row, Col, Statistic } from 'antd';
+import { Card, Tag, Typography, Space, Divider } from 'antd';
 import { 
   WarningOutlined, 
   CheckCircleOutlined, 
   ClockCircleOutlined,
-  BugOutlined
 } from '@ant-design/icons';
-import { PestWarning } from '@/queries/pest-warning';
 import dayjs from 'dayjs';
 
 const { Text, Paragraph } = Typography;
 
-interface PestWarningCardProps {
-  warning: PestWarning;
+/**
+ * Interface chung cho tất cả các loại cảnh báo
+ */
+export interface GenericWarning {
+  id: number;
+  generated_at: string;
+  risk_level: string;
+  message: string;
+  daily_data?: any[];
+  updated_at: string;
+}
+
+interface DiseaseWarningCardProps {
+  warning: GenericWarning;
   loading?: boolean;
+  title: string; // Tiêu đề của bệnh/sâu hại
+  icon?: React.ReactNode; // Icon tùy chỉnh
+  borderColor?: string; // Màu viền tùy chỉnh
 }
 
 /**
@@ -25,19 +38,42 @@ const getRiskColor = (riskLevel: string): string => {
     'TRUNG BÌNH': '#faad14',
     'THẤP': '#52c41a',
     'AN TOÀN': '#1890ff',
+    'ĐANG CHỜ CẬP NHẬT': '#d9d9d9',
   };
   return colorMap[riskLevel] || '#d9d9d9';
 };
 
 /**
- * Component hiển thị cảnh báo sâu hại
+ * Lấy icon theo mức độ nguy cơ
  */
-export const PestWarningCard: React.FC<PestWarningCardProps> = ({ warning, loading = false }) => {
+const getRiskIcon = (riskLevel: string) => {
+  if (riskLevel === 'AN TOÀN') {
+    return <CheckCircleOutlined />;
+  } else if (riskLevel === 'ĐANG CHỜ CẬP NHẬT') {
+    return <ClockCircleOutlined />;
+  }
+  return <WarningOutlined />;
+};
+
+/**
+ * Component hiển thị cảnh báo bệnh/sâu hại tổng quát
+ * Có thể tái sử dụng cho tất cả các loại cảnh báo
+ */
+export const DiseaseWarningCard: React.FC<DiseaseWarningCardProps> = ({ 
+  warning, 
+  loading = false,
+  title,
+  icon,
+  borderColor
+}) => {
+  const riskColor = borderColor || getRiskColor(warning.risk_level);
+  const riskIcon = icon || getRiskIcon(warning.risk_level);
+
   return (
     <Card
       loading={loading}
       style={{
-        borderLeft: `4px solid #722ed1`, // Màu tím cho sâu hại
+        borderLeft: `4px solid ${riskColor}`,
         marginBottom: 24,
       }}
     >
@@ -46,11 +82,17 @@ export const PestWarningCard: React.FC<PestWarningCardProps> = ({ warning, loadi
         <Space size="middle" style={{ width: '100%', justifyContent: 'space-between' }}>
           <Space size="middle">
             <Tag
-              icon={<BugOutlined />}
-              color="#722ed1"
+              icon={riskIcon}
+              color={riskColor}
               style={{ fontSize: 16, padding: '4px 12px' }}
             >
-              CẢNH BÁO SÂU HẠI
+              {title}
+            </Tag>
+            <Tag
+              color={riskColor}
+              style={{ fontSize: 14, padding: '2px 8px' }}
+            >
+              {warning.risk_level}
             </Tag>
           </Space>
           
@@ -61,32 +103,6 @@ export const PestWarningCard: React.FC<PestWarningCardProps> = ({ warning, loadi
             </Text>
           </Space>
         </Space>
-
-        <Divider style={{ margin: '12px 0' }} />
-
-        {/* Statistics */}
-        <Row gutter={24}>
-          <Col span={12}>
-            <Card size="small" bordered={false} style={{ background: '#fff7e6' }}>
-              <Statistic 
-                title={<Text strong>Sâu Đục Thân</Text>}
-                value={warning.stem_borer_risk} 
-                valueStyle={{ color: getRiskColor(warning.stem_borer_risk), fontWeight: 'bold' }} 
-                prefix={<WarningOutlined />}
-              />
-            </Card>
-          </Col>
-          <Col span={12}>
-            <Card size="small" bordered={false} style={{ background: '#f9f0ff' }}>
-              <Statistic 
-                title={<Text strong>Muỗi Hành</Text>}
-                value={warning.gall_midge_risk} 
-                valueStyle={{ color: getRiskColor(warning.gall_midge_risk), fontWeight: 'bold' }} 
-                prefix={<BugOutlined />}
-              />
-            </Card>
-          </Col>
-        </Row>
 
         <Divider style={{ margin: '12px 0' }} />
 

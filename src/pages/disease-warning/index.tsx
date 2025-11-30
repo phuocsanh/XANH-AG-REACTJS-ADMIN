@@ -27,14 +27,30 @@ import {
   useRunBacterialBlightAnalysisMutation
 } from '@/queries/bacterial-blight';
 import {
-  usePestWarningQuery,
-  useRunPestAnalysisMutation
-} from '@/queries/pest-warning';
+  useStemBorerWarningQuery,
+  useRunStemBorerAnalysisMutation
+} from '@/queries/stem-borer';
+import {
+  useGallMidgeWarningQuery,
+  useRunGallMidgeAnalysisMutation
+} from '@/queries/gall-midge';
+import {
+  useBrownPlantHopperWarningQuery,
+  useRunBrownPlantHopperAnalysisMutation
+} from '@/queries/brown-plant-hopper';
+import {
+  useSheathBlightWarningQuery,
+  useRunSheathBlightAnalysisMutation
+} from '@/queries/sheath-blight';
+import {
+  useGrainDiscolorationWarningQuery,
+  useRunGrainDiscolorationAnalysisMutation
+} from '@/queries/grain-discoloration';
 import { 
   WarningCard, 
   DailyDataTable, 
   LocationForm,
-  PestWarningCard
+  DiseaseWarningCard
 } from '@/components/disease-warning';
 import { UpdateLocationDto } from '@/models/rice-blast';
 
@@ -47,65 +63,91 @@ const { TabPane } = Tabs;
 export const DiseaseWarningPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('rice-blast');
   
-  // Queries
+  // Queries - Bệnh
   const { data: location, isLoading: locationLoading } = useLocationQuery();
   const { data: riceBlastWarning, isLoading: riceBlastLoading, refetch: refetchRiceBlast } = useWarningQuery();
   const { data: bacterialBlightWarning, isLoading: bacterialBlightLoading, refetch: refetchBacterialBlight } = useBacterialBlightWarningQuery();
-  const { data: pestWarning, isLoading: pestLoading, refetch: refetchPest } = usePestWarningQuery();
+  const { data: sheathBlightWarning, isLoading: sheathBlightLoading, refetch: refetchSheathBlight } = useSheathBlightWarningQuery();
+  const { data: grainDiscolorationWarning, isLoading: grainDiscolorationLoading, refetch: refetchGrainDiscoloration } = useGrainDiscolorationWarningQuery();
+  
+  // Queries - Sâu hại
+  const { data: stemBorerWarning, isLoading: stemBorerLoading, refetch: refetchStemBorer } = useStemBorerWarningQuery();
+  const { data: gallMidgeWarning, isLoading: gallMidgeLoading, refetch: refetchGallMidge } = useGallMidgeWarningQuery();
+  const { data: brownPlantHopperWarning, isLoading: brownPlantHopperLoading, refetch: refetchBrownPlantHopper } = useBrownPlantHopperWarningQuery();
   
   // Mutations
   const updateLocationMutation = useUpdateLocationMutation();
   const runRiceBlastMutation = useRunAnalysisMutation();
   const runBacterialBlightMutation = useRunBacterialBlightAnalysisMutation();
-  const runPestMutation = useRunPestAnalysisMutation();
+  const runStemBorerMutation = useRunStemBorerAnalysisMutation();
+  const runGallMidgeMutation = useRunGallMidgeAnalysisMutation();
+  const runBrownPlantHopperMutation = useRunBrownPlantHopperAnalysisMutation();
+  const runSheathBlightMutation = useRunSheathBlightAnalysisMutation();
+  const runGrainDiscolorationMutation = useRunGrainDiscolorationAnalysisMutation();
 
   // Handlers
   const handleUpdateLocation = (values: UpdateLocationDto) => {
     updateLocationMutation.mutate(values, {
       onSuccess: () => {
-        // Tự động chạy phân tích cho cả 3 loại sau khi cập nhật vị trí
+        // Tự động chạy phân tích cho tất cả các loại sau khi cập nhật vị trí
         setTimeout(() => {
           runRiceBlastMutation.mutate();
           runBacterialBlightMutation.mutate();
-          runPestMutation.mutate();
+          runStemBorerMutation.mutate();
+          runGallMidgeMutation.mutate();
+          runBrownPlantHopperMutation.mutate();
+          runSheathBlightMutation.mutate();
+          runGrainDiscolorationMutation.mutate();
         }, 500); // Delay nhỏ để đảm bảo location đã được cập nhật
       }
     });
   };
 
-  const handleRunRiceBlastAnalysis = () => {
-    runRiceBlastMutation.mutate();
-  };
-
-  const handleRunBacterialBlightAnalysis = () => {
-    runBacterialBlightMutation.mutate();
-  };
-
-  const handleRunPestAnalysis = () => {
-    runPestMutation.mutate();
-  };
-
   const handleRefresh = () => {
-    if (activeTab === 'rice-blast') {
-      refetchRiceBlast();
-    } else if (activeTab === 'bacterial-blight') {
-      refetchBacterialBlight();
-    } else {
-      refetchPest();
+    switch (activeTab) {
+      case 'rice-blast':
+        refetchRiceBlast();
+        break;
+      case 'bacterial-blight':
+        refetchBacterialBlight();
+        break;
+      case 'stem-borer':
+        refetchStemBorer();
+        break;
+      case 'gall-midge':
+        refetchGallMidge();
+        break;
+      case 'brown-plant-hopper':
+        refetchBrownPlantHopper();
+        break;
+      case 'sheath-blight':
+        refetchSheathBlight();
+        break;
+      case 'grain-discoloration':
+        refetchGrainDiscoloration();
+        break;
     }
   };
 
   const handleRunAllAnalyses = () => {
     runRiceBlastMutation.mutate();
     runBacterialBlightMutation.mutate();
-    runPestMutation.mutate();
+    runStemBorerMutation.mutate();
+    runGallMidgeMutation.mutate();
+    runBrownPlantHopperMutation.mutate();
+    runSheathBlightMutation.mutate();
+    runGrainDiscolorationMutation.mutate();
   };
 
   const isLoading = locationLoading;
   const isAnalyzing = updateLocationMutation.isPending || 
                       runRiceBlastMutation.isPending || 
                       runBacterialBlightMutation.isPending ||
-                      runPestMutation.isPending;
+                      runStemBorerMutation.isPending ||
+                      runGallMidgeMutation.isPending ||
+                      runBrownPlantHopperMutation.isPending ||
+                      runSheathBlightMutation.isPending ||
+                      runGrainDiscolorationMutation.isPending;
 
   return (
     <div style={{ padding: 24 }}>
@@ -122,7 +164,11 @@ export const DiseaseWarningPage: React.FC = () => {
               loading={
                 activeTab === 'rice-blast' ? riceBlastLoading : 
                 activeTab === 'bacterial-blight' ? bacterialBlightLoading :
-                pestLoading
+                activeTab === 'stem-borer' ? stemBorerLoading :
+                activeTab === 'gall-midge' ? gallMidgeLoading :
+                activeTab === 'brown-plant-hopper' ? brownPlantHopperLoading :
+                activeTab === 'sheath-blight' ? sheathBlightLoading :
+                grainDiscolorationLoading
               }
             >
               Làm mới
@@ -156,19 +202,16 @@ export const DiseaseWarningPage: React.FC = () => {
             </div>
           </Card>
         ) : (
-          <Row gutter={[24, 24]}>
-            {/* Left Column - Location Form */}
-            <Col xs={24} lg={8}>
-              <LocationForm
-                location={location}
-                onSubmit={handleUpdateLocation}
-                loading={updateLocationMutation.isPending}
-              />
-            </Col>
+          <>
+            {/* Location Form - Full Width at Top */}
+            <LocationForm
+              location={location}
+              onSubmit={handleUpdateLocation}
+              loading={updateLocationMutation.isPending}
+            />
 
-            {/* Right Column - Disease Warnings */}
-            <Col xs={24} lg={16}>
-              <Card>
+            {/* Disease Warnings Tabs - Full Width Below */}
+            <Card>
                 <Tabs activeKey={activeTab} onChange={setActiveTab}>
                   {/* Rice Blast Tab */}
                   <TabPane tab="🦠 Bệnh Đạo Ôn" key="rice-blast">
@@ -177,7 +220,7 @@ export const DiseaseWarningPage: React.FC = () => {
                         <Button
                           type="primary"
                           icon={<ThunderboltOutlined />}
-                          onClick={handleRunRiceBlastAnalysis}
+                          onClick={() => runRiceBlastMutation.mutate()}
                           loading={runRiceBlastMutation.isPending}
                           disabled={!location}
                         >
@@ -216,7 +259,7 @@ export const DiseaseWarningPage: React.FC = () => {
                         <Button
                           type="primary"
                           icon={<ThunderboltOutlined />}
-                          onClick={handleRunBacterialBlightAnalysis}
+                          onClick={() => runBacterialBlightMutation.mutate()}
                           loading={runBacterialBlightMutation.isPending}
                           disabled={!location}
                         >
@@ -249,26 +292,31 @@ export const DiseaseWarningPage: React.FC = () => {
                     </Space>
                   </TabPane>
 
-                  {/* Pest Warning Tab */}
-                  <TabPane tab="🐛 Cảnh Báo Sâu Hại" key="pest-warning">
+                  {/* Stem Borer Tab */}
+                  <TabPane tab="🐛 Sâu Đục Thân" key="stem-borer">
                     <Space direction="vertical" size="large" style={{ width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button
                           type="primary"
                           icon={<BugOutlined />}
-                          onClick={handleRunPestAnalysis}
-                          loading={runPestMutation.isPending}
+                          onClick={() => runStemBorerMutation.mutate()}
+                          loading={runStemBorerMutation.isPending}
                           disabled={!location}
                         >
-                          Phân tích sâu hại
+                          Phân tích Sâu Đục Thân
                         </Button>
                       </div>
 
-                      {pestWarning ? (
-                        <PestWarningCard warning={pestWarning} loading={runPestMutation.isPending} />
+                      {stemBorerWarning ? (
+                        <DiseaseWarningCard 
+                          warning={stemBorerWarning} 
+                          loading={runStemBorerMutation.isPending}
+                          title="SÂU ĐỤC THÂN"
+                          borderColor="#fa8c16"
+                        />
                       ) : (
                         <Alert
-                          message="Chưa có dữ liệu cảnh báo sâu hại"
+                          message="Chưa có dữ liệu cảnh báo Sâu Đục Thân"
                           description="Vui lòng cập nhật vị trí ruộng lúa và chạy phân tích."
                           type="warning"
                           showIcon
@@ -277,15 +325,149 @@ export const DiseaseWarningPage: React.FC = () => {
                       )}
                     </Space>
                   </TabPane>
+
+                  {/* Gall Midge Tab */}
+                  <TabPane tab="🦟 Muỗi Hành" key="gall-midge">
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          type="primary"
+                          icon={<BugOutlined />}
+                          onClick={() => runGallMidgeMutation.mutate()}
+                          loading={runGallMidgeMutation.isPending}
+                          disabled={!location}
+                        >
+                          Phân tích Muỗi Hành
+                        </Button>
+                      </div>
+
+                      {gallMidgeWarning ? (
+                        <DiseaseWarningCard 
+                          warning={gallMidgeWarning} 
+                          loading={runGallMidgeMutation.isPending}
+                          title="MUỖI HÀNH"
+                          borderColor="#722ed1"
+                        />
+                      ) : (
+                        <Alert
+                          message="Chưa có dữ liệu cảnh báo Muỗi Hành"
+                          description="Vui lòng cập nhật vị trí ruộng lúa và chạy phân tích."
+                          type="warning"
+                          showIcon
+                          icon={<BugOutlined />}
+                        />
+                      )}
+                    </Space>
+                  </TabPane>
+
+                  {/* Brown Plant Hopper Tab */}
+                  <TabPane tab="🦗 Rầy Nâu" key="brown-plant-hopper">
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          type="primary"
+                          icon={<BugOutlined />}
+                          onClick={() => runBrownPlantHopperMutation.mutate()}
+                          loading={runBrownPlantHopperMutation.isPending}
+                          disabled={!location}
+                        >
+                          Phân tích Rầy Nâu
+                        </Button>
+                      </div>
+
+                      {brownPlantHopperWarning ? (
+                        <DiseaseWarningCard 
+                          warning={brownPlantHopperWarning} 
+                          loading={runBrownPlantHopperMutation.isPending}
+                          title="RẦY NÂU"
+                          borderColor="#13c2c2"
+                        />
+                      ) : (
+                        <Alert
+                          message="Chưa có dữ liệu cảnh báo Rầy Nâu"
+                          description="Vui lòng cập nhật vị trí ruộng lúa và chạy phân tích."
+                          type="warning"
+                          showIcon
+                          icon={<BugOutlined />}
+                        />
+                      )}
+                    </Space>
+                  </TabPane>
+
+                  {/* Sheath Blight Tab */}
+                  <TabPane tab="🍂 Bệnh Khô Vằn" key="sheath-blight">
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          type="primary"
+                          icon={<ThunderboltOutlined />}
+                          onClick={() => runSheathBlightMutation.mutate()}
+                          loading={runSheathBlightMutation.isPending}
+                          disabled={!location}
+                        >
+                          Phân tích Bệnh Khô Vằn
+                        </Button>
+                      </div>
+
+                      {sheathBlightWarning ? (
+                        <DiseaseWarningCard 
+                          warning={sheathBlightWarning} 
+                          loading={runSheathBlightMutation.isPending}
+                          title="BỆNH KHÔ VẰN"
+                          borderColor="#eb2f96"
+                        />
+                      ) : (
+                        <Alert
+                          message="Chưa có dữ liệu cảnh báo Bệnh Khô Vằn"
+                          description="Vui lòng cập nhật vị trí ruộng lúa và chạy phân tích."
+                          type="warning"
+                          showIcon
+                          icon={<WarningOutlined />}
+                        />
+                      )}
+                    </Space>
+                  </TabPane>
+
+                  {/* Grain Discoloration Tab */}
+                  <TabPane tab="🌾 Bệnh Lem Lép Hạt" key="grain-discoloration">
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          type="primary"
+                          icon={<ThunderboltOutlined />}
+                          onClick={() => runGrainDiscolorationMutation.mutate()}
+                          loading={runGrainDiscolorationMutation.isPending}
+                          disabled={!location}
+                        >
+                          Phân tích Bệnh Lem Lép Hạt
+                        </Button>
+                      </div>
+
+                      {grainDiscolorationWarning ? (
+                        <DiseaseWarningCard 
+                          warning={grainDiscolorationWarning} 
+                          loading={runGrainDiscolorationMutation.isPending}
+                          title="BỆNH LEM LÉP HẠT"
+                          borderColor="#a0d911"
+                        />
+                      ) : (
+                        <Alert
+                          message="Chưa có dữ liệu cảnh báo Bệnh Lem Lép Hạt"
+                          description="Vui lòng cập nhật vị trí ruộng lúa và chạy phân tích."
+                          type="warning"
+                          showIcon
+                          icon={<WarningOutlined />}
+                        />
+                      )}
+                    </Space>
+                  </TabPane>
                 </Tabs>
               </Card>
-            </Col>
-          </Row>
-        )}
+            </>
+          )}
       </Space>
     </div>
   );
 };
 
 export default DiseaseWarningPage;
-

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, InputNumber, Button, Card, Space, message, Modal } from 'antd';
+import { Form, Input, InputNumber, Button, Card, Space, message, Modal, Row, Col } from 'antd';
 import { EnvironmentOutlined, SaveOutlined, AimOutlined } from '@ant-design/icons';
 import { Location, UpdateLocationDto } from '@/models/rice-blast';
 import LocationMap from '@/components/LocationMap';
@@ -179,7 +179,7 @@ export const LocationForm: React.FC<LocationFormProps> = ({
         title={
           <Space>
             <EnvironmentOutlined />
-            <span>Vị trí ruộng lúa</span>
+            <span>Địa điểm để phân tích</span>
           </Space>
         }
         style={{ marginBottom: 24 }}
@@ -190,98 +190,111 @@ export const LocationForm: React.FC<LocationFormProps> = ({
           onFinish={handleSubmit}
           disabled={loading}
         >
-          <Form.Item
-            label="Tên vị trí"
-            name="name"
-            rules={[
-              { required: true, message: 'Vui lòng nhập tên vị trí' },
-              { min: 3, message: 'Tên vị trí phải có ít nhất 3 ký tự' },
-            ]}
-          >
-            <Input 
-              placeholder="VD: Ruộng nhà ông Tư - Tân Lập, Vũ Thư" 
-              size="large"
-            />
-          </Form.Item>
+          {/* Row 1: Tên vị trí, Vĩ độ, Kinh độ */}
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Tên vị trí"
+                name="name"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập tên vị trí' },
+                  { min: 3, message: 'Tên vị trí phải có ít nhất 3 ký tự' },
+                ]}
+              >
+                <Input 
+                  placeholder="VD: Ruộng nhà ông Tư" 
+                  size="large"
+                />
+              </Form.Item>
+            </Col>
 
-          <Form.Item
-            label="Vĩ độ (Latitude)"
-            name="lat"
-            rules={[
-              { required: true, message: 'Vui lòng nhập vĩ độ' },
-              { 
-                type: 'number', 
-                min: -90, 
-                max: 90, 
-                message: 'Vĩ độ phải từ -90 đến 90' 
-              },
-            ]}
-          >
-            <InputNumber
-              placeholder="VD: 20.4167"
-              style={{ width: '100%' }}
-              step={0.0001}
-              precision={4}
-              size="large"
-            />
-          </Form.Item>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Vĩ độ (Latitude)"
+                name="lat"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập vĩ độ' },
+                  { 
+                    type: 'number', 
+                    min: -90, 
+                    max: 90, 
+                    message: 'Vĩ độ phải từ -90 đến 90' 
+                  },
+                ]}
+              >
+                <InputNumber
+                  placeholder="VD: 10.1286"
+                  style={{ width: '100%' }}
+                  step={0.0001}
+                  precision={4}
+                  size="large"
+                />
+              </Form.Item>
+            </Col>
 
-          <Form.Item
-            label="Kinh độ (Longitude)"
-            name="lon"
-            rules={[
-              { required: true, message: 'Vui lòng nhập kinh độ' },
-              { 
-                type: 'number', 
-                min: -180, 
-                max: 180, 
-                message: 'Kinh độ phải từ -180 đến 180' 
-              },
-            ]}
-          >
-            <InputNumber
-              placeholder="VD: 106.3667"
-              style={{ width: '100%' }}
-              step={0.0001}
-              precision={4}
-              size="large"
-            />
-          </Form.Item>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="Kinh độ (Longitude)"
+                name="lon"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập kinh độ' },
+                  { 
+                    type: 'number', 
+                    min: -180, 
+                    max: 180, 
+                    message: 'Kinh độ phải từ -180 đến 180' 
+                  },
+                ]}
+              >
+                <InputNumber
+                  placeholder="VD: 105.2710"
+                  style={{ width: '100%' }}
+                  step={0.0001}
+                  precision={4}
+                  size="large"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          {/* Location Actions */}
-          <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-            <Button
-              icon={<AimOutlined />}
-              onClick={detectUserLocation}
-              loading={isDetecting}
-              block
-              size="large"
-            >
-              Lấy vị trí hiện tại của tôi
-            </Button>
+          {/* Row 2: Action Buttons */}
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Button
+                icon={<AimOutlined />}
+                onClick={detectUserLocation}
+                loading={isDetecting}
+                block
+                size="large"
+              >
+                Lấy vị trí hiện tại của tôi
+              </Button>
+            </Col>
             
-            <Button
-              icon={<EnvironmentOutlined />}
-              onClick={() => setIsMapModalVisible(true)}
-              block
-              size="large"
-            >
-              Chọn vị trí trên bản đồ
-            </Button>
-          </Space>
+            <Col xs={24} md={8}>
+              <Button
+                icon={<EnvironmentOutlined />}
+                onClick={() => setIsMapModalVisible(true)}
+                block
+                size="large"
+              >
+                Chọn vị trí trên bản đồ
+              </Button>
+            </Col>
 
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={loading}
-              size="large"
-              block
-            >
-              {loading ? 'Đang lưu và phân tích...' : 'Lưu vị trí'}
-            </Button>
-          </Form.Item>
+            <Col xs={24} md={8}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<SaveOutlined />}
+                loading={loading}
+                size="large"
+                block
+              >
+                {loading ? 'Đang lưu...' : 'Lưu vị trí'}
+              </Button>
+            </Col>
+          </Row>
         </Form>
       </Card>
 

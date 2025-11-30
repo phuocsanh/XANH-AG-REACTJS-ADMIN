@@ -27,6 +27,7 @@ import {
   List,
   ListItem,
   Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -40,6 +41,7 @@ import {
   AimOutlined,
   SyncOutlined,
   ReloadOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -56,13 +58,54 @@ import { weatherService, WeatherData, SimplifiedWeatherData } from '@/lib/weathe
 import { frontendAiService } from '@/lib/ai-service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
-import { Tag, Space, Spin, Modal as AntModal, message } from 'antd';
+import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs } from 'antd';
 import {
   salesInvoiceSchema,
   SalesInvoiceFormData,
   defaultSalesInvoiceValues,
   paymentMethodLabels,
 } from './form-config';
+
+// Disease Warning Imports
+import {
+  useLocationQuery,
+  useUpdateLocationMutation,
+  useWarningQuery as useRiceBlastWarningQuery,
+  useRunAnalysisMutation as useRunRiceBlastAnalysisMutation,
+} from '@/queries/rice-blast';
+import {
+  useBacterialBlightWarningQuery,
+  useRunBacterialBlightAnalysisMutation,
+} from '@/queries/bacterial-blight';
+import {
+  useStemBorerWarningQuery,
+  useRunStemBorerAnalysisMutation,
+} from '@/queries/stem-borer';
+import {
+  useGallMidgeWarningQuery,
+  useRunGallMidgeAnalysisMutation,
+} from '@/queries/gall-midge';
+import {
+  useBrownPlantHopperWarningQuery,
+  useRunBrownPlantHopperAnalysisMutation,
+} from '@/queries/brown-plant-hopper';
+import {
+  useSheathBlightWarningQuery,
+  useRunSheathBlightAnalysisMutation,
+} from '@/queries/sheath-blight';
+import {
+  useGrainDiscolorationWarningQuery,
+  useRunGrainDiscolorationAnalysisMutation,
+} from '@/queries/grain-discoloration';
+import {
+  WarningCard,
+  DailyDataTable,
+  LocationForm,
+  DiseaseWarningCard,
+} from '@/components/disease-warning';
+import { UpdateLocationDto } from '@/models/rice-blast';
+
+const { TabPane } = AntTabs;
 
 interface Recommendation {
   time: string;
@@ -101,6 +144,7 @@ const CreateSalesInvoice = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isGuestCustomer, setIsGuestCustomer] = useState(true);
   const [currentTab, setCurrentTab] = useState(0);
+  const [diseaseWarningTab, setDiseaseWarningTab] = useState('rice-blast');
 
   // Technical Advisory States
   const [selectedProductIdsForAdvisory, setSelectedProductIdsForAdvisory] = useState<number[]>([]);
@@ -115,10 +159,16 @@ const CreateSalesInvoice = () => {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPrintModalVisible, setIsPrintModalVisible] = useState(false);
   const [printSections, setPrintSections] = useState({
+    invoice: true,
+    advisory: true,
+    diseaseWarning: true
+  });
+  const [selectedAdvisorySections, setSelectedAdvisorySections] = useState({
     mix: true,
     sort: true,
     spray: true
   });
+  const [selectedPrintDiseases, setSelectedPrintDiseases] = useState<string[]>([]);
   const printContentRef = useRef<HTMLDivElement>(null);
   
   // AI Warning Generation States
@@ -152,14 +202,32 @@ const CreateSalesInvoice = () => {
   const { data: latestInvoice } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
   const createMutation = useCreateSalesInvoiceMutation();
 
+  // Disease Warning Queries
+  const { data: diseaseLocation } = useLocationQuery();
+  const { data: riceBlastWarning } = useRiceBlastWarningQuery();
+  const { data: bacterialBlightWarning } = useBacterialBlightWarningQuery();
+  const { data: stemBorerWarning } = useStemBorerWarningQuery();
+  const { data: gallMidgeWarning } = useGallMidgeWarningQuery();
+  const { data: brownPlantHopperWarning } = useBrownPlantHopperWarningQuery();
+  const { data: sheathBlightWarning } = useSheathBlightWarningQuery();
+  const { data: grainDiscolorationWarning } = useGrainDiscolorationWarningQuery();
+
+  // Disease Warning Mutations
+  const updateLocationMutation = useUpdateLocationMutation();
+  const runRiceBlastMutation = useRunRiceBlastAnalysisMutation();
+  const runBacterialBlightMutation = useRunBacterialBlightAnalysisMutation();
+  const runStemBorerMutation = useRunStemBorerAnalysisMutation();
+  const runGallMidgeMutation = useRunGallMidgeAnalysisMutation();
+  const runBrownPlantHopperMutation = useRunBrownPlantHopperAnalysisMutation();
+  const runSheathBlightMutation = useRunSheathBlightAnalysisMutation();
+  const runGrainDiscolorationMutation = useRunGrainDiscolorationAnalysisMutation();
+
   // Set active season as default
   useEffect(() => {
     if (activeSeason) {
       setValue('season_id', activeSeason.id);
     }
   }, [activeSeason, setValue]);
-
-
 
   // Watch items to calculate totals
   const items = watch('items');
@@ -191,11 +259,6 @@ const CreateSalesInvoice = () => {
     }
   };
 
-
-
-  /**
-   * Generate warning using AI based on product descriptions
-   */
   /**
    * Generate warning using AI based on product descriptions
    */
@@ -308,9 +371,6 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
   // Auto-generate warning when items change
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Create a unique key for current items to check changes
-      const currentItemsKey = items.map(i => i.product_id).join(',');
-      
       if (items.length > 0) {
         handleGenerateWarning(true);
       }
@@ -370,12 +430,8 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     const submitData = {
       ...data,
       remaining_amount: remainingAmount,
-      // Đảm bảo customer_id được gửi đúng (null nếu là khách vãng lai)
       customer_id: data.customer_id || null,
     };
-
-    console.log('📤 Dữ liệu gửi đi:', submitData);
-    console.log('👤 Customer ID:', submitData.customer_id);
 
     createMutation.mutate(submitData as any, {
       onSuccess: () => {
@@ -403,14 +459,25 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     selectedProductIdsForAdvisory.includes(p.id)
   );
 
+  const handleProductToggleForAdvisory = (productId: number) => {
+    setSelectedProductIdsForAdvisory(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
   const createMixPrompt = (products: Product[]): string => {
     const productInfo = products.map((product: Product) => 
       `- ${product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
     ).join('\n');
     
-    return `Phân tích khả năng phối trộn các loại thuốc sau. Trả lời NGẮN GỌN:
+    return `Phân tích khả năng phối trộn các loại thuốc sau.
+QUAN TRỌNG: TRẢ LỜI HOÀN TOÀN BẰNG TIẾNG VIỆT.
+
+Yêu cầu trả lời NGẮN GỌN:
 - Kết luận: CÓ/KHÔNG
-- Lý do: (1 câu ngắn)
+- Lý do: (1 câu ngắn bằng tiếng Việt)
 
 Danh sách thuốc:
 ${productInfo}`;
@@ -421,9 +488,12 @@ ${productInfo}`;
       `- ${product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
     ).join('\n');
     
-    return `Sắp xếp thứ tự sử dụng các loại thuốc sau để đạt hiệu quả tốt nhất. Trả lời NGẮN GỌN:
+    return `Sắp xếp thứ tự sử dụng các loại thuốc sau để đạt hiệu quả tốt nhất.
+QUAN TRỌNG: TRẢ LỜI HOÀN TOÀN BẰNG TIẾNG VIỆT.
+
+Yêu cầu trả lời NGẮN GỌN:
 - Liệt kê tên thuốc theo thứ tự (dùng số thứ tự: 1, 2, 3...)
-- Lý do ngắn gọn (1 câu cho mỗi thuốc)
+- Lý do ngắn gọn (1 câu cho mỗi thuốc bằng tiếng Việt)
 
 Danh sách thuốc:
 ${productInfo}`;
@@ -665,8 +735,8 @@ ${productInfo}`;
   }, [currentTab, selectedLocation]);
 
   const handleAnalyze = async () => {
-    if (selectedProductIdsForAdvisory.length === 0) {
-      setError('Vui lòng chọn ít nhất một sản phẩm để phân tích');
+    if (selectedProductIdsForAdvisory.length < 2) {
+      setError('Vui lòng chọn ít nhất 2 sản phẩm để phân tích phối trộn');
       return;
     }
 
@@ -712,43 +782,249 @@ ${productInfo}`;
     return new Date(timestamp * 1000).toLocaleString('vi-VN');
   };
 
-  const handlePrint = () => {
-    setIsPrintModalVisible(true);
-  };
-
-  const handlePrintConfirm = () => {
-    window.print();
-  };
-
-  const handlePrintSectionChange = (section: 'mix' | 'sort' | 'spray') => {
+  const handlePrintSectionChange = (section: 'invoice' | 'advisory' | 'diseaseWarning') => {
     setPrintSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
   };
 
-  const handleProductToggleForAdvisory = (productId: number) => {
-    setSelectedProductIdsForAdvisory(prev =>
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+
+
+  const availableWarnings = [
+    { id: 'rice-blast', name: 'Bệnh Đạo Ôn', data: riceBlastWarning },
+    { id: 'bacterial-blight', name: 'Bệnh Cháy Bìa Lá', data: bacterialBlightWarning },
+    { id: 'stem-borer', name: 'Sâu Đục Thân', data: stemBorerWarning },
+    { id: 'gall-midge', name: 'Muỗi Hành', data: gallMidgeWarning },
+    { id: 'brown-plant-hopper', name: 'Rầy Nâu', data: brownPlantHopperWarning },
+    { id: 'sheath-blight', name: 'Bệnh Khô Vằn', data: sheathBlightWarning },
+    { id: 'grain-discoloration', name: 'Bệnh Lem Lép Hạt', data: grainDiscolorationWarning },
+  ].filter(w => w.data);
+
+  const generatePrintContent = () => {
+    const styles = `
+      <style>
+        body { font-family: 'Times New Roman', serif; line-height: 1.5; color: #000; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .section { margin-bottom: 25px; }
+        .section-title { font-size: 16px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 5px; text-transform: uppercase; }
+        .row { display: flex; margin-bottom: 5px; }
+        .label { font-weight: bold; width: 150px; }
+        .value { flex: 1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .total-section { margin-top: 15px; text-align: right; }
+        .warning-box { border: 1px solid #faad14; background-color: #fffbe6; padding: 15px; border-radius: 4px; margin-bottom: 15px; }
+        .warning-header { display: flex; align-items: center; margin-bottom: 10px; font-weight: bold; color: #d46b08; }
+        .warning-content { white-space: pre-line; }
+        .risk-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 12px; margin-right: 10px; }
+        .risk-CAO { background-color: #f5222d; }
+        .risk-TRUNG_BINH { background-color: #fa8c16; }
+        .risk-THAP { background-color: #52c41a; }
+        .footer { margin-top: 40px; text-align: center; font-style: italic; font-size: 12px; }
+        
+        /* Disease Warning Specific Styles */
+        .disease-warning-item { margin-bottom: 20px; padding: 10px; border-left: 4px solid #fa8c16; background: #fff; }
+        .disease-title { font-weight: bold; font-size: 15px; color: #d46b08; margin-bottom: 5px; }
+        .disease-content { font-size: 14px; line-height: 1.6; }
+      </style>
+    `;
+
+    let content = `
+      <html>
+        <head>
+          <title>Phiếu Tư Vấn & Hóa Đơn</title>
+          ${styles}
+        </head>
+        <body>
+          <div class="header">
+            <h2>PHIẾU TƯ VẤN & HÓA ĐƠN BÁN HÀNG</h2>
+            <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}</p>
+          </div>
+    `;
+
+    // 1. INVOICE SECTION
+    if (printSections.invoice) {
+      content += `
+        <div class="section">
+          <div class="section-title">I. THÔNG TIN KHÁCH HÀNG & ĐƠN HÀNG</div>
+          <div class="row"><span class="label">Khách hàng:</span><span class="value">${watch('customer_name') || 'Khách lẻ'}</span></div>
+          <div class="row"><span class="label">Số điện thoại:</span><span class="value">${watch('customer_phone') || '-'}</span></div>
+          <div class="row"><span class="label">Địa chỉ:</span><span class="value">${watch('customer_address') || '-'}</span></div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Sản phẩm</th>
+                <th class="text-center">SL</th>
+                <th class="text-right">Đơn giá</th>
+                <th class="text-right">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item, index) => `
+                <tr>
+                  <td class="text-center">${index + 1}</td>
+                  <td>${item.product_name}</td>
+                  <td class="text-center">${item.quantity}</td>
+                  <td class="text-right">${formatCurrency(item.unit_price)}</td>
+                  <td class="text-right">${formatCurrency(item.quantity * item.unit_price - (item.discount_amount || 0))}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="total-section">
+            <div class="row" style="justify-content: flex-end"><span class="label">Tổng tiền:</span><span class="value" style="flex: 0 auto">${formatCurrency(finalAmount)}</span></div>
+            ${partialPaymentAmount > 0 ? `<div class="row" style="justify-content: flex-end"><span class="label">Đã trả:</span><span class="value" style="flex: 0 auto">${formatCurrency(partialPaymentAmount)}</span></div>` : ''}
+            ${remainingAmount > 0 ? `<div class="row" style="justify-content: flex-end"><span class="label">Còn nợ:</span><span class="value" style="flex: 0 auto; font-weight: bold;">${formatCurrency(remainingAmount)}</span></div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. TECHNICAL ADVISORY SECTION
+    const showMix = printSections.advisory && selectedAdvisorySections.mix && mixResult;
+    const showSort = printSections.advisory && selectedAdvisorySections.sort && sortResult;
+    const showSpray = printSections.advisory && selectedAdvisorySections.spray && sprayingRecommendations.length > 0;
+
+    if (showMix || showSort || showSpray) {
+      content += `<div class="section"><div class="section-title">II. TƯ VẤN KỸ THUẬT</div>`;
+      
+      if (showMix) {
+        content += `
+          <div style="margin-bottom: 15px;">
+            <strong>Phối trộn thuốc:</strong>
+            <div style="margin-top: 5px;">${mixResult.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      }
+
+      if (showSort) {
+        content += `
+          <div style="margin-bottom: 15px;">
+            <strong>Thứ tự pha thuốc:</strong>
+            <div style="margin-top: 5px;">${sortResult.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      }
+
+      if (showSpray) {
+        content += `
+          <div style="margin-bottom: 15px;">
+            <strong>Thời điểm phun thuốc tốt nhất:</strong>
+            <ul style="margin-top: 5px; padding-left: 20px;">
+              ${sprayingRecommendations.map(rec => `
+                <li>
+                  <strong>${rec.time}</strong> - Mưa: ${rec.rain_prob}, Gió: ${rec.wind_speed}, ${rec.condition}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+      
+      content += `</div>`;
+    }
+
+    // 3. DISEASE WARNING SECTION
+    if (printSections.diseaseWarning) {
+      const activeWarnings = availableWarnings.filter(w => selectedPrintDiseases.includes(w.id));
+
+      if (activeWarnings.length > 0) {
+        content += `<div class="section"><div class="section-title">III. CẢNH BÁO BỆNH/SÂU HẠI (Tại ${diseaseLocation?.name || 'Vị trí đã chọn'})</div>`;
+        
+        activeWarnings.forEach(w => {
+          let messageHtml = w.data?.message || '';
+          content += `
+            <div class="disease-warning-item">
+              <div class="disease-title">
+                <span class="risk-badge risk-${w.data?.risk_level}">${w.data?.risk_level === 'CAO' ? 'CAO' : 'TRUNG BÌNH'}</span>
+                ${w.name} (${(w.data as any)?.probability || 0}%)
+              </div>
+              <div class="disease-content">
+                ${messageHtml.replace(/\n/g, '<br>')}
+              </div>
+            </div>
+          `;
+        });
+        
+        content += `</div>`;
+      } else if (diseaseLocation && selectedPrintDiseases.length === 0 && availableWarnings.length === 0) {
+         // Only show this if there are NO warnings at all available, not just because none are selected
+         content += `
+          <div class="section">
+            <div class="section-title">III. CẢNH BÁO BỆNH/SÂU HẠI</div>
+            <p>Hiện tại chưa phát hiện nguy cơ cao tại khu vực ${diseaseLocation.name}.</p>
+          </div>
+        `;
+      }
+    }
+
+    content += `
+          <div class="footer">
+            <p>Cảm ơn quý khách đã tin tưởng sử dụng sản phẩm & dịch vụ!</p>
+            <p>Hệ thống Xanh AG - Đồng hành cùng nhà nông</p>
+          </div>
+        </body>
+      </html>
+    `;
+    return content;
+  };
+
+  const handlePrint = () => {
+    // Initialize selected diseases with all available ones (or filter by high risk if desired)
+    const allWarningIds = availableWarnings.map(w => w.id);
+    setSelectedPrintDiseases(allWarningIds);
+    setIsPrintModalVisible(true);
+  };
+
+  const handlePrintConfirm = () => {
+    const content = generatePrintContent();
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+    setIsPrintModalVisible(false);
   };
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" mb={3}>
-        <IconButton onClick={() => navigate('/sales-invoices')} sx={{ mr: 2 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography variant="h4" fontWeight="bold">
-          Tạo hóa đơn bán hàng mới
-        </Typography>
+      {/* ... (Header & Tabs code remains same) ... */}
+
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box display="flex" alignItems="center">
+          <IconButton onClick={() => navigate('/sales-invoices')} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" fontWeight="bold">
+            Tạo hóa đơn bán hàng mới
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="secondary"
+          startIcon={<PrinterOutlined />}
+          onClick={handlePrint}
+          sx={{ ml: 2 }}
+        >
+          In phiếu tư vấn
+        </Button>
       </Box>
 
       <Tabs value={currentTab} onChange={(_, newValue) => setCurrentTab(newValue)} sx={{ mb: 3 }}>
         <Tab label="Thông tin hóa đơn" />
         <Tab label="Tư vấn kỹ thuật" />
+        <Tab label="Cảnh Báo Bệnh/Sâu Hại" />
       </Tabs>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -1272,7 +1548,7 @@ ${productInfo}`;
                       <Button
                         variant="contained"
                         onClick={handleAnalyze}
-                        disabled={isAnalyzing || selectedProductIdsForAdvisory.length === 0}
+                        disabled={isAnalyzing || selectedProductIdsForAdvisory.length < 2}
                       >
                         {isAnalyzing ? <Spin size="small" /> : 'Phân tích Phối trộn & Sắp xếp'}
                       </Button>
@@ -1458,6 +1734,238 @@ ${productInfo}`;
             </Grid>
           </Grid>
         </TabPanel>
+
+        {/* TAB 3: Disease Warning */}
+        <TabPanel value={currentTab} index={2}>
+          <Box sx={{ px: 2, mt:-5 }}>
+            {/* Header Actions */}
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography variant="h1">
+              </Typography>
+              <Space>
+                <Button
+                  variant="outlined"
+                  startIcon={<ReloadOutlined />}
+                  onClick={() => {
+                    switch (diseaseWarningTab) {
+                      case 'rice-blast': riceBlastWarning && runRiceBlastMutation.mutate(); break;
+                      case 'bacterial-blight': bacterialBlightWarning && runBacterialBlightMutation.mutate(); break;
+                      case 'stem-borer': stemBorerWarning && runStemBorerMutation.mutate(); break;
+                      case 'gall-midge': gallMidgeWarning && runGallMidgeMutation.mutate(); break;
+                      case 'brown-plant-hopper': brownPlantHopperWarning && runBrownPlantHopperMutation.mutate(); break;
+                      case 'sheath-blight': sheathBlightWarning && runSheathBlightMutation.mutate(); break;
+                      case 'grain-discoloration': grainDiscolorationWarning && runGrainDiscolorationMutation.mutate(); break;
+                    }
+                    // Refetch location
+                    updateLocationMutation.mutate(diseaseLocation as UpdateLocationDto);
+                  }}
+                  disabled={
+                    runRiceBlastMutation.isPending || 
+                    runBacterialBlightMutation.isPending ||
+                    runStemBorerMutation.isPending ||
+                    runGallMidgeMutation.isPending ||
+                    runBrownPlantHopperMutation.isPending ||
+                    runSheathBlightMutation.isPending ||
+                    runGrainDiscolorationMutation.isPending
+                  }
+                >
+                  Làm mới
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<ThunderboltOutlined />}
+                  onClick={() => {
+                    runRiceBlastMutation.mutate();
+                    runBacterialBlightMutation.mutate();
+                    runStemBorerMutation.mutate();
+                    runGallMidgeMutation.mutate();
+                    runBrownPlantHopperMutation.mutate();
+                    runSheathBlightMutation.mutate();
+                    runGrainDiscolorationMutation.mutate();
+                  }}
+                  disabled={
+                    !diseaseLocation ||
+                    runRiceBlastMutation.isPending || 
+                    runBacterialBlightMutation.isPending ||
+                    runStemBorerMutation.isPending ||
+                    runGallMidgeMutation.isPending ||
+                    runBrownPlantHopperMutation.isPending ||
+                    runSheathBlightMutation.isPending ||
+                    runGrainDiscolorationMutation.isPending
+                  }
+                >
+                  Phân tích tất cả
+                </Button>
+              </Space>
+            </Box>
+
+            {/* Location Form */}
+            <Box sx={{ mb: 3 }}>
+              <LocationForm
+                location={diseaseLocation}
+                onSubmit={(values: UpdateLocationDto) => {
+                  updateLocationMutation.mutate(values, {
+                    onSuccess: () => {
+                      // Tự động chạy phân tích cho tất cả module
+                      setTimeout(() => {
+                        runRiceBlastMutation.mutate();
+                        runBacterialBlightMutation.mutate();
+                        runStemBorerMutation.mutate();
+                        runGallMidgeMutation.mutate();
+                        runBrownPlantHopperMutation.mutate();
+                        runSheathBlightMutation.mutate();
+                        runGrainDiscolorationMutation.mutate();
+                      }, 500);
+                    }
+                  });
+                }}
+                loading={updateLocationMutation.isPending}
+              />
+            </Box>
+
+            {/* Disease Warnings Tabs */}
+            <AntCard>
+              <AntTabs activeKey={diseaseWarningTab} onChange={setDiseaseWarningTab}>
+                {/* Rice Blast Tab */}
+                <TabPane tab="🦠 Bệnh Đạo Ôn" key="rice-blast">
+                  <Box sx={{ pt: 2 }}>
+                    {riceBlastWarning ? (
+                      <>
+                        <WarningCard warning={riceBlastWarning} loading={runRiceBlastMutation.isPending} />
+                        {riceBlastWarning.daily_data && riceBlastWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={riceBlastWarning.daily_data} 
+                              loading={runRiceBlastMutation.isPending}
+                            />
+                          </AntCard>
+                        )}
+                      </>
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo bệnh đạo ôn. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+
+                {/* Bacterial Blight Tab */}
+                <TabPane tab="🍃 Bệnh Cháy Bìa Lá" key="bacterial-blight">
+                  <Box sx={{ pt: 2 }}>
+                    {bacterialBlightWarning ? (
+                      <>
+                        <WarningCard warning={bacterialBlightWarning} loading={runBacterialBlightMutation.isPending} />
+                        {bacterialBlightWarning.daily_data && bacterialBlightWarning.daily_data.length > 0 && (
+                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
+                            <DailyDataTable 
+                              data={bacterialBlightWarning.daily_data} 
+                              loading={runBacterialBlightMutation.isPending}
+                              diseaseType="bacterial-blight"
+                            />
+                          </AntCard>
+                        )}
+                      </>
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo bệnh cháy bìa lá. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+
+                {/* Stem Borer Tab */}
+                <TabPane tab="🐛 Sâu Đục Thân" key="stem-borer">
+                  <Box sx={{ pt: 2 }}>
+                    {stemBorerWarning ? (
+                      <DiseaseWarningCard 
+                        warning={stemBorerWarning} 
+                        loading={runStemBorerMutation.isPending}
+                        title="SÂU ĐỤC THÂN"
+                        borderColor="#fa8c16"
+                      />
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo Sâu Đục Thân. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+
+                {/* Gall Midge Tab */}
+                <TabPane tab="🦟 Muỗi Hành" key="gall-midge">
+                  <Box sx={{ pt: 2 }}>
+                    {gallMidgeWarning ? (
+                      <DiseaseWarningCard 
+                        warning={gallMidgeWarning} 
+                        loading={runGallMidgeMutation.isPending}
+                        title="MUỖI HÀNH"
+                        borderColor="#722ed1"
+                      />
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo Muỗi Hành. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+
+                {/* Brown Plant Hopper Tab */}
+                <TabPane tab="🦗 Rầy Nâu" key="brown-plant-hopper">
+                  <Box sx={{ pt: 2 }}>
+                    {brownPlantHopperWarning ? (
+                      <DiseaseWarningCard 
+                        warning={brownPlantHopperWarning} 
+                        loading={runBrownPlantHopperMutation.isPending}
+                        title="RẦY NÂU"
+                        borderColor="#13c2c2"
+                      />
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo Rầy Nâu. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+
+                {/* Sheath Blight Tab */}
+                <TabPane tab="🍂 Bệnh Khô Vằn" key="sheath-blight">
+                  <Box sx={{ pt: 2 }}>
+                    {sheathBlightWarning ? (
+                      <DiseaseWarningCard 
+                        warning={sheathBlightWarning} 
+                        loading={runSheathBlightMutation.isPending}
+                        title="BỆNH KHÔ VẰN"
+                        borderColor="#eb2f96"
+                      />
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo Bệnh Khô Vằn. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+
+                {/* Grain Discoloration Tab */}
+                <TabPane tab="🌾 Bệnh Lem Lép Hạt" key="grain-discoloration">
+                  <Box sx={{ pt: 2 }}>
+                    {grainDiscolorationWarning ? (
+                      <DiseaseWarningCard 
+                        warning={grainDiscolorationWarning} 
+                        loading={runGrainDiscolorationMutation.isPending}
+                        title="BỆNH LEM LÉP HẠT"
+                        borderColor="#a0d911"
+                      />
+                    ) : (
+                      <Alert severity="warning">
+                        Chưa có dữ liệu cảnh báo Bệnh Lem Lép Hạt. Vui lòng cập nhật vị trí ruộng lúa.
+                      </Alert>
+                    )}
+                  </Box>
+                </TabPane>
+              </AntTabs>
+            </AntCard>
+          </Box>
+        </TabPanel>
       </form>
 
       {/* Location Map Modal */}
@@ -1477,87 +1985,159 @@ ${productInfo}`;
         />
       </AntModal>
 
-      {/* Print Preview Modal */}
+      {/* Print Options Modal */}
       <AntModal
-        title="Xem trước và In"
+        title="Tùy chọn in phiếu tư vấn"
         open={isPrintModalVisible}
         onCancel={() => setIsPrintModalVisible(false)}
-        width={900}
-        footer={[
-          <Button key="cancel" onClick={() => setIsPrintModalVisible(false)}>
-            Đóng
-          </Button>,
-          <Button
-            key="print"
-            variant="contained"
-            startIcon={<PrinterOutlined />}
-            onClick={handlePrintConfirm}
-            disabled={!printSections.mix && !printSections.sort && !printSections.spray}
-          >
-            In
-          </Button>
-        ]}
+        onOk={handlePrintConfirm}
+        okText="In phiếu"
+        cancelText="Hủy"
+        width={1000}
+        style={{ top: 20 }}
       >
-        <Box mb={2}>
-          <Typography fontWeight="bold" mb={1}>Chọn nội dung cần in:</Typography>
-          <Box display="flex" flexDirection="column" gap={1}>
-            <Box>
-              <Checkbox
-                checked={printSections.mix}
-                onChange={() => handlePrintSectionChange('mix')}
-                disabled={!mixResult}
+        <Grid container spacing={3}>
+          {/* Left Column: Settings */}
+          <Grid item xs={12} md={4}>
+            <Box display="flex" flexDirection="column" gap={2}>
+              <Typography variant="h6" fontSize="1rem">Tùy chọn nội dung</Typography>
+              
+              {/* Invoice Section */}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={printSections.invoice}
+                    onChange={() => handlePrintSectionChange('invoice')}
+                  />
+                }
+                label="Thông tin hóa đơn & Khách hàng"
               />
-              Kết quả Phân tích Phối trộn
-            </Box>
-            <Box>
-              <Checkbox
-                checked={printSections.sort}
-                onChange={() => handlePrintSectionChange('sort')}
-                disabled={!sortResult}
-              />
-              Kết quả Sắp xếp
-            </Box>
-            <Box>
-              <Checkbox
-                checked={printSections.spray}
-                onChange={() => handlePrintSectionChange('spray')}
-                disabled={sprayingRecommendations.length === 0}
-              />
-              Thời điểm phun thuốc tốt nhất
-            </Box>
-          </Box>
-        </Box>
 
-        {/* Print Content */}
-        <Box ref={printContentRef} className="print-content">
-          {printSections.mix && mixResult && (
-            <Box mb={3}>
-              <Typography variant="h6" mb={1}>Kết quả Phân tích Phối trộn</Typography>
-              <div dangerouslySetInnerHTML={{ __html: mixResult }} />
-            </Box>
-          )}
-          {printSections.sort && sortResult && (
-            <Box mb={3}>
-              <Typography variant="h6" mb={1}>Sắp xếp thứ tự pha thuốc</Typography>
-              <div>{sortResult}</div>
-            </Box>
-          )}
-          {printSections.spray && sprayingRecommendations.length > 0 && (
-            <Box>
-              <Typography variant="h6" mb={1}>Thời điểm phun thuốc tốt nhất</Typography>
-              {sprayingRecommendations.map((item, index) => (
-                <Box key={index} mb={1}>
-                  <Typography>
-                    {item.time} - Nhiệt độ: {item.temperature}, Mưa: {item.rain_prob}, Gió: {item.wind_speed}
-                  </Typography>
-                  <Typography fontSize="0.875rem" color="text.secondary">
-                    {item.condition} - {item.reason}
-                  </Typography>
+              {/* Advisory Section */}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={printSections.advisory}
+                    onChange={() => handlePrintSectionChange('advisory')}
+                    disabled={!mixResult && !sortResult && sprayingRecommendations.length === 0}
+                  />
+                }
+                label="Tư vấn kỹ thuật"
+              />
+              {printSections.advisory && (
+                <Box ml={3} display="flex" flexDirection="column" gap={0.5}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={selectedAdvisorySections.mix}
+                        onChange={(e) => setSelectedAdvisorySections(prev => ({ ...prev, mix: e.target.checked }))}
+                        disabled={!mixResult}
+                      />
+                    }
+                    label={<Typography variant="body2">Phối trộn thuốc</Typography>}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={selectedAdvisorySections.sort}
+                        onChange={(e) => setSelectedAdvisorySections(prev => ({ ...prev, sort: e.target.checked }))}
+                        disabled={!sortResult}
+                      />
+                    }
+                    label={<Typography variant="body2">Thứ tự pha thuốc</Typography>}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={selectedAdvisorySections.spray}
+                        onChange={(e) => setSelectedAdvisorySections(prev => ({ ...prev, spray: e.target.checked }))}
+                        disabled={sprayingRecommendations.length === 0}
+                      />
+                    }
+                    label={<Typography variant="body2">Thời điểm phun thuốc tốt nhất</Typography>}
+                  />
                 </Box>
-              ))}
+              )}
+
+              {/* Disease Warning Section */}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={printSections.diseaseWarning}
+                    onChange={() => handlePrintSectionChange('diseaseWarning')}
+                    disabled={!diseaseLocation}
+                  />
+                }
+                label="Cảnh báo Bệnh/Sâu hại"
+              />
+              
+              {printSections.diseaseWarning && availableWarnings.length > 0 && (
+                <Box ml={3} display="flex" flexDirection="column" gap={0.5}>
+                  {availableWarnings.map(w => (
+                    <FormControlLabel
+                      key={w.id}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={selectedPrintDiseases.includes(w.id)}
+                          onChange={() => {
+                            setSelectedPrintDiseases(prev => 
+                              prev.includes(w.id) 
+                                ? prev.filter(id => id !== w.id)
+                                : [...prev, w.id]
+                            );
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2">
+                          {w.name} <span style={{ 
+                            color: w.data?.risk_level === 'CAO' ? '#f5222d' : '#fa8c16',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem'
+                          }}>
+                            ({w.data?.risk_level === 'CAO' ? 'CAO' : 'TB'})
+                          </span>
+                        </Typography>
+                      }
+                    />
+                  ))}
+                </Box>
+              )}
             </Box>
-          )}
-        </Box>
+          </Grid>
+
+          {/* Right Column: Preview */}
+          <Grid item xs={12} md={8}>
+            <Typography variant="h6" fontSize="1rem" mb={2}>Xem trước bản in</Typography>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                height: '600px', 
+                overflow: 'hidden', 
+                bgcolor: '#f5f5f5',
+                display: 'flex',
+                justifyContent: 'center',
+                p: 2
+              }}
+            >
+              <iframe
+                srcDoc={generatePrintContent()}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  backgroundColor: 'white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+                title="Print Preview"
+              />
+            </Paper>
+          </Grid>
+        </Grid>
       </AntModal>
 
       {/* Print Styles */}
