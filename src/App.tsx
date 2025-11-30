@@ -147,7 +147,7 @@ function App() {
             <div className='flex flex-1 overflow-x-hidden'>
               {/* Sidebar - hidden on mobile by default, shown as overlay */}
               {isHeaderFooterShow === false && isLogin && isSidebarOpen && (
-                <div className='hidden md:block w-[17%]'>
+                <div className='hidden md:block w-[17%] h-full'>
                   <Sidebar />
                 </div>
               )}

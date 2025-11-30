@@ -48,14 +48,14 @@ const Sidebar = () => {
   }
 
   return (
-    <div className='sidebar h-full bg-white shadow-lg'>
+    <div className='sidebar h-full bg-white shadow-lg overflow-y-auto'>
       <Link to='/'>
         <div className='logoWrapper py-3 px-4'>
           <img src={Logo} className='w-full max-w-[150px]' />
         </div>
       </Link>
 
-      <div className='sidebarTabs px-2 mt-4'>
+      <div className='sidebarTabs px-2 mt-4 pb-6'>
         <ul className='flex gap-3 flex-col'>
           {/* Dashboard - Always visible */}
           <li>

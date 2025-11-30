@@ -186,7 +186,7 @@ body {
 }
 
 .sidebar .sidebarTabs ul {
-  @apply max-h-[90vh] overflow-scroll overflow-x-hidden pb-12;
+  @apply overflow-x-hidden pb-12;
 }
 
 .dashboardBoxWrapper {

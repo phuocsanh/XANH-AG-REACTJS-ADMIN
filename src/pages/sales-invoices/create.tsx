@@ -1033,7 +1033,7 @@ ${productInfo}`;
           <Grid container spacing={3}>
             {/* Customer Information */}
             <Grid item xs={12} md={6}>
-              <Card>
+              <Card sx={{ height: '100%' }}>
                 <CardContent>
                   <Typography variant="h6" mb={2}>
                     Thông tin khách hàng
@@ -1108,7 +1108,7 @@ ${productInfo}`;
 
             {/* Invoice Information */}
             <Grid item xs={12} md={6}>
-              <Card>
+              <Card sx={{ height: '100%' }}>
                 <CardContent>
                   <Typography variant="h6" mb={2}>
                     Thông tin hóa đơn
@@ -1496,7 +1496,7 @@ ${productInfo}`;
               </Typography>
 
               {/* Location Display */}
-              <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
+              <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                 <Typography variant="body2" color="text.secondary" mb={1}>
                   Vị trí dự báo thời tiết:
                 </Typography>
