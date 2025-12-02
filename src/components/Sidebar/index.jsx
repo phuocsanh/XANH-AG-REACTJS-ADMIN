@@ -295,6 +295,21 @@ const Sidebar = () => {
             </Link>
           </li>
 
+          {/* Thêm menu cho quản lý vụ lúa */}
+          <li>
+            <Link to='/rice-crops'>
+              <Button
+                className={`w-full ${activeTab === 25 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(25)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiGrain className='text-green-600' />
+                </span>
+                Quản lý vụ lúa
+              </Button>
+            </Link>
+          </li>
+
           {isAdmin(userInfo) && (
             <li>
               <Link to='/users'>

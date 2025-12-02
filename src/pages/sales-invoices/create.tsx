@@ -104,6 +104,8 @@ import {
   DiseaseWarningCard,
 } from '@/components/disease-warning';
 import { UpdateLocationDto } from '@/models/rice-blast';
+import { useRiceCrops } from '@/queries/rice-crop';
+import { CropStatus } from '@/types/rice-farming.types';
 
 const { TabPane } = AntTabs;
 
@@ -143,6 +145,7 @@ const CreateSalesInvoice = () => {
   const [productSearch, setProductSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isGuestCustomer, setIsGuestCustomer] = useState(true);
+  const [selectedRiceCropId, setSelectedRiceCropId] = useState<number | undefined>(undefined);
   const [currentTab, setCurrentTab] = useState(0);
   const [diseaseWarningTab, setDiseaseWarningTab] = useState('rice-blast');
 
@@ -200,6 +203,18 @@ const CreateSalesInvoice = () => {
   const { data: seasons } = useSeasonsQuery();
   const { data: productsData } = useProductsQuery({ limit: 100 });
   const { data: latestInvoice } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
+  
+  // Lấy tất cả vụ lúa đang hoạt động (để chọn trước)
+  const { data: allActiveRiceCrops } = useRiceCrops({ 
+    status: CropStatus.ACTIVE 
+  });
+  
+  // Lấy vụ lúa của khách hàng đã chọn
+  const { data: customerRiceCrops } = useRiceCrops({ 
+    customer_id: selectedCustomer?.id, 
+    status: CropStatus.ACTIVE 
+  });
+  
   const createMutation = useCreateSalesInvoiceMutation();
 
   // Disease Warning Queries
@@ -256,6 +271,42 @@ const CreateSalesInvoice = () => {
       setValue('customer_name', '');
       setValue('customer_phone', '');
       setValue('customer_address', '');
+    }
+  };
+
+  const handleRiceCropSelect = (riceCropId: number | undefined) => {
+    setSelectedRiceCropId(riceCropId);
+    setValue('rice_crop_id', riceCropId);
+    
+    // Tự động điền thông tin từ vụ lúa
+    if (riceCropId && allActiveRiceCrops) {
+      const selectedCrop = allActiveRiceCrops.find((crop: any) => crop.id === riceCropId);
+      console.log('🌾 Selected Rice Crop:', selectedCrop);
+      
+      if (selectedCrop) {
+        // Set season_id TRƯỚC
+        if (selectedCrop.season_id) {
+          console.log('📅 Setting season_id:', selectedCrop.season_id);
+          setValue('season_id', selectedCrop.season_id, { shouldValidate: true });
+        }
+        
+        // Set customer info SAU
+        if (selectedCrop.customer) {
+          console.log('👤 Setting customer:', selectedCrop.customer);
+          setSelectedCustomer(selectedCrop.customer);
+          setIsGuestCustomer(false);
+          setValue('customer_id', selectedCrop.customer.id);
+          setValue('customer_name', selectedCrop.customer.name);
+          setValue('customer_phone', selectedCrop.customer.phone || '');
+          setValue('customer_address', selectedCrop.customer.address || '');
+        } else if (selectedCrop.customer_id) {
+          // Fallback: chỉ có customer_id
+          setValue('customer_id', selectedCrop.customer_id);
+        }
+      }
+    } else {
+      // Reset khi bỏ chọn
+      console.log('🔄 Resetting rice crop selection');
     }
   };
 
@@ -1031,6 +1082,34 @@ ${productInfo}`;
         {/* TAB 1: Invoice Information */}
         <TabPanel value={currentTab} index={0}>
           <Grid container spacing={3}>
+            {/* Chọn vụ lúa (toàn bộ chiều rộng) */}
+            {allActiveRiceCrops && allActiveRiceCrops.length > 0 && (
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" mb={2}>
+                      🌾 Chọn vụ lúa (tùy chọn)
+                    </Typography>
+                    <FormControl fullWidth>
+                      <InputLabel>Chọn vụ lúa để tự động điền thông tin</InputLabel>
+                      <Select
+                        value={selectedRiceCropId || ''}
+                        onChange={(e) => handleRiceCropSelect(e.target.value as number | undefined)}
+                        label="Chọn vụ lúa để tự động điền thông tin"
+                      >
+                        <MenuItem value=""><em>Không chọn (nhập thủ công)</em></MenuItem>
+                        {allActiveRiceCrops.map((crop: any) => (
+                          <MenuItem key={crop.id} value={crop.id}>
+                            {crop.customer?.name || `Khách hàng #${crop.customer_id}`} - {crop.field_name} ({crop.rice_variety}) - {crop.field_area.toLocaleString('vi-VN')} m²
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+            
             {/* Customer Information */}
             <Grid item xs={12} md={6}>
               <Card sx={{ height: '100%' }}>
@@ -1102,6 +1181,25 @@ ${productInfo}`;
                       />
                     )}
                   />
+
+                  {/* Chọn vụ lúa (chỉ hiển thị khi đã chọn khách hàng) */}
+                  {selectedCustomer && customerRiceCrops && customerRiceCrops.length > 0 && (
+                    <FormControl fullWidth sx={{ mt: 2 }}>
+                      <InputLabel>Vụ lúa (tùy chọn)</InputLabel>
+                      <Select
+                        value={selectedRiceCropId || ''}
+                        onChange={(e) => handleRiceCropSelect(e.target.value as number | undefined)}
+                        label="Vụ lúa (tùy chọn)"
+                      >
+                        <MenuItem value=""><em>Không chọn vụ lúa</em></MenuItem>
+                        {customerRiceCrops.map((crop: any) => (
+                          <MenuItem key={crop.id} value={crop.id}>
+                            {crop.field_name} - {crop.rice_variety} ({crop.field_area.toLocaleString('vi-VN')} m²)
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
                 </CardContent>
               </Card>
             </Grid>

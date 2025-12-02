@@ -41,7 +41,7 @@ const refreshToken = async (): Promise<string> => {
 
   try {
     // Gọi API refresh token trực tiếp bằng axios
-    const response = await axios.post(`${BASE_URL}/auth/refresh`, {
+    const response = await axios.post(`${BASE_URL}auth/refresh`, {
       refresh_token: refreshToken,
     })
 

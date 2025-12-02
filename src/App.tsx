@@ -41,6 +41,8 @@ import WeatherForecastPage from "./pages/weather-forecast"
 import DiseaseWarningPage from "./pages/disease-warning"
 // Thêm import cho trang kiểm tra thuốc bị cấm
 import BannedPesticidesPage from "./pages/banned-pesticides"
+// Thêm import cho trang quản lý vụ lúa
+import RiceCropsPage from "./pages/rice-crops"
 // Thêm import cho các module quản lý bán hàng
 import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
@@ -298,6 +300,16 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <BannedPesticidesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang quản lý vụ lúa */}
+                    <Route
+                      path='/rice-crops/*'
+                      element={
+                        <ProtectedRoute>
+                          <RiceCropsPage />
                         </ProtectedRoute>
                       }
                     />
