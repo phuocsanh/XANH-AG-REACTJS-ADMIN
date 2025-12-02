@@ -45,7 +45,12 @@ const refreshToken = async (): Promise<string> => {
       refresh_token: refreshToken,
     })
 
-    const { access_token, refresh_token: newRefreshToken } = response.data
+    console.log("🔄 Refresh token response:", response.data)
+
+    // Server wrap response trong { success, data }
+    // Cần lấy từ response.data.data thay vì response.data
+    const responseData = response.data?.data || response.data
+    const { access_token, refresh_token: newRefreshToken } = responseData
 
     if (access_token && newRefreshToken) {
       // Cập nhật token mới vào store và localStorage
@@ -57,11 +62,16 @@ const refreshToken = async (): Promise<string> => {
       // Sửa lại key để phù hợp với auth.ts
       localStorage.setItem("refresh_token", newRefreshToken)
       localStorage.setItem("access_token", access_token)
+      
+      console.log("✅ Refresh token thành công")
       return access_token
     } else {
+      console.error("❌ Không nhận được token mới:", responseData)
       throw new Error("Không nhận được token mới")
     }
   } catch (error) {
+    console.error("❌ Lỗi refresh token:", error)
+    
     // Xóa token và chuyển hướng về trang đăng nhập
     localStorage.removeItem("refresh_token")
     localStorage.removeItem("access_token")
