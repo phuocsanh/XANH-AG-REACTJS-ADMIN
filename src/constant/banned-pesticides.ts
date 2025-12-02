@@ -3,7 +3,7 @@
  * Theo quy định của Bộ Nông nghiệp và Phát triển Nông thôn
  */
 
-// Thuốc trừ sâu và thuốc bảo quản lâm sản bị cấm (23 hoạt chất)
+// Thuốc trừ sâu và thuốc bảo quản lâm sản bị cấm (28 hoạt chất)
 export const BANNED_INSECTICIDES = [
   'Aldrin',
   'BHC',
