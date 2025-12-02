@@ -57,11 +57,11 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
           <div style={{ fontSize: 12 }}>
             {record.tempMin !== undefined && record.tempMax !== undefined 
               ? `${record.tempMin.toFixed(1)} - ${record.tempMax.toFixed(1)}`
-              : `TB: ${record.tempAvg?.toFixed(1)}`}
+              : (record.tempAvg !== undefined ? `TB: ${record.tempAvg.toFixed(2)}` : '-')}
           </div>
-          {record.tempMin !== undefined && (
+          {record.tempMin !== undefined && record.tempAvg !== undefined && (
             <div style={{ fontSize: 12, color: '#888' }}>
-              TB: {record.tempAvg?.toFixed(1)}
+              TB: {record.tempAvg.toFixed(2)}
             </div>
           )}
         </div>
@@ -72,7 +72,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
       dataIndex: 'humidityAvg',
       key: 'humidity',
       width: 100,
-      render: (value: number) => value ? `${value.toFixed(1)}%` : '-',
+      render: (value: number) => value !== undefined ? `${value.toFixed(2)}%` : '-',
     },
   ];
 
@@ -100,7 +100,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             width: 120,
             render: (_, record: any) => (
               <div>
-                <div style={{ fontSize: 12 }}>{record.rainTotal?.toFixed(1)} mm</div>
+                <div style={{ fontSize: 12 }}>{record.rainTotal !== undefined ? `${record.rainTotal.toFixed(2)} mm` : '-'}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
               </div>
             ),
@@ -122,7 +122,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             width: 120,
             render: (_, record: any) => (
               <div>
-                <div style={{ fontSize: 12 }}>{record.rainTotal?.toFixed(1)} mm</div>
+                <div style={{ fontSize: 12 }}>{record.rainTotal !== undefined ? `${record.rainTotal.toFixed(2)} mm` : '-'}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>{record.rainHours} giờ</div>
               </div>
             ),
@@ -133,8 +133,8 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             width: 120,
             render: (_, record: any) => (
               <div>
-                <div style={{ fontSize: 12 }}>Max: {record.windSpeedMax?.toFixed(1)}</div>
-                <div style={{ fontSize: 12, color: '#888' }}>TB: {record.windSpeedAvg?.toFixed(1)}</div>
+                <div style={{ fontSize: 12 }}>Max: {record.windSpeedMax !== undefined ? record.windSpeedMax.toFixed(2) : '-'}</div>
+                <div style={{ fontSize: 12, color: '#888' }}>TB: {record.windSpeedAvg !== undefined ? record.windSpeedAvg.toFixed(2) : '-'}</div>
               </div>
             ),
           },
@@ -146,7 +146,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             render: (value: number) => (
               <Tooltip title="Tổng mưa 3 ngày - Nguy cơ ngập úng">
                 <span style={{ fontWeight: value >= 100 ? 'bold' : 'normal', color: value >= 100 ? '#ff4d4f' : 'inherit' }}>
-                  {value?.toFixed(1)} mm
+                  {value !== undefined ? `${value.toFixed(2)} mm` : '-'}
                 </span>
               </Tooltip>
             ),
@@ -171,7 +171,7 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             dataIndex: 'cloudAvg',
             key: 'cloud',
             width: 120,
-            render: (value: number) => `${value}%`,
+            render: (value: number) => value !== undefined ? `${value.toFixed(2)}%` : '-',
           },
         ];
 
@@ -182,14 +182,14 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             dataIndex: 'windSpeedAvg',
             key: 'wind',
             width: 120,
-            render: (value: number) => `${value} km/h`,
+            render: (value: number) => value !== undefined ? `${value.toFixed(2)} km/h` : '-',
           },
           {
             title: 'Mưa (mm)',
             dataIndex: 'rainTotal',
             key: 'rain',
             width: 100,
-            render: (value: number) => `${value} mm`,
+            render: (value: number) => value !== undefined ? `${value.toFixed(2)} mm` : '-',
           },
         ];
 
@@ -203,14 +203,14 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
             dataIndex: 'rainTotal',
             key: 'rain',
             width: 100,
-            render: (value: number) => `${value} mm`,
+            render: (value: number) => value !== undefined ? `${value.toFixed(2)} mm` : '-',
           },
           {
             title: 'Gió TB (km/h)',
             dataIndex: 'windSpeedAvg',
             key: 'wind',
             width: 120,
-            render: (value: number) => `${value} km/h`,
+            render: (value: number) => value !== undefined ? `${value.toFixed(2)} km/h` : '-',
           },
         ];
 

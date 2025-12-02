@@ -71,6 +71,9 @@ export const LocationForm: React.FC<LocationFormProps> = ({
   /**
    * Phát hiện vị trí hiện tại của người dùng
    */
+  /**
+   * Phát hiện vị trí hiện tại của người dùng
+   */
   const detectUserLocation = () => {
     if (!navigator.geolocation) {
       message.error('Trình duyệt của bạn không hỗ trợ định vị.');
@@ -78,44 +81,72 @@ export const LocationForm: React.FC<LocationFormProps> = ({
     }
 
     setIsDetecting(true);
-    const hide = message.loading('Đang xác định vị trí chi tiết...', 0);
+    const hide = message.loading('Đang xác định vị trí...', 0);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
+    const handleSuccess = async (position: GeolocationPosition) => {
+      const { latitude, longitude } = position.coords;
+      
+      try {
+        // Lấy tên địa điểm chi tiết
+        const detailedName = await getPlaceName(latitude, longitude);
         
-        try {
-          // Lấy tên địa điểm chi tiết
-          const detailedName = await getPlaceName(latitude, longitude);
-          
-          // Cập nhật form
-          form.setFieldsValue({
-            name: detailedName,
-            lat: latitude,
-            lon: longitude,
-          });
+        // Cập nhật form
+        form.setFieldsValue({
+          name: detailedName,
+          lat: latitude,
+          lon: longitude,
+        });
 
-          hide();
-          setIsDetecting(false);
-          message.success(`Đã cập nhật: ${detailedName}`);
-        } catch (error) {
-          hide();
-          setIsDetecting(false);
-          message.error('Không thể lấy tên địa điểm chi tiết.');
-          
-          // Fallback: Chỉ cập nhật tọa độ
-          form.setFieldsValue({
-            lat: latitude,
-            lon: longitude,
-          });
-        }
-      },
-      (error) => {
         hide();
         setIsDetecting(false);
-        console.error('Lỗi định vị:', error);
-        message.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập.');
-      },
+        message.success(`Đã cập nhật: ${detailedName}`);
+      } catch (error) {
+        hide();
+        setIsDetecting(false);
+        // Fallback: Chỉ cập nhật tọa độ nếu không lấy được tên
+        form.setFieldsValue({
+          lat: latitude,
+          lon: longitude,
+        });
+        message.warning('Đã lấy được tọa độ nhưng không thể xác định tên địa điểm.');
+      }
+    };
+
+    const handleError = (error: GeolocationPositionError, isHighAccuracy: boolean) => {
+      // Nếu thất bại với high accuracy, thử lại với low accuracy
+      if (isHighAccuracy && (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE)) {
+        console.log('Thử lại với độ chính xác thấp hơn...');
+        navigator.geolocation.getCurrentPosition(
+          handleSuccess,
+          (retryError) => handleError(retryError, false),
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+        );
+        return;
+      }
+
+      hide();
+      setIsDetecting(false);
+      console.error('Lỗi định vị:', error);
+
+      let errorMsg = 'Không thể lấy vị trí.';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMsg = 'Bạn đã từ chối quyền truy cập vị trí. Vui lòng cấp quyền trong cài đặt trình duyệt.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMsg = 'Không thể xác định vị trí hiện tại. Hãy kiểm tra kết nối mạng hoặc GPS.';
+          break;
+        case error.TIMEOUT:
+          errorMsg = 'Hết thời gian chờ lấy vị trí. Vui lòng thử lại.';
+          break;
+      }
+      message.error(errorMsg);
+    };
+
+    // Thử lần đầu với độ chính xác cao
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
+      (error) => handleError(error, true),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
