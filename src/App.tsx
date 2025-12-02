@@ -39,6 +39,8 @@ import PesticidesPage from "./pages/pesticides"
 import RiceMarketPage from "./pages/rice-market"
 import WeatherForecastPage from "./pages/weather-forecast"
 import DiseaseWarningPage from "./pages/disease-warning"
+// Thêm import cho trang kiểm tra thuốc bị cấm
+import BannedPesticidesPage from "./pages/banned-pesticides"
 // Thêm import cho các module quản lý bán hàng
 import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
@@ -286,6 +288,16 @@ function App() {
                       element={
                         <ProtectedRoute requiredPermission="RICE_BLAST_VIEW">
                           <DiseaseWarningPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang kiểm tra thuốc bị cấm */}
+                    <Route
+                      path='/banned-pesticides'
+                      element={
+                        <ProtectedRoute>
+                          <BannedPesticidesPage />
                         </ProtectedRoute>
                       }
                     />

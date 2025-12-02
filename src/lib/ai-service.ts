@@ -468,6 +468,127 @@ class FrontendAiService {
       }
     }
   }
+
+  /**
+   * Phân tích ảnh thuốc bảo vệ thực vật để kiểm tra hoạt chất bị cấm
+   * @param imageBase64 Ảnh dạng base64 (không bao gồm prefix data:image/...)
+   * @param bannedIngredients Danh sách hoạt chất bị cấm
+   * @returns Promise với kết quả phân tích
+   */
+  async analyzePesticideImage(
+    imageBase64: string,
+    bannedIngredients: string[]
+  ): Promise<AiResponse> {
+    if (!imageBase64 || imageBase64.trim().length === 0) {
+      return {
+        success: false,
+        error: "Vui lòng cung cấp ảnh để phân tích.",
+      }
+    }
+
+    try {
+      // Đảm bảo rate limit
+      await this.ensureRateLimit()
+
+      const apiKey = await this.getApiKey1()
+
+      // Tạo prompt phân tích
+      const prompt = `
+Bạn là chuyên gia phân tích thuốc bảo vệ thực vật. Hãy phân tích ảnh nhãn thuốc này và:
+
+1. Đọc và trích xuất TẤT CẢ các hoạt chất (active ingredients) có trong sản phẩm
+2. So sánh với danh sách hoạt chất BỊ CẤM sử dụng tại Việt Nam dưới đây
+3. Xác định xem sản phẩm có chứa hoạt chất bị cấm hay không
+
+DANH SÁCH HOẠT CHẤT BỊ CẤM TẠI VIỆT NAM:
+${bannedIngredients.map((ing, idx) => `${idx + 1}. ${ing}`).join('\n')}
+
+YÊU CẦU QUAN TRỌNG:
+- Đọc kỹ nhãn thuốc, tìm phần "Thành phần", "Hoạt chất", "Active Ingredient", "Ingredients"
+- So sánh CHÍNH XÁC tên hoạt chất (có thể viết bằng tiếng Việt hoặc tiếng Anh)
+- Lưu ý: Một số hoạt chất có thể có tên gọi khác nhau hoặc tên thương mại khác
+- Nếu không đọc được rõ ảnh hoặc không tìm thấy thông tin hoạt chất, hãy thông báo
+
+TRẢ VỀ KẾT QUẢ DƯỚI DẠNG JSON (KHÔNG THÊM MARKDOWN, KHÔNG THÊM TEXT GIẢI THÍCH):
+{
+  "product_name": "Tên sản phẩm (nếu có)",
+  "detected_ingredients": ["Danh sách hoạt chất tìm thấy trong ảnh"],
+  "banned_ingredients": ["Danh sách hoạt chất BỊ CẤM tìm thấy"],
+  "is_banned": true/false,
+  "warning_level": "NGUY_HIỂM" hoặc "AN_TOÀN" hoặc "KHÔNG_XÁC_ĐỊNH",
+  "warning_message": "Thông báo cảnh báo chi tiết bằng tiếng Việt",
+  "recommendations": "Khuyến nghị cho người dùng"
+}
+      `.trim()
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                  {
+                    inline_data: {
+                      mime_type: "image/jpeg",
+                      data: imageBase64,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          error:
+            errorData.error?.message ||
+            `Lỗi khi gọi API AI. Status: ${response.status}`,
+        }
+      }
+
+      const data = await response.json()
+
+      if (
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0]
+      ) {
+        const answer = data.candidates[0].content.parts[0].text || ""
+        return {
+          success: true,
+          answer: answer,
+        }
+      }
+
+      return {
+        success: false,
+        error: "Không tìm thấy câu trả lời trong phản hồi từ AI.",
+      }
+    } catch (error) {
+      console.error("Error calling Gemini Vision API:", error)
+      return {
+        success: false,
+        error:
+          (error as Error).message ||
+          "Lỗi khi gọi API AI để phân tích ảnh.",
+      }
+    }
+  }
 }
 
 // Export instance singleton

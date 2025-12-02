@@ -280,6 +280,21 @@ const Sidebar = () => {
             </li>
           )}
 
+          {/* Thêm menu cho kiểm tra thuốc bị cấm */}
+          <li>
+            <Link to='/banned-pesticides'>
+              <Button
+                className={`w-full ${activeTab === 24 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(24)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdWarning className='text-red-600' />
+                </span>
+                Kiểm tra thuốc bị cấm
+              </Button>
+            </Link>
+          </li>
+
           {isAdmin(userInfo) && (
             <li>
               <Link to='/users'>
