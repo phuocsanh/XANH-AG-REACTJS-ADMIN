@@ -67,18 +67,44 @@ export const searchProductsApi = async ({
     }
 
     // Gọi API POST /products/search với đúng format, page và limit trong body
-    const response = await api.postRaw<{
-      data: Product[]
-      page: number
-      limit: number
-      total: number
-    }>("/products/search", searchDto)
+    const response = await api.postRaw<
+      | {
+          data: Product[]
+          page: number
+          limit: number
+          total: number
+        }
+      | Product[]
+    >("/products/search", searchDto)
 
     // Log để debug
     console.log("Search product response:", response)
 
-    // Kiểm tra response có tồn tại không
-    if (!response || !response.data) {
+    // Xử lý response - có thể là array trực tiếp hoặc object có data property
+    let products: Product[] = []
+    let total = 0
+    let currentPage = page
+    let currentLimit = limit
+
+    if (Array.isArray(response)) {
+      // Server trả về array trực tiếp
+      products = response
+      total = response.length
+      console.log("Response is array, products:", products)
+    } else if (response && (response as { data: Product[] }).data) {
+      // Server trả về object có data property
+      const responseObject = response as {
+        data: Product[]
+        page: number
+        limit: number
+        total: number
+      }
+      products = responseObject.data
+      total = responseObject.total || 0
+      currentPage = responseObject.page || page
+      currentLimit = responseObject.limit || limit
+      console.log("Response is object, products:", products)
+    } else {
       console.log(
         "Search product response is invalid or empty, returning empty result"
       )
@@ -91,7 +117,7 @@ export const searchProductsApi = async ({
     }
 
     // Chuyển đổi dữ liệu sang format của ComboBox
-    const data = response.data.map((product: Product) => ({
+    const data = products.map((product: Product) => ({
       value: product.id,
       label: product.name?.trim() || `Sản phẩm ${product.id}`,
     }))
@@ -100,14 +126,14 @@ export const searchProductsApi = async ({
     console.log("Mapped search data for ComboBox:", data)
 
     // Tính toán hasMore dựa trên total và page/limit
-    const hasMore = response.total > response.page * response.limit
+    const hasMore = total > currentPage * currentLimit
 
     // Trả về dữ liệu theo đúng format - có hỗ trợ load more
     return {
       data,
-      total: response.total,
+      total,
       hasMore,
-      nextPage: hasMore ? response.page + 1 : undefined,
+      nextPage: hasMore ? currentPage + 1 : undefined,
     }
   } catch (error) {
     console.error("Error searching products:", error)

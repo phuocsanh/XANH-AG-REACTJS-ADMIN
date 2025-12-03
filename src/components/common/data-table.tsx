@@ -293,6 +293,7 @@ const DataTable = <T extends Record<string, unknown>>({
       {loading ? (
         <LoadingSpinner tip='Đang tải dữ liệu...'>
           <Table
+            size="small"
             columns={finalColumns}
             dataSource={[]}
             pagination={false}
@@ -302,6 +303,7 @@ const DataTable = <T extends Record<string, unknown>>({
         </LoadingSpinner>
       ) : (
         <Table
+          size="small"
           columns={finalColumns}
           dataSource={filteredData}
           locale={{ emptyText }}

@@ -8,6 +8,7 @@ export const salesInvoiceItemSchema = z.object({
   unit_price: z.number().min(0, 'Giá phải lớn hơn hoặc bằng 0'),
   discount_amount: z.number().min(0, 'Giảm giá phải lớn hơn hoặc bằng 0').default(0),
   notes: z.string().optional(),
+  price_type: z.enum(['cash', 'credit']).default('cash'), // Loại giá: tiền mặt hoặc nợ
 });
 
 // Schema cho hóa đơn
@@ -56,6 +57,7 @@ export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {
   unit_price: 0,
   discount_amount: 0,
   notes: '',
+  price_type: 'cash', // Mặc định là giá tiền mặt
 };
 
 export const paymentMethodLabels = {
@@ -70,4 +72,9 @@ export const invoiceStatusLabels = {
   paid: 'Đã thanh toán',
   cancelled: 'Đã hủy',
   refunded: 'Đã hoàn tiền',
+};
+
+export const priceTypeLabels = {
+  cash: 'Giá tiền mặt',
+  credit: 'Giá bán nợ',
 };

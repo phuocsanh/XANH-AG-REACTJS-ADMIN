@@ -34,6 +34,7 @@ export interface Product {
   ingredient: string[]
   // Thêm 2 trường mới từ server
   suggested_price?: string
+  credit_price?: string // Giá bán nợ
 }
 
 // Extend Product interface để tương thích với DataTable
@@ -55,6 +56,7 @@ export interface ProductFormValues
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient?: string
+  credit_price?: string // Giá bán nợ
 }
 
 export interface CreateProductRequest extends AnyObject {
@@ -74,6 +76,7 @@ export interface CreateProductRequest extends AnyObject {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient?: string[]
+  credit_price?: string // Giá bán nợ
 }
 
 export interface UpdateProductRequest
@@ -126,6 +129,7 @@ export interface ConvertedProductValues {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient?: string[]
+  credit_price?: string // Giá bán nợ
 }
 
 export interface ProductFormProps {

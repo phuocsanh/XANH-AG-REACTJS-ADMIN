@@ -64,7 +64,9 @@ import {
   SalesInvoiceFormData,
   defaultSalesInvoiceValues,
   paymentMethodLabels,
+  priceTypeLabels,
 } from './form-config';
+import { ProductsTable } from './components/ProductsTable';
 
 // Disease Warning Imports
 import {
@@ -457,6 +459,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
   }, [latestInvoice?.warning, selectedProductIdsForAdvisory, items]); // Re-run when warning, selected products, or items change
 
   const handleAddProduct = (product: Product) => {
+    // Mặc định sử dụng giá tiền mặt
     append({
       product_id: product.id,
       product_name: product.name,
@@ -464,6 +467,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       unit_price: Number(product.price) || 0,
       discount_amount: 0,
       notes: '',
+      price_type: 'cash', // Mặc định là giá tiền mặt
     });
     setProductSearch('');
   };
@@ -1072,10 +1076,17 @@ ${productInfo}`;
 
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Box display="flex" alignItems="center">
-          <IconButton onClick={() => navigate('/sales-invoices')} sx={{ mr: 2 }}>
+          <IconButton onClick={() => navigate('/sales-invoices')} sx={{ mr: { xs: 1, md: 2 } }}>
             <ArrowBackIcon />
           </IconButton>
-          <Typography variant="h4" fontWeight="bold">
+          <Typography 
+            variant="h4" 
+            fontWeight="bold"
+            sx={{ 
+              fontSize: { xs: '1.1rem', sm: '1.5rem', md: '2.125rem' },
+              lineHeight: { xs: 1.2, md: 1.5 }
+            }}
+          >
             Tạo hóa đơn bán hàng mới
           </Typography>
         </Box>
@@ -1084,13 +1095,33 @@ ${productInfo}`;
           color="secondary"
           startIcon={<PrinterOutlined />}
           onClick={handlePrint}
-          sx={{ ml: 2 }}
+          sx={{ 
+            ml: 1,
+            px: { xs: 1, md: 2 },
+            minWidth: { xs: 'auto', md: 'inherit' },
+            '& .MuiButton-startIcon': {
+              mr: { xs: 0, sm: 1 },
+              m: { xs: 0, sm: '0 8px 0 -4px' }
+            }
+          }}
         >
-          In phiếu tư vấn
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            In phiếu tư vấn
+          </Box>
+          <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+            In
+          </Box>
         </Button>
       </Box>
 
-      <Tabs value={currentTab} onChange={(_, newValue) => setCurrentTab(newValue)} sx={{ mb: 3 }}>
+      <Tabs 
+        value={currentTab} 
+        onChange={(_, newValue) => setCurrentTab(newValue)} 
+        sx={{ mb: 3 }}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+      >
         <Tab label="Thông tin hóa đơn" />
         <Tab label="Tư vấn kỹ thuật" />
         <Tab label="Cảnh Báo Bệnh/Sâu Hại" />
@@ -1363,7 +1394,13 @@ ${productInfo}`;
 
                   <Autocomplete
                     options={productsData?.data?.items || []}
-                    getOptionLabel={(option: Product) => `${option.name} - ${formatCurrency(Number(option.price) || 0)}`}
+                    getOptionLabel={(option: Product) => {
+                      const cashPrice = formatCurrency(Number(option.price) || 0);
+                      const creditPrice = option.credit_price 
+                        ? formatCurrency(Number(option.credit_price) || 0)
+                        : 'Chưa thiết lập';
+                      return `${option.name} - Tiền mặt: ${cashPrice} | Nợ: ${creditPrice}`;
+                    }}
                     onChange={(_, newValue) => {
                       if (newValue) {
                         handleAddProduct(newValue);
@@ -1393,110 +1430,18 @@ ${productInfo}`;
                     </Alert>
                   )}
 
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Sản phẩm</TableCell>
-                          <TableCell align="right">Số lượng</TableCell>
-                          <TableCell align="right">Đơn giá</TableCell>
-                          <TableCell align="right">Giảm giá</TableCell>
-                          <TableCell align="right">Thành tiền</TableCell>
-                          <TableCell align="center">Xóa</TableCell>
-                          <TableCell align="center">Phân tích</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {fields.map((field, index) => {
-                          const itemTotal =
-                            Number(watch(`items.${index}.quantity`)) * Number(watch(`items.${index}.unit_price`)) -
-                            (Number(watch(`items.${index}.discount_amount`)) || 0);
 
-                          return (
-                            <TableRow key={field.id}>
-                              <TableCell>
-                                <Typography variant="body2" fontWeight="bold">
-                                  {watch(`items.${index}.product_name`)}
-                                </Typography>
-                              </TableCell>
-                              <TableCell align="right">
-                                <Controller
-                                  name={`items.${index}.quantity`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <TextField
-                                      {...field}
-                                      type="number"
-                                      size="small"
-                                      inputProps={{ min: 1 }}
-                                      sx={{ width: 80 }}
-                                    />
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell align="right">
-                                <Controller
-                                  name={`items.${index}.unit_price`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <TextField
-                                      {...field}
-                                      type="number"
-                                      size="small"
-                                      inputProps={{ min: 0 }}
-                                      sx={{ width: 120 }}
-                                    />
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell align="right">
-                                <Controller
-                                  name={`items.${index}.discount_amount`}
-                                  control={control}
-                                  render={({ field }) => (
-                                    <TextField
-                                      {...field}
-                                      type="number"
-                                      size="small"
-                                      inputProps={{ min: 0 }}
-                                      sx={{ width: 100 }}
-                                    />
-                                  )}
-                                />
-                              </TableCell>
-                              <TableCell align="right">
-                                <Typography variant="body2" fontWeight="bold" color="success.main">
-                                  {formatCurrency(itemTotal)}
-                                </Typography>
-                              </TableCell>
-                              <TableCell align="center">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => remove(index)}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </TableCell>
-                              <TableCell align="center">
-                                <Checkbox
-                                  checked={selectedProductIdsForAdvisory.includes(field.product_id)}
-                                  onChange={() => {
-                                    const productId = field.product_id;
-                                    setSelectedProductIdsForAdvisory(prev =>
-                                      prev.includes(productId)
-                                        ? prev.filter(id => id !== productId)
-                                        : [...prev, productId]
-                                    );
-                                  }}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <ProductsTable
+                    fields={fields}
+                    control={control}
+                    watch={watch}
+                    setValue={setValue}
+                    remove={remove}
+                    formatCurrency={formatCurrency}
+                    selectedProductIdsForAdvisory={selectedProductIdsForAdvisory}
+                    setSelectedProductIdsForAdvisory={setSelectedProductIdsForAdvisory}
+                    productsData={productsData}
+                  />
                 </CardContent>
               </Card>
             </Grid>

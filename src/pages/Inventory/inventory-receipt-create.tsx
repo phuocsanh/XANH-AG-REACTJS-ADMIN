@@ -59,28 +59,36 @@ const InventoryReceiptCreate: React.FC = () => {
   // Flatten data từ tất cả pages
   const productOptions = useMemo(() => {
     if (!data?.pages) {
+      console.log("No pages data available")
       return []
     }
 
-    return data.pages.flatMap((page) => {
+    const flattened = data.pages.flatMap((page) => {
       if (!page || !page.data) {
         return []
       }
 
       return page.data
     })
+    
+    console.log("Product options flattened:", flattened)
+    return flattened
   }, [data?.pages])
 
   // Tạo object chứa tất cả props cho ComboBox
   const comboBoxProps = useMemo(
-    () => ({
-      data: productOptions,
-      isLoading,
-      isFetching,
-      hasNextPage,
-      isFetchingNextPage,
-      fetchNextPage,
-    }),
+    () => {
+      const props = {
+        data: productOptions,
+        isLoading,
+        isFetching,
+        hasNextPage,
+        isFetchingNextPage,
+        fetchNextPage,
+      }
+      console.log("ComboBox props:", props)
+      return props
+    },
     [
       productOptions,
       isLoading,

@@ -178,58 +178,35 @@ const ProductsList: React.FC = () => {
   // Cấu hình columns cho DataTable
   const columns = [
     {
-      key: "thumb",
-      title: "Hình ảnh",
-      width: 100,
-      render: (record: ExtendedProduct) => {
-        // Lấy ảnh từ thumb hoặc pictures[0]
-        const imageUrl =
-          record.thumb ||
-          (record.pictures && record.pictures.length > 0
-            ? record.pictures[0]
-            : undefined)
-
-        return (
-          <Image
-            src={getImageUrl(imageUrl)}
-            width={80}
-            height={80}
-            style={{ objectFit: "cover", borderRadius: "4px" }}
-            alt={record.name || "Sản phẩm"}
-            fallback='https://via.placeholder.com/80?text=No+Image'
-            preview={false}
-          />
-        )
-      },
-    },
-    {
       key: "name",
       title: "Tên sản phẩm",
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='flex items-center space-x-3'>
-          <div>
-            <div className='font-medium'>{record.name}</div>
-            <div className='text-gray-500 text-sm line-clamp-2'>
-              {record.description && record.description.length > 50 ? (
-                `${record.description.substring(0, 50)}...`
-              ) : (
-                <span>{record.description || ""}</span>
-              )}
-            </div>
-          </div>
-        </div>
+        <div className='font-medium px-2'>{record.name}</div>
       ),
     },
     {
       key: "price",
-      title: "Giá",
-      width: 150,
+      title: "Giá tiền mặt",
+      width: 120,
       render: (record: ExtendedProduct) => (
-        <div className='font-medium text-right'>
+        <div className='font-medium text-right text-green-600'>
           {new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
           }).format(Number(record.price || 0))}
+        </div>
+      ),
+    },
+    {
+      key: "credit_price",
+      title: "Giá nợ",
+      width: 120,
+      render: (record: ExtendedProduct) => (
+        <div className='font-medium text-right text-blue-600'>
+          {record.credit_price ? new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(Number(record.credit_price)) : "---"}
         </div>
       ),
     },
@@ -407,11 +384,17 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Mô tả'>
               {currentProduct.description || "Không có mô tả"}
             </Descriptions.Item>
-            <Descriptions.Item label='Giá bán'>
+            <Descriptions.Item label='Giá bán (Tiền mặt)'>
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
               }).format(Number(currentProduct.price || 0))}
+            </Descriptions.Item>
+            <Descriptions.Item label='Giá bán (Nợ)'>
+              {currentProduct.credit_price ? new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(currentProduct.credit_price)) : "Chưa thiết lập"}
             </Descriptions.Item>
             <Descriptions.Item label='Giá sau giảm'>
               {new Intl.NumberFormat("vi-VN", {

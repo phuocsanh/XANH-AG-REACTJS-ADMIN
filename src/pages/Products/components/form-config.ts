@@ -5,6 +5,7 @@ import { UploadFile } from "antd/lib/upload/interface"
 export const productFormSchema = z.object({
   name: z.string().min(1, "Tên sản phẩm không được để trống"),
   price: z.string().min(1, "Giá bán không được để trống"), // Giữ nguyên là string
+  credit_price: z.string().optional(), // Giá bán nợ (không bắt buộc)
   type: z.number().min(1, "Vui lòng chọn loại sản phẩm"),
   quantity: z.number().min(0, "Số lượng không hợp lệ"),
   discount: z.string().optional(),
@@ -20,10 +21,8 @@ export const productFormSchema = z.object({
   symbol_id: z.number().optional(),
   ingredient: z.string().min(1, "Vui lòng nhập thành phần nguyên liệu"), // Bắt buộc nhập
   // Thêm 2 trường mới từ server
-  profit_margin_percent: z
-    .string()
-    .min(1, "Vui lòng nhập phần trăm lợi nhuận mong muốn"),
-  average_cost_price: z.string().min(1, "Vui lòng nhập giá vốn trung bình"),
+  profit_margin_percent: z.string().optional(), // Không bắt buộc
+  average_cost_price: z.string().optional(), // Không bắt buộc
 })
 
 // Schema validation cho form tạo sản phẩm mới (yêu cầu thêm một số trường bắt buộc)
@@ -41,6 +40,7 @@ export type UpdateProductFormData = z.infer<typeof updateProductFormSchema>
 export interface ProductFormValues {
   name: string
   price: string // Giữ nguyên là string
+  credit_price?: string // Giá bán nợ
   type: number | undefined
   quantity: number
   discount?: string
@@ -65,6 +65,7 @@ export interface ConvertedProductValues {
   [key: string]: unknown
   name: string
   price: string // Giữ nguyên là string
+  credit_price?: string // Giá bán nợ
   type: number
   quantity: number
   description: string
@@ -89,6 +90,7 @@ export interface ConvertedProductValues {
 export const defaultProductFormValues: ProductFormValues = {
   name: "",
   price: "", // Giữ nguyên là string
+  credit_price: "", // Giá bán nợ
   type: undefined,
   quantity: 0,
   discount: "0",

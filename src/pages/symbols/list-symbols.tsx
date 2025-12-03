@@ -240,7 +240,7 @@ const ListSymbols = () => {
           initialValues={defaultSymbolValues}
         >
           <Form.Item
-            name='symbolCode'
+            name='code'
             label='Mã ký hiệu'
             rules={[{ required: true, message: "Vui lòng nhập mã ký hiệu" }]}
           >
@@ -248,7 +248,7 @@ const ListSymbols = () => {
           </Form.Item>
 
           <Form.Item
-            name='symbolName'
+            name='name'
             label='Tên ký hiệu'
             rules={[{ required: true, message: "Vui lòng nhập tên ký hiệu" }]}
           >
@@ -286,7 +286,7 @@ const ListSymbols = () => {
         title='Xác nhận xóa'
         content={
           deletingSymbol
-            ? `Bạn có chắc chắn muốn xóa ký hiệu "${deletingSymbol.symbolName}"?`
+            ? `Bạn có chắc chắn muốn xóa ký hiệu "${deletingSymbol.name}"?`
             : ""
         }
         okText='Xóa'

@@ -224,6 +224,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         reset({
           name: productItem.name?.trim() || "",
           price: productItem.price || "",
+          credit_price: productItem.credit_price || "", // Giá bán nợ
           type: productItem.type || undefined,
           quantity: productItem.quantity || 0,
           attributes: productItem.attributes || {},
@@ -333,6 +334,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         status: values.status,
         // Giữ nguyên giá trị price vì đã được xử lý trong FormField
         price: values.price,
+        credit_price: values.credit_price || "", // Giá bán nợ
         symbol_id: values.symbol_id,
         sub_types: values.sub_types || [],
         profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
@@ -350,6 +352,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       const serverData = {
         name: convertedValues.name,
         price: convertedValues.price,
+        credit_price: convertedValues.credit_price, // Giá bán nợ
         type: convertedValues.type,
         quantity: convertedValues.quantity,
         description: convertedValues.description,
@@ -469,12 +472,28 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className='w-full'>
+                <FormFieldNumber
+                  name='credit_price'
+                  control={control}
+                  label='Giá bán nợ (VNĐ)'
+                  placeholder='Nhập giá bán nợ'
+                  className='w-full'
+                  fixedDecimalScale={false}
+                />
+              </div>
+
+              <div className='w-full'>
                 <FormComboBox
                   name='unit_id'
                   control={control}
                   label='Đơn vị tính'
                   placeholder='Chọn đơn vị tính'
-                  options={[]}
+                  options={
+                    units?.data?.items?.map((unit: any) => ({
+                      label: unit.name,
+                      value: unit.id,
+                    })) || []
+                  }
                   className='w-full'
                   required
                   rules={{ required: "Vui lòng chọn đơn vị tính" }}
@@ -500,10 +519,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   control={control}
                   label='Phần trăm lợi nhuận mong muốn (%)'
                   placeholder='Nhập phần trăm lợi nhuận mong muốn'
-                  required
-                  rules={{
-                    required: "Vui lòng nhập phần trăm lợi nhuận mong muốn",
-                  }}
                   className='w-full'
                 />
               </div>
@@ -515,8 +530,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   control={control}
                   label='Giá vốn trung bình (VNĐ)'
                   placeholder='Nhập giá vốn trung bình'
-                  required
-                  rules={{ required: "Vui lòng nhập giá vốn trung bình" }}
                   className='w-full'
                 />
               </div>

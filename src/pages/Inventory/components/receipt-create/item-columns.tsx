@@ -42,19 +42,19 @@ const useItemColumns = ({
     },
     {
       title: "Sản phẩm",
-      dataIndex: "productId",
-      key: "productId",
+      dataIndex: "product_id",
+      key: "product_id",
       width: 120,
-      render: (productId: number, record: InventoryReceiptItemForm) => {
+      render: (product_id: number, record: InventoryReceiptItemForm) => {
         return (
           <div className='w-full'>
             <ComboBox
-              value={productId}
+              value={product_id}
               placeholder='Chọn sản phẩm'
               {...comboBoxProps}
               showSearch={true}
               onChange={(value) =>
-                handleItemChange(record.key, "productId", value)
+                handleItemChange(record.key, "product_id", value)
               }
               style={{ width: "100%" }}
             />
