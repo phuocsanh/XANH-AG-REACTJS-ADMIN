@@ -10,6 +10,7 @@ import {
 } from "@/models/product.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // Query keys cho product
 export const productKeys = {
@@ -273,8 +274,8 @@ export const useCreateProductMutation = () => {
       return response
     },
     onSuccess: () => {
-      // Invalidate và refetch danh sách products
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() })
+      // Invalidate tất cả queries liên quan đến products
+      invalidateResourceQueries(["/products"], productKeys.all)
       toast.success("Tạo sản phẩm thành công!")
     },
     onError: (error: unknown) => {

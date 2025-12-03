@@ -109,6 +109,8 @@ export const usePaginationQuery = <T>(
         success: true,
       } as PaginationResponse<T>
     },
+    refetchOnMount: true, // Luôn refetch khi component mount
+    staleTime: 0, // Data luôn được coi là stale, sẽ refetch khi invalidate
     ...options,
   })
 }
