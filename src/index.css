@@ -1,4 +1,27 @@
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
+
+/* CSS Variables cho bảng màu gradient xanh lá cây */
+:root {
+  /* Màu chính - Primary Green */
+  --green-light: #10b981;
+  --green-medium: #059669;
+  --green-dark: #047857;
+  --green-deep: #065f46;
+  
+  /* Màu phụ - Secondary Shades */
+  --lime-green: #84cc16;
+  --forest-green: #16a34a;
+  --teal: #14b8a6;
+  
+  /* Gradient Combinations */
+  --gradient-primary: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  --gradient-sidebar: linear-gradient(180deg, #059669 0%, #047857 100%);
+  --gradient-button: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-card: linear-gradient(135deg, #84cc16 0%, #10b981 100%);
+  --gradient-dashboard: linear-gradient(135deg, #14b8a6 0%, #059669 100%);
+  --gradient-graph: linear-gradient(135deg, #047857 0%, #059669 100%);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -39,13 +62,16 @@ body {
 }
 
 .btn-blue {
-  background: #3872fa !important;
+  background: var(--gradient-button) !important;
   color: #fff !important;
   text-transform: capitalize !important;
   padding: 7px 20px !important;
+  border: none !important;
 }
 .btn-blue:hover {
-  background: #346ae7 !important;
+  background: var(--gradient-primary) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 .btn-blue svg {
   font-size: 18px;
@@ -86,7 +112,8 @@ body {
 }
 
 .sidebar {
-  @apply h-full bg-white border-r border-gray-200;
+  background: var(--gradient-sidebar);
+  @apply h-full border-r border-gray-200;
 }
 
 .sidebar .sidebarTabs ul {
@@ -98,7 +125,7 @@ body {
 }
 
 .sidebar .sidebarTabs button {
-  @apply justify-start text-gray-700 capitalize text-sm font-semibold py-1 px-2.5 relative;
+  @apply justify-start text-white capitalize text-sm font-semibold py-1 px-2.5 relative;
 }
 
 .sidebar .sidebarTabs button svg {
@@ -114,12 +141,17 @@ body {
 }
 
 .sidebar .sidebarTabs button:hover {
-  @apply bg-gray-100;
+  background-color: rgba(16, 185, 129, 0.25);
+}
+
+.sidebar .sidebarTabs button.active {
+  background-color: rgba(16, 185, 129, 0.85) !important;
 }
 
 .sidebar .sidebarTabs button::before {
   content: "";
-  @apply absolute top-1/2 left-[-8px] w-1 h-0 bg-blue-500 rounded-r transition-all duration-300 opacity-0;
+  background-color: var(--green-light);
+  @apply absolute top-1/2 left-[-8px] w-1 h-0 rounded-r transition-all duration-300 opacity-0;
 }
 
 .sidebar .sidebarTabs button:hover::before,
@@ -133,7 +165,8 @@ body {
 
 .sidebar .sidebarTabs button.active,
 .sidebar .sidebarTabs button.active * {
-  @apply text-blue-500;
+  @apply text-white;
+  font-weight: 600;
 }
 
 .sidebar .sidebarTabs li {
@@ -154,19 +187,21 @@ body {
 
 .sidebar .sidebarTabs li .submenu button::after {
   content: "";
-  @apply absolute top-1/2 -translate-y-1/2 left-4 w-1.5 h-1.5 bg-gray-400 rounded-full;
+  background-color: rgba(16, 185, 129, 0.5);
+  @apply absolute top-1/2 -translate-y-1/2 left-4 w-1.5 h-1.5 rounded-full;
 }
 
 .sidebar .sidebarTabs li .submenu button {
-  @apply py-1 pl-9 pr-5 font-semibold text-gray-500 justify-start w-full;
+  @apply py-1 pl-9 pr-5 font-semibold justify-start w-full;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .sidebar .sidebarTabs li .submenu button.active {
-  @apply text-blue-500;
+  @apply text-white;
 }
 
 .sidebar .sidebarTabs li .submenu button.active::after {
-  @apply bg-blue-500;
+  background-color: var(--green-light);
 }
 
 .sidebar .sidebarTabs li .submenuWrapper {
@@ -290,7 +325,7 @@ body {
 }
 
 .graphBox {
-  background-image: linear-gradient(#1a50b5, #2a6ff7);
+  background: var(--gradient-graph);
   border-radius: 10px;
   padding: 25px;
 }
@@ -344,9 +379,10 @@ header .part2 button svg {
   border: 1px solid rgba(0, 0, 0, 0.3);
   overflow: hidden;
   border-radius: 10px;
+  transition: all 0.3s;
 }
 .searchBox:hover {
-  border: 1px solid rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--green-medium);
 }
 .searchBox input {
   outline: none !important;
@@ -456,6 +492,10 @@ p {
 }
 .form .form-group .input:hover {
   border: 1px solid rgba(0, 0, 0, 0.4);
+}
+.form .form-group .input:focus {
+  border: 1px solid var(--green-medium);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .form .form-group .input.lg {
@@ -642,11 +682,11 @@ p {
 }
 
 .socialBtn button:hover {
-  border: 1px solid #3872fa !important;
-  color: #3872fa !important;
+  border: 1px solid var(--green-medium) !important;
+  color: var(--green-medium) !important;
 }
 .socialBtn button:hover * {
-  color: #3872fa !important;
+  color: var(--green-medium) !important;
 }
 
 .signUpSection {

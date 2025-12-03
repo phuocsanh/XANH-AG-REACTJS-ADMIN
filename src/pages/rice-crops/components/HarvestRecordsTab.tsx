@@ -73,9 +73,9 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       cancelText: 'Hủy',
       onOk: async () => {
         try {
-          await deleteMutation.mutateAsync(id);
+          await deleteMutation.mutateAsync({ id, cropId: riceCropId });
           message.success('Xóa đợt thu hoạch thành công');
-        } catch (error) {
+        } catch {
           message.error('Có lỗi xảy ra khi xóa đợt thu hoạch');
         }
       },
@@ -150,6 +150,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
     {
       title: 'Hành động',
       key: 'action',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (text: any, record: HarvestRecord) => (
         <Space size="small">
           <Button
@@ -252,8 +253,9 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
                 <InputNumber
                   style={{ width: '100%' }}
                   min={0}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value!.replace(/\$\s?|(,*)/g, '')}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '0') as any}
                   onChange={(val) => {
                     const price = form.getFieldValue('unit_price') || 0;
                     form.setFieldsValue({ total_revenue: (val || 0) * price });
@@ -270,8 +272,9 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
                 <InputNumber
                   style={{ width: '100%' }}
                   min={0}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value!.replace(/\$\s?|(,*)/g, '')}
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '0') as any}
                   onChange={(val) => {
                     const qty = form.getFieldValue('yield_amount') || 0;
                     form.setFieldsValue({ total_revenue: qty * (val || 0) });
@@ -289,8 +292,9 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
             <InputNumber
               style={{ width: '100%' }}
               min={0}
-              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={value => value!.replace(/\$\s?|(,*)/g, '')}
+              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '0') as any}
             />
           </Form.Item>
 

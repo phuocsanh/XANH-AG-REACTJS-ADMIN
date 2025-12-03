@@ -4,11 +4,11 @@ import {
   WarningOutlined, 
   CheckCircleOutlined, 
   ClockCircleOutlined,
-  CalendarOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { WarningMessageDisplay } from './WarningMessageDisplay';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 /**
  * Interface chung cho tất cả các loại cảnh báo
@@ -103,31 +103,15 @@ export const DiseaseWarningCard: React.FC<DiseaseWarningCardProps> = ({
               {warning.risk_level}
             </Tag>
           </Space>
-
-          {warning.peak_days && (
-            <Space>
-              <CalendarOutlined style={{ color: riskColor }} />
-              <Text type="danger" strong style={{ color: riskColor }}>
-                Ngày cao điểm: {warning.peak_days}
-              </Text>
-            </Space>
-          )}
         </Space>
 
         <Divider style={{ margin: '12px 0' }} />
 
         {/* Message */}
-        <Paragraph
-          style={{
-            whiteSpace: 'pre-wrap',
-            backgroundColor: '#f5f5f5',
-            padding: 16,
-            borderRadius: 8,
-            marginBottom: 0,
-          }}
-        >
-          {warning.message}
-        </Paragraph>
+        <WarningMessageDisplay 
+          message={warning.message} 
+          peakDays={warning.peak_days} 
+        />
 
         <Divider style={{ margin: '12px 0' }} />
 

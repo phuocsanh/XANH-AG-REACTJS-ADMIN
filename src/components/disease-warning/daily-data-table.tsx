@@ -227,14 +227,14 @@ export const DailyDataTable: React.FC<DailyDataTableProps> = ({
       key: 'score',
       width: 120,
       render: (score: number) => (
-        <Tooltip title="Tổng điểm tối đa: 135">
+        <Tooltip title="Thang điểm AI: 0-100">
           <span
             style={{
-              fontWeight: score >= 100 ? 'bold' : 'normal',
-              color: score >= 100 ? '#ff4d4f' : 'inherit',
+              fontWeight: score >= 80 ? 'bold' : 'normal',
+              color: score >= 80 ? '#ff4d4f' : 'inherit',
             }}
           >
-            {score}/135
+            {score}/100
           </span>
         </Tooltip>
       ),

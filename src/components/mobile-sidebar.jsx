@@ -230,7 +230,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
             </li>
 
             <li>
-              <h6 className='text-black/70 capitalize px-3 mt-4'>
+              <h6 className='text-green-100 capitalize px-3 mt-4'>
                 Authentication
               </h6>
             </li>

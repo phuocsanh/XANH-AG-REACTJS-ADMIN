@@ -62,8 +62,11 @@ export const useGrainDiscolorationWarningQuery = () => {
 export const useRunGrainDiscolorationAnalysisMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.postRaw<GrainDiscolorationWarning>("/ai-grain-discoloration/run-now", {})
-      return response
+      // Sử dụng api.instance để có thể set timeout lâu hơn (2 phút) cho tác vụ AI
+      const response = await api.instance.post<GrainDiscolorationWarning>("/ai-grain-discoloration/run-now", {}, {
+        timeout: 120000
+      })
+      return response as unknown as GrainDiscolorationWarning
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: grainDiscolorationKeys.warning() })

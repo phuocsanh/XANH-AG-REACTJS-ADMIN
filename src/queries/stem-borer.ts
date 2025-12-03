@@ -61,8 +61,11 @@ export const useStemBorerWarningQuery = () => {
 export const useRunStemBorerAnalysisMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.postRaw<StemBorerWarning>("/ai-stem-borer/run-now", {})
-      return response
+      // Sử dụng api.instance để có thể set timeout lâu hơn (2 phút) cho tác vụ AI
+      const response = await api.instance.post<StemBorerWarning>("/ai-stem-borer/run-now", {}, {
+        timeout: 120000
+      })
+      return response as unknown as StemBorerWarning
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: stemBorerKeys.warning() })

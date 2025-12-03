@@ -873,7 +873,7 @@ ${productInfo}`;
         .warning-content { white-space: pre-line; }
         .risk-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 12px; margin-right: 10px; }
         .risk-CAO { background-color: #f5222d; }
-        .risk-TRUNG_BINH { background-color: #fa8c16; }
+        .risk-TRUNG_BINH { background-color: #fa8c16; color: #000; }
         .risk-THAP { background-color: #52c41a; }
         .footer { margin-top: 40px; text-align: center; font-style: italic; font-size: 12px; }
         
@@ -991,10 +991,28 @@ ${productInfo}`;
         
         activeWarnings.forEach(w => {
           let messageHtml = w.data?.message || '';
+          
+          // Loại bỏ phần "PHÂN TÍCH CHI TIẾT" và "KHUYẾN NGHỊ" khỏi message
+          // Chỉ lấy phần từ đầu đến trước "PHÂN TÍCH CHI TIẾT" hoặc "🔍 PHÂN TÍCH CHI TIẾT"
+          const detailIndex = messageHtml.indexOf('PHÂN TÍCH CHI TIẾT');
+          const detailIndexWithEmoji = messageHtml.indexOf('🔍 PHÂN TÍCH CHI TIẾT');
+          
+          let cutIndex = -1;
+          if (detailIndex !== -1 && detailIndexWithEmoji !== -1) {
+            cutIndex = Math.min(detailIndex, detailIndexWithEmoji);
+          } else if (detailIndex !== -1) {
+            cutIndex = detailIndex;
+          } else if (detailIndexWithEmoji !== -1) {
+            cutIndex = detailIndexWithEmoji;
+          }
+          
+          if (cutIndex !== -1) {
+            messageHtml = messageHtml.substring(0, cutIndex).trim();
+          }
+          
           content += `
             <div class="disease-warning-item">
               <div class="disease-title">
-                <span class="risk-badge risk-${w.data?.risk_level}">${w.data?.risk_level === 'CAO' ? 'CAO' : 'TRUNG BÌNH'}</span>
                 ${w.name}
               </div>
               <div class="disease-content">

@@ -62,8 +62,11 @@ export const useBrownPlantHopperWarningQuery = () => {
 export const useRunBrownPlantHopperAnalysisMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.postRaw<BrownPlantHopperWarning>("/ai-brown-plant-hopper/run-now", {})
-      return response
+      // Sử dụng api.instance để có thể set timeout lâu hơn (2 phút) cho tác vụ AI
+      const response = await api.instance.post<BrownPlantHopperWarning>("/ai-brown-plant-hopper/run-now", {}, {
+        timeout: 120000
+      })
+      return response as unknown as BrownPlantHopperWarning
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brownPlantHopperKeys.warning() })

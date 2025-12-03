@@ -60,8 +60,11 @@ export const useSheathBlightWarningQuery = () => {
 export const useRunSheathBlightAnalysisMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.postRaw<SheathBlightWarning>("/ai-sheath-blight/run-now", {})
-      return response
+      // Sử dụng api.instance để có thể set timeout lâu hơn (2 phút) cho tác vụ AI
+      const response = await api.instance.post<SheathBlightWarning>("/ai-sheath-blight/run-now", {}, {
+        timeout: 120000
+      })
+      return response as unknown as SheathBlightWarning
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sheathBlightKeys.warning() })

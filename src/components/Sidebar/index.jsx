@@ -1,4 +1,3 @@
-import Logo from "../../assets/images/logo.png"
 import { Link, useLocation } from "react-router-dom"
 import Button from "@mui/material/Button"
 import { MdOutlineDashboard } from "react-icons/md"
@@ -34,13 +33,9 @@ const Sidebar = () => {
   const location = useLocation()
 
   // Debug: Log user info
-  console.log('=== SIDEBAR DEBUG ===');
-  console.log('User Info:', userInfo);
-  console.log('User Role:', userInfo?.role);
-  console.log('Role Code:', userInfo?.role?.code);
-  console.log('Is SUPER_ADMIN?', userInfo?.role?.code === 'SUPER_ADMIN');
-  console.log('Permissions:', userInfo?.role?.permissions);
-  console.log('====================');
+  console.log("=== SIDEBAR DEBUG ===")
+  console.log("User Info:", userInfo)
+  console.log("User Role:", userInfo?.role)
 
   const isOpenSubmenu = (index) => {
     setActiveTab(index)
@@ -48,16 +43,9 @@ const Sidebar = () => {
   }
 
   return (
-    <div className='sidebar h-full bg-white shadow-lg overflow-y-auto'>
-      <Link to='/'>
-        <div className='logoWrapper py-3 px-4'>
-          <img src={Logo} className='w-full max-w-[150px]' />
-        </div>
-      </Link>
-
-      <div className='sidebarTabs px-2 mt-4 pb-6'>
+    <div className='sidebar h-full'>
+      <div className='sidebarTabs px-2 mt-4 overflow-y-auto h-[calc(100vh-80px)]'>
         <ul className='flex gap-3 flex-col'>
-          {/* Dashboard - Always visible */}
           <li>
             <Link to='/'>
               <Button
@@ -65,21 +53,21 @@ const Sidebar = () => {
                 onClick={() => isOpenSubmenu(0)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdOutlineDashboard />
+                  <MdOutlineDashboard className='text-blue-200' />
                 </span>
                 Dashboard
               </Button>
             </Link>
           </li>
 
-          {hasPermission(userInfo, 'PRODUCT_VIEW') && (
+          {hasPermission(userInfo, "PRODUCT_VIEW") && (
             <li>
               <Button
                 className={`w-full ${activeTab === 1 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(1)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <TbBrandProducthunt />
+                  <TbBrandProducthunt className='text-purple-200' />
                 </span>
                 Sản phẩm
                 <span
@@ -109,12 +97,14 @@ const Sidebar = () => {
                       </Button>
                     </Link>
                   </li>
-                  {hasPermission(userInfo, 'PRODUCT_MANAGE') && (
+                  {hasPermission(userInfo, "PRODUCT_MANAGE") && (
                     <li>
                       <Link to='/products/new'>
                         <Button
                           className={`w-full ${
-                            location.pathname === "/products/new" ? "active" : ""
+                            location.pathname === "/products/new"
+                              ? "active"
+                              : ""
                           }`}
                         >
                           Thêm sản phẩm
@@ -127,21 +117,21 @@ const Sidebar = () => {
             </li>
           )}
 
-          {hasPermission(userInfo, 'SALES_VIEW') && (
+          {hasPermission(userInfo, "SALES_VIEW") && (
             <li>
               <Button
                 className={`w-full ${activeTab === 2 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(2)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <HiOutlineShoppingCart />
+                  <HiOutlineShoppingCart className='text-orange-200' />
                 </span>
                 Đơn đặt hàng
               </Button>
             </li>
           )}
 
-          {hasPermission(userInfo, 'PRODUCT_MANAGE') && (
+          {hasPermission(userInfo, "PRODUCT_MANAGE") && (
             <>
               <li>
                 <Link to='/category/list'>
@@ -150,7 +140,7 @@ const Sidebar = () => {
                     onClick={() => isOpenSubmenu(3)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <BiCategory />
+                      <BiCategory className='text-indigo-200' />
                     </span>
                     Loại sản phẩm
                   </Button>
@@ -163,7 +153,7 @@ const Sidebar = () => {
                     onClick={() => isOpenSubmenu(4)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <TbCategoryMinus />
+                      <TbCategoryMinus className='text-pink-200' />
                     </span>
                     Loại phụ sản phẩm
                   </Button>
@@ -177,7 +167,7 @@ const Sidebar = () => {
                     onClick={() => isOpenSubmenu(5)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <RiFileListLine />
+                      <RiFileListLine className='text-teal-200' />
                     </span>
                     Đơn vị tính
                   </Button>
@@ -192,7 +182,7 @@ const Sidebar = () => {
                     onClick={() => isOpenSubmenu(6)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <FaRegCircle />
+                      <FaRegCircle className='text-cyan-200' />
                     </span>
                     Ký hiệu
                   </Button>
@@ -202,7 +192,7 @@ const Sidebar = () => {
           )}
 
           {/* Thêm menu cho supplier */}
-          {hasPermission(userInfo, 'INVENTORY_MANAGE') && (
+          {hasPermission(userInfo, "INVENTORY_MANAGE") && (
             <li>
               <Link to='/suppliers'>
                 <Button
@@ -210,7 +200,7 @@ const Sidebar = () => {
                   onClick={() => isOpenSubmenu(7)}
                 >
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                    <MdLocalShipping />
+                    <MdLocalShipping className='text-blue-200' />
                   </span>
                   Nhà cung cấp
                 </Button>
@@ -226,7 +216,7 @@ const Sidebar = () => {
                 onClick={() => isOpenSubmenu(8)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiPoisonBottle />
+                  <GiPoisonBottle className='text-red-200' />
                 </span>
                 Thuốc BVTV
               </Button>
@@ -241,7 +231,7 @@ const Sidebar = () => {
                 onClick={() => isOpenSubmenu(15)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiGrain />
+                  <GiGrain className='text-amber-200' />
                 </span>
                 Thị trường Lúa Gạo
               </Button>
@@ -256,7 +246,7 @@ const Sidebar = () => {
                 onClick={() => isOpenSubmenu(16)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdCloudQueue />
+                  <MdCloudQueue className='text-sky-200' />
                 </span>
                 Dự báo Thời tiết
               </Button>
@@ -264,7 +254,7 @@ const Sidebar = () => {
           </li>
 
           {/* Thêm menu cho disease warning */}
-          {hasPermission(userInfo, 'RICE_BLAST_VIEW') && (
+          {hasPermission(userInfo, "RICE_BLAST_VIEW") && (
             <li>
               <Link to='/disease-warning'>
                 <Button
@@ -272,7 +262,7 @@ const Sidebar = () => {
                   onClick={() => isOpenSubmenu(23)}
                 >
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                    <MdWarning />
+                    <MdWarning className='text-yellow-200' />
                   </span>
                   Cảnh báo Bệnh/Sâu hại
                 </Button>
@@ -288,7 +278,7 @@ const Sidebar = () => {
                 onClick={() => isOpenSubmenu(24)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdWarning className='text-red-600' />
+                  <MdWarning className='text-red-200' />
                 </span>
                 Kiểm tra thuốc bị cấm
               </Button>
@@ -303,7 +293,7 @@ const Sidebar = () => {
                 onClick={() => isOpenSubmenu(25)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiGrain className='text-green-600' />
+                  <GiGrain className='text-green-200' />
                 </span>
                 Quản lý vụ lúa
               </Button>
@@ -318,7 +308,7 @@ const Sidebar = () => {
                   onClick={() => isOpenSubmenu(9)}
                 >
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                    <FaUsers />
+                    <FaUsers className='text-violet-200' />
                   </span>
                   Quản lý người dùng
                 </Button>
@@ -327,14 +317,14 @@ const Sidebar = () => {
           )}
 
           {/* Quản lý nhập hàng */}
-          {hasPermission(userInfo, 'INVENTORY_VIEW') && (
+          {hasPermission(userInfo, "INVENTORY_VIEW") && (
             <li>
               <Button
                 className={`w-full ${activeTab === 10 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(10)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdInventory />
+                  <MdInventory className='text-emerald-200' />
                 </span>
                 Quản lý nhập hàng
                 <span
@@ -364,7 +354,7 @@ const Sidebar = () => {
                       Danh sách phiếu nhập
                     </Button>
                   </Link>
-                  {hasPermission(userInfo, 'INVENTORY_MANAGE') && (
+                  {hasPermission(userInfo, "INVENTORY_MANAGE") && (
                     <Link to='/inventory/receipts/create'>
                       <Button
                         className={`w-full ${
@@ -383,16 +373,17 @@ const Sidebar = () => {
           )}
 
           {/* Quản lý bán hàng */}
-          {(hasPermission(userInfo, 'SALES_VIEW') || hasPermission(userInfo, 'SALES_MANAGE')) && (
+          {(hasPermission(userInfo, "SALES_VIEW") ||
+            hasPermission(userInfo, "SALES_MANAGE")) && (
             <>
               <li>
-                <h6 className='text-black/70 capitalize px-3 mt-4'>
+                <h6 className='text-green-100 capitalize px-3 mt-4'>
                   Quản lý bán hàng
                 </h6>
               </li>
 
               {/* Mùa vụ */}
-              {hasPermission(userInfo, 'SALES_MANAGE') && (
+              {hasPermission(userInfo, "SALES_MANAGE") && (
                 <li>
                   <Link to='/seasons'>
                     <Button
@@ -400,7 +391,7 @@ const Sidebar = () => {
                       onClick={() => isOpenSubmenu(17)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <GiGrain />
+                        <GiGrain className='text-green-200' />
                       </span>
                       Mùa vụ
                     </Button>
@@ -409,7 +400,7 @@ const Sidebar = () => {
               )}
 
               {/* Khách hàng */}
-              {hasPermission(userInfo, 'SALES_VIEW') && (
+              {hasPermission(userInfo, "SALES_VIEW") && (
                 <li>
                   <Link to='/customers'>
                     <Button
@@ -417,7 +408,7 @@ const Sidebar = () => {
                       onClick={() => isOpenSubmenu(18)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <FaUsers />
+                        <FaUsers className='text-blue-200' />
                       </span>
                       Khách hàng
                     </Button>
@@ -426,7 +417,7 @@ const Sidebar = () => {
               )}
 
               {/* Hóa đơn bán hàng */}
-              {hasPermission(userInfo, 'SALES_VIEW') && (
+              {hasPermission(userInfo, "SALES_VIEW") && (
                 <li>
                   <Link to='/sales-invoices'>
                     <Button
@@ -434,7 +425,7 @@ const Sidebar = () => {
                       onClick={() => isOpenSubmenu(19)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <HiOutlineShoppingCart />
+                        <HiOutlineShoppingCart className='text-green-200' />
                       </span>
                       Hóa đơn bán hàng
                     </Button>
@@ -443,7 +434,7 @@ const Sidebar = () => {
               )}
 
               {/* Thanh toán */}
-              {hasPermission(userInfo, 'SALES_VIEW') && (
+              {hasPermission(userInfo, "SALES_VIEW") && (
                 <li>
                   <Link to='/payments'>
                     <Button
@@ -451,7 +442,7 @@ const Sidebar = () => {
                       onClick={() => isOpenSubmenu(20)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <MdOutlineDashboard />
+                        <MdOutlineDashboard className='text-green-200' />
                       </span>
                       Thanh toán
                     </Button>
@@ -460,7 +451,7 @@ const Sidebar = () => {
               )}
 
               {/* Công nợ */}
-              {hasPermission(userInfo, 'SALES_VIEW') && (
+              {hasPermission(userInfo, "SALES_VIEW") && (
                 <li>
                   <Link to='/debt-notes'>
                     <Button
@@ -468,7 +459,7 @@ const Sidebar = () => {
                       onClick={() => isOpenSubmenu(21)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <RiFileListLine />
+                        <RiFileListLine className='text-red-200' />
                       </span>
                       Công nợ
                     </Button>
@@ -477,7 +468,7 @@ const Sidebar = () => {
               )}
 
               {/* Trả hàng */}
-              {hasPermission(userInfo, 'SALES_VIEW') && (
+              {hasPermission(userInfo, "SALES_VIEW") && (
                 <li>
                   <Link to='/sales-returns'>
                     <Button
@@ -485,7 +476,7 @@ const Sidebar = () => {
                       onClick={() => isOpenSubmenu(22)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <MdAssignmentReturn />
+                        <MdAssignmentReturn className='text-orange-200' />
                       </span>
                       Trả hàng
                     </Button>
@@ -501,14 +492,14 @@ const Sidebar = () => {
               onClick={() => isOpenSubmenu(11)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                <MdNotificationsNone />
+                <MdNotificationsNone className='text-purple-200' />
               </span>
               Thông báo
             </Button>
           </li>
 
           <li>
-            <h6 className='text-black/70 capitalize px-3 mt-4'>
+            <h6 className='text-green-100 capitalize px-3 mt-4'>
               Authentication
             </h6>
           </li>
@@ -521,7 +512,7 @@ const Sidebar = () => {
                     onClick={() => isOpenSubmenu(12)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <FiUser />
+                      <FiUser className='text-blue-200' />
                     </span>
                     Đăng nhập
                   </Button>
@@ -536,7 +527,7 @@ const Sidebar = () => {
               onClick={() => isOpenSubmenu(13)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                <RiLockPasswordLine />
+                <RiLockPasswordLine className='text-amber-200' />
               </span>
               Quên mật khẩu
             </Button>
@@ -548,7 +539,7 @@ const Sidebar = () => {
               onClick={() => isOpenSubmenu(14)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                <IoSettingsOutline />
+                <IoSettingsOutline className='text-gray-300' />
               </span>
               Cài đặt
             </Button>

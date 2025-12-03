@@ -113,7 +113,9 @@ export interface RiceCrop {
   notes?: string;
   created_at: string;
   updated_at: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   customer?: any;  // Từ customer module
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   season?: any;    // Từ season module
 }
 
@@ -262,6 +264,8 @@ export interface CreateRiceCropDto {
   transplanting_date?: string;
   expected_harvest_date?: string;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
 /** DTO cập nhật vụ lúa */
@@ -275,18 +279,24 @@ export interface UpdateRiceCropDto {
   yield_amount?: number;
   quality_grade?: string;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.patchRaw
 }
 
 /** DTO cập nhật giai đoạn sinh trưởng */
 export interface UpdateGrowthStageDto {
   growth_stage: GrowthStage;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.patchRaw
 }
 
 /** DTO cập nhật trạng thái */
 export interface UpdateStatusDto {
   status: CropStatus;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.patchRaw
 }
 
 /** DTO tạo chi phí */
@@ -301,6 +311,8 @@ export interface CreateCostItemDto {
   purchase_date?: string;
   invoice_id?: number;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
 /** DTO tạo bản ghi thu hoạch */
@@ -316,6 +328,8 @@ export interface CreateHarvestRecordDto {
   payment_status: PaymentStatus;
   payment_date?: string;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
 /** DTO tạo lịch canh tác */
@@ -327,6 +341,7 @@ export interface CreateFarmingScheduleDto {
   actual_date?: string;
   status?: ScheduleStatus;
   description?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
@@ -342,6 +357,7 @@ export interface CreateApplicationRecordDto {
   area_applied?: number;
   applicator_name?: string;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; // Index signature để tránh lỗi dư thừa
 }
 
@@ -358,6 +374,8 @@ export interface CreateGrowthTrackingDto {
   severity?: Severity;
   photo_urls?: string[];
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
 // ==================== FILTER PARAMS ====================

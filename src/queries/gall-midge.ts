@@ -61,8 +61,11 @@ export const useGallMidgeWarningQuery = () => {
 export const useRunGallMidgeAnalysisMutation = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.postRaw<GallMidgeWarning>("/ai-gall-midge/run-now", {})
-      return response
+      // Sử dụng api.instance để có thể set timeout lâu hơn (2 phút) cho tác vụ AI
+      const response = await api.instance.post<GallMidgeWarning>("/ai-gall-midge/run-now", {}, {
+        timeout: 120000
+      })
+      return response as unknown as GallMidgeWarning
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gallMidgeKeys.warning() })
