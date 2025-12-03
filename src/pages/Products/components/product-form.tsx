@@ -199,6 +199,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Lấy dữ liệu từ response
         const productItem = productData as Product
         console.log("Product data from API:", productItem)
+        console.log("Product quantity from API:", productItem.quantity)
+        console.log("Product quantity type:", typeof productItem.quantity)
 
         if (!productItem) {
           throw new Error("Không tìm thấy thông tin sản phẩm")
@@ -461,10 +463,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 <FormFieldNumber
                   name='price'
                   control={control}
-                  label='Giá bán (VNĐ)'
-                  placeholder='Nhập giá bán'
+                  label='Giá bán tiền mặt (VNĐ)'
+                  placeholder='Nhập giá bán tiền mặt'
                   required
-                  rules={{ required: "Vui lòng nhập giá bán" }}
                   className='w-full'
                   fixedDecimalScale={false}
                   // Trường price theo schema là string nên component sẽ tự động trả về string
@@ -477,6 +478,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   control={control}
                   label='Giá bán nợ (VNĐ)'
                   placeholder='Nhập giá bán nợ'
+                  required
                   className='w-full'
                   fixedDecimalScale={false}
                 />

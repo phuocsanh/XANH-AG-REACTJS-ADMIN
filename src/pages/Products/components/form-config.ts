@@ -4,8 +4,16 @@ import { UploadFile } from "antd/lib/upload/interface"
 // Schema validation cho form sản phẩm
 export const productFormSchema = z.object({
   name: z.string().min(1, "Tên sản phẩm không được để trống"),
-  price: z.string().min(1, "Giá bán không được để trống"), // Giữ nguyên là string
-  credit_price: z.string().optional(), // Giá bán nợ (không bắt buộc)
+  price: z.string()
+    .min(1, "Giá bán tiền mặt không được để trống")
+    .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
+      message: "Giá bán tiền mặt phải là số >= 0"
+    }),
+  credit_price: z.string()
+    .min(1, "Giá bán nợ không được để trống")
+    .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
+      message: "Giá bán nợ phải là số >= 0"
+    }),
   type: z.number().min(1, "Vui lòng chọn loại sản phẩm"),
   quantity: z.number().min(0, "Số lượng không hợp lệ"),
   discount: z.string().optional(),
@@ -89,8 +97,8 @@ export interface ConvertedProductValues {
 // Giá trị mặc định cho form
 export const defaultProductFormValues: ProductFormValues = {
   name: "",
-  price: "", // Giữ nguyên là string
-  credit_price: "", // Giá bán nợ
+  price: "0", // Giá bán tiền mặt mặc định là 0
+  credit_price: "0", // Giá bán nợ mặc định là 0
   type: undefined,
   quantity: 0,
   discount: "0",

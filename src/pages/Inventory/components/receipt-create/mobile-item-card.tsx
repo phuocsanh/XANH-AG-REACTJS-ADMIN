@@ -191,6 +191,17 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
             )}
           </div>
           <div>
+            <label className='block text-xs mb-1'>Phí VC riêng</label>
+            <NumberInput
+              value={item.individual_shipping_cost || 0}
+              min={0}
+              placeholder='0'
+              onChange={(value) =>
+                handleItemChangeWithValidation("individual_shipping_cost", value || 0)
+              }
+            />
+          </div>
+          <div>
             <label className='block text-xs mb-1'>Thành tiền</label>
             <div className='p-2 bg-gray-100 rounded'>
               {new Intl.NumberFormat("vi-VN", {
@@ -230,6 +241,17 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               }).format(item.unit_cost)}
             </Text>
           </div>
+          {(item.individual_shipping_cost || 0) > 0 && (
+            <div className='flex justify-between text-sm'>
+              <Text type='secondary'>Phí VC riêng:</Text>
+              <Text>
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(item.individual_shipping_cost || 0)}
+              </Text>
+            </div>
+          )}
           <div className='flex justify-between text-sm'>
             <Text type='secondary'>Thành tiền:</Text>
             <Text strong style={{ color: "#52c41a" }}>

@@ -187,7 +187,26 @@ export function mapApiResponseToInventoryHistory(
 }
 
 // Helper functions
-export const getInventoryReceiptStatusText = (status: number): string => {
+export const getInventoryReceiptStatusText = (status: number | string): string => {
+  // Nếu status là string (từ server mới)
+  if (typeof status === 'string') {
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return "Nháp"
+      case 'pending':
+        return "Chờ duyệt"
+      case 'approved':
+        return "Đã duyệt"
+      case 'completed':
+        return "Hoàn thành"
+      case 'cancelled':
+        return "Đã hủy"
+      default:
+        return "Không xác định"
+    }
+  }
+  
+  // Nếu status là number (legacy)
   switch (status) {
     case InventoryReceiptStatus.DRAFT:
       return "Nháp"
@@ -221,12 +240,17 @@ export const getInventoryTransactionTypeText = (type: number): string => {
 // Interface cho request tạo phiếu nhập hàng
 export interface CreateInventoryReceiptRequest extends AnyObject {
   [key: string]: unknown // Index signature để tương thích với AnyObject
-  code: string // Mã phiếu nhập
+  receipt_code: string // Mã phiếu nhập (đổi từ code thành receipt_code)
   supplier_id: number // ID nhà cung cấp (bắt buộc)
   total_amount: number // Tổng tiền (bắt buộc)
   notes?: string // Ghi chú (tùy chọn)
-  status: string // Trạng thái phiếu nhập (bắt buộc)
+  status: string // Trạng thái phiếu nhập: draft, approved, completed, cancelled (bắt buộc)
+  created_by: number // ID người tạo (bắt buộc)
   items: CreateInventoryReceiptItemRequest[] // Danh sách chi tiết phiếu nhập
+  
+  // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
+  shared_shipping_cost?: number // Phí vận chuyển chung (tùy chọn)
+  shipping_allocation_method?: 'by_value' | 'by_quantity' // Phương thức phân bổ (tùy chọn)
 }
 
 // Interface cho request cập nhật phiếu nhập hàng
@@ -251,6 +275,9 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
   unit_cost: number // Giá vốn đơn vị (bắt buộc)
   total_price: number // Tổng tiền (bắt buộc)
   notes?: string // Ghi chú (tùy chọn)
+  
+  // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
+  individual_shipping_cost?: number // Phí vận chuyển riêng cho sản phẩm này (tùy chọn)
 }
 
 // Interface cho request cập nhật chi tiết phiếu nhập hàng

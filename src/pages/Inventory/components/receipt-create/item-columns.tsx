@@ -101,6 +101,25 @@ const useItemColumns = ({
       },
     },
     {
+      title: "Phí VC riêng",
+      dataIndex: "individual_shipping_cost",
+      key: "individual_shipping_cost",
+      width: 90,
+      align: "right",
+      render: (cost: number, record: InventoryReceiptItemForm) => {
+        return (
+          <NumberInput
+            value={cost || 0}
+            min={0}
+            placeholder='0'
+            onChange={(value) =>
+              handleItemChange(record.key, "individual_shipping_cost", value || 0)
+            }
+          />
+        )
+      },
+    },
+    {
       title: "Thành tiền",
       dataIndex: "total_price",
       key: "total_price",

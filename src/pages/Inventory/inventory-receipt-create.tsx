@@ -11,6 +11,10 @@ import {
   message,
   Divider,
   Select,
+  Checkbox,
+  InputNumber,
+  Radio,
+  Space,
 } from "antd"
 import {
   ArrowLeftOutlined,
@@ -45,6 +49,11 @@ const InventoryReceiptCreate: React.FC = () => {
   // State quản lý danh sách sản phẩm trong phiếu
   const [items, setItems] = useState<InventoryReceiptItemForm[]>([])
   const [editingKey, setEditingKey] = useState<string>("")
+
+  // State quản lý phí vận chuyển chung
+  const [hasSharedShipping, setHasSharedShipping] = useState(false)
+  const [sharedShippingCost, setSharedShippingCost] = useState(0)
+  const [allocationMethod, setAllocationMethod] = useState<'by_value' | 'by_quantity'>('by_value')
 
   // Sử dụng hook product search ở cấp cao hơn
   const {
@@ -104,6 +113,20 @@ const InventoryReceiptCreate: React.FC = () => {
   const { data: suppliersData, isLoading: suppliersLoading } =
     useSuppliersQuery()
 
+  // Hàm tính tổng tiền
+  const calculateTotals = () => {
+    const totalProductValue = items.reduce((sum, item) => sum + item.total_price, 0)
+    const totalIndividualShipping = items.reduce((sum, item) => sum + (item.individual_shipping_cost || 0), 0)
+    const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
+    
+    return {
+      totalProductValue,
+      totalIndividualShipping,
+      totalSharedShipping,
+      grandTotal: totalProductValue + totalIndividualShipping + totalSharedShipping,
+    }
+  }
+
   // Handlers
   const handleBack = () => {
     navigate("/inventory/receipts")
@@ -117,6 +140,7 @@ const InventoryReceiptCreate: React.FC = () => {
       quantity: 1,
       unit_cost: 0,
       total_price: 0,
+      individual_shipping_cost: 0, // Khởi tạo phí vận chuyển riêng
     }
     // Thêm sản phẩm mới vào đầu mảng thay vì cuối mảng
     setItems([newItem, ...items])
@@ -197,22 +221,35 @@ const InventoryReceiptCreate: React.FC = () => {
       // Tạo mã phiếu nhập tự động
       const receiptCode = `PN${Date.now()}`
 
-      // Tính tổng tiền
-      const totalAmount = items.reduce((sum, item) => sum + item.total_price, 0)
+      // Tính tổng tiền sử dụng hàm calculateTotals
+      const totals = calculateTotals()
 
       // Tạo request data theo đúng cấu trúc backend
       const requestData: CreateInventoryReceiptRequest = {
-        code: receiptCode, // Thay receiptCode thành code
-        supplier_id: values.supplierId as number, // Sử dụng supplierId từ form
-        total_amount: totalAmount,
+        receipt_code: receiptCode, // ✅ Sửa từ "code" thành "receipt_code"
+        supplier_id: values.supplierId as number,
+        total_amount: totals.grandTotal, // Sử dụng grandTotal từ calculateTotals
         notes: values.description as string | undefined,
-        status: "PENDING",
+        status: (values.status as string) || "draft", // ✅ Lấy từ form, mặc định là "draft"
+        created_by: 1, // ✅ THÊM trường created_by (TODO: lấy từ auth context)
+        
+        // Phí vận chuyển chung (chỉ gửi nếu có)
+        ...(hasSharedShipping && {
+          shared_shipping_cost: sharedShippingCost,
+          shipping_allocation_method: allocationMethod,
+        }),
+        
         items: items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           unit_cost: item.unit_cost,
           total_price: item.total_price,
           notes: item.notes || undefined,
+          
+          // Phí vận chuyển riêng (chỉ gửi nếu có)
+          ...((item.individual_shipping_cost || 0) > 0 && {
+            individual_shipping_cost: item.individual_shipping_cost,
+          }),
         })),
       }
 
@@ -278,6 +315,24 @@ const InventoryReceiptCreate: React.FC = () => {
                 ))}
               </Select>
             </Form.Item>
+
+            <Form.Item
+              label='Trạng thái'
+              name='status'
+              initialValue='draft'
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng chọn trạng thái",
+                },
+              ]}
+            >
+              <Select placeholder='Chọn trạng thái'>
+                <Select.Option value='draft'>Nháp</Select.Option>
+                <Select.Option value='pending'>Chờ duyệt</Select.Option>
+                <Select.Option value='approved'>Đã duyệt</Select.Option>
+              </Select>
+            </Form.Item>
           </div>
 
           <Form.Item label='Mô tả' name='description'>
@@ -339,20 +394,83 @@ const InventoryReceiptCreate: React.FC = () => {
             </div>
           )}
 
-          {/* Hiển thị tổng tiền */}
+          {/* Phần phí vận chuyển chung */}
+          <Card title="Phí Vận Chuyển Chung (Tùy chọn)" className='mt-4'>
+            <Checkbox 
+              checked={hasSharedShipping}
+              onChange={(e) => setHasSharedShipping(e.target.checked)}
+            >
+              Có phí vận chuyển chung
+            </Checkbox>
+            
+            {hasSharedShipping && (
+              <>
+                <Form.Item label="Số tiền" className='mt-4'>
+                  <InputNumber
+                    value={sharedShippingCost}
+                    onChange={(value) => setSharedShippingCost(value || 0)}
+                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => Number(value!.replace(/\$\s?|(,*)/g, ''))}
+                    style={{ width: '100%' }}
+                    addonAfter="VND"
+                    min={0}
+                  />
+                </Form.Item>
+                
+                <Form.Item label="Phương thức phân bổ">
+                  <Radio.Group 
+                    value={allocationMethod}
+                    onChange={(e) => setAllocationMethod(e.target.value)}
+                  >
+                    <Space direction="vertical">
+                      <Radio value="by_value">
+                        Theo giá trị (sản phẩm đắt chịu phí nhiều hơn)
+                      </Radio>
+                      <Radio value="by_quantity">
+                        Theo số lượng (chia đều)
+                      </Radio>
+                    </Space>
+                  </Radio.Group>
+                </Form.Item>
+              </>
+            )}
+          </Card>
+
+          {/* Hiển thị tổng tiền chi tiết */}
           <div className='mt-4 p-4 bg-gray-50 rounded-lg'>
-            <div className='flex justify-between items-center'>
-              <Text strong className='text-lg'>
-                Tổng tiền:
-              </Text>
-              <Text strong className='text-lg' style={{ color: "#52c41a" }}>
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(
-                  items.reduce((sum, item) => sum + item.total_price, 0)
-                )}
-              </Text>
+            <div style={{ fontSize: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span>Tổng tiền hàng:</span>
+                <strong>{calculateTotals().totalProductValue.toLocaleString('vi-VN')} VND</strong>
+              </div>
+              
+              {calculateTotals().totalIndividualShipping > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>Phí vận chuyển riêng:</span>
+                  <strong>{calculateTotals().totalIndividualShipping.toLocaleString('vi-VN')} VND</strong>
+                </div>
+              )}
+              
+              {calculateTotals().totalSharedShipping > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>Phí vận chuyển chung:</span>
+                  <strong>{calculateTotals().totalSharedShipping.toLocaleString('vi-VN')} VND</strong>
+                </div>
+              )}
+              
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginTop: 16, 
+                paddingTop: 16, 
+                borderTop: '2px solid #d9d9d9',
+                fontSize: 18,
+              }}>
+                <span>TỔNG THANH TOÁN:</span>
+                <strong style={{ color: '#52c41a' }}>
+                  {calculateTotals().grandTotal.toLocaleString('vi-VN')} VND
+                </strong>
+              </div>
             </div>
           </div>
 

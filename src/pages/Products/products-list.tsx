@@ -212,7 +212,7 @@ const ProductsList: React.FC = () => {
     },
 
     {
-      title: "Tồn kho",
+      title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
       width: 100,
@@ -402,7 +402,7 @@ const ProductsList: React.FC = () => {
                 currency: "VND",
               }).format(Number(currentProduct.discounted_price || 0))}
             </Descriptions.Item>
-            <Descriptions.Item label='Tồn kho'>
+            <Descriptions.Item label='Số lượng'>
               {currentProduct.quantity || 0}
             </Descriptions.Item>
             <Descriptions.Item label='Đã bán'>
