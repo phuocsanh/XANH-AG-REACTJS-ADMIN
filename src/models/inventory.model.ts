@@ -3,6 +3,21 @@
 import { ApiResponse } from "./auth.model"
 import { AnyObject } from "./common"
 
+// Types cho Upload Ảnh Hóa Đơn
+export interface ReceiptImage {
+  id: number
+  url: string
+  name: string
+  type: string
+  size: number
+  created_at: string
+}
+
+export interface UploadImageRequest {
+  fileId: number
+  fieldName?: string
+}
+
 // Enum cho trạng thái phiếu nhập hàng
 export enum InventoryReceiptStatus {
   DRAFT = 1,
@@ -27,6 +42,7 @@ export interface InventoryReceipt {
   status: string // Thay number thành string để khớp với backend
   total_amount: number // Thay totalAmount thành total_amount và string thành number để khớp với backend
   supplier_id?: number // Thay supplierName thành supplier_id để khớp với backend
+  supplier_name?: string // Thêm supplier_name để hiển thị
   created_by: number
   approved_by?: number
   completed_by?: number
@@ -57,6 +73,7 @@ export interface InventoryReceiptApiResponse {
   description?: string // Giữ nguyên để tương thích với API response
   status: number // Giữ nguyên để tương thích với API response
   total_amount: string // Thay totalAmount thành total_amount
+  supplier_id?: number // Thêm supplier_id
   supplier_name?: string // Thay supplierName thành supplier_name
   supplier_contact?: string // Thay supplierContact thành supplier_contact
   created_by: number
@@ -135,7 +152,8 @@ export function mapApiResponseToInventoryReceipt(
     notes: apiReceipt.description, // Thay description thành notes
     status: getInventoryReceiptStatusText(apiReceipt.status), // Chuyển status number thành text
     total_amount: parseFloat(apiReceipt.total_amount), // Chuyển string thành number
-    supplier_id: 0, // Tạm thời đặt là 0, sẽ cập nhật sau khi có API chính xác
+    supplier_id: apiReceipt.supplier_id || 0,
+    supplier_name: apiReceipt.supplier_name,
     created_by: apiReceipt.created_by,
     approved_by: apiReceipt.approved_by,
     completed_by: apiReceipt.completed_by,

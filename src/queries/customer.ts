@@ -5,6 +5,7 @@ import { queryClient } from "@/provider/app-provider-tanstack"
 import { Customer, CreateCustomerDto, UpdateCustomerDto } from "@/models/customer"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // ========== QUERY KEYS ==========
 export const customerKeys = {
@@ -94,7 +95,7 @@ export const useCreateCustomerMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      invalidateResourceQueries("/customers")
       toast.success("Tạo khách hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -119,7 +120,7 @@ export const useUpdateCustomerMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      invalidateResourceQueries("/customers")
       toast.success("Cập nhật khách hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -138,7 +139,7 @@ export const useDeleteCustomerMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customerKeys.lists() })
+      invalidateResourceQueries("/customers")
       toast.success("Xóa khách hàng thành công!")
     },
     onError: (error: unknown) => {

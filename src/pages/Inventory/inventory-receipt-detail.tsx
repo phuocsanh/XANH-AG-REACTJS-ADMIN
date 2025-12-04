@@ -39,6 +39,7 @@ import {
   useCancelInventoryReceiptMutation,
   useDeleteInventoryReceiptMutation,
 } from "@/queries/inventory"
+import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
 
 const { Title, Text } = Typography
 
@@ -493,6 +494,11 @@ const InventoryReceiptDetail: React.FC = () => {
               )}
             </Descriptions>
           </Card>
+
+          {/* Upload hình ảnh */}
+          <div style={{ marginTop: "16px" }}>
+            <ReceiptImageUpload receiptId={receiptId} />
+          </div>
         </Col>
       </Row>
 

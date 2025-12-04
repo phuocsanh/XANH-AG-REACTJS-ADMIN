@@ -5,6 +5,7 @@ import { queryClient } from "@/provider/app-provider-tanstack"
 import { Unit, CreateUnitDto, UpdateUnitDto } from "../models/unit.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // Query keys cho unit
 export const unitKeys = {
@@ -47,7 +48,7 @@ export const useCreateUnitMutation = () => {
     },
     onSuccess: () => {
       // Invalidate và refetch danh sách units
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       toast.success("Tạo đơn vị tính thành công!")
     },
     onError: (error: unknown) => {
@@ -73,7 +74,7 @@ export const useUpdateUnitMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       queryClient.invalidateQueries({ queryKey: unitKeys.detail(variables.id) })
       toast.success("Cập nhật đơn vị tính thành công!")
     },
@@ -94,7 +95,7 @@ export const useActivateUnitMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       queryClient.invalidateQueries({ queryKey: unitKeys.detail(variables) })
       toast.success("Kích hoạt đơn vị tính thành công!")
     },
@@ -115,7 +116,7 @@ export const useDeactivateUnitMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       queryClient.invalidateQueries({ queryKey: unitKeys.detail(variables) })
       toast.success("Vô hiệu hóa đơn vị tính thành công!")
     },
@@ -136,7 +137,7 @@ export const useArchiveUnitMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       queryClient.invalidateQueries({ queryKey: unitKeys.detail(variables) })
       toast.success("Lưu trữ đơn vị tính thành công!")
     },
@@ -157,7 +158,7 @@ export const useRestoreUnitMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       queryClient.invalidateQueries({ queryKey: unitKeys.detail(variables) })
       toast.success("Khôi phục đơn vị tính thành công!")
     },
@@ -178,7 +179,7 @@ export const useDeleteUnitMutation = () => {
     },
     onSuccess: () => {
       // Invalidate danh sách units
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       toast.success("Xóa đơn vị tính thành công!")
     },
     onError: (error: unknown) => {
@@ -198,7 +199,7 @@ export const usePermanentDeleteUnitMutation = () => {
     },
     onSuccess: () => {
       // Invalidate danh sách units
-      queryClient.invalidateQueries({ queryKey: unitKeys.lists() })
+      invalidateResourceQueries("/units")
       toast.success("Xóa vĩnh viễn đơn vị tính thành công!")
     },
     onError: (error: unknown) => {

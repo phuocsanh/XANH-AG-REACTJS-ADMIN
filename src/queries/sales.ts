@@ -13,6 +13,7 @@ import {
 } from "@/models/sales.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // ========== QUERY KEYS ==========
 export const salesKeys = {
@@ -47,7 +48,7 @@ export const useCreateInvoiceMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: salesKeys.invoices() })
+      invalidateResourceQueries("/sales/invoices")
       toast.success("Tạo hóa đơn bán hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -113,7 +114,7 @@ export const useUpdateInvoiceMutation = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(salesKeys.invoice(variables.id), data)
-      queryClient.invalidateQueries({ queryKey: salesKeys.invoices() })
+      invalidateResourceQueries("/sales/invoices")
       toast.success("Cập nhật hóa đơn bán hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -133,7 +134,7 @@ export const useDeleteInvoiceMutation = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.removeQueries({ queryKey: salesKeys.invoice(variables) })
-      queryClient.invalidateQueries({ queryKey: salesKeys.invoices() })
+      invalidateResourceQueries("/sales/invoices")
       toast.success("Xóa hóa đơn bán hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -164,7 +165,7 @@ export const useUpdatePaymentStatusMutation = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(salesKeys.invoice(variables.id), data)
-      queryClient.invalidateQueries({ queryKey: salesKeys.invoices() })
+      invalidateResourceQueries("/sales/invoices")
       toast.success("Cập nhật trạng thái thanh toán thành công!")
     },
     onError: (error: unknown) => {
@@ -210,7 +211,7 @@ export const useUpdateInvoiceItemMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: salesKeys.invoices() })
+      invalidateResourceQueries("/sales/invoices")
       toast.success("Cập nhật chi tiết hóa đơn thành công!")
     },
     onError: (error: unknown) => {
@@ -229,7 +230,7 @@ export const useDeleteInvoiceItemMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: salesKeys.invoices() })
+      invalidateResourceQueries("/sales/invoices")
       toast.success("Xóa chi tiết hóa đơn thành công!")
     },
     onError: (error: unknown) => {

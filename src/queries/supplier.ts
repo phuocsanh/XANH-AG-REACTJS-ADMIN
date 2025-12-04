@@ -10,6 +10,7 @@ import {
 } from "@/models/supplier.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // ========== QUERY KEYS ==========
 export const supplierKeys = {
@@ -61,7 +62,7 @@ export const useCreateSupplierMutation = () => {
     onSuccess: (data) => {
       console.log("Create supplier success:", data)
       // Invalidate và refetch danh sách nhà cung cấp
-      queryClient.invalidateQueries({ queryKey: supplierKeys.lists() })
+      invalidateResourceQueries("/suppliers")
       toast.success("Tạo nhà cung cấp thành công!")
     },
     onError: (error: unknown) => {
@@ -90,7 +91,7 @@ export const useUpdateSupplierMutation = () => {
     },
     onSuccess: () => {
       // Invalidate và refetch danh sách nhà cung cấp
-      queryClient.invalidateQueries({ queryKey: supplierKeys.lists() })
+      invalidateResourceQueries("/suppliers")
       toast.success("Cập nhật nhà cung cấp thành công!")
     },
     onError: (error: unknown) => {
@@ -110,7 +111,7 @@ export const useDeleteSupplierMutation = () => {
     },
     onSuccess: () => {
       // Invalidate và refetch danh sách nhà cung cấp
-      queryClient.invalidateQueries({ queryKey: supplierKeys.lists() })
+      invalidateResourceQueries("/suppliers")
       toast.success("Xóa nhà cung cấp thành công!")
     },
     onError: (error: unknown) => {

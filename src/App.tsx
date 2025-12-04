@@ -52,6 +52,9 @@ import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
 import CreateSalesReturn from "./pages/sales-returns/create"
+// Thêm import cho inventory returns và adjustments
+import ReturnsPage from "./pages/inventory/returns"
+import AdjustmentsPage from "./pages/inventory/adjustments"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { toast } from "react-toastify"
 
@@ -151,13 +154,13 @@ function App() {
             <div className='flex flex-1 overflow-x-hidden'>
               {/* Sidebar - hidden on mobile by default, shown as overlay */}
               {isHeaderFooterShow === false && isLogin && isSidebarOpen && (
-                <div className='hidden md:block w-[17%] h-full'>
+                <div className='hidden md:block md:fixed md:left-0 md:top-0 md:bottom-0 md:w-[17%] md:z-10 md:pt-[70px]' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
                   <Sidebar />
                 </div>
               )}
 
               {/* Main content area */}
-              <div className='flex-1 overflow-x-hidden min-w-0'>
+              <div className={`flex-1 overflow-x-hidden min-w-0 ${isHeaderFooterShow === false && isLogin && isSidebarOpen ? 'md:ml-[17%]' : ''}`}>
                 {/* Space for header on all devices */}
                 {isHeaderFooterShow === false && isLogin && (
                   <div className='h-[70px]'></div>
@@ -336,6 +339,26 @@ function App() {
                       element={
                         <ProtectedRoute requiredPermission="INVENTORY_VIEW">
                           <InventoryReceiptDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Routes cho Phiếu Trả Hàng */}
+                    <Route
+                      path='/inventory/returns/*'
+                      element={
+                        <ProtectedRoute requiredPermission="INVENTORY_VIEW">
+                          <ReturnsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    
+                    {/* Routes cho Phiếu Điều Chỉnh */}
+                    <Route
+                      path='/inventory/adjustments/*'
+                      element={
+                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
+                          <AdjustmentsPage />
                         </ProtectedRoute>
                       }
                     />

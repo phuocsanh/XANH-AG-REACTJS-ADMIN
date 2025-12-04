@@ -15,11 +15,14 @@ import {
   InputNumber,
   Radio,
   Space,
+  Upload,
 } from "antd"
+import type { UploadFile } from "antd"
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   SaveOutlined,
+  UploadOutlined,
 } from "@ant-design/icons"
 
 // Import MobileItemCard từ components
@@ -31,7 +34,11 @@ import {
   CreateInventoryReceiptRequest,
   InventoryReceiptItemForm,
 } from "@/models/inventory.model"
-import { useCreateInventoryReceiptMutation } from "@/queries/inventory"
+import { 
+  useCreateInventoryReceiptMutation,
+  useUploadFileMutation,
+  useAttachImageToReceiptMutation,
+} from "@/queries/inventory"
 import { useMobile, useTablet } from "@/hooks/use-media-query"
 import { useProductSearch } from "@/queries/product"
 import { useMemo } from "react"
@@ -49,6 +56,9 @@ const InventoryReceiptCreate: React.FC = () => {
   // State quản lý danh sách sản phẩm trong phiếu
   const [items, setItems] = useState<InventoryReceiptItemForm[]>([])
   const [editingKey, setEditingKey] = useState<string>("")
+  
+  // State quản lý danh sách file ảnh
+  const [fileList, setFileList] = useState<UploadFile[]>([])
 
   // State quản lý phí vận chuyển chung
   const [hasSharedShipping, setHasSharedShipping] = useState(false)
@@ -110,6 +120,8 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Queries
   const createReceiptMutation = useCreateInventoryReceiptMutation()
+  const uploadFileMutation = useUploadFileMutation()
+  const attachImageMutation = useAttachImageToReceiptMutation()
   const { data: suppliersData, isLoading: suppliersLoading } =
     useSuppliersQuery()
 
@@ -253,7 +265,33 @@ const InventoryReceiptCreate: React.FC = () => {
         })),
       }
 
-      await createReceiptMutation.mutateAsync(requestData)
+      const newReceipt = await createReceiptMutation.mutateAsync(requestData)
+      
+      // Upload ảnh nếu có
+      if (fileList.length > 0) {
+        try {
+          message.loading("Đang upload hình ảnh...")
+          
+          for (const file of fileList) {
+            if (file.originFileObj) {
+              // 1. Upload file lên server
+              const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
+              
+              // 2. Gắn file vào phiếu
+              await attachImageMutation.mutateAsync({
+                receiptId: newReceipt.id,
+                fileId: (uploadResult as any).data.id,
+                fieldName: "invoice_images",
+              })
+            }
+          }
+          message.success("Upload hình ảnh thành công!")
+        } catch (uploadError) {
+          console.error("Lỗi khi upload ảnh:", uploadError)
+          message.warning("Tạo phiếu thành công nhưng có lỗi khi upload ảnh")
+        }
+      }
+
       message.success("Tạo phiếu nhập hàng thành công!")
       navigate("/inventory/receipts")
     } catch (error) {
@@ -434,6 +472,23 @@ const InventoryReceiptCreate: React.FC = () => {
                 </Form.Item>
               </>
             )}
+          </Card>
+
+          {/* Phần upload ảnh hóa đơn */}
+          <Card title="Hình ảnh hóa đơn (Tùy chọn)" className='mt-4'>
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+              beforeUpload={() => false} // Prevent auto upload
+              accept="image/*"
+              multiple
+            >
+              <div>
+                <UploadOutlined />
+                <div style={{ marginTop: 8 }}>Upload</div>
+              </div>
+            </Upload>
           </Card>
 
           {/* Hiển thị tổng tiền chi tiết */}

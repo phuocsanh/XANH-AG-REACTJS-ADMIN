@@ -10,7 +10,7 @@ import {
 } from "@/models/product.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
-import { invalidateResourceQueries } from "@/utils/query-helpers"
+
 
 // Query keys cho product
 export const productKeys = {
@@ -275,7 +275,10 @@ export const useCreateProductMutation = () => {
     },
     onSuccess: () => {
       // Invalidate tất cả queries liên quan đến products
-      invalidateResourceQueries(["/products"], productKeys.all)
+      queryClient.invalidateQueries({ 
+        queryKey: ["/products"],
+        exact: false 
+      })
       toast.success("Tạo sản phẩm thành công!")
     },
     onError: (error: unknown) => {
@@ -303,8 +306,12 @@ export const useUpdateProductMutation = () => {
       return response
     },
     onSuccess: (data, variables) => {
-      // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() })
+      // Invalidate tất cả queries liên quan đến products
+      queryClient.invalidateQueries({ 
+        queryKey: ["/products"],
+        exact: false 
+      })
+      // Invalidate query detail cụ thể
       queryClient.invalidateQueries({
         queryKey: productKeys.detail(variables.id),
       })
@@ -326,8 +333,11 @@ export const useDeleteProductMutation = () => {
       return response
     },
     onSuccess: () => {
-      // Invalidate danh sách products
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() })
+      // Invalidate tất cả queries liên quan đến products
+      queryClient.invalidateQueries({ 
+        queryKey: ["/products"],
+        exact: false 
+      })
       toast.success("Xóa sản phẩm thành công!")
     },
     onError: (error: unknown) => {

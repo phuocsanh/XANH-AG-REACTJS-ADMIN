@@ -44,12 +44,12 @@ const Sidebar = () => {
 
   return (
     <div className='sidebar h-full'>
-      <div className='sidebarTabs px-2 mt-4 overflow-y-auto h-[calc(100vh-80px)]'>
-        <ul className='flex gap-3 flex-col'>
+      <div className='sidebarTabs px-2 overflow-y-auto h-[calc(100vh-80px)]'>
+        <ul className='flex gap-3 flex-col m'>
           <li>
             <Link to='/'>
               <Button
-                className={`w-full ${activeTab === 0 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 0 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(0)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -63,7 +63,7 @@ const Sidebar = () => {
           {hasPermission(userInfo, "PRODUCT_VIEW") && (
             <li>
               <Button
-                className={`w-full ${activeTab === 1 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 1 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(1)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -85,11 +85,11 @@ const Sidebar = () => {
                     : "colapsed"
                 }`}
               >
-                <ul className='submenu pl-8'>
+                <ul className='submenu pl-2'>
                   <li>
                     <Link to='/products'>
                       <Button
-                        className={`w-full ${
+                        className={`w-full !justify-start !text-left ${
                           location.pathname === "/products" ? "active" : ""
                         }`}
                       >
@@ -101,7 +101,7 @@ const Sidebar = () => {
                     <li>
                       <Link to='/products/new'>
                         <Button
-                          className={`w-full ${
+                          className={`w-full !justify-start !text-left ${
                             location.pathname === "/products/new"
                               ? "active"
                               : ""
@@ -120,7 +120,7 @@ const Sidebar = () => {
           {hasPermission(userInfo, "SALES_VIEW") && (
             <li>
               <Button
-                className={`w-full ${activeTab === 2 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 2 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(2)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -136,7 +136,7 @@ const Sidebar = () => {
               <li>
                 <Link to='/category/list'>
                   <Button
-                    className={`w-full ${activeTab === 3 ? "active" : ""}`}
+                    className={`w-full !justify-start !text-left ${activeTab === 3 ? "active" : ""}`}
                     onClick={() => isOpenSubmenu(3)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -149,7 +149,7 @@ const Sidebar = () => {
               <li>
                 <Link to='/sub-category/list'>
                   <Button
-                    className={`w-full ${activeTab === 4 ? "active" : ""}`}
+                    className={`w-full !justify-start !text-left ${activeTab === 4 ? "active" : ""}`}
                     onClick={() => isOpenSubmenu(4)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -163,7 +163,7 @@ const Sidebar = () => {
               <li>
                 <Link to='/units'>
                   <Button
-                    className={`w-full ${activeTab === 5 ? "active" : ""}`}
+                    className={`w-full !justify-start !text-left ${activeTab === 5 ? "active" : ""}`}
                     onClick={() => isOpenSubmenu(5)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -178,7 +178,7 @@ const Sidebar = () => {
               <li>
                 <Link to='/symbols'>
                   <Button
-                    className={`w-full ${activeTab === 6 ? "active" : ""}`}
+                    className={`w-full !justify-start !text-left ${activeTab === 6 ? "active" : ""}`}
                     onClick={() => isOpenSubmenu(6)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -196,7 +196,7 @@ const Sidebar = () => {
             <li>
               <Link to='/suppliers'>
                 <Button
-                  className={`w-full ${activeTab === 7 ? "active" : ""}`}
+                  className={`w-full !justify-start !text-left ${activeTab === 7 ? "active" : ""}`}
                   onClick={() => isOpenSubmenu(7)}
                 >
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -212,7 +212,7 @@ const Sidebar = () => {
           <li>
             <Link to='/pesticides'>
               <Button
-                className={`w-full ${activeTab === 8 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 8 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(8)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -227,7 +227,7 @@ const Sidebar = () => {
           <li>
             <Link to='/rice-market'>
               <Button
-                className={`w-full ${activeTab === 15 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 15 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(15)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -242,7 +242,7 @@ const Sidebar = () => {
           <li>
             <Link to='/weather-forecast'>
               <Button
-                className={`w-full ${activeTab === 16 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 16 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(16)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -258,7 +258,7 @@ const Sidebar = () => {
             <li>
               <Link to='/disease-warning'>
                 <Button
-                  className={`w-full ${activeTab === 23 ? "active" : ""}`}
+                  className={`w-full !justify-start !text-left ${activeTab === 23 ? "active" : ""}`}
                   onClick={() => isOpenSubmenu(23)}
                 >
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -274,7 +274,7 @@ const Sidebar = () => {
           <li>
             <Link to='/banned-pesticides'>
               <Button
-                className={`w-full ${activeTab === 24 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 24 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(24)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -289,7 +289,7 @@ const Sidebar = () => {
           <li>
             <Link to='/rice-crops'>
               <Button
-                className={`w-full ${activeTab === 25 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(25)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -304,7 +304,7 @@ const Sidebar = () => {
             <li>
               <Link to='/users'>
                 <Button
-                  className={`w-full ${activeTab === 9 ? "active" : ""}`}
+                  className={`w-full !justify-start !text-left ${activeTab === 9 ? "active" : ""}`}
                   onClick={() => isOpenSubmenu(9)}
                 >
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -320,7 +320,7 @@ const Sidebar = () => {
           {hasPermission(userInfo, "INVENTORY_VIEW") && (
             <li>
               <Button
-                className={`w-full ${activeTab === 10 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 10 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(10)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -342,10 +342,10 @@ const Sidebar = () => {
                     : "colapsed"
                 }`}
               >
-                <div className='submenu pl-8'>
+                <div className='submenu pl-2'>
                   <Link to='/inventory/receipts'>
                     <Button
-                      className={`w-full ${
+                      className={`w-full !justify-start !text-left ${
                         location.pathname === "/inventory/receipts"
                           ? "active"
                           : ""
@@ -354,10 +354,35 @@ const Sidebar = () => {
                       Danh sách phiếu nhập
                     </Button>
                   </Link>
+
+                  <Link to='/inventory/returns'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${
+                        location.pathname.includes("/inventory/returns")
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Phiếu trả hàng
+                    </Button>
+                  </Link>
+
+                  <Link to='/inventory/adjustments'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${
+                        location.pathname.includes("/inventory/adjustments")
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Phiếu điều chỉnh
+                    </Button>
+                  </Link>
+
                   {hasPermission(userInfo, "INVENTORY_MANAGE") && (
                     <Link to='/inventory/receipts/create'>
                       <Button
-                        className={`w-full ${
+                        className={`w-full !justify-start !text-left ${
                           location.pathname === "/inventory/receipts/create"
                             ? "active"
                             : ""
@@ -381,13 +406,11 @@ const Sidebar = () => {
                   Quản lý bán hàng
                 </h6>
               </li>
-
-              {/* Mùa vụ */}
               {hasPermission(userInfo, "SALES_MANAGE") && (
                 <li>
                   <Link to='/seasons'>
                     <Button
-                      className={`w-full ${activeTab === 17 ? "active" : ""}`}
+                      className={`w-full !justify-start !text-left ${activeTab === 17 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(17)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -404,7 +427,7 @@ const Sidebar = () => {
                 <li>
                   <Link to='/customers'>
                     <Button
-                      className={`w-full ${activeTab === 18 ? "active" : ""}`}
+                      className={`w-full !justify-start !text-left ${activeTab === 18 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(18)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -421,7 +444,7 @@ const Sidebar = () => {
                 <li>
                   <Link to='/sales-invoices'>
                     <Button
-                      className={`w-full ${activeTab === 19 ? "active" : ""}`}
+                      className={`w-full !justify-start !text-left ${activeTab === 19 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(19)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -438,7 +461,7 @@ const Sidebar = () => {
                 <li>
                   <Link to='/payments'>
                     <Button
-                      className={`w-full ${activeTab === 20 ? "active" : ""}`}
+                      className={`w-full !justify-start !text-left ${activeTab === 20 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(20)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -455,7 +478,7 @@ const Sidebar = () => {
                 <li>
                   <Link to='/debt-notes'>
                     <Button
-                      className={`w-full ${activeTab === 21 ? "active" : ""}`}
+                      className={`w-full !justify-start !text-left ${activeTab === 21 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(21)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -472,7 +495,7 @@ const Sidebar = () => {
                 <li>
                   <Link to='/sales-returns'>
                     <Button
-                      className={`w-full ${activeTab === 22 ? "active" : ""}`}
+                      className={`w-full !justify-start !text-left ${activeTab === 22 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(22)}
                     >
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -488,7 +511,7 @@ const Sidebar = () => {
 
           <li>
             <Button
-              className={`w-full ${activeTab === 11 ? "active" : ""}`}
+              className={`w-full !justify-start !text-left ${activeTab === 11 ? "active" : ""}`}
               onClick={() => isOpenSubmenu(11)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -508,7 +531,7 @@ const Sidebar = () => {
               <li>
                 <Link to='/sign-in'>
                   <Button
-                    className={`w-full ${activeTab === 12 ? "active" : ""}`}
+                    className={`w-full !justify-start !text-left ${activeTab === 12 ? "active" : ""}`}
                     onClick={() => isOpenSubmenu(12)}
                   >
                     <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -523,7 +546,7 @@ const Sidebar = () => {
 
           <li>
             <Button
-              className={`w-full ${activeTab === 13 ? "active" : ""}`}
+              className={`w-full !justify-start !text-left ${activeTab === 13 ? "active" : ""}`}
               onClick={() => isOpenSubmenu(13)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -535,7 +558,7 @@ const Sidebar = () => {
 
           <li>
             <Button
-              className={`w-full ${activeTab === 14 ? "active" : ""}`}
+              className={`w-full !justify-start !text-left ${activeTab === 14 ? "active" : ""}`}
               onClick={() => isOpenSubmenu(14)}
             >
               <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>

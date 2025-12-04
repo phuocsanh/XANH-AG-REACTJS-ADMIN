@@ -47,31 +47,31 @@ export const Header = () => {
   }
 
   return (
-    <header className='w-full fixed top-0 right-0 bg-white py-3 z-[100] flex items-center justify-between px-4 shadow-sm'>
+    <header className='w-full fixed top-0 right-0 py-3 z-[100] flex items-center justify-between px-4 shadow-sm' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
       {/* Mobile menu button */}
       <div className='md:hidden'>
         <Button onClick={toggleMobileSidebar}>
-          <FiMenu className='text-xl' />
+          <FiMenu className='text-xl text-white' />
         </Button>
       </div>
 
       {/* Desktop sidebar toggle button */}
       <div className='hidden md:block'>
         <Button onClick={toggleDesktopSidebar}>
-          <FiMenu className='text-xl' />
+          <FiMenu className='text-xl text-white' />
         </Button>
       </div>
 
       <div className='ml-auto part2'>
         <ul className='flex items-center gap-3'>
           <li>
-            <Button>
-              <FaRegBell />
+            <Button style={{background: 'rgba(255,255,255,0.1)'}}>
+              <FaRegBell className='text-white' />
             </Button>
           </li>
           <li>
-            <Button>
-              <MdOutlineEmail />
+            <Button style={{background: 'rgba(255,255,255,0.1)'}}>
+              <MdOutlineEmail className='text-white' />
             </Button>
           </li>
 

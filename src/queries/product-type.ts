@@ -12,6 +12,7 @@ import {
 } from "@/models/product-type.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // Query keys cho product type
 export const productTypeKeys = {
@@ -80,7 +81,7 @@ export const useCreateProductTypeMutation = () => {
     },
     onSuccess: () => {
       // Invalidate và refetch danh sách product types
-      queryClient.invalidateQueries({ queryKey: productTypeKeys.lists() })
+      invalidateResourceQueries("/product-types")
       toast.success("Tạo loại sản phẩm thành công!")
     },
     onError: (error: unknown) => {
@@ -109,7 +110,7 @@ export const useUpdateProductTypeMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productTypeKeys.lists() })
+      invalidateResourceQueries("/product-types")
       queryClient.invalidateQueries({
         queryKey: productTypeKeys.detail(variables.id),
       })
@@ -135,7 +136,7 @@ export const useDeleteProductTypeMutation = () => {
     },
     onSuccess: () => {
       // Invalidate danh sách product types
-      queryClient.invalidateQueries({ queryKey: productTypeKeys.lists() })
+      invalidateResourceQueries("/product-types")
       toast.success("Xóa loại sản phẩm thành công!")
     },
     onError: (error: unknown) => {

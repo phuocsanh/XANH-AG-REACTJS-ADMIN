@@ -5,6 +5,7 @@ import { queryClient } from "@/provider/app-provider-tanstack"
 import { Season, CreateSeasonDto, UpdateSeasonDto } from "@/models/season"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // ========== QUERY KEYS ==========
 export const seasonKeys = {
@@ -63,7 +64,7 @@ export const useCreateSeasonMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seasonKeys.lists() })
+      invalidateResourceQueries("/season")
       toast.success("Tạo mùa vụ thành công!")
     },
     onError: (error: unknown) => {
@@ -88,7 +89,7 @@ export const useUpdateSeasonMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seasonKeys.lists() })
+      invalidateResourceQueries("/season")
       toast.success("Cập nhật mùa vụ thành công!")
     },
     onError: (error: unknown) => {
@@ -107,7 +108,7 @@ export const useDeleteSeasonMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seasonKeys.lists() })
+      invalidateResourceQueries("/season")
       toast.success("Xóa mùa vụ thành công!")
     },
     onError: (error: unknown) => {

@@ -32,6 +32,7 @@ import {
 } from "@/models/inventory.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // ========== QUERY KEYS ==========
 export const inventoryKeys = {
@@ -154,7 +155,7 @@ export const useCreateInventoryReceiptMutation = () => {
     },
     onSuccess: (data) => {
       // Invalidate và refetch danh sách phiếu nhập
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      invalidateResourceQueries("/inventory/receipts")
       toast.success("Tạo phiếu nhập hàng thành công!")
       return data
     },
@@ -189,7 +190,7 @@ export const useUpdateInventoryReceiptMutation = () => {
       // Cập nhật cache cho phiếu cụ thể
       queryClient.setQueryData(inventoryKeys.receipt(variables.id), data)
       // Invalidate danh sách
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      invalidateResourceQueries("/inventory/receipts")
       toast.success("Cập nhật phiếu nhập hàng thành công!")
       return data
     },
@@ -214,7 +215,7 @@ export const useDeleteInventoryReceiptMutation = () => {
         queryKey: inventoryKeys.receiptItems(variables),
       })
       // Invalidate danh sách
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      invalidateResourceQueries("/inventory/receipts")
       toast.success("Xóa phiếu nhập hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -231,8 +232,8 @@ export const useDeleteInventoryReceiptMutation = () => {
 export const useApproveInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.putRaw<InventoryReceiptApiResponse>(
-        `/inventory/receipt/${id}/approve` // Thay đổi từ /inventory/receipts/${id}/approve thành /inventory/receipt/${id}/approve
+      const response = await api.postRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}/approve`
       )
       return {
         ...response,
@@ -242,7 +243,7 @@ export const useApproveInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      invalidateResourceQueries("/inventory/receipts")
       toast.success("Duyệt phiếu nhập hàng thành công!")
       return data
     },
@@ -258,8 +259,8 @@ export const useApproveInventoryReceiptMutation = () => {
 export const useCompleteInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.putRaw<InventoryReceiptApiResponse>(
-        `/inventory/receipt/${id}/complete` // Thay đổi từ /inventory/receipts/${id}/complete thành /inventory/receipt/${id}/complete
+      const response = await api.postRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}/complete`
       )
       return {
         ...response,
@@ -269,8 +270,8 @@ export const useCompleteInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
+      invalidateResourceQueries("/inventory/receipts")
+      invalidateResourceQueries("/inventory/product-history")
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Hoàn thành phiếu nhập hàng thành công!")
       return data
@@ -287,8 +288,8 @@ export const useCompleteInventoryReceiptMutation = () => {
 export const useCancelInventoryReceiptMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.putRaw<InventoryReceiptApiResponse>(
-        `/inventory/receipt/${id}/cancel` // Thay đổi từ /inventory/receipts/${id}/cancel thành /inventory/receipt/${id}/cancel
+      const response = await api.postRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}/cancel`
       )
       return {
         ...response,
@@ -298,7 +299,7 @@ export const useCancelInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      invalidateResourceQueries("/inventory/receipts")
       toast.success("Hủy phiếu nhập hàng thành công!")
       return data
     },
@@ -405,8 +406,8 @@ export const useStockInMutation = () => {
     },
     onSuccess: (data) => {
       // Cập nhật cache
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
+      invalidateResourceQueries("/inventory/receipts")
+      invalidateResourceQueries("/inventory/product-history")
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Nhập kho thành công!")
       return data
@@ -430,8 +431,8 @@ export const useStockOutMutation = () => {
     },
     onSuccess: (data) => {
       // Cập nhật cache
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
+      invalidateResourceQueries("/inventory/receipts")
+      invalidateResourceQueries("/inventory/product-history")
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Xuất kho thành công!")
       return data
@@ -803,5 +804,108 @@ export const useWeightedAverageCostQuery = (productId: number) => {
       return response
     },
     enabled: !!productId,
+  })
+}
+
+// ========== UPLOAD IMAGE HOOKS ==========
+
+/**
+ * Hook upload file lên server
+ */
+export const useUploadFileMutation = () => {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await api.postRaw('/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return response
+    },
+    onError: (error: Error) => {
+      toast.error(`Lỗi khi upload file: ${error.message}`)
+    },
+  })
+}
+
+/**
+ * Hook gắn ảnh vào phiếu nhập kho
+ */
+export const useAttachImageToReceiptMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      receiptId,
+      fileId,
+      fieldName,
+    }: {
+      receiptId: number
+      fileId: number
+      fieldName?: string
+    }) => {
+      const response = await api.postRaw(
+        `/inventory/receipt/${receiptId}/upload-image`,
+        { fileId, fieldName }
+      )
+      return response
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['receipt-images', variables.receiptId],
+      })
+      toast.success('Gắn ảnh vào phiếu thành công!')
+    },
+    onError: (error: Error) => {
+      toast.error(`Lỗi khi gắn ảnh: ${error.message}`)
+    },
+  })
+}
+
+/**
+ * Hook lấy danh sách ảnh của phiếu nhập kho
+ */
+export const useReceiptImagesQuery = (receiptId: number) => {
+  return useQuery({
+    queryKey: ['receipt-images', receiptId],
+    queryFn: async () => {
+      const response = await api.get<{
+        id: number
+        url: string
+        name: string
+        type: string
+        size: number
+        created_at: string
+      }[]>(`/inventory/receipt/${receiptId}/images`)
+      return response
+    },
+    enabled: !!receiptId,
+  })
+}
+
+/**
+ * Hook xóa ảnh khỏi phiếu nhập kho
+ */
+export const useDeleteReceiptImageMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      receiptId,
+      fileId,
+    }: {
+      receiptId: number
+      fileId: number
+    }) => {
+      const response = await api.deleteRaw(
+        `/inventory/receipt/${receiptId}/image/${fileId}`
+      )
+      return response
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['receipt-images', variables.receiptId],
+      })
+      toast.success('Xóa ảnh thành công!')
+    },
+    onError: (error: Error) => {
+      toast.error(`Lỗi khi xóa ảnh: ${error.message}`)
+    },
   })
 }

@@ -9,6 +9,7 @@ import {
 } from "@/models/product-subtype.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 
 // Query keys cho product subtype
 export const productSubtypeKeys = {
@@ -55,7 +56,7 @@ export const useCreateProductSubtypeMutation = () => {
     },
     onSuccess: () => {
       // Invalidate và refetch danh sách product subtypes
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       toast.success("Tạo loại phụ sản phẩm thành công!")
     },
     onError: (error: unknown) => {
@@ -84,7 +85,7 @@ export const useUpdateProductSubtypeMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       queryClient.invalidateQueries({
         queryKey: productSubtypeKeys.detail(variables.id),
       })
@@ -109,7 +110,7 @@ export const useActivateProductSubtypeMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       queryClient.invalidateQueries({
         queryKey: productSubtypeKeys.detail(variables),
       })
@@ -134,7 +135,7 @@ export const useDeactivateProductSubtypeMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       queryClient.invalidateQueries({
         queryKey: productSubtypeKeys.detail(variables),
       })
@@ -159,7 +160,7 @@ export const useArchiveProductSubtypeMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       queryClient.invalidateQueries({
         queryKey: productSubtypeKeys.detail(variables),
       })
@@ -184,7 +185,7 @@ export const useRestoreProductSubtypeMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate các queries liên quan
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       queryClient.invalidateQueries({
         queryKey: productSubtypeKeys.detail(variables),
       })
@@ -207,7 +208,7 @@ export const useDeleteProductSubtypeMutation = () => {
     },
     onSuccess: () => {
       // Invalidate danh sách product subtypes
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       toast.success("Xóa loại phụ sản phẩm thành công!")
     },
     onError: (error: unknown) => {
@@ -229,7 +230,7 @@ export const usePermanentDeleteProductSubtypeMutation = () => {
     },
     onSuccess: () => {
       // Invalidate danh sách product subtypes
-      queryClient.invalidateQueries({ queryKey: productSubtypeKeys.lists() })
+      invalidateResourceQueries("/product-subtype")
       toast.success("Xóa vĩnh viễn loại phụ sản phẩm thành công!")
     },
     onError: (error: unknown) => {
