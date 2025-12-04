@@ -1,4 +1,4 @@
-import { useState, useContext } from "react"
+import React, { useState, useContext } from "react"
 import Button from "@mui/material/Button"
 import { FaRegBell } from "react-icons/fa"
 import { MdOutlineEmail } from "react-icons/md"
@@ -17,31 +17,31 @@ import Logout from "@mui/icons-material/Logout"
 import { useAppStore } from "../../stores"
 import { MyContext } from "../../App"
 
-export const Header = () => {
-  const [anchorEl, setAnchorEl] = useState(null)
+export const Header: React.FC = () => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
   const { setIsSidebarOpen } = useContext(MyContext)
 
-  const handleClick = (event) => {
+  const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget)
   }
-  const handleClose = () => {
+  const handleClose = (): void => {
     setAnchorEl(null)
   }
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     // Logout logic here
     handleClose()
     useAppStore.setState({ accessToken: undefined, isLogin: false })
   }
 
-  const toggleMobileSidebar = () => {
+  const toggleMobileSidebar = (): void => {
     // Chỉ mở mobile sidebar, không ẩn header
     const event = new CustomEvent("toggleMobileSidebar")
     window.dispatchEvent(event)
   }
 
-  const toggleDesktopSidebar = () => {
+  const toggleDesktopSidebar = (): void => {
     // Toggle sidebar trên desktop
     setIsSidebarOpen((prev) => !prev)
   }
@@ -65,13 +65,19 @@ export const Header = () => {
       <div className='ml-auto part2'>
         <ul className='flex items-center gap-3'>
           <li>
-            <Button style={{background: 'rgba(255,255,255,0.1)'}}>
-              <FaRegBell className='text-white' />
+            <Button 
+              style={{background: 'white'}}
+              className='!border-2 !border-white !rounded-full'
+            >
+              <FaRegBell className='text-green-700' />
             </Button>
           </li>
           <li>
-            <Button style={{background: 'rgba(255,255,255,0.1)'}}>
-              <MdOutlineEmail className='text-white' />
+            <Button 
+              style={{background: 'white'}}
+              className='!border-2 !border-white !rounded-full'
+            >
+              <MdOutlineEmail className='text-green-700' />
             </Button>
           </li>
 

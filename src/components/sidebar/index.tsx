@@ -1,3 +1,4 @@
+import React, { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import Button from "@mui/material/Button"
 import { MdOutlineDashboard } from "react-icons/md"
@@ -13,7 +14,6 @@ import { useAppStore } from "../../stores"
 import { BiCategory } from "react-icons/bi"
 import { TbCategoryMinus } from "react-icons/tb"
 import { FaUsers } from "react-icons/fa"
-import { useState } from "react"
 import { RiFileListLine } from "react-icons/ri"
 // Thêm icon cho symbol
 import { FaRegCircle } from "react-icons/fa"
@@ -25,9 +25,9 @@ import { MdCloudQueue, MdAssignmentReturn, MdWarning } from "react-icons/md"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 
-const Sidebar = () => {
-  const [activeTab, setActiveTab] = useState(0)
-  const [isToggleSubmenu, setIsToggleSubmenu] = useState(false)
+const Sidebar: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<number>(0)
+  const [isToggleSubmenu, setIsToggleSubmenu] = useState<boolean>(false)
   const isLogin = useAppStore((state) => state.isLogin)
   const userInfo = useAppStore((state) => state.userInfo)
   const location = useLocation()
@@ -37,7 +37,7 @@ const Sidebar = () => {
   console.log("User Info:", userInfo)
   console.log("User Role:", userInfo?.role)
 
-  const isOpenSubmenu = (index) => {
+  const isOpenSubmenu = (index: number): void => {
     setActiveTab(index)
     setIsToggleSubmenu(!isToggleSubmenu)
   }
