@@ -86,7 +86,7 @@ const Sidebar = () => {
                 }`}
               >
                 <ul className='submenu pl-2'>
-                  <li>
+                  <li className="mb-2">
                     <Link to='/products'>
                       <Button
                         className={`w-full !justify-start !text-left ${
@@ -98,7 +98,7 @@ const Sidebar = () => {
                     </Link>
                   </li>
                   {hasPermission(userInfo, "PRODUCT_MANAGE") && (
-                    <li>
+                    <li className="-mb-12">
                       <Link to='/products/new'>
                         <Button
                           className={`w-full !justify-start !text-left ${
@@ -345,7 +345,7 @@ const Sidebar = () => {
                 <div className='submenu pl-2'>
                   <Link to='/inventory/receipts'>
                     <Button
-                      className={`w-full !justify-start !text-left ${
+                      className={`w-full !justify-start !text-left mb-2 ${
                         location.pathname === "/inventory/receipts"
                           ? "active"
                           : ""
@@ -357,7 +357,7 @@ const Sidebar = () => {
 
                   <Link to='/inventory/returns'>
                     <Button
-                      className={`w-full !justify-start !text-left ${
+                      className={`w-full !justify-start !text-left mb-2 ${
                         location.pathname.includes("/inventory/returns")
                           ? "active"
                           : ""
@@ -369,7 +369,7 @@ const Sidebar = () => {
 
                   <Link to='/inventory/adjustments'>
                     <Button
-                      className={`w-full !justify-start !text-left ${
+                      className={`w-full !justify-start !text-left mb-2 ${
                         location.pathname.includes("/inventory/adjustments")
                           ? "active"
                           : ""

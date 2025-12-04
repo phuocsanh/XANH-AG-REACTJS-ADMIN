@@ -749,3 +749,36 @@ body {
   line-height: 1 !important;
 }
 
+/* Override Ant Design Button Primary với gradient xanh */
+.ant-btn-primary {
+  background: var(--gradient-button) !important;
+  border: none !important;
+  color: #fff !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-btn-primary:hover:not(:disabled) {
+  background: var(--gradient-primary) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.ant-btn-primary:active:not(:disabled) {
+  background: var(--gradient-primary) !important;
+  transform: translateY(0);
+}
+
+.ant-btn-primary:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+  opacity: 0.6;
+}
+
+/* Override cho Button danger khi có type="primary" */
+.ant-btn-primary.ant-btn-dangerous {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.ant-btn-primary.ant-btn-dangerous:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+}
+

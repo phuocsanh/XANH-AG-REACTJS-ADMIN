@@ -485,8 +485,8 @@ const InventoryReceiptCreate: React.FC = () => {
               multiple
             >
               <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
+                <PlusOutlined />
+                <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
               </div>
             </Upload>
           </Card>
