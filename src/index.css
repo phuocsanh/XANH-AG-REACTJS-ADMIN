@@ -782,3 +782,49 @@ body {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
 }
 
+/* Mobile optimization - Giảm padding cho Card */
+@media (max-width: 768px) {
+  .ant-card-body {
+    padding: 8px !important;
+  }
+  
+  .ant-card-head {
+    padding: 6px 8px !important;
+    min-height: auto !important;
+  }
+  
+  .ant-card-head-title {
+    padding: 2px 0 !important;
+    font-size: 13px !important;
+  }
+  
+  /* Giảm spacing cho form elements */
+  .ant-form-item {
+    margin-bottom: 6px !important;
+  }
+  
+  .ant-input, .ant-select, .ant-input-number {
+    font-size: 14px !important;
+  }
+  
+  /* Giảm padding cho Title */
+  .ant-typography h5 {
+    margin-bottom: 2px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Giảm padding cho Alert */
+  .ant-alert {
+    padding: 4px 8px !important;
+  }
+  
+  /* Giảm margin cho Divider */
+  .ant-divider {
+    margin: 8px 0 !important;
+  }
+  
+  /* Fix sidebar bị che bởi header */
+  .sidebar {
+    padding-top: 70px !important;
+  }
+}

@@ -3,7 +3,7 @@ import { isFile, isFileArray, isObjectLike } from "./check-type"
 import { AnyObject, SuccessResponse } from "../models/common"
 import { useAppStore } from "../stores"
 
-export const URL = "http://localhost:3003/"
+export const URL = import.meta.env.VITE_API_URL || "http://localhost:3003"
 export const BASE_URL = URL
 
 export const URL_UPLOAD = BASE_URL + "/media/api/uploads/"

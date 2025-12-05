@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map, Marker, ZoomControl } from 'pigeon-maps';
 import { VIETNAM_LOCATIONS, Location } from '@/constants/locations';
-import { weatherService } from '@/lib/weather-service';
+import { weatherService } from '@/services/weather.service';
 
 interface LocationMapProps {
   selectedLocation: Location;

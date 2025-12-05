@@ -36,6 +36,8 @@ import { ProductType } from "@/models/product-type.model"
 import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
 import { ProductSubtype } from "@/models/product-subtype.model"
+import ProductComparisonPanel from "@/pages/products/components/ProductComparisonPanel"
+import { useProductsQuery } from "@/queries/product"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -176,6 +178,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   console.log("🚀 ~ ProductForm ~ units:", units)
   // Thêm query cho symbols
   const { data: symbols } = useSymbolsQuery()
+  // Thêm query cho danh sách sản phẩm
+  const { data: allProducts } = useProductsQuery({ offset: 0, limit: 1000 })
 
   // Debug log
   console.log("Product types data:", productTypes)
@@ -258,6 +262,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       }
     }
   }, [isEdit, productData, productLoading, reset])
+
+  // Reset form khi chuyển từ trang edit sang trang create
+  useEffect(() => {
+    if (!isEdit && !productLoading) {
+      reset(defaultProductFormValues)
+      setDescription("")
+    }
+  }, [isEdit, productLoading, reset])
 
   // Render các thuộc tính sản phẩm dựa trên loại sản phẩm được chọn
   const renderProductAttributes = () => {
@@ -424,243 +436,277 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   }
 
   return (
-    <div className='p-4'>
-      <Space direction='vertical' size='middle' style={{ width: "100%" }}>
-        <Card loading={loading || productLoading || initialLoading}>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div className='w-full'>
-                <FormField
-                  name='name'
-                  control={control}
-                  label='Tên sản phẩm'
-                  placeholder='Nhập tên sản phẩm'
-                  required
-                  rules={{ required: "Vui lòng nhập tên sản phẩm" }}
-                  className='w-full'
-                />
+    <div className=' md:p-4'>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6'>
+        {/* Form sản phẩm - 2 cột */}
+        <div className='lg:col-span-2'>
+          <Card loading={loading || productLoading || initialLoading}>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4'>
+                <div className='w-full'>
+                  <FormField
+                    name='name'
+                    control={control}
+                    label='Tên sản phẩm'
+                    placeholder='Nhập tên sản phẩm'
+                    required
+                    rules={{ required: "Vui lòng nhập tên sản phẩm" }}
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='type'
+                    control={control}
+                    label='Loại sản phẩm'
+                    placeholder='Chọn loại sản phẩm'
+                    required
+                    rules={{ required: "Vui lòng chọn loại sản phẩm" }}
+                    options={
+                      productTypes?.data?.items?.map((type: ProductType) => ({
+                        label: type.name,
+                        value: type.id,
+                      })) || []
+                    }
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='price'
+                    control={control}
+                    label='Giá bán tiền mặt (VNĐ)'
+                    placeholder='Nhập giá bán tiền mặt'
+                    required
+                    className='w-full'
+                    fixedDecimalScale={false}
+                    // Trường price theo schema là string nên component sẽ tự động trả về string
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='credit_price'
+                    control={control}
+                    label='Giá bán nợ (VNĐ)'
+                    placeholder='Nhập giá bán nợ'
+                    required
+                    className='w-full'
+                    fixedDecimalScale={false}
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='unit_id'
+                    control={control}
+                    label='Đơn vị tính'
+                    placeholder='Chọn đơn vị tính'
+                    options={
+                      units?.data?.items?.map((unit: any) => ({
+                        label: unit.name,
+                        value: unit.id,
+                      })) || []
+                    }
+                    className='w-full'
+                    required
+                    rules={{ required: "Vui lòng chọn đơn vị tính" }}
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='quantity'
+                    control={control}
+                    label='Số lượng'
+                    placeholder='Nhập số lượng'
+                    required
+                    rules={{ required: "Vui lòng nhập số lượng" }}
+                    className='w-full'
+                  />
+                </div>
+
+                {/* Thêm trường profit_margin_percent */}
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='profit_margin_percent'
+                    control={control}
+                    label='Phần trăm lợi nhuận mong muốn (%)'
+                    placeholder='Nhập phần trăm lợi nhuận mong muốn'
+                    className='w-full'
+                  />
+                </div>
+
+                {/* Thêm trường average_cost_price */}
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='average_cost_price'
+                    control={control}
+                    label='Giá vốn trung bình (VNĐ)'
+                    placeholder='Nhập giá vốn trung bình'
+                    className='w-full'
+                  />
+                </div>
+
+                {/* Thêm trường symbol */}
+                <div className='w-full'>
+                  <FormComboBox
+                    name='symbol_id'
+                    control={control}
+                    label='Ký hiệu'
+                    placeholder='Chọn ký hiệu'
+                    options={
+                      symbols?.data?.items?.map((symbol: Symbol) => ({
+                        label: `${symbol.name}`,
+                        value: symbol.id,
+                      })) || []
+                    }
+                    className='w-full'
+                  />
+                </div>
+
+                {/* Thêm trường ingredient với yêu cầu bắt buộc */}
+                <div className='w-full'>
+                  <FormField
+                    name='ingredient'
+                    control={control}
+                    label='Thành phần nguyên liệu'
+                    placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
+                    className='w-full'
+                    required
+                    rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='sub_types'
+                    control={control}
+                    label='Loại phụ sản phẩm'
+                    placeholder='Chọn loại phụ sản phẩm'
+                    mode='multiple'
+                    options={
+                      productSubtypes?.data?.items?.map(
+                        (subtype: ProductSubtype) => ({
+                          label: (subtype.subtypeName ||
+                            subtype.name ||
+                            "") as string,
+                          value: subtype.id,
+                        })
+                      ) || []
+                    }
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormField
+                    name='discount'
+                    control={control}
+                    label='Giảm giá (%)'
+                    placeholder='Nhập giảm giá'
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='status'
+                    control={control}
+                    label='Trạng thái'
+                    placeholder='Chọn trạng thái'
+                    options={BASE_STATUS.map((status) => ({
+                      label: status.label,
+                      value: status.value,
+                    }))}
+                    className='w-full'
+                  />
+                </div>
               </div>
 
-              <div className='w-full'>
-                <FormComboBox
-                  name='type'
-                  control={control}
-                  label='Loại sản phẩm'
-                  placeholder='Chọn loại sản phẩm'
-                  required
-                  rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                  options={
-                    productTypes?.data?.items?.map((type: ProductType) => ({
-                      label: type.name,
-                      value: type.id,
-                    })) || []
-                  }
-                  className='w-full'
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormFieldNumber
-                  name='price'
-                  control={control}
-                  label='Giá bán tiền mặt (VNĐ)'
-                  placeholder='Nhập giá bán tiền mặt'
-                  required
-                  className='w-full'
-                  fixedDecimalScale={false}
-                  // Trường price theo schema là string nên component sẽ tự động trả về string
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormFieldNumber
-                  name='credit_price'
-                  control={control}
-                  label='Giá bán nợ (VNĐ)'
-                  placeholder='Nhập giá bán nợ'
-                  required
-                  className='w-full'
-                  fixedDecimalScale={false}
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormComboBox
-                  name='unit_id'
-                  control={control}
-                  label='Đơn vị tính'
-                  placeholder='Chọn đơn vị tính'
-                  options={
-                    units?.data?.items?.map((unit: any) => ({
-                      label: unit.name,
-                      value: unit.id,
-                    })) || []
-                  }
-                  className='w-full'
-                  required
-                  rules={{ required: "Vui lòng chọn đơn vị tính" }}
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormFieldNumber
-                  name='quantity'
-                  control={control}
-                  label='Số lượng'
-                  placeholder='Nhập số lượng'
-                  required
-                  rules={{ required: "Vui lòng nhập số lượng" }}
-                  className='w-full'
-                />
-              </div>
-
-              {/* Thêm trường profit_margin_percent */}
-              <div className='w-full'>
-                <FormFieldNumber
-                  name='profit_margin_percent'
-                  control={control}
-                  label='Phần trăm lợi nhuận mong muốn (%)'
-                  placeholder='Nhập phần trăm lợi nhuận mong muốn'
-                  className='w-full'
-                />
-              </div>
-
-              {/* Thêm trường average_cost_price */}
-              <div className='w-full'>
-                <FormFieldNumber
-                  name='average_cost_price'
-                  control={control}
-                  label='Giá vốn trung bình (VNĐ)'
-                  placeholder='Nhập giá vốn trung bình'
-                  className='w-full'
-                />
-              </div>
-
-              {/* Thêm trường symbol */}
-              <div className='w-full'>
-                <FormComboBox
-                  name='symbol_id'
-                  control={control}
-                  label='Ký hiệu'
-                  placeholder='Chọn ký hiệu'
-                  options={
-                    symbols?.data?.items?.map((symbol: Symbol) => ({
-                      label: `${symbol.name}`,
-                      value: symbol.id,
-                    })) || []
-                  }
-                  className='w-full'
-                />
-              </div>
-
-              {/* Thêm trường ingredient với yêu cầu bắt buộc */}
-              <div className='w-full'>
-                <FormField
-                  name='ingredient'
-                  control={control}
-                  label='Thành phần nguyên liệu'
-                  placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
-                  className='w-full'
-                  required
-                  rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormComboBox
-                  name='sub_types'
-                  control={control}
-                  label='Loại phụ sản phẩm'
-                  placeholder='Chọn loại phụ sản phẩm'
-                  mode='multiple'
-                  options={
-                    productSubtypes?.data?.items?.map(
-                      (subtype: ProductSubtype) => ({
-                        label: (subtype.subtypeName ||
-                          subtype.name ||
-                          "") as string,
-                        value: subtype.id,
-                      })
-                    ) || []
-                  }
-                  className='w-full'
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormField
-                  name='discount'
-                  control={control}
-                  label='Giảm giá (%)'
-                  placeholder='Nhập giảm giá'
-                  className='w-full'
-                />
-              </div>
-
-              <div className='w-full'>
-                <FormComboBox
-                  name='status'
-                  control={control}
-                  label='Trạng thái'
-                  placeholder='Chọn trạng thái'
-                  options={BASE_STATUS.map((status) => ({
-                    label: status.label,
-                    value: status.value,
-                  }))}
-                  className='w-full'
-                />
-              </div>
-            </div>
-
-            <Form.Item
-              label='Mô tả sản phẩm'
-              className='w-full'
-              layout='vertical'
-            >
-              <div className='w-full'>
-                <TiptapEditor
-                  content={description}
-                  onChange={(content) => {
-                    setDescription(content)
-                  }}
-                />
-              </div>
-            </Form.Item>
-
-            <div className='w-full'>
-              <FormImageUpload
-                name='pictures'
-                control={control}
-                label='Hình ảnh chi tiết'
-                maxCount={5}
-                multiple={true}
+              <Form.Item
+                label='Mô tả sản phẩm'
                 className='w-full'
-              />
-            </div>
-
-            {renderProductAttributes()}
-
-            <div style={{ textAlign: "right", marginTop: "24px" }}>
-              <Button
-                style={{ marginRight: "8px" }}
-                onClick={() => navigate("/products")}
+                layout='vertical'
               >
-                Hủy
-              </Button>
-              <Button
-                type='primary'
-                htmlType='submit'
-                loading={loading}
-                icon={<SaveOutlined />}
-              >
-                {isEdit ? "Cập nhật" : "Thêm mới"}
-              </Button>
-            </div>
-          </form>
-        </Card>
-      </Space>
+                <div className='w-full'>
+                  <TiptapEditor
+                    content={description}
+                    onChange={(content) => {
+                      setDescription(content)
+                    }}
+                  />
+                </div>
+              </Form.Item>
+
+              <div className='w-full'>
+                <FormImageUpload
+                  name='pictures'
+                  control={control}
+                  label='Hình ảnh chi tiết'
+                  maxCount={5}
+                  multiple={true}
+                  className='w-full'
+                />
+              </div>
+
+              {renderProductAttributes()}
+
+              <div style={{ textAlign: "right", marginTop: "24px" }}>
+                <Button
+                  style={{ marginRight: "8px" }}
+                  onClick={() => navigate("/products")}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type='primary'
+                  htmlType='submit'
+                  loading={loading}
+                  icon={<SaveOutlined />}
+                >
+                  {isEdit ? "Cập nhật" : "Thêm mới"}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+
+        {/* AI So sánh sản phẩm - 1 cột */}
+        <div className='lg:col-span-1'>
+          <div className='sticky top-4'>
+            <ProductComparisonPanel
+              currentProduct={{
+                name: watch('name') || '',
+                product_type: productTypes?.data?.items?.find((t: ProductType) => t.id === watch('type'))?.name,
+                active_ingredient: watch('ingredient') || '',
+                price: watch('price') ? parseFloat(watch('price')) : undefined,
+                unit: units?.data?.items?.find((u: any) => u.id === watch('unit_id'))?.name,
+                description: description,
+              }}
+              availableProducts={
+                allProducts?.data?.items?.map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  product_type: productTypes?.data?.items?.find((t: ProductType) => t.id === p.type)?.name,
+                  active_ingredient: Array.isArray(p.ingredient) ? p.ingredient.join(', ') : p.ingredient,
+                  concentration: p.attributes?.concentration as string | undefined,
+                  unit: units?.data?.items?.find((u: any) => u.id === p.unit_id)?.name,
+                  price: parseFloat(p.price || '0'),
+                  manufacturer: p.attributes?.manufacturer as string | undefined,
+                  description: p.description,
+                  usage: p.attributes?.usage as string | undefined,
+                })) || []
+              }
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
 export default ProductForm
+

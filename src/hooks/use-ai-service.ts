@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react"
-import { frontendAiService } from "@/lib/ai-service"
-import type { AiResponse } from "@/lib/ai-service"
+import { frontendAiService } from "@/services/ai.service"
+import type { AiResponse } from "@/services/ai.service"
 
 /**
  * Hook để sử dụng AI service trong các component

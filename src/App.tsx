@@ -43,6 +43,8 @@ import DiseaseWarningPage from "./pages/disease-warning"
 import BannedPesticidesPage from "./pages/banned-pesticides"
 // Thêm import cho trang quản lý vụ lúa
 import RiceCropsPage from "./pages/rice-crops"
+// Thêm import cho trang so sánh sản phẩm AI
+import ProductComparisonPage from "./pages/product-comparison"
 // Thêm import cho các module quản lý bán hàng
 import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
@@ -56,7 +58,10 @@ import CreateSalesReturn from "./pages/sales-returns/create"
 import ReturnsPage from "./pages/inventory/returns"
 import AdjustmentsPage from "./pages/inventory/adjustments"
 import { requestForToken, onMessageListener } from "./lib/firebase"
+import { fetchAndActivate, getValue } from "firebase/remote-config"
+import { remoteConfig } from "./lib/firebase"
 import { toast } from "react-toastify"
+import { useConfigStore } from "./stores/config.store"
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -72,13 +77,60 @@ export const MyContext = createContext<TypeMyContext>({
   setIsSidebarOpen: () => {},
 })
 
+export const ThemeContext = createContext<{
+  isDarkMode: boolean
+  setIsDarkMode: Dispatch<SetStateAction<boolean>>
+}>({
+  isDarkMode: false,
+  setIsDarkMode: () => {},
+})
+
 function App() {
-  const [isHeaderFooterShow, setIsHeaderFooterShow] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true) // State để điều khiển sidebar
+  const [isHeaderFooterShow, setIsHeaderFooterShow] = useState(false) // State local
   const isLogin = useAppStore((state) => state.isLogin)
   const isHeaderFooterShowRef = useRef(isHeaderFooterShow)
   useAuthStatus() // Use the hook to initialize auth status
+
+  // Fetch Remote Config và lưu vào store khi app khởi động
+  useEffect(() => {
+    const initRemoteConfig = async () => {
+      try {
+        console.log('🚀 Initializing Remote Config...')
+        const activated = await fetchAndActivate(remoteConfig)
+        console.log('✅ Remote Config fetched:', activated ? 'New config activated' : 'Using cached config')
+        
+        // Lấy 7 API keys và lưu vào store
+        const keys = [
+          { name: 'GEMINI_API_KEY_1', setter: 'setGeminiApiKey1' },
+          { name: 'GEMINI_API_KEY_2', setter: 'setGeminiApiKey2' },
+          { name: 'GEMINI_API_KEY_3', setter: 'setGeminiApiKey3' },
+          { name: 'GEMINI_API_KEY_4', setter: 'setGeminiApiKey4' },
+          { name: 'GEMINI_API_KEY_5', setter: 'setGeminiApiKey5' },
+          { name: 'GEMINI_API_KEY_6', setter: 'setGeminiApiKey6' },
+          { name: 'GEMINI_API_KEY_7', setter: 'setGeminiApiKey7' },
+        ]
+        
+        const storeState = useConfigStore.getState()
+        
+        keys.forEach(({ name, setter }) => {
+          const value = getValue(remoteConfig, name).asString()
+          if (value && value.trim()) {
+            (storeState as any)[setter](value)
+            console.log(`✅ ${name} loaded`)
+          } else {
+            console.warn(`⚠️ ${name} not found in Remote Config`)
+          }
+        })
+      } catch (error) {
+        console.error('❌ Failed to initialize Remote Config:', error)
+      }
+    }
+    
+    initRemoteConfig()
+  }, [])
 
   // Kiểm tra trạng thái đăng nhập khi ứng dụng khởi động
   useEffect(() => {
@@ -195,6 +247,14 @@ function App() {
                       element={
                         <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
                           <Products />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/product-comparison'
+                      element={
+                        <ProtectedRoute requiredPermission="PRODUCT_VIEW">
+                          <ProductComparisonPage />
                         </ProtectedRoute>
                       }
                     />

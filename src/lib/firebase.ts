@@ -21,9 +21,20 @@ remoteConfig.settings.minimumFetchIntervalMillis = import.meta.env.DEV ? 0 : 432
 
 export const getRemoteConfigValue = async (key: string) => {
   try {
-    await fetchAndActivate(remoteConfig);
+    const activated = await fetchAndActivate(remoteConfig);
+    console.log(`🔄 Remote Config fetch result for "${key}":`, activated ? 'Activated' : 'No change');
+    
     const val = getValue(remoteConfig, key);
-    return val.asString();
+    const stringValue = val.asString();
+    const source = val.getSource(); // 'remote', 'default', or 'static'
+    
+    console.log(`📦 Remote Config value for "${key}":`, {
+      value: stringValue || '(empty)',
+      source: source,
+      hasValue: !!stringValue
+    });
+    
+    return stringValue;
   } catch (error) {
     console.error(`Error fetching remote config for key ${key}:`, error);
     return "";

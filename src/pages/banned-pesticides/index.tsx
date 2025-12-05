@@ -22,7 +22,7 @@ import {
   InfoCircleOutlined,
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
-import { frontendAiService } from '@/lib/ai-service';
+import { frontendAiService } from '@/services/ai.service';
 import {
   ALL_BANNED_INGREDIENTS,
   BANNED_INGREDIENTS_BY_TYPE,

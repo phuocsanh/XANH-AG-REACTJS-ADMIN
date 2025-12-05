@@ -123,6 +123,11 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                       <Button className='w-full'>Thêm sản phẩm</Button>
                     </Link>
                   </li>
+                  <li>
+                    <Link to='/product-comparison' onClick={handleLinkClick}>
+                      <Button className='w-full'>So sánh AI</Button>
+                    </Link>
+                  </li>
                 </ul>
               </div>
             </li>

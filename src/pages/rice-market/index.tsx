@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Typography, Alert, Button, Row, Col, List } from 'antd';
 import { ReloadOutlined, YoutubeOutlined } from '@ant-design/icons';
-import { riceMarketService, RiceAnalysisResult, YouTubeVideoData } from '@/lib/rice-market-service';
+import { riceMarketService, RiceAnalysisResult, YouTubeVideoData } from '@/services/rice-market.service';
 import { toast } from 'react-toastify';
 
 const { Title, Text, Paragraph } = Typography;

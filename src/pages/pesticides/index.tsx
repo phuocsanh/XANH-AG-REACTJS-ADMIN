@@ -5,8 +5,8 @@ import ComboBox from '@/components/common/combo-box';
 import { useAiService } from '@/hooks/use-ai-service';
 import { useProductsQuery } from '@/queries/product';
 import { Product } from '@/models/product.model';
-import { weatherService, WeatherData, SimplifiedWeatherData } from '@/lib/weather-service';
-import { frontendAiService } from '@/lib/ai-service';
+import { weatherService, WeatherData, SimplifiedWeatherData } from '@/services/weather.service';
+import { frontendAiService } from '@/services/ai.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
 

@@ -2,7 +2,8 @@ import {
   PESTICIDE_MIXING_DOCUMENT_TEXT,
   PESTICIDE_MIXING_REFERENCE_LINKS,
 } from "@/data/pesticide-mixing-data"
-import { getRemoteConfigValue } from "./firebase"
+import { useConfigStore } from "@/stores/config.store"
+import { GEMINI_CONFIG, getGeminiApiUrl } from "@/config/gemini.config"
 
 // Interface cho response data
 export interface AiResponse {
@@ -15,39 +16,34 @@ export interface AiResponse {
  * Service để gọi trực tiếp Google AI Gemini API từ frontend
  */
 class FrontendAiService {
-  private readonly model = "gemini-2.5-flash"
   private lastRequestTime: number = 0
   private readonly minRequestInterval: number = 1000 // 1 second between requests
 
   /**
-   * Lấy API key từ Remote Config
+   * Lấy API key từ store (đã được load sẵn khi app khởi động)
    */
-  private async getApiKey1(): Promise<string> {
-    const apiKey = await getRemoteConfigValue("GEMINI_API_KEY_1")
-    if (!apiKey) {
-      throw new Error(
-        "GEMINI_API_KEY_1 could not be retrieved from Remote Config"
-      )
+  private getApiKey1(): string {
+    const { geminiApiKey1 } = useConfigStore.getState()
+    if (!geminiApiKey1 || !geminiApiKey1.trim()) {
+      throw new Error("GEMINI_API_KEY_1 not found. Please reload the app.")
     }
-    return apiKey
+    return geminiApiKey1
   }
-  private async getApiKey2(): Promise<string> {
-    const apiKey = await getRemoteConfigValue("GEMINI_API_KEY_2")
-    if (!apiKey) {
-      throw new Error(
-        "GEMINI_API_KEY_2 could not be retrieved from Remote Config"
-      )
+  
+  private getApiKey2(): string {
+    const { geminiApiKey2 } = useConfigStore.getState()
+    if (!geminiApiKey2 || !geminiApiKey2.trim()) {
+      throw new Error("GEMINI_API_KEY_2 not found. Please reload the app.")
     }
-    return apiKey
+    return geminiApiKey2
   }
-  private async getApiKey3(): Promise<string> {
-    const apiKey = await getRemoteConfigValue("GEMINI_API_KEY_3")
-    if (!apiKey) {
-      throw new Error(
-        "GEMINI_API_KEY_3 could not be retrieved from Remote Config"
-      )
+  
+  private getApiKey3(): string {
+    const { geminiApiKey3 } = useConfigStore.getState()
+    if (!geminiApiKey3 || !geminiApiKey3.trim()) {
+      throw new Error("GEMINI_API_KEY_3 not found. Please reload the app.")
     }
-    return apiKey
+    return geminiApiKey3
   }
 
   /**
@@ -143,12 +139,10 @@ class FrontendAiService {
       await this.ensureRateLimit()
 
       const prompt = this.createMixPesticidesPrompt(question)
-      const apiKey = await this.getApiKey1()
+      const apiKey = this.getApiKey1()
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${
-          this.model
-        }:generateContent?key=${apiKey}`,
+        getGeminiApiUrl(apiKey),
         {
           method: "POST",
           headers: {
@@ -232,12 +226,10 @@ class FrontendAiService {
       await this.ensureRateLimit()
 
       const prompt = this.createSortPesticidesPrompt(question)
-      const apiKey = await this.getApiKey2()
+      const apiKey = this.getApiKey2()
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${
-          this.model
-        }:generateContent?key=${apiKey}`,
+        getGeminiApiUrl(apiKey),
         {
           method: "POST",
           headers: {
@@ -320,12 +312,10 @@ class FrontendAiService {
       // Đảm bảo rate limit
       await this.ensureRateLimit()
 
-      const apiKey = await this.getApiKey3()
+      const apiKey = this.getApiKey3()
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${
-          this.model
-        }:generateContent?key=${apiKey}`,
+        getGeminiApiUrl(apiKey),
         {
           method: "POST",
           headers: {
@@ -403,12 +393,10 @@ class FrontendAiService {
       // Đảm bảo rate limit
       await this.ensureRateLimit()
 
-      const apiKey = await this.getApiKey1()
+      const apiKey = this.getApiKey1()
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${
-          this.model
-        }:generateContent?key=${apiKey}`,
+        getGeminiApiUrl(apiKey),
         {
           method: "POST",
           headers: {
@@ -490,7 +478,7 @@ class FrontendAiService {
       // Đảm bảo rate limit
       await this.ensureRateLimit()
 
-      const apiKey = await this.getApiKey1()
+      const apiKey = this.getApiKey1()
 
       // Tạo prompt phân tích
       const prompt = `
@@ -522,7 +510,7 @@ TRẢ VỀ KẾT QUẢ DƯỚI DẠNG JSON (KHÔNG THÊM MARKDOWN, KHÔNG THÊM 
       `.trim()
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${apiKey}`,
+        getGeminiApiUrl(apiKey),
         {
           method: "POST",
           headers: {

@@ -98,7 +98,7 @@ const Sidebar: React.FC = () => {
                     </Link>
                   </li>
                   {hasPermission(userInfo, "PRODUCT_MANAGE") && (
-                    <li className="-mb-12">
+                    <li >
                       <Link to='/products/new'>
                         <Button
                           className={`w-full !justify-start !text-left ${
@@ -112,6 +112,19 @@ const Sidebar: React.FC = () => {
                       </Link>
                     </li>
                   )}
+                  <li className="-mb-8">
+                    <Link to='/product-comparison'>
+                      <Button
+                        className={`w-full !justify-start !text-left ${
+                          location.pathname === "/product-comparison"
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        So sánh AI
+                      </Button>
+                    </Link>
+                  </li>
                 </ul>
               </div>
             </li>
