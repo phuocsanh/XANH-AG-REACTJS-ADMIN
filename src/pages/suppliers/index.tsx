@@ -392,7 +392,13 @@ export const Suppliers = () => {
           variant='contained'
           startIcon={<Add />}
           onClick={handleAddSupplier}
-          sx={{ borderRadius: 2 }}
+          sx={{ 
+            borderRadius: 2,
+            background: 'linear-gradient(180deg, #059669 0%, #047857 100%)',
+            '&:hover': {
+              background: 'linear-gradient(180deg, #047857 0%, #059669 100%)',
+            }
+          }}
         >
           Thêm nhà cung cấp
         </Button>

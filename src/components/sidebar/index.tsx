@@ -60,77 +60,7 @@ const Sidebar: React.FC = () => {
             </Link>
           </li>
 
-          {hasPermission(userInfo, "PRODUCT_VIEW") && (
-            <li>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 1 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(1)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <TbBrandProducthunt className='text-purple-200' />
-                </span>
-                Sản phẩm
-                <span
-                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
-                    activeTab === 1 && isToggleSubmenu === true ? "rotate" : ""
-                  }`}
-                >
-                  <FaAngleRight />
-                </span>
-              </Button>
-              <div
-                className={`submenuWrapper ${
-                  activeTab === 1 && isToggleSubmenu === true
-                    ? "colapse"
-                    : "colapsed"
-                }`}
-              >
-                <ul className='submenu pl-2'>
-                  <li className="mb-2">
-                    <Link to='/products'>
-                      <Button
-                        className={`w-full !justify-start !text-left ${
-                          location.pathname === "/products" ? "active" : ""
-                        }`}
-                      >
-                        Danh sách sản phẩm
-                      </Button>
-                    </Link>
-                  </li>
-                  {hasPermission(userInfo, "PRODUCT_MANAGE") && (
-                    <li >
-                      <Link to='/products/new'>
-                        <Button
-                          className={`w-full !justify-start !text-left ${
-                            location.pathname === "/products/new"
-                              ? "active"
-                              : ""
-                          }`}
-                        >
-                          Thêm sản phẩm
-                        </Button>
-                      </Link>
-                    </li>
-                  )}
-                  <li className="-mb-8">
-                    <Link to='/product-comparison'>
-                      <Button
-                        className={`w-full !justify-start !text-left ${
-                          location.pathname === "/product-comparison"
-                            ? "active"
-                            : ""
-                        }`}
-                      >
-                        So sánh AI
-                      </Button>
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </li>
-          )}
-
-          {hasPermission(userInfo, "SALES_VIEW") && (
+          {/* {hasPermission(userInfo, "SALES_VIEW") && (
             <li>
               <Button
                 className={`w-full !justify-start !text-left ${activeTab === 2 ? "active" : ""}`}
@@ -142,261 +72,7 @@ const Sidebar: React.FC = () => {
                 Đơn đặt hàng
               </Button>
             </li>
-          )}
-
-          {hasPermission(userInfo, "PRODUCT_MANAGE") && (
-            <>
-              <li>
-                <Link to='/category/list'>
-                  <Button
-                    className={`w-full !justify-start !text-left ${activeTab === 3 ? "active" : ""}`}
-                    onClick={() => isOpenSubmenu(3)}
-                  >
-                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <BiCategory className='text-indigo-200' />
-                    </span>
-                    Loại sản phẩm
-                  </Button>
-                </Link>
-              </li>
-              <li>
-                <Link to='/sub-category/list'>
-                  <Button
-                    className={`w-full !justify-start !text-left ${activeTab === 4 ? "active" : ""}`}
-                    onClick={() => isOpenSubmenu(4)}
-                  >
-                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <TbCategoryMinus className='text-pink-200' />
-                    </span>
-                    Loại phụ sản phẩm
-                  </Button>
-                </Link>
-              </li>
-
-              <li>
-                <Link to='/units'>
-                  <Button
-                    className={`w-full !justify-start !text-left ${activeTab === 5 ? "active" : ""}`}
-                    onClick={() => isOpenSubmenu(5)}
-                  >
-                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <RiFileListLine className='text-teal-200' />
-                    </span>
-                    Đơn vị tính
-                  </Button>
-                </Link>
-              </li>
-
-              {/* Thêm menu cho symbol */}
-              <li>
-                <Link to='/symbols'>
-                  <Button
-                    className={`w-full !justify-start !text-left ${activeTab === 6 ? "active" : ""}`}
-                    onClick={() => isOpenSubmenu(6)}
-                  >
-                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <FaRegCircle className='text-cyan-200' />
-                    </span>
-                    Ký hiệu
-                  </Button>
-                </Link>
-              </li>
-            </>
-          )}
-
-          {/* Thêm menu cho supplier */}
-          {hasPermission(userInfo, "INVENTORY_MANAGE") && (
-            <li>
-              <Link to='/suppliers'>
-                <Button
-                  className={`w-full !justify-start !text-left ${activeTab === 7 ? "active" : ""}`}
-                  onClick={() => isOpenSubmenu(7)}
-                >
-                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                    <MdLocalShipping className='text-blue-200' />
-                  </span>
-                  Nhà cung cấp
-                </Button>
-              </Link>
-            </li>
-          )}
-
-          {/* Thêm menu cho pesticides */}
-          <li>
-            <Link to='/pesticides'>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 8 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(8)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiPoisonBottle className='text-red-200' />
-                </span>
-                Thuốc BVTV
-              </Button>
-            </Link>
-          </li>
-
-          {/* Thêm menu cho rice market */}
-          <li>
-            <Link to='/rice-market'>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 15 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(15)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiGrain className='text-amber-200' />
-                </span>
-                Thị trường Lúa Gạo
-              </Button>
-            </Link>
-          </li>
-
-
-
-          {/* Thêm menu cho disease warning */}
-          {hasPermission(userInfo, "RICE_BLAST_VIEW") && (
-            <li>
-              <Link to='/disease-warning'>
-                <Button
-                  className={`w-full !justify-start !text-left ${activeTab === 23 ? "active" : ""}`}
-                  onClick={() => isOpenSubmenu(23)}
-                >
-                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                    <MdWarning className='text-yellow-200' />
-                  </span>
-                  Cảnh báo Bệnh/Sâu hại
-                </Button>
-              </Link>
-            </li>
-          )}
-
-          {/* Thêm menu cho kiểm tra thuốc bị cấm */}
-          <li>
-            <Link to='/banned-pesticides'>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 24 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(24)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdWarning className='text-red-200' />
-                </span>
-                Kiểm tra thuốc bị cấm
-              </Button>
-            </Link>
-          </li>
-
-          {/* Thêm menu cho quản lý vụ lúa */}
-          <li>
-            <Link to='/rice-crops'>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(25)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiGrain className='text-green-200' />
-                </span>
-                Quản lý vụ lúa
-              </Button>
-            </Link>
-          </li>
-
-          {isAdmin(userInfo) && (
-            <li>
-              <Link to='/users'>
-                <Button
-                  className={`w-full !justify-start !text-left ${activeTab === 9 ? "active" : ""}`}
-                  onClick={() => isOpenSubmenu(9)}
-                >
-                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                    <FaUsers className='text-violet-200' />
-                  </span>
-                  Quản lý người dùng
-                </Button>
-              </Link>
-            </li>
-          )}
-
-          {/* Quản lý nhập hàng */}
-          {hasPermission(userInfo, "INVENTORY_VIEW") && (
-            <li>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 10 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(10)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdInventory className='text-emerald-200' />
-                </span>
-                Quản lý nhập hàng
-                <span
-                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
-                    activeTab === 10 && isToggleSubmenu === true ? "rotate" : ""
-                  }`}
-                >
-                  <FaAngleRight />
-                </span>
-              </Button>
-              <div
-                className={`submenuWrapper ${
-                  activeTab === 10 && isToggleSubmenu === true
-                    ? "colapse"
-                    : "colapsed"
-                }`}
-              >
-                <div className='submenu pl-2'>
-                  <Link to='/inventory/receipts'>
-                    <Button
-                      className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname === "/inventory/receipts"
-                          ? "active"
-                          : ""
-                      }`}
-                    >
-                      Danh sách phiếu nhập
-                    </Button>
-                  </Link>
-
-                  <Link to='/inventory/returns'>
-                    <Button
-                      className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname.includes("/inventory/returns")
-                          ? "active"
-                          : ""
-                      }`}
-                    >
-                      Phiếu trả hàng
-                    </Button>
-                  </Link>
-
-                  <Link to='/inventory/adjustments'>
-                    <Button
-                      className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname.includes("/inventory/adjustments")
-                          ? "active"
-                          : ""
-                      }`}
-                    >
-                      Phiếu điều chỉnh
-                    </Button>
-                  </Link>
-
-                  {hasPermission(userInfo, "INVENTORY_MANAGE") && (
-                    <Link to='/inventory/receipts/create'>
-                      <Button
-                        className={`w-full !justify-start !text-left ${
-                          location.pathname === "/inventory/receipts/create"
-                            ? "active"
-                            : ""
-                        }`}
-                      >
-                        Tạo phiếu nhập
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </li>
-          )}
-
+          )} */}
           {/* Quản lý bán hàng */}
           {(hasPermission(userInfo, "SALES_VIEW") ||
             hasPermission(userInfo, "SALES_MANAGE")) && (
@@ -507,6 +183,327 @@ const Sidebar: React.FC = () => {
                 </li>
               )}
             </>
+          )}
+
+          {/* Thêm menu cho supplier */}
+          {hasPermission(userInfo, "INVENTORY_MANAGE") && (
+            <li>
+              <Link to='/suppliers'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 7 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(7)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <MdLocalShipping className='text-blue-200' />
+                  </span>
+                  Nhà cung cấp
+                </Button>
+              </Link>
+            </li>
+          )}
+          {/* Quản lý nhập hàng */}
+          {hasPermission(userInfo, "INVENTORY_VIEW") && (
+            <li>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 10 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(10)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdInventory className='text-emerald-200' />
+                </span>
+                Quản lý nhập hàng
+                <span
+                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                    activeTab === 10 && isToggleSubmenu === true ? "rotate" : ""
+                  }`}
+                >
+                  <FaAngleRight />
+                </span>
+              </Button>
+              <div
+                className={`submenuWrapper ${
+                  activeTab === 10 && isToggleSubmenu === true
+                    ? "colapse"
+                    : "colapsed"
+                }`}
+              >
+                <div className='submenu pl-2'>
+                  <Link to='/inventory/receipts'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname === "/inventory/receipts"
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Danh sách phiếu nhập
+                    </Button>
+                  </Link>
+
+                  <Link to='/inventory/returns'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname.includes("/inventory/returns")
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Phiếu trả hàng
+                    </Button>
+                  </Link>
+
+                  <Link to='/inventory/adjustments'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname.includes("/inventory/adjustments")
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Phiếu điều chỉnh
+                    </Button>
+                  </Link>
+
+                  {hasPermission(userInfo, "INVENTORY_MANAGE") && (
+                    <Link to='/inventory/receipts/create'>
+                      <Button
+                        className={`w-full !justify-start !text-left ${
+                          location.pathname === "/inventory/receipts/create"
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        Tạo phiếu nhập
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </li>
+          )}
+
+          {hasPermission(userInfo, "PRODUCT_VIEW") && (
+            <li>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 1 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(1)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <TbBrandProducthunt className='text-purple-200' />
+                </span>
+                Sản phẩm
+                <span
+                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                    activeTab === 1 && isToggleSubmenu === true ? "rotate" : ""
+                  }`}
+                >
+                  <FaAngleRight />
+                </span>
+              </Button>
+              <div
+                className={`submenuWrapper ${
+                  activeTab === 1 && isToggleSubmenu === true
+                    ? "colapse"
+                    : "colapsed"
+                }`}
+              >
+                <ul className='submenu pl-2'>
+                  <li className="mb-2">
+                    <Link to='/products'>
+                      <Button
+                        className={`w-full !justify-start !text-left ${
+                          location.pathname === "/products" ? "active" : ""
+                        }`}
+                      >
+                        Danh sách sản phẩm
+                      </Button>
+                    </Link>
+                  </li>
+                  {hasPermission(userInfo, "PRODUCT_MANAGE") && (
+                    <li >
+                      <Link to='/products/new'>
+                        <Button
+                          className={`w-full !justify-start !text-left ${
+                            location.pathname === "/products/new"
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Thêm sản phẩm
+                        </Button>
+                      </Link>
+                    </li>
+                  )}
+                  <li className="-mb-8">
+                    <Link to='/product-comparison'>
+                      <Button
+                        className={`w-full !justify-start !text-left ${
+                          location.pathname === "/product-comparison"
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        So sánh AI
+                      </Button>
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          )}
+          {hasPermission(userInfo, "PRODUCT_MANAGE") && (
+            <>
+              <li>
+                <Link to='/category/list'>
+                  <Button
+                    className={`w-full !justify-start !text-left ${activeTab === 3 ? "active" : ""}`}
+                    onClick={() => isOpenSubmenu(3)}
+                  >
+                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                      <BiCategory className='text-indigo-200' />
+                    </span>
+                    Loại sản phẩm
+                  </Button>
+                </Link>
+              </li>
+              <li>
+                <Link to='/sub-category/list'>
+                  <Button
+                    className={`w-full !justify-start !text-left ${activeTab === 4 ? "active" : ""}`}
+                    onClick={() => isOpenSubmenu(4)}
+                  >
+                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                      <TbCategoryMinus className='text-pink-200' />
+                    </span>
+                    Loại phụ sản phẩm
+                  </Button>
+                </Link>
+              </li>
+
+              <li>
+                <Link to='/units'>
+                  <Button
+                    className={`w-full !justify-start !text-left ${activeTab === 5 ? "active" : ""}`}
+                    onClick={() => isOpenSubmenu(5)}
+                  >
+                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                      <RiFileListLine className='text-teal-200' />
+                    </span>
+                    Đơn vị tính
+                  </Button>
+                </Link>
+              </li>
+
+              {/* Thêm menu cho symbol */}
+              <li>
+                <Link to='/symbols'>
+                  <Button
+                    className={`w-full !justify-start !text-left ${activeTab === 6 ? "active" : ""}`}
+                    onClick={() => isOpenSubmenu(6)}
+                  >
+                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                      <FaRegCircle className='text-cyan-200' />
+                    </span>
+                    Ký hiệu
+                  </Button>
+                </Link>
+              </li>
+            </>
+          )}
+
+          {/* Thêm menu cho pesticides */}
+          <li>
+            <Link to='/pesticides'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 8 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(8)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiPoisonBottle className='text-red-200' />
+                </span>
+                Thuốc BVTV
+              </Button>
+            </Link>
+          </li>
+
+          {/* Thêm menu cho rice market */}
+          <li>
+            <Link to='/rice-market'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 15 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(15)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiGrain className='text-amber-200' />
+                </span>
+                Thị trường Lúa Gạo
+              </Button>
+            </Link>
+          </li>
+
+
+
+          {/* Thêm menu cho disease warning */}
+          {hasPermission(userInfo, "RICE_BLAST_VIEW") && (
+            <li>
+              <Link to='/disease-warning'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 23 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(23)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <MdWarning className='text-yellow-200' />
+                  </span>
+                  Cảnh báo Bệnh/Sâu hại
+                </Button>
+              </Link>
+            </li>
+          )}
+
+          {/* Thêm menu cho kiểm tra thuốc bị cấm */}
+          <li>
+            <Link to='/banned-pesticides'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 24 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(24)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdWarning className='text-red-200' />
+                </span>
+                Kiểm tra thuốc bị cấm
+              </Button>
+            </Link>
+          </li>
+
+          {/* Thêm menu cho quản lý vụ lúa */}
+          <li>
+            <Link to='/rice-crops'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(25)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiGrain className='text-green-200' />
+                </span>
+                Quản lý vụ lúa
+              </Button>
+            </Link>
+          </li>
+
+          {isAdmin(userInfo) && (
+            <li>
+              <Link to='/users'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 9 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(9)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <FaUsers className='text-violet-200' />
+                  </span>
+                  Quản lý người dùng
+                </Button>
+              </Link>
+            </li>
           )}
 
           <li>

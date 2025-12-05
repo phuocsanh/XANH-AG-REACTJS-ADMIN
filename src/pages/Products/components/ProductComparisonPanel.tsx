@@ -43,7 +43,7 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
   currentProduct,
   availableProducts = [],
 }) => {
-  const [selectedProductId, setSelectedProductId] = useState<number | undefined>();
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]); // Đổi thành array
   const [manualInput, setManualInput] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<UploadFile[]>([]);
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
@@ -109,7 +109,7 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
   // Xử lý so sánh
   const handleCompare = async () => {
     // Kiểm tra xem có ít nhất 1 nguồn dữ liệu không
-    if (!selectedProductId && uploadedImages.length === 0 && !manualInput.trim()) {
+    if (selectedProductIds.length === 0 && uploadedImages.length === 0 && !manualInput.trim()) {
       message.warning('Vui lòng chọn sản phẩm, upload ảnh, hoặc nhập thông tin để so sánh');
       return;
     }
@@ -120,12 +120,14 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
       // Chuẩn bị danh sách sản phẩm để so sánh
       const compareProducts: ProductInfo[] = [];
 
-      // 1. Thêm sản phẩm từ dropdown (nếu có)
-      if (selectedProductId) {
-        const selectedProduct = availableProducts.find((p) => p.id === selectedProductId);
-        if (selectedProduct) {
-          compareProducts.push(selectedProduct);
-        }
+      // 1. Thêm các sản phẩm từ dropdown (nếu có)
+      if (selectedProductIds.length > 0) {
+        selectedProductIds.forEach(id => {
+          const selectedProduct = availableProducts.find((p) => p.id === id);
+          if (selectedProduct) {
+            compareProducts.push(selectedProduct);
+          }
+        });
       }
 
       // 2. Thêm sản phẩm từ text input (nếu có)
@@ -256,15 +258,17 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
 
         {/* Phần 1: Chọn sản phẩm từ DB */}
         <div className="mb-1 md:mb-4">
-          <Title level={5}>1. Chọn sản phẩm từ Database</Title>
+          <Title level={5}>1. Chọn sản phẩm từ Database (có thể chọn nhiều)</Title>
           <Select
+            mode="multiple"
             showSearch
             style={{ width: '100%' }}
-            placeholder="Tìm và chọn sản phẩm..."
+            placeholder="Tìm và chọn nhiều sản phẩm..."
             optionFilterProp="children"
-            value={selectedProductId}
-            onChange={(value) => setSelectedProductId(value)}
+            value={selectedProductIds}
+            onChange={(value) => setSelectedProductIds(value)}
             allowClear
+            maxTagCount="responsive"
             filterOption={(input, option) =>
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
             }
@@ -321,7 +325,7 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
           icon={<SwapOutlined />}
           onClick={handleCompare}
           loading={loading}
-          disabled={!selectedProductId && uploadedImages.length === 0 && !manualInput.trim()}
+          disabled={selectedProductIds.length === 0 && uploadedImages.length === 0 && !manualInput.trim()}
           block
         >
           So sánh với AI
