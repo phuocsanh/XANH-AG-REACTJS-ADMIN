@@ -30,3 +30,4 @@ source-nestjs-server
 modules
 src-mobile
 src-server
+.vercel
