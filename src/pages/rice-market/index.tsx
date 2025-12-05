@@ -1,33 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Typography, Spin, Alert, Input, Button, List, Tag, Row, Col, Statistic, Divider, Space } from 'antd';
-import { ReloadOutlined, SendOutlined, YoutubeOutlined, RiseOutlined, FallOutlined, MinusOutlined } from '@ant-design/icons';
+import { Card, Typography, Alert, Button, Row, Col, List } from 'antd';
+import { ReloadOutlined, YoutubeOutlined } from '@ant-design/icons';
 import { riceMarketService, RiceAnalysisResult, YouTubeVideoData } from '@/lib/rice-market-service';
 import { toast } from 'react-toastify';
 
 const { Title, Text, Paragraph } = Typography;
-const { Search } = Input;
 
 const RiceMarketPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<RiceAnalysisResult | null>(null);
   const [videos, setVideos] = useState<YouTubeVideoData[]>([]);
   const [loadingVideos, setLoadingVideos] = useState<boolean>(false);
-  const [question, setQuestion] = useState<string>('');
-  const [answer, setAnswer] = useState<any>(null);
-  const [answering, setAnswering] = useState<boolean>(false);
+
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Try to get latest data first
+      // Thử lấy dữ liệu mới nhất từ database
       let result = await riceMarketService.getLatestRiceMarketData();
       setData(result);
-      
-      // If data is old or empty, maybe trigger analysis (optional, for now just show what we have)
-      // Or we can provide a button to refresh/analyze fresh data
-    } catch (error) {
-      console.error('Error fetching rice market data:', error);
-      toast.error('Không thể tải dữ liệu thị trường lúa gạo.');
+    } catch (error: any) {
+      // Nếu lỗi 404 (Không tìm thấy dữ liệu), chỉ thông báo
+      if (error.response && error.response.status === 404) {
+        console.log('Chưa có dữ liệu trong database.');
+        toast.info('Chưa có dữ liệu thị trường lúa gạo.');
+        setData(null);
+      } else {
+        console.error('Error fetching rice market data:', error);
+        toast.error('Không thể tải dữ liệu thị trường lúa gạo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -48,67 +49,31 @@ const RiceMarketPage: React.FC = () => {
   const handleAnalyze = async () => {
     setLoading(true);
     try {
-      const result = await riceMarketService.analyzeRiceMarket();
+      // Chỉ lấy dữ liệu mới nhất từ database
+      const result = await riceMarketService.getLatestRiceMarketData();
       setData(result);
-      toast.success('Đã cập nhật dữ liệu phân tích mới nhất.');
-    } catch (error) {
-      console.error('Error analyzing rice market:', error);
-      toast.error('Lỗi khi phân tích thị trường.');
+      toast.success('Đã cập nhật dữ liệu mới nhất.');
+    } catch (error: any) {
+      if (error.response && error.response.status === 404) {
+        toast.info('Chưa có dữ liệu mới trong hệ thống.');
+        setData(null);
+      } else {
+        console.error('Error updating rice market data:', error);
+        toast.error('Lỗi khi cập nhật dữ liệu.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAsk = async () => {
-    if (!question.trim()) return;
-    setAnswering(true);
-    setAnswer(null);
-    try {
-      const result = await riceMarketService.askWithSources(question);
-      setAnswer(result);
-    } catch (error) {
-      console.error('Error asking question:', error);
-      toast.error('Không thể trả lời câu hỏi.');
-    } finally {
-      setAnswering(false);
-    }
-  };
+
 
   useEffect(() => {
     fetchData();
     fetchVideos();
   }, []);
 
-  const columns = [
-    {
-      title: 'Giống lúa',
-      dataIndex: 'variety',
-      key: 'variety',
-      render: (text: string) => <Text strong>{text}</Text>,
-    },
-    {
-      title: 'Giá hiện tại',
-      dataIndex: 'currentPrice',
-      key: 'currentPrice',
-      render: (text: string) => <Text type="success">{text}</Text>,
-    },
-    {
-      title: 'Thay đổi',
-      dataIndex: 'change',
-      key: 'change',
-      render: (text: string) => {
-        if (!text) return <MinusOutlined />;
-        if (text.includes('tăng')) return <Tag color="green"><RiseOutlined /> {text}</Tag>;
-        if (text.includes('giảm')) return <Tag color="red"><FallOutlined /> {text}</Tag>;
-        return <Tag color="default"><MinusOutlined /> {text}</Tag>;
-      },
-    },
-    {
-      title: 'Tỉnh/Thành',
-      dataIndex: 'province',
-      key: 'province',
-    },
-  ];
+
 
   return (
     <div className="p-4">
@@ -120,7 +85,7 @@ const RiceMarketPage: React.FC = () => {
           onClick={handleAnalyze} 
           loading={loading}
         >
-          Cập nhật phân tích
+          Làm mới dữ liệu
         </Button>
       </div>
 
@@ -129,88 +94,37 @@ const RiceMarketPage: React.FC = () => {
           <Card title="Tổng quan thị trường" loading={loading} className="mb-4 shadow-md">
             {data ? (
               <>
-                <Paragraph>{data.summary}</Paragraph>
-                
-                {data.priceData && (
-                  <Row gutter={16} className="mb-4">
-                    <Col span={8}>
-                      <Statistic title="Giá lúa tươi" value={data.priceData.freshRice} valueStyle={{ color: '#3f8600', fontSize: '1.2rem' }} />
-                    </Col>
-                    <Col span={8}>
-                      <Statistic title="Giá gạo xuất khẩu" value={data.priceData.exportRice} valueStyle={{ color: '#cf1322', fontSize: '1.2rem' }} />
-                    </Col>
-                    <Col span={8}>
-                      <Statistic title="Xu hướng" value={data.priceData.trend} prefix={data.priceData.trend === 'tăng' ? <RiseOutlined /> : data.priceData.trend === 'giảm' ? <FallOutlined /> : <MinusOutlined />} />
-                    </Col>
-                  </Row>
-                )}
+                {/* Hiển thị Summary */}
+                <div className="mb-4">
+                  <Title level={4}>Tóm tắt</Title>
+                  <Paragraph>{data.summary}</Paragraph>
+                </div>
 
-                <Divider orientation="left">Chi tiết giá lúa</Divider>
-                <Table 
-                  dataSource={data.riceVarieties} 
-                  columns={columns} 
-                  pagination={false} 
-                  rowKey={(record) => `${record.variety}-${record.province}`}
-                  size="small"
-                />
-
-                {data.marketInsights && data.marketInsights.length > 0 && (
-                  <>
-                    <Divider orientation="left">Nhận định thị trường</Divider>
-                    <List
-                      dataSource={data.marketInsights}
-                      renderItem={(item) => (
-                        <List.Item>
-                          <Text>• {item}</Text>
-                        </List.Item>
-                      )}
-                    />
-                  </>
-                )}
+                {/* Hiển thị Price Analysis */}
+                <div className="mb-4">
+                  <Title level={4}>Phân tích giá</Title>
+                  <Paragraph style={{ whiteSpace: 'pre-line' }}>
+                    {typeof data === 'object' && 'price_analysis' in data 
+                      ? (data as any).price_analysis 
+                      : 'Không có dữ liệu phân tích giá'}
+                  </Paragraph>
+                </div>
                 
                 <div className="mt-4 text-right">
-                  <Text type="secondary" italic>Cập nhật lần cuối: {new Date(data.lastUpdated).toLocaleString('vi-VN')}</Text>
-                  {data.sourceUrl && (
+                  <Text type="secondary" italic>
+                    Cập nhật lần cuối: {new Date(data.lastUpdated || (data as any).last_updated || new Date()).toLocaleString('vi-VN')}
+                  </Text>
+                  {(data.sourceUrl || (data as any).data_sources) && (
                     <div>
-                      <Text type="secondary">Nguồn: <a href={data.sourceUrl} target="_blank" rel="noopener noreferrer">{data.sourceUrl}</a></Text>
+                      <Text type="secondary">
+                        Nguồn: {data.sourceUrl || ((data as any).data_sources && (data as any).data_sources.join(', '))}
+                      </Text>
                     </div>
                   )}
                 </div>
               </>
             ) : (
-              <Alert message="Chưa có dữ liệu phân tích. Vui lòng nhấn 'Cập nhật phân tích'." type="info" showIcon />
-            )}
-          </Card>
-
-          <Card title="Hỏi đáp AI về thị trường lúa gạo" className="mb-4 shadow-md">
-            <Space.Compact style={{ width: '100%' }}>
-              <Input 
-                placeholder="Đặt câu hỏi về giá lúa, xu hướng thị trường..." 
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onPressEnter={handleAsk}
-              />
-              <Button type="primary" icon={<SendOutlined />} onClick={handleAsk} loading={answering}>Hỏi</Button>
-            </Space.Compact>
-            
-            {answer && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <Paragraph>{answer.answer}</Paragraph>
-                {answer.sources && answer.sources.length > 0 && (
-                  <div className="mt-2">
-                    <Text strong>Nguồn tham khảo:</Text>
-                    <ul className="list-disc pl-5 mt-1">
-                      {answer.sources.map((source: any, index: number) => (
-                        <li key={index}>
-                          <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            {source.title}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+              <Alert message="Chưa có dữ liệu phân tích." type="info" showIcon />
             )}
           </Card>
         </Col>

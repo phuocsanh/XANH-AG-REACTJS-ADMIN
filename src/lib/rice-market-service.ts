@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import api from '../utils/api';
 
 export interface RiceAnalysisResult {
   summary: string;
@@ -61,26 +59,22 @@ export interface YouTubeSearchResult {
 
 export const riceMarketService = {
   getLatestRiceMarketData: async (): Promise<RiceAnalysisResult> => {
-    const response = await axios.get(`${API_URL}/ai-analysis-rice/latest-rice-market`);
-    return response.data;
+    const response = await api.get<RiceAnalysisResult>('/ai-analysis-rice/latest-rice-market');
+    return response;
   },
 
   analyzeRiceMarket: async (): Promise<RiceAnalysisResult> => {
-    const response = await axios.get(`${API_URL}/ai-analysis-rice/rice-market`);
-    return response.data;
+    const response = await api.get<RiceAnalysisResult>('/ai-analysis-rice/rice-market');
+    return response;
   },
 
   getYouTubeVideos: async (query?: string, limit?: number): Promise<YouTubeSearchResult> => {
-    const response = await axios.get(`${API_URL}/ai-analysis-rice/youtube-videos`, {
-      params: { query, limit },
-    });
-    return response.data;
+    const response = await api.get<YouTubeSearchResult>('/ai-analysis-rice/youtube-videos', { query, limit });
+    return response;
   },
 
   askWithSources: async (question: string): Promise<any> => {
-    const response = await axios.post(`${API_URL}/ai-analysis-rice/ask-with-sources`, {
-      question,
-    });
-    return response.data;
+    const response = await api.postRaw<any>('/ai-analysis-rice/ask-with-sources', { question });
+    return response;
   },
 };
