@@ -8,6 +8,7 @@ import {
 } from "@/models/auth.model"
 import { handleApiError } from "@/utils/error-handler"
 import { useAppStore } from "@/stores"
+import { API_ENDPOINTS } from "@/config/api.config"
 
 // ========== AUTH HOOKS ==========
 
@@ -55,7 +56,7 @@ export const useLoginMutation = () => {
       // Gọi trực tiếp axios mà không qua interceptor
       // Sử dụng đúng tên trường mà server expect: 'account' và 'password'
       const response = await axios.post(
-        "http://localhost:3003/auth/login",
+        API_ENDPOINTS.AUTH_LOGIN,
         {
           account: credentials.user_account,
           password: credentials.user_password,
@@ -238,7 +239,7 @@ export const useRegisterMutation = () => {
 
       // Gọi trực tiếp axios mà không qua interceptor
       const response = await axios.post(
-        "http://localhost:3003/auth/register",
+        API_ENDPOINTS.AUTH_REGISTER,
         payload,
         {
           headers: {
@@ -326,6 +327,79 @@ export const useRegisterMutation = () => {
         )
       }
       handleApiError(error, "Đăng ký không thành công")
+    },
+  })
+}
+
+/**
+ * Hook đổi mật khẩu
+ */
+export const useChangePasswordMutation = () => {
+  const setIsLogin = useAppStore((state) => state.setIsLogin)
+  const setUserInfo = useAppStore((state) => state.setUserInfo)
+  const setAccessToken = useAppStore((state) => state.setAccessToken)
+  const setRefreshToken = useAppStore((state) => state.setRefreshToken)
+  const accessToken = useAppStore((state) => state.accessToken)
+
+  return useMutation({
+    mutationFn: async (data: {
+      old_password: string
+      new_password: string
+    }) => {
+      // Import axios trực tiếp để tránh interceptor xử lý
+      const axios = (await import("axios")).default
+
+      // Log để debug (không log mật khẩu thực tế)
+      console.log("Sending change password request")
+
+      // Gọi API với access token
+      const response = await axios.put(
+        API_ENDPOINTS.AUTH_CHANGE_PASSWORD,
+        {
+          old_password: data.old_password,
+          new_password: data.new_password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      console.log("Change password response:", response.data)
+      return response.data
+    },
+    onSuccess: (response) => {
+      console.log("Change password successful:", response)
+
+      // Kiểm tra response
+      if (!response || typeof response !== "object") {
+        toast.error("Đổi mật khẩu thất bại: Dữ liệu không hợp lệ")
+        return
+      }
+
+      // Kiểm tra success field
+      if ("success" in response && response.success === true) {
+        toast.success("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.")
+
+        // Logout user sau khi đổi mật khẩu thành công
+        setTimeout(() => {
+          setIsLogin(false)
+          setUserInfo(null)
+          setAccessToken("")
+          setRefreshToken("")
+          localStorage.removeItem("access_token")
+          localStorage.removeItem("refresh_token")
+          window.location.href = "/sign-in"
+        }, 1500)
+      } else {
+        toast.error("Đổi mật khẩu thất bại")
+      }
+    },
+    onError: (error: unknown) => {
+      console.error("Change password error:", error)
+      handleApiError(error, "Đổi mật khẩu không thành công")
     },
   })
 }

@@ -541,6 +541,23 @@ const Sidebar: React.FC = () => {
             </>
           )}
 
+          {/* Đổi mật khẩu - chỉ hiển thị khi đã đăng nhập */}
+          {isLogin && (
+            <li>
+              <Link to='/change-password'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 26 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(26)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <RiLockPasswordLine className='text-green-200' />
+                  </span>
+                  Đổi mật khẩu
+                </Button>
+              </Link>
+            </li>
+          )}
+
           <li>
             <Button
               className={`w-full !justify-start !text-left ${activeTab === 13 ? "active" : ""}`}

@@ -27,6 +27,8 @@ import {
 import { useAppStore } from "./stores"
 import { useAuthStatus } from "./queries/auth"
 import { ForgotPassword } from "./pages/forgot-password"
+// Thêm import cho trang đổi mật khẩu
+import { ChangePassword } from "./pages/change-password"
 import ListUnits from "./pages/units/list-units"
 // Thêm import cho trang symbol
 import ListSymbols from "./pages/symbols/list-symbols"
@@ -487,6 +489,14 @@ function App() {
                     <Route
                       path='/forgot-password'
                       element={<ForgotPassword />}
+                    />
+                    <Route
+                      path='/change-password'
+                      element={
+                        <ProtectedRoute>
+                          <ChangePassword />
+                        </ProtectedRoute>
+                      }
                     />
 
                     {/* Trang 404 */}
