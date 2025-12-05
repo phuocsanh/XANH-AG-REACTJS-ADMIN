@@ -37,7 +37,7 @@ import { SignUp } from "./pages/sign-up"
 // Thêm import cho trang pesticides
 import PesticidesPage from "./pages/pesticides"
 import RiceMarketPage from "./pages/rice-market"
-import WeatherForecastPage from "./pages/weather-forecast"
+
 import DiseaseWarningPage from "./pages/disease-warning"
 // Thêm import cho trang kiểm tra thuốc bị cấm
 import BannedPesticidesPage from "./pages/banned-pesticides"
@@ -277,15 +277,7 @@ function App() {
                       }
                     />
 
-                    {/* Trang dự báo thời tiết */}
-                    <Route
-                      path='/weather-forecast'
-                      element={
-                        <ProtectedRoute>
-                          <WeatherForecastPage />
-                        </ProtectedRoute>
-                      }
-                    />
+
 
                     {/* Trang cảnh báo bệnh/sâu hại lúa */}
                     <Route

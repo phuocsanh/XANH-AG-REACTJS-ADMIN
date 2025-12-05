@@ -238,20 +238,7 @@ const Sidebar: React.FC = () => {
             </Link>
           </li>
 
-          {/* Thêm menu cho weather forecast */}
-          <li>
-            <Link to='/weather-forecast'>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 16 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(16)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <MdCloudQueue className='text-sky-200' />
-                </span>
-                Dự báo Thời tiết
-              </Button>
-            </Link>
-          </li>
+
 
           {/* Thêm menu cho disease warning */}
           {hasPermission(userInfo, "RICE_BLAST_VIEW") && (
