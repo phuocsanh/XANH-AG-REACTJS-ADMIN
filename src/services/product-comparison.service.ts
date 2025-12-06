@@ -185,28 +185,45 @@ Chỉ trả về JSON, không thêm text nào khác.
   /**
    * Phân tích ảnh sản phẩm sử dụng Gemini Vision
    */
-  analyzeImage: async (imageBase64: string): Promise<ProductInfo> => {
+  analyzeImage: async (images: string[]): Promise<ProductInfo> => {
     const prompt = `
-Phân tích ảnh nhãn thuốc bảo vệ thực vật này và trích xuất thông tin:
-- Tên sản phẩm
-- Hoạt chất và hàm lượng
-- Nhà sản xuất
-- Công dụng
+Hãy đóng vai một máy OCR (Nhận diện ký tự quang học) chuyên nghiệp. Nhiệm vụ của bạn là ĐỌC và CHÉP LẠI chính xác từng chữ trên nhãn thuốc này.
 
-Trả về JSON với cấu trúc:
+QUY TẮC BẮT BUỘC:
+1. KHÔNG được bỏ sót bất kỳ dòng chữ nhỏ nào, đặc biệt là phần "LƯU Ý" và các dòng cảnh báo ở cuối nhãn.
+2. Đối với Bảng Liều Lượng/Thời gian sử dụng: Phải chép lại đủ từng mốc thời gian và liều lượng tương ứng (Ví dụ: 4-6 ngày -> 80ml...).
+3. Tuyệt đối KHÔNG tóm tắt. Thấy chữ gì chép chữ đó.
+
+Cấu trúc JSON trả về:
 {
   "name": "Tên sản phẩm",
   "active_ingredient": "Hoạt chất",
   "concentration": "Hàm lượng",
   "manufacturer": "Nhà sản xuất",
-  "usage": "Công dụng"
+  "usage": "Tóm tắt 1 câu công dụng chính",
+  "details": {
+    "usage": "Chép lại NGUYÊN VĂN mục CÔNG DỤNG",
+    "dosage": "Chép lại NGUYÊN VĂN mục LIỀU LƯỢNG và HƯỚNG DẪN SỬ DỤNG. \n*QUAN TRỌNG:* Phải liệt kê đầy đủ bảng hướng dẫn chi tiết (VD: \n- 4-6 ngày sau sạ: ... \n- 7-9 ngày sau sạ: ... \n- 10-12 ngày sau sạ: ...)",
+    "application_time": "Chép lại NGUYÊN VĂN mục THỜI ĐIỂM SỬ DỤNG",
+    "preharvest_interval": "Chép lại NGUYÊN VĂN mục THỜI GIAN CÁCH LY",
+    "notes": "Chép lại NGUYÊN VĂN mục LƯU Ý. \n*QUAN TRỌNG:* Đọc kỹ các dòng chữ nhỏ ở dưới cùng (Ví dụ: Không dùng chung với thuốc gốc gì? Cách ly bao nhiêu ngày?)"
+  }
 }
 
-Chỉ trả về JSON, không thêm text nào khác.
+Chỉ trả về JSON.
 `;
 
     try {
       const apiKey = getGeminiApiKey();
+      
+      // Tạo parts từ danh sách ảnh
+      const imageParts = images.map(imgBase64 => ({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data: imgBase64.split(',')[1] || imgBase64
+        }
+      }));
+
       const response = await fetch(
         getGeminiApiUrl(apiKey),
         {
@@ -218,12 +235,7 @@ Chỉ trả về JSON, không thêm text nào khác.
           contents: [{
             parts: [
               { text: prompt },
-              {
-                inline_data: {
-                  mime_type: 'image/jpeg',
-                  data: imageBase64.split(',')[1]
-                }
-              }
+              ...imageParts
             ]
           }]
         }),
@@ -234,7 +246,32 @@ Chỉ trả về JSON, không thêm text nào khác.
       }
 
       const data = await response.json();
-      const text = data.candidates[0].content.parts[0].text;
+      console.log('Product Analysis Response:', data);
+
+      if (!data.candidates || data.candidates.length === 0) {
+        if (data.promptFeedback) {
+           console.error('Prompt Feedback:', data.promptFeedback);
+           throw new Error(`AI từ chối phân tích ảnh: ${data.promptFeedback.blockReason || 'Lý do không xác định'}`);
+        }
+        throw new Error('AI không trả về kết quả nào.');
+      }
+
+      const candidate = data.candidates[0];
+      console.log('🔍 Candidate Detail:', JSON.stringify(candidate, null, 2));
+
+      // Kiểm tra lý do kết thúc nếu không có nội dung
+      if (!candidate.content) {
+        if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+          throw new Error(`AI không trả về nội dung. Lý do: ${candidate.finishReason}. Vui lòng thử lại với ảnh khác.`);
+        }
+        throw new Error('AI trả về phản hồi rỗng không xác định.');
+      }
+      
+      if (!candidate.content.parts || !candidate.content.parts[0]) {
+         throw new Error('Cấu trúc nội dung từ AI thiếu thành phần text.');
+      }
+
+      const text = candidate.content.parts[0].text;
       
       // Parse JSON từ response
       const jsonMatch = text.match(/\{[\s\S]*\}/);

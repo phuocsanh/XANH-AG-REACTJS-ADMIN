@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import Button from "@mui/material/Button"
 import { MdOutlineDashboard } from "react-icons/md"
@@ -21,7 +21,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdCloudQueue, MdAssignmentReturn, MdWarning } from "react-icons/md"
+import { MdAssignmentReturn, MdWarning } from "react-icons/md"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 
@@ -36,6 +36,117 @@ const Sidebar: React.FC = () => {
   console.log("=== SIDEBAR DEBUG ===")
   console.log("User Info:", userInfo)
   console.log("User Role:", userInfo?.role)
+
+  // Tự động set activeTab và mở submenu dựa trên URL hiện tại
+  useEffect(() => {
+    const path = location.pathname
+    
+    // Dashboard
+    if (path === '/') {
+      setActiveTab(0)
+      setIsToggleSubmenu(false)
+    }
+    // Sản phẩm - tab 1
+    else if (path.startsWith('/products') || path.startsWith('/product-comparison')) {
+      setActiveTab(1)
+      setIsToggleSubmenu(true)
+    }
+    // Loại sản phẩm
+    else if (path.startsWith('/category')) {
+      setActiveTab(3)
+      setIsToggleSubmenu(false)
+    }
+    // Loại phụ sản phẩm
+    else if (path.startsWith('/sub-category')) {
+      setActiveTab(4)
+      setIsToggleSubmenu(false)
+    }
+    // Đơn vị tính
+    else if (path.startsWith('/units')) {
+      setActiveTab(5)
+      setIsToggleSubmenu(false)
+    }
+    // Ký hiệu
+    else if (path.startsWith('/symbols')) {
+      setActiveTab(6)
+      setIsToggleSubmenu(false)
+    }
+    // Nhà cung cấp
+    else if (path.startsWith('/suppliers')) {
+      setActiveTab(7)
+      setIsToggleSubmenu(false)
+    }
+    // Thuốc BVTV
+    else if (path.startsWith('/pesticides')) {
+      setActiveTab(8)
+      setIsToggleSubmenu(false)
+    }
+    // Quản lý người dùng
+    else if (path.startsWith('/users')) {
+      setActiveTab(9)
+      setIsToggleSubmenu(false)
+    }
+    // Quản lý nhập hàng - tab 10
+    else if (path.startsWith('/inventory')) {
+      setActiveTab(10)
+      setIsToggleSubmenu(true)
+    }
+    // Thị trường Lúa Gạo
+    else if (path.startsWith('/rice-market')) {
+      setActiveTab(15)
+      setIsToggleSubmenu(false)
+    }
+    // Mùa vụ
+    else if (path.startsWith('/seasons')) {
+      setActiveTab(17)
+      setIsToggleSubmenu(false)
+    }
+    // Khách hàng
+    else if (path.startsWith('/customers')) {
+      setActiveTab(18)
+      setIsToggleSubmenu(false)
+    }
+    // Hóa đơn bán hàng
+    else if (path.startsWith('/sales-invoices')) {
+      setActiveTab(19)
+      setIsToggleSubmenu(false)
+    }
+    // Thanh toán
+    else if (path.startsWith('/payments')) {
+      setActiveTab(20)
+      setIsToggleSubmenu(false)
+    }
+    // Công nợ
+    else if (path.startsWith('/debt-notes')) {
+      setActiveTab(21)
+      setIsToggleSubmenu(false)
+    }
+    // Trả hàng
+    else if (path.startsWith('/sales-returns')) {
+      setActiveTab(22)
+      setIsToggleSubmenu(false)
+    }
+    // Cảnh báo Bệnh/Sâu hại
+    else if (path.startsWith('/disease-warning')) {
+      setActiveTab(23)
+      setIsToggleSubmenu(false)
+    }
+    // Kiểm tra thuốc bị cấm
+    else if (path.startsWith('/banned-pesticides')) {
+      setActiveTab(24)
+      setIsToggleSubmenu(false)
+    }
+    // Quản lý vụ lúa
+    else if (path.startsWith('/rice-crops')) {
+      setActiveTab(25)
+      setIsToggleSubmenu(false)
+    }
+    // Đổi mật khẩu
+    else if (path.startsWith('/change-password')) {
+      setActiveTab(26)
+      setIsToggleSubmenu(false)
+    }
+  }, [location.pathname])
 
   const isOpenSubmenu = (index: number): void => {
     setActiveTab(index)

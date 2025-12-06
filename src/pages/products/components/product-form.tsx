@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, message, Card, Space, Form } from "antd"
+import { Button, message, Space, Form, Spin } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -39,6 +39,8 @@ import { ProductSubtype } from "@/models/product-subtype.model"
 import ProductComparisonPanel from "@/pages/products/components/ProductComparisonPanel"
 import { useProductsQuery } from "@/queries/product"
 import { UPLOAD_TYPES } from "@/services/upload.service"
+// Thêm import cho ImageAnalyzer
+import { ImageAnalyzer, ExtractedProductData } from "@/components/image-analyzer"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -151,7 +153,7 @@ const TiptapEditor: React.FC<{
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const { control, handleSubmit, watch, reset } = useForm<ProductFormValues>({
+  const { control, handleSubmit, watch, reset, setValue } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: defaultProductFormValues,
   })
@@ -436,14 +438,82 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     }
   }
 
+  /**
+   * Xử lý khi AI trích xuất được thông tin từ ảnh
+   */
+  const handleDataExtracted = (data: ExtractedProductData) => {
+    console.log('📊 Dữ liệu trích xuất từ ảnh:', data);
+    
+    // Tự động điền thông tin vào form
+    if (data.name) {
+      setValue('name', data.name);
+    }
+    
+    if (data.active_ingredient) {
+      setValue('ingredient', data.active_ingredient);
+    }
+    
+    // Xử lý mô tả chi tiết từ AI
+    if (data.details) {
+      // Helper function để giữ xuống dòng
+      const formatText = (text?: string) => {
+        if (!text) return '';
+        return text.replace(/\n/g, '<br/>');
+      };
+
+      let htmlDescription = '';
+      
+      if (data.details.usage) {
+        htmlDescription += `<p><strong>Công dụng:</strong><br/>${formatText(data.details.usage)}</p>`;
+      }
+      
+      if (data.details.application_time) {
+        htmlDescription += `<p><strong>Thời điểm sử dụng:</strong><br/>${formatText(data.details.application_time)}</p>`;
+      }
+
+      if (data.details.dosage) {
+        htmlDescription += `<p><strong>Liều lượng / Hướng dẫn sử dụng:</strong><br/>${formatText(data.details.dosage)}</p>`;
+      }
+      
+      if (data.details.preharvest_interval) {
+        htmlDescription += `<p><strong>Thời gian cách ly:</strong><br/>${formatText(data.details.preharvest_interval)}</p>`;
+      }
+      
+      if (data.details.notes) {
+        htmlDescription += `<p><strong>Lưu ý / Cảnh báo:</strong><br/>${formatText(data.details.notes)}</p>`;
+      }
+      
+      // Nếu có dữ liệu chi tiết thì dùng, không thì fallback về description thường
+      if (htmlDescription) {
+        setDescription(htmlDescription);
+      } else if (data.description || data.usage) {
+        setDescription(data.description || data.usage || '');
+      }
+    } else if (data.description || data.usage) {
+      const desc = data.description || data.usage || '';
+      setDescription(desc);
+    }
+    
+    message.success('Đã điền thông tin tự động. Vui lòng kiểm tra và chỉnh sửa nếu cần.');
+  }
+
   return (
-    <div className=' md:p-4'>
+    <div className=''>
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6'>
         {/* Form sản phẩm - 2 cột */}
         <div className='lg:col-span-2'>
-          <Card loading={loading || productLoading || initialLoading} className="product-card">
-            <form onSubmit={handleSubmit(onSubmit)} className="product-form">
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0'>
+          <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden">
+            <Spin spinning={loading || productLoading || initialLoading}>
+              <form onSubmit={handleSubmit(onSubmit)} className="product-form">
+              {/* Component trích xuất thông tin từ hình ảnh - Hỗ trợ cả tạo mới và chỉnh sửa */}
+              <div className="px-3 md:px-6 pt-3 md:pt-6">
+                <ImageAnalyzer 
+                  onDataExtracted={handleDataExtracted}
+                  loading={loading || initialLoading}
+                />
+              </div>
+              
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0 px-3 md:px-6 pb-3 md:pb-6'>
                 <div className='w-full'>
                   <FormField
                     name='name'
@@ -577,6 +647,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
                     className='w-full'
                     required
+                    type="textarea"
+                    rows={4}
                     rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
                   />
                 </div>
@@ -603,12 +675,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 </div>
 
                 <div className='w-full'>
-                  <FormField
+                  <FormFieldNumber
                     name='discount'
                     control={control}
                     label='Giảm giá (%)'
                     placeholder='Nhập giảm giá'
                     className='w-full'
+                    min={0}
+                    max={100}
                   />
                 </div>
 
@@ -627,53 +701,56 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 </div>
               </div>
 
-              <Form.Item
-                label='Mô tả sản phẩm'
-                className='w-full'
-                layout='vertical'
-              >
+              <div className="px-3 md:px-6 pb-3 md:pb-6">
+                <Form.Item
+                  label='Mô tả sản phẩm'
+                  className='w-full'
+                  layout='vertical'
+                >
+                  <div className='w-full'>
+                    <TiptapEditor
+                      content={description}
+                      onChange={(content) => {
+                        setDescription(content)
+                      }}
+                    />
+                  </div>
+                </Form.Item>
+
                 <div className='w-full'>
-                  <TiptapEditor
-                    content={description}
-                    onChange={(content) => {
-                      setDescription(content)
-                    }}
+                  <FormImageUpload
+                    name='pictures'
+                    control={control}
+                    label='Hình ảnh chi tiết'
+                    maxCount={5}
+                    multiple={true}
+                    uploadType={UPLOAD_TYPES.PRODUCT}
+                    className='w-full'
                   />
                 </div>
-              </Form.Item>
 
-              <div className='w-full'>
-                <FormImageUpload
-                  name='pictures'
-                  control={control}
-                  label='Hình ảnh chi tiết'
-                  maxCount={5}
-                  multiple={true}
-                  uploadType={UPLOAD_TYPES.PRODUCT}
-                  className='w-full'
-                />
-              </div>
+                {renderProductAttributes()}
 
-              {renderProductAttributes()}
-
-              <div style={{ textAlign: "right", marginTop: "24px" }}>
-                <Button
-                  style={{ marginRight: "8px" }}
-                  onClick={() => navigate("/products")}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type='primary'
-                  htmlType='submit'
-                  loading={loading}
-                  icon={<SaveOutlined />}
-                >
-                  {isEdit ? "Cập nhật" : "Thêm mới"}
-                </Button>
+                <div style={{ textAlign: "right", marginTop: "24px" }}>
+                  <Button
+                    style={{ marginRight: "8px" }}
+                    onClick={() => navigate("/products")}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    type='primary'
+                    htmlType='submit'
+                    loading={loading}
+                    icon={<SaveOutlined />}
+                  >
+                    {isEdit ? "Cập nhật" : "Thêm mới"}
+                  </Button>
+                </div>
               </div>
             </form>
-          </Card>
+            </Spin>
+          </div>
         </div>
 
         {/* AI So sánh sản phẩm - 1 cột */}

@@ -3,7 +3,7 @@
  * Lấy từ environment variable hoặc dùng giá trị mặc định
  */
 export const GEMINI_CONFIG = {
-  model: import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash',
+  model: import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash',
   apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
 } as const
 

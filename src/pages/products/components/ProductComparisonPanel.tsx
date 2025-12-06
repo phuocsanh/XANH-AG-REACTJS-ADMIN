@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Button,
@@ -10,17 +10,13 @@ import {
   Alert,
   Spin,
   Typography,
-  Space,
   Tag,
   Divider,
   message,
 } from 'antd';
 import {
   UploadOutlined,
-  SendOutlined,
   SwapOutlined,
-  DeleteOutlined,
-  PlusOutlined,
 } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import {
@@ -50,48 +46,8 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [analyzingImage, setAnalyzingImage] = useState(false);
 
-  // Xử lý paste ảnh từ clipboard
-  useEffect(() => {
-    const handlePaste = async (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        if (item.type.indexOf('image') !== -1) {
-          e.preventDefault();
-          const file = item.getAsFile();
-          if (!file) continue;
-
-          // Validate file
-          if (!validateImageFile(file)) {
-            message.error('File không hợp lệ. Chỉ chấp nhận JPG, PNG, WEBP và tối đa 5MB');
-            return;
-          }
-
-          // Tạo UploadFile object
-          const uploadFile: UploadFile = {
-            uid: `paste-${Date.now()}`,
-            name: `pasted-image-${Date.now()}.png`,
-            status: 'done',
-            originFileObj: file as any,
-          };
-
-          // Thêm vào danh sách
-          const newFileList = [...uploadedImages, uploadFile];
-          setUploadedImages(newFileList);
-          message.success('Đã thêm ảnh từ clipboard');
-
-          break;
-        }
-      }
-    };
-
-    document.addEventListener('paste', handlePaste);
-    return () => {
-      document.removeEventListener('paste', handlePaste);
-    };
-  }, [uploadedImages]);
+  // Xóa useEffect đăng ký sự kiện paste toàn cục
+  // Logic paste sẽ được xử lý qua onPaste event của thẻ div
 
   // Xử lý upload ảnh
   const handleUploadChange = async (info: any) => {
@@ -104,6 +60,43 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
     }
 
     setUploadedImages(fileList);
+  };
+
+  /**
+   * Xử lý sự kiện paste ảnh
+   */
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        // Validate file
+        if (!validateImageFile(file)) {
+          message.error('File không hợp lệ. Chỉ chấp nhận JPG, PNG, WEBP và tối đa 5MB');
+          return;
+        }
+
+        // Tạo UploadFile object
+        const uploadFile: UploadFile = {
+          uid: `paste-${Date.now()}`,
+          name: `pasted-image-${Date.now()}.png`,
+          status: 'done',
+          originFileObj: file as any,
+        };
+
+        // Thêm vào danh sách - sử dụng callback để đảm bảo state mới nhất
+        setUploadedImages(prev => [...prev, uploadFile]);
+        message.success('Đã thêm ảnh từ clipboard');
+
+        break;
+      }
+    }
   };
 
   // Xử lý so sánh
@@ -283,26 +276,33 @@ const ProductComparisonPanel: React.FC<ProductComparisonPanelProps> = ({
         <div className="mb-1 md:mb-4">
           <Title level={5}>2. Upload ảnh sản phẩm</Title>
           <Alert
-            message="Tip: Bạn có thể paste ảnh trực tiếp bằng Ctrl+V (hoặc Cmd+V)"
+            message="Tip: Click vào vùng này rồi nhấn Ctrl+V để dán ảnh"
             type="info"
             showIcon
             className="mb-2"
             closable
           />
-          <Upload
-            listType="picture-card"
-            fileList={uploadedImages}
-            onChange={handleUploadChange}
-            beforeUpload={() => false} // Prevent auto upload
-            accept="image/jpeg,image/jpg,image/png,image/webp"
+          <div 
+            onPaste={handlePaste}
+            tabIndex={0}
+            className="outline-none focus:ring-2 focus:ring-blue-100 rounded-lg p-2 transition-all"
+            style={{ border: '1px dashed #d9d9d9' }}
           >
-            {uploadedImages.length < 3 && (
-              <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
-              </div>
-            )}
-          </Upload>
+            <Upload
+              listType="picture-card"
+              fileList={uploadedImages}
+              onChange={handleUploadChange}
+              beforeUpload={() => false} // Prevent auto upload
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+            >
+              {uploadedImages.length < 3 && (
+                <div>
+                  <UploadOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+          </div>
         </div>
 
         {/* Phần 3: Nhập thông tin thủ công */}
