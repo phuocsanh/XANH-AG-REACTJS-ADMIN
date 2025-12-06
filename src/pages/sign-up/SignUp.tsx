@@ -1,4 +1,4 @@
-import Logo from "../../assets/images/logo.png"
+import Logo from "../../assets/images/logo-xanh.png"
 import Button from "@mui/material/Button"
 import { Link, useNavigate } from "react-router-dom"
 import { CircularProgress, InputAdornment, TextField } from "@mui/material"
@@ -98,7 +98,7 @@ export const SignUp = () => {
               )}
             </div>
 
-            <div className='mt-6'>
+            <div className='mt-6 mb-8'>
               <CustomTextField
                 id='user_password'
                 label='Mật khẩu'
@@ -132,7 +132,7 @@ export const SignUp = () => {
             </div>
 
             <Button
-              className={`w-100 btn-blue btn-round h-12 mt-8`}
+              className={`w-100 btn-blue btn-round h-12 `}
               type='submit'
               disabled={registerMutation.isPending}
             >

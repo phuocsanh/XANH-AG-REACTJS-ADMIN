@@ -1,4 +1,4 @@
-import Logo from "../../assets/images/logo.png"
+import Logo from "../../assets/images/logo-xanh.png"
 import Button from "@mui/material/Button"
 import { Link } from "react-router-dom"
 import { CircularProgress, InputAdornment, TextField } from "@mui/material"
@@ -12,7 +12,7 @@ import styled from "styled-components"
 
 const CustomTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
-    borderRadius: "100px", // Đặt border-radius tại đây
+    borderRadius: "100px",
   },
 })
 export const SignIn = () => {
@@ -20,7 +20,7 @@ export const SignIn = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    context.setIsHeaderFooterShow(true)
+    context.setIsHeaderFooterShow(false)
   }, [])
 
   const {
@@ -34,108 +34,116 @@ export const SignIn = () => {
 
   const onSubmit = async (values: FormField) => {
     try {
-      // Sử dụng trực tiếp values từ form với validation đã được thực hiện - theo pattern của example
       await loginMutation.mutateAsync(values)
-      // Redirect sẽ được xử lý trong onSuccess của mutation
     } catch (error) {
-      // Lỗi đã được xử lý trong useLoginMutation
       console.error("Lỗi đăng nhập:", error)
     }
   }
   return (
     <>
-      <div className='min-h-screen'>
-        <div className='header flex items-center justify-between'>
-          <div className='logo'>
+      <div className='min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50'>
+        <div className='w-full max-w-md'>
+          <div className='text-center mb-8'>
             <Link to='/'>
-              <img src={Logo} />
+              <img src={Logo} alt="Logo" className="h-24 mx-auto mb-6" />
             </Link>
-          </div>
-          <div className='ml-auto flex items-center justify-end gap-3'>
-            {/* <Link to='/sign-in'>
-              <Button className='btn-border btn-round'>
-                <LuArrowRightToLine /> Login
-              </Button>
-            </Link> */}
-          </div>
-        </div>
-
-        <div className='max-w-md mx-auto p-4 sm:p-6'>
-          <h1 className='text-center font-weight-bold'>
-            Welcome Back!
-            <br />
-            Sign in with your credentials.
-          </h1>
-          <div className='mt-20'>
-            <CustomTextField
-              id='outlined-basic'
-              label='Tài khoản (Email hoặc Username)'
-              variant='outlined'
-              required
-              className='w-full'
-              error={!!errors.user_account?.message || false}
-              {...register("user_account")}
-            />
-            {errors.user_account && (
-              <p className='mt-1 text-red-600'>{errors.user_account.message}</p>
-            )}
+            <h1 className='text-center font-bold text-2xl md:text-3xl font-sans tracking-wide leading-relaxed'>
+              <span
+                style={{
+                  background: "var(--gradient-sidebar)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  display: "inline-block"
+                }}
+              >
+                Xin chào đến với VTNN XANH!
+              </span>
+              <br />
+              <span className="text-gray-500 text-lg md:text-xl font-normal mt-2 block">
+                Đăng nhập với thông tin của bạn.
+              </span>
+            </h1>
           </div>
 
-          <div className='mt-9'>
-            <CustomTextField
-              id='outlined-basic'
-              label='Mật khẩu'
-              variant='outlined'
-              className='w-full'
-              required
-              type={showPassword ? undefined : "password"}
-              error={!!errors.user_password?.message || false}
-              {...register("user_password")}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <span
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                      </span>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+          <div className='bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100'>
+            <div className='mb-6'>
+              <CustomTextField
+                id='outlined-basic'
+                label='Tài khoản (Email hoặc Username)'
+                variant='outlined'
+                required
+                className='w-full'
+                error={!!errors.user_account?.message || false}
+                {...register("user_account")}
+              />
+              {errors.user_account && (
+                <p className='mt-1 text-red-600 text-sm ml-2'>
+                  {errors.user_account.message}
+                </p>
+              )}
+            </div>
 
-            {errors.user_password && (
-              <p className='mt-1 text-red-600'>
-                {errors.user_password.message}
+            <div className='mb-8'>
+              <CustomTextField
+                id='outlined-basic'
+                label='Mật khẩu'
+                variant='outlined'
+                className='w-full'
+                required
+                type={showPassword ? undefined : "password"}
+                error={!!errors.user_password?.message || false}
+                {...register("user_password")}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <span
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{ cursor: "pointer" }}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              {errors.user_password && (
+                <p className='mt-1 text-red-600 text-sm ml-2'>
+                  {errors.user_password.message}
+                </p>
+              )}
+            </div>
+
+            <Button
+              className={`w-full btn-blue btn-round h-12 shadow-lg hover:shadow-xl transition-all duration-300`}
+              onClick={handleSubmit(onSubmit)}
+              disabled={loginMutation.isPending}
+              style={{ fontSize: "16px", fontWeight: "600" }}
+            >
+              {loginMutation.isPending ? (
+                <CircularProgress size={24} color='inherit' />
+              ) : (
+                "Đăng nhập"
+              )}
+            </Button>
+
+            {/* Thêm nút đăng ký */}
+            <div className='mt-6 text-center text-gray-500'>
+              <p>
+                Chưa có tài khoản?{" "}
+                <Link 
+                  to='/sign-up' 
+                  className='font-bold hover:underline'
+                  style={{ color: "var(--green-medium)" }}
+                >
+                  Đăng ký ngay
+                </Link>
               </p>
-            )}
-          </div>
-
-          <br />
-
-          <Button
-            className={`w-100 btn-blue btn-round h-12 mt-4`}
-            onClick={handleSubmit(onSubmit)}
-            disabled={loginMutation.isPending}
-          >
-            {loginMutation.isPending ? (
-              <CircularProgress size={24} color='inherit' />
-            ) : (
-              <p className='text-white'>Đăng nhập</p>
-            )}
-          </Button>
-
-          {/* Thêm nút đăng ký */}
-          <div className='mt-6 text-center'>
-            <p>
-              Chưa có tài khoản?{" "}
-              <Link to='/sign-up' className='text-blue-600 hover:underline'>
-                Đăng ký ngay
-              </Link>
-            </p>
+            </div>
           </div>
         </div>
       </div>
