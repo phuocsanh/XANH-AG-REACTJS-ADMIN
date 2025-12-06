@@ -168,24 +168,31 @@ const InventoryReceiptCreate: React.FC = () => {
     field: keyof InventoryReceiptItemForm,
     value: unknown
   ) => {
-    setItems(
-      items.map((item) => {
+    setItems((prevItems) => 
+      prevItems.map((item) => {
         if (item.key === key) {
           const updatedItem = { ...item, [field]: value }
 
-          // Tự động tính toán total_price khi quantity hoặc unit_cost thay đổi
-          if (field === "quantity" || field === "unit_cost") {
-            const quantity =
-              field === "quantity" ? (value as number) : item.quantity
-            const unit_cost =
-              field === "unit_cost" ? (value as number) : item.unit_cost
-            updatedItem.total_price = quantity * unit_cost
+          // Tự động cập nhật tên sản phẩm và đơn giá khi chọn sản phẩm
+          // (Logic này vẫn giữ lại như fallback, dù con đã xử lý)
+          if (field === "product_id") {
+            const selectedProduct = productOptions.find((p: any) => p.id === (value as number)) as any
+            if (selectedProduct) {
+               // Fallback: dùng label nếu không có name
+               updatedItem.product_name = selectedProduct.name || selectedProduct.label || ""
+               
+               if (selectedProduct.cost_price !== undefined) {
+                   updatedItem.unit_cost = selectedProduct.cost_price;
+               }
+            }
           }
 
-          // Tự động cập nhật tên sản phẩm khi chọn sản phẩm
-          if (field === "product_id") {
-            // Không cần tìm sản phẩm trong danh sách toàn cục nữa
-            // Tên sản phẩm sẽ được cập nhật từ component ComboBox
+          // Tự động tính toán total_price
+          if (field === "quantity" || field === "unit_cost" || field === "product_id") {
+             const quantity = field === "quantity" ? (value as number) : updatedItem.quantity
+             const unit_cost = field === "unit_cost" ? (value as number) : updatedItem.unit_cost
+             
+             updatedItem.total_price = quantity * unit_cost
           }
 
           return updatedItem
@@ -208,42 +215,53 @@ const InventoryReceiptCreate: React.FC = () => {
   })
 
   const handleSubmit = async (values: Record<string, unknown>) => {
+    console.log("🚀 ~ handleSubmit ~ values:", values)
     try {
-      // Validate có ít nhất 1 sản phẩm
-      if (items.length === 0) {
+      // 1. Lọc ra các sản phẩm hợp lệ (đã chọn sản phẩm)
+      const validItems = items.filter(
+        (item) => item.product_id && item.product_id !== 0
+      )
+      
+      console.log("DEBUG: All Items:", items);
+      console.log("DEBUG: Valid Items:", validItems);
+
+      // 2. Kiểm tra nếu không có sản phẩm nào hợp lệ
+      if (validItems.length === 0) {
+        console.log("DEBUG: BLOCKED - No valid items");
         message.error("Vui lòng thêm ít nhất một sản phẩm")
         return
       }
 
-      // Validate tất cả items đã hoàn thành
-      const hasIncompleteItems = items.some(
-        (item) =>
-          !item.product_id ||
-          item.product_id === 0 ||
-          !item.quantity ||
-          item.quantity < 1 ||
-          item.unit_cost < 0
+      // 3. Validate chi tiết các sản phẩm hợp lệ (số lượng, đơn giá)
+      const hasInvalidDetails = validItems.some(
+        (item) => !item.quantity || item.quantity < 1 || item.unit_cost < 0
       )
+      console.log("DEBUG: Has Invalid Details:", hasInvalidDetails);
 
-      if (hasIncompleteItems) {
-        message.error("Vui lòng hoàn thành thông tin tất cả sản phẩm")
+      if (hasInvalidDetails) {
+        console.log("DEBUG: BLOCKED - Invalid details");
+        message.error("Vui lòng kiểm tra số lượng và đơn giá của các sản phẩm")
         return
+       
       }
-
+      console.log("🚀 ~ aaaaaaaaaaa")
       // Tạo mã phiếu nhập tự động
       const receiptCode = `PN${Date.now()}`
 
-      // Tính tổng tiền sử dụng hàm calculateTotals
-      const totals = calculateTotals()
+      // Tính lại tổng tiền dựa trên validItems để đảm bảo chính xác
+      const totalProductValue = validItems.reduce((sum, item) => sum + item.total_price, 0)
+      const totalIndividualShipping = validItems.reduce((sum, item) => sum + (item.individual_shipping_cost || 0), 0)
+      const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
+      const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
 
       // Tạo request data theo đúng cấu trúc backend
       const requestData: CreateInventoryReceiptRequest = {
-        receipt_code: receiptCode, // ✅ Sửa từ "code" thành "receipt_code"
+        receipt_code: receiptCode,
         supplier_id: values.supplierId as number,
-        total_amount: totals.grandTotal, // Sử dụng grandTotal từ calculateTotals
+        total_amount: grandTotal,
         notes: values.description as string | undefined,
-        status: (values.status as string) || "draft", // ✅ Lấy từ form, mặc định là "draft"
-        created_by: 1, // ✅ THÊM trường created_by (TODO: lấy từ auth context)
+        status: (values.status as string) || "draft",
+        created_by: 1, // TODO: lấy từ auth context
         
         // Phí vận chuyển chung (chỉ gửi nếu có)
         ...(hasSharedShipping && {
@@ -251,7 +269,8 @@ const InventoryReceiptCreate: React.FC = () => {
           shipping_allocation_method: allocationMethod,
         }),
         
-        items: items.map((item) => ({
+        // Chỉ gửi validItems
+        items: validItems.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           unit_cost: item.unit_cost,
@@ -319,7 +338,15 @@ const InventoryReceiptCreate: React.FC = () => {
       </div>
 
       <Card className='mb-4'>
-        <Form form={form} layout='vertical' onFinish={handleSubmit}>
+        <Form 
+          form={form} 
+          layout='vertical' 
+          onFinish={handleSubmit}
+          onFinishFailed={(errorInfo) => {
+            console.log('Form validation failed:', errorInfo);
+            message.error("Vui lòng kiểm tra các trường bắt buộc (Nhà cung cấp, Trạng thái...)");
+          }}
+        >
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
             <Form.Item
               label='Nhà cung cấp'

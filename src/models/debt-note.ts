@@ -1,4 +1,5 @@
-export type DebtNoteStatus = 'active' | 'paid' | 'overdue' | 'cancelled';
+// Trạng thái phiếu công nợ
+export type DebtNoteStatus = 'active' | 'paid' | 'overdue' | 'cancelled' | 'settled';
 
 export interface DebtNote {
   id: number;
@@ -19,6 +20,10 @@ export interface DebtNote {
   updated_at: Date | string;
 }
 
+/**
+ * @deprecated Không sử dụng nữa. Dùng SettleAndRolloverDto thay thế.
+ * Chức năng trả nợ đã chuyển sang /payments/settle-debt
+ */
 export interface PayDebtDto {
   amount: number;
   payment_method: 'cash' | 'transfer';
@@ -32,4 +37,41 @@ export interface CreateDebtNoteDto {
   due_date?: string;
   notes?: string;
   source_invoices?: number[];
+}
+
+/**
+ * DTO cho API chốt sổ công nợ mới
+ * Endpoint: POST /payments/settle-debt
+ */
+export interface SettleAndRolloverDto {
+  customer_id: number;
+  season_id: number;
+  amount: number;
+  payment_method: 'cash' | 'transfer';
+  payment_date?: string;
+  notes?: string;
+}
+
+/**
+ * Response từ API chốt sổ công nợ
+ */
+export interface SettleAndRolloverResponse {
+  payment: {
+    id: number;
+    code: string;
+    amount: number;
+    payment_method: string;
+  };
+  settled_invoices: Array<{
+    id: number;
+    remaining_amount: number;
+    payment_status: string;
+  }>;
+  old_debt_note?: {
+    id: number;
+    status: string;
+    paid_amount: number;
+    remaining_amount: number;
+  };
+  new_debt_note?: any;
 }

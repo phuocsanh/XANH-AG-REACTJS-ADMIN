@@ -30,3 +30,8 @@ export interface CreateCustomerDto {
 }
 
 export interface UpdateCustomerDto extends Partial<CreateCustomerDto> {}
+
+export interface CustomerDebtor extends Customer {
+  total_debt: number;
+  debt_count: number;
+}

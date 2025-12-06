@@ -149,9 +149,31 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
               placeholder='Chọn sản phẩm'
               {...comboBoxProps}
               showSearch={true}
-              onChange={(value) =>
+              onChange={(value, option) => {
+                // Update ID trước
                 handleItemChangeWithValidation("product_id", value)
-              }
+                
+                // Update tên sản phẩm và đơn giá từ option (nếu có)
+                // Điều này quan trọng vì danh sách productOptions ở component cha có thể không đầy đủ
+                // nhưng option trả về từ ComboBox luôn chứa thông tin của item đã chọn
+                if (option) {
+                    const optArray = Array.isArray(option) ? option : [option];
+                    const selectedOpt = optArray[0] as any;
+                    
+                    if (selectedOpt) {
+                         // Lấy tên sản phẩm
+                         const name = selectedOpt.name || selectedOpt.label || "";
+                         if (name) {
+                             handleItemChange(item.key, "product_name", name);
+                         }
+                         
+                         // Lấy giá vốn (nếu có)
+                         if (selectedOpt.cost_price !== undefined) {
+                             handleItemChange(item.key, "unit_cost", selectedOpt.cost_price);
+                         }
+                    }
+                }
+              }}
               style={{ width: "100%" }}
             />
             {errors.product_id && (

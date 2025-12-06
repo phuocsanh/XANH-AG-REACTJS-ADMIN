@@ -53,9 +53,26 @@ const useItemColumns = ({
               placeholder='Chọn sản phẩm'
               {...comboBoxProps}
               showSearch={true}
-              onChange={(value) =>
+              onChange={(value, option) => {
                 handleItemChange(record.key, "product_id", value)
-              }
+
+                // Logic đồng bộ với MobileItemCard: Lấy tên và giá từ option ngay khi chọn
+                if (option) {
+                  const optArray = Array.isArray(option) ? option : [option]
+                  const selectedOpt = optArray[0] as any
+
+                  if (selectedOpt) {
+                    const name = selectedOpt.name || selectedOpt.label || ""
+                    if (name) {
+                      handleItemChange(record.key, "product_name", name)
+                    }
+
+                    if (selectedOpt.cost_price !== undefined) {
+                      handleItemChange(record.key, "unit_cost", selectedOpt.cost_price)
+                    }
+                  }
+                }
+              }}
               style={{ width: "100%" }}
             />
           </div>

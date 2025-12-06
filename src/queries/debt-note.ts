@@ -40,25 +40,6 @@ export const useDebtNoteQuery = (id: number) => {
 }
 
 /**
- * Hook trả nợ
- */
-export const usePayDebtMutation = () => {
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: PayDebtDto }) => {
-      const response = await api.postRaw<any>(`/debt-notes/${id}/pay`, data as any)
-      return response
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: debtNoteKeys.lists() })
-      toast.success("Trả nợ thành công!")
-    },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi trả nợ")
-    },
-  })
-}
-
-/**
  * Hook tạo phiếu nợ
  */
 export const useCreateDebtNoteMutation = () => {
@@ -76,6 +57,20 @@ export const useCreateDebtNoteMutation = () => {
     },
   })
 }
+
+/**
+ * @deprecated Hook trả nợ cũ - KHÔNG SỬ DỤNG NỮA
+ * 
+ * Chức năng trả nợ đã được chuyển sang API mới:
+ * - Endpoint: POST /payments/settle-debt
+ * - Hook mới: useSettleAndRolloverMutation (trong payment.ts)
+ * 
+ * Lý do thay đổi:
+ * - Backend tự động phân bổ thanh toán theo FIFO
+ * - Hỗ trợ chốt sổ công nợ theo mùa vụ
+ * - Tự động tạo phiếu thu và cập nhật phiếu nợ
+ */
+// export const usePayDebtMutation = () => { ... } - ĐÃ XÓA
 
 /**
  * Hook xóa phiếu nợ

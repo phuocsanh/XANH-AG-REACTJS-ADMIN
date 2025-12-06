@@ -19,6 +19,7 @@ export const debtStatusLabels = {
   paid: 'Đã trả',
   overdue: 'Quá hạn',
   cancelled: 'Đã hủy',
+  settled: 'Đã chốt sổ',
 };
 
 export const debtStatusColors = {
@@ -26,4 +27,5 @@ export const debtStatusColors = {
   paid: 'success',
   overdue: 'error',
   cancelled: 'default',
+  settled: 'orange',
 } as const;

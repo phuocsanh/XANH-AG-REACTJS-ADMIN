@@ -54,24 +54,7 @@ export const usePaymentAllocationsQuery = (id: number) => {
   })
 }
 
-/**
- * Hook tạo thanh toán đơn giản
- */
-export const useCreatePaymentMutation = () => {
-  return useMutation({
-    mutationFn: async (payment: CreatePaymentDto) => {
-      const response = await api.postRaw<Payment>("/payments", payment as any)
-      return response
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
-      toast.success("Tạo phiếu thu thành công!")
-    },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi tạo phiếu thu")
-    },
-  })
-}
+
 
 /**
  * Hook chốt sổ với phiếu nợ
@@ -86,6 +69,37 @@ export const useSettlePaymentMutation = () => {
       queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
       queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
       toast.success("Chốt sổ thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi chốt sổ")
+    },
+  })
+}
+
+/**
+ * Hook chốt sổ công nợ (API mới - settle-debt)
+ * Thay thế cho usePayDebtMutation cũ
+ * 
+ * API này tự động:
+ * - Phân bổ thanh toán theo FIFO (hóa đơn cũ trước)
+ * - Tạo phiếu thu mới
+ * - Cập nhật phiếu nợ (settled hoặc paid)
+ * - Không tạo phiếu nợ mới (giữ nguyên nợ cũ nếu trả thiếu)
+ */
+export const useSettleAndRolloverMutation = () => {
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await api.postRaw<any>(
+        "/payments/settle-debt", 
+        data as any
+      )
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      toast.success("Chốt sổ công nợ thành công!")
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi chốt sổ")

@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
-import { Customer, CreateCustomerDto, UpdateCustomerDto } from "@/models/customer"
+import { Customer, CreateCustomerDto, UpdateCustomerDto, CustomerDebtor } from "@/models/customer"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 import { invalidateResourceQueries } from "@/utils/query-helpers"
@@ -18,6 +18,7 @@ export const customerKeys = {
   invoices: (id: number) => [...customerKeys.detail(id), "invoices"] as const,
   debts: (id: number) => [...customerKeys.detail(id), "debts"] as const,
   search: (query: string) => [...customerKeys.all, "search", query] as const,
+  debtorSearch: (query: string) => [...customerKeys.all, "debtorSearch", query] as const,
 } as const
 
 // ========== CUSTOMER HOOKS ==========
@@ -39,7 +40,33 @@ export const useCustomerSearchQuery = (search: string) => {
       const response = await api.get<Customer[]>("/customers", { search })
       return response
     },
-    enabled: search.length >= 2,
+    enabled: search.length >= 1, // Cho phép tìm ngay từ 1 ký tự hoặc rỗng để load default list nếu muốn
+  })
+}
+
+/**
+ * Hook tìm kiếm khách hàng đang nợ (API Mới)
+ */
+export const useCustomerDebtorsSearchQuery = (search: string) => {
+  return useQuery({
+    queryKey: customerKeys.debtorSearch(search),
+    queryFn: async () => {
+      // Gọi API /customers/debtors
+      const response = await api.get<any>("/customers/debtors", { 
+        search,
+        page: 1,
+        limit: 50 
+      })
+      
+      // Kiểm tra cấu trúc response để lấy data chính xác
+      let data: CustomerDebtor[] = [];
+      if (Array.isArray(response)) data = response;
+      else if (response && Array.isArray(response.data)) data = response.data;
+      else if (response && response.data && Array.isArray(response.data.data)) data = response.data.data;
+      
+      return data;
+    },
+    // Luôn enabled để load danh sách nợ mặc định khi mở modal
   })
 }
 
@@ -60,26 +87,69 @@ export const useCustomerQuery = (id: number) => {
 /**
  * Hook lấy hóa đơn của khách hàng
  */
+/**
+ * Hook lấy hóa đơn của khách hàng (Cập nhật endpoint đúng)
+ */
 export const useCustomerInvoicesQuery = (id: number) => {
   return useQuery({
     queryKey: customerKeys.invoices(id),
     queryFn: async () => {
-      const response = await api.get<any>(`/customers/${id}/invoices`)
-      return response
+      // Gọi API danh sách hóa đơn, lọc theo customer_id
+      const response = await api.get<any>(`/sales/invoices`, { 
+        customer_id: id,
+        limit: 100 // Lấy số lượng lớn để tính nợ
+      })
+      
+      // Xử lý response để lấy danh sách items
+      let items: any[] = [];
+      
+      // LOGIC MỚI: Check nếu response chính là Array (do interceptor trả về data.data)
+      if (Array.isArray(response)) {
+          items = response;
+      } else if (response && response.data && Array.isArray(response.data.items)) {
+        items = response.data.items;
+      } else if (response && Array.isArray(response.data)) { 
+          items = response.data;
+      } else if (response && response.items && Array.isArray(response.items)) { 
+          items = response.items;
+      }
+
+      // Filter client-side để chắc chắn chỉ lấy hóa đơn còn nợ
+      return items.filter((inv: any) => (inv.remaining_amount || 0) > 0);
     },
     enabled: !!id,
   })
 }
 
 /**
- * Hook lấy công nợ của khách hàng
+ * Hook lấy công nợ của khách hàng (Cập nhật endpoint đúng)
  */
 export const useCustomerDebtsQuery = (id: number) => {
   return useQuery({
     queryKey: customerKeys.debts(id),
     queryFn: async () => {
-      const response = await api.get<any>(`/customers/${id}/debts`)
-      return response
+      // Gọi API danh sách phiếu nợ, lọc theo customer_id
+      const response = await api.get<any>(`/debt-notes`, { 
+        customer_id: id,
+        limit: 100
+      })
+
+      // Xử lý response
+      let items: any[] = [];
+      
+      // LOGIC MỚI: Check nếu response chính là Array
+      if (Array.isArray(response)) {
+          items = response;
+      } else if (response && response.data && Array.isArray(response.data.items)) {
+        items = response.data.items;
+      } else if (response && Array.isArray(response.data)) {
+          items = response.data;
+      } else if (response && response.items && Array.isArray(response.items)) {
+          items = response.items;
+      }
+      
+      // Filter client-side
+      return items.filter((debt: any) => (debt.remaining_amount || 0) > 0);
     },
     enabled: !!id,
   })

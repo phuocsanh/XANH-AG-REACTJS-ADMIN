@@ -1,19 +1,18 @@
+/**
+ * Trang Quản Lý Công Nợ
+ * 
+ * Để xem và chốt sổ công nợ.
+ */
 import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
-import { useDebtNotesQuery, usePayDebtMutation } from "@/queries/debt-note"
+import { useDebtNotesQuery } from "@/queries/debt-note"
 import {
-  Button,
   Select,
   Tag,
-  Space,
-  Form,
-  InputNumber,
   Card,
   Statistic,
   Row,
   Col,
-  Modal,
-  Input,
 } from "antd"
 import { DollarOutlined } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
@@ -21,6 +20,8 @@ import {
   debtStatusLabels,
   debtStatusColors,
 } from "./form-config"
+import { SettleDebtModal } from "../payments/components/settle-debt-modal"
+import { Button } from "antd"
 
 // Extend DebtNote interface để tương thích với DataTable
 interface ExtendedDebtNote extends DebtNote {
@@ -28,24 +29,29 @@ interface ExtendedDebtNote extends DebtNote {
   [key: string]: any
 }
 
-// Type for pay debt form values
-interface PayDebtFormValues {
-  amount: number
-  payment_method: "cash" | "transfer"
-  notes?: string
-}
-
 const DebtNotesList: React.FC = () => {
   // State quản lý UI
   const [statusFilter, setStatusFilter] = React.useState<string>("")
-  const [isPayModalVisible, setIsPayModalVisible] =
-    React.useState<boolean>(false)
-  const [payingDebt, setPayingDebt] = React.useState<DebtNote | null>(null)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
 
-  // Form instance
-  const [form] = Form.useForm<PayDebtFormValues>()
+  // State modal chốt sổ
+  const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
+  const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
+
+  // Handlers
+  const handleOpenSettleModal = (record: ExtendedDebtNote) => {
+    setSettleInitialValues({
+        customer_id: record.customer_id,
+        season_id: record.season_id
+    })
+    setIsSettleModalVisible(true)
+  }
+
+  const handleCloseSettleModal = () => {
+    setIsSettleModalVisible(false)
+    setSettleInitialValues(undefined)
+  }
 
   // Sử dụng query hooks
   const { data: debtNotesData, isLoading } = useDebtNotesQuery({
@@ -53,46 +59,6 @@ const DebtNotesList: React.FC = () => {
     limit: pageSize,
     status: statusFilter || undefined,
   })
-
-  const payDebtMutation = usePayDebtMutation()
-
-  // Hàm xử lý mở modal trả nợ
-  const handleOpenPayModal = (debtNote: DebtNote) => {
-    setPayingDebt(debtNote)
-    form.setFieldsValue({
-      amount: debtNote.remaining_amount,
-      payment_method: "cash",
-      notes: "",
-    })
-    setIsPayModalVisible(true)
-  }
-
-  // Xử lý đóng pay modal
-  const handleClosePayModal = () => {
-    setIsPayModalVisible(false)
-    form.resetFields()
-    setPayingDebt(null)
-  }
-
-  // Xử lý submit form trả nợ
-  const handlePaySubmit = async () => {
-    if (!payingDebt) return
-
-    try {
-      const values = await form.validateFields()
-
-      await payDebtMutation.mutateAsync(
-        { id: payingDebt.id, data: values },
-        {
-          onSuccess: () => {
-            handleClosePayModal()
-          },
-        }
-      )
-    } catch (error) {
-      console.error("Form validation failed:", error)
-    }
-  }
 
   // Lấy danh sách phiếu nợ
   const getDebtNoteList = (): ExtendedDebtNote[] => {
@@ -112,7 +78,7 @@ const DebtNotesList: React.FC = () => {
     }).format(value)
   }
 
-  const loading = isLoading || payDebtMutation.isPending
+  const loading = isLoading
 
   // Tính toán thống kê
   const debtList = getDebtNoteList()
@@ -140,7 +106,9 @@ const DebtNotesList: React.FC = () => {
       title: "Khách hàng",
       width: 180,
       render: (record: ExtendedDebtNote) => (
-        <div className='font-medium'>{record.customer_name}</div>
+        <div className='font-medium'>
+          {record.customer_name || record.customer?.name || "-"}
+        </div>
       ),
     },
     {
@@ -209,18 +177,16 @@ const DebtNotesList: React.FC = () => {
       title: "Hành động",
       width: 120,
       render: (record: ExtendedDebtNote) => (
-        <Space size='middle'>
-          {record.remaining_amount > 0 && record.status !== "paid" && (
-            <Button
-              type='primary'
-              icon={<DollarOutlined />}
-              onClick={() => handleOpenPayModal(record)}
-              size='small'
-            >
-              Trả nợ
-            </Button>
-          )}
-        </Space>
+         record.remaining_amount > 0 && record.status !== 'settled' ? (
+           <Button 
+             type="primary" 
+             size="small"
+             icon={<DollarOutlined />}
+             onClick={() => handleOpenSettleModal(record)}
+           >
+             Chốt sổ
+           </Button>
+         ) : null
       ),
     },
   ]
@@ -318,91 +284,11 @@ const DebtNotesList: React.FC = () => {
         />
       </div>
 
-      {/* Modal trả nợ */}
-      <Modal
-        title={`Trả nợ: ${payingDebt?.code || ""}`}
-        open={isPayModalVisible}
-        onCancel={handleClosePayModal}
-        footer={[
-          <Button key='cancel' onClick={handleClosePayModal}>
-            Hủy
-          </Button>,
-          <Button
-            key='submit'
-            type='primary'
-            loading={payDebtMutation.isPending}
-            onClick={handlePaySubmit}
-          >
-            Xác nhận trả nợ
-          </Button>,
-        ]}
-        width={500}
-      >
-        {payingDebt && (
-          <div>
-            <Card className='mb-4 bg-gray-50'>
-              <div className='mb-2'>
-                <div className='text-gray-500 text-sm'>Khách hàng</div>
-                <div className='text-lg font-medium'>
-                  {payingDebt.customer_name}
-                </div>
-              </div>
-              <div>
-                <div className='text-gray-500 text-sm'>Số tiền còn nợ</div>
-                <div className='text-2xl font-bold text-red-600'>
-                  {formatCurrency(payingDebt.remaining_amount)}
-                </div>
-              </div>
-            </Card>
-
-            <Form form={form} layout='vertical'>
-              <Form.Item
-                label='Số tiền trả'
-                name='amount'
-                rules={[
-                  { required: true, message: "Vui lòng nhập số tiền trả" },
-                  {
-                    type: "number",
-                    max: payingDebt.remaining_amount,
-                    message: "Số tiền không được vượt quá số tiền còn nợ",
-                  },
-                ]}
-              >
-                <InputNumber
-                  className='w-full'
-                  min={0}
-                  max={payingDebt.remaining_amount}
-                  formatter={(value) =>
-                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, "") : "") as any}
-                  placeholder='Nhập số tiền'
-                />
-              </Form.Item>
-
-              <Form.Item
-                label='Phương thức thanh toán'
-                name='payment_method'
-                rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng chọn phương thức thanh toán",
-                  },
-                ]}
-              >
-                <Select placeholder='Chọn phương thức'>
-                  <Select.Option value='cash'>Tiền mặt</Select.Option>
-                  <Select.Option value='transfer'>Chuyển khoản</Select.Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item label='Ghi chú' name='notes'>
-                <Input.TextArea rows={3} placeholder='Nhập ghi chú' />
-              </Form.Item>
-            </Form>
-          </div>
-        )}
-      </Modal>
+      <SettleDebtModal
+        open={isSettleModalVisible}
+        onCancel={handleCloseSettleModal}
+        initialValues={settleInitialValues}
+      />
     </div>
   )
 }
