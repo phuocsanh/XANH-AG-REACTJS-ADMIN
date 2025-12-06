@@ -828,3 +828,47 @@ body {
     padding-top: 70px !important;
   }
 }
+
+/* ==========================================================================
+   CUSTOM PRODUCT FORM COMPACT STYLES
+   ========================================================================== */
+.product-card .ant-card-body {
+  padding: 12px !important;
+}
+
+/* Reduce spacing between form items (rows) */
+.product-form .ant-form-item {
+  margin-bottom: 8px !important; 
+}
+
+/* Reduce spacing between label and input */
+.product-form .ant-form-item-label {
+  padding-bottom: 2px !important;
+  overflow: visible;
+}
+
+.product-form .ant-form-item-label > label {
+  height: auto !important;
+  font-size: 13px !important;
+}
+
+/* Compact input height */
+.product-form .ant-input,
+.product-form .ant-select-selector,
+.product-form .ant-input-number-input,
+.product-form .ant-picker {
+  height: 34px !important;
+  font-size: 14px !important;
+}
+
+.product-form .ant-select-selection-item,
+.product-form .ant-select-selection-placeholder {
+  line-height: 32px !important;
+}
+
+/* Error message compactness */
+.product-form .ant-form-item-explain {
+  min-height: unset !important;
+  font-size: 12px !important;
+  margin-top: 2px !important;
+}

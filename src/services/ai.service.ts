@@ -463,9 +463,17 @@ class FrontendAiService {
    * @param bannedIngredients Danh sách hoạt chất bị cấm
    * @returns Promise với kết quả phân tích
    */
+  /**
+   * Phân tích ảnh thuốc bảo vệ thực vật để kiểm tra hoạt chất bị cấm
+   * @param imageBase64 Ảnh dạng base64 (không bao gồm prefix data:image/...)
+   * @param bannedIngredients Danh sách hoạt chất bị cấm
+   * @param restrictedIngredients Danh sách hoạt chất hạn chế/cảnh báo (optional)
+   * @returns Promise với kết quả phân tích
+   */
   async analyzePesticideImage(
     imageBase64: string,
-    bannedIngredients: string[]
+    bannedIngredients: string[],
+    restrictedIngredients: string[] = []
   ): Promise<AiResponse> {
     if (!imageBase64 || imageBase64.trim().length === 0) {
       return {
@@ -485,25 +493,34 @@ class FrontendAiService {
 Bạn là chuyên gia phân tích thuốc bảo vệ thực vật. Hãy phân tích ảnh nhãn thuốc này và:
 
 1. Đọc và trích xuất TẤT CẢ các hoạt chất (active ingredients) có trong sản phẩm
-2. So sánh với danh sách hoạt chất BỊ CẤM sử dụng tại Việt Nam dưới đây
-3. Xác định xem sản phẩm có chứa hoạt chất bị cấm hay không
+2. So sánh với 2 danh sách dưới đây:
+   - DANH SÁCH 1: Hoạt chất BỊ CẤM sử dụng tại Việt Nam (Cực kỳ nguy hiểm)
+   - DANH SÁCH 2: Hoạt chất HẠN CHẾ sử dụng / CẢNH BÁO ĐẶC BIỆT (Cần thận trọng)
 
-DANH SÁCH HOẠT CHẤT BỊ CẤM TẠI VIỆT NAM:
+3. Xác định xem sản phẩm có chứa hoạt chất bị cấm hoặc hạn chế hay không
+
+DANH SÁCH 1 - BỊ CẤM TUYỆT ĐỐI:
 ${bannedIngredients.map((ing, idx) => `${idx + 1}. ${ing}`).join('\n')}
+
+DANH SÁCH 2 - HẠN CHẾ / CẢNH BÁO:
+${restrictedIngredients.length > 0 ? restrictedIngredients.map((ing, idx) => `${idx + 1}. ${ing}`).join('\n') : "(Không có)"}
 
 YÊU CẦU QUAN TRỌNG:
 - Đọc kỹ nhãn thuốc, tìm phần "Thành phần", "Hoạt chất", "Active Ingredient", "Ingredients"
 - So sánh CHÍNH XÁC tên hoạt chất (có thể viết bằng tiếng Việt hoặc tiếng Anh)
-- Lưu ý: Một số hoạt chất có thể có tên gọi khác nhau hoặc tên thương mại khác
-- Nếu không đọc được rõ ảnh hoặc không tìm thấy thông tin hoạt chất, hãy thông báo
+- Nếu phát hiện chất trong DANH SÁCH 1 -> Mức độ cảnh báo là "NGUY_HIỂM"
+- Nếu KHÔNG có chất cấm nhưng có chất trong DANH SÁCH 2 -> Mức độ cảnh báo là "CẢNH_BÁO"
+- Nếu không có cả hai -> Mức độ là "AN_TOÀN"
 
 TRẢ VỀ KẾT QUẢ DƯỚI DẠNG JSON (KHÔNG THÊM MARKDOWN, KHÔNG THÊM TEXT GIẢI THÍCH):
 {
   "product_name": "Tên sản phẩm (nếu có)",
-  "detected_ingredients": ["Danh sách hoạt chất tìm thấy trong ảnh"],
+  "detected_ingredients": ["Danh sách tất cả hoạt chất tìm thấy"],
   "banned_ingredients": ["Danh sách hoạt chất BỊ CẤM tìm thấy"],
-  "is_banned": true/false,
-  "warning_level": "NGUY_HIỂM" hoặc "AN_TOÀN" hoặc "KHÔNG_XÁC_ĐỊNH",
+  "restricted_ingredients": ["Danh sách hoạt chất HẠN CHẾ tìm thấy"],
+  "is_banned": true/false (true nếu có chất cấm),
+  "is_restricted": true/false (true nếu có chất hạn chế nhưng không có chất cấm),
+  "warning_level": "NGUY_HIỂM" hoặc "CẢNH_BÁO" hoặc "AN_TOÀN" hoặc "KHÔNG_XÁC_ĐỊNH",
   "warning_message": "Thông báo cảnh báo chi tiết bằng tiếng Việt",
   "recommendations": "Khuyến nghị cho người dùng"
 }

@@ -32,7 +32,7 @@ export const BANNED_INSECTICIDES = [
   'Trichlorfon (Chlorophos)',
   'Chlorpyrifos Ethyl',
   'Fipronil',
-  'Carbosulfan'
+  // 'Carbosulfan' - Đã chuyển sang danh sách hạn chế/cảnh báo
 ];
 
 // Thuốc trừ bệnh bị cấm (06 hoạt chất)
@@ -56,12 +56,22 @@ export const BANNED_HERBICIDES = [
   'Glyphosate',
 ];
 
+// Danh sách hoạt chất hạn chế sử dụng / Cảnh báo đặc biệt (Chưa cấm hoàn toàn nhưng cần lưu ý)
+export const RESTRICTED_INGREDIENTS = [
+  'Carbosulfan',
+];
+
 // Tổng hợp tất cả hoạt chất bị cấm
 export const ALL_BANNED_INGREDIENTS = [
   ...BANNED_INSECTICIDES,
   ...BANNED_FUNGICIDES,
   ...BANNED_RODENTICIDES,
   ...BANNED_HERBICIDES,
+];
+
+// Tổng hợp tất cả hoạt chất hạn chế/cảnh báo
+export const ALL_RESTRICTED_INGREDIENTS = [
+  ...RESTRICTED_INGREDIENTS
 ];
 
 // Phân loại hoạt chất bị cấm
@@ -93,6 +103,14 @@ export const isBannedIngredient = (ingredient: string): boolean => {
   const normalizedIngredient = ingredient.toLowerCase().trim();
   return ALL_BANNED_INGREDIENTS.some(
     (banned) => normalizedIngredient.includes(banned.toLowerCase())
+  );
+};
+
+// Hàm kiểm tra hoạt chất có bị hạn chế/cảnh báo không
+export const isRestrictedIngredient = (ingredient: string): boolean => {
+  const normalizedIngredient = ingredient.toLowerCase().trim();
+  return ALL_RESTRICTED_INGREDIENTS.some(
+    (restricted) => normalizedIngredient.includes(restricted.toLowerCase())
   );
 };
 

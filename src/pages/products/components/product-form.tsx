@@ -440,9 +440,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6'>
         {/* Form sản phẩm - 2 cột */}
         <div className='lg:col-span-2'>
-          <Card loading={loading || productLoading || initialLoading}>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4'>
+          <Card loading={loading || productLoading || initialLoading} className="product-card">
+            <form onSubmit={handleSubmit(onSubmit)} className="product-form">
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0'>
                 <div className='w-full'>
                   <FormField
                     name='name'
