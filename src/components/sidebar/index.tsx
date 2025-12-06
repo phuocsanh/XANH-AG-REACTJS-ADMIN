@@ -334,7 +334,7 @@ const Sidebar: React.FC = () => {
                       </Link>
                     </li>
                   )}
-                  <li className="-mb-8">
+                  <li className="-mb-8 mt-2">
                     <Link to='/product-comparison'>
                       <Button
                         className={`w-full !justify-start !text-left ${

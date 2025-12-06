@@ -47,6 +47,8 @@ import BannedPesticidesPage from "./pages/banned-pesticides"
 import RiceCropsPage from "./pages/rice-crops"
 // Thêm import cho trang so sánh sản phẩm AI
 import ProductComparisonPage from "./pages/product-comparison"
+// Thêm import cho trang test upload
+import UploadTestPage from "./pages/upload-test"
 // Thêm import cho các module quản lý bán hàng
 import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
@@ -357,6 +359,16 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <BannedPesticidesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Trang test upload ảnh */}
+                    <Route
+                      path='/upload-test'
+                      element={
+                        <ProtectedRoute>
+                          <UploadTestPage />
                         </ProtectedRoute>
                       }
                     />

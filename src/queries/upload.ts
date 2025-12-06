@@ -12,13 +12,19 @@ import {
   FileSearchParams,
 } from "@/models/upload.model"
 import { handleApiError } from "@/utils/error-handler"
+import { uploadService, UploadType } from "@/services/upload.service"
 
 // ========== UPLOAD HOOKS ==========
 
 interface UploadFileRequest {
   file: File
   type: string
-  folder: string
+  folder?: string // Optional now
+}
+
+interface UploadImageRequest {
+  file: File
+  type?: UploadType
 }
 
 /**
@@ -30,7 +36,9 @@ export const useUploadFileMutation = () => {
       const formData = new FormData()
       formData.append("file", uploadData.file)
       formData.append("type", uploadData.type)
-      formData.append("folder", uploadData.folder)
+      if (uploadData.folder) {
+        formData.append("folder", uploadData.folder)
+      }
 
       const response = await api.postForm<UploadResponse>("/uploads", formData)
       return response
@@ -46,22 +54,12 @@ export const useUploadFileMutation = () => {
 }
 
 /**
- * Hook upload file hình ảnh
+ * Hook upload file hình ảnh (Sử dụng UploadService mới có nén ảnh)
  */
 export const useUploadImageMutation = () => {
   return useMutation({
-    mutationFn: async (uploadData: UploadFileRequest) => {
-      const formData = new FormData()
-      formData.append("file", uploadData.file)
-      formData.append("type", uploadData.type)
-      formData.append("folder", uploadData.folder)
-
-      const response = await api.postForm<UploadResponse>(
-        "/upload/image",
-        formData
-      )
-
-      return response
+    mutationFn: async (uploadData: UploadImageRequest) => {
+      return await uploadService.uploadImage(uploadData.file, uploadData.type)
     },
     onSuccess: () => {
       toast.success("Upload hình ảnh thành công!")

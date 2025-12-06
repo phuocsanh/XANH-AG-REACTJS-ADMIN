@@ -1,6 +1,8 @@
+import React from "react"
 import { Controller, Control, FieldValues, Path } from "react-hook-form"
 import { Form } from "antd"
 import ImageUpload from "../image-upload/image-upload"
+import { UPLOAD_TYPES, UploadType } from "@/services/upload.service"
 
 // Interface cho props của FormImageUpload
 interface FormImageUploadProps<T extends FieldValues> {
@@ -12,6 +14,7 @@ interface FormImageUploadProps<T extends FieldValues> {
   maxCount?: number // Số lượng file tối đa
   multiple?: boolean // Cho phép chọn nhiều file
   className?: string // CSS class
+  uploadType?: UploadType // Loại upload
   rules?: {
     required?: boolean | string
     validate?: (value: string[] | null) => boolean | string
@@ -35,6 +38,7 @@ function FormImageUpload<T extends FieldValues>({
   maxCount = 5,
   multiple = true,
   className,
+  uploadType = UPLOAD_TYPES.COMMON,
   rules = {},
 }: FormImageUploadProps<T>) {
   // Tạo validation rules
@@ -59,26 +63,45 @@ function FormImageUpload<T extends FieldValues>({
         name={name}
         control={control}
         rules={validationRules}
-        render={({ field: { onChange, value }, fieldState: { error } }) => (
-          <>
-            <ImageUpload
-              value={value || []}
-              onChange={(urls) => {
-                // Gọi onChange của React Hook Form với mảng URLs
-                onChange(urls)
-              }}
-              maxCount={maxCount}
-              multiple={multiple}
-            />
-            {error && (
-              <div
-                style={{ color: "#ff4d4f", fontSize: "14px", marginTop: "4px" }}
-              >
-                {error.message}
-              </div>
-            )}
-          </>
-        )}
+        render={({ field: { onChange, value }, fieldState: { error } }) => {
+          // Normalize value to string[] for ImageUpload component
+          // Handle both string[] and UploadFile[] from form
+          const normalizedValue = React.useMemo(() => {
+            if (!value) return [];
+            if (Array.isArray(value)) {
+              return value.map((item: any) => {
+                // If item is already a string, return it
+                if (typeof item === 'string') return item;
+                // If item is an UploadFile object, extract the url
+                if (typeof item === 'object' && 'url' in item) return item.url || '';
+                return '';
+              }).filter(Boolean);
+            }
+            return [];
+          }, [value]);
+
+          return (
+            <>
+              <ImageUpload
+                value={normalizedValue}
+                onChange={(urls) => {
+                  // Gọi onChange của React Hook Form với mảng URLs
+                  onChange(urls)
+                }}
+                maxCount={maxCount}
+                multiple={multiple}
+                uploadType={uploadType}
+              />
+              {error && (
+                <div
+                  style={{ color: "#ff4d4f", fontSize: "14px", marginTop: "4px" }}
+                >
+                  {error.message}
+                </div>
+              )}
+            </>
+          )
+        }}
       />
     </Form.Item>
   )

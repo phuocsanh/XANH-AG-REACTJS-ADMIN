@@ -38,6 +38,7 @@ import { Symbol } from "@/models/symbol.model"
 import { ProductSubtype } from "@/models/product-subtype.model"
 import ProductComparisonPanel from "@/pages/products/components/ProductComparisonPanel"
 import { useProductsQuery } from "@/queries/product"
+import { UPLOAD_TYPES } from "@/services/upload.service"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -648,6 +649,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   label='Hình ảnh chi tiết'
                   maxCount={5}
                   multiple={true}
+                  uploadType={UPLOAD_TYPES.PRODUCT}
                   className='w-full'
                 />
               </div>

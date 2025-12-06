@@ -3,11 +3,14 @@ import { Upload, message } from "antd"
 import { UploadFile, UploadProps } from "antd/lib/upload/interface"
 import { useUploadImageMutation } from "../../queries/upload"
 
+import { UPLOAD_TYPES, UploadType } from "@/services/upload.service"
+
 interface ImageUploadProps {
   value?: string[]
   onChange?: (urls: string[]) => void
   maxCount?: number
   multiple?: boolean
+  uploadType?: UploadType
 }
 
 const { Dragger } = Upload
@@ -17,6 +20,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   maxCount = 5,
   multiple = true,
+  uploadType = UPLOAD_TYPES.COMMON,
 }) => {
   const [loading, setLoading] = useState(false)
   const [fileList, setFileList] = useState<UploadFile[]>([])
@@ -64,8 +68,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         // Create proper UploadFileRequest object with required properties
         const uploadRequest = {
           file: currentFile.originFileObj as File,
-          type: "image", // Default to image type
-          folder: "images", // Default folder
+          type: uploadType,
         }
 
         const response = await uploadImageMutation.mutateAsync(uploadRequest)
@@ -117,7 +120,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         .filter((item) => item.status === "done" && item.url)
         .map((item) => item.url as string)
 
-      onChange?.(urls)
+      // Only call onChange if URLs actually changed
+      const currentUrls = value || []
+      const hasChanged = 
+        urls.length !== currentUrls.length ||
+        urls.some((url, index) => url !== currentUrls[index])
+      
+      if (hasChanged) {
+        onChange?.(urls)
+      }
     }
   }
 
@@ -144,11 +155,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       beforeUpload={() => false} // Prevent automatic upload
       listType='picture-card'
       disabled={loading}
+      accept="image/*,.heic,.heif"
     >
       <div className='flex flex-col items-center justify-center p-2'>
         <div className='text-blue-500 text-lg mb-1'>Tải ảnh lên</div>
         <div className='text-gray-500 text-sm'>
           Click hoặc kéo thả ảnh vào đây
+        </div>
+        <div className='text-gray-400 text-xs mt-1'>
+          Hỗ trợ JPG, PNG, HEIC (iPhone)
         </div>
       </div>
     </Dragger>
