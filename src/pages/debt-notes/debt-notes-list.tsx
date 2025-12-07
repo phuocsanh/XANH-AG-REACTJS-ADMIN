@@ -38,6 +38,7 @@ const DebtNotesList: React.FC = () => {
   // State modal chốt sổ
   const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
   const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
+  const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<any>(null)
 
   // Handlers
   const handleOpenSettleModal = (record: ExtendedDebtNote) => {
@@ -45,12 +46,32 @@ const DebtNotesList: React.FC = () => {
         customer_id: record.customer_id,
         season_id: record.season_id
     })
+    
+    // Tạo object customer giả giả từ thông tin có sẵn để pass qua modal
+    // Giúp modal không cần load lại danh sách nợ
+    if (record.customer_id) {
+        setSettleInitialCustomer({
+            id: record.customer_id,
+            name: record.customer_name || record.customer?.name || "Khách hàng",
+            phone: record.customer?.phone || "",
+            code: record.customer?.code || "",
+            // total_debt & debt_count will be fetched by modal
+            type: 'regular',
+            is_guest: false,
+            total_purchases: 0,
+            total_spent: 0,
+            created_at: '',
+            updated_at: ''
+        })
+    }
+
     setIsSettleModalVisible(true)
   }
 
   const handleCloseSettleModal = () => {
     setIsSettleModalVisible(false)
     setSettleInitialValues(undefined)
+    setSettleInitialCustomer(null)
   }
 
   // Sử dụng query hooks
@@ -83,7 +104,10 @@ const DebtNotesList: React.FC = () => {
   // Tính toán thống kê
   const debtList = getDebtNoteList()
   const totalDebt = debtList.reduce(
-    (sum, debt) => sum + debt.remaining_amount,
+    (sum, debt) => {
+      const amount = Number(debt.remaining_amount)
+      return sum + (isNaN(amount) ? 0 : amount)
+    },
     0
   )
   const overdueCount = debtList.filter((debt) => debt.status === "overdue")
@@ -288,6 +312,7 @@ const DebtNotesList: React.FC = () => {
         open={isSettleModalVisible}
         onCancel={handleCloseSettleModal}
         initialValues={settleInitialValues}
+        initialCustomer={settleInitialCustomer}
       />
     </div>
   )

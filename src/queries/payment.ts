@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 import { Payment, CreatePaymentDto, SettlePaymentDto, PaymentAllocation } from "@/models/payment"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
@@ -66,8 +67,10 @@ export const useSettlePaymentMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
+      invalidateResourceQueries("/payments")
+      invalidateResourceQueries("/debt-notes")
+      invalidateResourceQueries("/customers")
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
       toast.success("Chốt sổ thành công!")
     },
     onError: (error: unknown) => {
@@ -96,8 +99,10 @@ export const useSettleAndRolloverMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
+      invalidateResourceQueries("/payments")
+      invalidateResourceQueries("/debt-notes")
+      invalidateResourceQueries("/customers")
+      // Invalidate customer search queries (key starts with "customers", not "/customers")
       queryClient.invalidateQueries({ queryKey: ["customers"] })
       toast.success("Chốt sổ công nợ thành công!")
     },
@@ -117,7 +122,7 @@ export const useDeletePaymentMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
+      invalidateResourceQueries("/payments")
       toast.success("Xóa phiếu thu thành công!")
     },
     onError: (error: unknown) => {

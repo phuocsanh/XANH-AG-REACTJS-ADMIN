@@ -3,6 +3,7 @@ import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
 import { DebtNote, PayDebtDto, CreateDebtNoteDto } from "@/models/debt-note"
+import { invalidateResourceQueries } from "@/utils/query-helpers"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
@@ -49,7 +50,7 @@ export const useCreateDebtNoteMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: debtNoteKeys.lists() })
+      invalidateResourceQueries("/debt-notes")
       toast.success("Tạo phiếu nợ thành công!")
     },
     onError: (error: unknown) => {
@@ -82,7 +83,7 @@ export const useDeleteDebtNoteMutation = () => {
       return response
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: debtNoteKeys.lists() })
+      invalidateResourceQueries("/debt-notes")
       toast.success("Xóa phiếu nợ thành công!")
     },
     onError: (error: unknown) => {
