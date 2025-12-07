@@ -45,10 +45,10 @@ import {
   ReloadOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateSalesInvoiceMutation, useLatestInvoiceByCustomerQuery } from '@/queries/sales-invoice';
+import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery } from '@/queries/product';
@@ -145,6 +145,14 @@ function TabPanel(props: TabPanelProps) {
 
 const CreateSalesInvoice = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = !!id;
+  
+  // Fetch invoice data if in edit mode
+  const { data: invoiceData, isLoading: isLoadingInvoice } = useSalesInvoiceQuery(
+    id ? parseInt(id) : 0
+  );
+  
   const [customerSearch, setCustomerSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -223,7 +231,9 @@ const CreateSalesInvoice = () => {
     status: CropStatus.ACTIVE 
   });
   
+  
   const createMutation = useCreateSalesInvoiceMutation();
+  const updateMutation = useUpdateSalesInvoiceMutation();
 
   // Reset rice_crop_id khi thay đổi season_id
   useEffect(() => {
@@ -232,6 +242,44 @@ const CreateSalesInvoice = () => {
       setSelectedRiceCropId(undefined);
     }
   }, [selectedSeasonId, selectedCustomer, setValue]);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (isEditMode && invoiceData?.data) {
+      const invoice = invoiceData.data;
+      
+      // Set form values
+      setValue('customer_id', invoice.customer_id);
+      setValue('customer_name', invoice.customer_name);
+      setValue('customer_phone', invoice.customer_phone || '');
+      setValue('customer_address', invoice.customer_address || '');
+      setValue('season_id', invoice.season_id);
+      setValue('rice_crop_id', invoice.rice_crop_id);
+      setValue('payment_method', invoice.payment_method as any);
+      setValue('total_amount', invoice.total_amount);
+      setValue('discount_amount', invoice.discount_amount);
+      setValue('final_amount', invoice.final_amount);
+      setValue('partial_payment_amount', invoice.partial_payment_amount);
+      setValue('notes', invoice.notes || '');
+      setValue('warning', invoice.warning || '');
+      
+      // Set items if available
+      if (invoice.items && invoice.items.length > 0) {
+        setValue('items', invoice.items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_amount: item.discount_amount || 0,
+          notes: item.notes || ''
+        })));
+      }
+      
+      // Set selected customer if customer_id exists
+      if (invoice.customer_id) {
+        setIsGuestCustomer(false);
+      }
+    }
+  }, [isEditMode, invoiceData, setValue]);
 
   // Disease Warning Queries
   const { data: diseaseLocation } = useLocationQuery();
@@ -510,11 +558,23 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       customer_id: data.customer_id || null,
     };
 
-    createMutation.mutate(submitData as any, {
-      onSuccess: () => {
-        navigate('/sales-invoices');
-      }
-    });
+    if (isEditMode && id) {
+      // Update existing invoice
+      updateMutation.mutate({ id: parseInt(id), data: submitData as any }, {
+        onSuccess: () => {
+          message.success('Cập nhật hóa đơn thành công!');
+          navigate('/sales-invoices');
+        }
+      });
+    } else {
+      // Create new invoice
+      createMutation.mutate(submitData as any, {
+        onSuccess: () => {
+          message.success('Tạo hóa đơn thành công!');
+          navigate('/sales-invoices');
+        }
+      });
+    }
   };
 
   const totalAmount = watch('total_amount');
@@ -1109,7 +1169,7 @@ ${productInfo}`;
               lineHeight: { xs: 1.2, md: 1.5 }
             }}
           >
-            Tạo hóa đơn bán hàng mới
+            {isEditMode ? 'Chỉnh sửa hóa đơn' : 'Tạo hóa đơn bán hàng mới'}
           </Typography>
         </Box>
         <Button

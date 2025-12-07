@@ -15,6 +15,9 @@ const SalesInvoices: React.FC = () => {
 
       {/* Trang tạo hóa đơn mới */}
       <Route path='create' element={<CreateSalesInvoice />} />
+
+      {/* Trang chỉnh sửa hóa đơn */}
+      <Route path='edit/:id' element={<CreateSalesInvoice />} />
     </Routes>
   )
 }

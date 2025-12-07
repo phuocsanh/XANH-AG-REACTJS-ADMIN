@@ -20,6 +20,7 @@ import {
 import {
   PlusOutlined,
   EyeOutlined,
+  EditOutlined,
   DollarOutlined,
   SearchOutlined,
 } from "@ant-design/icons"
@@ -242,7 +243,7 @@ const SalesInvoicesList: React.FC = () => {
     {
       key: "action",
       title: "Thao tác",
-      width: 200,
+      width: 250,
       render: (record: ExtendedSalesInvoice) => (
         <Space size='small'>
           <Button
@@ -252,7 +253,16 @@ const SalesInvoicesList: React.FC = () => {
           >
             Xem
           </Button>
-          {record.remaining_amount > 0 && (
+          {record.status === 'draft' && (
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/sales-invoices/edit/${record.id}`)}
+              size='small'
+            >
+              Sửa
+            </Button>
+          )}
+          {record.status !== 'draft' && record.remaining_amount > 0 && (
             <Button
               type='primary'
               icon={<DollarOutlined />}
