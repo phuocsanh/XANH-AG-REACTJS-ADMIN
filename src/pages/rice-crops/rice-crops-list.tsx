@@ -223,6 +223,22 @@ const RiceCropsList: React.FC = () => {
       ),
     },
     {
+      key: 'customer_name',
+      title: 'Khách hàng',
+      width: 180,
+      render: (record: ExtendedRiceCrop) => (
+        <div>{record.customer?.name || '-'}</div>
+      ),
+    },
+    {
+      key: 'season_name',
+      title: 'Mùa vụ',
+      width: 150,
+      render: (record: ExtendedRiceCrop) => (
+        <div>{record.season?.name || '-'}</div>
+      ),
+    },
+    {
       key: 'field_area',
       title: 'Diện tích (m²)',
       width: 120,

@@ -44,7 +44,6 @@ import {
   useCancelInventoryReceiptMutation,
   useInventoryStatsQuery,
 } from "@/queries/inventory"
-import { useSuppliersQuery } from "@/queries/supplier"
 import { LoadingSpinner } from "@/components/common"
 
 const { Title, Text } = Typography
@@ -111,8 +110,7 @@ const InventoryReceiptsList: React.FC = () => {
   const { data: statsData, isLoading: isLoadingStats } =
     useInventoryStatsQuery()
 
-  // Fetch danh sách nhà cung cấp để hiển thị tên
-  const { data: suppliersData } = useSuppliersQuery({ limit: 1000 }) // Lấy tất cả (hoặc số lượng lớn) để map tên
+
 
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
@@ -400,14 +398,7 @@ const InventoryReceiptsList: React.FC = () => {
       key: "supplier_id",
       width: 200,
       render: (_: number, record: InventoryReceipt) => {
-        if (record.supplier_name) return record.supplier_name
-        
-        if (record.supplier_id && suppliersData?.data?.items) {
-          const supplier = suppliersData.data.items.find(s => s.id === record.supplier_id)
-          if (supplier) return supplier.name
-        }
-        
-        return record.supplier_id ? `Nhà cung cấp #${record.supplier_id}` : "-"
+        return record.supplier?.name || record.supplier_name || (record.supplier_id ? `Nhà cung cấp #${record.supplier_id}` : "-")
       },
     },
     {

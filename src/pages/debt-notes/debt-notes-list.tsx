@@ -127,7 +127,7 @@ const DebtNotesList: React.FC = () => {
       width: 180,
       render: (record: ExtendedDebtNote) => (
         <div className='font-medium'>
-          {record.customer_name || record.customer?.name || "-"}
+          {record.customer?.name || record.customer_name || "-"}
         </div>
       ),
     },
@@ -136,7 +136,7 @@ const DebtNotesList: React.FC = () => {
       title: "Mùa vụ",
       width: 120,
       render: (record: ExtendedDebtNote) => (
-        <div>{record.season_name || "-"}</div>
+        <div>{record.season?.name || record.season_name || "-"}</div>
       ),
     },
     {

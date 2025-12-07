@@ -43,6 +43,7 @@ export interface InventoryReceipt {
   total_amount: number // Thay totalAmount thành total_amount và string thành number để khớp với backend
   supplier_id?: number // Thay supplierName thành supplier_id để khớp với backend
   supplier_name?: string // Thêm supplier_name để hiển thị
+  supplier?: { id: number; name: string; code?: string }
   created_by: number
   approved_by?: number
   completed_by?: number

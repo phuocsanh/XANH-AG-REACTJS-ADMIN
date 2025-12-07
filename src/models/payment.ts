@@ -5,6 +5,7 @@ export interface Payment {
   code: string;
   customer_id: number;
   customer_name?: string;
+  customer?: { id: number; name: string; phone?: string };
   amount: number;
   allocated_amount: number;
   payment_date: Date | string;

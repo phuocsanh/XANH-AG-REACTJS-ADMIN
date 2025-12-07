@@ -3,16 +3,7 @@ import { Payment, PaymentAllocation } from "@/models/payment"
 import {
   usePaymentsQuery,
   usePaymentAllocationsQuery,
-  useSettleAndRolloverMutation,
 } from "@/queries/payment"
-import {
-  useCustomerInvoicesQuery,
-  useCustomerDebtsQuery,
-  useCustomerDebtorsSearchQuery,
-}
-from "@/queries/customer"
-import { useSeasonsQuery } from "@/queries/season"
-import { Customer, CustomerDebtor } from "@/models/customer"
 import { Season } from "@/models/season"
 import {
   Button,
@@ -60,7 +51,6 @@ const PaymentsList: React.FC = () => {
 
   // Tìm kiếm khách hàng (đã bỏ search cho simple modal)
   
-  const { data: seasons } = useSeasonsQuery()
   const { data: allocations } = usePaymentAllocationsQuery(
     viewingPayment?.id || 0
   )
@@ -117,7 +107,7 @@ const PaymentsList: React.FC = () => {
       width: 200,
       render: (record: ExtendedPayment) => (
         <div className='font-medium'>
-          {record.customer_name || record.customer?.name || "-"}
+          {record.customer?.name || record.customer_name || "-"}
         </div>
       ),
     },

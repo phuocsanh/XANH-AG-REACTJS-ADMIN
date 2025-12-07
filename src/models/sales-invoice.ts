@@ -20,7 +20,9 @@ export interface SalesInvoice {
   customer_address?: string;
   season_id?: number;
   season_name?: string;
+  season?: { id: number; name: string; code?: string };
   rice_crop_id?: number;
+  rice_crop?: { id: number; field_name: string; rice_variety?: string };
   total_amount: number;
   discount_amount: number;
   final_amount: number;

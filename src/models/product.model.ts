@@ -26,11 +26,13 @@ export interface Product {
   profit_margin_percent: string
   average_cost_price: string
   unit_id?: number
+  unit?: { id: number; name: string }
   latest_purchase_price?: number
   created_at: string
   updated_at: string
   // Thêm 2 trường mới
   symbol_id?: number
+  symbol?: { id: number; name: string }
   ingredient: string[]
   // Thêm 2 trường mới từ server
   suggested_price?: string

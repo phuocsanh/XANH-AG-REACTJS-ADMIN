@@ -6,8 +6,10 @@ export interface DebtNote {
   code: string;
   customer_id: number;
   customer_name?: string;
+  customer?: { id: number; name: string; phone?: string; code?: string };
   season_id?: number;
   season_name?: string;
+  season?: { id: number; name: string; code?: string };
   amount: number;
   paid_amount: number;
   remaining_amount: number;

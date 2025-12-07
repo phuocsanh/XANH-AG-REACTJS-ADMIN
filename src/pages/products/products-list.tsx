@@ -458,9 +458,9 @@ const ProductsList: React.FC = () => {
                 ? new Date(currentProduct.updated_at).toLocaleString("vi-VN")
                 : "Chưa cập nhật"}
             </Descriptions.Item>
-            {currentProduct.symbol_id && (
+            {(currentProduct.symbol || currentProduct.symbol_id) && (
               <Descriptions.Item label='Ký hiệu'>
-                {currentProduct.symbol_id}
+                {currentProduct.symbol?.name || currentProduct.symbol_id}
               </Descriptions.Item>
             )}
             {currentProduct.ingredient &&
