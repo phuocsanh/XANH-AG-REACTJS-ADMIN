@@ -13,7 +13,6 @@ import {
   Row,
   Col,
   Table,
-  InputNumber,
   message as antdMessage,
   Upload,
   UploadFile,
@@ -21,6 +20,7 @@ import {
 } from "antd"
 import { PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined, UploadOutlined } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
+import NumberInput from "@/components/common/number-input"
 
 import { CreateReturnRequest, ReturnItem } from "@/models/inventory-return.model"
 import { useCreateReturnMutation, useAttachImageToReturnMutation } from "@/queries/inventory-return"
@@ -137,10 +137,10 @@ const ReturnCreate: React.FC = () => {
               const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
               
               // Gắn file vào phiếu
-              if (uploadResult?.data?.id) {
+              if ((uploadResult as any)?.data?.id) {
                 await attachImageMutation.mutateAsync({
                   returnId: newReturn.id,
-                  fileId: uploadResult.data.id,
+                  fileId: (uploadResult as any).data.id,
                   fieldName: 'return_images',
                 })
               }
@@ -343,7 +343,7 @@ const ReturnCreate: React.FC = () => {
               </Col>
               <Col xs={12} md={4}>
                 <Form.Item label="Số lượng">
-                  <InputNumber
+                  <NumberInput
                     min={1}
                     value={quantity}
                     onChange={(val) => setQuantity(val || 1)}
@@ -353,12 +353,10 @@ const ReturnCreate: React.FC = () => {
               </Col>
               <Col xs={12} md={4}>
                 <Form.Item label="Đơn giá">
-                  <InputNumber
+                  <NumberInput
                     min={0}
                     value={unitCost}
                     onChange={(val) => setUnitCost(val || 0)}
-                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                    parser={(value) => value!.replace(/\$\s?|(,*)/g, "")}
                     style={{ width: "100%" }}
                   />
                 </Form.Item>

@@ -30,6 +30,7 @@ import {
   FormControlLabel,
   CircularProgress,
 } from '@mui/material';
+import { FormFieldNumber, FormField } from '@/components/form';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -1395,19 +1396,15 @@ ${productInfo}`;
                     </Alert>
                   )}
 
-                  <Controller
-                    name="notes"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
+                  <FormField
+                        name="notes"
+                        control={control}
                         label="Ghi chú"
-                        multiline
+                        type="textarea"
                         rows={3}
+                        placeholder="Nhập ghi chú hóa đơn..."
+                        className="mb-4"
                       />
-                    )}
-                  />
                 </CardContent>
               </Card>
             </Grid>
@@ -1489,19 +1486,14 @@ ${productInfo}`;
                         <Typography fontWeight="bold">{formatCurrency(totalAmount)}</Typography>
                       </Box>
 
-                      <Controller
+                      <FormFieldNumber
                         name="discount_amount"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            fullWidth
-                            label="Giảm giá tổng đơn"
-                            type="number"
-                            inputProps={{ min: 0 }}
-                            sx={{ mb: 2 }}
-                          />
-                        )}
+                        label="Giảm giá tổng đơn"
+                        min={0}
+                        size="large"
+                        placeholder="0"
+                        className="mb-4"
                       />
 
                       <Divider sx={{ my: 2 }} />
@@ -1520,21 +1512,19 @@ ${productInfo}`;
                         <Typography>Spacer</Typography>
                       </Box>
 
-                      <Controller
+                      <FormFieldNumber
                         name="partial_payment_amount"
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            fullWidth
-                            label="Số tiền khách trả trước"
-                            type="number"
-                            inputProps={{ min: 0, max: finalAmount }}
-                            helperText="Nhập số tiền khách trả trước (nếu trả một phần)"
-                            sx={{ mb: 2 }}
-                          />
-                        )}
+                        label="Số tiền khách trả trước"
+                        min={0}
+                        max={finalAmount}
+                        size="large"
+                        placeholder="0"
+                        className="mb-4"
                       />
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 2, display: 'block' }}>
+                        Nhập số tiền khách trả trước (nếu trả một phần)
+                      </Typography>
 
                       {remainingAmount > 0 && (
                         <Alert severity="warning">

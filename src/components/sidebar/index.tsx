@@ -193,38 +193,7 @@ const Sidebar: React.FC = () => {
                   Quản lý bán hàng
                 </h6>
               </li>
-              {hasPermission(userInfo, "SALES_MANAGE") && (
-                <li>
-                  <Link to='/seasons'>
-                    <Button
-                      className={`w-full !justify-start !text-left ${activeTab === 17 ? "active" : ""}`}
-                      onClick={() => isOpenSubmenu(17)}
-                    >
-                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <GiGrain className='text-green-200' />
-                      </span>
-                      Mùa vụ
-                    </Button>
-                  </Link>
-                </li>
-              )}
 
-              {/* Khách hàng */}
-              {hasPermission(userInfo, "SALES_VIEW") && (
-                <li>
-                  <Link to='/customers'>
-                    <Button
-                      className={`w-full !justify-start !text-left ${activeTab === 18 ? "active" : ""}`}
-                      onClick={() => isOpenSubmenu(18)}
-                    >
-                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <FaUsers className='text-blue-200' />
-                      </span>
-                      Khách hàng
-                    </Button>
-                  </Link>
-                </li>
-              )}
 
               {/* Hóa đơn bán hàng */}
               {hasPermission(userInfo, "SALES_VIEW") && (
@@ -600,6 +569,39 @@ const Sidebar: React.FC = () => {
               </Button>
             </Link>
           </li>
+
+          {hasPermission(userInfo, "SALES_MANAGE") && (
+            <li>
+              <Link to='/seasons'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 17 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(17)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <GiGrain className='text-green-200' />
+                  </span>
+                  Mùa vụ
+                </Button>
+              </Link>
+            </li>
+          )}
+
+          {/* Khách hàng */}
+          {hasPermission(userInfo, "SALES_VIEW") && (
+            <li>
+              <Link to='/customers'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 18 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(18)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <FaUsers className='text-blue-200' />
+                  </span>
+                  Khách hàng
+                </Button>
+              </Link>
+            </li>
+          )}
 
           {isAdmin(userInfo) && (
             <li>

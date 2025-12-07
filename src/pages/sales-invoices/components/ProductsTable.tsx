@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   Typography,
-  TextField,
   Select,
   MenuItem,
   IconButton,
@@ -22,6 +21,7 @@ import { Controller, Control, UseFormWatch, UseFormSetValue } from 'react-hook-f
 import { SalesInvoiceFormData } from '../form-config';
 import { priceTypeLabels } from '../form-config';
 import { Product } from '@/models/product.model';
+import NumberInput from '@/components/common/number-input';
 
 interface ProductsDataResponse {
   data?: {
@@ -148,12 +148,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         name={`items.${index}.quantity`}
                         control={control}
                         render={({ field }) => (
-                          <TextField
-                            {...field}
-                            type="number"
+                          <NumberInput
+                            value={field.value}
+                            onChange={(val) => field.onChange(val)}
+                            min={1}
                             size="small"
-                            inputProps={{ min: 1 }}
-                            sx={{ width: 90 }}
+                            style={{ width: 90 }}
                           />
                         )}
                       />
@@ -163,12 +163,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         name={`items.${index}.unit_price`}
                         control={control}
                         render={({ field }) => (
-                          <TextField
-                            {...field}
-                            type="number"
+                          <NumberInput
+                            value={field.value}
+                            onChange={(val) => field.onChange(val)}
+                            min={0}
                             size="small"
-                            inputProps={{ min: 0 }}
-                            sx={{ width: 150 }}
+                            style={{ width: 150 }}
                           />
                         )}
                       />
@@ -178,12 +178,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         name={`items.${index}.discount_amount`}
                         control={control}
                         render={({ field }) => (
-                          <TextField
-                            {...field}
-                            type="number"
+                          <NumberInput
+                            value={field.value}
+                            onChange={(val) => field.onChange(val)}
+                            min={0}
                             size="small"
-                            inputProps={{ min: 0 }}
-                            sx={{ width: 130 }}
+                            style={{ width: 130 }}
                           />
                         )}
                       />
@@ -307,12 +307,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     name={`items.${index}.quantity`}
                     control={control}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        type="number"
+                      <NumberInput
+                        value={field.value}
+                        onChange={(val) => field.onChange(val)}
+                        min={1}
                         size="small"
-                        inputProps={{ min: 1 }}
+                        style={{ width: '100%' }}
                       />
                     )}
                   />
@@ -326,12 +326,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     name={`items.${index}.unit_price`}
                     control={control}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        type="number"
+                      <NumberInput
+                        value={field.value}
+                        onChange={(val) => field.onChange(val)}
+                        min={0}
                         size="small"
-                        inputProps={{ min: 0 }}
+                        style={{ width: '100%' }}
                       />
                     )}
                   />
@@ -345,12 +345,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     name={`items.${index}.discount_amount`}
                     control={control}
                     render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        type="number"
+                      <NumberInput
+                        value={field.value}
+                        onChange={(val) => field.onChange(val)}
+                        min={0}
                         size="small"
-                        inputProps={{ min: 0 }}
+                        style={{ width: '100%' }}
                       />
                     )}
                   />

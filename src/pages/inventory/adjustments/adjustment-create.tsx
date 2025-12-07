@@ -20,6 +20,7 @@ import {
   UploadProps,
 } from "antd"
 import { PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined, UploadOutlined } from "@ant-design/icons"
+import NumberInput from "@/components/common/number-input"
 
 import { CreateAdjustmentRequest, AdjustmentItem } from "@/models/inventory-adjustment.model"
 import { useCreateAdjustmentMutation, useAttachImageToAdjustmentMutation } from "@/queries/inventory-adjustment"
@@ -219,7 +220,7 @@ const AdjustmentCreate: React.FC = () => {
               </Col>
               <Col xs={24} md={8}>
                 <Form.Item label="Số lượng thay đổi" help="Dương: tăng, Âm: giảm">
-                  <InputNumber
+                  <NumberInput
                     value={quantityChange}
                     onChange={(val) => setQuantityChange(val || 0)}
                     style={{ width: "100%" }}

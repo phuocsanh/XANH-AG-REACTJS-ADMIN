@@ -29,6 +29,7 @@ interface FormFieldNumberProps<T extends FieldValues> {
   // Thuộc tính cho số thập phân
   decimalScale?: number
   fixedDecimalScale?: boolean
+  allowClear?: boolean
 }
 
 /**
@@ -52,6 +53,7 @@ function FormFieldNumber<T extends FieldValues>({
   max,
   decimalScale = 0, // Mặc định là 0 (số nguyên)
   fixedDecimalScale = false,
+  allowClear = true,
 }: FormFieldNumberProps<T>) {
   // Tạo validation rules cho React Hook Form
   const validationRules = {
@@ -110,6 +112,8 @@ function FormFieldNumber<T extends FieldValues>({
             fixedDecimalScale={fixedDecimalScale}
             allowNegative={false}
             customInput={Input}
+            allowClear={allowClear}
+            style={{ width: "100%" }}
             value={
               field.value !== undefined && field.value !== null
                 ? field.value

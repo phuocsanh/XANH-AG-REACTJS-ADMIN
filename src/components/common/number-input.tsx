@@ -11,7 +11,11 @@ interface NumberInputProps {
   min?: number
   max?: number
   size?: "large" | "middle" | "small"
-  // Loại bỏ index signature để tránh lỗi
+  style?: React.CSSProperties
+  className?: string
+  status?: "error" | "warning"
+  addonAfter?: React.ReactNode
+  addonBefore?: React.ReactNode
 }
 
 const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(

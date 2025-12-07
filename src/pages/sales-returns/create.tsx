@@ -8,10 +8,8 @@ import {
   Card,
   CardContent,
   Autocomplete,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
+  Alert,
+  FormHelperText,
   IconButton,
   Table,
   TableBody,
@@ -20,9 +18,9 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Alert,
-  FormHelperText,
 } from '@mui/material';
+import { FormField } from '@/components/form';
+import NumberInput from '@/components/common/number-input';
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
@@ -191,49 +189,32 @@ const CreateSalesReturn = () => {
                   Thông tin trả hàng
                 </Typography>
 
-                <Controller
+                <FormField
                   name="refund_method"
                   control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Phương thức hoàn tiền</InputLabel>
-                      <Select {...field} label="Phương thức hoàn tiền">
-                        {Object.entries(refundMethodLabels).map(([value, label]) => (
-                          <MenuItem key={value} value={value}>
-                            {label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
+                  label="Phương thức hoàn tiền"
+                  type="select"
+                  options={Object.entries(refundMethodLabels).map(([value, label]) => ({
+                    value,
+                    label,
+                  }))}
+                  className="mb-4"
                 />
 
-                <Controller
+                <FormField
                   name="reason"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Lý do trả hàng"
-                      placeholder="VD: Hàng lỗi, khách đổi ý..."
-                      sx={{ mb: 2 }}
-                    />
-                  )}
+                  label="Lý do trả hàng"
+                  placeholder="VD: Hàng lỗi, khách đổi ý..."
+                  className="mb-4"
                 />
 
-                <Controller
+                <FormField
                   name="notes"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="Ghi chú"
-                      multiline
-                      rows={3}
-                    />
-                  )}
+                  label="Ghi chú"
+                  type="textarea"
+                  rows={3}
                 />
               </CardContent>
             </Card>
@@ -318,13 +299,14 @@ const CreateSalesReturn = () => {
                                   name={`items.${index}.quantity`}
                                   control={control}
                                   render={({ field }) => (
-                                    <TextField
-                                      {...field}
-                                      type="number"
+                                    <NumberInput
+                                      value={field.value ? Number(field.value) : null}
+                                      onChange={(val) => field.onChange(val)}
+                                      min={1}
+                                      max={maxQuantity}
                                       size="small"
-                                      inputProps={{ min: 1, max: maxQuantity }}
-                                      sx={{ width: 80 }}
-                                      error={!!errors.items?.[index]?.quantity}
+                                      style={{ width: 80 }}
+                                      status={!!errors.items?.[index]?.quantity ? "error" : undefined}
                                     />
                                   )}
                                 />

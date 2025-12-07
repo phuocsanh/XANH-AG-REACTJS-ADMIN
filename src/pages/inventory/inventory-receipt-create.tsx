@@ -29,6 +29,7 @@ import {
 import MobileItemCard from "./components/receipt-create/mobile-item-card"
 // Import itemColumns từ components
 import useItemColumns from "./components/receipt-create/item-columns"
+import NumberInput from "@/components/common/number-input"
 
 import {
   CreateInventoryReceiptRequest,
@@ -471,11 +472,9 @@ const InventoryReceiptCreate: React.FC = () => {
             {hasSharedShipping && (
               <>
                 <Form.Item label="Số tiền" className='mt-4'>
-                  <InputNumber
+                  <NumberInput
                     value={sharedShippingCost}
                     onChange={(value) => setSharedShippingCost(value || 0)}
-                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => Number(value!.replace(/\$\s?|(,*)/g, ''))}
                     style={{ width: '100%' }}
                     addonAfter="VND"
                     min={0}

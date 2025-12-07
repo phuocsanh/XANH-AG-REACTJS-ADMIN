@@ -9,6 +9,7 @@ import {
   Card,
   Alert,
 } from "antd"
+import NumberInput from '@/components/common/number-input'
 import {
   useCustomerDebtsQuery,
   useCustomerDebtorsSearchQuery,
@@ -314,13 +315,9 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
             name='amount'
             rules={[{ required: true, message: "Vui lòng nhập số tiền" }]}
           >
-            <InputNumber
+            <NumberInput
               className='w-full'
               min={0}
-              formatter={(value) =>
-                `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, "") : "") as any}
               placeholder='Nhập số tiền'
             />
           </Form.Item>
