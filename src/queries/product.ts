@@ -10,6 +10,7 @@ import {
 } from "@/models/product.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { mapSearchResponse } from "@/utils/api-response-mapper"
 
 
 // Query keys cho product
@@ -232,23 +233,36 @@ export const useProductSearch = (
 }
 
 /**
- * Hook lấy danh sách sản phẩm
+ * Hook lấy danh sách sản phẩm (POST /products/search)
  */
 export const useProductsQuery = (params?: ExtendedProductListParams) => {
-  // Tách riêng các tham số phân trang
-  const paginationParams = params
-    ? {
-        page:
-          params.offset !== undefined
-            ? Math.floor(params.offset / (params.limit || 10)) + 1
-            : 1,
-        limit: params.limit,
-        ...params,
-      }
-    : undefined
+  const page = params?.offset !== undefined
+    ? Math.floor(params.offset / (params.limit || 10)) + 1
+    : 1
+  const limit = params?.limit || 10
 
-  return usePaginationQuery<Product>("/products", paginationParams)
+  return useQuery({
+    queryKey: productKeys.list(params || {}),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        success: boolean
+        data: Product[]
+        pagination: {
+          total: number
+          totalPages: number | null
+        }
+      }>('/products/search', {
+        page,
+        limit,
+      })
+
+      return mapSearchResponse(response, page, limit)
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
+
 
 /**
  * Hook lấy thông tin chi tiết một sản phẩm

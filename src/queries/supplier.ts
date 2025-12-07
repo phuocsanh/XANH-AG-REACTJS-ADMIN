@@ -25,10 +25,43 @@ export const supplierKeys = {
 // ========== SUPPLIER HOOKS ==========
 
 /**
- * Hook lấy danh sách nhà cung cấp
+ * Hook lấy danh sách nhà cung cấp (POST /suppliers/search)
  */
 export const useSuppliersQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<Supplier>("/suppliers", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: supplierKeys.list(params),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: Supplier[]
+        total: number
+        page: number
+        limit: number
+      }>('/suppliers/search', {
+        page,
+        limit,
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

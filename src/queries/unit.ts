@@ -17,10 +17,40 @@ export const unitKeys = {
 }
 
 /**
- * Hook lấy danh sách tất cả đơn vị tính
+ * Hook lấy danh sách đơn vị (POST /units/search)
  */
 export const useUnitsQuery = () => {
-  return usePaginationQuery<Unit>("/units")
+  return useQuery({
+    queryKey: unitKeys.all,
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: Unit[]
+        total: number
+        page: number
+        limit: number
+      }>('/units/search', {
+        page: 1,
+        limit: 1000, // Lấy tất cả units
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

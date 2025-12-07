@@ -28,6 +28,7 @@ export const salesInvoiceSchema = z.object({
   final_amount: z.number().min(0),
   partial_payment_amount: z.number().min(0).default(0),
   items: z.array(salesInvoiceItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
+  status: z.enum(['draft', 'confirmed', 'paid']).optional(),
 });
 
 export type SalesInvoiceItemFormData = z.infer<typeof salesInvoiceItemSchema>;
@@ -49,6 +50,7 @@ export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
   final_amount: 0,
   partial_payment_amount: 0,
   items: [],
+  status: 'draft',
 };
 
 export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {

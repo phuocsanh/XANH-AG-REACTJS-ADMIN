@@ -24,6 +24,7 @@ import FarmingSchedulesTab from './components/FarmingSchedulesTab';
 import ApplicationRecordsTab from './components/ApplicationRecordsTab';
 import GrowthTrackingTab from './components/GrowthTrackingTab';
 import ProfitReportTab from './components/ProfitReportTab';
+import { InvoicesTab } from './components/InvoicesTab';
 
 // Màu sắc cho giai đoạn sinh trưởng
 const growthStageColors: Record<GrowthStage, string> = {
@@ -174,6 +175,11 @@ const RiceCropDetail: React.FC = () => {
       key: 'costs',
       label: 'Chi phí',
       children: <CostItemsTab riceCropId={riceCrop.id} />,
+    },
+    {
+      key: 'invoices',
+      label: '🧾 Hóa đơn mua hàng',
+      children: <InvoicesTab riceCropId={riceCrop.id} />,
     },
     {
       key: 'harvest',

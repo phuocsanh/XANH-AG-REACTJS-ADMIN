@@ -6,6 +6,8 @@ import { SalesInvoice, CreateSalesInvoiceDto, AddPaymentDto } from "@/models/sal
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
+import { mapSearchResponse } from "@/utils/api-response-mapper"
+
 // ========== QUERY KEYS ==========
 export const salesInvoiceKeys = {
   all: ["sales-invoices"] as const,
@@ -21,10 +23,54 @@ export const salesInvoiceKeys = {
 // ========== SALES INVOICE HOOKS ==========
 
 /**
- * Hook lấy danh sách hóa đơn
+ * Hook lấy danh sách hóa đơn (POST /sales/invoices/search)
  */
 export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<SalesInvoice>("/sales/invoices", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+  const status = params?.status as string | undefined
+  const riceCropFilter = params?.rice_crop_filter as string | undefined
+
+  return useQuery({
+    queryKey: salesInvoiceKeys.list(params),
+    queryFn: async () => {
+      // Xây dựng filters
+      const filters: any[] = []
+      
+      // Filter theo rice_crop_id
+      if (riceCropFilter === 'has_crop') {
+        filters.push({
+          field: 'rice_crop_id',
+          operator: 'isnotnull',
+          value: null
+        })
+      } else if (riceCropFilter === 'no_crop') {
+        filters.push({
+          field: 'rice_crop_id',
+          operator: 'isnull',
+          value: null
+        })
+      }
+
+      const response = await api.postRaw<{
+        success: boolean
+        data: SalesInvoice[]
+        pagination: {
+          total: number
+          totalPages: number | null
+        }
+      }>('/sales/invoices/search', {
+        page,
+        limit,
+        ...(status && { status }),
+        ...(filters.length > 0 && { filters })
+      })
+
+      return mapSearchResponse(response, page, limit)
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

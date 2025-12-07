@@ -7,6 +7,7 @@ export interface PaginationData<T> {
   total_pages: number
   has_next: boolean
   has_prev: boolean
+  summary?: any // Optional summary data từ API (ví dụ: statistics)
 }
 
 // Interface cho response API phân trang

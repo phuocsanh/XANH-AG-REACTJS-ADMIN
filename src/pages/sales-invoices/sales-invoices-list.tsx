@@ -36,6 +36,7 @@ const SalesInvoicesList: React.FC = () => {
   // State quản lý UI
   const [searchTerm, setSearchTerm] = React.useState<string>("")
   const [statusFilter, setStatusFilter] = React.useState<string>("")
+  const [riceCropFilter, setRiceCropFilter] = React.useState<string>("")
   const [isDetailModalVisible, setIsDetailModalVisible] =
     React.useState<boolean>(false)
   const [isPaymentModalVisible, setIsPaymentModalVisible] =
@@ -53,6 +54,7 @@ const SalesInvoicesList: React.FC = () => {
     page: currentPage,
     limit: pageSize,
     status: statusFilter || undefined,
+    rice_crop_filter: riceCropFilter || undefined,
   })
 
   const addPaymentMutation = useAddPaymentMutation()
@@ -259,7 +261,7 @@ const SalesInvoicesList: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className='grid grid-cols-2 gap-4 mb-6'>
+      <div className='grid grid-cols-3 gap-4 mb-6'>
         <Input
           placeholder='Tìm kiếm theo mã HĐ, tên khách hàng, SĐT...'
           prefix={<SearchOutlined />}
@@ -277,6 +279,16 @@ const SalesInvoicesList: React.FC = () => {
           <Select.Option value='confirmed'>Đã xác nhận</Select.Option>
           <Select.Option value='paid'>Đã thanh toán</Select.Option>
           <Select.Option value='cancelled'>Đã hủy</Select.Option>
+        </Select>
+        <Select
+          placeholder='Lọc theo vụ lúa'
+          value={riceCropFilter || undefined}
+          onChange={(value) => setRiceCropFilter(value || "")}
+          allowClear
+        >
+          <Select.Option value=''>Tất cả</Select.Option>
+          <Select.Option value='has_crop'>Có liên kết vụ lúa</Select.Option>
+          <Select.Option value='no_crop'>Không liên kết</Select.Option>
         </Select>
       </div>
 
@@ -363,6 +375,44 @@ const SalesInvoicesList: React.FC = () => {
                 </div>
               </Card>
             </div>
+
+            {/* Thông tin Vụ lúa (nếu có) */}
+            {(viewingInvoice as any).rice_crop && (
+              <Alert
+                message="🌾 Hóa đơn này liên kết với vụ lúa"
+                description={
+                  <div className='mt-2'>
+                    <div className='font-medium text-base mb-1'>
+                      {(viewingInvoice as any).rice_crop.field_name}
+                    </div>
+                    <div className='text-sm text-gray-600'>
+                      <span>Giống lúa: {(viewingInvoice as any).rice_crop.rice_variety}</span>
+                      {(viewingInvoice as any).rice_crop.field_area && (
+                        <span className='ml-3'>
+                          Diện tích: {(viewingInvoice as any).rice_crop.field_area.toLocaleString('vi-VN')} m²
+                        </span>
+                      )}
+                    </div>
+                    {(viewingInvoice as any).rice_crop.season && (
+                      <div className='text-sm text-gray-600 mt-1'>
+                        Mùa vụ: {(viewingInvoice as any).rice_crop.season.name} ({(viewingInvoice as any).rice_crop.season.year})
+                      </div>
+                    )}
+                    <Button
+                      type="link"
+                      size="small"
+                      className='mt-2 p-0'
+                      onClick={() => navigate(`/rice-crops/${(viewingInvoice as any).rice_crop_id}`)}
+                    >
+                      Xem chi tiết vụ lúa →
+                    </Button>
+                  </div>
+                }
+                type="info"
+                showIcon
+                className='mb-4'
+              />
+            )}
 
             {viewingInvoice.warning && (
               <Alert

@@ -101,19 +101,15 @@ const DebtNotesList: React.FC = () => {
 
   const loading = isLoading
 
-  // Tính toán thống kê
+  // Lấy thống kê từ API (thay vì tự tính)
   const debtList = getDebtNoteList()
-  const totalDebt = debtList.reduce(
-    (sum, debt) => {
-      const amount = Number(debt.remaining_amount)
-      return sum + (isNaN(amount) ? 0 : amount)
-    },
-    0
-  )
-  const overdueCount = debtList.filter((debt) => debt.status === "overdue")
-    .length
-  const activeCount = debtList.filter((debt) => debt.status === "active").length
-  const paidCount = debtList.filter((debt) => debt.status === "paid").length
+  const summary = debtNotesData?.data?.summary
+  
+  // Sử dụng summary từ API nếu có, fallback về 0 nếu không
+  const totalDebt = summary?.total_debt || 0
+  const overdueCount = summary?.overdue_count || 0
+  const activeCount = summary?.active_count || 0
+  const paidCount = summary?.paid_count || 0
 
   // Cấu hình columns cho DataTable
   const columns = [

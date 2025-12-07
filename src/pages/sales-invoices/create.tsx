@@ -28,6 +28,7 @@ import {
   ListItem,
   Checkbox,
   FormControlLabel,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -206,18 +207,30 @@ const CreateSalesInvoice = () => {
   const { data: productsData } = useProductsQuery({ limit: 100 });
   const { data: latestInvoice } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
   
+  // Watch season_id để filter vụ lúa
+  const selectedSeasonId = watch('season_id');
+
   // Lấy tất cả vụ lúa đang hoạt động (để chọn trước)
   const { data: allActiveRiceCrops } = useRiceCrops({ 
     status: CropStatus.ACTIVE 
   });
   
-  // Lấy vụ lúa của khách hàng đã chọn
-  const { data: customerRiceCrops } = useRiceCrops({ 
+  // Lấy vụ lúa của khách hàng đã chọn VÀ theo mùa vụ đã chọn
+  const { data: customerRiceCrops, isLoading: isLoadingRiceCrops } = useRiceCrops({ 
     customer_id: selectedCustomer?.id, 
+    season_id: selectedSeasonId,
     status: CropStatus.ACTIVE 
   });
   
   const createMutation = useCreateSalesInvoiceMutation();
+
+  // Reset rice_crop_id khi thay đổi season_id
+  useEffect(() => {
+    if (selectedCustomer) {
+      setValue('rice_crop_id', undefined);
+      setSelectedRiceCropId(undefined);
+    }
+  }, [selectedSeasonId, selectedCustomer, setValue]);
 
   // Disease Warning Queries
   const { data: diseaseLocation } = useLocationQuery();
@@ -238,13 +251,13 @@ const CreateSalesInvoice = () => {
   const runBrownPlantHopperMutation = useRunBrownPlantHopperAnalysisMutation();
   const runSheathBlightMutation = useRunSheathBlightAnalysisMutation();
   const runGrainDiscolorationMutation = useRunGrainDiscolorationAnalysisMutation();
-
   // Set active season as default
   useEffect(() => {
-    if (activeSeason) {
+    // Chỉ set default nếu chưa có giá trị (để tránh override lựa chọn của user)
+    if (activeSeason && !selectedSeasonId) {
       setValue('season_id', activeSeason.id);
     }
-  }, [activeSeason, setValue]);
+  }, [activeSeason, setValue]); // Bỏ selectedSeasonId khỏi dependency để tránh loop
 
   // Watch items to calculate totals
   const items = watch('items');
@@ -262,54 +275,38 @@ const CreateSalesInvoice = () => {
   const handleCustomerSelect = (customer: Customer | null) => {
     setSelectedCustomer(customer);
     if (customer) {
+      // Khách hàng từ hệ thống
       setIsGuestCustomer(false);
       setValue('customer_id', customer.id);
       setValue('customer_name', customer.name);
       setValue('customer_phone', customer.phone);
       setValue('customer_address', customer.address || '');
+      
+      // ✨ BẮT BUỘC: Reset season và rice crop để người dùng chọn lại
+      setValue('season_id', undefined);
+      setValue('rice_crop_id', undefined);
+      setSelectedRiceCropId(undefined);
+      
+      message.info('Vui lòng chọn Mùa vụ và Vụ lúa cho khách hàng này');
     } else {
+      // Khách vãng lai
       setIsGuestCustomer(true);
       setValue('customer_id', undefined);
       setValue('customer_name', '');
       setValue('customer_phone', '');
       setValue('customer_address', '');
+      // Khách vãng lai không cần season/rice crop
+      setValue('season_id', activeSeason?.id); // Set lại active season
+      setValue('rice_crop_id', undefined);
+      setSelectedRiceCropId(undefined);
     }
   };
 
   const handleRiceCropSelect = (riceCropId: number | undefined) => {
+    console.log('🌾 Selected Rice Crop ID:', riceCropId);
     setSelectedRiceCropId(riceCropId);
     setValue('rice_crop_id', riceCropId);
-    
-    // Tự động điền thông tin từ vụ lúa
-    if (riceCropId && allActiveRiceCrops) {
-      const selectedCrop = allActiveRiceCrops.find((crop: any) => crop.id === riceCropId);
-      console.log('🌾 Selected Rice Crop:', selectedCrop);
-      
-      if (selectedCrop) {
-        // Set season_id TRƯỚC
-        if (selectedCrop.season_id) {
-          console.log('📅 Setting season_id:', selectedCrop.season_id);
-          setValue('season_id', selectedCrop.season_id, { shouldValidate: true });
-        }
-        
-        // Set customer info SAU
-        if (selectedCrop.customer) {
-          console.log('👤 Setting customer:', selectedCrop.customer);
-          setSelectedCustomer(selectedCrop.customer);
-          setIsGuestCustomer(false);
-          setValue('customer_id', selectedCrop.customer.id);
-          setValue('customer_name', selectedCrop.customer.name);
-          setValue('customer_phone', selectedCrop.customer.phone || '');
-          setValue('customer_address', selectedCrop.customer.address || '');
-        } else if (selectedCrop.customer_id) {
-          // Fallback: chỉ có customer_id
-          setValue('customer_id', selectedCrop.customer_id);
-        }
-      }
-    } else {
-      // Reset khi bỏ chọn
-      console.log('🔄 Resetting rice crop selection');
-    }
+    // Không cần auto-fill ngược lại season/customer vì flow hiện tại là xuôi: Customer -> Season -> Rice Crop
   };
 
   /**
@@ -480,6 +477,18 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
   };
 
   const onSubmit = (data: SalesInvoiceFormData) => {
+    // ✨ Validation: Nếu có khách hàng từ hệ thống, bắt buộc phải có season_id và rice_crop_id
+    if (data.customer_id) {
+      if (!data.season_id) {
+        message.error('Vui lòng chọn Mùa vụ cho khách hàng này');
+        return;
+      }
+      if (!data.rice_crop_id) {
+        message.error('Vui lòng chọn Vụ lúa cho khách hàng này');
+        return;
+      }
+    }
+    
     const remainingAmount = data.final_amount - data.partial_payment_amount;
     
     const submitData = {
@@ -1131,33 +1140,6 @@ ${productInfo}`;
         {/* TAB 1: Invoice Information */}
         <TabPanel value={currentTab} index={0}>
           <Grid container spacing={3}>
-            {/* Chọn vụ lúa (toàn bộ chiều rộng) */}
-            {allActiveRiceCrops && allActiveRiceCrops.length > 0 && (
-              <Grid item xs={12}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" mb={2}>
-                      🌾 Chọn vụ lúa (tùy chọn)
-                    </Typography>
-                    <FormControl fullWidth>
-                      <InputLabel>Chọn vụ lúa để tự động điền thông tin</InputLabel>
-                      <Select
-                        value={selectedRiceCropId || ''}
-                        onChange={(e) => handleRiceCropSelect(e.target.value as number | undefined)}
-                        label="Chọn vụ lúa để tự động điền thông tin"
-                      >
-                        <MenuItem value=""><em>Không chọn (nhập thủ công)</em></MenuItem>
-                        {allActiveRiceCrops.map((crop: any) => (
-                          <MenuItem key={crop.id} value={crop.id}>
-                            {crop.customer?.name || `Khách hàng #${crop.customer_id}`} - {crop.field_name} ({crop.rice_variety}) - {crop.field_area.toLocaleString('vi-VN')} m²
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
             
             {/* Customer Information */}
             <Grid item xs={12} md={6}>
@@ -1231,23 +1213,47 @@ ${productInfo}`;
                     )}
                   />
 
-                  {/* Chọn vụ lúa (chỉ hiển thị khi đã chọn khách hàng) */}
-                  {selectedCustomer && customerRiceCrops && customerRiceCrops.length > 0 && (
-                    <FormControl fullWidth sx={{ mt: 2 }}>
-                      <InputLabel>Vụ lúa (tùy chọn)</InputLabel>
-                      <Select
-                        value={selectedRiceCropId || ''}
-                        onChange={(e) => handleRiceCropSelect(e.target.value as number | undefined)}
-                        label="Vụ lúa (tùy chọn)"
-                      >
-                        <MenuItem value=""><em>Không chọn vụ lúa</em></MenuItem>
-                        {customerRiceCrops.map((crop: any) => (
-                          <MenuItem key={crop.id} value={crop.id}>
-                            {crop.field_name} - {crop.rice_variety} ({crop.field_area.toLocaleString('vi-VN')} m²)
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                  {/* Chọn vụ lúa - BẮT BUỘC khi đã chọn khách hàng */}
+                  {/* Chọn vụ lúa - BẮT BUỘC khi đã chọn khách hàng */}
+                  {selectedCustomer && (
+                    <Box sx={{ mt: 2 }}>
+                      {isLoadingRiceCrops ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 56 }}>
+                          <CircularProgress size={24} />
+                          <Typography variant="body2" color="text.secondary">
+                            Đang tải danh sách vụ lúa...
+                          </Typography>
+                        </Box>
+                      ) : customerRiceCrops && customerRiceCrops.length > 0 ? (
+                        <FormControl 
+                          fullWidth 
+                          required 
+                          error={!selectedRiceCropId}
+                        >
+                          <InputLabel>Vụ lúa *</InputLabel>
+                          <Select
+                            value={selectedRiceCropId || ''}
+                            onChange={(e) => handleRiceCropSelect(e.target.value as number)}
+                            label="Vụ lúa *"
+                          >
+                            {customerRiceCrops.map((crop: any) => (
+                              <MenuItem key={crop.id} value={crop.id}>
+                                {crop.field_name} - {crop.rice_variety} ({crop.field_area.toLocaleString('vi-VN')} m²)
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {!selectedRiceCropId && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                              Bắt buộc chọn vụ lúa khi tạo hóa đơn cho khách hàng
+                            </Typography>
+                          )}
+                        </FormControl>
+                      ) : (
+                        <Alert severity="warning">
+                          Khách hàng này chưa có vụ lúa nào trong mùa vụ này.
+                        </Alert>
+                      )}
+                    </Box>
                   )}
                 </CardContent>
               </Card>
@@ -1265,15 +1271,25 @@ ${productInfo}`;
                     name="season_id"
                     control={control}
                     render={({ field }) => (
-                      <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel>Mùa vụ</InputLabel>
-                        <Select {...field} label="Mùa vụ">
+                      <FormControl 
+                        fullWidth 
+                        sx={{ mb: 2 }}
+                        required={!!selectedCustomer}
+                        error={!!selectedCustomer && !field.value}
+                      >
+                        <InputLabel>{selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}</InputLabel>
+                        <Select {...field} label={selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}>
                           {seasons?.data?.items?.map((season: Season) => (
                             <MenuItem key={season.id} value={season.id}>
                               {season.name} ({season.year})
                             </MenuItem>
                           ))}
                         </Select>
+                        {selectedCustomer && !field.value && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                            Bắt buộc chọn mùa vụ khi tạo hóa đơn cho khách hàng
+                          </Typography>
+                        )}
                       </FormControl>
                     )}
                   />
@@ -1535,13 +1551,28 @@ ${productInfo}`;
                   Hủy
                 </Button>
                 <Button
-                  type="submit"
+                  variant="outlined"
+                  onClick={handleSubmit((data) => onSubmit({ ...data, status: 'draft' }))}
+                  disabled={createMutation.isPending}
+                  startIcon={<SaveIcon sx={{ color: 'text.secondary' }} />}
+                >
+                  Lưu nháp
+                </Button>
+                <Button
                   variant="contained"
                   color="primary"
                   startIcon={<SaveIcon />}
+                  onClick={handleSubmit((data) => {
+                     let status: 'draft' | 'confirmed' | 'paid' = 'confirmed';
+                     // Nếu thanh toán tiền mặt và trả đủ -> Paid
+                     if (data.payment_method === 'cash' && (data.final_amount - data.partial_payment_amount) <= 0) {
+                        status = 'paid';
+                     }
+                     onSubmit({ ...data, status });
+                  })}
                   disabled={createMutation.isPending}
                 >
-                  {createMutation.isPending ? 'Đang tạo...' : 'Tạo hóa đơn'}
+                  {createMutation.isPending ? 'Đang tạo...' : 'Lưu & Xác nhận'}
                 </Button>
               </Box>
             </Grid>

@@ -15,17 +15,50 @@ import { invalidateResourceQueries } from "@/utils/query-helpers"
 export const productSubtypeKeys = {
   all: ["productSubtypes"] as const,
   lists: () => [...productSubtypeKeys.all, "list"] as const,
-  list: (filters: string) =>
-    [...productSubtypeKeys.lists(), { filters }] as const,
+  list: (params: Record<string, unknown>) =>
+    [...productSubtypeKeys.lists(), { params }] as const,
   details: () => [...productSubtypeKeys.all, "detail"] as const,
   detail: (id: number) => [...productSubtypeKeys.details(), id] as const,
 }
 
 /**
- * Hook lấy danh sách tất cả loại phụ sản phẩm
+ * Hook lấy danh sách loại phụ sản phẩm (POST /product-subtype/search)
  */
 export const useProductSubtypesQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<ProductSubtype>("/product-subtype", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: productSubtypeKeys.list(params || {}),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: ProductSubtype[]
+        total: number
+        page: number
+        limit: number
+      }>('/product-subtype/search', {
+        page,
+        limit,
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

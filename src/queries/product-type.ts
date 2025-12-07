@@ -18,7 +18,7 @@ import { invalidateResourceQueries } from "@/utils/query-helpers"
 export const productTypeKeys = {
   all: ["productTypes"] as const,
   lists: () => [...productTypeKeys.all, "list"] as const,
-  list: (filters: string) => [...productTypeKeys.lists(), { filters }] as const,
+  list: (params: Record<string, unknown>) => [...productTypeKeys.lists(), { params }] as const,
   details: () => [...productTypeKeys.all, "detail"] as const,
   detail: (id: number) => [...productTypeKeys.details(), id] as const,
   subtypes: {
@@ -33,10 +33,43 @@ export const productTypeKeys = {
 }
 
 /**
- * Hook lấy danh sách loại sản phẩm
+ * Hook lấy danh sách loại sản phẩm (POST /product-types/search)
  */
 export const useProductTypesQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<ProductType>("/product-types", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: productTypeKeys.list(params || {}),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: ProductType[]
+        total: number
+        page: number
+        limit: number
+      }>('/product-types/search', {
+        page,
+        limit,
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

@@ -30,13 +30,40 @@ export const usePendingUsersQuery = () => {
   });
 };
 
-export const useAllUsersQuery = () => {
+export const useAllUsersQuery = (params?: Record<string, unknown>) => {
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 1000 // Lấy nhiều để hiển thị tất cả
+
   return useQuery({
-    queryKey: userKeys.all(),
+    queryKey: [...userKeys.all(), params],
     queryFn: async () => {
-      const response = await api.get<UserResponse[]>("/users");
-      return response;
+      const response = await api.postRaw<{
+        data: UserResponse[]
+        total: number
+        page: number
+        limit: number
+      }>('/users/search', {
+        page,
+        limit,
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
     },
+    refetchOnMount: true,
+    staleTime: 0,
   });
 };
 

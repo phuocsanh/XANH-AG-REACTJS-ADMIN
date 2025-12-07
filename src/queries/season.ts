@@ -21,10 +21,43 @@ export const seasonKeys = {
 // ========== SEASON HOOKS ==========
 
 /**
- * Hook lấy danh sách mùa vụ
+ * Hook lấy danh sách mùa vụ (POST /season/search)
  */
 export const useSeasonsQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<Season>("/season", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 100 // Lấy nhiều để hiển thị tất cả
+
+  return useQuery({
+    queryKey: seasonKeys.list(params),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: Season[]
+        total: number
+        page: number
+        limit: number
+      }>('/season/search', {
+        page,
+        limit,
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

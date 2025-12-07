@@ -7,6 +7,8 @@ import { Payment, CreatePaymentDto, SettlePaymentDto, PaymentAllocation } from "
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
+import { mapSearchResponse } from "@/utils/api-response-mapper"
+
 // ========== QUERY KEYS ==========
 export const paymentKeys = {
   all: ["payments"] as const,
@@ -21,10 +23,32 @@ export const paymentKeys = {
 // ========== PAYMENT HOOKS ==========
 
 /**
- * Hook lấy danh sách thanh toán
+ * Hook lấy danh sách thanh toán (POST /payments/search)
  */
 export const usePaymentsQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<Payment>("/payments", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: paymentKeys.list(params),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        success: boolean
+        data: Payment[]
+        pagination: {
+          total: number
+          totalPages: number | null
+        }
+      }>('/payments/search', {
+        page,
+        limit,
+      })
+
+      return mapSearchResponse(response, page, limit)
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

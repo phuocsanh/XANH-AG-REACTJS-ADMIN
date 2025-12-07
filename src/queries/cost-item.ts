@@ -23,17 +23,28 @@ export const costItemKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Lấy danh sách chi phí
+ * Lấy danh sách chi phí (POST /cost-items/search)
  */
 export const useCostItems = (filters?: CostItemFilters) => {
   return useQuery({
     queryKey: costItemKeys.list(filters || {}),
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.rice_crop_id) params.append('rice_crop_id', filters.rice_crop_id.toString());
-      if (filters?.category) params.append('category', filters.category);
+      const searchBody: any = {
+        page: 1,
+        limit: 1000,
+      }
 
-      return await api.get<CostItem[]>(`/cost-items?${params.toString()}`);
+      if (filters?.rice_crop_id) searchBody.rice_crop_id = filters.rice_crop_id
+      if (filters?.category) searchBody.category = filters.category
+
+      const response = await api.postRaw<{
+        data: CostItem[]
+        total: number
+        page: number
+        limit: number
+      }>('/cost-items/search', searchBody)
+
+      return response.data || []
     },
   });
 };

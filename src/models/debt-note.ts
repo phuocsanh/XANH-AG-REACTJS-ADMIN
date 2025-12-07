@@ -75,3 +75,13 @@ export interface SettleAndRolloverResponse {
   };
   new_debt_note?: any;
 }
+
+/**
+ * Thống kê công nợ từ API
+ */
+export interface DebtNoteStatistics {
+  total_debt: number;
+  overdue_count: number;
+  active_count: number;
+  paid_count: number;
+}

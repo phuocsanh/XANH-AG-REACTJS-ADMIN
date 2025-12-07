@@ -7,27 +7,54 @@ import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 import { invalidateResourceQueries } from "@/utils/query-helpers"
 
+import { mapSearchResponse } from "@/utils/api-response-mapper"
+
 // ========== QUERY KEYS ==========
 export const customerKeys = {
-  all: ["customers"] as const,
+  all: ["/customers"] as const,
   lists: () => [...customerKeys.all, "list"] as const,
   list: (params?: Record<string, unknown>) =>
     [...customerKeys.lists(), params] as const,
   details: () => [...customerKeys.all, "detail"] as const,
   detail: (id: number) => [...customerKeys.details(), id] as const,
-  invoices: (id: number) => [...customerKeys.detail(id), "invoices"] as const,
-  debts: (id: number) => [...customerKeys.detail(id), "debts"] as const,
+  invoices: (id: number) => [...customerKeys.all, "invoices", id] as const,
+  debts: (id: number) => [...customerKeys.all, "debts", id] as const,
   search: (query: string) => [...customerKeys.all, "search", query] as const,
   debtorSearch: (query: string) => [...customerKeys.all, "debtorSearch", query] as const,
+  debtors: (search?: string) => [...customerKeys.all, "debtors", search] as const,
 } as const
 
 // ========== CUSTOMER HOOKS ==========
 
 /**
- * Hook lấy danh sách khách hàng
+ * Hook lấy danh sách khách hàng (POST /customers/search)
  */
 export const useCustomersQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<Customer>("/customers", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+  const search = params?.search as string | undefined
+
+  return useQuery({
+    queryKey: customerKeys.list(params),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        success: boolean
+        data: Customer[]
+        pagination: {
+          total: number
+          totalPages: number | null
+        }
+      }>('/customers/search', {
+        page,
+        limit,
+        ...(search && { search })
+      })
+
+      return mapSearchResponse(response, page, limit)
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**
@@ -37,10 +64,21 @@ export const useCustomerSearchQuery = (search: string) => {
   return useQuery({
     queryKey: customerKeys.search(search),
     queryFn: async () => {
-      const response = await api.get<Customer[]>("/customers", { search })
-      return response
+      const response = await api.postRaw<{
+        success: boolean
+        data: Customer[]
+        pagination: any
+      }>('/customers/search', {
+        search,
+        page: 1,
+        limit: 20
+      })
+      
+      // API search trả về { data: Customer[], ... }
+      // Chúng ta cần trả về mảng Customer[] cho component Autocomplete
+      return response.data || []
     },
-    enabled: search.length >= 1, // Cho phép tìm ngay từ 1 ký tự hoặc rỗng để load default list nếu muốn
+    enabled: search.length >= 1, 
   })
 }
 

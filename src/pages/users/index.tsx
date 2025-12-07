@@ -169,7 +169,8 @@ const PendingUsersTab: React.FC = () => {
 };
 
 const AllUsersTab: React.FC = () => {
-  const { data: users, isLoading } = useAllUsersQuery();
+  const { data: usersResponse, isLoading } = useAllUsersQuery();
+  const users = usersResponse?.data?.items || [];
   const activateMutation = useActivateUserMutation();
   const deactivateMutation = useDeactivateUserMutation();
   const deleteMutation = useDeleteUserMutation();

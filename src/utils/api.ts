@@ -283,10 +283,18 @@ api.instance.interceptors.response.use(
         return response.data
       }
 
-      // Nếu success = true, trả về data
+      // Nếu success = true
       if (response.data.success === true) {
         console.log("Response success is true")
-        // Kiểm tra nếu data tồn tại
+        
+        // ✨ QUAN TRỌNG: Nếu response có pagination, giữ nguyên toàn bộ response
+        // Đây là response từ search endpoints
+        if ("pagination" in response.data) {
+          console.log("Response has pagination, returning full response:", response.data)
+          return response.data
+        }
+        
+        // Nếu không có pagination, unwrap data như cũ
         if ("data" in response.data) {
           console.log("Returning response.data.data:", response.data.data)
           return response.data.data

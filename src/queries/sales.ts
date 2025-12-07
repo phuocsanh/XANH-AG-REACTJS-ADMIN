@@ -58,10 +58,43 @@ export const useCreateInvoiceMutation = () => {
 }
 
 /**
- * Hook lấy danh sách tất cả hóa đơn bán hàng
+ * Hook lấy danh sách tất cả hóa đơn bán hàng (POST /sales/invoices/search)
  */
 export const useInvoicesQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<SalesInvoice>("/sales/invoices", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: salesKeys.invoicesList(),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: SalesInvoice[]
+        total: number
+        page: number
+        limit: number
+      }>('/sales/invoices/search', {
+        page,
+        limit,
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

@@ -20,10 +20,63 @@ export const debtNoteKeys = {
 // ========== DEBT NOTE HOOKS ==========
 
 /**
- * Hook lấy danh sách công nợ
+ * Hook lấy danh sách công nợ (dùng POST /debt-notes/search)
+ * Trả về kèm statistics từ API
  */
 export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<DebtNote>("/debt-notes", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+  const status = params?.status as string | undefined
+
+  return useQuery({
+    queryKey: debtNoteKeys.list(params),
+    queryFn: async () => {
+      const filters = []
+      if (status) {
+        filters.push({
+          field: 'status',
+          operator: 'eq',
+          value: status
+        })
+      }
+
+      const response = await api.postRaw<{
+        data: DebtNote[]
+        total: number
+        page: number
+        limit: number
+        summary: {
+          total_debt: number
+          overdue_count: number
+          active_count: number
+          paid_count: number
+        }
+      }>('/debt-notes/search', {
+        page,
+        limit,
+        ...(filters.length > 0 && { filters })
+      })
+
+      // Transform response để phù hợp với PaginationResponse format
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+          summary: response.summary // Thêm summary vào response
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**
