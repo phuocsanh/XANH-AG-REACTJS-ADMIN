@@ -44,7 +44,7 @@ export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
   invoice_code: '',
   notes: '',
   warning: '',
-  payment_method: 'cash',
+  payment_method: 'debt',
   total_amount: 0,
   discount_amount: 0,
   final_amount: 0,
@@ -59,7 +59,7 @@ export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {
   unit_price: 0,
   discount_amount: 0,
   notes: '',
-  price_type: 'cash', // Mặc định là giá tiền mặt
+  price_type: 'credit', // Mặc định là giá bán nợ
 };
 
 export const paymentMethodLabels = {

@@ -456,15 +456,27 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
   }, [latestInvoice?.warning, selectedProductIdsForAdvisory, items]); // Re-run when warning, selected products, or items change
 
   const handleAddProduct = (product: Product) => {
-    // Mặc định sử dụng giá tiền mặt
+    // Tự động chọn giá dựa trên phương thức thanh toán
+    const currentPaymentMethod = watch('payment_method');
+    const isDebt = currentPaymentMethod === 'debt';
+    
+    // Nếu là công nợ -> dùng giá nợ (nếu có), ngược lại dùng giá tiền mặt
+    const priceType = isDebt ? 'credit' : 'cash';
+    
+    let unitPrice = Number(product.price) || 0;
+    // Nếu chọn nợ và sản phẩm có giá nợ -> dùng giá nợ
+    if (isDebt && product.credit_price && Number(product.credit_price) > 0) {
+        unitPrice = Number(product.credit_price);
+    }
+
     append({
       product_id: product.id,
       product_name: product.name,
       quantity: 1,
-      unit_price: Number(product.price) || 0,
+      unit_price: unitPrice,
       discount_amount: 0,
       notes: '',
-      price_type: 'cash', // Mặc định là giá tiền mặt
+      price_type: priceType,
     });
     setProductSearch('');
   };
