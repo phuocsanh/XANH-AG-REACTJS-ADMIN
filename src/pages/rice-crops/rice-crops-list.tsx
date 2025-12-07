@@ -1,5 +1,5 @@
 /**
- * Trang danh sách quản lý vụ lúa
+ * Trang danh sách Quản Lý Canh Tác
  * Bao gồm: Xem, Thêm, Sửa, Xóa vụ lúa
  */
 
@@ -296,7 +296,7 @@ const RiceCropsList: React.FC = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">🌾 Quản Lý Vụ Lúa</h1>
+        <h1 className="text-2xl font-bold">🌾 Quản Lý Canh Tác</h1>
         <Button
           type="primary"
           icon={<PlusOutlined />}

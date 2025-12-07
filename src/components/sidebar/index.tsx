@@ -136,7 +136,7 @@ const Sidebar: React.FC = () => {
       setActiveTab(24)
       setIsToggleSubmenu(false)
     }
-    // Quản lý vụ lúa
+    // Quản Lý Canh Tác
     else if (path.startsWith('/rice-crops')) {
       setActiveTab(25)
       setIsToggleSubmenu(false)
@@ -555,7 +555,7 @@ const Sidebar: React.FC = () => {
             </Link>
           </li>
 
-          {/* Thêm menu cho quản lý vụ lúa */}
+          {/* Thêm menu cho Quản Lý Canh Tác */}
           <li>
             <Link to='/rice-crops'>
               <Button
@@ -565,7 +565,7 @@ const Sidebar: React.FC = () => {
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <GiGrain className='text-green-200' />
                 </span>
-                Quản lý vụ lúa
+                Quản Lý Canh Tác
               </Button>
             </Link>
           </li>

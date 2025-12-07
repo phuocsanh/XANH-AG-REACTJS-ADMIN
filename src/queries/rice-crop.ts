@@ -1,5 +1,5 @@
 /**
- * React Query hooks cho quản lý vụ lúa (Rice Crop)
+ * React Query hooks cho Quản Lý Canh Tác (Rice Crop)
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

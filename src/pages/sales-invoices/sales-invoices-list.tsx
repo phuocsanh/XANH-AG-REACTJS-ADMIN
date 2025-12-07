@@ -4,6 +4,8 @@ import {
   useSalesInvoicesQuery,
   useAddPaymentMutation,
 } from "@/queries/sales-invoice"
+import { useSeasonsQuery } from "@/queries/season"
+import { useRiceCrops } from "@/queries/rice-crop"
 import {
   Button,
   Tag,
@@ -56,8 +58,30 @@ const SalesInvoicesList: React.FC = () => {
     status: statusFilter || undefined,
     rice_crop_filter: riceCropFilter || undefined,
   })
-
   const addPaymentMutation = useAddPaymentMutation()
+  const { data: seasonsData } = useSeasonsQuery({ limit: 1000 })
+  const { data: riceCropsData } = useRiceCrops()
+
+  // Optimize lookups with Maps
+  const seasonMap = React.useMemo(() => {
+    const map: Record<number, any> = {}
+    if (seasonsData?.data?.items) {
+      seasonsData.data.items.forEach((s: any) => {
+        map[s.id] = s
+      })
+    }
+    return map
+  }, [seasonsData])
+
+  const riceCropMap = React.useMemo(() => {
+    const map: Record<number, any> = {}
+    if (riceCropsData) {
+      riceCropsData.forEach((c: any) => {
+        map[c.id] = c
+      })
+    }
+    return map
+  }, [riceCropsData])
 
   // Handlers
   const handleViewInvoice = (invoice: SalesInvoice) => {
@@ -158,9 +182,31 @@ const SalesInvoicesList: React.FC = () => {
       key: "season_name",
       title: "Mùa vụ",
       width: 120,
-      render: (record: ExtendedSalesInvoice) => (
-        <div>{record.season_name || "-"}</div>
-      ),
+      render: (record: ExtendedSalesInvoice) => {
+        const seasonId = record.season_id || (record as any).season_id
+        const season = seasonId ? seasonMap[seasonId] : null
+        return <div>{season?.name || record.season_name || (seasonId ? `Mùa #${seasonId}` : "-")}</div>
+      },
+    },
+    {
+      key: "rice_crop_id",
+      title: "Vụ lúa",
+      width: 150,
+      render: (record: ExtendedSalesInvoice) => {
+        const riceCropId = record.rice_crop_id || (record as any).rice_crop_id
+        const crop = riceCropId ? riceCropMap[riceCropId] : null
+        return (
+          <div>
+            {crop ? (
+              <div className="flex flex-col">
+                <span className="font-medium">{crop.field_name || `Vụ #${riceCropId}`}</span>
+              </div>
+            ) : (
+              riceCropId ? `Vụ #${riceCropId}` : "-"
+            )}
+          </div>
+        )
+      },
     },
     {
       key: "final_amount",

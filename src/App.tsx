@@ -43,7 +43,7 @@ import RiceMarketPage from "./pages/rice-market"
 import DiseaseWarningPage from "./pages/disease-warning"
 // Thêm import cho trang kiểm tra thuốc bị cấm
 import BannedPesticidesPage from "./pages/banned-pesticides"
-// Thêm import cho trang quản lý vụ lúa
+// Thêm import cho trang Quản Lý Canh Tác
 import RiceCropsPage from "./pages/rice-crops"
 // Thêm import cho trang so sánh sản phẩm AI
 import ProductComparisonPage from "./pages/product-comparison"
@@ -373,7 +373,7 @@ function App() {
                       }
                     />
 
-                    {/* Trang quản lý vụ lúa */}
+                    {/* Trang Quản Lý Canh Tác */}
                     <Route
                       path='/rice-crops/*'
                       element={

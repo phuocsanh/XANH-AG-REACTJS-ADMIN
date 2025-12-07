@@ -204,7 +204,7 @@ const RiceCropDetail: React.FC = () => {
             },
             {
               href: '/rice-crops',
-              title: 'Quản lý vụ lúa',
+              title: 'Quản Lý Canh Tác',
               onClick: (e) => {
                 e.preventDefault();
                 navigate('/rice-crops');
