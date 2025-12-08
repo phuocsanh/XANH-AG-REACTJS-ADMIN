@@ -24,7 +24,7 @@ export const productFormSchema = z.object({
   attributes: z.record(z.string(), z.any()).optional(),
   unit_id: z.number().optional(), // Bắt buộc nhập
   sub_types: z.array(z.number()).optional(),
-  status: z.enum(["active", "inactive", "archived"]).optional(),
+  status: z.enum(["active", "inactive", "archived", "pending"]).optional(),
   // Thêm 2 trường mới
   symbol_id: z.number().optional(),
   ingredient: z.string().min(1, "Vui lòng nhập thành phần nguyên liệu"), // Bắt buộc nhập
@@ -59,7 +59,7 @@ export interface ProductFormValues {
   attributes?: Record<string, unknown>
   unit_id: number | undefined // Bắt buộc nhập
   sub_types?: number[]
-  status?: "active" | "inactive" | "archived"
+  status?: "active" | "inactive" | "archived" | "pending"
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient: string // Bắt buộc nhập
@@ -83,7 +83,7 @@ export interface ConvertedProductValues {
   unit_id: number | undefined // Bắt buộc nhập
   sub_types?: number[]
   discount?: string
-  status?: "active" | "inactive" | "archived"
+  status?: "active" | "inactive" | "archived" | "pending"
   videos?: string[]
   // Thêm 2 trường mới
   symbol_id?: number

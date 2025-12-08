@@ -187,26 +187,28 @@ Chỉ trả về JSON, không thêm text nào khác.
    */
   analyzeImage: async (images: string[]): Promise<ProductInfo> => {
     const prompt = `
-Hãy đóng vai một máy OCR (Nhận diện ký tự quang học) chuyên nghiệp. Nhiệm vụ của bạn là ĐỌC và CHÉP LẠI chính xác từng chữ trên nhãn thuốc này.
+Hãy đóng vai một chuyên gia xử lý dữ liệu OCR. Nhiệm vụ của bạn là trích xuất thông tin từ nhãn thuốc BVTV và CHUẨN HÓA nội dung.
 
-QUY TẮC BẮT BUỘC:
-1. KHÔNG được bỏ sót bất kỳ dòng chữ nhỏ nào, đặc biệt là phần "LƯU Ý" và các dòng cảnh báo ở cuối nhãn.
-2. Đối với Bảng Liều Lượng/Thời gian sử dụng: Phải chép lại đủ từng mốc thời gian và liều lượng tương ứng (Ví dụ: 4-6 ngày -> 80ml...).
-3. Tuyệt đối KHÔNG tóm tắt. Thấy chữ gì chép chữ đó.
+QUY TẮC QUAN TRỌNG ĐỂ TRÁNH LẶP TIÊU ĐỀ:
+1. Khi trích xuất nội dung của một mục, BẮT BUỘC PHẢI LOẠI BỎ TIÊU ĐỀ của mục đó trong giá trị trả về.
+   - Ví dụ SAI: "usage": "CÔNG DỤNG: Trừ các loại cỏ..."
+   - Ví dụ ĐÚNG: "usage": "Trừ các loại cỏ..." (Đã xóa bỏ chữ "CÔNG DỤNG:")
+   
+2. Vẫn phải giữ nguyên vẹn nội dung chi tiết, các mốc thời gian, số liệu, không được tóm tắt sai lệch.
 
 Cấu trúc JSON trả về:
 {
-  "name": "Tên sản phẩm",
-  "active_ingredient": "Hoạt chất",
-  "concentration": "Hàm lượng",
-  "manufacturer": "Nhà sản xuất",
-  "usage": "Tóm tắt 1 câu công dụng chính",
+  "name": "Tên sản phẩm (viết hoa)",
+  "active_ingredient": "Hoạt chất VÀ Hàm lượng (BẮT BUỘC: Phải lấy cả tên hoạt chất và nồng độ/hàm lượng đi kèm. Ví dụ: 'Butachlor 150g/l' hoặc 'Mancozeb 20%'. Nếu có nhiều hoạt chất thì liệt kê đầy đủ, ngăn cách bằng dấu phẩy)",
+  "concentration": "Hàm lượng (Nếu đã gộp vào active_ingredient thì trường này có thể để trống hoặc lặp lại)",
+  "manufacturer": "Nhà sản xuất/đăng ký",
+  "usage": "Tóm tắt 1 câu ngắn gọn công dụng chính (VD: Thuốc trừ cỏ hậu nảy mầm)",
   "details": {
-    "usage": "Chép lại NGUYÊN VĂN mục CÔNG DỤNG",
-    "dosage": "Chép lại NGUYÊN VĂN mục LIỀU LƯỢNG và HƯỚNG DẪN SỬ DỤNG. \n*QUAN TRỌNG:* Phải liệt kê đầy đủ bảng hướng dẫn chi tiết (VD: \n- 4-6 ngày sau sạ: ... \n- 7-9 ngày sau sạ: ... \n- 10-12 ngày sau sạ: ...)",
-    "application_time": "Chép lại NGUYÊN VĂN mục THỜI ĐIỂM SỬ DỤNG",
-    "preharvest_interval": "Chép lại NGUYÊN VĂN mục THỜI GIAN CÁCH LY",
-    "notes": "Chép lại NGUYÊN VĂN mục LƯU Ý. \n*QUAN TRỌNG:* Đọc kỹ các dòng chữ nhỏ ở dưới cùng (Ví dụ: Không dùng chung với thuốc gốc gì? Cách ly bao nhiêu ngày?)"
+    "usage": "Nội dung chi tiết mục CÔNG DỤNG (CHỈ LẤY NỘI DUNG, KHÔNG chép lại chữ 'CÔNG DỤNG')",
+    "dosage": "Nội dung mục LIỀU LƯỢNG/HƯỚNG DẪN SỬ DỤNG. Trình bày rõ ràng dạng list nếu có nhiều mốc thời gian (VD: - 4-6 ngày: ...). (KHÔNG chép lại chữ 'HƯỚNG DẪN SỬ DỤNG')",
+    "application_time": "Nội dung mục THỜI ĐIỂM SỬ DỤNG (KHÔNG chép lại tiêu đề)",
+    "preharvest_interval": "Nội dung mục THỜI GIAN CÁCH LY (KHÔNG chép lại tiêu đề)",
+    "notes": "Nội dung mục LƯU Ý/CẢNH BÁO. Bao gồm cả các dòng cảnh báo về thuốc gốc Carbamate/Lân hữu cơ nếu có. (KHÔNG chép lại chữ 'LƯU Ý')"
   }
 }
 

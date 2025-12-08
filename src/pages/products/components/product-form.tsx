@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, message, Space, Form, Spin } from "antd"
+import { Button, message, Space, Form, Spin, Modal } from "antd"
 import { SaveOutlined } from "@ant-design/icons"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -423,13 +423,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           } as any,
         })
         message.success("Cập nhật sản phẩm thành công")
+        navigate("/products")
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await createProductMutation.mutateAsync(serverData as any)
-        message.success("Thêm sản phẩm thành công")
+        Modal.success({
+          title: "Thành công",
+          content: "Thêm sản phẩm thành công!",
+          okText: "Xác nhận",
+        })
       }
-
-      navigate("/products")
     } catch (error) {
       console.error("Error saving product:", error)
       message.error("Có lỗi xảy ra khi lưu sản phẩm")
