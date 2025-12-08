@@ -1,4 +1,5 @@
 import { UserResponse } from "@/models/auth.model";
+import { RoleCode } from "@/constant/role";
 
 /**
  * Kiểm tra user có quyền cụ thể hay không
@@ -11,7 +12,7 @@ export const hasPermission = (user: UserResponse | null | undefined, requiredPer
   if (!user) return false;
   
   // Super Admin luôn có quyền
-  if (user.role?.code === 'SUPER_ADMIN') return true;
+  if (user.role?.code === RoleCode.SUPER_ADMIN) return true;
 
   // Nếu không có role hoặc permissions, return false
   if (!user.role || !user.role.permissions) return false;
@@ -28,7 +29,7 @@ export const hasPermission = (user: UserResponse | null | undefined, requiredPer
 export const hasAnyPermission = (user: UserResponse | null | undefined, permissionsArray: string[]): boolean => {
   if (!user || !user.role) return false;
   
-  if (user.role.code === 'SUPER_ADMIN') return true;
+  if (user.role.code === RoleCode.SUPER_ADMIN) return true;
   
   if (!user.role.permissions) return false;
 
@@ -40,7 +41,7 @@ export const hasAnyPermission = (user: UserResponse | null | undefined, permissi
  */
 export const isAdmin = (user: UserResponse | null | undefined): boolean => {
   if (!user || !user.role) return false;
-  return ['SUPER_ADMIN', 'ADMIN'].includes(user.role.code);
+  return [RoleCode.SUPER_ADMIN, RoleCode.ADMIN].includes(user.role.code as RoleCode);
 };
 
 /**
@@ -75,8 +76,8 @@ export const canManageUser = (
   if (!currentUser.role || !targetUser.role) {
     // Nếu target user có role_id nhưng không có role object, ta vẫn có thể check
     const targetRoleId = (targetUser as any).role_id;
-    if (currentUser.role?.code === 'SUPER_ADMIN') return true;
-    if (currentUser.role?.code === 'ADMIN') {
+    if (currentUser.role?.code === RoleCode.SUPER_ADMIN) return true;
+    if (currentUser.role?.code === RoleCode.ADMIN) {
         // Admin không thể quản lý Super Admin (1) hoặc Admin (2)
         return ![1, 2].includes(targetRoleId);
     }
@@ -84,11 +85,11 @@ export const canManageUser = (
   }
 
   // Super Admin có thể quản lý tất cả
-  if (currentUser.role.code === 'SUPER_ADMIN') return true;
+  if (currentUser.role.code === RoleCode.SUPER_ADMIN) return true;
 
   // Admin không thể quản lý Super Admin hoặc Admin khác
-  if (currentUser.role.code === 'ADMIN') {
-    return !['SUPER_ADMIN', 'ADMIN'].includes(targetUser.role.code);
+  if (currentUser.role.code === RoleCode.ADMIN) {
+    return ![RoleCode.SUPER_ADMIN, RoleCode.ADMIN].includes(targetUser.role.code as RoleCode);
   }
 
   return false;

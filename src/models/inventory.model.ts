@@ -18,13 +18,13 @@ export interface UploadImageRequest {
   fieldName?: string
 }
 
-// Enum cho trạng thái phiếu nhập hàng
+// Enum cho trạng thái phiếu nhập hàng (sử dụng string lowercase)
 export enum InventoryReceiptStatus {
-  DRAFT = 1,
-  PENDING = 2,
-  APPROVED = 3,
-  COMPLETED = 4,
-  CANCELLED = 5,
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
 }
 
 // Enum cho loại giao dịch kho
@@ -39,7 +39,8 @@ export interface InventoryReceipt {
   id: number
   code: string
   notes?: string // Thay description thành notes để khớp với backend
-  status: string // Thay number thành string để khớp với backend
+  status: string // Trạng thái là string text tiếng Việt (đã map) hoặc raw string
+  status_code?: string // status code raw (draft, pending...)
   total_amount: number // Thay totalAmount thành total_amount và string thành number để khớp với backend
   supplier_id?: number // Thay supplierName thành supplier_id để khớp với backend
   supplier_name?: string // Thêm supplier_name để hiển thị
@@ -72,7 +73,7 @@ export interface InventoryReceiptApiResponse {
   id: number
   code: string
   description?: string // Giữ nguyên để tương thích với API response
-  status: number // Giữ nguyên để tương thích với API response
+  status: string // Backend trả về string
   total_amount: string // Thay totalAmount thành total_amount
   supplier_id?: number // Thêm supplier_id
   supplier_name?: string // Thay supplierName thành supplier_name
@@ -207,42 +208,30 @@ export function mapApiResponseToInventoryHistory(
 
 // Helper functions
 export const getInventoryReceiptStatusText = (status: number | string): string => {
-  // Nếu status là string (từ server mới)
-  if (typeof status === 'string') {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return "Nháp"
-      case 'pending':
-        return "Chờ duyệt"
-      case 'approved':
-        return "Đã duyệt"
-      case 'completed':
-        return "Hoàn thành"
-      case 'cancelled':
-        return "Đã hủy"
-      default:
-        return "Không xác định"
-    }
-  }
+  const statusStr = String(status).toLowerCase();
   
-  // Nếu status là number (legacy)
-  switch (status) {
+  switch (statusStr) {
     case InventoryReceiptStatus.DRAFT:
+    case '1':
       return "Nháp"
     case InventoryReceiptStatus.PENDING:
+    case '2':
       return "Chờ duyệt"
     case InventoryReceiptStatus.APPROVED:
+    case '3':
       return "Đã duyệt"
     case InventoryReceiptStatus.COMPLETED:
+    case '4':
       return "Hoàn thành"
     case InventoryReceiptStatus.CANCELLED:
+    case '5':
       return "Đã hủy"
     default:
       return "Không xác định"
   }
 }
 
-export const getInventoryTransactionTypeText = (type: number): string => {
+export const getInventoryTransactionTypeText = (type: InventoryTransactionType): string => {
   switch (type) {
     case InventoryTransactionType.IMPORT:
       return "Nhập kho"
@@ -355,7 +344,7 @@ export interface InventoryHistoryListApiResponse
 export interface InventoryReceiptListParams {
   limit?: number
   offset?: number
-  status?: number
+  status?: string // Backend mong đợi string
   code?: string
   supplierName?: string
   startDate?: string

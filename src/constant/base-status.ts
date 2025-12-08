@@ -2,6 +2,7 @@
 export const BASE_STATUS = [
   { value: "active", label: "Hoạt động" },
   { value: "inactive", label: "Không hoạt động" },
+  { value: "pending", label: "Chờ duyệt" },
   { value: "archived", label: "Đã lưu trữ" },
 ] as const
 

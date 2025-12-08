@@ -88,72 +88,79 @@ function FormFieldNumber<T extends FieldValues>({
   }
 
   return (
-    <Controller
-      name={name}
-      control={control}
-      rules={validationRules}
-      render={({ field, fieldState: { error } }) => (
-        <Form.Item
-          label={label}
-          className={className}
-          validateStatus={error ? "error" : ""}
-          help={error?.message}
-          required={required}
-          layout='vertical'
-        >
-          <NumericFormat
-            placeholder={placeholder}
-            disabled={disabled}
-            size={size}
-            status={error ? ("error" as const) : undefined}
-            thousandSeparator='.'
-            decimalSeparator=','
-            decimalScale={decimalScale}
-            fixedDecimalScale={fixedDecimalScale}
-            allowNegative={false}
-            customInput={Input}
-            allowClear={allowClear}
-            style={{ width: "100%" }}
-            value={
-              field.value !== undefined && field.value !== null
-                ? field.value
-                : ""
-            }
-            onValueChange={(values) => {
-              // Tự động chuyển đổi kiểu dữ liệu dựa trên tên trường và schema
-              // Nếu trường được định nghĩa trong schema là number thì trả về number
-              // Nếu không thì trả về string
-
-              // Danh sách các trường cần trả về kiểu number (dựa trên schema)
-              const numberFields = ["quantity", "symbolId"]
-
-              // Kiểm tra xem trường hiện tại có trong danh sách numberFields không
-              // Hoặc nếu tên trường chứa các từ khóa thường dùng cho số (attributes.*)
-              const isNumberField =
-                numberFields.includes(name) || name.startsWith("attributes.")
-
-              // Chuyển đổi giá trị dựa trên loại trường
-              const value = isNumberField ? Number(values.value) : values.value
-              field.onChange(value)
-            }}
-            // Cho phép nhập bất kỳ giá trị nào không giới hạn độ dài
-            isAllowed={(values) => {
-              // Cho phép giá trị rỗng
-              if (!values.value) return true
-
-              // Kiểm tra giá trị min/max nếu được cung cấp
-              const numericValue = parseFloat(values.value)
-              if (min !== undefined && numericValue < min) return false
-              if (max !== undefined && numericValue > max) return false
-
-              return true
-            }}
-            prefix={prefix}
-            suffix={suffix}
-          />
-        </Form.Item>
-      )}
-    />
+    <Form.Item
+      label={label}
+      className={className}
+      required={required}
+      layout='vertical'
+    >
+      <Controller
+        name={name}
+        control={control}
+        rules={validationRules}
+        render={({ field, fieldState: { error } }) => (
+          <>
+            <NumericFormat
+              placeholder={placeholder}
+              disabled={disabled}
+              size={size}
+              status={error ? ("error" as const) : undefined}
+              thousandSeparator='.'
+              decimalSeparator=','
+              decimalScale={decimalScale}
+              fixedDecimalScale={fixedDecimalScale}
+              allowNegative={false}
+              customInput={Input}
+              allowClear={allowClear}
+              style={{ width: "100%" }}
+              value={
+                field.value !== undefined && field.value !== null
+                  ? field.value
+                  : ""
+              }
+              onValueChange={(values) => {
+                // Tự động chuyển đổi kiểu dữ liệu dựa trên tên trường và schema
+                // Nếu trường được định nghĩa trong schema là number thì trả về number
+                // Nếu không thì trả về string
+  
+                // Danh sách các trường cần trả về kiểu number (dựa trên schema)
+                const numberFields = ["quantity", "symbolId"]
+  
+                // Kiểm tra xem trường hiện tại có trong danh sách numberFields không
+                // Hoặc nếu tên trường chứa các từ khóa thường dùng cho số (attributes.*)
+                const isNumberField =
+                  numberFields.includes(name) || name.startsWith("attributes.")
+  
+                // Chuyển đổi giá trị dựa trên loại trường
+                const value = isNumberField ? Number(values.value) : values.value
+                field.onChange(value)
+              }}
+              // Cho phép nhập bất kỳ giá trị nào không giới hạn độ dài
+              isAllowed={(values) => {
+                // Cho phép giá trị rỗng
+                if (!values.value) return true
+  
+                // Kiểm tra giá trị min/max nếu được cung cấp
+                const numericValue = parseFloat(values.value)
+                if (min !== undefined && numericValue < min) return false
+                if (max !== undefined && numericValue > max) return false
+  
+                return true
+              }}
+              prefix={prefix}
+              suffix={suffix}
+            />
+            {error && (
+              <div
+                style={{ color: "#ff4d4f", fontSize: "14px", marginTop: "4px" }}
+              >
+                {error.message}
+              </div>
+            )}
+          </>
+        )}
+      />
+    </Form.Item>
   )
 }
 

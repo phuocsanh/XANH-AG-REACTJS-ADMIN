@@ -143,23 +143,30 @@ function FormField<T extends FieldValues>({
   }
 
   return (
-    <Controller
-      name={name}
-      control={control}
-      rules={validationRules}
-      render={({ field, fieldState: { error } }) => (
-        <Form.Item
-          label={label}
-          className={className}
-          validateStatus={error ? "error" : ""}
-          help={error?.message}
-          required={required}
-          layout='vertical'
-        >
-          {renderInput(field, error)}
-        </Form.Item>
-      )}
-    />
+    <Form.Item
+      label={label}
+      className={className}
+      required={required}
+      layout='vertical'
+    >
+      <Controller
+        name={name}
+        control={control}
+        rules={validationRules}
+        render={({ field, fieldState: { error } }) => (
+          <>
+            {renderInput(field, error)}
+            {error && (
+              <div
+                style={{ color: "#ff4d4f", fontSize: "14px", marginTop: "4px" }}
+              >
+                {error.message}
+              </div>
+            )}
+          </>
+        )}
+      />
+    </Form.Item>
   )
 }
 

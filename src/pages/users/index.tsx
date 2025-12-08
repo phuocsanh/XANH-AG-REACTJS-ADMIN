@@ -5,6 +5,7 @@ import { usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCrea
 import { UserResponse } from '@/models/auth.model';
 import { useAppStore } from '@/stores';
 import { canManageUser } from '@/utils/permission';
+import { RoleCode } from '@/constant/role';
 import dayjs from 'dayjs';
 
 const { TabPane } = Tabs;
@@ -72,11 +73,11 @@ const PendingUsersTab: React.FC = () => {
       key: 'status',
       render: (text: string) => {
         const statusColors: { [key: string]: string } = {
-          'PENDING': 'orange',
-          'ACTIVE': 'green',
-          'INACTIVE': 'red',
+          'pending': 'orange',
+          'active': 'green',
+          'inactive': 'red',
         };
-        return <Tag color={statusColors[text] || 'default'}>{text}</Tag>;
+        return <Tag color={statusColors[text?.toLowerCase()] || 'default'}>{text}</Tag>;
       },
     },
     {
@@ -86,19 +87,19 @@ const PendingUsersTab: React.FC = () => {
         const canManage = canManageUser(currentUser, record);
         
         const menuItems = [
-          ...(record.status === 'PENDING' ? [{
+            ...((record.status || '').toLowerCase() === 'pending' ? [{
             key: 'approve',
             label: 'Duyệt',
             icon: <CheckOutlined />,
             onClick: () => approveMutation.mutate(record.id || record.user_id),
           }] : []),
-          ...(canManage && record.status !== 'ACTIVE' ? [{
+          ...(canManage && (record.status || '').toLowerCase() !== 'active' ? [{
             key: 'activate',
             label: 'Kích hoạt',
             icon: <CheckCircleOutlined />,
             onClick: () => activateMutation.mutate(record.id || record.user_id),
           }] : []),
-          ...(canManage && record.status === 'ACTIVE' ? [{
+          ...(canManage && (record.status || '').toLowerCase() === 'active' ? [{
             key: 'deactivate',
             label: 'Vô hiệu hóa',
             icon: <StopOutlined />,
@@ -115,7 +116,7 @@ const PendingUsersTab: React.FC = () => {
 
         return (
           <Space>
-            {record.status === 'PENDING' && (
+            {(record.status || '').toLowerCase() === 'pending' && (
               <Popconfirm
                 title="Bạn có chắc chắn muốn duyệt người dùng này?"
                 onConfirm={() => approveMutation.mutate(record.id || record.user_id)}
@@ -205,19 +206,19 @@ const AllUsersTab: React.FC = () => {
 
         if (!roleCode && record.role_id) {
           switch (record.role_id) {
-            case 1: roleCode = 'SUPER_ADMIN'; roleName = 'Super Admin'; break;
-            case 2: roleCode = 'ADMIN'; roleName = 'Admin'; break;
-            case 3: roleCode = 'STAFF'; roleName = 'Staff'; break;
-            case 4: roleCode = 'USER'; roleName = 'User'; break;
+            case 1: roleCode = RoleCode.SUPER_ADMIN; roleName = 'Super Admin'; break;
+            case 2: roleCode = RoleCode.ADMIN; roleName = 'Admin'; break;
+            case 3: roleCode = RoleCode.STAFF; roleName = 'Staff'; break;
+            case 4: roleCode = RoleCode.USER; roleName = 'User'; break;
             default: roleCode = 'UNKNOWN'; roleName = 'Unknown';
           }
         }
 
         const roleColors: { [key: string]: string } = {
-          'SUPER_ADMIN': 'red',
-          'ADMIN': 'orange',
-          'STAFF': 'blue',
-          'USER': 'green',
+          [RoleCode.SUPER_ADMIN]: 'red',
+          [RoleCode.ADMIN]: 'orange',
+          [RoleCode.STAFF]: 'blue',
+          [RoleCode.USER]: 'green',
         };
         return (
           <Tag color={roleColors[roleCode || ''] || 'default'}>
@@ -238,11 +239,11 @@ const AllUsersTab: React.FC = () => {
       key: 'status',
       render: (text: string) => {
         const statusColors: { [key: string]: string } = {
-          'PENDING': 'orange',
-          'ACTIVE': 'green',
-          'INACTIVE': 'red',
+          'pending': 'orange',
+          'active': 'green',
+          'inactive': 'red',
         };
-        return <Tag color={statusColors[text] || 'default'}>{text}</Tag>;
+        return <Tag color={statusColors[text?.toLowerCase()] || 'default'}>{text}</Tag>;
       },
     },
     {

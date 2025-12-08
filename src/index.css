@@ -854,11 +854,18 @@ body {
 
 /* Compact input height */
 .product-form .ant-input,
+.product-form .ant-input-affix-wrapper,
+.product-form .ant-input-number,
 .product-form .ant-select-selector,
 .product-form .ant-input-number-input,
 .product-form .ant-picker {
   height: 34px !important;
   font-size: 14px !important;
+}
+
+/* Ensure inner input of affix wrapper fits height and doesn't cause overflow */
+.product-form .ant-input-affix-wrapper .ant-input {
+  height: 100% !important;
 }
 
 .product-form .ant-select-selection-item,

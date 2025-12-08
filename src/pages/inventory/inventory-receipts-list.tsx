@@ -54,7 +54,7 @@ const InventoryReceiptsList: React.FC = () => {
 
   // State quản lý tìm kiếm và lọc
   const [searchTerm, setSearchTerm] = useState<string>("")
-  const [statusFilter, setStatusFilter] = useState<number | undefined>()
+  const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [supplierFilter, setSupplierFilter] = useState<string>("")
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(
     null
@@ -80,8 +80,6 @@ const InventoryReceiptsList: React.FC = () => {
     }
 
     if (supplierFilter !== undefined) {
-      // Cần cập nhật lại filter theo supplierId
-      // Tạm thời comment lại vì cần cập nhật API để hỗ trợ filter theo supplierId
       // params.supplierId = supplierFilter
     }
 
@@ -110,8 +108,6 @@ const InventoryReceiptsList: React.FC = () => {
   const { data: statsData, isLoading: isLoadingStats } =
     useInventoryStatsQuery()
 
-
-
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
   const approveReceiptMutation = useApproveInventoryReceiptMutation()
@@ -124,7 +120,7 @@ const InventoryReceiptsList: React.FC = () => {
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
 
-  const handleStatusFilterChange = (value: number | undefined) => {
+  const handleStatusFilterChange = (value: string | undefined) => {
     setStatusFilter(value)
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
@@ -198,55 +194,37 @@ const InventoryReceiptsList: React.FC = () => {
 
   // Render trạng thái
   const renderStatus = (statusText: string) => {
-    // Xác định status enum từ statusText
-    let status: InventoryReceiptStatus = InventoryReceiptStatus.DRAFT
-    switch (statusText) {
+    const statusStr = statusText // statusText is already localized text from getInventoryReceiptStatusText
+    let color = "default"
+    let icon = null
+    
+    switch (statusStr) {
       case "Nháp":
-        status = InventoryReceiptStatus.DRAFT
+        color = "default"
+        icon = <EditOutlined />
         break
       case "Chờ duyệt":
-        status = InventoryReceiptStatus.PENDING
+        color = "processing"
+        icon = <SyncOutlined spin />
         break
       case "Đã duyệt":
-        status = InventoryReceiptStatus.APPROVED
+        color = "success"
+        icon = <CheckOutlined />
         break
       case "Hoàn thành":
-        status = InventoryReceiptStatus.COMPLETED
+        color = "success"
+        icon = <CheckOutlined />
         break
       case "Đã hủy":
-        status = InventoryReceiptStatus.CANCELLED
+        color = "error"
+        icon = <CloseOutlined />
         break
       default:
-        status = InventoryReceiptStatus.DRAFT
+        color = "default"
     }
-
-    const statusConfig = {
-      [InventoryReceiptStatus.DRAFT]: {
-        color: "default",
-        icon: <EditOutlined />,
-      },
-      [InventoryReceiptStatus.PENDING]: {
-        color: "processing",
-        icon: <SyncOutlined spin />,
-      },
-      [InventoryReceiptStatus.APPROVED]: {
-        color: "success",
-        icon: <CheckOutlined />,
-      },
-      [InventoryReceiptStatus.COMPLETED]: {
-        color: "success",
-        icon: <CheckOutlined />,
-      },
-      [InventoryReceiptStatus.CANCELLED]: {
-        color: "error",
-        icon: <CloseOutlined />,
-      },
-    }
-
-    const config = statusConfig[status] || { color: "default", icon: null }
 
     return (
-      <Tag color={config.color} icon={config.icon}>
+      <Tag color={color} icon={icon}>
         {statusText}
       </Tag>
     )
@@ -268,6 +246,7 @@ const InventoryReceiptsList: React.FC = () => {
     )
 
     // Chỉnh sửa (chỉ khi ở trạng thái DRAFT hoặc PENDING)
+    // Note: record.status is Vietnamese text
     if (record.status === "Nháp" || record.status === "Chờ duyệt") {
       actions.push(
         <Tooltip key='edit' title='Chỉnh sửa'>
@@ -419,7 +398,7 @@ const InventoryReceiptsList: React.FC = () => {
       key: "status",
       width: 120,
       align: "center",
-      render: (status: string) => renderStatus(status), // status đã là text rồi, không cần chuyển đổi
+      render: (status: string) => renderStatus(status),
     },
     {
       title: "Ngày tạo",
@@ -531,7 +510,7 @@ const InventoryReceiptsList: React.FC = () => {
       {/* Bộ lọc và tìm kiếm */}
       <Card style={{ marginBottom: "16px" }}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={6}>
             <Input.Search
               placeholder='Tìm theo mã phiếu...'
               value={searchTerm}

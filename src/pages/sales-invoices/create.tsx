@@ -55,6 +55,7 @@ import { useProductsQuery } from '@/queries/product';
 import { Customer } from '@/models/customer';
 import { Season } from '@/models/season';
 import { Product } from '@/models/product.model';
+import { SalesInvoice } from '@/models/sales-invoice';
 import { useAiService } from '@/hooks/use-ai-service';
 import { weatherService, WeatherData, SimplifiedWeatherData } from '@/services/weather.service';
 import { frontendAiService } from '@/services/ai.service';
@@ -109,7 +110,7 @@ import {
 } from '@/components/disease-warning';
 import { UpdateLocationDto } from '@/models/rice-blast';
 import { useRiceCrops } from '@/queries/rice-crop';
-import { CropStatus } from '@/types/rice-farming.types';
+import { CropStatus, RiceCrop } from '@/types/rice-farming.types';
 
 const { TabPane } = AntTabs;
 
@@ -214,7 +215,16 @@ const CreateSalesInvoice = () => {
   const { data: activeSeason } = useActiveSeasonQuery();
   const { data: seasons } = useSeasonsQuery();
   const { data: productsData } = useProductsQuery({ limit: 100 });
-  const { data: latestInvoice } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
+  const { data: latestInvoiceResponse } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
+  
+  // Filter out current invoice if we are editing the latest one
+  const latestInvoice = useMemo(() => {
+    const invoice = (latestInvoiceResponse as any)?.data as SalesInvoice | undefined;
+    if (invoice && id && invoice.id === parseInt(id)) {
+      return null;
+    }
+    return invoice || null;
+  }, [latestInvoiceResponse, id]);
   
   // Watch season_id để filter vụ lúa
   const selectedSeasonId = watch('season_id');
@@ -277,6 +287,18 @@ const CreateSalesInvoice = () => {
       // Set selected customer if customer_id exists
       if (invoice.customer_id) {
         setIsGuestCustomer(false);
+        // Khôi phục trạng thái selectedCustomer để các query phụ thuộc (như danh sách vụ lúa) hoạt động
+        setSelectedCustomer({
+          id: invoice.customer_id,
+          name: invoice.customer_name,
+          phone: invoice.customer_phone || '',
+          address: invoice.customer_address || '',
+        } as Customer);
+      }
+
+      // Khôi phục trạng thái selectedRiceCropId
+      if (invoice.rice_crop_id) {
+        setSelectedRiceCropId(invoice.rice_crop_id);
       }
     }
   }, [isEditMode, invoiceData, setValue]);
@@ -560,7 +582,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
 
     if (isEditMode && id) {
       // Update existing invoice
-      updateMutation.mutate({ id: parseInt(id), data: submitData as any }, {
+      updateMutation.mutate({ id: parseInt(id), invoice: submitData as any }, {
         onSuccess: () => {
           message.success('Cập nhật hóa đơn thành công!');
           navigate('/sales-invoices');
@@ -1309,7 +1331,7 @@ ${productInfo}`;
                             onChange={(e) => handleRiceCropSelect(e.target.value as number)}
                             label="Vụ lúa *"
                           >
-                            {customerRiceCrops.map((crop: any) => (
+                            {customerRiceCrops.map((crop: RiceCrop) => (
                               <MenuItem key={crop.id} value={crop.id}>
                                 {crop.field_name} - {crop.rice_variety} ({crop.field_area.toLocaleString('vi-VN')} m²)
                               </MenuItem>
@@ -1902,13 +1924,13 @@ ${productInfo}`;
                   startIcon={<ReloadOutlined />}
                   onClick={() => {
                     switch (diseaseWarningTab) {
-                      case 'rice-blast': riceBlastWarning && runRiceBlastMutation.mutate(); break;
-                      case 'bacterial-blight': bacterialBlightWarning && runBacterialBlightMutation.mutate(); break;
-                      case 'stem-borer': stemBorerWarning && runStemBorerMutation.mutate(); break;
-                      case 'gall-midge': gallMidgeWarning && runGallMidgeMutation.mutate(); break;
-                      case 'brown-plant-hopper': brownPlantHopperWarning && runBrownPlantHopperMutation.mutate(); break;
-                      case 'sheath-blight': sheathBlightWarning && runSheathBlightMutation.mutate(); break;
-                      case 'grain-discoloration': grainDiscolorationWarning && runGrainDiscolorationMutation.mutate(); break;
+                      case 'rice-blast': if (riceBlastWarning) runRiceBlastMutation.mutate(); break;
+                      case 'bacterial-blight': if (bacterialBlightWarning) runBacterialBlightMutation.mutate(); break;
+                      case 'stem-borer': if (stemBorerWarning) runStemBorerMutation.mutate(); break;
+                      case 'gall-midge': if (gallMidgeWarning) runGallMidgeMutation.mutate(); break;
+                      case 'brown-plant-hopper': if (brownPlantHopperWarning) runBrownPlantHopperMutation.mutate(); break;
+                      case 'sheath-blight': if (sheathBlightWarning) runSheathBlightMutation.mutate(); break;
+                      case 'grain-discoloration': if (grainDiscolorationWarning) runGrainDiscolorationMutation.mutate(); break;
                     }
                     // Refetch location
                     updateLocationMutation.mutate(diseaseLocation as UpdateLocationDto);
