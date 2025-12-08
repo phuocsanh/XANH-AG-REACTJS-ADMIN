@@ -284,7 +284,7 @@ const Sidebar: React.FC = () => {
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                         <RiFileListLine className='text-green-200' />
                       </span>
-                      📊 Báo cáo Lợi nhuận
+                      Báo cáo PF
                     </Button>
                   </Link>
                 </li>
