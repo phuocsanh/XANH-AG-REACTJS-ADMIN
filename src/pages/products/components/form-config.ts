@@ -31,6 +31,11 @@ export const productFormSchema = z.object({
   // Thêm 2 trường mới từ server
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
+  // Trường cho danh sách thuộc tính động trên FE
+  attribute_list: z.array(z.object({
+    key: z.string(),
+    value: z.any()
+  })).optional(),
 })
 
 // Schema validation cho form tạo sản phẩm mới (yêu cầu thêm một số trường bắt buộc)
@@ -66,6 +71,8 @@ export interface ProductFormValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
+  // Trường cho danh sách thuộc tính động trên FE
+  attribute_list?: { key: string; value: any }[]
 }
 
 // Interface cho ConvertedProductValues (phù hợp với cấu trúc hiện tại)

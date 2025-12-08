@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, message, Space, Form, Spin, Modal } from "antd"
-import { SaveOutlined } from "@ant-design/icons"
-import { useForm } from "react-hook-form"
+import { Button, message, Space, Form, Spin, Modal, Row, Col } from "antd"
+import { SaveOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   FormField,
@@ -157,6 +158,13 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     resolver: zodResolver(productFormSchema),
     defaultValues: defaultProductFormValues,
   })
+  
+  // Field array cho thuộc tính động
+  const { fields: attributeFields, append: appendAttribute, remove: removeAttribute } = useFieldArray({
+    control,
+    name: "attribute_list" as any,
+  })
+
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(false)
@@ -251,7 +259,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           ingredient: Array.isArray(productItem.ingredient)
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
-        })
+          
+          // Chuyển đổi attributes object thành array cho form
+          attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
+            ? Object.entries(productItem.attributes)
+                .filter(([key]) => key !== 'unit') // Lọc bỏ trường unit vì đã có trường riêng
+                .map(([key, value]) => ({ key, value }))
+            : [],
+        } as any)
 
         // Product type will be watched through watchedType
 
@@ -274,44 +289,59 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     }
   }, [isEdit, productLoading, reset])
 
-  // Render các thuộc tính sản phẩm dựa trên loại sản phẩm được chọn
+  // Render các thuộc tính sản phẩm động
   const renderProductAttributes = () => {
-    // Kiểm tra nếu loại sản phẩm được chọn có ID là 1, 2, 3, hoặc 4
-    if (watchedType && [1, 2, 3, 4].includes(Number(watchedType))) {
-      return (
-        <div className='mb-4'>
-          <h3 className='text-lg font-medium mb-2'>Thuộc tính sản phẩm</h3>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div className='w-full'>
-              <FormFieldNumber
-                name='attributes.Liều phun bình ml/25 lít'
-                control={control}
-                label='Liều phun bình ml/25 lít'
-                placeholder='Nhập liều phun bình ml/25 lít'
-              />
-            </div>
-            <div className='w-full'>
-              <FormFieldNumber
-                name='attributes.Liều phun ml/ha'
-                control={control}
-                label='Liều phun ml/ha'
-                placeholder='Nhập liều phun ml/ha'
-              />
-            </div>
-            <div className='w-full'>
-              <FormFieldNumber
-                name='attributes.Lượng nước phun lít/ha'
-                control={control}
-                label='Lượng nước phun lít/ha'
-                placeholder='Lượng nước phun lít/ha'
-              />
-            </div>
-          </div>
+    return (
+      <div className='mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200'>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className='text-lg font-medium m-0'>Thuộc tính sản phẩm</h3>
+          <Button 
+            type="dashed" 
+            onClick={() => appendAttribute({ key: "", value: "" })}
+            icon={<PlusOutlined />}
+          >
+            Thêm thuộc tính
+          </Button>
         </div>
-      )
-    }
+        
+        {attributeFields.length === 0 && (
+          <div className="text-center text-gray-500 py-4 italic">
+            Chưa có thuộc tính nào. Nhấn "Thêm thuộc tính" để tạo mới.
+          </div>
+        )}
 
-    return null
+        <div className='space-y-3'>
+          {attributeFields.map((field, index) => (
+            <div key={field.id} className='flex gap-2 items-end'>
+              <div className='flex-1'>
+                <FormField
+                  name={`attribute_list.${index}.key`}
+                  control={control}
+                  label="Tên thuộc tính"
+                  placeholder='VD: Liều phun'
+                  className='mb-0'
+                />
+              </div>
+              <div className='flex-1'>
+                <FormField
+                  name={`attribute_list.${index}.value`}
+                  control={control}
+                  label="Giá trị"
+                  placeholder='VD: 100ml'
+                  className='mb-0'
+                />
+              </div>
+              <Button 
+                danger 
+                icon={<DeleteOutlined />} 
+                onClick={() => removeAttribute(index)}
+                className="mb-2"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   const onSubmit = async (values: ProductFormValues) => {
@@ -340,14 +370,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               .filter((url) => url)
           : [],
         // Thêm đơn vị tính vào attributes
-        attributes: values.attributes
-          ? {
-              ...values.attributes,
-              unit: values.unit_id?.toString() || "",
+        // Thêm đơn vị tính vào attributes và xử lý attribute_list
+        attributes: {
+          ...((values as any).attribute_list || []).reduce((acc: any, item: any) => {
+            if (item.key) {
+              acc[item.key] = item.value;
             }
-          : {
-              unit: values.unit_id?.toString() || "",
-            },
+            return acc;
+          }, {}),
+          unit: values.unit_id?.toString() || "",
+        },
         status: values.status,
         // Giữ nguyên giá trị price vì đã được xử lý trong FormField
         price: values.price,
