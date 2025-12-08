@@ -868,6 +868,12 @@ body {
   height: 100% !important;
 }
 
+/* Exception: textarea should have auto height for multiple lines */
+.product-form textarea.ant-input {
+  height: auto !important;
+  min-height: 80px !important;
+}
+
 .product-form .ant-select-selection-item,
 .product-form .ant-select-selection-placeholder {
   line-height: 32px !important;

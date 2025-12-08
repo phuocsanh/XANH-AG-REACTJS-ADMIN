@@ -57,6 +57,8 @@ import CreateSalesInvoice from "./pages/sales-invoices/create"
 import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
+// Thêm import cho trang quản lý diện tích mỗi công đất
+import Areas from "./pages/area-of-each-plot-of-land"
 import CreateSalesReturn from "./pages/sales-returns/create"
 // Thêm import cho inventory returns và adjustments
 import ReturnsPage from "./pages/inventory/returns"
@@ -435,6 +437,14 @@ function App() {
                       element={
                         <ProtectedRoute requiredPermission="SALES_MANAGE">
                           <Seasons />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/area-of-each-plot-of-land'
+                      element={
+                        <ProtectedRoute requiredPermission="SALES_MANAGE">
+                          <Areas />
                         </ProtectedRoute>
                       }
                     />

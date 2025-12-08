@@ -91,14 +91,23 @@ export enum ScheduleType {
 
 // ==================== INTERFACES ====================
 
+/** Vùng trồng/Lô đất */
+export interface AreaOfEachPlotOfLand {
+  id: number;
+  name?: string;
+  code?: string;
+  acreage?: number;
+}
+
 /** Vụ lúa */
 export interface RiceCrop {
   id: number;
   customer_id: number;
   season_id: number;
   field_name: string;
-  large_labor_days: number;
+  amount_of_land: number; // Đổi tên từ large_labor_days
   field_area: number;
+  area_of_each_plot_of_land_id?: number; // Thêm trường này
   location?: string;
   rice_variety: string;
   seed_source?: string;
@@ -117,6 +126,7 @@ export interface RiceCrop {
   customer?: any;  // Từ customer module
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   season?: any;    // Từ season module
+  areaOfEachPlotOfLand?: AreaOfEachPlotOfLand; // Relation object
 }
 
 /** Chi phí */
@@ -255,8 +265,9 @@ export interface CreateRiceCropDto {
   customer_id: number;
   season_id: number;
   field_name: string;
-  large_labor_days: number;
+  amount_of_land: number; // Đổi tên từ large_labor_days
   field_area: number;
+  area_of_each_plot_of_land_id?: number; // Thêm trường này
   location?: string;
   rice_variety: string;
   seed_source?: string;
@@ -271,8 +282,9 @@ export interface CreateRiceCropDto {
 /** DTO cập nhật vụ lúa */
 export interface UpdateRiceCropDto {
   field_name?: string;
-  large_labor_days?: number;
+  amount_of_land?: number; // Đổi tên từ large_labor_days
   field_area?: number;
+  area_of_each_plot_of_land_id?: number; // Thêm trường này
   location?: string;
   rice_variety?: string;
   expected_harvest_date?: string;

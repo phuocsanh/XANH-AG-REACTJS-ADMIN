@@ -34,6 +34,8 @@ import {
 } from '@/queries/rice-crop';
 import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
+// Import query cho diện tích mỗi công đất
+import { useAreasQuery } from "@/queries/area-of-each-plot-of-land";
 import type { RiceCrop, CreateRiceCropDto, GrowthStage, CropStatus } from '@/types/rice-farming.types';
 import dayjs from 'dayjs';
 
@@ -95,9 +97,32 @@ const RiceCropsList: React.FC = () => {
   const { data: crops, isLoading } = useRiceCrops();
   const { data: customersData } = useCustomersQuery({ limit: 100 });
   const { data: seasonsData } = useSeasonsQuery();
+  const { data: areasData } = useAreasQuery({ limit: 100 }); // Load danh sách diện tích
   const createMutation = useCreateRiceCrop();
   const updateMutation = useUpdateRiceCrop();
   const deleteMutation = useDeleteRiceCrop();
+
+  // Watch các trường để tự động tính diện tích
+  const watchedAmountOfLand = Form.useWatch('amount_of_land', form);
+  const watchedAreaId = Form.useWatch('area_of_each_plot_of_land_id', form);
+
+  // Tự động tính diện tích khi có đủ thông tin
+  React.useEffect(() => {
+    if (watchedAmountOfLand && watchedAreaId && areasData?.data?.items) {
+      // Tìm diện tích mỗi công đất được chọn
+      const selectedArea = areasData.data.items.find((area: any) => area.id === watchedAreaId);
+      
+      if (selectedArea) {
+        // Tính: Diện tích = Số lượng đất × Diện tích mỗi công đất
+        const calculatedArea = Number(watchedAmountOfLand) * Number(selectedArea.acreage);
+        
+        // Cập nhật vào form
+        form.setFieldsValue({
+          field_area: calculatedArea
+        });
+      }
+    }
+  }, [watchedAmountOfLand, watchedAreaId, areasData, form]);
 
   // Handlers
   const handleAddCrop = () => {
@@ -112,7 +137,8 @@ const RiceCropsList: React.FC = () => {
       customer_id: crop.customer_id,
       season_id: crop.season_id,
       field_name: crop.field_name,
-      large_labor_days: crop.large_labor_days,
+      amount_of_land: crop.amount_of_land,
+      area_of_each_plot_of_land_id: crop.area_of_each_plot_of_land_id,
       field_area: crop.field_area,
       location: crop.location,
       rice_variety: crop.rice_variety,
@@ -374,7 +400,7 @@ const RiceCropsList: React.FC = () => {
         ]}
         width={800}
       >
-        <Form form={form} layout="vertical" className="mt-4">
+        <Form form={form} layout="vertical" className="mt-4 product-form">
           <div className="grid grid-cols-2 gap-4">
             <Form.Item
               label="Khách hàng"
@@ -415,15 +441,36 @@ const RiceCropsList: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Số công lớn"
-              name="large_labor_days"
-              rules={[{ required: true, message: 'Vui lòng nhập số công lớn' }]}
+              label="Số lượng đất"
+              name="amount_of_land"
+              rules={[{ required: true, message: 'Vui lòng nhập số lượng đất' }]}
             >
               <InputNumber
                 min={0}
                 style={{ width: '100%' }}
                 placeholder="VD: 10"
               />
+            </Form.Item>
+
+            <Form.Item
+              label="Diện tích mỗi công đất"
+              name="area_of_each_plot_of_land_id"
+              tooltip="Chọn diện tích mỗi công đất (Không bắt buộc)"
+            >
+              <Select 
+                placeholder="Chọn diện tích"
+                allowClear
+                showSearch
+                filterOption={(input, option: any) =>
+                  option?.children?.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {areasData?.data?.items?.map((area: any) => (
+                  <Select.Option key={area.id} value={area.id}>
+                    {area.name} - {Number(area.acreage).toLocaleString('vi-VN')}m²
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item

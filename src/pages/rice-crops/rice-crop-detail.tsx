@@ -103,8 +103,13 @@ const RiceCropDetail: React.FC = () => {
             <Descriptions.Item label="Diện tích">
               {riceCrop.field_area.toLocaleString('vi-VN')} m²
             </Descriptions.Item>
-            <Descriptions.Item label="Số công lớn">
-              {riceCrop.large_labor_days}
+            <Descriptions.Item label="Số lượng đất">
+              {riceCrop.amount_of_land}
+            </Descriptions.Item>
+            <Descriptions.Item label="Diện tích mỗi công đất">
+              {riceCrop.areaOfEachPlotOfLand 
+                ? `${riceCrop.areaOfEachPlotOfLand.name || ''} ${riceCrop.areaOfEachPlotOfLand.code ? `(${riceCrop.areaOfEachPlotOfLand.code})` : ''}`
+                : (riceCrop.area_of_each_plot_of_land_id || '-')}
             </Descriptions.Item>
             <Descriptions.Item label="Giống lúa">
               {riceCrop.rice_variety}

@@ -101,6 +101,11 @@ const Sidebar: React.FC = () => {
       setActiveTab(17)
       setIsToggleSubmenu(false)
     }
+    // Diện tích mỗi công đất
+    else if (path.startsWith('/area-of-each-plot-of-land')) {
+      setActiveTab(27)
+      setIsToggleSubmenu(false)
+    }
     // Khách hàng
     else if (path.startsWith('/customers')) {
       setActiveTab(18)
@@ -581,6 +586,23 @@ const Sidebar: React.FC = () => {
                     <GiGrain className='text-green-200' />
                   </span>
                   Mùa vụ
+                </Button>
+              </Link>
+            </li>
+          )}
+
+          {/* Diện tích mỗi công đất */}
+          {hasPermission(userInfo, "SALES_MANAGE") && (
+            <li>
+              <Link to='/area-of-each-plot-of-land'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 27 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(27)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <BiCategory className='text-lime-200' />
+                  </span>
+                  Diện tích mỗi công đất
                 </Button>
               </Link>
             </li>
