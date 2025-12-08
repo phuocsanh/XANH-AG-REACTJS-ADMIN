@@ -131,6 +131,11 @@ const Sidebar: React.FC = () => {
       setActiveTab(22)
       setIsToggleSubmenu(false)
     }
+    // Báo cáo Lợi nhuận
+    else if (path.startsWith('/profit-reports')) {
+      setActiveTab(28)
+      setIsToggleSubmenu(false)
+    }
     // Cảnh báo Bệnh/Sâu hại
     else if (path.startsWith('/disease-warning')) {
       setActiveTab(23)
@@ -263,6 +268,23 @@ const Sidebar: React.FC = () => {
                         <MdAssignmentReturn className='text-orange-200' />
                       </span>
                       Trả hàng
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {/* Báo cáo Lợi nhuận */}
+              {hasPermission(userInfo, "SALES_VIEW") && (
+                <li>
+                  <Link to='/profit-reports'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 28 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(28)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <RiFileListLine className='text-green-200' />
+                      </span>
+                      📊 Báo cáo Lợi nhuận
                     </Button>
                   </Link>
                 </li>

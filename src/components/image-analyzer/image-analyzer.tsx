@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Button, message, Spin } from 'antd';
+import { Button, message, Spin, Image } from 'antd';
 import { CameraOutlined, FileImageOutlined, LoadingOutlined } from '@ant-design/icons';
 import { productComparisonService, fileToBase64, validateImageFile } from '@/services/product-comparison.service';
+import heic2any from 'heic2any';
 
 /**
  * Interface cho dữ liệu trích xuất từ ảnh
@@ -101,6 +102,7 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
 
   /**
    * Xử lý khi người dùng chọn file
+   * Hỗ trợ HEIC/HEIF từ iPhone
    */
   const handleFileSelect = async (file: File) => {
     // Validate file
@@ -110,7 +112,37 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
     }
 
     try {
-      const base64 = await fileToBase64(file);
+      let fileToProcess = file;
+
+      // Convert HEIC/HEIF sang JPEG nếu cần
+      if (file.type === 'image/heic' || file.type === 'image/heif' || 
+          file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        console.log('📱 Đang chuyển đổi ảnh HEIC/HEIF...');
+        message.loading({ content: 'Đang xử lý ảnh iPhone...', key: 'heic-convert', duration: 0 });
+        
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.9,
+          });
+
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+          fileToProcess = new File(
+            [blob], 
+            file.name.replace(/\.(heic|heif)$/i, '.jpg'),
+            { type: 'image/jpeg' }
+          );
+          
+          message.success({ content: 'Chuyển đổi ảnh thành công!', key: 'heic-convert', duration: 1 });
+        } catch (heicError) {
+          console.error('❌ Lỗi chuyển đổi HEIC:', heicError);
+          message.error({ content: 'Không thể chuyển đổi ảnh HEIC', key: 'heic-convert' });
+          return;
+        }
+      }
+
+      const base64 = await fileToBase64(fileToProcess);
       setImages(prev => [...prev, base64]);
     } catch (error) {
       console.error('Error converting file to base64:', error);
@@ -162,35 +194,55 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
 
         {/* Image Grid */}
         {images.length > 0 && (
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-            {images.map((img, idx) => (
-              <div key={idx} className="relative group aspect-square border rounded-lg overflow-hidden bg-gray-50">
-                <img 
-                  src={img} 
-                  alt={`Preview ${idx + 1}`} 
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  onClick={() => removeImage(idx)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Xóa ảnh"
-                  type="button"
+          <Image.PreviewGroup>
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+              {images.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative group aspect-square border rounded-lg overflow-hidden bg-gray-50 hover:shadow-lg transition-all duration-200"
+                  title="Click để xem ảnh lớn"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                  <Image
+                    src={img}
+                    alt={`Preview ${idx + 1}`}
+                    className="w-full h-full object-cover cursor-pointer"
+                    preview={{
+                      mask: (
+                        <div className="flex flex-col items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                          <span className="text-xs">Xem lớn</span>
+                        </div>
+                      ),
+                    }}
+                    style={{ objectFit: 'cover' }}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeImage(idx);
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600"
+                    title="Xóa ảnh"
+                    type="button"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              
+              {/* Nút thêm ảnh nhỏ gọn trong grid nếu cần */}
+               <div 
+                className="flex items-center justify-center aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors bg-gray-50"
+                onClick={handleUploadClick}
+              >
+                 <CameraOutlined className="text-xl text-gray-400" />
               </div>
-            ))}
-            
-            {/* Nút thêm ảnh nhỏ gọn trong grid nếu cần */}
-             <div 
-              className="flex items-center justify-center aspect-square border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition-colors bg-gray-50"
-              onClick={handleUploadClick}
-            >
-               <CameraOutlined className="text-xl text-gray-400" />
             </div>
-          </div>
+          </Image.PreviewGroup>
         )}
 
         {/* Empty State / Upload Area */}
@@ -219,7 +271,7 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
         <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
+            accept="image/jpeg,image/jpg,image/png,image/webp,.heic,.heif"
             multiple // Cho phép chọn nhiều file
             style={{ display: 'none' }}
             onChange={handleInputChange}
@@ -243,7 +295,7 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
         
          {/* Helper Text */}
          <div className="text-xs text-gray-400 mt-[-8px]">
-             * Click vào khung để dán ảnh (Ctrl+V). Nhấn "Trích xuất thông tin" để AI xử lý lại nếu cần.
+             * Click vào khung để dán ảnh (Ctrl+V). <strong>Click vào ảnh để xem phóng to.</strong> Nhấn "Trích xuất thông tin" để AI xử lý.
          </div>
       </div>
     </div>

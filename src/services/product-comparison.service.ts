@@ -301,16 +301,24 @@ export const fileToBase64 = (file: File): Promise<string> => {
 
 /**
  * Utility: Validate image file
+ * Hỗ trợ HEIC/HEIF từ iPhone
  */
 export const validateImageFile = (file: File): boolean => {
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
   const maxSize = 5 * 1024 * 1024; // 5MB
 
-  if (!validTypes.includes(file.type)) {
+  // Kiểm tra MIME type hoặc extension (vì một số browser không nhận diện HEIC)
+  const isValidType = validTypes.includes(file.type) || 
+                      file.name.toLowerCase().endsWith('.heic') || 
+                      file.name.toLowerCase().endsWith('.heif');
+
+  if (!isValidType) {
+    console.warn('❌ File type không hợp lệ:', file.type, file.name);
     return false;
   }
 
   if (file.size > maxSize) {
+    console.warn('❌ File quá lớn:', (file.size / 1024 / 1024).toFixed(2), 'MB');
     return false;
   }
 

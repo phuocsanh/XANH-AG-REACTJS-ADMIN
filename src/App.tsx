@@ -57,6 +57,8 @@ import CreateSalesInvoice from "./pages/sales-invoices/create"
 import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
+// Thêm import cho trang báo cáo lợi nhuận
+import ProfitReportsPage from "./pages/profit-reports"
 // Thêm import cho trang quản lý diện tích mỗi công đất
 import Areas from "./pages/area-of-each-plot-of-land"
 import CreateSalesReturn from "./pages/sales-returns/create"
@@ -501,6 +503,14 @@ function App() {
                       element={
                         <ProtectedRoute requiredPermission="SALES_MANAGE">
                           <CreateSalesReturn />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/profit-reports'
+                      element={
+                        <ProtectedRoute requiredPermission="store-profit-report:read">
+                          <ProfitReportsPage />
                         </ProtectedRoute>
                       }
                     />

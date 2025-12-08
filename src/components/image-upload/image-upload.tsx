@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { Upload, message } from "antd"
 import { UploadFile, UploadProps } from "antd/lib/upload/interface"
 import { useUploadImageMutation } from "../../queries/upload"
@@ -24,6 +24,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 }) => {
   const [loading, setLoading] = useState(false)
   const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [isFocused, setIsFocused] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Upload mutation
   const uploadImageMutation = useUploadImageMutation()
@@ -42,6 +44,90 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setFileList([])
     }
   }, [value])
+
+  /**
+   * Xử lý khi paste ảnh từ clipboard
+   */
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items
+    let hasImage = false
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile()
+        if (file) {
+          hasImage = true
+          
+          // Kiểm tra maxCount
+          if (fileList.length >= maxCount) {
+            message.warning(`Chỉ được tải tối đa ${maxCount} ảnh`)
+            return
+          }
+
+          // Tạo UploadFile object từ file paste
+          const uploadFile: UploadFile = {
+            uid: `paste-${Date.now()}-${i}`,
+            name: file.name || `pasted-image-${Date.now()}.png`,
+            status: 'uploading',
+            originFileObj: file as any,
+          }
+
+          // Thêm vào fileList
+          const newFileList = [...fileList, uploadFile]
+          setFileList(newFileList)
+
+          // Upload file
+          try {
+            setLoading(true)
+            const uploadRequest = {
+              file: file,
+              type: uploadType,
+            }
+
+            const response = await uploadImageMutation.mutateAsync(uploadRequest)
+
+            // Cập nhật file với URL từ server
+            const updatedList = newFileList.map((item) => {
+              if (item.uid === uploadFile.uid) {
+                return {
+                  ...item,
+                  url: response.url,
+                  thumbUrl: response.url,
+                  status: "done" as const,
+                }
+              }
+              return item
+            })
+
+            setFileList(updatedList)
+
+            // Extract URLs và gọi onChange
+            const urls = updatedList
+              .filter((item) => item.status === "done" && item.url)
+              .map((item) => item.url as string)
+
+            onChange?.(urls)
+            message.success('Đã paste ảnh thành công!')
+          } catch (error) {
+            console.error('Upload error:', error)
+            message.error('Tải ảnh lên thất bại')
+            
+            // Xóa file lỗi khỏi list
+            const updatedList = newFileList.filter(
+              (item) => item.uid !== uploadFile.uid
+            )
+            setFileList(updatedList)
+          } finally {
+            setLoading(false)
+          }
+        }
+      }
+    }
+
+    if (hasImage) {
+      e.preventDefault()
+    }
+  }
 
   const handleChange: UploadProps["onChange"] = async ({
     file: uploadedFile,
@@ -146,27 +232,47 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   }
 
   return (
-    <Dragger
-      fileList={fileList}
-      onChange={handleChange}
-      onRemove={handleRemove}
-      multiple={multiple}
-      maxCount={maxCount}
-      beforeUpload={() => false} // Prevent automatic upload
-      listType='picture-card'
-      disabled={loading}
-      accept="image/*,.heic,.heif"
+    <div
+      ref={containerRef}
+      onPaste={handlePaste}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      tabIndex={0}
+      style={{
+        outline: 'none',
+        border: isFocused ? '2px solid #1890ff' : '2px solid transparent',
+        borderRadius: '8px',
+        padding: '2px',
+        transition: 'border-color 0.3s',
+      }}
     >
-      <div className='flex flex-col items-center justify-center p-2'>
-        <div className='text-blue-500 text-lg mb-1'>Tải ảnh lên</div>
-        <div className='text-gray-500 text-sm'>
-          Click hoặc kéo thả ảnh vào đây
+      <Dragger
+        fileList={fileList}
+        onChange={handleChange}
+        onRemove={handleRemove}
+        multiple={multiple}
+        maxCount={maxCount}
+        beforeUpload={() => false} // Prevent automatic upload
+        listType='picture-card'
+        disabled={loading}
+        accept="image/*,.heic,.heif"
+      >
+        <div className='flex flex-col items-center justify-center p-2'>
+          <div className='text-blue-500 text-lg mb-1'>Tải ảnh lên</div>
+          <div className='text-gray-500 text-sm'>
+            Click hoặc kéo thả ảnh vào đây
+          </div>
+          <div className='text-gray-400 text-xs mt-1'>
+            Hỗ trợ JPG, PNG, HEIC (iPhone)
+          </div>
+          {isFocused && (
+            <div className='text-blue-500 text-xs mt-2 font-semibold animate-pulse'>
+              📋 Nhấn Ctrl+V để paste ảnh
+            </div>
+          )}
         </div>
-        <div className='text-gray-400 text-xs mt-1'>
-          Hỗ trợ JPG, PNG, HEIC (iPhone)
-        </div>
-      </div>
-    </Dragger>
+      </Dragger>
+    </div>
   )
 }
 

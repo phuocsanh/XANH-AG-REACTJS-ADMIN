@@ -86,3 +86,17 @@ export const useCustomerProfitReport = (
     enabled: !!customerId && customerId > 0,
   });
 };
+
+/**
+ * Lấy báo cáo lợi nhuận theo vụ lúa (Rice Crop)
+ * @param riceCropId - ID của vụ lúa
+ */
+export const useRiceCropProfitQuery = (riceCropId: number) => {
+  return useQuery({
+    queryKey: [...storeProfitReportKeys.all, 'rice-crop', riceCropId] as const,
+    queryFn: async () => {
+      return await api.get<any>(`/store-profit-report/rice-crop/${riceCropId}`);
+    },
+    enabled: !!riceCropId && riceCropId > 0,
+  });
+};

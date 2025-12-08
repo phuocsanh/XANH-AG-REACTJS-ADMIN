@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -61,7 +61,7 @@ import { weatherService, WeatherData, SimplifiedWeatherData } from '@/services/w
 import { frontendAiService } from '@/services/ai.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
-import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs } from 'antd';
+import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs, Popover } from 'antd';
 import {
   salesInvoiceSchema,
   SalesInvoiceFormData,
@@ -219,7 +219,8 @@ const CreateSalesInvoice = () => {
   
   // Filter out current invoice if we are editing the latest one
   const latestInvoice = useMemo(() => {
-    const invoice = (latestInvoiceResponse as any)?.data as SalesInvoice | undefined;
+    // API interceptor đã unwrap response, latestInvoiceResponse đã là SalesInvoice hoặc null
+    const invoice = latestInvoiceResponse as SalesInvoice | null | undefined;
     if (invoice && id && invoice.id === parseInt(id)) {
       return null;
     }
@@ -245,6 +246,44 @@ const CreateSalesInvoice = () => {
   const createMutation = useCreateSalesInvoiceMutation();
   const updateMutation = useUpdateSalesInvoiceMutation();
 
+  // State để hiển thị lợi nhuận khi nhấn giữ
+  const [showProfit, setShowProfit] = useState(false);
+  const pressTimerRef = useRef<any>(null);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Tính lợi nhuận real-time
+  const calculatedProfit = useMemo(() => {
+    const items = watch('items') || [];
+    let totalRevenue = 0;
+    let totalCost = 0;
+
+    const productsList = productsData?.data?.items || [];
+
+    items.forEach((item: any) => {
+      if (item.product_id && item.quantity) {
+        const product = productsList.find((p: any) => p.id === item.product_id);
+        const avgCost = Number(product?.average_cost_price || 0);
+        const unitPrice = Number(item.unit_price || 0);
+        const quantity = Number(item.quantity || 0);
+        const itemRevenue = quantity * unitPrice;
+        const itemCost = quantity * avgCost;
+        
+        totalRevenue += itemRevenue;
+        totalCost += itemCost;
+      }
+    });
+
+    const profit = totalRevenue - totalCost;
+    const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+
+    return {
+      revenue: totalRevenue,
+      cost: totalCost,
+      profit,
+      margin,
+    };
+  }, [watch('items'), productsData]);
+
   // Reset rice_crop_id khi thay đổi season_id
   useEffect(() => {
     if (selectedCustomer) {
@@ -255,8 +294,9 @@ const CreateSalesInvoice = () => {
 
   // Populate form when editing
   useEffect(() => {
-    if (isEditMode && invoiceData?.data) {
-      const invoice = invoiceData.data;
+    // API interceptor đã unwrap response, invoiceData đã là SalesInvoice trực tiếp
+    if (isEditMode && invoiceData) {
+      const invoice = invoiceData;
       
       // Set form values
       setValue('customer_id', invoice.customer_id);
@@ -275,12 +315,17 @@ const CreateSalesInvoice = () => {
       
       // Set items if available
       if (invoice.items && invoice.items.length > 0) {
+        // Suy luận price_type từ payment_method của invoice
+        const inferredPriceType = invoice.payment_method === 'debt' ? 'credit' : 'cash';
+        
         setValue('items', invoice.items.map(item => ({
           product_id: item.product_id,
+          product_name: item.product_name,
           quantity: item.quantity,
           unit_price: item.unit_price,
           discount_amount: item.discount_amount || 0,
-          notes: item.notes || ''
+          notes: item.notes || '',
+          price_type: inferredPriceType as 'cash' | 'credit', // Suy luận từ payment_method
         })));
       }
       
@@ -415,6 +460,8 @@ const CreateSalesInvoice = () => {
 - Thời gian sử dụng tối ưu
 - Lưu ý khi phối trộn (nếu có)
 - Điều kiện bảo quản
+- Lưu ý khi sử dụng cùng với các sản phẩm khác
+- Tập chú ý các dữ liệu trong tên sản phẩm , ký hiệu, liều lượng. 
 
 Danh sách sản phẩm:
 ${productDescriptions}
@@ -1626,7 +1673,59 @@ ${productInfo}`;
 
             {/* Actions */}
             <Grid item xs={12}>
-              <Box display="flex" gap={2} justifyContent="flex-end">
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', position: 'relative' }}>
+                {/* Nút hiển thị lợi nhuận - Hover để xem */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: 0,
+                    bottom: 0,
+                  }}
+                >
+                  <Popover
+                    content={
+                      <div style={{ minWidth: 200 }}>
+                        <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                          Dự kiến:
+                        </div>
+                        <div 
+                          style={{ 
+                            fontSize: 20, 
+                            fontWeight: 'bold',
+                            color: calculatedProfit.profit >= 0 ? '#52c41a' : '#ff4d4f',
+                            marginBottom: 4,
+                          }}
+                        >
+                          {new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(calculatedProfit.profit)}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#666' }}>
+                          Tỷ suất: {calculatedProfit.margin.toFixed(2)}%
+                        </div>
+                      </div>
+                    }
+                    trigger="hover"
+                    placement="topLeft"
+                  >
+                    <IconButton
+                      size="small"
+                      sx={{
+                        bgcolor: calculatedProfit.profit >= 0 ? 'success.light' : 'error.light',
+                        '&:hover': {
+                          bgcolor: calculatedProfit.profit >= 0 ? 'success.main' : 'error.main',
+                        },
+                        width: 32,
+                        height: 32,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <ThunderboltOutlined style={{ fontSize: 16, color: '#fff' }} />
+                    </IconButton>
+                  </Popover>
+                </Box>
+
                 <Button
                   variant="outlined"
                   onClick={() => navigate('/sales-invoices')}
