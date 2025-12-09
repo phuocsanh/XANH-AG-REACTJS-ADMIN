@@ -4,16 +4,22 @@ import {
   useSalesReturnsQuery,
   useUpdateSalesReturnStatusMutation,
 } from "@/queries/sales-return"
-import { Button, Tag, Space, Select, Modal, Card, Descriptions } from "antd"
+import { Button, Tag, Space, Modal, Card, Descriptions } from "antd"
 import {
   PlusOutlined,
   EyeOutlined,
   CheckOutlined,
   CloseOutlined,
+  SearchOutlined,
 } from "@ant-design/icons"
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
+import FilterHeader from "@/components/common/filter-header"
 import { ConfirmModal } from "@/components/common"
 import { useNavigate } from "react-router-dom"
+import { TablePaginationConfig, TableProps } from "antd"
+import { FilterValue, SorterResult } from "antd/es/table/interface"
 import {
   returnStatusLabels,
   returnStatusColors,
@@ -28,7 +34,7 @@ interface ExtendedSalesReturn extends SalesReturn {
 
 const SalesReturnsList: React.FC = () => {
   // State quản lý UI
-  const [statusFilter, setStatusFilter] = React.useState<string>("")
+  const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [isDetailModalVisible, setIsDetailModalVisible] =
     React.useState<boolean>(false)
   const [approveConfirmVisible, setApproveConfirmVisible] =
@@ -44,11 +50,101 @@ const SalesReturnsList: React.FC = () => {
 
   const navigate = useNavigate()
 
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <DatePicker.RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Handle Table Change
+  const handleTableChange: TableProps<ExtendedSalesReturn>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter,
+    extra
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+    
+    const newFilters = { ...filters }
+
+    // Status filter
+    if (tableFilters.status && tableFilters.status.length > 0) {
+        newFilters.status = tableFilters.status[0]
+    }
+
+    // Created At Range
+    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
+      newFilters.start_date = tableFilters.created_at[0]
+      newFilters.end_date = tableFilters.created_at[1]
+    } else {
+        delete newFilters.start_date
+        delete newFilters.end_date
+    }
+
+    setFilters(newFilters)
+  }
+
+  // Handle Filter Change
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value }
+      if (!value) delete newFilters[key]
+      setFilters(newFilters)
+      setCurrentPage(1)
+  }
+
   // Queries
   const { data: returnsData, isLoading } = useSalesReturnsQuery({
     page: currentPage,
     limit: pageSize,
-    status: statusFilter || undefined,
+    ...filters
   })
 
   const updateStatusMutation = useUpdateSalesReturnStatusMutation()
@@ -134,23 +230,47 @@ const SalesReturnsList: React.FC = () => {
   const columns = [
     {
       key: "code",
-      title: "Mã phiếu trả",
-      width: 120,
+      title: (
+        <FilterHeader 
+            title="Mã phiếu trả" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
       render: (record: ExtendedSalesReturn) => (
         <div className='font-medium'>{record.code}</div>
       ),
     },
     {
       key: "invoice_code",
-      title: "Hóa đơn gốc",
-      width: 120,
+      title: (
+        <FilterHeader 
+            title="Hóa đơn gốc" 
+            dataIndex="invoice_code" 
+            value={filters.invoice_code} 
+            onChange={(val) => handleFilterChange('invoice_code', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
       render: (record: ExtendedSalesReturn) => (
         <div className='font-medium'>{record.invoice_code}</div>
       ),
     },
     {
       key: "customer_name",
-      title: "Khách hàng",
+      title: (
+        <FilterHeader 
+            title="Khách hàng" 
+            dataIndex="customer_name" 
+            value={filters.customer_name} 
+            onChange={(val) => handleFilterChange('customer_name', val)}
+            inputType="text"
+        />
+      ),
       width: 180,
       render: (record: ExtendedSalesReturn) => (
         <div className='font-medium'>{record.customer_name}</div>
@@ -181,7 +301,15 @@ const SalesReturnsList: React.FC = () => {
     {
       key: "status",
       title: "Trạng thái",
-      width: 120,
+      width: 130,
+      filters: [
+          { text: "Chờ duyệt", value: "pending" },
+          { text: "Đã duyệt", value: "approved" },
+          { text: "Từ chối", value: "rejected" },
+          { text: "Hoàn tất", value: "completed" },
+      ],
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
       render: (record: ExtendedSalesReturn) => {
         const status = record.status as keyof typeof returnStatusLabels
         return (
@@ -194,10 +322,13 @@ const SalesReturnsList: React.FC = () => {
     {
       key: "created_at",
       title: "Ngày tạo",
+      dataIndex: "created_at",
       width: 120,
-      render: (record: ExtendedSalesReturn) => (
+      ...getDateColumnSearchProps('created_at'),
+      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
+      render: (value : string) => (
         <div>
-          {new Date(record.created_at).toLocaleDateString("vi-VN")}
+          {new Date(value).toLocaleDateString("vi-VN")}
         </div>
       ),
     },
@@ -252,23 +383,6 @@ const SalesReturnsList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filter */}
-      <div className='mb-6'>
-        <Select
-          placeholder='Lọc theo trạng thái'
-          value={statusFilter || undefined}
-          onChange={(value) => setStatusFilter(value || "")}
-          allowClear
-          className='w-64'
-        >
-          <Select.Option value=''>Tất cả</Select.Option>
-          <Select.Option value='pending'>Chờ duyệt</Select.Option>
-          <Select.Option value='approved'>Đã duyệt</Select.Option>
-          <Select.Option value='rejected'>Từ chối</Select.Option>
-          <Select.Option value='completed'>Hoàn tất</Select.Option>
-        </Select>
-      </div>
-
       {/* Danh sách phiếu trả */}
       <div className='bg-white rounded shadow'>
         <DataTable
@@ -282,11 +396,10 @@ const SalesReturnsList: React.FC = () => {
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50", "100"],
             showTotal: (total: number) => `Tổng ${total} phiếu trả`,
-            onChange: (page: number, size: number) => {
-              setCurrentPage(page)
-              setPageSize(size)
-            },
           }}
+          onChange={handleTableChange}
+          showSearch={false}
+          showFilters={false}
         />
       </div>
 

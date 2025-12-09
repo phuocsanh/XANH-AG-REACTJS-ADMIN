@@ -39,6 +39,7 @@ export const useProductSubtypesQuery = (params?: Record<string, unknown>) => {
       }>('/product-subtype/search', {
         page,
         limit,
+        ...params,
       })
 
       return {

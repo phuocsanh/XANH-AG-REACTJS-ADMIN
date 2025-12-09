@@ -6,6 +6,7 @@ import { UploadFile } from "antd/lib/upload/interface"
 // Interface cho dữ liệu sản phẩm từ API
 export interface Product {
   id: number
+  code: string
   name: string
   price: string
   status: BaseStatus
@@ -17,7 +18,7 @@ export interface Product {
   description: string
   slug: string | null
   quantity: number
-  type: number
+  type: number | { id: number; name: string }
   sub_product_type: number[]
   discount: string
   discounted_price: string

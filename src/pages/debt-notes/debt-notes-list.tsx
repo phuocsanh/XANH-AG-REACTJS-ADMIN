@@ -7,21 +7,25 @@ import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
 import { useDebtNotesQuery } from "@/queries/debt-note"
 import {
-  Select,
   Tag,
   Card,
   Statistic,
   Row,
   Col,
+  DatePicker,
+  Space,
 } from "antd"
-import { DollarOutlined } from "@ant-design/icons"
+import { DollarOutlined, SearchOutlined } from "@ant-design/icons"
+import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
+import FilterHeader from "@/components/common/filter-header"
 import {
   debtStatusLabels,
   debtStatusColors,
 } from "./form-config"
 import { SettleDebtModal } from "../payments/components/settle-debt-modal"
-import { Button } from "antd"
+import { Button, TablePaginationConfig, TableProps } from "antd"
+import { FilterValue, SorterResult } from "antd/es/table/interface"
 
 // Extend DebtNote interface để tương thích với DataTable
 interface ExtendedDebtNote extends DebtNote {
@@ -31,7 +35,7 @@ interface ExtendedDebtNote extends DebtNote {
 
 const DebtNotesList: React.FC = () => {
   // State quản lý UI
-  const [statusFilter, setStatusFilter] = React.useState<string>("")
+  const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
 
@@ -39,6 +43,107 @@ const DebtNotesList: React.FC = () => {
   const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
   const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
   const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<any>(null)
+
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <DatePicker.RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Handle Table Change
+  const handleTableChange: TableProps<ExtendedDebtNote>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter,
+    extra
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+    
+    const newFilters = { ...filters }
+
+    // Status filter
+    if (tableFilters.status && tableFilters.status.length > 0) {
+        newFilters.status = tableFilters.status[0]
+    } else {
+    }
+
+    // Due Date Range
+    if (tableFilters.due_date && tableFilters.due_date.length === 2) {
+      newFilters.due_date_start = tableFilters.due_date[0]
+      newFilters.due_date_end = tableFilters.due_date[1]
+    } else {
+        delete newFilters.due_date_start
+        delete newFilters.due_date_end
+    }
+
+    // Sorter (amount, paid_amount, remaining_amount)
+    const sortItem = Array.isArray(sorter) ? sorter[0] : sorter;
+    if (sortItem && sortItem.field && sortItem.order) {
+        newFilters.sort_by = sortItem.field
+        newFilters.sort_direction = sortItem.order === 'ascend' ? 'ASC' : 'DESC'
+    } else {
+        delete newFilters.sort_by
+        delete newFilters.sort_direction
+    }
+
+    setFilters(newFilters)
+  }
+
+  // Handle Filter Change
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value }
+      if (!value) delete newFilters[key]
+      setFilters(newFilters)
+      setCurrentPage(1)
+  }
 
   // Handlers
   const handleOpenSettleModal = (record: ExtendedDebtNote) => {
@@ -78,7 +183,7 @@ const DebtNotesList: React.FC = () => {
   const { data: debtNotesData, isLoading } = useDebtNotesQuery({
     page: currentPage,
     limit: pageSize,
-    status: statusFilter || undefined,
+    ...filters
   })
 
   // Lấy danh sách phiếu nợ
@@ -115,15 +220,31 @@ const DebtNotesList: React.FC = () => {
   const columns = [
     {
       key: "code",
-      title: "Mã phiếu nợ",
-      width: 120,
+      title: (
+        <FilterHeader 
+            title="Mã phiếu nợ" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
       render: (record: ExtendedDebtNote) => (
         <div className='font-medium'>{record.code}</div>
       ),
     },
     {
       key: "customer_name",
-      title: "Khách hàng",
+      title: (
+        <FilterHeader 
+            title="Khách hàng" 
+            dataIndex="customer_name" 
+            value={filters.customer_name} 
+            onChange={(val) => handleFilterChange('customer_name', val)}
+            inputType="text"
+        />
+      ),
       width: 180,
       render: (record: ExtendedDebtNote) => (
         <div className='font-medium'>
@@ -133,7 +254,15 @@ const DebtNotesList: React.FC = () => {
     },
     {
       key: "season_name",
-      title: "Mùa vụ",
+      title: (
+        <FilterHeader 
+            title="Mùa vụ" 
+            dataIndex="season_name" 
+            value={filters.season_name} 
+            onChange={(val) => handleFilterChange('season_name', val)}
+            inputType="text"
+        />
+      ),
       width: 120,
       render: (record: ExtendedDebtNote) => (
         <div>{record.season?.name || record.season_name || "-"}</div>
@@ -141,40 +270,52 @@ const DebtNotesList: React.FC = () => {
     },
     {
       key: "amount",
+      dataIndex: "amount",
       title: "Số tiền nợ",
       width: 130,
-      render: (record: ExtendedDebtNote) => (
-        <div className='text-gray-600'>{formatCurrency(record.amount)}</div>
+      sorter: true,
+      sortOrder: filters.sort_by === 'amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
+      render: (value: number) => (
+        <div className='text-gray-600'>{formatCurrency(value)}</div>
       ),
     },
     {
       key: "paid_amount",
+      dataIndex: "paid_amount",
       title: "Đã trả",
       width: 130,
-      render: (record: ExtendedDebtNote) => (
+      sorter: true,
+      sortOrder: filters.sort_by === 'paid_amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
+      render: (value: number) => (
         <div className='text-green-600 font-medium'>
-          {formatCurrency(record.paid_amount)}
+          {formatCurrency(value)}
         </div>
       ),
     },
     {
       key: "remaining_amount",
+      dataIndex: "remaining_amount",
       title: "Còn nợ",
       width: 130,
-      render: (record: ExtendedDebtNote) => (
+      sorter: true,
+      sortOrder: filters.sort_by === 'remaining_amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
+      render: (value: number) => (
         <div className='text-red-600 font-bold'>
-          {formatCurrency(record.remaining_amount)}
+          {formatCurrency(value)}
         </div>
       ),
     },
     {
       key: "due_date",
       title: "Hạn trả",
+      dataIndex: "due_date",
       width: 120,
-      render: (record: ExtendedDebtNote) => (
+      ...getDateColumnSearchProps('due_date'),
+      filteredValue: (filters.due_date_start && filters.due_date_end) ? [filters.due_date_start, filters.due_date_end] : null,
+      render: (value : string) => (
         <div>
-          {record.due_date
-            ? new Date(record.due_date).toLocaleDateString("vi-VN")
+          {value
+            ? new Date(value).toLocaleDateString("vi-VN")
             : "-"}
         </div>
       ),
@@ -183,6 +324,13 @@ const DebtNotesList: React.FC = () => {
       key: "status",
       title: "Trạng thái",
       width: 120,
+      filters: [
+          { text: "Đang nợ", value: "active" },
+          { text: "Quá hạn", value: "overdue" },
+          { text: "Đã trả", value: "paid" },
+      ],
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
       render: (record: ExtendedDebtNote) => {
         const status = record.status as keyof typeof debtStatusLabels
         return (
@@ -267,22 +415,6 @@ const DebtNotesList: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Filter */}
-      <div className='mb-6'>
-        <Select
-          placeholder='Lọc theo trạng thái'
-          value={statusFilter || undefined}
-          onChange={(value) => setStatusFilter(value || "")}
-          allowClear
-          className='w-64'
-        >
-          <Select.Option value=''>Tất cả</Select.Option>
-          <Select.Option value='active'>Đang nợ</Select.Option>
-          <Select.Option value='overdue'>Quá hạn</Select.Option>
-          <Select.Option value='paid'>Đã trả</Select.Option>
-        </Select>
-      </div>
-
       {/* Danh sách phiếu nợ */}
       <div className='bg-white rounded shadow'>
         <DataTable
@@ -296,11 +428,10 @@ const DebtNotesList: React.FC = () => {
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50", "100"],
             showTotal: (total: number) => `Tổng ${total} phiếu nợ`,
-            onChange: (page: number, size: number) => {
-              setCurrentPage(page)
-              setPageSize(size)
-            },
           }}
+          onChange={handleTableChange}
+          showSearch={false}
+          showFilters={false}
         />
       </div>
 

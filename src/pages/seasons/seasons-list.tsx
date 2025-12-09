@@ -24,7 +24,10 @@ import {
   SearchOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
+import FilterHeader from "@/components/common/filter-header"
 import { ConfirmModal } from "@/components/common"
+import { TablePaginationConfig, TableProps } from "antd"
+import { FilterValue, SorterResult } from "antd/es/table/interface"
 import dayjs from "dayjs"
 import type { Dayjs } from "dayjs"
 
@@ -47,7 +50,7 @@ interface SeasonFormValues {
 
 const SeasonsList: React.FC = () => {
   // State quản lý UI
-  const [searchTerm, setSearchTerm] = React.useState<string>("")
+  const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [isFormModalVisible, setIsFormModalVisible] =
     React.useState<boolean>(false)
   const [deleteConfirmVisible, setDeleteConfirmVisible] =
@@ -62,10 +65,112 @@ const SeasonsList: React.FC = () => {
   // Form instance
   const [form] = Form.useForm<SeasonFormValues>()
 
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <DatePicker.RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Handle Table Change
+  const handleTableChange: TableProps<ExtendedSeason>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter,
+    extra
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+    
+    const newFilters = { ...filters }
+    
+    // Status (is_active boolean)
+    if (tableFilters.is_active && tableFilters.is_active.length > 0) {
+      // Convert string "true"/"false" back to boolean if needed, or pass as is depending on backend
+      newFilters.is_active = tableFilters.is_active[0]
+    } else {
+    }
+
+    // Start Date Range
+    if (tableFilters.start_date && tableFilters.start_date.length === 2) {
+      newFilters.start_date_start = tableFilters.start_date[0]
+      newFilters.start_date_end = tableFilters.start_date[1]
+    } else {
+        delete newFilters.start_date_start
+        delete newFilters.start_date_end
+    }
+
+    // End Date Range
+    if (tableFilters.end_date && tableFilters.end_date.length === 2) {
+      newFilters.end_date_start = tableFilters.end_date[0]
+      newFilters.end_date_end = tableFilters.end_date[1]
+    } else {
+        delete newFilters.end_date_start
+        delete newFilters.end_date_end
+    }
+
+    setFilters(newFilters)
+  }
+
+  // Handle Filter Change
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value }
+      if (!value) delete newFilters[key]
+      setFilters(newFilters)
+      setCurrentPage(1)
+  }
+
   // Sử dụng query hooks
   const { data: seasonsData, isLoading } = useSeasonsQuery({
     page: currentPage,
     limit: pageSize,
+    ...filters
   })
 
   const createMutation = useCreateSeasonMutation()
@@ -169,37 +274,8 @@ const SeasonsList: React.FC = () => {
     setEditingSeason(null)
   }
 
-  // Filter seasons based on search term
-  const filteredSeasons = React.useMemo(() => {
-    if (!seasonsData || !seasonsData.data) {
-      return []
-    }
-
-    let result = [...(seasonsData.data.items || [])]
-
-    // Lọc theo từ khóa tìm kiếm
-    if (searchTerm.trim()) {
-      const lowerSearchTerm = searchTerm.toLowerCase().trim()
-      result = result.filter((season: Season) => {
-        if (!season) return false
-
-        const name = String(season.name || "").toLowerCase()
-        const code = String(season.code || "").toLowerCase()
-        const description = String(season.description || "").toLowerCase()
-
-        return (
-          name.includes(lowerSearchTerm) ||
-          code.includes(lowerSearchTerm) ||
-          description.includes(lowerSearchTerm)
-        )
-      })
-    }
-
-    return result
-  }, [seasonsData, searchTerm])
-
-  // Sử dụng filteredSeasons trong giao diện
-  const displaySeasons: ExtendedSeason[] = filteredSeasons.map(
+  // Display Seasons
+  const displaySeasons: ExtendedSeason[] = (seasonsData?.data?.items || []).map(
     (season: Season) => ({
       ...season,
       key: season.id.toString(),
@@ -213,7 +289,15 @@ const SeasonsList: React.FC = () => {
   const columns = [
     {
       key: "code",
-      title: "Mã",
+      title: (
+        <FilterHeader 
+            title="Mã" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+            inputType="text"
+        />
+      ),
       width: 120,
       render: (record: ExtendedSeason) => (
         <div className='font-medium'>{record.code}</div>
@@ -221,7 +305,15 @@ const SeasonsList: React.FC = () => {
     },
     {
       key: "name",
-      title: "Tên mùa vụ",
+      title: (
+        <FilterHeader 
+            title="Tên mùa vụ" 
+            dataIndex="name" 
+            value={filters.name} 
+            onChange={(val) => handleFilterChange('name', val)}
+            inputType="text"
+        />
+      ),
       width: 200,
       render: (record: ExtendedSeason) => (
         <div className='font-medium'>{record.name}</div>
@@ -229,18 +321,29 @@ const SeasonsList: React.FC = () => {
     },
     {
       key: "year",
-      title: "Năm",
-      width: 100,
+      title: (
+        <FilterHeader 
+            title="Năm" 
+            dataIndex="year" 
+            value={filters.year} 
+            onChange={(val) => handleFilterChange('year', val)}
+            inputType="text"
+        />
+      ),
+      width: 120,
       render: (record: ExtendedSeason) => <div>{record.year}</div>,
     },
     {
       key: "start_date",
       title: "Ngày bắt đầu",
+      dataIndex: "start_date",
       width: 120,
-      render: (record: ExtendedSeason) => (
+      ...getDateColumnSearchProps('start_date'),
+      filteredValue: (filters.start_date_start && filters.start_date_end) ? [filters.start_date_start, filters.start_date_end] : null,
+      render: (value: string) => (
         <div>
-          {record.start_date
-            ? new Date(record.start_date).toLocaleDateString("vi-VN")
+          {value
+            ? new Date(value).toLocaleDateString("vi-VN")
             : "-"}
         </div>
       ),
@@ -248,11 +351,14 @@ const SeasonsList: React.FC = () => {
     {
       key: "end_date",
       title: "Ngày kết thúc",
+      dataIndex: "end_date",
       width: 120,
-      render: (record: ExtendedSeason) => (
+      ...getDateColumnSearchProps('end_date'),
+      filteredValue: (filters.end_date_start && filters.end_date_end) ? [filters.end_date_start, filters.end_date_end] : null,
+      render: (value : string) => (
         <div>
-          {record.end_date
-            ? new Date(record.end_date).toLocaleDateString("vi-VN")
+          {value
+            ? new Date(value).toLocaleDateString("vi-VN")
             : "-"}
         </div>
       ),
@@ -261,6 +367,12 @@ const SeasonsList: React.FC = () => {
       key: "is_active",
       title: "Trạng thái",
       width: 140,
+      filters: [
+          { text: "Đang hoạt động", value: true },
+          { text: "Đã kết thúc", value: false },
+      ],
+      filteredValue: filters.is_active !== undefined ? [filters.is_active] : null,
+      filterMultiple: false,
       render: (record: ExtendedSeason) => (
         <Tag color={record.is_active ? "green" : "default"}>
           {record.is_active ? "Đang hoạt động" : "Đã kết thúc"}
@@ -302,17 +414,6 @@ const SeasonsList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Thanh tìm kiếm */}
-      <div className='mb-6'>
-        <Input
-          placeholder='Tìm kiếm mùa vụ...'
-          prefix={<SearchOutlined />}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className='max-w-md'
-        />
-      </div>
-
       {/* Danh sách mùa vụ */}
       <div className='bg-white rounded shadow'>
         <DataTable
@@ -326,11 +427,10 @@ const SeasonsList: React.FC = () => {
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50", "100"],
             showTotal: (total: number) => `Tổng ${total} mùa vụ`,
-            onChange: (page: number, size: number) => {
-              setCurrentPage(page)
-              setPageSize(size)
-            },
           }}
+          onChange={handleTableChange}
+          showSearch={false}
+          showFilters={false}
         />
       </div>
 

@@ -185,7 +185,6 @@ const ListUnits = () => {
                 key: "created_at",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
-                sorter: true,
               },
             ]}
             data={unitRows}

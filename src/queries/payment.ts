@@ -22,6 +22,13 @@ export const paymentKeys = {
 
 // ========== PAYMENT HOOKS ==========
 
+// Helper define type for filter
+interface FilterCondition {
+  field: string;
+  operator: string;
+  value: any;
+}
+
 /**
  * Hook lấy danh sách thanh toán (POST /payments/search)
  */
@@ -32,6 +39,60 @@ export const usePaymentsQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: paymentKeys.list(params),
     queryFn: async () => {
+      // API MỚI (theo Migration Guide & Source Code src copy):
+      // 1. Không dùng filters array.
+      // 2. Dùng Flat Params.
+      // 3. DTO validation (whitelist) chặn các field lạ -> Phải map chính xác tên field trong SearchPaymentDto.
+      
+      const payload: any = {
+        page,
+        limit,
+      };
+
+      // --- Flat Fields ---
+      if (params?.code) payload.code = params.code;
+      if (params?.payment_method) payload.payment_method = params.payment_method;
+      if (params?.debt_note_code) payload.debt_note_code = params.debt_note_code;
+
+      // --- Mapped Fields ---
+      // UI dùng customer_term -> Server DTO dùng customer_name (được map sang customer.name trong Service)
+      if (params?.customer_term) {
+        payload.customer_name = params.customer_term;
+      }
+
+      // --- Flat Fields ---
+      if (params?.code) payload.code = params.code;
+      if (params?.payment_method) payload.payment_method = params.payment_method;
+      if (params?.debt_note_code) payload.debt_note_code = params.debt_note_code;
+
+      // --- Mapped Fields ---
+      // UI dùng customer_term -> Server DTO dùng customer_name
+      if (params?.customer_term) {
+        payload.customer_name = params.customer_term;
+      }
+
+      // UI dùng sort_by/direction -> Server dùng sort param (format: field:DIR)
+      if (params?.sort_by) {
+        const field = String(params.sort_by);
+        const dir = String(params.sort_direction || 'DESC');
+        // Backend hỗ trợ sort: 'amount:DESC'
+        payload.sort = `${field}:${dir}`; 
+      }
+
+      // Global Search (keyword)
+      if (params?.keyword) {
+        payload.keyword = params.keyword;
+      }
+
+      // Note: Backend có thể chưa support start_date/end_date trong DTO strict mode, 
+      // nhưng cần gửi lên để user thấy payload. Nếu backend strip thì phải báo backend dev thêm vào DTO.
+      if (params?.start_date) {
+        payload.start_date = params.start_date;
+      }
+      if (params?.end_date) {
+        payload.end_date = params.end_date;
+      }
+
       const response = await api.postRaw<{
         success: boolean
         data: Payment[]
@@ -39,10 +100,7 @@ export const usePaymentsQuery = (params?: Record<string, unknown>) => {
           total: number
           totalPages: number | null
         }
-      }>('/payments/search', {
-        page,
-        limit,
-      })
+      }>('/payments/search', payload)
 
       return mapSearchResponse(response, page, limit)
     },

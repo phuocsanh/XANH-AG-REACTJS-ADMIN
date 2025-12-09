@@ -9,7 +9,6 @@ import {
   Button,
   Tag,
   Space,
-  Select,
   Modal,
   Card,
   Descriptions,
@@ -24,9 +23,14 @@ import {
   DollarOutlined,
   SearchOutlined,
 } from "@ant-design/icons"
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
+import FilterHeader from "@/components/common/filter-header"
 import { useNavigate } from "react-router-dom"
 import { invoiceStatusLabels, paymentMethodLabels } from "./form-config"
+import { TablePaginationConfig, TableProps } from "antd"
+import { FilterValue, SorterResult } from "antd/es/table/interface"
 
 // Extend SalesInvoice interface
 interface ExtendedSalesInvoice extends SalesInvoice {
@@ -36,9 +40,7 @@ interface ExtendedSalesInvoice extends SalesInvoice {
 
 const SalesInvoicesList: React.FC = () => {
   // State quản lý UI
-  const [searchTerm, setSearchTerm] = React.useState<string>("")
-  const [statusFilter, setStatusFilter] = React.useState<string>("")
-  const [riceCropFilter, setRiceCropFilter] = React.useState<string>("")
+  const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [isDetailModalVisible, setIsDetailModalVisible] =
     React.useState<boolean>(false)
   const [isPaymentModalVisible, setIsPaymentModalVisible] =
@@ -51,12 +53,109 @@ const SalesInvoicesList: React.FC = () => {
 
   const navigate = useNavigate()
 
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <DatePicker.RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Handle Table Change
+  const handleTableChange: TableProps<ExtendedSalesInvoice>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter,
+    extra
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+    
+    const newFilters = { ...filters }
+
+    // Status filter
+    if (tableFilters.status && tableFilters.status.length > 0) {
+        newFilters.status = tableFilters.status[0]
+    } else {
+        delete newFilters.status
+    }
+
+    // Rice Crop filter (mapped from rice_crop_id column)
+    if (tableFilters.rice_crop_id && tableFilters.rice_crop_id.length > 0) {
+        newFilters.rice_crop_filter = tableFilters.rice_crop_id[0]
+    } else {
+    }
+
+    // Created At Range
+    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
+      newFilters.start_date = tableFilters.created_at[0]
+      newFilters.end_date = tableFilters.created_at[1]
+    } else {
+      delete newFilters.start_date
+      delete newFilters.end_date
+    }
+
+    setFilters(newFilters)
+  }
+
+  // Handle Filter Change
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value }
+      if (!value) delete newFilters[key]
+      setFilters(newFilters)
+      setCurrentPage(1)
+  }
+
   // Queries
   const { data: invoicesData, isLoading } = useSalesInvoicesQuery({
     page: currentPage,
     limit: pageSize,
-    status: statusFilter || undefined,
-    rice_crop_filter: riceCropFilter || undefined,
+    ...filters
   })
   const addPaymentMutation = useAddPaymentMutation()
 
@@ -134,15 +233,31 @@ const SalesInvoicesList: React.FC = () => {
   const columns = [
     {
       key: "code",
-      title: "Mã HĐ",
-      width: 120,
+      title: (
+        <FilterHeader 
+            title="Mã HĐ" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
       render: (record: ExtendedSalesInvoice) => (
         <div className='font-medium'>{record.code}</div>
       ),
     },
     {
       key: "customer_name",
-      title: "Khách hàng",
+      title: (
+        <FilterHeader 
+            title="Khách hàng" 
+            dataIndex="customer_name" 
+            value={filters.customer_name} 
+            onChange={(val) => handleFilterChange('customer_name', val)}
+            inputType="text"
+        />
+      ),
       width: 180,
       render: (record: ExtendedSalesInvoice) => (
         <div className='font-medium'>{record.customer_name}</div>
@@ -150,8 +265,16 @@ const SalesInvoicesList: React.FC = () => {
     },
     {
       key: "customer_phone",
-      title: "SĐT",
-      width: 120,
+      title: (
+        <FilterHeader 
+            title="SĐT" 
+            dataIndex="customer_phone" 
+            value={filters.customer_phone} 
+            onChange={(val) => handleFilterChange('customer_phone', val)}
+            inputType="text"
+        />
+      ),
+      width: 130,
       render: (record: ExtendedSalesInvoice) => (
         <div>{record.customer_phone}</div>
       ),
@@ -168,6 +291,12 @@ const SalesInvoicesList: React.FC = () => {
       key: "rice_crop_id",
       title: "Vụ lúa",
       width: 150,
+      filters: [
+          { text: "Có liên kết vụ lúa", value: "has_crop" },
+          { text: "Không liên kết", value: "no_crop" },
+      ],
+      filteredValue: filters.rice_crop_filter ? [filters.rice_crop_filter] : null,
+      filterMultiple: false,
       render: (record: ExtendedSalesInvoice) => {
         const crop = record.rice_crop
         return (
@@ -220,6 +349,15 @@ const SalesInvoicesList: React.FC = () => {
       key: "status",
       title: "Trạng thái",
       width: 130,
+      filters: [
+          { text: "Nháp", value: "draft" },
+          { text: "Đã xác nhận", value: "confirmed" },
+          { text: "Đã thanh toán", value: "paid" },
+          { text: "Đã hủy", value: "cancelled" },
+          { text: "Hoàn tiền", value: "refunded" },
+      ],
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
       render: (record: ExtendedSalesInvoice) => {
         const status = record.status
         return (
@@ -233,10 +371,13 @@ const SalesInvoicesList: React.FC = () => {
     {
       key: "created_at",
       title: "Ngày tạo",
+      dataIndex: "created_at",
       width: 120,
-      render: (record: ExtendedSalesInvoice) => (
+      ...getDateColumnSearchProps('created_at'),
+      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
+      render: (value: string) => (
         <div>
-          {new Date(record.created_at).toLocaleDateString("vi-VN")}
+          {new Date(value).toLocaleDateString("vi-VN")}
         </div>
       ),
     },
@@ -290,38 +431,6 @@ const SalesInvoicesList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className='grid grid-cols-3 gap-4 mb-6'>
-        <Input
-          placeholder='Tìm kiếm theo mã HĐ, tên khách hàng, SĐT...'
-          prefix={<SearchOutlined />}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <Select
-          placeholder='Lọc theo trạng thái'
-          value={statusFilter || undefined}
-          onChange={(value) => setStatusFilter(value || "")}
-          allowClear
-        >
-          <Select.Option value=''>Tất cả</Select.Option>
-          <Select.Option value='draft'>Nháp</Select.Option>
-          <Select.Option value='confirmed'>Đã xác nhận</Select.Option>
-          <Select.Option value='paid'>Đã thanh toán</Select.Option>
-          <Select.Option value='cancelled'>Đã hủy</Select.Option>
-        </Select>
-        <Select
-          placeholder='Lọc theo vụ lúa'
-          value={riceCropFilter || undefined}
-          onChange={(value) => setRiceCropFilter(value || "")}
-          allowClear
-        >
-          <Select.Option value=''>Tất cả</Select.Option>
-          <Select.Option value='has_crop'>Có liên kết vụ lúa</Select.Option>
-          <Select.Option value='no_crop'>Không liên kết</Select.Option>
-        </Select>
-      </div>
-
       {/* Danh sách hóa đơn */}
       <div className='bg-white rounded shadow'>
         <DataTable
@@ -335,11 +444,10 @@ const SalesInvoicesList: React.FC = () => {
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50", "100"],
             showTotal: (total: number) => `Tổng ${total} hóa đơn`,
-            onChange: (page: number, size: number) => {
-              setCurrentPage(page)
-              setPageSize(size)
-            },
           }}
+          onChange={handleTableChange}
+          showSearch={false}
+          showFilters={false}
         />
       </div>
 

@@ -31,6 +31,10 @@ export interface InvoiceProfit {
   gross_profit: number;        // Lợi nhuận gộp
   gross_margin: number;        // Tỷ suất lợi nhuận gộp (%)
   item_details: InvoiceItemProfit[];
+  // Bổ sung các trường còn thiếu
+  net_profit: number;          // Lợi nhuận ròng (sau khi trừ quà tặng/giảm giá nếu có)
+  gift_value: number;          // Giá trị quà tặng
+  gift_description?: string;   // Mô tả quà tặng
 }
 
 // ==================== Báo Cáo Mùa Vụ ====================
@@ -113,6 +117,15 @@ export interface SeasonStoreProfit {
 
 // ==================== Lợi Nhuận Khách Hàng ====================
 
+export interface CustomerSummaryStats {
+  total_invoices: number;
+  total_revenue: number;
+  total_cost?: number;
+  total_profit: number;
+  avg_margin: number;
+  season_name?: string;
+}
+
 /**
  * Thông tin đơn hàng trong báo cáo khách hàng
  */
@@ -149,13 +162,32 @@ export interface CustomerProfitReport {
   customer_name: string;
   customer_phone?: string;
   customer_email?: string;
+  
+  // Tổng hợp (có thể là lifetime hoặc summary chung)
+  summary: CustomerSummaryStats;
+  
+  // Các field bổ sung cho báo cáo chi tiết
+  lifetime_summary?: CustomerSummaryStats;
+  current_season_summary?: CustomerSummaryStats;
+
+  invoices: CustomerInvoice[];
+  by_season: CustomerSeasonSummary[];
+}
+
+// ==================== Lợi Nhuận Vụ Lúa (Rice Crop) ====================
+
+export interface RiceCropProfit {
+  rice_crop_id: number;
+  field_name: string;
+  customer_name: string;
+  season_name: string;
+  
   summary: {
     total_invoices: number;
     total_revenue: number;
-    total_cost: number;
     total_profit: number;
     avg_margin: number;
   };
+  
   invoices: CustomerInvoice[];
-  by_season: CustomerSeasonSummary[];
 }

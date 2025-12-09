@@ -30,20 +30,18 @@ export const riceCropKeys = {
 /**
  * Lấy danh sách vụ lúa (POST /rice-crops/search)
  */
-export const useRiceCrops = (filters?: RiceCropFilters) => {
-  return useQuery({
-    queryKey: riceCropKeys.list(filters || {}),
-    queryFn: async () => {
-      const searchBody: any = {
-        page: 1,
-        limit: 1000, // Lấy nhiều để hiển thị tất cả
-      }
+export const useRiceCrops = (params?: Record<string, unknown>) => {
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
 
-      // Thêm filters nếu có
-      if (filters?.customer_id) searchBody.customer_id = filters.customer_id
-      if (filters?.season_id) searchBody.season_id = filters.season_id
-      if (filters?.status) searchBody.status = filters.status
-      if (filters?.growth_stage) searchBody.growth_stage = filters.growth_stage
+  return useQuery({
+    queryKey: riceCropKeys.list(params as any),
+    queryFn: async () => {
+      const searchBody = {
+        page,
+        limit,
+        ...params
+      }
 
       const response = await api.postRaw<{
         data: RiceCrop[]
@@ -52,7 +50,10 @@ export const useRiceCrops = (filters?: RiceCropFilters) => {
         limit: number
       }>('/rice-crops/search', searchBody)
 
-      return response.data || []
+      return {
+          data: response.data || [],
+          total: response.total || 0
+      }
     },
   });
 };

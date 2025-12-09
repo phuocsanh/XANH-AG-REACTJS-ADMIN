@@ -25,7 +25,10 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import DataTable from '@/components/common/data-table';
+import FilterHeader from '@/components/common/filter-header';
 import { ConfirmModal } from '@/components/common';
+import { TablePaginationConfig, TableProps } from 'antd';
+import { FilterValue, SorterResult } from 'antd/es/table/interface';
 import {
   useRiceCrops,
   useCreateRiceCrop,
@@ -80,7 +83,7 @@ const statusLabels: Record<CropStatus, string> = {
 
 const RiceCropsList: React.FC = () => {
   // State quản lý UI
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const [isFormModalVisible, setIsFormModalVisible] = useState<boolean>(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState<boolean>(false);
   const [deletingCrop, setDeletingCrop] = useState<RiceCrop | null>(null);
@@ -90,11 +93,125 @@ const RiceCropsList: React.FC = () => {
 
   const navigate = useNavigate();
 
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <DatePicker.RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Handle Table Change
+  const handleTableChange: TableProps<ExtendedRiceCrop>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter,
+    extra
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+    
+    const newFilters = { ...filters }
+    
+    // Status
+    if (tableFilters.status && tableFilters.status.length > 0) {
+      newFilters.status = tableFilters.status[0]
+    } else {
+      delete newFilters.status
+    }
+    
+    // Customer Name (text search)
+    if (tableFilters.customer_name && tableFilters.customer_name[0]) {
+       // FilterHeader puts value directly, but if sorting or other AntD mechanism puts it in array
+       // we handle it here if needed, but primarily handled via handleFilterChange
+    }
+
+    // Season Name (text search)
+     if (tableFilters.season_name && tableFilters.season_name[0]) {
+       // Similar to customer_name
+    }
+    
+    // Growth Stage
+    if (tableFilters.growth_stage && tableFilters.growth_stage.length > 0) {
+      newFilters.growth_stage = tableFilters.growth_stage[0]
+    } else {
+      delete newFilters.growth_stage
+    }
+
+    // Sowing Date Range
+    if (tableFilters.sowing_date && tableFilters.sowing_date.length === 2) {
+      newFilters.started_at_start = tableFilters.sowing_date[0]
+      newFilters.started_at_end = tableFilters.sowing_date[1]
+    } else {
+        delete newFilters.started_at_start
+        delete newFilters.started_at_end
+    }
+
+    setFilters(newFilters)
+  }
+
+  // Handle Filter Change
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value }
+      if (!value) delete newFilters[key]
+      setFilters(newFilters)
+      setCurrentPage(1)
+  }
+
   // Form instance
   const [form] = Form.useForm();
 
   // Queries
-  const { data: crops, isLoading } = useRiceCrops();
+  const { data: cropsData, isLoading } = useRiceCrops({
+      page: currentPage,
+      limit: pageSize,
+      ...filters
+  });
   const { data: customersData } = useCustomersQuery({ limit: 100 });
   const { data: seasonsData } = useSeasonsQuery();
   const { data: areasData } = useAreasQuery({ limit: 100 }); // Load danh sách diện tích
@@ -218,19 +335,9 @@ const RiceCropsList: React.FC = () => {
 
   // Lấy danh sách vụ lúa
   const getCropList = (): ExtendedRiceCrop[] => {
-    if (!crops) return [];
+    if (!cropsData?.data) return [];
 
-    let filteredCrops = crops;
-    
-    // Filter theo search term
-    if (searchTerm) {
-      filteredCrops = crops.filter((crop: RiceCrop) =>
-        crop.field_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        crop.rice_variety.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    return filteredCrops.map((crop: RiceCrop) => ({
+    return cropsData.data.map((crop: RiceCrop) => ({
       ...crop,
       key: crop.id.toString(),
     }));
@@ -242,7 +349,15 @@ const RiceCropsList: React.FC = () => {
   const columns = [
     {
       key: 'field_name',
-      title: 'Tên ruộng',
+      title: (
+        <FilterHeader 
+            title="Tên ruộng" 
+            dataIndex="field_name" 
+            value={filters.field_name} 
+            onChange={(val) => handleFilterChange('field_name', val)}
+            inputType="text"
+        />
+      ),
       width: 200,
       render: (record: ExtendedRiceCrop) => (
         <div className="font-medium">{record.field_name}</div>
@@ -250,7 +365,15 @@ const RiceCropsList: React.FC = () => {
     },
     {
       key: 'customer_name',
-      title: 'Khách hàng',
+      title: (
+        <FilterHeader 
+            title="Khách hàng" 
+            dataIndex="customer_name" 
+            value={filters.customer_name} 
+            onChange={(val) => handleFilterChange('customer_name', val)}
+            inputType="text"
+        />
+      ),
       width: 180,
       render: (record: ExtendedRiceCrop) => (
         <div>{record.customer?.name || '-'}</div>
@@ -258,7 +381,15 @@ const RiceCropsList: React.FC = () => {
     },
     {
       key: 'season_name',
-      title: 'Mùa vụ',
+      title: (
+        <FilterHeader 
+            title="Mùa vụ" 
+            dataIndex="season_name" 
+            value={filters.season_name} 
+            onChange={(val) => handleFilterChange('season_name', val)}
+            inputType="text"
+        />
+      ),
       width: 150,
       render: (record: ExtendedRiceCrop) => (
         <div>{record.season?.name || '-'}</div>
@@ -274,7 +405,15 @@ const RiceCropsList: React.FC = () => {
     },
     {
       key: 'rice_variety',
-      title: 'Giống lúa',
+      title: (
+        <FilterHeader 
+            title="Giống lúa" 
+            dataIndex="rice_variety" 
+            value={filters.rice_variety} 
+            onChange={(val) => handleFilterChange('rice_variety', val)}
+            inputType="text"
+        />
+      ),
       width: 150,
       render: (record: ExtendedRiceCrop) => <div>{record.rice_variety}</div>,
     },
@@ -282,6 +421,9 @@ const RiceCropsList: React.FC = () => {
       key: 'growth_stage',
       title: 'Giai đoạn',
       width: 150,
+      filters: Object.entries(growthStageLabels).map(([value, text]) => ({ text, value })),
+      filteredValue: filters.growth_stage ? [filters.growth_stage] : null,
+      filterMultiple: false,
       render: (record: ExtendedRiceCrop) => (
         <Tag color={growthStageColors[record.growth_stage]}>
           {growthStageLabels[record.growth_stage]}
@@ -292,6 +434,9 @@ const RiceCropsList: React.FC = () => {
       key: 'status',
       title: 'Trạng thái',
       width: 150,
+      filters: Object.entries(statusLabels).map(([value, text]) => ({ text, value })),
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
       render: (record: ExtendedRiceCrop) => (
         <Tag color={statusColors[record.status]}>
           {statusLabels[record.status]}
@@ -348,17 +493,6 @@ const RiceCropsList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Thanh tìm kiếm */}
-      <div className="mb-6">
-        <Input
-          placeholder="Tìm kiếm theo tên ruộng hoặc giống lúa..."
-          prefix={<SearchOutlined />}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
-
       {/* Danh sách vụ lúa */}
       <div className="bg-white rounded shadow">
         <DataTable
@@ -368,15 +502,14 @@ const RiceCropsList: React.FC = () => {
           pagination={{
             current: currentPage,
             pageSize: pageSize,
-            total: getCropList().length,
+            total: cropsData?.total || 0,
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50', '100'],
             showTotal: (total: number) => `Tổng ${total} vụ lúa`,
-            onChange: (page: number, size: number) => {
-              setCurrentPage(page);
-              setPageSize(size);
-            },
           }}
+          onChange={handleTableChange}
+          showSearch={false}
+          showFilters={false}
         />
       </div>
 

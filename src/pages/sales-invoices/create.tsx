@@ -1366,7 +1366,7 @@ ${productInfo}`;
                             Đang tải danh sách vụ lúa...
                           </Typography>
                         </Box>
-                      ) : customerRiceCrops && customerRiceCrops.length > 0 ? (
+                      ) : customerRiceCrops?.data && customerRiceCrops.data.length > 0 ? (
                         <FormControl 
                           fullWidth 
                           required 
@@ -1378,7 +1378,7 @@ ${productInfo}`;
                             onChange={(e) => handleRiceCropSelect(e.target.value as number)}
                             label="Vụ lúa *"
                           >
-                            {customerRiceCrops.map((crop: RiceCrop) => (
+                            {customerRiceCrops.data.map((crop: RiceCrop) => (
                               <MenuItem key={crop.id} value={crop.id}>
                                 {crop.field_name} - {crop.rice_variety} ({crop.field_area.toLocaleString('vi-VN')} m²)
                               </MenuItem>

@@ -8,7 +8,7 @@ export const unitSchema = z.object({
   name: z.string().min(1, "Tên đơn vị tính là bắt buộc"),
   code: z.string().min(1, "Mã đơn vị tính là bắt buộc"),
   description: z.string().optional(),
-  status: z.enum(["active", "inactive", "archived"]).default("active"),
+  status: z.enum(["active", "inactive", "pending", "archived"]).default("active"),
 })
 
 // Type cho form data

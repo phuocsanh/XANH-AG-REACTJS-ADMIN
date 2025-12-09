@@ -6,7 +6,7 @@ import { IoMdAdd } from "react-icons/io"
 import { MyContext } from "../../App"
 
 import DialogAddUpdate from "./components/dialog-add-update"
-import { ConfirmModal } from "../../components/common" // Import ConfirmModal từ common components
+import { ConfirmModal } from "../../components/common"
 import {
   useProductSubtypesQuery,
   useDeleteProductSubtypeMutation,
@@ -15,15 +15,24 @@ import { ProductSubtype } from "../../models/product-subtype.model"
 import { useProductTypesQuery as useProductTypes } from "../../queries/product-type"
 import { toast } from "react-toastify"
 import DataTable from "../../components/common/data-table"
+import FilterHeader from "../../components/common/filter-header"
 
 const ListSubCategory = () => {
   const context = useContext(MyContext)
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [filters, setFilters] = useState<Record<string, any>>({})
 
   const {
     data: productSubtypesResponse,
     isLoading: isLoadingSubtypes,
     refetch: refetchSubtypes,
-  } = useProductSubtypesQuery()
+  } = useProductSubtypesQuery({
+    page: currentPage,
+    limit: pageSize,
+    ...filters,
+  })
   const deleteProductSubtypeMutation = useDeleteProductSubtypeMutation()
   const { data: productTypesResponse, isLoading: isLoadingTypes } =
     useProductTypes()
@@ -35,9 +44,9 @@ const ListSubCategory = () => {
 
   const [openDialog, setOpenDialog] = useState(false)
   const [editingRow, setEditingRow] = useState<ProductSubtype | null>(null)
-  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false) // Thêm state cho modal xóa
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false)
   const [deletingSubCategory, setDeletingSubCategory] =
-    useState<ProductSubtype | null>(null) // Thêm state cho danh mục phụ đang xóa
+    useState<ProductSubtype | null>(null)
 
   // Trích xuất dữ liệu từ response phân trang
   const productSubtypes = productSubtypesResponse?.data?.items || []
@@ -49,9 +58,8 @@ const ListSubCategory = () => {
     setOpenDialog(true)
   }
 
-  // Xử lý xóa loại phụ sản phẩm - cập nhật để set state cho modal
+  // Xử lý xóa loại phụ sản phẩm
   const handleDelete = (record: ProductSubtype) => {
-    // Set state để hiển thị modal xác nhận
     setDeletingSubCategory(record)
     setDeleteConfirmVisible(true)
   }
@@ -63,15 +71,12 @@ const ListSubCategory = () => {
     try {
       await deleteProductSubtypeMutation.mutateAsync(deletingSubCategory.id)
       toast.success("Xóa loại phụ sản phẩm thành công!")
-      // Đóng modal xác nhận
       setDeleteConfirmVisible(false)
       setDeletingSubCategory(null)
-      // Refetch data
       refetchSubtypes()
     } catch (error) {
       console.error("Lỗi khi xóa loại phụ sản phẩm:", error)
       toast.error("Có lỗi xảy ra khi xóa loại phụ sản phẩm!")
-      // Đóng modal xác nhận
       setDeleteConfirmVisible(false)
       setDeletingSubCategory(null)
     }
@@ -87,6 +92,23 @@ const ListSubCategory = () => {
   const handleAdd = () => {
     setEditingRow(null)
     setOpenDialog(true)
+  }
+
+  // Handle Table Change
+  const handleTableChange = (
+    pagination: any,
+    tableFilters: any,
+    sorter: any
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+  }
+
+  const handleFilterChange = (key: string, value: any) => {
+    const newFilters = { ...filters, [key]: value }
+    if (!value) delete newFilters[key]
+    setFilters(newFilters)
+    setCurrentPage(1)
   }
 
   // Hàm để lấy tên loại sản phẩm từ ID
@@ -116,7 +138,15 @@ const ListSubCategory = () => {
           <DataTable<ProductSubtype>
             columns={[
               {
-                title: "Tên loại phụ sản phẩm",
+                title: (
+                  <FilterHeader 
+                      title="Tên loại phụ sản phẩm" 
+                      dataIndex="name" 
+                      value={filters.name} 
+                      onChange={(val) => handleFilterChange('name', val)}
+                      inputType="text"
+                  />
+                ),
                 dataIndex: "name",
                 key: "name",
                 sorter: true,
@@ -142,36 +172,34 @@ const ListSubCategory = () => {
                 key: "created_at",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
-                sorter: true,
               },
             ]}
             data={productSubtypes || []}
             loading={isLoadingSubtypes || isLoadingTypes}
-            showSearch={true}
-            searchPlaceholder='Tìm kiếm loại phụ sản phẩm...'
-            searchableColumns={["name", "description"]}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            scroll={{ x: "100%" }}
-            paginationConfig={{
-              pageSize: 10,
+            onChange={handleTableChange}
+            pagination={{
+              current: currentPage,
+              pageSize: pageSize,
+              total: productSubtypesResponse?.data?.total || 0,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) =>
+              showTotal: (total: number, range: [number, number]) =>
                 `${range[0]}-${range[1]} của ${total} loại phụ sản phẩm`,
             }}
+            showSearch={false}
+            scroll={{ x: "100%" }}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       </div>
 
-      {/* Dialog thêm/sửa loại phụ sản phẩm */}
       <DialogAddUpdate
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         editingSubtype={editingRow}
       />
 
-      {/* Modal xác nhận xóa loại phụ sản phẩm */}
       <ConfirmModal
         title='Xác nhận xóa'
         content={

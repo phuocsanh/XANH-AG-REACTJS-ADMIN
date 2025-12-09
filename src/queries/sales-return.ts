@@ -22,7 +22,41 @@ export const salesReturnKeys = {
  * Hook lấy danh sách phiếu trả hàng
  */
 export const useSalesReturnsQuery = (params?: Record<string, unknown>) => {
-  return usePaginationQuery<SalesReturn>("/sales-returns", params)
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: salesReturnKeys.list(params),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: SalesReturn[]
+        total: number
+        page: number
+        limit: number
+      }>('/sales-returns/search', {
+        page,
+        limit,
+        ...params
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**

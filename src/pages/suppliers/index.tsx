@@ -25,13 +25,17 @@ import {
   useDeleteSupplierMutation,
 } from "@/queries/supplier"
 import { Supplier, PaginatedSuccessResponse } from "@/models/supplier.model"
-import ResponsiveDataTable from "@/components/common/responsive-data-table"
+import DataTable from "@/components/common/data-table"
 import {
   supplierSchema,
   SupplierFormData,
   defaultSupplierValues,
 } from "./form-config"
 import { useAppStore } from "@/stores"
+import FilterHeader from "@/components/common/filter-header"
+import { DatePicker, Space, Button as AntButton } from "antd"
+import { SearchOutlined } from "@ant-design/icons"
+import dayjs from "dayjs"
 
 // Extend Supplier interface để tương thích với DataTable
 interface ExtendedSupplier extends Supplier, Record<string, unknown> {}
@@ -61,12 +65,19 @@ export const Suppliers = () => {
   const [isEditing, setIsEditing] = useState(false)
   const userInfo = useAppStore((state) => state.userInfo)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [filters, setFilters] = useState<Record<string, any>>({})
+
   // React Query hooks
-  const { data: suppliers, isLoading, error } = useSuppliersQuery()
-  console.log("🚀 ~ Suppliers ~ suppliers:", suppliers)
+  const { data: suppliersData, isLoading, error } = useSuppliersQuery({
+    page: currentPage,
+    limit: pageSize,
+    ...filters,
+  })
 
   // Debug log
-  console.log("useSuppliersQuery result:", { suppliers, isLoading, error })
+  console.log("useSuppliersQuery result:", { suppliersData, isLoading, error })
   const createSupplierMutation = useCreateSupplierMutation()
   const updateSupplierMutation = useUpdateSupplierMutation()
   const deleteSupplierMutation = useDeleteSupplierMutation()
@@ -81,6 +92,103 @@ export const Suppliers = () => {
     resolver: zodResolver(supplierSchema),
     defaultValues: defaultSupplierValues,
   })
+
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <DatePicker.RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <AntButton
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })} // Giữ dropdown để user thấy kết quả
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </AntButton>
+          <AntButton
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </AntButton>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Handle Table Change
+  const handleTableChange: any = (pagination: any, tableFilters: any, sorter: any) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+
+    const newFilters = { ...filters }
+
+    // Handle Sorting
+    if (sorter.field && sorter.order) {
+      newFilters.sort_by = sorter.field
+      newFilters.sort_direction = sorter.order === 'ascend' ? 'ASC' : 'DESC'
+    } else {
+      delete newFilters.sort_by
+      delete newFilters.sort_direction
+    }
+    
+    // Handle Native Filters (Status)
+    if (tableFilters.status?.[0]) {
+       newFilters.status = tableFilters.status[0]
+    } else {
+       delete newFilters.status
+    }
+
+    // Handle Date Range (created_at)
+    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
+      newFilters.start_date = tableFilters.created_at[0]
+      newFilters.end_date = tableFilters.created_at[1]
+    } else {
+        delete newFilters.start_date
+        delete newFilters.end_date
+    }
+
+    setFilters(newFilters)
+  }
+  
+  // Handler update filter trực tiếp (Controlled mode)
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value };
+      if (!value) delete newFilters[key];
+      
+      setFilters(newFilters);
+      setCurrentPage(1); // Reset about page 1 upon filtering
+  }
 
   // Xử lý mở dialog thêm nhà cung cấp
   const handleAddSupplier = () => {
@@ -186,87 +294,8 @@ export const Suppliers = () => {
 
   // Trích xuất danh sách nhà cung cấp từ response API
   const getSupplierList = (): ExtendedSupplier[] => {
-    console.log("Suppliers data:", suppliers)
-    // Kiểm tra cấu trúc dữ liệu thực tế từ API
-    if (!suppliers) return []
-
-    // Nếu có trường data và data có trường items (cấu trúc PaginationResponse mới)
-    if (
-      typeof suppliers === "object" &&
-      suppliers !== null &&
-      "data" in suppliers
-    ) {
-      const supplierObj = suppliers as unknown as Record<string, unknown>
-      if (
-        typeof supplierObj.data === "object" &&
-        supplierObj.data !== null &&
-        "items" in supplierObj.data &&
-        Array.isArray((supplierObj.data as Record<string, unknown>).items)
-      ) {
-        console.log("Using new pagination response format")
-        return (supplierObj.data as Record<string, unknown>)
-          .items as unknown as ExtendedSupplier[]
-      }
-    }
-
-    // Nếu có trường success và data (cấu trúc cũ)
-    if (isPaginatedResponse(suppliers)) {
-      console.log("Using old paginated response format")
-      return suppliers.data as unknown as ExtendedSupplier[]
-    }
-
-    // Nếu có trường items (cấu trúc cũ)
-    if (
-      typeof suppliers === "object" &&
-      suppliers !== null &&
-      "items" in suppliers
-    ) {
-      const supplierObj = suppliers as unknown as Record<string, unknown>
-      if (Array.isArray(supplierObj.items)) {
-        console.log("Using legacy response format")
-        return supplierObj.items as ExtendedSupplier[]
-      }
-    }
-
-    // Nếu dữ liệu trực tiếp là mảng
-    if (Array.isArray(suppliers)) {
-      console.log("Using direct array format")
-      return suppliers as ExtendedSupplier[]
-    }
-
-    // Nếu là object nhưng không có cấu trúc rõ ràng, thử truy cập trực tiếp các trường
-    if (typeof suppliers === "object" && suppliers !== null) {
-      const supplierObj = suppliers as unknown as Record<string, unknown>
-
-      // Kiểm tra nếu có trường data là mảng
-      if ("data" in supplierObj && Array.isArray(supplierObj.data)) {
-        console.log("Using data array format")
-        return supplierObj.data as ExtendedSupplier[]
-      }
-
-      // Kiểm tra nếu có trường items là mảng
-      if ("items" in supplierObj && Array.isArray(supplierObj.items)) {
-        console.log("Using items array format")
-        return supplierObj.items as ExtendedSupplier[]
-      }
-    }
-
-    // Kiểm tra cấu trúc interceptor response: {success: true, data: [...], meta: {...}}
-    if (typeof suppliers === "object" && suppliers !== null) {
-      const supplierObj = suppliers as unknown as Record<string, unknown>
-      if (
-        "success" in supplierObj &&
-        supplierObj.success === true &&
-        "data" in supplierObj &&
-        Array.isArray(supplierObj.data)
-      ) {
-        console.log("Using interceptor response format")
-        return supplierObj.data as ExtendedSupplier[]
-      }
-    }
-
-    console.log("Unknown response format")
-    return []
+    if (!suppliersData?.data?.items) return []
+    return suppliersData.data.items as ExtendedSupplier[]
   }
 
   // Cấu hình cột cho DataTable
@@ -279,58 +308,93 @@ export const Suppliers = () => {
       width: 80,
     },
     {
-      title: "Tên nhà cung cấp",
+      title: (
+        <FilterHeader 
+            title="Tên nhà cung cấp" 
+            dataIndex="name" 
+            value={filters.name} 
+            onChange={(val) => handleFilterChange('name', val)}
+        />
+      ),
       dataIndex: "name" as const,
       key: "name",
       sorter: true,
-      width: 150,
+      width: 200,
       render: (value: unknown) => (
-        <div className='truncate max-w-[140px]' title={String(value)}>
+        <div className='truncate max-w-[190px] font-medium' title={String(value)}>
           {String(value)}
         </div>
       ),
     },
     {
-      title: "Mã",
+      title: (
+        <FilterHeader 
+            title="Mã" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+        />
+      ),
       dataIndex: "code" as const,
       key: "code",
       sorter: true,
-      width: 100,
+      width: 120,
       render: (value: unknown) => (
-        <div className='truncate max-w-[90px]' title={String(value)}>
+        <div className='truncate max-w-[110px]' title={String(value)}>
           {String(value)}
         </div>
       ),
     },
     {
-      title: "Địa chỉ",
+      title: (
+        <FilterHeader 
+            title="Địa chỉ" 
+            dataIndex="address" 
+            value={filters.address} 
+            onChange={(val) => handleFilterChange('address', val)}
+        />
+      ),
       dataIndex: "address" as const,
       key: "address",
-      width: 150,
+      width: 200,
       render: (value: unknown) => (
-        <div className='truncate max-w-[140px]' title={String(value) || "N/A"}>
+        <div className='truncate max-w-[190px]' title={String(value) || "N/A"}>
           {String(value) || "N/A"}
         </div>
       ),
     },
     {
-      title: "SĐT",
+      title: (
+        <FilterHeader 
+            title="SĐT" 
+            dataIndex="phone" 
+            value={filters.phone} 
+            onChange={(val) => handleFilterChange('phone', val)}
+        />
+      ),
       dataIndex: "phone" as const,
       key: "phone",
-      width: 120,
+      width: 150,
       render: (value: unknown) => (
-        <div className='truncate max-w-[110px]' title={String(value) || "N/A"}>
+        <div className='truncate max-w-[140px]' title={String(value) || "N/A"}>
           {String(value) || "N/A"}
         </div>
       ),
     },
     {
-      title: "Email",
+      title: (
+        <FilterHeader 
+            title="Email" 
+            dataIndex="email" 
+            value={filters.email} 
+            onChange={(val) => handleFilterChange('email', val)}
+        />
+      ),
       dataIndex: "email" as const,
       key: "email",
-      width: 150,
+      width: 180,
       render: (value: unknown) => (
-        <div className='truncate max-w-[140px]' title={String(value) || "N/A"}>
+        <div className='truncate max-w-[170px]' title={String(value) || "N/A"}>
           {String(value) || "N/A"}
         </div>
       ),
@@ -339,7 +403,14 @@ export const Suppliers = () => {
       title: "Trạng thái",
       dataIndex: "status" as const,
       key: "status",
-      width: 120,
+      width: 150,
+      filters: [
+        { text: 'Hoạt động', value: 'active' },
+        { text: 'Không hoạt động', value: 'inactive' },
+        { text: 'Đã lưu trữ', value: 'archived' },
+      ],
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
       render: (value: unknown) => {
         const status = String(value)
         return (
@@ -368,11 +439,12 @@ export const Suppliers = () => {
       dataIndex: "created_at" as const,
       key: "created_at",
       width: 120,
+      ...getDateColumnSearchProps('created_at'),
+      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
       render: (value: unknown) => {
         const date = String(value)
         return date ? new Date(date).toLocaleDateString("vi-VN") : "N/A"
       },
-      sorter: true,
     },
   ]
 
@@ -404,24 +476,30 @@ export const Suppliers = () => {
         </Button>
       </Box>
 
-      {/* Bảng danh sách nhà cung cấp với responsive design */}
-      <ResponsiveDataTable<ExtendedSupplier>
-        columns={tableColumns}
-        data={getSupplierList()}
-        loading={isLoading}
-        showSearch={true}
-        searchPlaceholder='Tìm kiếm nhà cung cấp...'
-        searchableColumns={["name", "code", "phone", "email"]}
-        onEdit={handleEditSupplier}
-        onDelete={handleDeleteSupplier}
-        paginationConfig={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} của ${total} nhà cung cấp`,
-        }}
-      />
+      {/* Bảng danh sách nhà cung cấp với DataTable chuẩn */}
+      {/* Sử dụng DataTable trực tiếp để tránh lỗi layout mobile card view */}
+      <div className='bg-white rounded shadow table-responsive'>
+        <DataTable<ExtendedSupplier>
+          columns={tableColumns}
+          data={getSupplierList()}
+          loading={isLoading}
+          showSearch={true}
+          searchPlaceholder='Tìm kiếm nhà cung cấp...'
+          searchableColumns={["name", "code", "phone", "email"]}
+          onEdit={handleEditSupplier}
+          onDelete={handleDeleteSupplier}
+          onChange={handleTableChange}
+          paginationConfig={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: suppliersData?.data?.total || 0,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} của ${total} nhà cung cấp`,
+          }}
+        />
+      </div>
 
       {/* Dialog thêm/sửa nhà cung cấp */}
       <Dialog

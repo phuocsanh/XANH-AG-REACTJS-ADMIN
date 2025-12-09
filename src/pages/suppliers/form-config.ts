@@ -8,7 +8,7 @@ export const supplierSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
   contact_person: z.string().optional(),
-  status: z.enum(["active", "inactive", "archived"]).default("active"),
+  status: z.enum(["active", "inactive", "pending", "archived"]).default("active"),
   notes: z.string().optional(),
 })
 

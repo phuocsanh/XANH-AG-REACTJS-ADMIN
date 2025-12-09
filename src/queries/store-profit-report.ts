@@ -8,6 +8,7 @@ import type {
   InvoiceProfit,
   SeasonStoreProfit,
   CustomerProfitReport,
+  RiceCropProfit,
 } from '@/types/store-profit.types';
 
 // ==================== QUERY KEYS ====================
@@ -95,7 +96,7 @@ export const useRiceCropProfitQuery = (riceCropId: number) => {
   return useQuery({
     queryKey: [...storeProfitReportKeys.all, 'rice-crop', riceCropId] as const,
     queryFn: async () => {
-      return await api.get<any>(`/store-profit-report/rice-crop/${riceCropId}`);
+      return await api.get<RiceCropProfit>(`/store-profit-report/rice-crop/${riceCropId}`);
     },
     enabled: !!riceCropId && riceCropId > 0,
   });

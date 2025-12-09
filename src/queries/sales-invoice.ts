@@ -62,7 +62,7 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
       }>('/sales/invoices/search', {
         page,
         limit,
-        ...(status && { status }),
+        ...params,
         ...(filters.length > 0 && { filters })
       })
 

@@ -7,7 +7,6 @@ import { useProductTypesQuery } from "@/queries/product-type"
 import { ProductType } from "../../models/product-type.model"
 import {
   Button,
-  Input,
   Modal,
   Select,
   Tag,
@@ -15,74 +14,70 @@ import {
   Space,
   Descriptions,
 } from "antd"
+import { TablePaginationConfig, TableProps } from "antd"
 import {
   PlusOutlined,
-  SearchOutlined,
-  FileSearchOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
+  FilterOutlined,
 } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
-import { ConfirmModal } from "../../components/common" // Cập nhật import
-import { useDeleteProductMutation } from "@/queries/product" // Thêm hook xóa
+import { ConfirmModal } from "../../components/common"
+import { useDeleteProductMutation } from "@/queries/product"
+import FilterHeader from "@/components/common/filter-header"
 
-// Extend Product interface để tương thích với DataTable
-
-// Type for product form values
 const ProductsList: React.FC = () => {
-  // State quản lý UI
-  const [searchTerm, setSearchTerm] = React.useState<string>("")
-  const [filterType, setFilterType] = React.useState<string>("")
-  const [isViewModalVisible, setIsViewModalVisible] =
-    React.useState<boolean>(false)
-  const [deleteConfirmVisible, setDeleteConfirmVisible] =
-    React.useState<boolean>(false) // Thêm state cho modal xóa
-  const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(
-    null
-  ) // Thêm state cho sản phẩm đang xóa
-  // State for image preview (commented out until needed)
-  // const [previewOpen, setPreviewOpen] = React.useState<boolean>(false);
-  // const [previewImage, setPreviewImage] = React.useState<string>('');
-  // const [previewTitle, setPreviewTitle] = React.useState<string>('');
+  // State quản lý UI & Data Params
+  const [filters, setFilters] = React.useState<Record<string, any>>({})
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
 
-  // State quản lý dữ liệu
-  const [currentProduct, setCurrentProduct] = React.useState<Product | null>(
-    null
-  )
-
-  // Hàm xử lý submit form
+  // State modals
+  const [isViewModalVisible, setIsViewModalVisible] = React.useState<boolean>(false)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = React.useState<boolean>(false)
+  const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(null)
+  const [currentProduct, setCurrentProduct] = React.useState<Product | null>(null)
 
   const navigate = useNavigate()
-  const deleteProductMutation = useDeleteProductMutation() // Thêm hook xóa
+  const deleteProductMutation = useDeleteProductMutation()
 
-  // Hàm xử lý chỉnh sửa sản phẩm
+  // Build Params cho Query
+  const queryParams = React.useMemo(() => ({
+      page: currentPage,
+      limit: pageSize,
+      ...filters
+  }), [currentPage, pageSize, filters])
+
+  // Sử dụng Server-side Query
+  const { data: productsData, isLoading: isLoadingProducts } = useProductsQuery(queryParams)
+  
+  // Data access path based on API response structure
+  const products = productsData?.data?.items || [] 
+  const totalProducts = productsData?.data?.total || 0
+
   const handleEditProduct = (product: Product) => {
     if (!product) return
-
-    // Điều hướng đến trang chỉnh sửa với ID sản phẩm
     navigate(`/products/edit/${product.id}`)
   }
 
-  // Sử dụng query hook mới để fetch danh sách sản phẩm
-  const { data: productsData, isLoading: isLoadingProducts } =
-    useProductsQuery()
-
-  // Sử dụng query hook mới để fetch danh sách loại sản phẩm
-  const { data: productTypesData, isLoading: isLoadingTypes } =
-    useProductTypesQuery()
-
-  // Lấy danh sách loại sản phẩm
+  const { data: productTypesData, isLoading: isLoadingTypes } = useProductTypesQuery()
   const productTypes: ProductType[] = productTypesData?.data?.items || []
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value)
+  // Xóa bộ lọc
+  const handleClearFilters = () => {
+      setFilters({})
+      setCurrentPage(1)
   }
 
-  // Hàm lọc sản phẩm theo loại
-  const handleFilter = React.useCallback((value: string) => {
-    setFilterType(value)
-  }, [])
+  // Update Filter trực tiếp từ Header Input
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value };
+      if (!value && value !== 0) delete newFilters[key]; // Xóa key nếu value rỗng
+      console.log('Filter change:', key, value, newFilters);
+      setFilters(newFilters);
+      setCurrentPage(1); // Reset về trang 1 khi filter
+  }
 
   // Xử lý xóa sản phẩm - cập nhật để set state cho modal
   const handleDelete = (product: Product) => {
@@ -114,51 +109,6 @@ const ProductsList: React.FC = () => {
     setDeletingProduct(null)
   }
 
-  // Filter products based on search term and filter type
-  const filteredProducts = React.useMemo(() => {
-    if (!productsData || !productsData.data) {
-      return []
-    }
-
-    let result = [...(productsData.data.items || [])]
-
-    // Lọc theo từ khóa tìm kiếm
-    if (searchTerm.trim()) {
-      const lowerSearchTerm = searchTerm.toLowerCase().trim()
-      result = result.filter((product: Product) => {
-        if (!product) return false
-
-        const name = String(product.name || "").toLowerCase()
-        const description = String(product.description || "").toLowerCase()
-
-        return (
-          name.includes(lowerSearchTerm) ||
-          description.includes(lowerSearchTerm)
-        )
-      })
-    }
-
-    // Lọc theo loại sản phẩm
-    if (filterType) {
-      result = result.filter((product: Product) => {
-        const productType = product.type
-        return productType?.toString() === filterType
-      })
-    }
-
-    return result
-  }, [productsData, searchTerm, filterType])
-
-  // Sử dụng filteredProducts trong giao diện
-  const displayProducts = filteredProducts as ExtendedProduct[]
-  console.log("Displaying products:", displayProducts.length)
-
-  // Function to handle file change (commented out until needed)
-  // const handleFileChange = ({ fileList: _newFileList }: { fileList: UploadFile[] }) => {
-  //   // Update file list state
-  //   // setFileList(newFileList);
-  // };
-
   const loading = isLoadingProducts || isLoadingTypes
 
   // Hàm tiện ích để xử lý đường dẫn ảnh
@@ -175,164 +125,240 @@ const ProductsList: React.FC = () => {
     return url
   }, [])
 
+  // Helper function for currency formatting
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(value);
+  };
+
+  // Handle Table Change (Pagination, Filters, Sorter)
+  const handleTableChange: TableProps<ExtendedProduct>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter: any,
+    extra
+  ) => {
+    const newFilters = { ...filters }
+
+    // 1. Pagination
+    if (pagination.current && pagination.pageSize) {
+       setCurrentPage(pagination.current)
+       setPageSize(pagination.pageSize)
+    }
+
+    // 2. Native Filters (Category, Status)
+    if (tableFilters.category) {
+       newFilters.type_id = (tableFilters.category as string[])[0]
+    } else {
+       delete newFilters.type_id
+    }
+
+    if (tableFilters.status) {
+       newFilters.status = (tableFilters.status as string[])[0]
+    } else {
+       delete newFilters.status
+    }
+
+    // 3. Sorter
+    if (sorter && sorter.order) {
+        newFilters.sort_by = sorter.field
+        newFilters.sort_direction = sorter.order === 'ascend' ? 'ASC' : 'DESC'
+    } else {
+        delete newFilters.sort_by
+        delete newFilters.sort_direction
+    }
+
+    setFilters(newFilters)
+  }
+
   // Cấu hình columns cho DataTable
-  const columns = [
+  const columns = React.useMemo(() => [
     {
       key: "name",
-      title: "Tên sản phẩm",
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium px-2'>{record.name}</div>
+      title: (
+        <FilterHeader 
+            title="Tên sản phẩm" 
+            dataIndex="name" 
+            value={filters.name} 
+            onChange={(val) => handleFilterChange('name', val)}
+            inputType="text"
+        />
       ),
+      width: 250,
+      render: (_: unknown, record: ExtendedProduct) => (
+        <div className='font-medium text-gray-900'>{record.name}</div>
+      ),
+    },
+    {
+        key: "category",
+        title: "Danh mục",
+        width: 150,
+        filters: productTypes.map(t => ({ text: t.name, value: t.id })),
+        filteredValue: filters.type_id ? [filters.type_id] : null, // Controlled filter state
+        filterMultiple: false,
+        render: (_: unknown, record: ExtendedProduct) => {
+            const typeName = typeof record.type === 'object' && record.type 
+                ? (record.type as any).name 
+                : productTypes.find(t => t.id === record.type)?.name;
+            return <div className='text-gray-600'>{typeName || '---'}</div>
+        },
     },
     {
       key: "price",
+      dataIndex: "price", // Needed for sorter to identify field
       title: "Giá tiền mặt",
-      width: 120,
-      render: (record: ExtendedProduct) => (
-        <div className='font-medium text-right text-green-600'>
-          {new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(Number(record.price || 0))}
+      width: 150,
+      sorter: true, // Enable sorting
+      render: (value: string) => (
+        <div className='font-medium text-emerald-600'>
+          {formatCurrency(Number(value))}
         </div>
       ),
     },
     {
-      key: "credit_price",
-      title: "Giá nợ",
-      width: 120,
-      render: (record: ExtendedProduct) => (
-        <div className='font-medium text-right text-blue-600'>
-          {record.credit_price ? new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(Number(record.credit_price)) : "---"}
-        </div>
-      ),
+        key: "credit_price",
+        dataIndex: "credit_price", // Needed for sorter to identify field
+        title: "Giá nợ",
+        width: 150,
+        sorter: true, // Enable sorting
+        render: (value: string) => (
+          <div className='font-medium text-blue-600'>
+            {value ? formatCurrency(Number(value)) : '---'}
+          </div>
+        ),
     },
-
     {
-      title: "Số lượng",
-      dataIndex: "quantity",
       key: "quantity",
-      width: 100,
-      align: "center" as const,
-      render: (_: unknown, record: ExtendedProduct) => (
-        <Tag
-          color={record.quantity && record.quantity > 0 ? "green" : "orange"}
-        >
-          {record.quantity || 0}
+      dataIndex: "quantity", // Needed for sorter to identify field
+      title: "Số lượng",
+      width: 120,
+      align: 'center' as const,
+      sorter: true, // Enable sorting
+      render: (value: number) => (
+        <Tag color={value > 0 ? 'green' : 'red'}>
+            {value}
         </Tag>
       ),
     },
     {
       key: "status",
       title: "Trạng thái",
-      width: 120,
-      render: (record: ExtendedProduct) => (
-        <Tag color={record.status === "active" ? "green" : "default"}>
-          {record.status === "active" ? "Đang bán" : "Nháp"}
-        </Tag>
-      ),
+      width: 150,
+      filters: [
+          { text: "Đang bán", value: "active" },
+          { text: "Ngừng bán", value: "inactive" },
+          { text: "Chờ duyệt", value: "pending" },
+          { text: "Đã lưu trữ", value: "archived" }
+      ],
+      filteredValue: filters.status ? [filters.status] : null, // Controlled filter state
+      filterMultiple: false,
+      render: (record: ExtendedProduct) => {
+        let color = 'default';
+        let text = '---';
+        switch (record.status) {
+            case 'active':
+                color = 'green';
+                text = 'Đang bán';
+                break;
+            case 'inactive':
+                color = 'red';
+                text = 'Ngừng bán';
+                break;
+            case 'pending':
+                color = 'orange';
+                text = 'Chờ duyệt';
+                break;
+            case 'archived':
+                color = 'default';
+                text = 'Đã lưu trữ';
+                break;
+            default:
+                text = record.status;
+        }
+        return <Tag color={color}>{text}</Tag>
+      },
     },
     {
       key: "action",
       title: "Hành động",
-      width: 150,
+      width: 120,
       render: (record: ExtendedProduct) => (
-        <Space size='middle'>
+        <Space size='small'>
           <Button
             icon={<EyeOutlined />}
+            size="small"
             onClick={() => {
               setCurrentProduct(record)
               setIsViewModalVisible(true)
             }}
-            title='Xem chi tiết'
+            title='Xem'
           />
           <Button
             icon={<EditOutlined />}
+            size="small"
             onClick={() => handleEditProduct(record)}
-            title='Chỉnh sửa'
+            title='Sửa'
           />
           <Button
             danger
             icon={<DeleteOutlined />}
+            size="small"
             title='Xóa'
-            onClick={() => handleDelete(record)} // Gọi handleDelete với toàn bộ record
+            onClick={() => handleDelete(record)}
           />
         </Space>
       ),
     },
-  ]
+  ], [filters, productTypes])
 
   return (
     <div className='p-6'>
       <div className='flex justify-between items-center mb-6'>
         <h1 className='text-2xl font-bold'>Danh sách sản phẩm</h1>
-        <Button
-          type='primary'
-          icon={<PlusOutlined />}
-          onClick={() => navigate("/products/new")}
-        >
-          Thêm sản phẩm
-        </Button>
+        <Space>
+            {Object.keys(filters).length > 0 && (
+                <Button 
+                    onClick={handleClearFilters}
+                    icon={<FilterOutlined />}
+                    danger
+                >
+                    Xóa bộ lọc
+                </Button>
+            )}
+            <Button
+            type='primary'
+            icon={<PlusOutlined />}
+            onClick={() => navigate("/products/new")}
+            >
+            Thêm sản phẩm
+            </Button>
+        </Space>
       </div>
 
-      {/* Thanh tìm kiếm và lọc */}
-      <div className='mb-6 flex gap-4'>
-        <Input
-          placeholder='Tìm kiếm sản phẩm...'
-          prefix={<SearchOutlined />}
-          value={searchTerm}
-          onChange={handleSearch}
-          className='flex-1'
-        />
-        <Select
-          placeholder='Lọc theo loại sản phẩm'
-          value={filterType}
-          onChange={handleFilter}
-          allowClear
-          className='w-64'
-        >
-          {productTypes.map((type) => (
-            <Select.Option key={type.id} value={type.id?.toString()}>
-              {type.name}
-            </Select.Option>
-          ))}
-        </Select>
-      </div>
 
       {/* Danh sách sản phẩm */}
-      {!displayProducts.length ? (
-        <div className='text-center py-12 bg-gray-50 rounded'>
-          <FileSearchOutlined
-            style={{ fontSize: "48px", color: "#999", marginBottom: "16px" }}
-          />
-          <p className='text-gray-500 text-lg'>
-            Không tìm thấy sản phẩm nào phù hợp
-          </p>
-        </div>
-      ) : (
-        <div className='bg-white rounded shadow'>
-          <DataTable
-            data={displayProducts}
-            columns={columns}
-            loading={loading}
-            pagination={{
-              current: 1,
-              pageSize: displayProducts.length,
-              total: displayProducts.length,
-              showSizeChanger: true,
-              pageSizeOptions: ["10", "20", "50", "100"],
-              showTotal: (total: number) => `Tổng ${total} sản phẩm`,
-              onChange: (page: number, pageSize: number) => {
-                // Xử lý phân trang
-                console.log("Page changed:", page, "Page size:", pageSize)
-              },
-            }}
-          />
-        </div>
-      )}
+      <div className='bg-white rounded shadow'>
+        <DataTable
+          data={products as ExtendedProduct[]}
+          columns={columns}
+          loading={loading}
+          // Pass Server-side pagination via pagination prop (DataTable overrides it)
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: totalProducts,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50", "100"],
+            showTotal: (total: number) => `Tổng ${total} sản phẩm`,
+          }}
+          onChange={handleTableChange}
+          searchableColumns={[]} // Disable client-side search
+          showSearch={false} // Disable client-side search UI
+          showFilters={false} // Disable client-side filter UI
+        />
+      </div>
 
       {/* Modal xem chi tiết sản phẩm */}
       <Modal
@@ -394,7 +420,7 @@ const ProductsList: React.FC = () => {
               {currentProduct.credit_price ? new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(Number(currentProduct.credit_price)) : "Chưa thiết lập"}
+                }).format(Number(currentProduct.credit_price)) : "Chưa thiết lập"}
             </Descriptions.Item>
             <Descriptions.Item label='Giá sau giảm'>
               {new Intl.NumberFormat("vi-VN", {

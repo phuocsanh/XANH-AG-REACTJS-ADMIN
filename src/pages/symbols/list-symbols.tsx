@@ -199,7 +199,6 @@ const ListSymbols = () => {
                 key: "createdAt",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
-                sorter: true,
               },
             ]}
             data={symbolRows}

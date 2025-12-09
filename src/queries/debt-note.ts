@@ -54,6 +54,7 @@ export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
       }>('/debt-notes/search', {
         page,
         limit,
+        ...params,
         ...(filters.length > 0 && { filters })
       })
 

@@ -66,7 +66,9 @@ interface DataTableProps<T = Record<string, unknown>>
   columnFilters?: ColumnFilter[]
   // Pagination config
   paginationConfig?: {
+    current?: number
     pageSize?: number
+    total?: number
     showSizeChanger?: boolean
     showQuickJumper?: boolean
     showTotal?: (total: number, range: [number, number]) => string
@@ -310,7 +312,10 @@ const DataTable = <T extends Record<string, unknown>>({
           scroll={{ x: "max-content" }}
           pagination={{
             ...paginationConfig,
-            total: filteredData.length,
+            ...(tableProps.pagination ? tableProps.pagination : {}),
+            total: tableProps.pagination && tableProps.pagination.total !== undefined 
+                ? tableProps.pagination.total 
+                : filteredData.length,
           }}
           onChange={handleTableChange}
           {...tableProps}

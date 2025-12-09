@@ -50,6 +50,7 @@ export const useProductTypesQuery = (params?: Record<string, unknown>) => {
       }>('/product-types/search', {
         page,
         limit,
+        ...params,
       })
 
       return {

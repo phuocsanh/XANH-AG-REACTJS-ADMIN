@@ -47,7 +47,7 @@ export const useCustomersQuery = (params?: Record<string, unknown>) => {
       }>('/customers/search', {
         page,
         limit,
-        ...(search && { search })
+        ...params // Spread all params to support filtering (code, name, phone, etc.)
       })
 
       return mapSearchResponse(response, page, limit)

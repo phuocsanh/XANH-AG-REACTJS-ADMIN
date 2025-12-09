@@ -6,7 +6,7 @@ import { IoMdAdd } from "react-icons/io"
 import { MyContext } from "../../App"
 
 import DialogAddUpdate from "./components/dialog-add-update"
-import { ConfirmModal } from "../../components/common" // Import ConfirmModal từ common components
+import { ConfirmModal } from "../../components/common"
 import {
   useProductTypesQuery as useProductTypes,
   useDeleteProductTypeMutation,
@@ -19,14 +19,21 @@ import { Status } from "../../models/common"
 import { toast } from "react-toastify"
 import DataTable from "../../components/common/data-table"
 import { Tag } from "antd"
-
-// Extend ProductType interface để tương thích với DataTable
+import FilterHeader from "../../components/common/filter-header"
 
 const ListCategory = () => {
   const context = useContext(MyContext)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [filters, setFilters] = useState<Record<string, any>>({})
+
   // Sử dụng React Query để lấy dữ liệu loại sản phẩm
-  const { data: productTypesResponse, isLoading } = useProductTypes()
+  const { data: productTypesResponse, isLoading } = useProductTypes({
+    page: currentPage,
+    limit: pageSize,
+    ...filters,
+  })
   const deleteProductTypeMutation = useDeleteProductTypeMutation()
 
   useEffect(() => {
@@ -36,10 +43,10 @@ const ListCategory = () => {
 
   const [openDialog, setOpenDialog] = useState(false)
   const [editingRow, setEditingRow] = useState<ProductType | null>(null)
-  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false) // Thêm state cho modal xóa
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false)
   const [deletingCategory, setDeletingCategory] = useState<ProductType | null>(
     null
-  ) // Thêm state cho danh mục đang xóa
+  )
 
   // Chuyển đổi dữ liệu từ API thành format phù hợp với table
   const rows = useMemo(() => {
@@ -67,9 +74,8 @@ const ListCategory = () => {
     setOpenDialog(true)
   }
 
-  // Xử lý xóa loại sản phẩm - cập nhật để set state cho modal
+  // Xử lý xóa loại sản phẩm
   const handleDelete = (record: ExtendedProductType) => {
-    // Set state để hiển thị modal xác nhận
     setDeletingCategory(record as ProductType)
     setDeleteConfirmVisible(true)
   }
@@ -81,13 +87,11 @@ const ListCategory = () => {
     try {
       await deleteProductTypeMutation.mutateAsync(deletingCategory.id as number)
       toast.success("Xóa loại sản phẩm thành công!")
-      // Đóng modal xác nhận
       setDeleteConfirmVisible(false)
       setDeletingCategory(null)
     } catch (error) {
       console.error("Lỗi khi xóa loại sản phẩm:", error)
       toast.error("Có lỗi xảy ra khi xóa loại sản phẩm!")
-      // Đóng modal xác nhận
       setDeleteConfirmVisible(false)
       setDeletingCategory(null)
     }
@@ -103,6 +107,23 @@ const ListCategory = () => {
   const handleAdd = () => {
     setEditingRow(null)
     setOpenDialog(true)
+  }
+
+  // Handle Table Change
+  const handleTableChange = (
+    pagination: any,
+    tableFilters: any,
+    sorter: any
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+  }
+
+  const handleFilterChange = (key: string, value: any) => {
+    const newFilters = { ...filters, [key]: value }
+    if (!value) delete newFilters[key]
+    setFilters(newFilters)
+    setCurrentPage(1)
   }
 
   // Render trạng thái
@@ -134,13 +155,29 @@ const ListCategory = () => {
           <DataTable<ExtendedProductType>
             columns={[
               {
-                title: "Tên loại sản phẩm",
+                title: (
+                  <FilterHeader 
+                      title="Tên loại sản phẩm" 
+                      dataIndex="name" 
+                      value={filters.name} 
+                      onChange={(val) => handleFilterChange('name', val)}
+                      inputType="text"
+                  />
+                ),
                 dataIndex: "name",
                 key: "name",
                 sorter: true,
               },
               {
-                title: "Mã loại",
+                title: (
+                  <FilterHeader 
+                      title="Mã loại" 
+                      dataIndex="code" 
+                      value={filters.code} 
+                      onChange={(val) => handleFilterChange('code', val)}
+                      inputType="text"
+                  />
+                ),
                 dataIndex: "code",
                 key: "code",
                 sorter: true,
@@ -163,36 +200,34 @@ const ListCategory = () => {
                 key: "created_at",
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
-                sorter: true,
               },
             ]}
             data={rows}
             loading={isLoading}
-            showSearch={true}
-            searchPlaceholder='Tìm kiếm loại sản phẩm...'
-            searchableColumns={["name", "code", "description"]}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            scroll={{ x: "100%" }}
-            paginationConfig={{
-              pageSize: 10,
+            onChange={handleTableChange}
+            pagination={{
+              current: currentPage,
+              pageSize: pageSize,
+              total: productTypesResponse?.data?.total || 0,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) =>
+              showTotal: (total: number, range: [number, number]) =>
                 `${range[0]}-${range[1]} của ${total} loại sản phẩm`,
             }}
+            showSearch={false}
+            scroll={{ x: "100%" }}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       </div>
 
-      {/* Dialog thêm/sửa loại sản phẩm */}
       <DialogAddUpdate
         openDialog={openDialog}
         setOpenDialog={setOpenDialog}
         editingRow={editingRow}
       />
 
-      {/* Modal xác nhận xóa loại sản phẩm */}
       <ConfirmModal
         title='Xác nhận xóa'
         content={

@@ -46,6 +46,8 @@ import {
 } from "@/queries/inventory"
 import { LoadingSpinner } from "@/components/common"
 
+import FilterHeader from '@/components/common/filter-header'
+
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
 
@@ -53,12 +55,7 @@ const InventoryReceiptsList: React.FC = () => {
   const navigate = useNavigate()
 
   // State quản lý tìm kiếm và lọc
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [statusFilter, setStatusFilter] = useState<string | undefined>()
-  const [supplierFilter, setSupplierFilter] = useState<string>("")
-  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(
-    null
-  )
+  const [filters, setFilters] = useState<Record<string, any>>({})
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -71,25 +68,27 @@ const InventoryReceiptsList: React.FC = () => {
       offset: (pagination.page - 1) * pagination.limit,
     }
 
-    if (searchTerm.trim()) {
-      params.code = searchTerm.trim()
+    if (filters.code) {
+      params.code = filters.code
     }
 
-    if (statusFilter !== undefined) {
-      params.status = statusFilter
+    if (filters.status) {
+      params.status = filters.status
     }
 
-    if (supplierFilter !== undefined) {
-      // params.supplierId = supplierFilter
+    // Nếu API hỗ trợ lọc theo tên nhà cung cấp
+    if (filters.supplier_name) {
+       // params.supplierName = filters.supplier_name 
+       // Tạm thời chưa biết field chính xác, để lại logic mở
     }
 
-    if (dateRange) {
-      params.startDate = dateRange[0].format("YYYY-MM-DD")
-      params.endDate = dateRange[1].format("YYYY-MM-DD")
+    if (filters.start_date && filters.end_date) {
+      params.startDate = filters.start_date
+      params.endDate = filters.end_date
     }
 
     return params
-  }, [searchTerm, statusFilter, supplierFilter, dateRange, pagination])
+  }, [filters, pagination])
 
   // Queries
   const {
@@ -115,49 +114,109 @@ const InventoryReceiptsList: React.FC = () => {
   const cancelReceiptMutation = useCancelInventoryReceiptMutation()
 
   // Handlers
-  const handleSearch = (value: string) => {
-    setSearchTerm(value)
-    setPagination((prev) => ({ ...prev, page: 1 }))
-  }
-
-  const handleStatusFilterChange = (value: string | undefined) => {
-    setStatusFilter(value)
-    setPagination((prev) => ({ ...prev, page: 1 }))
-  }
-
-  const handleSupplierFilterChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+  const handleTableChange = (
+    newPagination: any,
+    tableFilters: any,
+    sorter: any
   ) => {
-    setSupplierFilter(e.target.value)
-    setPagination((prev) => ({ ...prev, page: 1 }))
-  }
+    setPagination((prev) => ({
+      ...prev,
+      page: newPagination.current || 1,
+      limit: newPagination.pageSize || 10,
+    }))
 
-  const handleDateRangeChange = (
-    dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null,
-    _dateStrings: [string, string]
-  ) => {
-    if (dates && dates[0] && dates[1]) {
-      setDateRange([dates[0], dates[1]])
+    const newFilters = { ...filters }
+
+    // Status Filter
+    if (tableFilters.status && tableFilters.status.length > 0) {
+      newFilters.status = tableFilters.status[0]
     } else {
-      setDateRange(null)
+      delete newFilters.status
     }
+
+    // Created At Filter
+    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
+      newFilters.start_date = tableFilters.created_at[0]
+      newFilters.end_date = tableFilters.created_at[1]
+    } else {
+      delete newFilters.start_date
+      delete newFilters.end_date
+    }
+
+    setFilters(newFilters)
+  }
+
+  const handleFilterChange = (key: string, value: any) => {
+    const newFilters = { ...filters, [key]: value }
+    if (!value) delete newFilters[key]
+    setFilters(newFilters)
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
 
-  const handleTableChange = (page: number, pageSize: number) => {
-    setPagination({ page, limit: pageSize })
+  const handleCreateReceipt = () => {
+    navigate("/inventory/receipts/create")
   }
 
+  // Date Filter UI Helper
+  const getDateColumnSearchProps = (dataIndex: string): any => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <RangePicker 
+            style={{ marginBottom: 8, display: 'flex' }}
+            format="DD/MM/YYYY"
+            value={
+                selectedKeys && selectedKeys[0] 
+                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                : undefined
+            }
+            onChange={(dates) => {
+                if (dates && dates[0] && dates[1]) {
+                    setSelectedKeys([
+                        dates[0].startOf('day').toISOString(), 
+                        dates[1].endOf('day').toISOString()
+                    ])
+                } else {
+                    setSelectedKeys([])
+                }
+            }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => confirm({ closeDropdown: false })}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Lọc
+          </Button>
+          <Button
+            onClick={() => {
+                if (clearFilters) {
+                    clearFilters()
+                    confirm()
+                }
+            }}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Xóa
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+    ),
+  })
+
+  // Action handlers...
   const handleViewReceipt = (receipt: InventoryReceipt) => {
     navigate(`/inventory/receipts/${receipt.id}`)
   }
 
   const handleEditReceipt = (receipt: InventoryReceipt) => {
     navigate(`/inventory/receipts/edit/${receipt.id}`)
-  }
-
-  const handleCreateReceipt = () => {
-    navigate("/inventory/receipts/create")
   }
 
   const handleDeleteReceipt = async (id: number) => {
@@ -194,7 +253,7 @@ const InventoryReceiptsList: React.FC = () => {
 
   // Render trạng thái
   const renderStatus = (statusText: string) => {
-    const statusStr = statusText // statusText is already localized text from getInventoryReceiptStatusText
+    const statusStr = statusText
     let color = "default"
     let icon = null
     
@@ -245,8 +304,6 @@ const InventoryReceiptsList: React.FC = () => {
       </Tooltip>
     )
 
-    // Chỉnh sửa (chỉ khi ở trạng thái DRAFT hoặc PENDING)
-    // Note: record.status is Vietnamese text
     if (record.status === "Nháp" || record.status === "Chờ duyệt") {
       actions.push(
         <Tooltip key='edit' title='Chỉnh sửa'>
@@ -259,7 +316,6 @@ const InventoryReceiptsList: React.FC = () => {
       )
     }
 
-    // Duyệt (chỉ khi ở trạng thái PENDING)
     if (record.status === "Chờ duyệt") {
       actions.push(
         <Tooltip key='approve' title='Duyệt phiếu'>
@@ -281,7 +337,6 @@ const InventoryReceiptsList: React.FC = () => {
       )
     }
 
-    // Hoàn thành (chỉ khi ở trạng thái APPROVED)
     if (record.status === "Đã duyệt") {
       actions.push(
         <Tooltip key='complete' title='Hoàn thành nhập kho'>
@@ -303,7 +358,6 @@ const InventoryReceiptsList: React.FC = () => {
       )
     }
 
-    // Hủy (chỉ khi ở trạng thái DRAFT, PENDING, hoặc APPROVED)
     if (
       record.status === "Nháp" ||
       record.status === "Chờ duyệt" ||
@@ -329,7 +383,6 @@ const InventoryReceiptsList: React.FC = () => {
       )
     }
 
-    // Xóa (chỉ khi ở trạng thái DRAFT hoặc CANCELLED)
     if (record.status === "Nháp" || record.status === "Đã hủy") {
       actions.push(
         <Tooltip key='delete' title='Xóa phiếu'>
@@ -357,7 +410,15 @@ const InventoryReceiptsList: React.FC = () => {
   // Cấu hình cột cho bảng
   const columns: ColumnsType<InventoryReceipt> = [
     {
-      title: "Mã phiếu",
+      title: (
+        <FilterHeader 
+            title="Mã phiếu" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+            inputType="text"
+        />
+      ),
       dataIndex: "code",
       key: "code",
       width: 180,
@@ -372,7 +433,15 @@ const InventoryReceiptsList: React.FC = () => {
       ),
     },
     {
-      title: "Nhà cung cấp",
+      title: (
+        <FilterHeader 
+            title="Nhà cung cấp" 
+            dataIndex="supplier_name" 
+            value={filters.supplier_name} 
+            onChange={(val) => handleFilterChange('supplier_name', val)}
+            inputType="text"
+        />
+      ),
       dataIndex: "supplier_id",
       key: "supplier_id",
       width: 200,
@@ -384,7 +453,7 @@ const InventoryReceiptsList: React.FC = () => {
       title: "Tổng tiền",
       dataIndex: "total_amount",
       key: "total_amount",
-      width: 120,
+      width: 150,
       align: "right",
       render: (amount: number) =>
         new Intl.NumberFormat("vi-VN", {
@@ -396,15 +465,26 @@ const InventoryReceiptsList: React.FC = () => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 150,
       align: "center",
+      filters: [
+        { text: "Nháp", value: InventoryReceiptStatus.DRAFT },
+        { text: "Chờ duyệt", value: InventoryReceiptStatus.PENDING },
+        { text: "Đã duyệt", value: InventoryReceiptStatus.APPROVED },
+        { text: "Hoàn thành", value: InventoryReceiptStatus.COMPLETED },
+        { text: "Đã hủy", value: InventoryReceiptStatus.CANCELLED },
+      ],
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
       render: (status: string) => renderStatus(status),
     },
     {
       title: "Ngày tạo",
       dataIndex: "created_at",
       key: "created_at",
-      width: 120,
+      width: 150,
+      ...getDateColumnSearchProps('created_at'),
+      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
@@ -507,64 +587,6 @@ const InventoryReceiptsList: React.FC = () => {
         )}
       </Row>
 
-      {/* Bộ lọc và tìm kiếm */}
-      <Card style={{ marginBottom: "16px" }}>
-        <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={6}>
-            <Input.Search
-              placeholder='Tìm theo mã phiếu...'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onSearch={handleSearch}
-              allowClear
-              prefix={<SearchOutlined />}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Select
-              placeholder='Lọc theo trạng thái'
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              allowClear
-              style={{ width: "100%" }}
-            >
-              <Select.Option value={InventoryReceiptStatus.DRAFT}>
-                Nháp
-              </Select.Option>
-              <Select.Option value={InventoryReceiptStatus.PENDING}>
-                Chờ duyệt
-              </Select.Option>
-              <Select.Option value={InventoryReceiptStatus.APPROVED}>
-                Đã duyệt
-              </Select.Option>
-              <Select.Option value={InventoryReceiptStatus.COMPLETED}>
-                Hoàn thành
-              </Select.Option>
-              <Select.Option value={InventoryReceiptStatus.CANCELLED}>
-                Đã hủy
-              </Select.Option>
-            </Select>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Input
-              placeholder='Tìm theo nhà cung cấp...'
-              value={supplierFilter}
-              onChange={handleSupplierFilterChange}
-              allowClear
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <RangePicker
-              value={dateRange}
-              onChange={handleDateRangeChange}
-              format='DD/MM/YYYY'
-              placeholder={["Từ ngày", "Đến ngày"]}
-              style={{ width: "100%" }}
-            />
-          </Col>
-        </Row>
-      </Card>
-
       {/* Bảng dữ liệu */}
       <Card>
         <div
@@ -608,9 +630,8 @@ const InventoryReceiptsList: React.FC = () => {
               showQuickJumper: true,
               showTotal: (total, range) =>
                 `${range[0]}-${range[1]} của ${total} phiếu nhập`,
-              onChange: handleTableChange,
-              onShowSizeChange: handleTableChange,
             }}
+            onChange={handleTableChange}
             scroll={{ x: 1200 }}
           />
         )}
@@ -620,3 +641,4 @@ const InventoryReceiptsList: React.FC = () => {
 }
 
 export default InventoryReceiptsList
+

@@ -42,6 +42,7 @@ export const useSuppliersQuery = (params?: Record<string, unknown>) => {
       }>('/suppliers/search', {
         page,
         limit,
+        ...params,
       })
 
       return {

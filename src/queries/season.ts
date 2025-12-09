@@ -38,6 +38,7 @@ export const useSeasonsQuery = (params?: Record<string, unknown>) => {
       }>('/season/search', {
         page,
         limit,
+        ...params
       })
 
       return {

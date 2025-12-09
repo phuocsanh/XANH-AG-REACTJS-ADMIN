@@ -25,11 +25,13 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  SearchOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
+import FilterHeader from "@/components/common/filter-header"
 import { ConfirmModal } from "@/components/common"
 import { customerTypeLabels } from "./form-config"
+import { TablePaginationConfig, TableProps } from "antd"
+import { FilterValue, SorterResult } from "antd/es/table/interface"
 
 // Extend Customer interface để tương thích với DataTable
 interface ExtendedCustomer extends Customer {
@@ -51,7 +53,7 @@ interface CustomerFormValues {
 
 const CustomersList: React.FC = () => {
   // State quản lý UI
-  const [searchTerm, setSearchTerm] = React.useState<string>("")
+  const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [isFormModalVisible, setIsFormModalVisible] =
     React.useState<boolean>(false)
   const [deleteConfirmVisible, setDeleteConfirmVisible] =
@@ -73,11 +75,43 @@ const CustomersList: React.FC = () => {
   // Form instance
   const [form] = Form.useForm<CustomerFormValues>()
 
+  // Handle Table Change
+  const handleTableChange: TableProps<ExtendedCustomer>['onChange'] = (
+    pagination,
+    tableFilters,
+    sorter,
+    extra
+  ) => {
+    setCurrentPage(pagination.current || 1)
+    setPageSize(pagination.pageSize || 10)
+    
+    const newFilters = { ...filters }
+
+    // Handle Type filter
+    if (tableFilters.type) {
+        if (tableFilters.type.length > 0) {
+            newFilters.type = tableFilters.type[0]
+        } else {
+            delete newFilters.type
+        }
+    }
+
+    setFilters(newFilters)
+  }
+
+  // Handle Filter Change
+  const handleFilterChange = (key: string, value: any) => {
+      const newFilters = { ...filters, [key]: value }
+      if (!value) delete newFilters[key]
+      setFilters(newFilters)
+      setCurrentPage(1) // Reset to first page on filter change
+  }
+
   // Sử dụng query hooks
   const { data: customersData, isLoading } = useCustomersQuery({
     page: currentPage,
     limit: pageSize,
-    search: searchTerm || undefined,
+    ...filters
   })
 
   const { data: customerInvoices } = useCustomerInvoicesQuery(
@@ -218,30 +252,61 @@ const CustomersList: React.FC = () => {
   const columns = [
     {
       key: "code",
-      title: "Mã KH",
-      width: 100,
+      title: (
+        <FilterHeader 
+            title="Mã KH" 
+            dataIndex="code" 
+            value={filters.code} 
+            onChange={(val) => handleFilterChange('code', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
       render: (record: ExtendedCustomer) => (
         <div className='font-medium'>{record.code}</div>
       ),
     },
     {
       key: "name",
-      title: "Tên khách hàng",
-      width: 180,
+      title: (
+        <FilterHeader 
+            title="Tên khách hàng" 
+            dataIndex="name" 
+            value={filters.name} 
+            onChange={(val) => handleFilterChange('name', val)}
+            inputType="text"
+        />
+      ),
+      width: 250,
       render: (record: ExtendedCustomer) => (
         <div className='font-medium'>{record.name}</div>
       ),
     },
     {
       key: "phone",
-      title: "Số điện thoại",
-      width: 120,
+      title: (
+        <FilterHeader 
+            title="Số điện thoại" 
+            dataIndex="phone" 
+            value={filters.phone} 
+            onChange={(val) => handleFilterChange('phone', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
       render: (record: ExtendedCustomer) => <div>{record.phone}</div>,
     },
     {
       key: "type",
       title: "Loại KH",
       width: 140,
+      filters: [
+          { text: "Thường", value: "regular" },
+          { text: "VIP", value: "vip" },
+          { text: "Sỉ", value: "wholesale" },
+      ],
+      filteredValue: filters.type ? [filters.type] : null,
+      filterMultiple: false,
       render: (record: ExtendedCustomer) => {
         const colorMap = {
           regular: "default",
@@ -491,16 +556,6 @@ const CustomersList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Thanh tìm kiếm */}
-      <div className='mb-6'>
-        <Input
-          placeholder='Tìm kiếm theo tên hoặc số điện thoại...'
-          prefix={<SearchOutlined />}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className='max-w-md'
-        />
-      </div>
 
       {/* Danh sách khách hàng */}
       <div className='bg-white rounded shadow'>
@@ -515,11 +570,10 @@ const CustomersList: React.FC = () => {
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50", "100"],
             showTotal: (total: number) => `Tổng ${total} khách hàng`,
-            onChange: (page: number, size: number) => {
-              setCurrentPage(page)
-              setPageSize(size)
-            },
           }}
+          onChange={handleTableChange}
+          showSearch={false}
+          showFilters={false}
         />
       </div>
 

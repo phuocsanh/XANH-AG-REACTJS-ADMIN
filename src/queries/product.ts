@@ -235,15 +235,33 @@ export const useProductSearch = (
 /**
  * Hook lấy danh sách sản phẩm (POST /products/search)
  */
-export const useProductsQuery = (params?: ExtendedProductListParams) => {
-  const page = params?.offset !== undefined
-    ? Math.floor(params.offset / (params.limit || 10)) + 1
-    : 1
-  const limit = params?.limit || 10
+// Hook lấy danh sách sản phẩm (POST /products/search)
+export const useProductsQuery = (params?: Record<string, any>) => {
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
 
   return useQuery({
     queryKey: productKeys.list(params || {}),
     queryFn: async () => {
+      // Build Payload chuẩn Flat Params
+      const payload: any = {
+        page,
+        limit,
+      };
+
+      if (params?.keyword) payload.keyword = params.keyword;
+      if (params?.name) payload.name = params.name;
+      if (params?.code) payload.code = params.code;
+      if (params?.status) payload.status = params.status;
+      if (params?.type_id) payload.type_id = params.type_id; // Filter theo loại SP
+
+      // Sort
+      if (params?.sort_by) {
+        const field = String(params.sort_by);
+        const dir = String(params.sort_direction || 'DESC');
+        payload.sort = `${field}:${dir}`; 
+      }
+
       const response = await api.postRaw<{
         success: boolean
         data: Product[]
@@ -251,10 +269,7 @@ export const useProductsQuery = (params?: ExtendedProductListParams) => {
           total: number
           totalPages: number | null
         }
-      }>('/products/search', {
-        page,
-        limit,
-      })
+      }>('/products/search', payload)
 
       return mapSearchResponse(response, page, limit)
     },
