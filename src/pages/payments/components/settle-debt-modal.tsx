@@ -45,10 +45,13 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   const [selectedCustomer, setSelectedCustomer] = React.useState<CustomerDebtor | null>(null)
   const [selectedSeason, setSelectedSeason] = React.useState<number | null>(null)
   const [debtorSearch, setDebtorSearch] = React.useState("")
+  // State lưu kết quả chốt sổ
+  const [settleResult, setSettleResult] = React.useState<any>(null)
+  const [showResult, setShowResult] = React.useState(false)
 
   // Queries
-  // Luôn load danh sách search để lấy thông tin nợ chính xác nhất từ API
-  const { data: debtors, isLoading: isLoadingDebtors } = useCustomerDebtorsSearchQuery(debtorSearch)
+  // Chỉ load danh sách khi modal mở để tránh gọi API thừa
+  const { data: debtors, isLoading: isLoadingDebtors } = useCustomerDebtorsSearchQuery(debtorSearch, { enabled: open })
   const { data: seasons } = useSeasonsQuery()
 
   // Queries phụ thuộc vào selection và luôn FETCH để đảm bảo tính đúng nợ từng mùa vụ
@@ -187,17 +190,24 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      const submitData = {
-        customer_id: values.customer_id,
-        season_id: values.season_id,
-        amount: values.amount,
-        payment_method: values.payment_method,
-        notes: values.notes,
-      }
+    const submitData = {
+      customer_id: values.customer_id,
+      season_id: values.season_id,
+      amount: values.amount,
+      payment_method: values.payment_method,
+      notes: values.notes,
+      // Quà tặng khi quyết toán nợ
+      gift_description: values.gift_description,
+      gift_value: values.gift_value || 0,
+    }
       
       await settleAndRolloverMutation.mutateAsync(submitData, {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          // Lưu kết quả và hiển thị modal kết quả
+          setSettleResult(response)
+          setShowResult(true)
           onSuccess?.()
+          // Đóng modal form
           onCancel()
         },
       })
@@ -226,6 +236,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
     }))
 
   return (
+    <>
     <Modal
       title='Chốt sổ công nợ'
       open={open}
@@ -286,28 +297,122 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         </Form.Item>
 
         {/* Luôn hiển thị thông tin nợ nếu có data */}
-        {(selectedCustomer || customerId) && selectedSeason && (
-          <Card className='mb-4 bg-gray-50'>
-            <div className='text-gray-500 text-sm'>
-              Tổng công nợ của mùa vụ này
-            </div>
-            <div className='text-2xl font-bold text-red-600'>
-              {formatCurrency(debtAmount)}
-            </div>
-            {shouldFetchDetails ? (
-                <div className='text-sm text-gray-500 mt-2'>
-                  Gồm {customerInvoices?.length || 0} hóa đơn chưa thanh toán đủ
+        {(selectedCustomer || customerId) && selectedSeason && (() => {
+          // Group invoices theo rice_crop_id
+          const invoicesByRiceCrop = new Map<number | null, {
+            rice_crop_id: number | null;
+            field_name: string;
+            invoices: any[];
+            total_debt: number;
+          }>();
+
+          if (customerInvoices && customerInvoices.length > 0) {
+            customerInvoices.forEach((invoice: any) => {
+              const riceCropId = invoice.rice_crop_id || null;
+              const fieldName = invoice.rice_crop?.field_name || 'Không thuộc vụ lúa nào';
+              
+              if (!invoicesByRiceCrop.has(riceCropId)) {
+                invoicesByRiceCrop.set(riceCropId, {
+                  rice_crop_id: riceCropId,
+                  field_name: fieldName,
+                  invoices: [],
+                  total_debt: 0,
+                });
+              }
+              
+              const group = invoicesByRiceCrop.get(riceCropId)!;
+              group.invoices.push(invoice);
+              group.total_debt += Number(invoice.remaining_amount || 0);
+            });
+          }
+
+          const breakdown = Array.from(invoicesByRiceCrop.values());
+
+          return (
+            <Card className='mb-4' style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+              <div className='text-gray-600 text-sm font-medium mb-2'>
+                Tổng công nợ của mùa vụ này
+              </div>
+              <div className='text-2xl font-bold text-red-600 mb-3'>
+                {formatCurrency(debtAmount)}
+              </div>
+              <div className='text-sm text-gray-500 mb-3'>
+                Gồm {customerInvoices?.length || 0} hóa đơn chưa thanh toán đủ
+                <br />
+                (Hệ thống tự động phân bổ theo thứ tự FIFO)
+              </div>
+
+              {/* Breakdown theo mảnh ruộng */}
+              {breakdown.length > 0 && (
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #d9f7be' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: 12, color: '#52c41a' }}>
+                    📊 Chi tiết theo mảnh ruộng:
+                  </div>
+                  {breakdown.map((crop, index) => (
+                    <div 
+                      key={crop.rice_crop_id || `no-crop-${index}`}
+                      style={{ 
+                        background: 'white',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        marginBottom: 6,
+                        border: '1px solid #d9f7be'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontWeight: 500, fontSize: '13px' }}>
+                          {crop.field_name}
+                        </span>
+                        <span style={{ 
+                          background: '#e6f7ff', 
+                          padding: '2px 8px', 
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          color: '#1890ff'
+                        }}>
+                          {crop.invoices.length} hóa đơn
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: 4 }}>
+                        <strong>Tổng nợ:</strong> {formatCurrency(crop.total_debt)}
+                      </div>
+                      {/* Danh sách hóa đơn - Thu nhỏ và có scroll */}
+                      <div style={{ 
+                        fontSize: '11px', 
+                        color: '#999', 
+                        marginTop: 6,
+                        maxHeight: '120px',
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
+                        lineHeight: '1.2'
+                      }}>
+                        {crop.invoices.map((inv: any, idx: number) => (
+                          <div key={inv.id} style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            padding: '2px 0',
+                            borderTop: idx > 0 ? '1px solid #f5f5f5' : 'none',
+                            lineHeight: '1.2'
+                          }}>
+                            <span style={{ 
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '60%'
+                            }}>{inv.code}</span>
+                            <span style={{ fontWeight: 500, color: '#666' }}>
+                              {formatCurrency(inv.remaining_amount)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-            ) : (
-                 <div className='text-sm text-gray-500 mt-2'>
-                  Thông tin từ danh sách
-                </div>
-            )}
-            <div className='text-sm text-gray-500'>
-              (Hệ thống tự động phân bổ theo thứ tự FIFO)
-            </div>
-          </Card>
-        )}
+              )}
+            </Card>
+          );
+        })()}
 
         <div className='grid grid-cols-2 gap-4'>
           <Form.Item
@@ -344,10 +449,173 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           />
         )}
 
+        {/* Quà tặng khi quyết toán nợ */}
+        <div style={{ background: '#fff9e6', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#666' }}>
+            🎁 Quà tặng cuối vụ (tùy chọn)
+          </div>
+          
+          <Form.Item
+            label='Mô tả quà tặng'
+            name='gift_description'
+          >
+            <Input 
+              placeholder='VD: 1 bao phân DAP 50kg' 
+            />
+          </Form.Item>
+
+          <Form.Item
+            label='Giá trị quà tặng'
+            name='gift_value'
+          >
+            <NumberInput
+              className='w-full'
+              min={0}
+              placeholder='0'
+            />
+          </Form.Item>
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '-8px' }}>
+            Giá trị quà tặng quy đổi ra tiền (VD: 500,000 đ)
+          </div>
+        </div>
+
         <Form.Item label='Ghi chú' name='notes'>
           <Input.TextArea rows={3} placeholder='Nhập ghi chú (tùy chọn)' />
         </Form.Item>
       </Form>
     </Modal>
+
+    {/* Modal hiển thị kết quả chốt sổ */}
+    <Modal
+      title="✅ Chốt sổ công nợ thành công"
+      open={showResult}
+      onCancel={() => setShowResult(false)}
+      footer={[
+        <Button key="close" type="primary" onClick={() => setShowResult(false)}>
+          Đóng
+        </Button>
+      ]}
+      width={800}
+    >
+      {settleResult && (
+        <div>
+          {/* Tổng quan */}
+          <Card className='mb-4' style={{ background: '#f6ffed' }}>
+            <div style={{ marginBottom: 8 }}>
+              <strong>Tổng nợ:</strong> {formatCurrency(settleResult.total_debt)}
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <strong style={{ color: '#52c41a' }}>Đã thanh toán:</strong> {formatCurrency(settleResult.payment?.amount || 0)}
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <strong style={{ color: settleResult.remaining_debt > 0 ? '#ff4d4f' : '#52c41a' }}>
+                Còn nợ:
+              </strong> {formatCurrency(settleResult.remaining_debt)}
+            </div>
+            
+            {/* Hiển thị quà tặng */}
+            {settleResult.gift_description && (
+              <div style={{ marginTop: 12, padding: '12px', background: '#fff9e6', borderRadius: '4px' }}>
+                <strong>🎁 Quà tặng:</strong> {formatCurrency(settleResult.gift_value)}
+                <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                  {settleResult.gift_description}
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Breakdown theo mảnh ruộng */}
+          {settleResult.breakdown_by_rice_crop && settleResult.breakdown_by_rice_crop.length > 0 && (
+            <div>
+              <h3 style={{ marginBottom: 16 }}>📊 Chi tiết theo mảnh ruộng</h3>
+              {settleResult.breakdown_by_rice_crop.map((crop: any, index: number) => (
+                <Card 
+                  key={crop.rice_crop_id || `no-crop-${index}`} 
+                  className='mb-3'
+                  style={{ borderLeft: '4px solid #52c41a' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <h4 style={{ margin: 0 }}>
+                      {crop.field_name}
+                    </h4>
+                    <span style={{ 
+                      background: '#e6f7ff', 
+                      padding: '2px 8px', 
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      {crop.invoice_count} hóa đơn
+                    </span>
+                  </div>
+                  
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Tổng nợ:</strong> {formatCurrency(crop.total_debt)}
+                  </div>
+
+                  {/* Danh sách hóa đơn */}
+                  <div style={{ 
+                    background: '#fafafa', 
+                    padding: '12px', 
+                    borderRadius: '4px',
+                    marginTop: 12
+                  }}>
+                    <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: 8 }}>
+                      Danh sách hóa đơn:
+                    </div>
+                    {crop.invoices.map((invoice: any) => (
+                      <div 
+                        key={invoice.id}
+                        style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          padding: '6px 0',
+                          borderBottom: '1px solid #f0f0f0'
+                        }}
+                      >
+                        <span style={{ fontSize: '13px' }}>{invoice.code}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 500 }}>
+                          {formatCurrency(invoice.remaining_amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Danh sách hóa đơn đã thanh toán */}
+          {settleResult.settled_invoices && settleResult.settled_invoices.length > 0 && (
+            <Card className='mt-4'>
+              <h3 style={{ marginBottom: 12 }}>
+                ✅ Hóa đơn đã thanh toán ({settleResult.settled_invoices.length})
+              </h3>
+              <div>
+                {settleResult.settled_invoices.map((invoice: any) => (
+                  <div 
+                    key={invoice.id}
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      padding: '8px 0',
+                      borderBottom: '1px solid #f0f0f0'
+                    }}
+                  >
+                    <span>{invoice.code}</span>
+                    <span style={{ 
+                      color: invoice.payment_status === 'paid' ? '#52c41a' : '#faad14',
+                      fontWeight: 500
+                    }}>
+                      {invoice.payment_status === 'paid' ? '✓ Đã thanh toán' : '◐ Thanh toán một phần'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+    </Modal>
+    </>
   )
 }

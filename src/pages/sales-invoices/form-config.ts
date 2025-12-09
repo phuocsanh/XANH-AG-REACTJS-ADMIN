@@ -27,6 +27,9 @@ export const salesInvoiceSchema = z.object({
   discount_amount: z.number().min(0).default(0),
   final_amount: z.number().min(0),
   partial_payment_amount: z.number().min(0).default(0),
+  // Quà tặng khi bán hàng
+  gift_description: z.string().optional(),
+  gift_value: z.number().min(0, 'Giá trị quà tặng phải lớn hơn hoặc bằng 0').default(0),
   items: z.array(salesInvoiceItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
   status: z.enum(['draft', 'confirmed', 'paid']).optional(),
 });
@@ -49,6 +52,9 @@ export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
   discount_amount: 0,
   final_amount: 0,
   partial_payment_amount: 0,
+  // Quà tặng khi bán hàng
+  gift_description: '',
+  gift_value: 0,
   items: [],
   status: 'draft',
 };

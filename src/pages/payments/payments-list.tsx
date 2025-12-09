@@ -3,6 +3,7 @@ import { Payment, PaymentAllocation } from "@/models/payment"
 import {
   usePaymentsQuery,
   usePaymentAllocationsQuery,
+  useRollbackPaymentMutation,
 } from "@/queries/payment"
 import { Season } from "@/models/season"
 import {
@@ -19,6 +20,8 @@ import {
 import {
   EyeOutlined,
   DollarOutlined,
+  RollbackOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
 import { paymentMethodLabels } from "./form-config"
@@ -55,6 +58,9 @@ const PaymentsList: React.FC = () => {
     viewingPayment?.id || 0
   )
 
+  // Mutation rollback
+  const rollbackMutation = useRollbackPaymentMutation()
+
   // Handlers
   const handleOpenSettleModal = () => {
     setIsSettleModalVisible(true)
@@ -72,6 +78,41 @@ const PaymentsList: React.FC = () => {
   const handleCloseDetailModal = () => {
     setIsDetailModalVisible(false)
     setViewingPayment(null)
+  }
+
+  // Handler rollback payment
+  const handleRollback = (payment: Payment) => {
+    Modal.confirm({
+      title: '⚠️ Xác nhận hoàn tác thanh toán',
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <div>
+          <p>Bạn sắp hoàn tác thanh toán:</p>
+          <ul style={{ marginTop: 12, paddingLeft: 20 }}>
+            <li><strong>Mã:</strong> {payment.code}</li>
+            <li><strong>Số tiền:</strong> {formatCurrency(payment.amount)}</li>
+            <li><strong>Khách hàng:</strong> {payment.customer?.name || payment.customer_name}</li>
+          </ul>
+          <p style={{ marginTop: 12, color: '#ff4d4f' }}>
+            <strong>Hành động này sẽ:</strong>
+          </p>
+          <ul style={{ paddingLeft: 20 }}>
+            <li>✓ Xóa payment và allocations</li>
+            <li>✓ Hoàn trả tiền vào công nợ</li>
+            <li>✓ Cập nhật lại trạng thái invoices</li>
+          </ul>
+          <p style={{ marginTop: 12 }}>
+            Bạn có chắc chắn muốn tiếp tục?
+          </p>
+        </div>
+      ),
+      okText: 'Xác nhận hoàn tác',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: () => {
+        rollbackMutation.mutate(payment.id)
+      },
+    })
   }
 
   const formatCurrency = (value: number) => {
@@ -99,6 +140,18 @@ const PaymentsList: React.FC = () => {
       width: 120,
       render: (record: ExtendedPayment) => (
         <div className='font-medium'>{record.code}</div>
+      ),
+    },
+    {
+      key: "debt_note_code",
+      title: "Mã Phiếu Nợ",
+      width: 150,
+      render: (record: ExtendedPayment) => (
+        <div className='text-gray-500'>
+            {record.debt_note_code ? (
+                <Tag color="cyan">{record.debt_note_code}</Tag>
+            ) : "-"}
+        </div>
       ),
     },
     {
@@ -156,15 +209,26 @@ const PaymentsList: React.FC = () => {
     {
       key: "action",
       title: "Hành động",
-      width: 120,
+      width: 180,
       render: (record: ExtendedPayment) => (
-        <Button
-          icon={<EyeOutlined />}
-          onClick={() => handleViewPayment(record)}
-          size='small'
-        >
-          Xem
-        </Button>
+        <Space size="small">
+          <Button
+            icon={<EyeOutlined />}
+            onClick={() => handleViewPayment(record)}
+            size='small'
+          >
+            Xem
+          </Button>
+          <Button
+            icon={<RollbackOutlined />}
+            onClick={() => handleRollback(record)}
+            size='small'
+            danger
+            loading={rollbackMutation.isPending}
+          >
+            Hoàn tác
+          </Button>
+        </Space>
       ),
     },
   ]
@@ -225,6 +289,14 @@ const PaymentsList: React.FC = () => {
         {viewingPayment && (
           <div className='mt-4'>
             <Descriptions bordered column={2}>
+              <Descriptions.Item label='Mã PT'>
+                <span className='font-bold'>{viewingPayment.code}</span>
+              </Descriptions.Item>
+              <Descriptions.Item label='Mã Phiếu Nợ'>
+                {viewingPayment.debt_note_code ? (
+                   <Tag color="cyan">{viewingPayment.debt_note_code}</Tag>
+                ) : "-"}
+              </Descriptions.Item>
               <Descriptions.Item label='Khách hàng' span={2}>
                 {viewingPayment.customer_name}
               </Descriptions.Item>

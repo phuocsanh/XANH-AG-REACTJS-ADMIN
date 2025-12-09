@@ -13,6 +13,7 @@ export interface Payment {
   notes?: string;
   created_by?: number;
   created_at: Date | string;
+  debt_note_code?: string;
 }
 
 export interface CreatePaymentDto {

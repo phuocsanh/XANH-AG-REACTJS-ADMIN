@@ -562,6 +562,41 @@ const ProfitReportsPage: React.FC = () => {
               </Col>
             </Row>
 
+            {/* Hiển thị quà tặng và lợi nhuận ròng */}
+            {(invoiceProfit.gift_description || invoiceProfit.gift_value > 0) && (
+              <Row gutter={[16, 16]} className="mb-6">
+                <Col xs={24}>
+                  <Card style={{ background: '#fff9e6' }}>
+                    <div style={{ marginBottom: 16 }}>
+                      <strong style={{ fontSize: 16 }}>🎁 Quà tặng:</strong>
+                      <div style={{ marginTop: 8 }}>
+                        <span style={{ fontSize: 14, color: '#666' }}>
+                          {invoiceProfit.gift_description || 'Không có mô tả'}
+                        </span>
+                        <span style={{ marginLeft: 16, fontSize: 16, fontWeight: 'bold', color: '#faad14' }}>
+                          {formatCurrency(invoiceProfit.gift_value)}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+            )}
+
+            {/* Lợi nhuận ròng */}
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col xs={24} sm={12}>
+                <Card style={{ background: getProfitColor(invoiceProfit.net_profit) === '#3f8600' ? '#f6ffed' : '#fff2e8' }}>
+                  <Statistic
+                    title="Lợi nhuận Ròng (sau trừ quà tặng)"
+                    value={invoiceProfit.net_profit}
+                    formatter={(value) => formatCurrency(Number(value))}
+                    valueStyle={{ color: getProfitColor(invoiceProfit.net_profit), fontSize: 24, fontWeight: 'bold' }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+
             {/* Bảng chi tiết sản phẩm */}
             <Card title="Chi tiết Sản phẩm">
               <Table

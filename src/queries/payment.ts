@@ -154,3 +154,32 @@ export const useDeletePaymentMutation = () => {
     },
   })
 }
+
+/**
+ * Hook hoàn tác thanh toán (Rollback)
+ * Hoàn trả tiền vào công nợ và xóa payment
+ */
+export const useRollbackPaymentMutation = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.postRaw<{
+        success: boolean;
+        message: string;
+        payment: any;
+        affected_invoices: number;
+        affected_debt_note: any;
+      }>(`/payments/${id}/rollback`, {})
+      return response
+    },
+    onSuccess: (response) => {
+      invalidateResourceQueries("/payments")
+      invalidateResourceQueries("/debt-notes")
+      invalidateResourceQueries("/sales")
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      toast.success(response.message || "Hoàn tác thanh toán thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi hoàn tác thanh toán")
+    },
+  })
+}

@@ -85,7 +85,7 @@ export const useCustomerSearchQuery = (search: string) => {
 /**
  * Hook tìm kiếm khách hàng đang nợ (API Mới)
  */
-export const useCustomerDebtorsSearchQuery = (search: string) => {
+export const useCustomerDebtorsSearchQuery = (search: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: customerKeys.debtorSearch(search),
     queryFn: async () => {
@@ -104,7 +104,7 @@ export const useCustomerDebtorsSearchQuery = (search: string) => {
       
       return data;
     },
-    // Luôn enabled để load danh sách nợ mặc định khi mở modal
+    enabled: options?.enabled,
   })
 }
 
@@ -132,9 +132,10 @@ export const useCustomerInvoicesQuery = (id: number) => {
   return useQuery({
     queryKey: customerKeys.invoices(id),
     queryFn: async () => {
-      // Gọi API danh sách hóa đơn, lọc theo customer_id
-      const response = await api.get<any>(`/sales/invoices`, { 
+      // Gọi API search với POST, lọc theo customer_id
+      const response = await api.postRaw<any>('/sales/invoices/search', { 
         customer_id: id,
+        page: 1,
         limit: 100 // Lấy số lượng lớn để tính nợ
       })
       
@@ -166,9 +167,10 @@ export const useCustomerDebtsQuery = (id: number) => {
   return useQuery({
     queryKey: customerKeys.debts(id),
     queryFn: async () => {
-      // Gọi API danh sách phiếu nợ, lọc theo customer_id
-      const response = await api.get<any>(`/debt-notes`, { 
+      // Gọi API search với POST, lọc theo customer_id
+      const response = await api.postRaw<any>('/debt-notes/search', { 
         customer_id: id,
+        page: 1,
         limit: 100
       })
 

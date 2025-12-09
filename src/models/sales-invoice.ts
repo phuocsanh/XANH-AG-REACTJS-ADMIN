@@ -37,6 +37,9 @@ export interface SalesInvoice {
   created_at: Date | string;
   updated_at: Date | string;
   items?: SalesInvoiceItem[];
+  // Quà tặng khi bán hàng
+  gift_description?: string;
+  gift_value?: number;
 }
 
 export interface CreateSalesInvoiceDto {
@@ -53,6 +56,9 @@ export interface CreateSalesInvoiceDto {
   discount_amount: number;
   final_amount: number;
   partial_payment_amount?: number;
+  // Quà tặng khi bán hàng
+  gift_description?: string;
+  gift_value?: number;
   items: {
     product_id: number;
     quantity: number;

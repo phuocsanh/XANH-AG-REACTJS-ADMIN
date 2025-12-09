@@ -25,6 +25,10 @@ export interface InvoiceProfit {
   cost_of_goods_sold: number;
   gross_profit: number;
   gross_margin: number;
+  // Quà tặng khi bán hàng
+  gift_description?: string;
+  gift_value: number;
+  net_profit: number; // Lợi nhuận ròng = gross_profit - gift_value
   item_details: InvoiceItemProfit[];
 }
 
