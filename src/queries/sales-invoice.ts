@@ -34,22 +34,23 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: salesInvoiceKeys.list(params),
     queryFn: async () => {
-      // Xây dựng filters
-      const filters: any[] = []
-      
-      // Filter theo rice_crop_id
-      if (riceCropFilter === 'has_crop') {
-        filters.push({
-          field: 'rice_crop_id',
-          operator: 'isnotnull',
-          value: null
-        })
-      } else if (riceCropFilter === 'no_crop') {
-        filters.push({
-          field: 'rice_crop_id',
-          operator: 'isnull',
-          value: null
-        })
+      // Build payload với flat params (không dùng filters array nữa)
+      const payload: any = {
+        page,
+        limit,
+      }
+
+      // Thêm các flat params
+      if (status) payload.status = status
+      if (riceCropFilter) payload.rice_crop_filter = riceCropFilter
+      if (params?.customer_id) payload.customer_id = params.customer_id
+      if (params?.keyword) payload.keyword = params.keyword
+
+      // Sort
+      if (params?.sort_by) {
+        const field = String(params.sort_by)
+        const dir = String(params.sort_direction || 'DESC')
+        payload.sort = `${field}:${dir}`
       }
 
       const response = await api.postRaw<{
@@ -59,12 +60,7 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
           total: number
           totalPages: number | null
         }
-      }>('/sales/invoices/search', {
-        page,
-        limit,
-        ...params,
-        ...(filters.length > 0 && { filters })
-      })
+      }>('/sales/invoices/search', payload)
 
       return mapSearchResponse(response, page, limit)
     },

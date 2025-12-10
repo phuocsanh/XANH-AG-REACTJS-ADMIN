@@ -19,9 +19,9 @@ export interface UploadImageRequest {
 }
 
 // Enum cho trạng thái phiếu nhập hàng (sử dụng string lowercase)
+// Backend chỉ có 4 status: draft, approved, completed, cancelled
 export enum InventoryReceiptStatus {
   DRAFT = 'draft',
-  PENDING = 'pending',
   APPROVED = 'approved',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
@@ -153,6 +153,7 @@ export function mapApiResponseToInventoryReceipt(
     code: apiReceipt.code,
     notes: apiReceipt.description, // Thay description thành notes
     status: getInventoryReceiptStatusText(apiReceipt.status), // Chuyển status number thành text
+    status_code: apiReceipt.status, // Giữ nguyên status code raw
     total_amount: parseFloat(apiReceipt.total_amount), // Chuyển string thành number
     supplier_id: apiReceipt.supplier_id || 0,
     supplier_name: apiReceipt.supplier_name,
@@ -214,10 +215,8 @@ export const getInventoryReceiptStatusText = (status: number | string): string =
     case InventoryReceiptStatus.DRAFT:
     case '1':
       return "Nháp"
-    case InventoryReceiptStatus.PENDING:
-    case '2':
-      return "Chờ duyệt"
     case InventoryReceiptStatus.APPROVED:
+    case '2':
     case '3':
       return "Đã duyệt"
     case InventoryReceiptStatus.COMPLETED:

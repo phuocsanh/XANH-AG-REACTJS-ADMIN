@@ -21,7 +21,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdAssignmentReturn, MdWarning } from "react-icons/md"
+import { MdAssignmentReturn, MdWarning, MdCalculate } from "react-icons/md"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 
@@ -44,6 +44,11 @@ const Sidebar: React.FC = () => {
     // Dashboard
     if (path === '/') {
       setActiveTab(0)
+      setIsToggleSubmenu(false)
+    }
+    // Tính liều lượng
+    else if (path.startsWith('/dosage-calculator')) {
+      setActiveTab(29)
       setIsToggleSubmenu(false)
     }
     // Sản phẩm - tab 1
@@ -177,6 +182,20 @@ const Sidebar: React.FC = () => {
                   <MdOutlineDashboard className='text-blue-200' />
                 </span>
                 Dashboard
+              </Button>
+            </Link>
+          </li>
+          
+          <li>
+            <Link to='/dosage-calculator'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 29 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(29)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdCalculate className='text-cyan-400' />
+                </span>
+                Tính Liều Lượng
               </Button>
             </Link>
           </li>

@@ -31,13 +31,23 @@ export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: debtNoteKeys.list(params),
     queryFn: async () => {
-      const filters = []
-      if (status) {
-        filters.push({
-          field: 'status',
-          operator: 'eq',
-          value: status
-        })
+      // Build payload với flat params (không dùng filters array nữa)
+      const payload: any = {
+        page,
+        limit,
+      }
+
+      // Thêm các flat params
+      if (status) payload.status = status
+      if (params?.customer_id) payload.customer_id = params.customer_id
+      if (params?.season_id) payload.season_id = params.season_id
+      if (params?.keyword) payload.keyword = params.keyword
+
+      // Sort
+      if (params?.sort_by) {
+        const field = String(params.sort_by)
+        const dir = String(params.sort_direction || 'DESC')
+        payload.sort = `${field}:${dir}`
       }
 
       const response = await api.postRaw<{
@@ -51,12 +61,7 @@ export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
           active_count: number
           paid_count: number
         }
-      }>('/debt-notes/search', {
-        page,
-        limit,
-        ...params,
-        ...(filters.length > 0 && { filters })
-      })
+      }>('/debt-notes/search', payload)
 
       // Transform response để phù hợp với PaginationResponse format
       return {

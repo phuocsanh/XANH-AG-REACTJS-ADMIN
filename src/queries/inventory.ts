@@ -32,7 +32,7 @@ import {
 } from "@/models/inventory.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
-import { invalidateResourceQueries } from "@/utils/query-helpers"
+
 
 // ========== QUERY KEYS ==========
 export const inventoryKeys = {
@@ -81,27 +81,53 @@ export const inventoryKeys = {
 // ========== INVENTORY RECEIPT HOOKS ==========
 
 /**
- * Hook lấy danh sách phiếu nhập hàng
+ * Hook lấy danh sách phiếu nhập hàng (POST /inventory/receipts/search)
  */
 export const useInventoryReceiptsQuery = (
   params?: InventoryReceiptListParams
 ) => {
-  // Chuyển đổi InventoryReceiptListParams thành PaginationParams
-  const paginationParams = params
-    ? {
-        page:
-          params.offset !== undefined
-            ? Math.floor(params.offset / (params.limit || 10)) + 1
-            : 1,
-        limit: params.limit,
-        ...params,
-      }
-    : undefined
+  const page = params?.offset !== undefined
+    ? Math.floor(params.offset / (params.limit || 10)) + 1
+    : 1
+  const limit = params?.limit || 10
 
-  return usePaginationQuery<InventoryReceiptApiResponse>(
-    "/inventory/receipts",
-    paginationParams
-  )
+  return useQuery({
+    queryKey: inventoryKeys.receiptsList(params),
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: InventoryReceiptApiResponse[]
+        total: number
+        page: number
+        limit: number
+      }>('/inventory/receipts/search', {
+        page,
+        limit,
+        keyword: params?.code, // Global search
+        filters: {
+          ...(params?.status && { status: params.status }),
+          ...(params?.supplierName && { supplier_name: params.supplierName }),
+        },
+        sort: 'created_at:DESC',
+      })
+
+      return {
+        data: {
+          items: response.data,
+          total: response.total,
+          page: response.page,
+          limit: response.limit,
+          total_pages: Math.ceil(response.total / response.limit),
+          has_next: response.page * response.limit < response.total,
+          has_prev: response.page > 1,
+        },
+        status: 200,
+        message: 'Success',
+        success: true
+      }
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
 }
 
 /**
@@ -155,7 +181,7 @@ export const useCreateInventoryReceiptMutation = () => {
     },
     onSuccess: (data) => {
       // Invalidate và refetch danh sách phiếu nhập
-      invalidateResourceQueries("/inventory/receipts")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Tạo phiếu nhập hàng thành công!")
       return data
     },
@@ -177,8 +203,8 @@ export const useUpdateInventoryReceiptMutation = () => {
       id: number
       receipt: UpdateInventoryReceiptRequest
     }) => {
-      const response = await api.putRaw<InventoryReceiptApiResponse>(
-        `/inventory/receipt/${id}`, // Thay đổi từ /inventory/receipts/${id} thành /inventory/receipt/${id}
+      const response = await api.patchRaw<InventoryReceiptApiResponse>(
+        `/inventory/receipt/${id}`,
         receipt
       )
       return {
@@ -190,7 +216,7 @@ export const useUpdateInventoryReceiptMutation = () => {
       // Cập nhật cache cho phiếu cụ thể
       queryClient.setQueryData(inventoryKeys.receipt(variables.id), data)
       // Invalidate danh sách
-      invalidateResourceQueries("/inventory/receipts")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Cập nhật phiếu nhập hàng thành công!")
       return data
     },
@@ -215,7 +241,7 @@ export const useDeleteInventoryReceiptMutation = () => {
         queryKey: inventoryKeys.receiptItems(variables),
       })
       // Invalidate danh sách
-      invalidateResourceQueries("/inventory/receipts")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Xóa phiếu nhập hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -243,7 +269,7 @@ export const useApproveInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      invalidateResourceQueries("/inventory/receipts")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Duyệt phiếu nhập hàng thành công!")
       return data
     },
@@ -270,8 +296,8 @@ export const useCompleteInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      invalidateResourceQueries("/inventory/receipts")
-      invalidateResourceQueries("/inventory/product-history")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Hoàn thành phiếu nhập hàng thành công!")
       return data
@@ -299,7 +325,7 @@ export const useCancelInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      invalidateResourceQueries("/inventory/receipts")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Hủy phiếu nhập hàng thành công!")
       return data
     },
@@ -406,8 +432,8 @@ export const useStockInMutation = () => {
     },
     onSuccess: (data) => {
       // Cập nhật cache
-      invalidateResourceQueries("/inventory/receipts")
-      invalidateResourceQueries("/inventory/product-history")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Nhập kho thành công!")
       return data
@@ -431,8 +457,8 @@ export const useStockOutMutation = () => {
     },
     onSuccess: (data) => {
       // Cập nhật cache
-      invalidateResourceQueries("/inventory/receipts")
-      invalidateResourceQueries("/inventory/product-history")
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Xuất kho thành công!")
       return data
@@ -615,22 +641,34 @@ export const useInventoryStatsQuery = () => {
   return useQuery({
     queryKey: inventoryKeys.stats(),
     queryFn: async () => {
-      // Gọi API lấy danh sách phiếu nhập để tính toán thống kê
-      const receipts = await api.get<InventoryReceiptApiResponse[]>(
-        "/inventory/receipts"
-      )
+      // Gọi API POST search để lấy tất cả phiếu nhập (không phân trang)
+      const response = await api.postRaw<{
+        data: InventoryReceiptApiResponse[]
+        total: number
+      }>("/inventory/receipts/search", {
+        page: 1,
+        limit: 9999, // Lấy tất cả để tính stats
+      })
 
+      const receipts = response.data
       const totalReceipts = receipts.length
-      const pendingReceipts = receipts.filter(
-        (r: InventoryReceiptApiResponse) => r.status === 1
-      ).length // PENDING
+      
+      // Đếm theo status string
+      const draftReceipts = receipts.filter(
+        (r: InventoryReceiptApiResponse) => r.status === 'draft'
+      ).length
+      
+      const approvedReceipts = receipts.filter(
+        (r: InventoryReceiptApiResponse) => r.status === 'approved'
+      ).length
+      
       const completedReceipts = receipts.filter(
-        (r: InventoryReceiptApiResponse) => r.status === 3
-      ).length // COMPLETED
+        (r: InventoryReceiptApiResponse) => r.status === 'completed'
+      ).length
 
       // Tính tổng giá trị (chỉ các phiếu đã hoàn thành)
       const totalValue = receipts
-        .filter((r: InventoryReceiptApiResponse) => r.status === 3)
+        .filter((r: InventoryReceiptApiResponse) => r.status === 'completed')
         .reduce(
           (sum: number, r: InventoryReceiptApiResponse) =>
             sum + parseFloat(r.total_amount || "0"),
@@ -640,7 +678,8 @@ export const useInventoryStatsQuery = () => {
 
       return {
         totalReceipts,
-        pendingReceipts,
+        draftReceipts,
+        approvedReceipts,
         completedReceipts,
         totalValue,
       }
@@ -817,9 +856,7 @@ export const useUploadFileMutation = () => {
     mutationFn: async (file: File) => {
       const formData = new FormData()
       formData.append('file', file)
-      const response = await api.postRaw('/upload/image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const response = await api.postForm('/upload/image', formData)
       return response
     },
     onError: (error: Error) => {
@@ -893,7 +930,7 @@ export const useDeleteReceiptImageMutation = () => {
       receiptId: number
       fileId: number
     }) => {
-      const response = await api.deleteRaw(
+      const response = await api.delete(
         `/inventory/receipt/${receiptId}/image/${fileId}`
       )
       return response

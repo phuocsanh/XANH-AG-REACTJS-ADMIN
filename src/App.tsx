@@ -65,6 +65,7 @@ import CreateSalesReturn from "./pages/sales-returns/create"
 // Thêm import cho inventory returns và adjustments
 import ReturnsPage from "./pages/inventory/returns"
 import AdjustmentsPage from "./pages/inventory/adjustments"
+import DosageCalculator from "./pages/calculator/dosage-calculator"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
 import { remoteConfig } from "./lib/firebase"
@@ -241,6 +242,15 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    
+                    <Route
+                      path='/dosage-calculator'
+                      element={
+                        <ProtectedRoute>
+                          <DosageCalculator />
+                        </ProtectedRoute>
+                      }
+                    />
 
                     <Route
                       path='/products/list'
@@ -398,6 +408,14 @@ function App() {
                     />
                     <Route
                       path='/inventory/receipts/create'
+                      element={
+                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
+                          <InventoryReceiptCreate />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/inventory/receipts/edit/:id'
                       element={
                         <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
                           <InventoryReceiptCreate />

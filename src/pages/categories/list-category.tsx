@@ -166,7 +166,6 @@ const ListCategory = () => {
                 ),
                 dataIndex: "name",
                 key: "name",
-                sorter: true,
               },
               {
                 title: (
@@ -180,7 +179,6 @@ const ListCategory = () => {
                 ),
                 dataIndex: "code",
                 key: "code",
-                sorter: true,
               },
               {
                 title: "Mô tả",

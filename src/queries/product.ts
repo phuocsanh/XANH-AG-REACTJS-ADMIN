@@ -52,23 +52,18 @@ export const searchProductsApi = async ({
     console.log("Searching products with params:", { page, limit, search })
 
     // Luôn gọi API POST /products/search cho cả trường hợp mặc định và tìm kiếm
-    // Tạo search DTO theo format mới của server - bao gồm page và limit trong body
-    const searchDto = {
+    // Tạo search DTO theo format mới của server - dùng flat params
+    const searchDto: any = {
       page,
       limit,
-      filters: search.trim()
-        ? [
-            {
-              field: "productName",
-              operator: "ilike",
-              value: `%${search.trim()}%`,
-            },
-          ]
-        : [],
-      operator: "AND",
     }
 
-    // Gọi API POST /products/search với đúng format, page và limit trong body
+    // Thêm keyword nếu có search term
+    if (search.trim()) {
+      searchDto.keyword = search.trim()
+    }
+
+    // Gọi API POST /products/search với đúng format
     const response = await api.postRaw<
       | {
           data: Product[]
@@ -155,28 +150,23 @@ export const searchProductsApi = async ({
  */
 export const getProductsByIds = async (ids: number[]): Promise<Product[]> => {
   try {
-    // Tạo search DTO để lấy nhiều sản phẩm theo IDs
-    const searchDto = {
-      page: 1,
-      limit: ids.length,
-      filters: [
-        {
-          field: "id",
-          operator: "in",
-          value: ids,
-        },
-      ],
-      operator: "AND",
-    }
+    // TODO: Kiểm tra xem backend có hỗ trợ filter theo IDs không
+    // Nếu không, cần gọi từng product riêng lẻ hoặc yêu cầu backend thêm endpoint mới
+    
+    // Tạm thời dùng cách gọi từng product
+    const products = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const response = await api.get<Product>(`/products/${id}`)
+          return response
+        } catch (error) {
+          console.error(`Error fetching product ${id}:`, error)
+          return null
+        }
+      })
+    )
 
-    const response = await api.postRaw<{
-      data: Product[]
-      page: number
-      limit: number
-      total: number
-    }>("/products/search", searchDto)
-
-    return response.data || []
+    return products.filter((p): p is Product => p !== null)
   } catch (error) {
     console.error("Error fetching products by IDs:", error)
     handleApiError(error, "Có lỗi xảy ra khi lấy thông tin sản phẩm")

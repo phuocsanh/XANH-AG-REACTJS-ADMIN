@@ -154,7 +154,7 @@ const InventoryReceiptDetail: React.FC = () => {
     return <Tag color={config.color}>{statusText}</Tag>
   }
 
-  // Render các nút hành động
+  // Render các nút hành động theo đúng nghiệp vụ
   const renderActionButtons = () => {
     if (!receipt) return null
 
@@ -178,65 +178,36 @@ const InventoryReceiptDetail: React.FC = () => {
       </Button>
     )
 
-    // Nút chỉnh sửa (chỉ khi ở trạng thái DRAFT hoặc PENDING)
-    if (receipt.status === "Nháp" || receipt.status === "Chờ duyệt") {
+    // === DRAFT (Nháp) ===
+    if (receipt.status === "Nháp") {
+      // Chỉnh sửa
       buttons.push(
         <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
           Chỉnh sửa
         </Button>
       )
-    }
-
-    // Nút duyệt (chỉ khi ở trạng thái PENDING)
-    if (receipt.status === "Chờ duyệt") {
+      
+      // Xóa
       buttons.push(
         <Popconfirm
-          key='approve'
-          title='Duyệt phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn duyệt phiếu nhập hàng này?'
-          onConfirm={handleApprove}
-          okText='Duyệt'
+          key='delete'
+          title='Xóa phiếu nhập hàng'
+          description='Bạn có chắc chắn muốn xóa phiếu nhập hàng này? Hành động này không thể hoàn tác.'
+          onConfirm={handleDelete}
+          okText='Xóa'
           cancelText='Hủy'
         >
           <Button
-            type='primary'
-            icon={<CheckOutlined />}
-            loading={approveReceiptMutation.isPending}
+            icon={<DeleteOutlined />}
+            danger
+            loading={deleteReceiptMutation.isPending}
           >
-            Duyệt phiếu
+            Xóa phiếu
           </Button>
         </Popconfirm>
       )
-    }
-
-    // Nút hoàn thành (chỉ khi ở trạng thái APPROVED)
-    if (receipt.status === "Đã duyệt") {
-      buttons.push(
-        <Popconfirm
-          key='complete'
-          title='Hoàn thành nhập kho'
-          description='Bạn có chắc chắn muốn hoàn thành việc nhập kho cho phiếu này?'
-          onConfirm={handleComplete}
-          okText='Hoàn thành'
-          cancelText='Hủy'
-        >
-          <Button
-            type='primary'
-            icon={<CheckOutlined />}
-            loading={completeReceiptMutation.isPending}
-          >
-            Hoàn thành
-          </Button>
-        </Popconfirm>
-      )
-    }
-
-    // Nút hủy (chỉ khi ở trạng thái DRAFT, PENDING, hoặc APPROVED)
-    if (
-      receipt.status === "Nháp" ||
-      receipt.status === "Chờ duyệt" ||
-      receipt.status === "Đã duyệt"
-    ) {
+      
+      // Hủy
       buttons.push(
         <Popconfirm
           key='cancel'
@@ -256,8 +227,103 @@ const InventoryReceiptDetail: React.FC = () => {
       )
     }
 
-    // Nút xóa (chỉ khi ở trạng thái DRAFT hoặc CANCELLED)
-    if (receipt.status === "Nháp" || receipt.status === "Đã hủy") {
+    // === PENDING (Chờ duyệt) ===
+    if (receipt.status === "Chờ duyệt") {
+      // Chỉnh sửa (vẫn được sửa trước khi duyệt)
+      buttons.push(
+        <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
+          Chỉnh sửa
+        </Button>
+      )
+      
+      // Duyệt phiếu
+      buttons.push(
+        <Popconfirm
+          key='approve'
+          title='Duyệt phiếu nhập hàng'
+          description='Bạn có chắc chắn muốn duyệt phiếu nhập hàng này?'
+          onConfirm={handleApprove}
+          okText='Duyệt'
+          cancelText='Hủy'
+        >
+          <Button
+            type='primary'
+            icon={<CheckOutlined />}
+            loading={approveReceiptMutation.isPending}
+          >
+            Duyệt phiếu
+          </Button>
+        </Popconfirm>
+      )
+      
+      // Hủy (từ chối)
+      buttons.push(
+        <Popconfirm
+          key='cancel'
+          title='Hủy phiếu nhập hàng'
+          description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
+          onConfirm={handleCancel}
+          okText='Hủy phiếu'
+          cancelText='Không'
+        >
+          <Button
+            icon={<CloseOutlined />}
+            loading={cancelReceiptMutation.isPending}
+          >
+            Hủy phiếu
+          </Button>
+        </Popconfirm>
+      )
+    }
+
+    // === APPROVED (Đã duyệt) ===
+    if (receipt.status === "Đã duyệt") {
+      // Hoàn thành nhập kho
+      buttons.push(
+        <Popconfirm
+          key='complete'
+          title='Hoàn thành nhập kho'
+          description='Bạn có chắc chắn muốn hoàn thành việc nhập kho cho phiếu này? Hành động này sẽ cập nhật tồn kho.'
+          onConfirm={handleComplete}
+          okText='Hoàn thành'
+          cancelText='Hủy'
+        >
+          <Button
+            type='primary'
+            icon={<CheckOutlined />}
+            loading={completeReceiptMutation.isPending}
+          >
+            Hoàn thành
+          </Button>
+        </Popconfirm>
+      )
+      
+      // Hủy (nếu có vấn đề)
+      buttons.push(
+        <Popconfirm
+          key='cancel'
+          title='Hủy phiếu nhập hàng'
+          description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
+          onConfirm={handleCancel}
+          okText='Hủy phiếu'
+          cancelText='Không'
+        >
+          <Button
+            icon={<CloseOutlined />}
+            loading={cancelReceiptMutation.isPending}
+          >
+            Hủy phiếu
+          </Button>
+        </Popconfirm>
+      )
+    }
+
+    // === COMPLETED (Hoàn thành) ===
+    // Chỉ có nút in và xem lịch sử (đã thêm ở trên)
+
+    // === CANCELLED (Đã hủy) ===
+    if (receipt.status === "Đã hủy") {
+      // Xóa phiếu (để dọn dẹp)
       buttons.push(
         <Popconfirm
           key='delete'

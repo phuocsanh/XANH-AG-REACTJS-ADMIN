@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import React, { useState, useEffect } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import {
   Card,
   Button,
@@ -34,9 +34,14 @@ import NumberInput from "@/components/common/number-input"
 import {
   CreateInventoryReceiptRequest,
   InventoryReceiptItemForm,
+  InventoryReceiptStatus,
+  getInventoryReceiptStatusText,
 } from "@/models/inventory.model"
 import { 
   useCreateInventoryReceiptMutation,
+  useUpdateInventoryReceiptMutation,
+  useInventoryReceiptQuery,
+  useInventoryReceiptItemsQuery,
   useUploadFileMutation,
   useAttachImageToReceiptMutation,
 } from "@/queries/inventory"
@@ -50,6 +55,10 @@ const { TextArea } = Input
 
 const InventoryReceiptCreate: React.FC = () => {
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const receiptId = id ? Number(id) : undefined
+  const isEditMode = !!receiptId
+  
   const [form] = Form.useForm()
   const isMobile = useMobile()
   const isTablet = useTablet()
@@ -121,10 +130,49 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Queries
   const createReceiptMutation = useCreateInventoryReceiptMutation()
+  const updateReceiptMutation = useUpdateInventoryReceiptMutation()
   const uploadFileMutation = useUploadFileMutation()
   const attachImageMutation = useAttachImageToReceiptMutation()
-  const { data: suppliersData, isLoading: suppliersLoading } =
-    useSuppliersQuery()
+  const { data: suppliersData, isLoading: suppliersLoading } = useSuppliersQuery()
+  
+  // Load dữ liệu khi edit mode (hooks đã có enabled built-in)
+  const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(receiptId || 0)
+  const { data: existingItems, isLoading: isLoadingItems } = useInventoryReceiptItemsQuery(receiptId || 0)
+
+  // Pre-fill form khi load dữ liệu trong edit mode
+  useEffect(() => {
+    if (isEditMode && existingReceipt && existingItems && !isLoadingReceipt && !isLoadingItems) {
+      // Set form values
+      form.setFieldsValue({
+        supplierId: existingReceipt.supplier_id,
+        status: existingReceipt.status_code || existingReceipt.status,
+        description: existingReceipt.notes,
+      })
+
+      // Set items (dùng type assertion để truy cập các property)
+      const mappedItems: InventoryReceiptItemForm[] = existingItems.map((item: any, index) => ({
+        key: `${item.id || index}`,
+        product_id: item.product_id,
+        product_name: item.productName || item.product_name || '',
+        quantity: item.quantity,
+        unit_cost: Number(item.unit_cost || item.unitPrice || 0),
+        total_price: Number(item.total_price || 0),
+        individual_shipping_cost: Number(item.individual_shipping_cost || 0),
+        notes: item.notes,
+      }))
+      setItems(mappedItems)
+
+      // Set shipping costs nếu có (dùng type assertion)
+      const receipt = existingReceipt as any
+      if (receipt.shared_shipping_cost) {
+        setHasSharedShipping(true)
+        setSharedShippingCost(Number(receipt.shared_shipping_cost))
+      }
+      if (receipt.shipping_allocation_method) {
+        setAllocationMethod(receipt.shipping_allocation_method as 'by_value' | 'by_quantity')
+      }
+    }
+  }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, form])
 
   // Hàm tính tổng tiền
   const calculateTotals = () => {
@@ -245,83 +293,129 @@ const InventoryReceiptCreate: React.FC = () => {
         return
        
       }
-      console.log("🚀 ~ aaaaaaaaaaa")
-      // Tạo mã phiếu nhập tự động
-      const receiptCode = `PN${Date.now()}`
-
+      
       // Tính lại tổng tiền dựa trên validItems để đảm bảo chính xác
       const totalProductValue = validItems.reduce((sum, item) => sum + item.total_price, 0)
       const totalIndividualShipping = validItems.reduce((sum, item) => sum + (item.individual_shipping_cost || 0), 0)
       const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
       const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
 
-      // Tạo request data theo đúng cấu trúc backend
-      const requestData: CreateInventoryReceiptRequest = {
-        receipt_code: receiptCode,
-        supplier_id: values.supplierId as number,
-        total_amount: grandTotal,
-        notes: values.description as string | undefined,
-        status: (values.status as string) || "draft",
-        created_by: 1, // TODO: lấy từ auth context
-        
-        // Phí vận chuyển chung (chỉ gửi nếu có)
-        ...(hasSharedShipping && {
-          shared_shipping_cost: sharedShippingCost,
-          shipping_allocation_method: allocationMethod,
-        }),
-        
-        // Chỉ gửi validItems
-        items: validItems.map((item) => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_cost: item.unit_cost,
-          total_price: item.total_price,
-          notes: item.notes || undefined,
+      if (isEditMode && receiptId) {
+        // === UPDATE MODE ===
+        const updateData: any = {
+          supplier_id: values.supplierId as number,
+          total_amount: grandTotal,
+          notes: values.description as string | undefined,
+          status: (values.status as string) || "draft",
           
-          // Phí vận chuyển riêng (chỉ gửi nếu có)
-          ...((item.individual_shipping_cost || 0) > 0 && {
-            individual_shipping_cost: item.individual_shipping_cost,
+          // Phí vận chuyển chung (chỉ gửi nếu có)
+          ...(hasSharedShipping && {
+            shared_shipping_cost: sharedShippingCost,
+            shipping_allocation_method: allocationMethod,
           }),
-        })),
-      }
-
-      const newReceipt = await createReceiptMutation.mutateAsync(requestData)
-      
-      // Upload ảnh nếu có
-      if (fileList.length > 0) {
-        try {
-          message.loading("Đang upload hình ảnh...")
           
-          for (const file of fileList) {
-            if (file.originFileObj) {
-              // 1. Upload file lên server
-              const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
-              
-              // 2. Gắn file vào phiếu
-              await attachImageMutation.mutateAsync({
-                receiptId: newReceipt.id,
-                fileId: (uploadResult as any).data.id,
-                fieldName: "invoice_images",
-              })
-            }
-          }
-          message.success("Upload hình ảnh thành công!")
-        } catch (uploadError) {
-          console.error("Lỗi khi upload ảnh:", uploadError)
-          message.warning("Tạo phiếu thành công nhưng có lỗi khi upload ảnh")
+          // Items (backend sẽ xử lý update items)
+          items: validItems.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_price: item.total_price,
+            notes: item.notes || undefined,
+            
+            // Phí vận chuyển riêng (chỉ gửi nếu có)
+            ...((item.individual_shipping_cost || 0) > 0 && {
+              individual_shipping_cost: item.individual_shipping_cost,
+            }),
+          })),
         }
-      }
 
-      message.success("Tạo phiếu nhập hàng thành công!")
-      navigate("/inventory/receipts")
+        await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: updateData })
+        message.success("Cập nhật phiếu nhập hàng thành công!")
+        navigate("/inventory/receipts")
+      } else {
+        // === CREATE MODE ===
+        // Tạo mã phiếu nhập tự động
+        const receiptCode = `PN${Date.now()}`
+
+        // Tạo request data theo đúng cấu trúc backend
+        const requestData: CreateInventoryReceiptRequest = {
+          receipt_code: receiptCode,
+          supplier_id: values.supplierId as number,
+          total_amount: grandTotal,
+          notes: values.description as string | undefined,
+          status: (values.status as string) || "draft",
+          created_by: 1, // TODO: lấy từ auth context
+          
+          // Phí vận chuyển chung (chỉ gửi nếu có)
+          ...(hasSharedShipping && {
+            shared_shipping_cost: sharedShippingCost,
+            shipping_allocation_method: allocationMethod,
+          }),
+          
+          // Chỉ gửi validItems
+          items: validItems.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_price: item.total_price,
+            notes: item.notes || undefined,
+            
+            // Phí vận chuyển riêng (chỉ gửi nếu có)
+            ...((item.individual_shipping_cost || 0) > 0 && {
+              individual_shipping_cost: item.individual_shipping_cost,
+            }),
+          })),
+        }
+
+        const newReceipt = await createReceiptMutation.mutateAsync(requestData)
+      
+        // Upload ảnh nếu có
+        if (fileList.length > 0) {
+          try {
+            message.loading("Đang upload hình ảnh...")
+            
+            for (const file of fileList) {
+              if (file.originFileObj) {
+                // 1. Upload file lên server
+                const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
+                
+                // 2. Gắn file vào phiếu
+                await attachImageMutation.mutateAsync({
+                  receiptId: newReceipt.id,
+                  fileId: (uploadResult as any).data.id,
+                  fieldName: "invoice_images",
+                })
+              }
+            }
+            message.success("Upload hình ảnh thành công!")
+          } catch (uploadError) {
+            console.error("Lỗi khi upload ảnh:", uploadError)
+            message.warning("Tạo phiếu thành công nhưng có lỗi khi upload ảnh")
+          }
+        }
+
+        message.success("Tạo phiếu nhập hàng thành công!")
+        navigate("/inventory/receipts")
+      }
     } catch (error) {
-      console.error("Error creating receipt:", error)
-      message.error("Có lỗi xảy ra khi tạo phiếu nhập hàng")
+      console.error("Error saving receipt:", error)
+      message.error(isEditMode ? "Có lỗi xảy ra khi cập nhật phiếu nhập hàng" : "Có lỗi xảy ra khi tạo phiếu nhập hàng")
     }
   }
 
   // Sử dụng card layout cho cả mobile và tablet
   const useCardLayout = isMobile || isTablet
+
+  // Loading state khi đang load dữ liệu trong edit mode
+  if (isEditMode && (isLoadingReceipt || isLoadingItems)) {
+    return (
+      <div className='p-4 flex justify-center items-center' style={{ minHeight: '400px' }}>
+        <div className='text-center'>
+          <div className='mb-4'>Đang tải dữ liệu...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='p-4'>
@@ -334,7 +428,7 @@ const InventoryReceiptCreate: React.FC = () => {
           Quay lại
         </Button>
         <Title level={4} className='m-0 text-lg sm:text-xl'>
-          Tạo phiếu nhập hàng
+          {isEditMode ? "Chỉnh sửa phiếu nhập hàng" : "Tạo phiếu nhập hàng"}
         </Title>
       </div>
 
@@ -394,9 +488,11 @@ const InventoryReceiptCreate: React.FC = () => {
               ]}
             >
               <Select placeholder='Chọn trạng thái'>
-                <Select.Option value='draft'>Nháp</Select.Option>
-                <Select.Option value='pending'>Chờ duyệt</Select.Option>
-                <Select.Option value='approved'>Đã duyệt</Select.Option>
+                {Object.values(InventoryReceiptStatus).map(status => (
+                  <Select.Option key={status} value={status}>
+                    {getInventoryReceiptStatusText(status)}
+                  </Select.Option>
+                ))}
               </Select>
             </Form.Item>
           </div>
@@ -560,10 +656,10 @@ const InventoryReceiptCreate: React.FC = () => {
               type='primary'
               htmlType='submit'
               icon={<SaveOutlined />}
-              loading={createReceiptMutation.isPending}
+              loading={isEditMode ? updateReceiptMutation.isPending : createReceiptMutation.isPending}
               size='large'
             >
-              Tạo phiếu nhập hàng
+              {isEditMode ? "Cập nhật phiếu nhập hàng" : "Tạo phiếu nhập hàng"}
             </Button>
           </div>
         </Form>
