@@ -185,9 +185,24 @@ export interface RiceCropProfit {
   summary: {
     total_invoices: number;
     total_revenue: number;
-    total_profit: number;
+    cost_of_goods_sold: number;
+    gross_profit: number;
+    
+    // New fields
+    operating_costs: number;
+    net_profit: number;
+    net_margin: number;
+    
+    gift_value_from_invoices: number;
+    total_profit: number; // Keep specifically for backward compatibility if needed, though net_profit replaces it effectively
     avg_margin: number;
   };
   
+  operating_costs_breakdown?: {
+      name: string;
+      amount: number;
+      date?: string;
+  }[];
+
   invoices: CustomerInvoice[];
 }

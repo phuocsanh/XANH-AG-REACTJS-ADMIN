@@ -28,9 +28,9 @@ export const riceCropKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Lấy danh sách vụ lúa (POST /rice-crops/search)
+ * Lấy  Danh sách ruộng lúa (POST /rice-crops/search)
  */
-export const useRiceCrops = (params?: Record<string, unknown>) => {
+export const useRiceCrops = (params?: Record<string, unknown>, options?: { enabled?: boolean }) => {
   const page = (params?.page as number) || 1
   const limit = (params?.limit as number) || 10
 
@@ -55,6 +55,7 @@ export const useRiceCrops = (params?: Record<string, unknown>) => {
           total: response.total || 0
       }
     },
+    enabled: options?.enabled,
   });
 };
 

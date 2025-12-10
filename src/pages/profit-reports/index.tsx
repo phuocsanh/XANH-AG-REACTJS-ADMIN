@@ -366,16 +366,6 @@ const ProfitReportsPage: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Số hóa đơn"
-                    value={riceCropProfit.summary?.total_invoices || 0}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Card>
-              </Col>
-
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Statistic
                     title="Tổng Doanh thu"
                     value={riceCropProfit.summary?.total_revenue || 0}
                     formatter={(value) => formatCurrency(Number(value))}
@@ -387,10 +377,11 @@ const ProfitReportsPage: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Lợi nhuận"
-                    value={riceCropProfit.summary?.total_profit || 0}
+                    title="Lợi nhuận Gộp"
+                    value={riceCropProfit.summary?.gross_profit || 0}
                     formatter={(value) => formatCurrency(Number(value))}
-                    valueStyle={{ color: getProfitColor(riceCropProfit.summary?.total_profit || 0) }}
+                    prefix={<RiseOutlined />}
+                    valueStyle={{ color: getProfitColor(riceCropProfit.summary?.gross_profit || 0) }}
                   />
                 </Card>
               </Col>
@@ -398,15 +389,85 @@ const ProfitReportsPage: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic
-                    title="Tỷ suất TB (%)"
-                    value={riceCropProfit.summary?.avg_margin || 0}
-                    suffix="%"
-                    precision={2}
-                    valueStyle={{ color: getMarginColor(riceCropProfit.summary?.avg_margin || 0) }}
+                    title="Chi phí Vận hành"
+                    value={riceCropProfit.summary?.operating_costs || 0}
+                    formatter={(value) => formatCurrency(Number(value))}
+                    prefix={<FallOutlined />}
+                    valueStyle={{ color: '#cf1322' }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={12} md={6}>
+                <Card>
+                  <Statistic
+                    title="Lợi nhuận Ròng"
+                    value={riceCropProfit.summary?.net_profit || 0}
+                    formatter={(value) => formatCurrency(Number(value))}
+                    prefix={<DollarOutlined />}
+                    valueStyle={{ color: getProfitColor(riceCropProfit.summary?.net_profit || 0) }}
                   />
                 </Card>
               </Col>
             </Row>
+
+            <Row gutter={[16, 16]} className="mb-6">
+                <Col xs={24} sm={12} md={8}>
+                    <Card>
+                        <Statistic
+                            title="Giá vốn hàng bán"
+                            value={riceCropProfit.summary?.cost_of_goods_sold || 0}
+                            formatter={(value) => formatCurrency(Number(value))}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                    <Card>
+                        <Statistic
+                            title="Tỷ suất LN Ròng"
+                            value={riceCropProfit.summary?.net_margin || 0}
+                            suffix="%"
+                            valueStyle={{ color: getMarginColor(riceCropProfit.summary?.net_margin || 0) }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                    <Card>
+                         <Statistic
+                            title="Số hóa đơn"
+                            value={riceCropProfit.summary?.total_invoices || 0}
+                            valueStyle={{ color: '#1890ff' }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Chi tiết Chi phí vận hành */}
+            {riceCropProfit.operating_costs_breakdown && riceCropProfit.operating_costs_breakdown.length > 0 && (
+                <Card title="Chi tiết Chi phí Vận hành" className="mb-6" size="small">
+                    <Table
+                        dataSource={riceCropProfit.operating_costs_breakdown}
+                        rowKey="id" // Assuming ID exists or index fallback if not
+                        pagination={false}
+                        size="small"
+                        columns={[
+                            { title: 'Tên chi phí', dataIndex: 'name', key: 'name' },
+                            { 
+                                title: 'Số tiền', 
+                                dataIndex: 'amount', 
+                                key: 'amount',
+                                render: (val) => <span className="text-red-600">{formatCurrency(val)}</span>
+                            },
+                             { 
+                                title: 'Ngày chi', 
+                                dataIndex: 'date', 
+                                key: 'date',
+                                render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : '-'
+                            }
+                        ]}
+                    />
+                </Card>
+            )}
 
             {/* Bảng danh sách hóa đơn */}
             <Card title="Danh sách Hóa đơn">

@@ -333,7 +333,7 @@ const RiceCropsList: React.FC = () => {
 
 
 
-  // Lấy danh sách vụ lúa
+  // Lấy  Danh sách ruộng lúa
   const getCropList = (): ExtendedRiceCrop[] => {
     if (!cropsData?.data) return [];
 
@@ -493,7 +493,7 @@ const RiceCropsList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Danh sách vụ lúa */}
+      {/*  Danh sách ruộng lúa */}
       <div className="bg-white rounded shadow">
         <DataTable
           data={getCropList()}

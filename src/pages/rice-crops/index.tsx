@@ -9,7 +9,7 @@ import RiceCropDetail from './rice-crop-detail';
 const RiceCrops: React.FC = () => {
   return (
     <Routes>
-      {/* Trang danh sách vụ lúa */}
+      {/* Trang  Danh sách ruộng lúa */}
       <Route index element={<RiceCropsList />} />
       <Route path=":id" element={<RiceCropDetail />} />
     </Routes>

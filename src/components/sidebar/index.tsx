@@ -21,7 +21,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdAssignmentReturn, MdWarning, MdCalculate } from "react-icons/md"
+import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney } from "react-icons/md"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 
@@ -602,8 +602,8 @@ const Sidebar: React.FC = () => {
           </li>
 
           {/* Thêm menu cho Quản Lý Canh Tác */}
+          {/* Thêm menu cho Quản Lý Canh Tác */}
           <li>
-            <Link to='/rice-crops'>
               <Button
                 className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(25)}
@@ -612,8 +612,47 @@ const Sidebar: React.FC = () => {
                   <GiGrain className='text-green-200' />
                 </span>
                 Quản Lý Canh Tác
+                <span
+                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                    activeTab === 25 && isToggleSubmenu === true ? "rotate" : ""
+                  }`}
+                >
+                  <FaAngleRight />
+                </span>
               </Button>
-            </Link>
+              <div
+                className={`submenuWrapper ${
+                  activeTab === 25 && isToggleSubmenu === true
+                    ? "colapse"
+                    : "colapsed"
+                }`}
+              >
+                <div className='submenu pl-2'>
+                  <Link to='/rice-crops'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname === "/rice-crops"
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Danh sách ruộng lúa
+                    </Button>
+                  </Link>
+
+                  <Link to='/rice-crops/categories'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname === "/rice-crops/categories"
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Loại chi phí canh tác
+                    </Button>
+                  </Link>
+                </div>
+              </div>
           </li>
 
           {hasPermission(userInfo, "SALES_MANAGE") && (
@@ -629,6 +668,61 @@ const Sidebar: React.FC = () => {
                   Mùa vụ
                 </Button>
               </Link>
+            </li>
+          )}
+
+          {/* Chi phí vận hành */}
+          {hasPermission(userInfo, "SALES_MANAGE") && (
+            <li>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 30 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(30)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdAttachMoney className='text-red-300' />
+                </span>
+                Chi phí Vận hành
+                <span
+                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                    activeTab === 30 && isToggleSubmenu === true ? "rotate" : ""
+                  }`}
+                >
+                  <FaAngleRight />
+                </span>
+              </Button>
+              <div
+                className={`submenuWrapper ${
+                  activeTab === 30 && isToggleSubmenu === true
+                    ? "colapse"
+                    : "colapsed"
+                }`}
+              >
+                <div className='submenu pl-2'>
+                  <Link to='/operating-costs'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname === "/operating-costs"
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Danh sách chi phí
+                    </Button>
+                  </Link>
+
+                  <Link to='/operating-costs/categories'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname === "/operating-costs/categories"
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Loại chi phí
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </li>
           )}
 

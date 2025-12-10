@@ -45,6 +45,8 @@ import DiseaseWarningPage from "./pages/disease-warning"
 import BannedPesticidesPage from "./pages/banned-pesticides"
 // Thêm import cho trang Quản Lý Canh Tác
 import RiceCropsPage from "./pages/rice-crops"
+import RiceCropDetails from "./pages/rice-crops/details"
+import CostItemCategoriesPage from './pages/rice-crops/categories'
 // Thêm import cho trang so sánh sản phẩm AI
 import ProductComparisonPage from "./pages/product-comparison"
 // Thêm import cho trang test upload
@@ -65,6 +67,8 @@ import CreateSalesReturn from "./pages/sales-returns/create"
 // Thêm import cho inventory returns và adjustments
 import ReturnsPage from "./pages/inventory/returns"
 import AdjustmentsPage from "./pages/inventory/adjustments"
+import OperatingCostCategoriesPage from './pages/operating-costs/categories'
+import OperatingCostsPage from "./pages/operating-costs"
 import DosageCalculator from "./pages/calculator/dosage-calculator"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
@@ -388,6 +392,15 @@ function App() {
                     />
 
                     {/* Trang Quản Lý Canh Tác */}
+                    {/* IMPORTANT: Specific routes must come BEFORE wildcard routes */}
+                    <Route
+                      path='/rice-crops/categories'
+                      element={
+                        <ProtectedRoute>
+                          <CostItemCategoriesPage />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path='/rice-crops/*'
                       element={
@@ -532,6 +545,14 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route
+                      path='/operating-costs'
+                      element={
+                        <ProtectedRoute requiredPermission="SALES_MANAGE">
+                          <OperatingCostsPage />
+                        </ProtectedRoute>
+                      }
+                    />
 
                     {/* Trang đăng nhập - không yêu cầu xác thực */}
                     <Route path='/sign-in' element={<SignIn />} />
@@ -545,6 +566,25 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <ChangePassword />
+                        </ProtectedRoute>
+                      }
+                    />
+
+
+                    {/* Routes cho Chi phí Vận hành */}
+                    <Route
+                      path='/operating-costs'
+                      element={
+                        <ProtectedRoute requiredPermission="OPERATING_COST_VIEW">
+                          <OperatingCostsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                     <Route
+                      path='/operating-costs/categories'
+                      element={
+                        <ProtectedRoute requiredPermission="OPERATING_COST_VIEW">
+                          <OperatingCostCategoriesPage />
                         </ProtectedRoute>
                       }
                     />

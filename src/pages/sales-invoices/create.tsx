@@ -332,7 +332,7 @@ const CreateSalesInvoice = () => {
       // Set selected customer if customer_id exists
       if (invoice.customer_id) {
         setIsGuestCustomer(false);
-        // Khôi phục trạng thái selectedCustomer để các query phụ thuộc (như danh sách vụ lúa) hoạt động
+        // Khôi phục trạng thái selectedCustomer để các query phụ thuộc (như  Danh sách ruộng lúa) hoạt động
         setSelectedCustomer({
           id: invoice.customer_id,
           name: invoice.customer_name,
@@ -1363,7 +1363,7 @@ ${productInfo}`;
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 56 }}>
                           <CircularProgress size={24} />
                           <Typography variant="body2" color="text.secondary">
-                            Đang tải danh sách vụ lúa...
+                            Đang tải  Danh sách ruộng lúa...
                           </Typography>
                         </Box>
                       ) : customerRiceCrops?.data && customerRiceCrops.data.length > 0 ? (
