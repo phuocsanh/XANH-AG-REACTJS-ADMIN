@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { Card, Form, Select, Typography, Row, Col, Divider, Statistic, Radio } from 'antd'
+import React, { useState } from 'react'
+import { Card, Form, Select, Typography, Row, Col, Divider, Statistic, Tabs } from 'antd'
 import { ExperimentOutlined, CalculatorOutlined } from '@ant-design/icons'
 import NumberInput from '../../components/common/number-input'
 
 const { Title, Text } = Typography
 const { Option } = Select
+const { TabPane } = Tabs
 
 // Constants for conversion (to m2)
 const AREA_UNITS = {
@@ -23,6 +24,27 @@ const DOSAGE_UNITS = {
 }
 
 const DosageCalculator: React.FC = () => {
+    return (
+        <div className="p-2 md:p-6">
+            <Card 
+                title={<><CalculatorOutlined /> Tính Liều Lượng Thuốc</>} 
+                className="shadow-md"
+                bordered={false}
+            >
+                <Tabs defaultActiveKey="1" type="card">
+                    <TabPane tab="Theo Diện Tích" key="1">
+                        <AreaCalculator />
+                    </TabPane>
+                    <TabPane tab="Theo Tỷ Lệ / Ngâm Giống" key="2">
+                        <RatioCalculator />
+                    </TabPane>
+                </Tabs>
+            </Card>
+        </div>
+    )
+}
+
+const AreaCalculator: React.FC = () => {
   const [form] = Form.useForm()
   
   // Default values
@@ -164,14 +186,8 @@ const DosageCalculator: React.FC = () => {
   }
 
   return (
-    <div className="p-2 md:p-6">
-      <Row gutter={[16, 16]} justify="center">
-        <Col xs={24} md={12} lg={10}>
-          <Card 
-            title={<><CalculatorOutlined /> Tính Liều Lượng Thuốc</>} 
-            className="shadow-md"
-            bordered={false}
-          >
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={12}>
             <Form
               form={form}
               layout="vertical"
@@ -251,12 +267,10 @@ const DosageCalculator: React.FC = () => {
                        </Form.Item>
                    </Col>
                </Row>
-        
             </Form>
-          </Card>
         </Col>
 
-        <Col xs={24} md={12} lg={10}>
+        <Col xs={24} md={12}>
            <Card 
              className="shadow-md h-full bg-blue-50" 
              bordered={false}
@@ -310,8 +324,170 @@ const DosageCalculator: React.FC = () => {
            </Card>
         </Col>
       </Row>
-    </div>
   )
+}
+
+const RatioCalculator: React.FC = () => {
+    const [form] = Form.useForm()
+    
+    // Default values
+    const [values, setValues] = useState({
+      chemAmount: 0,
+      chemUnit: 'ml',
+      targetAmount: 0, // e.g. 10 kg
+      targetUnit: 'kg',
+      
+      actualAmount: 0, // e.g. 400 kg
+    })
+
+    const [result, setResult] = useState<{
+        amount: number
+        unit: string
+        display: string
+    } | null>(null)
+
+    const handleValuesChange = (_: any, allValues: any) => {
+        setValues({ ...values, ...allValues })
+        calculate(allValues)
+    }
+
+    const calculate = (vals: typeof values) => {
+        const { chemAmount, targetAmount, actualAmount, chemUnit } = vals
+        
+        if (!chemAmount || !targetAmount || !actualAmount) {
+            setResult(null)
+            return
+        }
+
+        // Formula: (Standard Chem / Standard Target) * Actual Target
+        const resultAmount = (Number(chemAmount) / Number(targetAmount)) * Number(actualAmount)
+        
+        let displayAmount = resultAmount
+        let displayUnit = chemUnit
+
+        // Auto convert if result is too large/small (optional, keep simple for now)
+        if (chemUnit === 'ml' && resultAmount >= 1000) {
+            displayAmount = resultAmount / 1000
+            displayUnit = 'Lít'
+        } else if (chemUnit === 'l' && resultAmount < 1) {
+             displayAmount = resultAmount * 1000
+             displayUnit = 'ml'
+        }
+
+        setResult({
+            amount: displayAmount,
+            unit: displayUnit,
+            display: `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(displayAmount)} ${displayUnit}`
+        })
+    }
+
+    return (
+        <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  initialValues={values}
+                  onValuesChange={handleValuesChange}
+                >
+                    <Title level={5} className="mb-4">1. Tỷ lệ pha chuẩn (Theo hướng dẫn)</Title>
+                    <Text type="secondary" className="mb-2 block">Ví dụ: Pha <b className="text-black">20ml</b> thuốc cho <b className="text-black">10kg</b> giống.</Text>
+                    
+                    <Row gutter={10}>
+                        <Col span={12}>
+                             <Form.Item label="Lượng thuốc" name="chemAmount">
+                                 <NumberInput placeholder="VD: 20" size="large" />
+                             </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                             <Form.Item label="Đơn vị thuốc" name="chemUnit">
+                                 <Select size="large">
+                                    <Option value="ml">ml</Option>
+                                    <Option value="l">Lít</Option>
+                                    <Option value="g">gram</Option>
+                                    <Option value="kg">kg</Option>
+                                 </Select>
+                             </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <div className="flex justify-center items-center my-2">
+                        <Text strong className="text-xl text-gray-400">DÙNG CHO</Text>
+                    </div>
+
+                    <Row gutter={10}>
+                        <Col span={12}>
+                             <Form.Item label="Lượng giống/nước" name="targetAmount">
+                                 <NumberInput placeholder="VD: 10" size="large" />
+                             </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                             <Form.Item label="Đơn vị" name="targetUnit">
+                                 <Select size="large">
+                                    <Option value="kg">kg (giống)</Option>
+                                    <Option value="l">Lít (nước)</Option>
+                                    <Option value="tan">Tấn</Option>
+                                 </Select>
+                             </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Divider />
+
+                    <Title level={5} className="mb-4">2. Thực tế áp dụng</Title>
+                    <Form.Item label={`Tổng lượng ${values.targetUnit === 'l' ? 'nước' : 'giống'} cần xử lý`} name="actualAmount">
+                        <NumberInput placeholder="VD: 400" size="large" addonAfter={values.targetUnit} />
+                    </Form.Item>
+                </Form>
+            </Col>
+
+            <Col xs={24} md={12}>
+                <Card 
+                  className="shadow-md h-full bg-blue-50" 
+                  bordered={false}
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+                >
+                   <div className="text-center">
+                      <Title level={4} type="secondary">KẾT QUẢ TÍNH TOÁN</Title>
+                      
+                      <div className="my-8">
+                         {result ? (
+                             <>
+                                 <Text className="block text-gray-500 mb-2">
+                                     Để xử lý <b className="text-gray-800">{values.actualAmount} {values.targetUnit}</b> giống/nước, bạn cần lượng thuốc là:
+                                 </Text>
+                                 <Statistic 
+                                     value={result.amount} 
+                                     precision={2}
+                                     suffix={<span className="text-2xl font-bold ml-1">{result.unit}</span>}
+                                     valueStyle={{ color: '#1890ff', fontSize: '3rem', fontWeight: 'bold' }}
+                                 />
+                             </>
+                         ) : (
+                             <div className="text-gray-400 py-10">
+                                 <ExperimentOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+                                 <p>Nhập đủ thông tin bên trái để tính toán</p>
+                             </div>
+                         )}
+                      </div>
+
+                      {result && (
+                          <div className="bg-white p-4 rounded-lg border border-blue-100 text-left">
+                              <Text strong>Giải thích:</Text>
+                              <ul className="list-disc pl-5 mt-2 text-gray-600">
+                                  <li>Tỷ lệ: {values.chemAmount} {values.chemUnit} / {values.targetAmount} {values.targetUnit}</li>
+                                  <li>
+                                    Công thức: ({values.chemAmount} / {values.targetAmount}) x {values.actualAmount}
+                                  </li>
+                                  <li>Kết quả: <b>{result.display}</b></li>
+                              </ul>
+                          </div>
+                      )}
+                   </div>
+                </Card>
+            </Col>
+        </Row>
+    )
 }
 
 export default DosageCalculator
