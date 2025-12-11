@@ -122,15 +122,35 @@ function FormComboBox<T extends FieldValues>({
     ...rules,
   }
 
-  // Handle search - sử dụng externalOnSearch nếu có, ngược lại dùng internal state
+  // Debounce timer ref
+  const searchTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  // Handle search với debounce 1.5s
   const handleSearch = useCallback(
     (value: string) => {
       if (externalOnSearch) {
-        externalOnSearch(value)
+        // Clear timeout cũ nếu có
+        if (searchTimerRef.current) {
+          clearTimeout(searchTimerRef.current)
+        }
+        
+        // Set timeout mới
+        searchTimerRef.current = setTimeout(() => {
+          externalOnSearch(value)
+        }, 1500)
       }
     },
     [externalOnSearch]
   )
+
+  // Cleanup khi unmount
+  React.useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
+      }
+    }
+  }, [])
 
   // Function để load more data
   const loadMore = () => {

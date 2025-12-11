@@ -79,6 +79,36 @@ function ComboBox({
   // Sử dụng data từ bên ngoài nếu có, ngược lại dùng static options
   const displayOptions = externalData || staticOptions
 
+  // Debounce timer ref
+  const searchTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  // Handle search với debounce 1.5s
+  const handleSearch = React.useCallback(
+    (value: string) => {
+      if (externalOnSearch) {
+        // Clear timeout cũ nếu có
+        if (searchTimerRef.current) {
+          clearTimeout(searchTimerRef.current)
+        }
+        
+        // Set timeout mới
+        searchTimerRef.current = setTimeout(() => {
+          externalOnSearch(value)
+        }, 1500)
+      }
+    },
+    [externalOnSearch]
+  )
+
+  // Cleanup khi unmount
+  React.useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
+      }
+    }
+  }, [])
+
   // Function để load more data
   const loadMore = () => {
     if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
@@ -155,7 +185,7 @@ function ComboBox({
       allowClear={allowClear}
       showSearch={showSearch}
       filterOption={filterOption}
-      onSearch={externalOnSearch}
+      onSearch={handleSearch}
       onPopupScroll={handlePopupScroll}
       loading={isLoading || isFetching}
       options={mappedOptions}

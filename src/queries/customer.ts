@@ -69,7 +69,7 @@ export const useCustomerSearchQuery = (search: string) => {
         data: Customer[]
         pagination: any
       }>('/customers/search', {
-        search,
+        keyword: search,
         page: 1,
         limit: 20
       })

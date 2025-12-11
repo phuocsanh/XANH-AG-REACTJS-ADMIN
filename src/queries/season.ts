@@ -62,14 +62,25 @@ export const useSeasonsQuery = (params?: Record<string, unknown>) => {
 }
 
 /**
- * Hook lấy mùa vụ đang hoạt động
+ * Hook lấy mùa vụ mới nhất (đang hoạt động hoặc mới tạo gần nhất)
  */
 export const useActiveSeasonQuery = () => {
   return useQuery({
     queryKey: seasonKeys.active(),
     queryFn: async () => {
-      const response = await api.get<Season>("/season/active")
-      return response
+      const response = await api.postRaw<{
+        data: Season[]
+        total: number
+        page: number
+        limit: number
+      }>("/season/search", {
+        page: 1,
+        limit: 20,
+        sort: 'created_at:DESC' // Sắp xếp mới nhất lên đầu
+      })
+      
+      // Trả về season đầu tiên (mới nhất) hoặc null nếu không có
+      return response.data?.[0] || null
     },
   })
 }

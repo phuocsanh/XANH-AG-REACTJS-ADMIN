@@ -30,13 +30,14 @@ import {
   FormControlLabel,
   CircularProgress,
 } from '@mui/material';
-import { FormFieldNumber, FormField } from '@/components/form';
+import { FormFieldNumber, FormField, FormComboBox } from '@/components/form';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
+import { Select as AntSelect } from 'antd';
 import {
   PrinterOutlined,
   EnvironmentOutlined,
@@ -61,6 +62,7 @@ import { weatherService, WeatherData, SimplifiedWeatherData } from '@/services/w
 import { frontendAiService } from '@/services/ai.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
+import ComboBox from '@/components/common/combo-box';
 import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs, Popover } from 'antd';
 import {
   salesInvoiceSchema,
@@ -212,7 +214,7 @@ const CreateSalesInvoice = () => {
 
   // Queries
   const { data: customers } = useCustomerSearchQuery(customerSearch);
-  const { data: activeSeason } = useActiveSeasonQuery();
+  const { data: activeSeason } = useActiveSeasonQuery(); // Lấy mùa vụ mới nhất
   const { data: seasons } = useSeasonsQuery();
   const { data: productsData } = useProductsQuery({ limit: 100 });
   const { data: latestInvoiceResponse } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
@@ -370,10 +372,11 @@ const CreateSalesInvoice = () => {
   // Set active season as default
   useEffect(() => {
     // Chỉ set default nếu chưa có giá trị (để tránh override lựa chọn của user)
-    if (activeSeason && !selectedSeasonId) {
+    // Kiểm tra cả isEditMode để không override khi đang edit
+    if (activeSeason && selectedSeasonId === undefined && !isEditMode) {
       setValue('season_id', activeSeason.id);
     }
-  }, [activeSeason, setValue]); // Bỏ selectedSeasonId khỏi dependency để tránh loop
+  }, [activeSeason, selectedSeasonId, isEditMode, setValue]);
 
   // Watch items to calculate totals
   const items = watch('items');
@@ -1291,112 +1294,53 @@ ${productInfo}`;
                     Thông tin khách hàng
                   </Typography>
 
-                  <Autocomplete
-                    options={customers || []}
-                    getOptionLabel={(option) => `${option.name} - ${option.phone}`}
-                    value={selectedCustomer}
-                    onChange={(_, newValue) => handleCustomerSelect(newValue)}
-                    onInputChange={(_, newInputValue) => setCustomerSearch(newInputValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Tìm khách hàng (tên hoặc SĐT)"
-                        placeholder="Nhập tên hoặc số điện thoại..."
-                        helperText="Để trống nếu là khách vãng lai"
-                      />
-                    )}
-                    sx={{ mb: 2 }}
+                  <FormComboBox
+                    name="customer_id"
+                    control={control}
+                    label="Tìm khách hàng (tên hoặc SĐT)"
+                    placeholder="Nhập tên hoặc số điện thoại... (Để trống nếu là khách vãng lai)"
+                    data={customers?.map((c: Customer) => ({
+                      value: c.id,
+                      label: `${c.name} - ${c.phone}`
+                    })) || []}
+                    onSearch={setCustomerSearch}
+                    onSelectionChange={(value) => {
+                      const customer = customers?.find((c: Customer) => c.id === value);
+                      handleCustomerSelect(customer || null);
+                    }}
+                    allowClear
+                    showSearch
                   />
 
-                  <Controller
+                  <FormField
                     name="customer_name"
                     control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Tên khách hàng *"
-                        error={!!errors.customer_name}
-                        helperText={errors.customer_name?.message}
-                        disabled={!isGuestCustomer}
-                        sx={{ mb: 2 }}
-                      />
-                    )}
+                    label="Tên khách hàng *"
+                    placeholder="Nhập tên khách hàng"
+                    required
+                    disabled={!isGuestCustomer}
                   />
 
-                  <Controller
+                  <FormField
                     name="customer_phone"
                     control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Số điện thoại *"
-                        error={!!errors.customer_phone}
-                        helperText={errors.customer_phone?.message}
-                        disabled={!isGuestCustomer}
-                        sx={{ mb: 2 }}
-                      />
-                    )}
+                    label="Số điện thoại *"
+                    placeholder="Nhập số điện thoại"
+                    required
+                    disabled={!isGuestCustomer}
                   />
 
-                  <Controller
+                  <FormField
                     name="customer_address"
                     control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Địa chỉ"
-                        multiline
-                        rows={2}
-                        disabled={!isGuestCustomer}
-                      />
-                    )}
+                    label="Địa chỉ"
+                    placeholder="Nhập địa chỉ"
+                    type="textarea"
+                    rows={2}
+                    disabled={!isGuestCustomer}
                   />
 
-                  {/* Chọn vụ lúa - BẮT BUỘC khi đã chọn khách hàng */}
-                  {/* Chọn vụ lúa - BẮT BUỘC khi đã chọn khách hàng */}
-                  {selectedCustomer && (
-                    <Box sx={{ mt: 2 }}>
-                      {isLoadingRiceCrops ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 56 }}>
-                          <CircularProgress size={24} />
-                          <Typography variant="body2" color="text.secondary">
-                            Đang tải  Danh sách ruộng lúa...
-                          </Typography>
-                        </Box>
-                      ) : customerRiceCrops?.data && customerRiceCrops.data.length > 0 ? (
-                        <FormControl 
-                          fullWidth 
-                          required 
-                          error={!selectedRiceCropId}
-                        >
-                          <InputLabel>Vụ lúa *</InputLabel>
-                          <Select
-                            value={selectedRiceCropId || ''}
-                            onChange={(e) => handleRiceCropSelect(e.target.value as number)}
-                            label="Vụ lúa *"
-                          >
-                            {customerRiceCrops.data.map((crop: RiceCrop) => (
-                              <MenuItem key={crop.id} value={crop.id}>
-                                {crop.field_name} - {crop.rice_variety} ({crop.field_area.toLocaleString('vi-VN')} m²)
-                              </MenuItem>
-                            ))}
-                          </Select>
-                          {!selectedRiceCropId && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                              Bắt buộc chọn vụ lúa khi tạo hóa đơn cho khách hàng
-                            </Typography>
-                          )}
-                        </FormControl>
-                      ) : (
-                        <Alert severity="warning">
-                          Khách hàng này chưa có vụ lúa nào trong mùa vụ này.
-                        </Alert>
-                      )}
-                    </Box>
-                  )}
+
                 </CardContent>
               </Card>
             </Grid>
@@ -1409,48 +1353,67 @@ ${productInfo}`;
                     Thông tin hóa đơn
                   </Typography>
 
-                  <Controller
+                  <FormComboBox
                     name="season_id"
                     control={control}
-                    render={({ field }) => (
-                      <FormControl 
-                        fullWidth 
-                        sx={{ mb: 2 }}
-                        required={!!selectedCustomer}
-                        error={!!selectedCustomer && !field.value}
-                      >
-                        <InputLabel>{selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}</InputLabel>
-                        <Select {...field} label={selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}>
-                          {seasons?.data?.items?.map((season: Season) => (
-                            <MenuItem key={season.id} value={season.id}>
-                              {season.name} ({season.year})
-                            </MenuItem>
-                          ))}
-                        </Select>
-                        {selectedCustomer && !field.value && (
-                          <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                            Bắt buộc chọn mùa vụ khi tạo hóa đơn cho khách hàng
-                          </Typography>
-                        )}
-                      </FormControl>
-                    )}
+                    label={selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}
+                    placeholder="Chọn mùa vụ"
+                    required={!!selectedCustomer}
+                    options={seasons?.data?.items?.map((season: Season) => ({
+                      value: season.id,
+                      label: `${season.name} (${season.year})`
+                    })) || []}
+                    allowClear
+                    showSearch
                   />
 
-                  <Controller
+                  {/* Chọn vụ lúa - BẮT BUỘC khi đã chọn khách hàng */}
+                  {selectedCustomer && (
+                    <Box sx={{ mt: 2 }}>
+                      {isLoadingRiceCrops ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 56 }}>
+                          <CircularProgress size={24} />
+                          <Typography variant="body2" color="text.secondary">
+                            Đang tải Danh sách ruộng lúa...
+                          </Typography>
+                        </Box>
+                      ) : customerRiceCrops?.data && customerRiceCrops.data.length > 0 ? (
+                        <FormComboBox
+                          name="rice_crop_id"
+                          control={control}
+                          label="Ruộng lúa *"
+                          placeholder="Chọn ruộng lúa"
+                          required
+                          options={customerRiceCrops.data.map((crop: RiceCrop) => ({
+                            value: crop.id,
+                            label: `${crop.field_name} - ${crop.rice_variety} (${crop.field_area.toLocaleString('vi-VN')} m²)`
+                          }))}
+                          onSelectionChange={(value) => {
+                            setSelectedRiceCropId(value as number);
+                          }}
+                          allowClear
+                          showSearch
+                        />
+                      ) : (
+                        <Alert severity="warning">
+                          Khách hàng này chưa có vụ lúa nào trong mùa vụ này.
+                        </Alert>
+                      )}
+                    </Box>
+                  )}
+
+                  <FormComboBox
                     name="payment_method"
                     control={control}
-                    render={({ field }) => (
-                      <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel>Phương thức thanh toán *</InputLabel>
-                        <Select {...field} label="Phương thức thanh toán *">
-                          {Object.entries(paymentMethodLabels).map(([value, label]) => (
-                            <MenuItem key={value} value={value}>
-                              {label}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )}
+                    label="Phương thức thanh toán *"
+                    placeholder="Chọn phương thức thanh toán"
+                    required
+                    options={Object.entries(paymentMethodLabels).map(([value, label]) => ({
+                      value,
+                      label
+                    }))}
+                    allowClear={false}
+                    showSearch={false}
                   />
 
                   <Box sx={{ mb: 2 }}>
@@ -1475,19 +1438,13 @@ ${productInfo}`;
                         {isGeneratingWarning ? 'Đang tạo...' : 'Tạo bằng AI'}
                       </Button>
                     </Box>
-                    <Controller
+                    <FormField
                       name="warning"
                       control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          fullWidth
-                          multiline
-                          rows={2}
-                          placeholder="AI sẽ tự động tạo lưu ý dựa trên mô tả sản phẩm, hoặc bạn có thể nhập thủ công"
-                          helperText="Lưu ý này sẽ được lưu lại và tự động hiển thị khi tạo đơn hàng tiếp theo cho khách hàng này"
-                        />
-                      )}
+                      label=""
+                      placeholder="AI sẽ tự động tạo lưu ý dựa trên mô tả sản phẩm, hoặc bạn có thể nhập thủ công"
+                      type="textarea"
+                      rows={2}
                     />
                   </Box>
 
@@ -1575,30 +1532,29 @@ ${productInfo}`;
                     Danh sách sản phẩm
                   </Typography>
 
-                  <Autocomplete
-                    options={productsData?.data?.items || []}
-                    getOptionLabel={(option: Product) => {
-                      const cashPrice = formatCurrency(Number(option.price) || 0);
-                      const creditPrice = option.credit_price 
-                        ? formatCurrency(Number(option.credit_price) || 0)
+                  <ComboBox
+                    label="Thêm sản phẩm"
+                    placeholder="Tìm kiếm sản phẩm..."
+                    data={productsData?.data?.items?.map((product: Product) => {
+                      const cashPrice = formatCurrency(Number(product.price) || 0);
+                      const creditPrice = product.credit_price 
+                        ? formatCurrency(Number(product.credit_price) || 0)
                         : 'Chưa thiết lập';
-                      return `${option.name} - Tiền mặt: ${cashPrice} | Nợ: ${creditPrice}`;
-                    }}
-                    onChange={(_, newValue) => {
-                      if (newValue) {
-                        handleAddProduct(newValue);
+                      return {
+                        value: product.id,
+                        label: `${product.name} - Tiền mặt: ${cashPrice} | Nợ: ${creditPrice}`
+                      };
+                    }) || []}
+                    value={undefined}
+                    onChange={(value: string | number) => {
+                      const product = productsData?.data?.items?.find((p: Product) => p.id === value);
+                      if (product) {
+                        handleAddProduct(product);
                       }
                     }}
-                    inputValue={productSearch}
-                    onInputChange={(_, newInputValue) => setProductSearch(newInputValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Thêm sản phẩm"
-                        placeholder="Tìm kiếm sản phẩm..."
-                      />
-                    )}
-                    sx={{ mb: 2 }}
+                    onSearch={setProductSearch}
+                    allowClear
+                    showSearch
                   />
 
                   {latestInvoice?.warning && (

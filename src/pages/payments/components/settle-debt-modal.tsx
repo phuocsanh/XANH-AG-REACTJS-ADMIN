@@ -63,7 +63,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   const { data: customerDebts } = useCustomerDebtsQuery(shouldFetchDetails ? (customerId || 0) : 0)
   
   // Lấy debt summary của khách hàng đã chọn
-  const { data: debtSummary } = useCustomerDebtSummaryQuery(customerId || 0)
+  const { data: debtSummary, isLoading: isLoadingDebtSummary } = useCustomerDebtSummaryQuery(customerId || 0)
 
   // Watch form values
   const settleAmount = Form.useWatch("amount", form) || 0
@@ -237,9 +237,15 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
       label: (
         <div className="flex justify-between items-center w-full">
            <span>{c.name} - {c.phone}</span>
-           <span className="text-red-500 font-medium ml-2">
-             Nợ: {formatCurrency(displayDebt)} ({displayCount} phiếu)
-           </span>
+           {isSelected && isLoadingDebtSummary ? (
+             <span className="text-gray-400 font-medium ml-2">
+               Đang tải...
+             </span>
+           ) : (
+             <span className="text-red-500 font-medium ml-2">
+               Nợ: {formatCurrency(displayDebt)} ({displayCount} phiếu)
+             </span>
+           )}
         </div>
       ),
       filterText: `${c.name} ${c.phone} ${c.code}`, 

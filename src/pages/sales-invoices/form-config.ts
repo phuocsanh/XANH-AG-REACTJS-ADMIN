@@ -32,6 +32,24 @@ export const salesInvoiceSchema = z.object({
   gift_value: z.number().min(0, 'Giá trị quà tặng phải lớn hơn hoặc bằng 0').default(0),
   items: z.array(salesInvoiceItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
   status: z.enum(['draft', 'confirmed', 'paid']).optional(),
+}).refine((data) => {
+  // Nếu có customer_id (khách hàng từ hệ thống), bắt buộc phải có season_id
+  if (data.customer_id && !data.season_id) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Vui lòng chọn Mùa vụ cho khách hàng này',
+  path: ['season_id'], // Lỗi sẽ hiển thị ở field season_id
+}).refine((data) => {
+  // Nếu có customer_id (khách hàng từ hệ thống), bắt buộc phải có rice_crop_id
+  if (data.customer_id && !data.rice_crop_id) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Vui lòng chọn Ruộng lúa cho khách hàng này',
+  path: ['rice_crop_id'], // Lỗi sẽ hiển thị ở field rice_crop_id
 });
 
 export type SalesInvoiceItemFormData = z.infer<typeof salesInvoiceItemSchema>;
