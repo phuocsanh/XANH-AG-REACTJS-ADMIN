@@ -89,8 +89,8 @@ export const useCustomerDebtorsSearchQuery = (search: string, options?: { enable
   return useQuery({
     queryKey: customerKeys.debtorSearch(search),
     queryFn: async () => {
-      // Gọi API /customers/debtors
-      const response = await api.get<any>("/customers/debtors", { 
+      // Gọi API POST /customers/debtors
+      const response = await api.postRaw<any>("/customers/debtors", { 
         search,
         page: 1,
         limit: 50 
@@ -116,6 +116,24 @@ export const useCustomerQuery = (id: number) => {
     queryKey: customerKeys.detail(id),
     queryFn: async () => {
       const response = await api.get<Customer>(`/customers/${id}`)
+      return response
+    },
+    enabled: !!id,
+  })
+}
+
+/**
+ * Hook lấy tổng nợ và số phiếu nợ của khách hàng
+ */
+export const useCustomerDebtSummaryQuery = (id: number) => {
+  return useQuery({
+    queryKey: [...customerKeys.detail(id), 'debt-summary'],
+    queryFn: async () => {
+      const response = await api.get<{
+        customer_id: number
+        total_debt: number
+        debt_note_count: number
+      }>(`/customers/${id}/debt-summary`)
       return response
     },
     enabled: !!id,

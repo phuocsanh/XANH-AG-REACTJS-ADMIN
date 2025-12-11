@@ -14,6 +14,7 @@ import {
   useCustomerDebtsQuery,
   useCustomerDebtorsSearchQuery,
   useCustomerInvoicesQuery,
+  useCustomerDebtSummaryQuery,
 } from "@/queries/customer"
 import { useSeasonsQuery } from "@/queries/season"
 import { Season } from "@/models/season"
@@ -60,6 +61,9 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   
   const { data: customerInvoices } = useCustomerInvoicesQuery(shouldFetchDetails ? (customerId || 0) : 0)
   const { data: customerDebts } = useCustomerDebtsQuery(shouldFetchDetails ? (customerId || 0) : 0)
+  
+  // Lấy debt summary của khách hàng đã chọn
+  const { data: debtSummary } = useCustomerDebtSummaryQuery(customerId || 0)
 
   // Watch form values
   const settleAmount = Form.useWatch("amount", form) || 0
@@ -222,18 +226,26 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
       ? [initialCustomer, ...safeDebtors] 
       : safeDebtors
 
-  const debtorOptions = displayDebtors.map((c: CustomerDebtor) => ({
+  const debtorOptions = displayDebtors.map((c: CustomerDebtor) => {
+    // Lấy debt summary từ API nếu đây là customer đang được chọn
+    const isSelected = c.id === customerId
+    const displayDebt = isSelected && debtSummary ? debtSummary.total_debt : (c.total_debt || 0)
+    const displayCount = isSelected && debtSummary ? debtSummary.debt_note_count : (c.debt_count || 0)
+    
+    return {
       value: c.id,
       label: (
         <div className="flex justify-between items-center w-full">
            <span>{c.name} - {c.phone}</span>
            <span className="text-red-500 font-medium ml-2">
-             Nợ: {formatCurrency(c.total_debt)} ({c.debt_count} phiếu)
+             Nợ: {formatCurrency(displayDebt)} ({displayCount} phiếu)
            </span>
         </div>
       ),
       filterText: `${c.name} ${c.phone} ${c.code}`, 
-    }))
+    }
+  })
+
 
   return (
     <>

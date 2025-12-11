@@ -220,6 +220,9 @@ export const useDeletePaymentMutation = () => {
 export const useRollbackPaymentMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
+      console.log('🔥 useRollbackPaymentMutation - mutationFn được gọi với ID:', id)
+      console.log('🔥 Endpoint:', `/payments/${id}/rollback`)
+      
       const response = await api.postRaw<{
         success: boolean;
         message: string;
@@ -227,16 +230,25 @@ export const useRollbackPaymentMutation = () => {
         affected_invoices: number;
         affected_debt_note: any;
       }>(`/payments/${id}/rollback`, {})
+      
+      console.log('✅ useRollbackPaymentMutation - Response:', response)
       return response
     },
     onSuccess: (response) => {
-      invalidateResourceQueries("/payments")
+      console.log('✅ useRollbackPaymentMutation - onSuccess:', response)
+      
+      // Invalidate payments queries với đúng query key
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all })
+      
+      // Invalidate các queries liên quan
       invalidateResourceQueries("/debt-notes")
       invalidateResourceQueries("/sales")
       queryClient.invalidateQueries({ queryKey: ["customers"] })
+      
       toast.success(response.message || "Hoàn tác thanh toán thành công!")
     },
     onError: (error: unknown) => {
+      console.error('❌ useRollbackPaymentMutation - onError:', error)
       handleApiError(error, "Có lỗi xảy ra khi hoàn tác thanh toán")
     },
   })

@@ -5,15 +5,12 @@ import {
   usePaymentAllocationsQuery,
   useRollbackPaymentMutation,
 } from "@/queries/payment"
-import { Season } from "@/models/season"
 import {
   Button,
   Tag,
   Space,
   Modal,
   List,
-  Card,
-  Alert,
   Descriptions,
   Divider,
   Input,
@@ -46,13 +43,18 @@ const PaymentsList: React.FC = () => {
     React.useState<boolean>(false)
   const [isDetailModalVisible, setIsDetailModalVisible] =
     React.useState<boolean>(false)
+  const [isConfirmRollbackVisible, setIsConfirmRollbackVisible] =
+    React.useState<boolean>(false)
   const [viewingPayment, setViewingPayment] = React.useState<Payment | null>(
     null
   )
+  const [rollbackingPayment, setRollbackingPayment] = React.useState<Payment | null>(null)
 
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
   const [filters, setFilters] = React.useState<Record<string, any>>({})
+  // State để track payment đang được rollback
+  const [rollingBackPaymentId, setRollingBackPaymentId] = React.useState<number | null>(null)
 
   // Queries
   const { data: paymentsData, isLoading } = usePaymentsQuery({
@@ -67,7 +69,7 @@ const PaymentsList: React.FC = () => {
     viewingPayment?.id || 0
   )
 
-  // Mutation rollback
+  // Mutation rollback với callback để reset loading state
   const rollbackMutation = useRollbackPaymentMutation()
 
   // Handlers
@@ -91,37 +93,39 @@ const PaymentsList: React.FC = () => {
 
   // Handler rollback payment
   const handleRollback = (payment: Payment) => {
-    Modal.confirm({
-      title: '⚠️ Xác nhận hoàn tác thanh toán',
-      icon: <ExclamationCircleOutlined />,
-      content: (
-        <div>
-          <p>Bạn sắp hoàn tác thanh toán:</p>
-          <ul style={{ marginTop: 12, paddingLeft: 20 }}>
-            <li><strong>Mã:</strong> {payment.code}</li>
-            <li><strong>Số tiền:</strong> {formatCurrency(payment.amount)}</li>
-            <li><strong>Khách hàng:</strong> {payment.customer?.name || payment.customer_name}</li>
-          </ul>
-          <p style={{ marginTop: 12, color: '#ff4d4f' }}>
-            <strong>Hành động này sẽ:</strong>
-          </p>
-          <ul style={{ paddingLeft: 20 }}>
-            <li>✓ Xóa payment và allocations</li>
-            <li>✓ Hoàn trả tiền vào công nợ</li>
-            <li>✓ Cập nhật lại trạng thái invoices</li>
-          </ul>
-          <p style={{ marginTop: 12 }}>
-            Bạn có chắc chắn muốn tiếp tục?
-          </p>
-        </div>
-      ),
-      okText: 'Xác nhận hoàn tác',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: () => {
-        rollbackMutation.mutate(payment.id)
-      },
+    console.log('🔄 handleRollback được gọi với payment:', payment)
+    setRollbackingPayment(payment)
+    setIsConfirmRollbackVisible(true)
+  }
+
+  // Handler xác nhận rollback
+  const handleConfirmRollback = () => {
+    if (!rollbackingPayment) return
+    
+    console.log('✅ User xác nhận rollback payment ID:', rollbackingPayment.id)
+    
+    // Set state để track payment đang được rollback
+    setRollingBackPaymentId(rollbackingPayment.id)
+    
+    console.log('🚀 Gọi rollbackMutation.mutate với ID:', rollbackingPayment.id)
+    rollbackMutation.mutate(rollbackingPayment.id, {
+      onSettled: () => {
+        console.log('✅ Mutation settled, reset rollingBackPaymentId')
+        // Reset state sau khi hoàn tất (thành công hoặc lỗi)
+        setRollingBackPaymentId(null)
+      }
     })
+    
+    // Đóng modal
+    setIsConfirmRollbackVisible(false)
+    setRollbackingPayment(null)
+  }
+
+  // Handler hủy rollback
+  const handleCancelRollback = () => {
+    console.log('❌ User hủy rollback')
+    setIsConfirmRollbackVisible(false)
+    setRollbackingPayment(null)
   }
 
   const formatCurrency = (value: number) => {
@@ -417,7 +421,7 @@ const PaymentsList: React.FC = () => {
             onClick={() => handleRollback(record)}
             size='small'
             danger
-            loading={rollbackMutation.isPending}
+            loading={rollingBackPaymentId === record.id}
           >
             Hoàn tác
           </Button>
@@ -501,7 +505,7 @@ const PaymentsList: React.FC = () => {
                 ) : "-"}
               </Descriptions.Item>
               <Descriptions.Item label='Khách hàng' span={2}>
-                {viewingPayment.customer_name}
+                {viewingPayment.customer?.name || viewingPayment.customer_name || '-'}
               </Descriptions.Item>
               <Descriptions.Item label='Số tiền'>
                 <span className='text-green-600 font-bold'>
@@ -527,8 +531,8 @@ const PaymentsList: React.FC = () => {
                     <div className='flex justify-between w-full'>
                       <span>
                         {allocation.allocation_type === "invoice"
-                          ? `Hóa đơn: ${allocation.invoice_code}`
-                          : `Phiếu nợ: ${allocation.debt_note_code}`}
+                          ? `Hóa đơn: ${allocation.invoice?.code || 'N/A'}`
+                          : `Phiếu nợ: ${allocation.debt_note?.code || 'N/A'}`}
                       </span>
                       <span className='font-medium'>
                         {formatCurrency(allocation.amount)}
@@ -542,6 +546,39 @@ const PaymentsList: React.FC = () => {
                 Chưa có phân bổ
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Confirm Rollback Modal */}
+      <Modal
+        title="⚠️ Xác nhận hoàn tác thanh toán"
+        open={isConfirmRollbackVisible}
+        onOk={handleConfirmRollback}
+        onCancel={handleCancelRollback}
+        okText="Xác nhận hoàn tác"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}
+      >
+        {rollbackingPayment && (
+          <div>
+            <p>Bạn sắp hoàn tác thanh toán:</p>
+            <ul style={{ marginTop: 12, paddingLeft: 20 }}>
+              <li><strong>Mã:</strong> {rollbackingPayment.code}</li>
+              <li><strong>Số tiền:</strong> {formatCurrency(rollbackingPayment.amount)}</li>
+              <li><strong>Khách hàng:</strong> {rollbackingPayment.customer?.name || rollbackingPayment.customer_name}</li>
+            </ul>
+            <p style={{ marginTop: 12, color: '#ff4d4f' }}>
+              <strong>Hành động này sẽ:</strong>
+            </p>
+            <ul style={{ paddingLeft: 20 }}>
+              <li>✓ Xóa payment và allocations</li>
+              <li>✓ Hoàn trả tiền vào công nợ</li>
+              <li>✓ Cập nhật lại trạng thái invoices</li>
+            </ul>
+            <p style={{ marginTop: 12 }}>
+              Bạn có chắc chắn muốn tiếp tục?
+            </p>
           </div>
         )}
       </Modal>

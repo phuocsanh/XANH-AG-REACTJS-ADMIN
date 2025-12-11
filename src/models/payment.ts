@@ -44,8 +44,10 @@ export interface PaymentAllocation {
   allocation_type: 'invoice' | 'debt_note';
   invoice_id?: number;
   invoice_code?: string;
+  invoice?: { id: number; code: string };
   debt_note_id?: number;
   debt_note_code?: string;
+  debt_note?: { id: number; code: string };
   amount: number;
   created_at: Date | string;
 }
