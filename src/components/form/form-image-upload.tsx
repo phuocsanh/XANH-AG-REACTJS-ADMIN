@@ -15,9 +15,10 @@ interface FormImageUploadProps<T extends FieldValues> {
   multiple?: boolean // Cho phép chọn nhiều file
   className?: string // CSS class
   uploadType?: UploadType // Loại upload
+  returnFullObjects?: boolean // Trả về object đầy đủ thay vì chỉ URL
   rules?: {
     required?: boolean | string
-    validate?: (value: string[] | null) => boolean | string
+    validate?: (value: any[] | null) => boolean | string
     [key: string]: unknown
   } // Validation rules
 }
@@ -39,6 +40,7 @@ function FormImageUpload<T extends FieldValues>({
   multiple = true,
   className,
   uploadType = UPLOAD_TYPES.COMMON,
+  returnFullObjects = false,
   rules = {},
 }: FormImageUploadProps<T>) {
   // Tạo validation rules
@@ -72,8 +74,11 @@ function FormImageUpload<T extends FieldValues>({
               return value.map((item: any) => {
                 // If item is already a string, return it
                 if (typeof item === 'string') return item;
-                // If item is an UploadFile object, extract the url
-                if (typeof item === 'object' && 'url' in item) return item.url || '';
+                // If item is an UploadFile object/response object
+                // If returnFullObjects is true, we want to keep the object
+                // But ImageUpload expects 'value' to be used for initial display.
+                // ImageUpload updated logic handles objects with 'url' property.
+                if (typeof item === 'object') return item;
                 return '';
               }).filter(Boolean);
             }
@@ -91,6 +96,7 @@ function FormImageUpload<T extends FieldValues>({
                 maxCount={maxCount}
                 multiple={multiple}
                 uploadType={uploadType}
+                returnFullObjects={returnFullObjects}
               />
               {error && (
                 <div

@@ -1,435 +1,495 @@
-// Form tạo phiếu trả hàng
+// Form tạo phiếu trả hàng - React Hook Form version
 
-import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from 'react';
+import { message } from 'antd';
 import {
-  Card,
-  Form,
-  Input,
-  Select,
+  Box,
   Button,
-  Space,
   Typography,
-  Row,
-  Col,
+  Grid,
+  Card,
+  CardContent,
+  Alert,
+  IconButton,
   Table,
-  message as antdMessage,
-  Upload,
-  UploadFile,
-  UploadProps,
-} from "antd"
-import { PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined, UploadOutlined } from "@ant-design/icons"
-import type { ColumnsType } from "antd/es/table"
-import NumberInput from "@/components/common/number-input"
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from '@mui/material';
+import { FormField, FormComboBox, FormFieldNumber, FormImageUpload } from '@/components/form';
+import NumberInput from '@/components/common/number-input';
+import ComboBox from '@/components/common/combo-box';
+import {
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useCreateReturnMutation, useAttachImageToReturnMutation } from '@/queries/inventory-return';
+import { useUploadFileMutation, useInventoryReceiptsQuery } from '@/queries/inventory';
+import { useAppStore } from '@/stores';
+import { InventoryReceiptApiResponse } from '@/models/inventory.model';
+import {
+  returnFormSchema,
+  ReturnFormData,
+  defaultReturnValues,
+} from './form-config';
 
-import { CreateReturnRequest, ReturnItem } from "@/models/inventory-return.model"
-import { useCreateReturnMutation, useAttachImageToReturnMutation } from "@/queries/inventory-return"
-import { useUploadFileMutation } from "@/queries/inventory"
-import { useSuppliersQuery } from "@/queries/supplier"
-import { useProductsQuery } from "@/queries/product"
-import { useAppStore } from "@/stores"
+const ReturnCreate = () => {
+  const navigate = useNavigate();
+  const userInfo = useAppStore((state) => state.userInfo);
+  const [receiptSearch, setReceiptSearch] = useState('');
+  const [selectedReceipt, setSelectedReceipt] = useState<InventoryReceiptApiResponse | null>(null);
+  const [tempProductSelect, setTempProductSelect] = useState<number | null>(null);
 
-const { Title, Text } = Typography
-const { TextArea } = Input
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<ReturnFormData>({
+    resolver: zodResolver(returnFormSchema),
+    defaultValues: defaultReturnValues,
+  });
 
-const ReturnCreate: React.FC = () => {
-  const navigate = useNavigate()
-  const [form] = Form.useForm()
-  const userInfo = useAppStore((state) => state.userInfo)
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'items',
+  });
 
-  // State cho items
-  const [items, setItems] = useState<ReturnItem[]>([])
-  const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
-  const [quantity, setQuantity] = useState<number>(1)
-  const [unitCost, setUnitCost] = useState<number>(0)
-  const [itemReason, setItemReason] = useState<string>("")
-  const [itemNotes, setItemNotes] = useState<string>("")
+  // Queries - Chỉ load khi có search term
+  const { data: receiptsData } = useInventoryReceiptsQuery(
+    receiptSearch ? { limit: 20, code: receiptSearch } : undefined
+  );
+  const createMutation = useCreateReturnMutation();
+  const attachImageMutation = useAttachImageToReturnMutation();
 
-  // State cho upload ảnh
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+  // Lấy danh sách sản phẩm từ phiếu nhập đã chọn
+  const availableProducts = (selectedReceipt as any)?.items?.map((item: any) => ({
+    product_id: item.product_id,
+    product_name: item.product?.name || `Sản phẩm #${item.product_id}`,
+    quantity: item.quantity,
+    unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
+  })) || [];
 
-  // Queries
-  const { data: suppliersData } = useSuppliersQuery({ limit: 1000 })
-  const { data: productsData } = useProductsQuery({ limit: 1000 })
-  const createReturnMutation = useCreateReturnMutation()
-  const uploadFileMutation = useUploadFileMutation()
-  const attachImageMutation = useAttachImageToReturnMutation()
-
-  // Tính tổng tiền
-  const totalAmount = items.reduce((sum, item) => sum + item.total_price, 0)
-
-  // Thêm item vào danh sách
-  const handleAddItem = () => {
-    if (!selectedProduct) {
-      antdMessage.error("Vui lòng chọn sản phẩm!")
-      return
+  // Xử lý chọn phiếu nhập kho
+  const handleReceiptSelect = (receiptId: number | null) => {
+    const receipt = receiptsData?.data?.items?.find((r) => r.id === receiptId);
+    setSelectedReceipt(receipt || null);
+    if (receipt) {
+      setValue('receipt_id', receipt.id);
+      setValue('supplier_id', receipt.supplier_id || 0);
+      setValue('return_code', `RT-${receipt.code}`);
+      // Reset items khi đổi phiếu
+      setValue('items', []);
+    } else {
+      setValue('receipt_id', 0);
+      setValue('supplier_id', 0);
+      setValue('return_code', '');
+      setValue('items', []);
     }
-    if (quantity <= 0) {
-      antdMessage.error("Số lượng phải lớn hơn 0!")
-      return
-    }
-    if (unitCost <= 0) {
-      antdMessage.error("Đơn giá phải lớn hơn 0!")
-      return
-    }
+  };
 
-    const newItem: ReturnItem = {
-      product_id: selectedProduct,
-      quantity,
-      unit_cost: unitCost,
-      total_price: quantity * unitCost,
-      reason: itemReason,
-      notes: itemNotes,
-    }
+  // Thêm sản phẩm vào danh sách
+  const handleAddProduct = (product: typeof availableProducts[0]) => {
+    // Check if already exists
+    const exists = fields.some((field) => field.product_id === product.product_id);
+    if (exists) return;
 
-    setItems([...items, newItem])
-    
-    // Reset form
-    setSelectedProduct(null)
-    setQuantity(1)
-    setUnitCost(0)
-    setItemReason("")
-    setItemNotes("")
-  }
-
-  // Xóa item
-  const handleDeleteItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index))
-  }
-
-  // Xử lý thay đổi file upload
-  const handleFileChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
-    setFileList(newFileList)
-  }
+    append({
+      product_id: product.product_id,
+      product_name: product.product_name,
+      quantity: 1,
+      unit_cost: product.unit_cost,
+      total_price: product.unit_cost,
+      reason: '',
+      notes: '',
+    });
+  };
 
   // Submit form
-  const handleSubmit = async (values: any) => {
-    if (items.length === 0) {
-      antdMessage.error("Vui lòng thêm ít nhất 1 sản phẩm!")
-      return
-    }
-
+  const onSubmit = async (data: ReturnFormData) => {
     if (!userInfo?.id) {
-      antdMessage.error("Không tìm thấy thông tin người dùng!")
-      return
-    }
-
-    const returnData: CreateReturnRequest = {
-      return_code: values.return_code,
-      supplier_id: values.supplier_id,
-      total_amount: totalAmount,
-      reason: values.reason,
-      notes: values.notes,
-      created_by: userInfo.id,
-      items,
+      alert('Không tìm thấy thông tin người dùng!');
+      return;
     }
 
     try {
-      // 1. Tạo phiếu trả hàng
-      const newReturn = await createReturnMutation.mutateAsync(returnData)
-      
-      // 2. Upload và gắn ảnh (nếu có)
-      if (fileList.length > 0 && newReturn?.id) {
-        const uploadPromises = fileList.map(async (file) => {
-          if (file.originFileObj) {
+      // Recalculate derived values to ensure consistency
+      const processedItems = data.items.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_cost: item.unit_cost,
+          total_price: item.quantity * item.unit_cost,
+          reason: item.reason,
+          notes: item.notes,
+      }));
+
+      const returnData = {
+        return_code: data.return_code,
+        supplier_id: data.supplier_id,
+        receipt_id: data.receipt_id,
+        total_amount: processedItems.reduce((sum, item) => sum + item.total_price, 0),
+        reason: data.reason,
+        notes: data.notes,
+        created_by: userInfo.id,
+        items: processedItems,
+      };
+
+      // 1. Tạo phiếu trả
+      const newReturn = await createMutation.mutateAsync(returnData as any);
+
+      // 2. Gắn ảnh (nếu có)
+      // data.images sẽ chứa mảng các object { id, url, name } do FormImageUpload trả về (nhờ prop returnFullObjects)
+      if (data.images && data.images.length > 0 && newReturn?.id) {
+        const imagePromises = data.images.map(async (img: any) => {
+          if (img.id) {
             try {
-              // Upload file lên server
-              const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
-              
-              // Gắn file vào phiếu
-              if ((uploadResult as any)?.data?.id) {
-                await attachImageMutation.mutateAsync({
-                  returnId: newReturn.id,
-                  fileId: (uploadResult as any).data.id,
-                  fieldName: 'return_images',
-                })
-              }
+              await attachImageMutation.mutateAsync({
+                returnId: newReturn.id,
+                fileId: img.id,
+                fieldName: 'return_images',
+              });
             } catch (error) {
-              console.error("Error uploading image:", error)
-              antdMessage.error(`Lỗi upload ảnh: ${file.name}`)
+              console.error("Error attaching image:", error);
             }
           }
-        })
+        });
         
-        await Promise.all(uploadPromises)
+        await Promise.all(imagePromises);
       }
 
-      antdMessage.success("Tạo phiếu trả hàng thành công!")
-      navigate("/inventory/returns")
+      navigate('/inventory/returns');
     } catch (error) {
-      console.error("Error creating return:", error)
-      // Lỗi đã được handle trong mutation onError
+      console.error('Error creating return:', error);
     }
-  }
+  };
 
-  // Columns cho bảng items
-  const itemColumns: ColumnsType<ReturnItem & { index: number }> = [
-    {
-      title: "STT",
-      dataIndex: "index",
-      key: "index",
-      width: 60,
-      render: (_, __, index) => index + 1,
-    },
-    {
-      title: "Sản phẩm",
-      dataIndex: "product_id",
-      key: "product_id",
-      render: (productId: number) => {
-        const product = productsData?.data?.items?.find((p) => p.id === productId)
-        return product?.name || `Sản phẩm #${productId}`
-      },
-    },
-    {
-      title: "Số lượng",
-      dataIndex: "quantity",
-      key: "quantity",
-      width: 100,
-      align: "right",
-    },
-    {
-      title: "Đơn giá",
-      dataIndex: "unit_cost",
-      key: "unit_cost",
-      width: 120,
-      align: "right",
-      render: (cost: number) =>
-        new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }).format(cost),
-    },
-    {
-      title: "Thành tiền",
-      dataIndex: "total_price",
-      key: "total_price",
-      width: 120,
-      align: "right",
-      render: (price: number) =>
-        new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }).format(price),
-    },
-    {
-      title: "Lý do",
-      dataIndex: "reason",
-      key: "reason",
-      ellipsis: true,
-    },
-    {
-      title: "Thao tác",
-      key: "actions",
-      width: 80,
-      align: "center",
-      render: (_, __, index) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDeleteItem(index)}
-        />
-      ),
-    },
-  ]
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(value);
+  };
+
+  // Get receipt list
+  const receiptList = receiptsData?.data?.items || [];
 
   return (
-    <div style={{ padding: "24px" }}>
-      <Card>
-        <div style={{ marginBottom: "24px" }}>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/inventory/returns")}
-            style={{ marginBottom: "16px" }}
-          >
-            Quay lại
-          </Button>
-          <Title level={2}>Tạo phiếu trả hàng</Title>
-        </div>
+    <Box>
+      <Box display="flex" alignItems="center" mb={3}>
+        <IconButton onClick={() => navigate('/inventory/returns')} sx={{ mr: 2 }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4" fontWeight="bold">
+          Tạo phiếu trả hàng
+        </Typography>
+      </Box>
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="return_code"
-                label="Mã phiếu"
-                rules={[
-                  { required: true, message: "Vui lòng nhập mã phiếu!" },
-                  { pattern: /^RT-/, message: "Mã phiếu phải bắt đầu bằng RT-" },
-                ]}
-              >
-                <Input placeholder="RT-2024-001" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="supplier_id"
-                label="Nhà cung cấp"
-                rules={[{ required: true, message: "Vui lòng chọn nhà cung cấp!" }]}
-              >
-                <Select
-                  placeholder="Chọn nhà cung cấp"
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Grid container spacing={3}>
+          {/* Phiếu nhập kho */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" mb={2}>
+                  Thông tin phiếu nhập
+                </Typography>
+
+                <FormComboBox
+                  name="receipt_id"
+                  control={control}
+                  label="Tìm phiếu nhập kho"
+                  placeholder="Nhập mã phiếu nhập..."
+                  data={receiptList.map((receipt: any) => ({
+                    value: receipt.id,
+                    label: `${receipt.code} - ${receipt.supplier?.name || 'N/A'} - ${formatCurrency(parseFloat(String(receipt.total_amount) || '0'))}`
+                  }))}
+                  onSearch={setReceiptSearch}
+                  onSelectionChange={(value) => {
+                    handleReceiptSelect(typeof value === 'number' ? value : null);
+                  }}
+                  allowClear
                   showSearch
-                  optionFilterProp="children"
-                >
-                  {suppliersData?.data?.items?.map((supplier) => (
-                    <Select.Option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+                />
 
-          <Form.Item
-            name="reason"
-            label="Lý do trả hàng"
-            rules={[
-              { required: true, message: "Vui lòng nhập lý do trả hàng!" },
-              { min: 10, message: "Lý do phải có ít nhất 10 ký tự!" },
-            ]}
-          >
-            <TextArea
-              rows={3}
-              placeholder="Hàng bị lỗi, không đúng quy cách..."
-            />
-          </Form.Item>
+                {selectedReceipt && (
+                  <Box mt={2}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Nhà cung cấp:
+                    </Typography>
+                    <Typography variant="body1" mb={1}>
+                      {(selectedReceipt as any)?.supplier?.name || 'N/A'}
+                    </Typography>
+                    
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Mã phiếu trả:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="bold">
+                      {watch('return_code')}
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <Form.Item name="notes" label="Ghi chú">
-            <TextArea rows={2} placeholder="Ghi chú thêm (nếu có)" />
-          </Form.Item>
+          {/* Thông tin trả hàng */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" mb={2}>
+                  Thông tin trả hàng
+                </Typography>
 
-          {/* Upload ảnh */}
-          <Card title="Hình ảnh chứng từ / Hàng lỗi" style={{ marginBottom: "16px" }}>
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={handleFileChange}
-              beforeUpload={() => false} // Prevent auto upload
-              accept="image/*"
-              multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
-              </div>
-            </Upload>
-          </Card>
+                <FormField
+                  name="reason"
+                  control={control}
+                  label="Lý do trả hàng"
+                  type="textarea"
+                  rows={3}
+                  placeholder="VD: Hàng lỗi, không đúng quy cách..."
+                  className="mb-4"
+                />
 
-          {/* Thêm sản phẩm */}
-          <Card title="Thêm sản phẩm" style={{ marginBottom: "16px" }}>
-            <Row gutter={16}>
-              <Col xs={24} md={8}>
-                <Form.Item label="Sản phẩm">
-                  <Select
-                    placeholder="Chọn sản phẩm"
-                    value={selectedProduct}
-                    onChange={setSelectedProduct}
-                    showSearch
-                    optionFilterProp="children"
-                  >
-                    {productsData?.data?.items?.map((product) => (
-                      <Select.Option key={product.id} value={product.id}>
-                        {product.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={12} md={4}>
-                <Form.Item label="Số lượng">
-                  <NumberInput
-                    min={1}
-                    value={quantity}
-                    onChange={(val) => setQuantity(val || 1)}
-                    style={{ width: "100%" }}
+                <FormField
+                  name="notes"
+                  control={control}
+                  label="Ghi chú"
+                  type="textarea"
+                  rows={2}
+                />
+
+                <Box mt={2}>
+                  <Typography variant="subtitle2" mb={1}>
+                    Hình ảnh chứng từ / sản phẩm lỗi
+                  </Typography>
+                  <FormImageUpload
+                    name="images"
+                    control={control}
+                    uploadType="common"
+                    returnFullObjects={true}
+                    multiple
+                    maxCount={5}
                   />
-                </Form.Item>
-              </Col>
-              <Col xs={12} md={4}>
-                <Form.Item label="Đơn giá">
-                  <NumberInput
-                    min={0}
-                    value={unitCost}
-                    onChange={(val) => setUnitCost(val || 0)}
-                    style={{ width: "100%" }}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label="Lý do">
-                  <Input
-                    value={itemReason}
-                    onChange={(e) => setItemReason(e.target.value)}
-                    placeholder="Lý do trả sản phẩm này"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Button
-              type="dashed"
-              icon={<PlusOutlined />}
-              onClick={handleAddItem}
-              block
-            >
-              Thêm sản phẩm
-            </Button>
-          </Card>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          {/* Danh sách sản phẩm */}
-          <Card title="Danh sách sản phẩm" style={{ marginBottom: "16px" }}>
-            <Table
-              columns={itemColumns}
-              dataSource={items.map((item, index) => ({ ...item, index }))}
-              rowKey="index"
-              pagination={false}
-              scroll={{ x: 800 }}
-              summary={() => (
-                <Table.Summary>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={4} align="right">
-                      <Text strong>Tổng cộng:</Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="right">
-                      <Text strong style={{ color: "#1890ff", fontSize: "16px" }}>
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(totalAmount)}
-                      </Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} colSpan={2} />
-                  </Table.Summary.Row>
-                </Table.Summary>
-              )}
-            />
-          </Card>
+          {/* Sản phẩm */}
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" mb={2}>
+                  Sản phẩm trả lại
+                </Typography>
 
-          {/* Buttons */}
-          <Form.Item>
-            <Space>
+                {selectedReceipt ? (
+                  <>
+                    <Box mb={3}>
+                      <Typography variant="subtitle2" mb={1}>
+                        Chọn sản phẩm từ phiếu nhập:
+                      </Typography>
+                      
+                      {/* Quick-add buttons - chỉ hiển thị 10 sản phẩm đầu */}
+                      {availableProducts.length > 0 && (
+                        <>
+                          <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
+                            {availableProducts.slice(0, 10).map((product: any) => (
+                              <Button
+                                key={product.product_id}
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handleAddProduct(product)}
+                                disabled={fields.some((f) => f.product_id === product.product_id)}
+                              >
+                                {product.product_name} (SL: {product.quantity})
+                              </Button>
+                            ))}
+                          </Box>
+                          
+                          {availableProducts.length > 10 && (
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                              Phiếu nhập có {availableProducts.length} sản phẩm. Hiển thị 10 sản phẩm đầu tiên. 
+                              Dùng dropdown bên dưới để chọn sản phẩm khác.
+                            </Alert>
+                          )}
+                        </>
+                      )}
+
+                      {/* Dropdown để chọn tất cả sản phẩm */}
+                      <Box>
+                        <Typography variant="subtitle2" mb={1}>
+                          Hoặc tìm kiếm sản phẩm:
+                        </Typography>
+                        <ComboBox
+                          data={availableProducts.map((p: any) => ({
+                            value: p.product_id,
+                            label: `${p.product_name} (Đã nhập: ${p.quantity})`
+                          }))}
+                          value={tempProductSelect}
+                          onChange={(value) => {
+                            const product = availableProducts.find((p: any) => p.product_id === value);
+                            if (product) {
+                              handleAddProduct(product);
+                              setTempProductSelect(null);
+                            }
+                          }}
+                          placeholder="-- Chọn sản phẩm --"
+                          showSearch
+                          allowClear
+                          filterOption={(input, option) => {
+                            const label = option?.label?.toString().toLowerCase() || '';
+                            const searchText = input.toLowerCase();
+                            return label.includes(searchText);
+                          }}
+                        />
+                      </Box>
+                    </Box>
+
+                    {errors.items && (
+                      <Alert severity="error" sx={{ mb: 2 }}>
+                        {errors.items.message}
+                      </Alert>
+                    )}
+
+                    {fields.length > 0 && (
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Sản phẩm</TableCell>
+                              <TableCell align="right">Số lượng trả</TableCell>
+                              <TableCell align="right">Đơn giá</TableCell>
+                              <TableCell align="right">Thành tiền</TableCell>
+                              <TableCell>Lý do</TableCell>
+                              <TableCell align="center">Xóa</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {fields.map((field, index) => {
+                              const quantity = watch(`items.${index}.quantity`) || 0;
+                              const unitCost = watch(`items.${index}.unit_cost`) || 0;
+                              const total = quantity * unitCost;
+
+                              // Find max quantity from receipt
+                              const receiptItem = (selectedReceipt as any)?.items?.find(
+                                (i: any) => i.product_id === field.product_id
+                              );
+                              const maxQuantity = receiptItem ? receiptItem.quantity : 999;
+
+                              return (
+                                <TableRow key={field.id}>
+                                  <TableCell>
+                                    <Typography variant="body2" fontWeight="bold">
+                                      {field.product_name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      Đã nhập: {maxQuantity}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    <Controller
+                                      name={`items.${index}.quantity`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <NumberInput
+                                          value={field.value ? Number(field.value) : null}
+                                          onChange={(val) => field.onChange(val)}
+                                          min={1}
+                                          max={maxQuantity}
+                                          size="small"
+                                          style={{ width: 80 }}
+                                        />
+                                      )}
+                                    />
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    {formatCurrency(unitCost)}
+                                  </TableCell>
+                                  <TableCell align="right">
+                                    <Typography fontWeight="bold" color="error.main">
+                                      {formatCurrency(total)}
+                                    </Typography>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Controller
+                                      name={`items.${index}.reason`}
+                                      control={control}
+                                      render={({ field }) => (
+                                        <input
+                                          {...field}
+                                          placeholder="Lý do..."
+                                          style={{
+                                            width: '100%',
+                                            padding: '4px 8px',
+                                            border: '1px solid #d9d9d9',
+                                            borderRadius: '4px',
+                                            fontSize: '14px'
+                                          }}
+                                        />
+                                      )}
+                                    />
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => remove(index)}
+                                    >
+                                      <DeleteIcon />
+                                    </IconButton>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                  </>
+                ) : (
+                  <Alert severity="info">
+                    Vui lòng chọn phiếu nhập kho trước
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Actions */}
+          <Grid item xs={12}>
+            <Box display="flex" gap={2} justifyContent="flex-end">
               <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={createReturnMutation.isPending || uploadFileMutation.isPending || attachImageMutation.isPending}
+                variant="outlined"
+                onClick={() => navigate('/inventory/returns')}
+                disabled={createMutation.isPending}
               >
-                Tạo phiếu trả hàng
-              </Button>
-              <Button onClick={() => navigate("/inventory/returns")}>
                 Hủy
               </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
-  )
-}
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={<SaveIcon />}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu trả'}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </form>
+    </Box>
+  );
+};
 
-export default ReturnCreate
+export default ReturnCreate;

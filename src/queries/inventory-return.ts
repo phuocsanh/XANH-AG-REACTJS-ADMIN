@@ -10,15 +10,25 @@ import {
   mapApiResponseToReturn,
 } from '@/models/inventory-return.model'
 import { invalidateResourceQueries } from '@/utils/query-helpers'
+import { handleApiError } from '@/utils/error-handler'
 
 // Lấy danh sách phiếu trả hàng
 export const useReturnsQuery = () => {
   return useQuery({
     queryKey: ['returns'],
     queryFn: async () => {
-      // apiClient trả về data đã unwrap (response.data.data)
-      const data = await apiClient.get<ReturnApiResponse[]>('/inventory/returns')
-      return data.map(mapApiResponseToReturn) as InventoryReturn[]
+      // Đổi từ GET /inventory/returns sang POST /sales-returns/search
+      const response = await apiClient.postRaw<{
+        data: ReturnApiResponse[]
+        total: number
+        page: number
+        limit: number
+      }>('/sales-returns/search', {
+        limit: 1000, // Lấy tất cả
+        offset: 0
+      })
+      // Backend trả về 'data' không phải 'items'
+      return response.data.map(mapApiResponseToReturn) as InventoryReturn[]
     },
   })
 }
@@ -41,15 +51,15 @@ export const useCreateReturnMutation = () => {
   return useMutation({
     mutationFn: async (data: CreateReturnRequest) => {
       // Sử dụng postRaw cho JSON body
-      const response = await apiClient.postRaw<ReturnApiResponse>('/inventory/return', data)
+      const response = await apiClient.postRaw<ReturnApiResponse>('/inventory/return', data as any)
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries(queryClient, 'returns', { exact: false })
+      invalidateResourceQueries('returns')
       message.success('Tạo phiếu trả hàng thành công!')
     },
-    onError: () => {
-      message.error('Tạo phiếu trả hàng thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Tạo phiếu trả hàng thất bại!')
     },
   })
 }
@@ -64,11 +74,11 @@ export const useApproveReturnMutation = () => {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['return', id] })
-      invalidateResourceQueries(queryClient, 'returns', { exact: false })
+      invalidateResourceQueries('returns')
       message.success('Duyệt phiếu trả hàng thành công!')
     },
-    onError: () => {
-      message.error('Duyệt phiếu trả hàng thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Duyệt phiếu trả hàng thất bại!')
     },
   })
 }
@@ -83,13 +93,13 @@ export const useCompleteReturnMutation = () => {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['return', id] })
-      invalidateResourceQueries(queryClient, 'returns', { exact: false })
+      invalidateResourceQueries('returns')
       // Invalidate inventory vì tồn kho đã thay đổi
-      invalidateResourceQueries(queryClient, 'products', { exact: false })
+      invalidateResourceQueries('products')
       message.success('Hoàn thành phiếu trả hàng! Tồn kho đã được cập nhật.')
     },
-    onError: () => {
-      message.error('Hoàn thành phiếu trả hàng thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Hoàn thành phiếu trả hàng thất bại!')
     },
   })
 }
@@ -104,11 +114,11 @@ export const useCancelReturnMutation = () => {
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['return', id] })
-      invalidateResourceQueries(queryClient, 'returns', { exact: false })
+      invalidateResourceQueries('returns')
       message.success('Hủy phiếu trả hàng thành công!')
     },
-    onError: () => {
-      message.error('Hủy phiếu trả hàng thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Hủy phiếu trả hàng thất bại!')
     },
   })
 }
@@ -122,11 +132,11 @@ export const useDeleteReturnMutation = () => {
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries(queryClient, 'returns', { exact: false })
+      invalidateResourceQueries('returns')
       message.success('Xóa phiếu trả hàng thành công!')
     },
-    onError: () => {
-      message.error('Xóa phiếu trả hàng thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Xóa phiếu trả hàng thất bại!')
     },
   })
 }

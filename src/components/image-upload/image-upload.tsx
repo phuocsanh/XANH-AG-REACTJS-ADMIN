@@ -6,11 +6,12 @@ import { useUploadImageMutation } from "../../queries/upload"
 import { UPLOAD_TYPES, UploadType } from "@/services/upload.service"
 
 interface ImageUploadProps {
-  value?: string[]
-  onChange?: (urls: string[]) => void
+  value?: any[] // string[] or object[]
+  onChange?: (files: any[]) => void
   maxCount?: number
   multiple?: boolean
   uploadType?: UploadType
+  returnFullObjects?: boolean
 }
 
 const { Dragger } = Upload
@@ -21,6 +22,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   maxCount = 5,
   multiple = true,
   uploadType = UPLOAD_TYPES.COMMON,
+  returnFullObjects = false,
 }) => {
   const [loading, setLoading] = useState(false)
   const [fileList, setFileList] = useState<UploadFile[]>([])
@@ -33,12 +35,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   // Convert URLs to UploadFile objects
   React.useEffect(() => {
     if (value && value.length > 0) {
-      const files = value.map((url, index) => ({
-        uid: `-${index}`,
-        name: `image-${index}.jpg`,
-        status: "done" as const,
-        url: url,
-      }))
+      const files = value.map((item, index) => {
+        // Handle both string URLs and objects
+        const url = typeof item === 'string' ? item : item?.url || '';
+        return {
+          uid: typeof item === 'object' && item?.id ? String(item.id) : `-${index}`,
+          name: typeof item === 'object' && item?.name ? item.name : `image-${index}.jpg`,
+          status: "done" as const,
+          url: url,
+          response: typeof item === 'object' ? item : undefined, // Keep original object in response
+        };
+      });
       setFileList(files)
     } else {
       setFileList([])
@@ -102,11 +109,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             setFileList(updatedList)
 
             // Extract URLs và gọi onChange
-            const urls = updatedList
+            const result = updatedList
               .filter((item) => item.status === "done" && item.url)
-              .map((item) => item.url as string)
+              .map((item) => {
+                if (returnFullObjects) {
+                    return {
+                        id: response.id,
+                        url: response.url,
+                        name: item.name,
+                    };
+                }
+                return item.url;
+              });
 
-            onChange?.(urls)
+            onChange?.(result as any[])
             message.success('Đã paste ảnh thành công!')
           } catch (error) {
             console.error('Upload error:', error)
@@ -166,6 +182,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               ...item,
               // Use correct property name from server response
               url: response.url,
+              response: response, // Store full response
               thumbUrl: response.url,
               status: "done" as const,
             }
@@ -176,11 +193,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         setFileList(updatedList)
 
         // Extract URLs and call onChange
-        const urls = updatedList
+        const result = updatedList
           .filter((item) => item.status === "done" && item.url)
-          .map((item) => item.url as string)
+          .map((item) => {
+             if (returnFullObjects) {
+                 return {
+                     id: item.response?.id || item.uid, // Use response ID if available
+                     url: item.url,
+                     name: item.name,
+                     type: item.response?.type || 'image',
+                 };
+             }
+             return item.url;
+          });
 
-        onChange?.(urls)
+        onChange?.(result as any[])
       } catch (error) {
         console.error("Upload error:", error)
         message.error("Tải ảnh lên thất bại")
@@ -191,11 +218,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         setFileList(updatedList)
 
         // Extract URLs and call onChange even when there's an error
-        const urls = updatedList
+        const result = updatedList
           .filter((item) => item.status === "done" && item.url)
-          .map((item) => item.url as string)
+          .map((item) => {
+             if (returnFullObjects) {
+                 return item.response || { url: item.url };
+             }
+             return item.url;
+          });
 
-        onChange?.(urls)
+        onChange?.(result as any[])
       } finally {
         setLoading(false)
       }
@@ -218,16 +250,38 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   }
 
+  // Update response property when using paste
+  const handlePasteUpdate = (updatedList: UploadFile[]) => {
+      const result = updatedList
+        .filter((item) => item.status === "done" && item.url)
+        .map((item) => {
+           if (returnFullObjects) {
+               return {
+                   id: item.response?.id || item.uid,
+                   url: item.url,
+                   name: item.name,
+               };
+           }
+           return item.url;
+        });
+      onChange?.(result as any[]);
+  };
+
   const handleRemove = (file: UploadFile) => {
     const newFileList = fileList.filter((item) => item.uid !== file.uid)
     setFileList(newFileList)
 
     // Extract URLs of remaining files and call onChange
-    const urls = newFileList
+    const result = newFileList
       .filter((item) => item.status === "done" && item.url)
-      .map((item) => item.url) as string[]
+      .map((item) => {
+         if (returnFullObjects) {
+             return item.response || { url: item.url };
+         }
+         return item.url;
+      });
 
-    onChange?.(urls)
+    onChange?.(result as any[])
     return true // Allow the default remove behavior
   }
 
