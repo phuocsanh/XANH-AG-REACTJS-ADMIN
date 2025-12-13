@@ -3,13 +3,10 @@ import {
   Box,
   Button,
   Typography,
-  TextField,
   Grid,
   Card,
   CardContent,
-  Autocomplete,
   Alert,
-  FormHelperText,
   IconButton,
   Table,
   TableBody,
@@ -19,7 +16,7 @@ import {
   TableRow,
   Paper,
 } from '@mui/material';
-import { FormField } from '@/components/form';
+import { FormField, FormComboBox } from '@/components/form';
 import NumberInput from '@/components/common/number-input';
 import {
   ArrowBack as ArrowBackIcon,
@@ -135,22 +132,22 @@ const CreateSalesReturn = () => {
                   Thông tin hóa đơn
                 </Typography>
 
-                <Autocomplete
-                  options={invoiceList}
-                  getOptionLabel={(option) => `${option.code} - ${option.customer_name}`}
-                  value={selectedInvoice}
-                  onChange={(_, newValue) => handleInvoiceSelect(newValue)}
-                  onInputChange={(_, newInputValue) => setInvoiceSearch(newInputValue)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Tìm hóa đơn"
-                      placeholder="Nhập mã hóa đơn hoặc tên khách hàng..."
-                      error={!!errors.invoice_id}
-                      helperText={errors.invoice_id?.message}
-                    />
-                  )}
-                  sx={{ mb: 2 }}
+                <FormComboBox
+                  name="invoice_id"
+                  control={control}
+                  label="Tìm hóa đơn"
+                  placeholder="Nhập mã hóa đơn hoặc tên khách hàng..."
+                  data={invoiceList.map((invoice: SalesInvoice) => ({
+                    value: invoice.id,
+                    label: `${invoice.code} - ${invoice.customer_name}`
+                  }))}
+                  onSearch={setInvoiceSearch}
+                  onSelectionChange={(value) => {
+                    const invoice = invoiceList.find((inv: SalesInvoice) => inv.id === value);
+                    handleInvoiceSelect(invoice || null);
+                  }}
+                  allowClear
+                  showSearch
                 />
 
                 {selectedInvoice && (
@@ -324,11 +321,12 @@ const CreateSalesReturn = () => {
                                   name={`items.${index}.reason`}
                                   control={control}
                                   render={({ field }) => (
-                                    <TextField
-                                      {...field}
-                                      size="small"
+                                    <FormField
+                                      name={`items.${index}.reason`}
+                                      control={control}
+                                      label=""
                                       placeholder="Lý do..."
-                                      fullWidth
+                                      size="small"
                                     />
                                   )}
                                 />

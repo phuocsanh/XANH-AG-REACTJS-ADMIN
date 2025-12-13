@@ -7,18 +7,18 @@ import { FaRegUser } from "react-icons/fa6"
 import { Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import FormField from "@/components/form/form-field"
 import {
   forgotPasswordSchema,
   ForgotPasswordFormData,
   defaultForgotPasswordValues,
 } from "./form-config"
-import { TextField } from "@mui/material"
 
 export const ForgotPassword = () => {
   const context = useContext(MyContext)
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({
@@ -75,14 +75,12 @@ export const ForgotPassword = () => {
           <form className='form mt-5' onSubmit={handleSubmit(onSubmit)}>
             <div className='col_ lg'>
               <h4>Full Name</h4>
-              <TextField
-                fullWidth
-                label='Tài khoản (Email hoặc Username)'
-                variant='outlined'
-                {...register("user_account")}
-                error={!!errors.user_account?.message}
-                helperText={errors.user_account?.message}
-                className='mb-3'
+              <FormField
+                name="user_account"
+                control={control}
+                label="Tài khoản (Email hoặc Username)"
+                placeholder="Nhập email hoặc username"
+                required
               />
             </div>
 

@@ -38,6 +38,9 @@ const DosageCalculator: React.FC = () => {
                     <TabPane tab="Theo Tỷ Lệ / Ngâm Giống" key="2">
                         <RatioCalculator />
                     </TabPane>
+                    <TabPane tab="Theo Lượng Nước / Ha" key="3">
+                        <WaterBasedCalculator />
+                    </TabPane>
                 </Tabs>
             </Card>
         </div>
@@ -70,7 +73,7 @@ const AreaCalculator: React.FC = () => {
   } | null>(null)
 
   // Handle calculation whenever values change
-  const handleValuesChange = (changedValues: any, allValues: any) => {
+  const handleValuesChange = (changedValues: Partial<typeof values>, allValues: typeof values) => {
     // We need to determine which field triggered the change to sync the others
     // Since 'changedValues' only contains the changed field.
     
@@ -138,7 +141,7 @@ const AreaCalculator: React.FC = () => {
     const totalHa = totalM2 / 10000
 
     // 2. Calculate raw amount needed
-    let totalAmount = rate * totalHa
+    const totalAmount = rate * totalHa
     
     // 3. Determine display unit and format
     let resultUnit = ''
@@ -346,7 +349,7 @@ const RatioCalculator: React.FC = () => {
         display: string
     } | null>(null)
 
-    const handleValuesChange = (_: any, allValues: any) => {
+    const handleValuesChange = (_: Partial<typeof values>, allValues: typeof values) => {
         setValues({ ...values, ...allValues })
         calculate(allValues)
     }
@@ -483,6 +486,236 @@ const RatioCalculator: React.FC = () => {
                               </ul>
                           </div>
                       )}
+                   </div>
+                </Card>
+            </Col>
+        </Row>
+    )
+}
+
+// Component tính toán theo lượng nước / ha
+const WaterBasedCalculator: React.FC = () => {
+    const [form] = Form.useForm()
+    
+    // State cho các giá trị đầu vào
+    const [values, setValues] = useState({
+        chemAmount: 0,        // Lượng thuốc (ml)
+        waterAmount: 0,       // Lượng nước (lít)
+        waterPerHa: 0,        // Lượng nước cần cho 1 ha (lít)
+        
+        // Diện tích tùy chỉnh
+        customAreaAmount: 0,
+        customAreaUnit: 'cong_1296',
+    })
+
+    const [results, setResults] = useState<{
+        perHa: number          // ml thuốc cho 10.000 m²
+        customArea: number     // ml thuốc cho diện tích tùy chỉnh
+    } | null>(null)
+
+    const handleValuesChange = (_: Partial<typeof values>, allValues: typeof values) => {
+        setValues({ ...values, ...allValues })
+        calculate(allValues)
+    }
+
+    const calculate = (vals: typeof values) => {
+        const { chemAmount, waterAmount, waterPerHa, customAreaAmount, customAreaUnit } = vals
+        
+        if (!chemAmount || !waterAmount || !waterPerHa) {
+            setResults(null)
+            return
+        }
+
+        // Tính tỷ lệ pha: ml thuốc / lít nước
+        const ratioMlPerLiter = Number(chemAmount) / Number(waterAmount)
+        
+        // Tính lượng thuốc cho 10.000 m²
+        const mlPerHa = ratioMlPerLiter * Number(waterPerHa)
+        
+        // Tính lượng thuốc cho diện tích tùy chỉnh
+        let mlCustomArea = 0
+        if (customAreaAmount > 0) {
+            const unit = Object.values(AREA_UNITS).find(u => u.value === customAreaUnit)
+            if (unit) {
+                const areaM2 = Number(customAreaAmount) * unit.toM2
+                mlCustomArea = (mlPerHa * areaM2) / 10000
+            }
+        }
+
+        setResults({
+            perHa: mlPerHa,
+            customArea: mlCustomArea,
+        })
+    }
+
+    // Hàm format hiển thị số với đơn vị phù hợp
+    const formatAmount = (ml: number): string => {
+        if (ml >= 1000) {
+            return `${(ml / 1000).toFixed(2)} Lít`
+        }
+        return `${ml.toFixed(2)} ml`
+    }
+
+    return (
+        <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  initialValues={values}
+                  onValuesChange={handleValuesChange}
+                >
+                    <Title level={5} className="mb-4">1. Tỷ lệ pha thuốc</Title>
+                    <Text type="secondary" className="mb-2 block">
+                        Ví dụ: <b className="text-black">10ml</b> Litosen cho <b className="text-black">10 lít</b> nước.
+                    </Text>
+                    
+                    <Row gutter={10}>
+                        <Col span={12}>
+                             <Form.Item label="Lượng thuốc" name="chemAmount">
+                                 <NumberInput placeholder="VD: 10" size="large" addonAfter="ml" />
+                             </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                             <Form.Item label="Lượng nước" name="waterAmount">
+                                 <NumberInput placeholder="VD: 10" size="large" addonAfter="lít" />
+                             </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Divider />
+
+                    <Title level={5} className="mb-4">2. Lượng nước cần cho 10.000 m² (1 ha chuẩn)</Title>
+                    <Form.Item label="Lượng nước phun/tưới cho 10.000 m²" name="waterPerHa">
+                        <NumberInput placeholder="VD: 500" size="large" addonAfter="lít" />
+                    </Form.Item>
+
+                    <Divider />
+
+                    <Title level={5} className="mb-4">3. Diện tích tùy chỉnh (Tùy chọn)</Title>
+                    <Text type="secondary" className="mb-2 block text-xs">
+                        Nhập diện tích cụ thể để tính lượng thuốc cần thiết.
+                    </Text>
+                    
+                    <Row gutter={10}>
+                        <Col span={12}>
+                             <Form.Item label="Diện tích" name="customAreaAmount">
+                                 <NumberInput placeholder="VD: 5" size="large" />
+                             </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                             <Form.Item label="Đơn vị" name="customAreaUnit">
+                                 <Select size="large" onChange={(value) => {
+                                     // Khi thay đổi đơn vị, tự động cập nhật lượng nước nếu có diện tích
+                                     if (values.customAreaAmount > 0 && values.waterPerHa > 0) {
+                                         const unit = Object.values(AREA_UNITS).find(u => u.value === value)
+                                         if (unit) {
+                                             const areaM2 = values.customAreaAmount * unit.toM2
+                                             const areaHa = areaM2 / 10000
+                                             const waterForArea = values.waterPerHa * areaHa
+                                             // Hiển thị thông tin cho người dùng
+                                             console.log(`Diện tích ${values.customAreaAmount} ${unit.label} = ${areaM2}m² = ${areaHa.toFixed(4)} ha`)
+                                             console.log(`Lượng nước cần: ${waterForArea.toFixed(2)} lít`)
+                                         }
+                                     }
+                                 }}>
+                                     <Option value={AREA_UNITS.CONG_MT.value}>{AREA_UNITS.CONG_MT.label}</Option>
+                                     <Option value={AREA_UNITS.CONG_STD.value}>{AREA_UNITS.CONG_STD.label}</Option>
+                                     <Option value={AREA_UNITS.HA.value}>{AREA_UNITS.HA.label}</Option>
+                                     <Option value={AREA_UNITS.M2.value}>{AREA_UNITS.M2.label}</Option>
+                                 </Select>
+                             </Form.Item>
+                        </Col>
+                    </Row>
+                    
+                    {values.customAreaAmount > 0 && (
+                        <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                            <Text className="block text-sm mb-2">
+                                <strong>Thông tin diện tích:</strong>
+                            </Text>
+                            <Text className="block text-xs text-gray-600">
+                                {values.customAreaAmount} {Object.values(AREA_UNITS).find(u => u.value === values.customAreaUnit)?.label} 
+                                {' = '}
+                                {((values.customAreaAmount * (Object.values(AREA_UNITS).find(u => u.value === values.customAreaUnit)?.toM2 || 0)) / 10000).toFixed(4)} ha
+                                {' = '}
+                                {(values.customAreaAmount * (Object.values(AREA_UNITS).find(u => u.value === values.customAreaUnit)?.toM2 || 0)).toLocaleString('vi-VN')} m²
+                            </Text>
+                            {values.waterPerHa > 0 && (
+                                <Text className="block text-xs text-blue-600 mt-1">
+                                    → Lượng nước cần: <strong>
+                                        {(values.waterPerHa * (values.customAreaAmount * (Object.values(AREA_UNITS).find(u => u.value === values.customAreaUnit)?.toM2 || 0)) / 10000).toFixed(2)} lít
+                                    </strong>
+                                </Text>
+                            )}
+                        </div>
+                    )}
+                </Form>
+            </Col>
+
+            <Col xs={24} md={12}>
+                <Card 
+                  className="shadow-md h-full bg-blue-50" 
+                  bordered={false}
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+                >
+                   <div className="text-center">
+                      <Title level={4} type="secondary">KẾT QUẢ TÍNH TOÁN</Title>
+                      
+                      <div className="my-6">
+                         {results ? (
+                             <>
+                                 <div className="bg-white p-4 rounded-lg border border-blue-100 mb-4">
+                                     <Row gutter={[16, 16]}>
+                                         <Col span={24}>
+                                             <Statistic 
+                                                 title={<span className="text-base">Lượng thuốc cho 10.000 m²</span>}
+                                                 value={results.perHa} 
+                                                 precision={2}
+                                                 suffix={<span className="text-lg font-bold ml-1">ml</span>}
+                                                 valueStyle={{ color: '#1890ff', fontSize: '2rem', fontWeight: 'bold' }}
+                                             />
+                                         </Col>
+                                         {values.customAreaAmount > 0 && (
+                                             <Col span={24}>
+                                                 <Divider className="my-2" />
+                                                 <Statistic 
+                                                     title={
+                                                         <span className="text-sm">
+                                                             {values.customAreaAmount} {Object.values(AREA_UNITS).find(u => u.value === values.customAreaUnit)?.label}
+                                                         </span>
+                                                     }
+                                                     value={results.customArea} 
+                                                     precision={2}
+                                                     suffix="ml"
+                                                     valueStyle={{ color: '#fa8c16', fontSize: '1.5rem' }}
+                                                 />
+                                             </Col>
+                                         )}
+                                     </Row>
+                                 </div>
+
+                                 <div className="bg-white p-4 rounded-lg border border-blue-100 text-left">
+                                     <Text strong>Công thức giải thích:</Text>
+                                     <ul className="list-disc pl-5 mt-2 text-gray-600">
+                                         <li>
+                                             Tỷ lệ pha: {values.chemAmount}ml / {values.waterAmount}lít = {(values.chemAmount / values.waterAmount).toFixed(2)} ml/lít
+                                         </li>
+                                         <li>
+                                             Lượng nước cho 10.000 m²: {values.waterPerHa} lít
+                                         </li>
+                                         <li>
+                                             Lượng thuốc cho 10.000 m²: {(values.chemAmount / values.waterAmount).toFixed(2)} × {values.waterPerHa} = <b>{formatAmount(results.perHa)}</b>
+                                         </li>
+                                     </ul>
+                                 </div>
+                             </>
+                         ) : (
+                             <div className="text-gray-400 py-10">
+                                 <ExperimentOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+                                 <p>Nhập thông tin bên trái để xem kết quả</p>
+                             </div>
+                         )}
+                      </div>
                    </div>
                 </Card>
             </Col>

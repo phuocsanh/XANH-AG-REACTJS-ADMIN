@@ -1,18 +1,15 @@
-import { useState } from "react"
 import {
   Box,
   Button,
-  TextField,
   Typography,
   Paper,
-  IconButton,
-  InputAdornment,
   CircularProgress,
 } from "@mui/material"
-import { Visibility, VisibilityOff, Lock } from "@mui/icons-material"
+import { Lock } from "@mui/icons-material"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useChangePasswordMutation } from "@/queries/auth"
+import FormField from "@/components/form/form-field"
 import {
   changePasswordFormSchema,
   ChangePasswordFormData,
@@ -24,15 +21,11 @@ import {
  * Cho phép người dùng đã đăng nhập thay đổi mật khẩu của mình
  */
 export const ChangePassword = () => {
-  const [showOldPassword, setShowOldPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
   const changePasswordMutation = useChangePasswordMutation()
 
   // Form handling với react-hook-form và zod validation
   const {
-    register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -96,74 +89,33 @@ export const ChangePassword = () => {
         {/* Form */}
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           {/* Mật khẩu hiện tại */}
-          <TextField
-            fullWidth
-            type={showOldPassword ? "text" : "password"}
-            label="Mật khẩu hiện tại *"
-            {...register("old_password")}
-            error={!!errors.old_password}
-            helperText={errors.old_password?.message}
-            margin="normal"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowOldPassword(!showOldPassword)}
-                    edge="end"
-                  >
-                    {showOldPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+          <FormField
+            name="old_password"
+            control={control}
+            label="Mật khẩu hiện tại"
+            type="password"
+            placeholder="Nhập mật khẩu hiện tại"
+            required
           />
 
           {/* Mật khẩu mới */}
-          <TextField
-            fullWidth
-            type={showNewPassword ? "text" : "password"}
-            label="Mật khẩu mới *"
-            {...register("new_password")}
-            error={!!errors.new_password}
-            helperText={errors.new_password?.message}
-            margin="normal"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    edge="end"
-                  >
-                    {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+          <FormField
+            name="new_password"
+            control={control}
+            label="Mật khẩu mới"
+            type="password"
+            placeholder="Nhập mật khẩu mới"
+            required
           />
 
           {/* Xác nhận mật khẩu mới */}
-          <TextField
-            fullWidth
-            type={showConfirmPassword ? "text" : "password"}
-            label="Xác nhận mật khẩu mới *"
-            {...register("confirm_password")}
-            error={!!errors.confirm_password}
-            helperText={errors.confirm_password?.message}
-            margin="normal"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
-                    edge="end"
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
+          <FormField
+            name="confirm_password"
+            control={control}
+            label="Xác nhận mật khẩu mới"
+            type="password"
+            placeholder="Nhập lại mật khẩu mới"
+            required
           />
 
           {/* Buttons */}

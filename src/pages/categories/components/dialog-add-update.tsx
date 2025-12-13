@@ -1,9 +1,10 @@
-import { Button, TextField, Switch, FormControlLabel } from "@mui/material"
+import { Button, Switch, FormControlLabel } from "@mui/material"
 import { useEffect } from "react"
 import { IoCloseCircleSharp } from "react-icons/io5"
 import DialogCustom from "@/components/dialog"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import FormField from "@/components/form/form-field"
 import {
   useCreateProductTypeMutation,
   useUpdateProductTypeMutation,
@@ -27,6 +28,7 @@ function DialogAddUpdate({
   setOpenDialog: (is: boolean) => void
 }) {
   const {
+    control,
     handleSubmit,
     setValue,
     watch,
@@ -41,10 +43,7 @@ function DialogAddUpdate({
   const createProductTypeMutation = useCreateProductTypeMutation()
   const updateProductTypeMutation = useUpdateProductTypeMutation()
 
-  // Theo dõi các giá trị form
-  const typeName = watch("name")
-  const typeCode = watch("code")
-  const description = watch("description")
+  // Theo dõi status cho Switch
   const status = watch("status")
 
   // Load dữ liệu khi edit
@@ -117,72 +116,36 @@ function DialogAddUpdate({
         <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col'>
           {/* Tên loại sản phẩm */}
           <div className='mt-3'>
-            <h4 className='font-semibold mb-2'>Tên loại sản phẩm *</h4>
-            <TextField
-              variant='outlined'
-              fullWidth
-              value={typeName || ""}
-              sx={{
-                "& .MuiInputBase-input": {
-                  fontSize: 15,
-                  height: 25,
-                  paddingX: 2,
-                  paddingY: 1,
-                },
-              }}
-              error={!!errors.name?.message}
-              onChange={(e) => setValue("name", e.target.value)}
+            <FormField
+              name="name"
+              control={control}
+              label="Tên loại sản phẩm"
+              placeholder="Nhập tên loại sản phẩm"
+              required
             />
-            {errors.name && (
-              <p className='mt-1 text-red-600'>{errors.name.message}</p>
-            )}
           </div>
 
           {/* Mã loại sản phẩm */}
           <div className='mt-3'>
-            <h4 className='font-semibold mb-2'>Mã loại sản phẩm *</h4>
-            <TextField
-              variant='outlined'
-              fullWidth
-              value={typeCode || ""}
-              sx={{
-                "& .MuiInputBase-input": {
-                  fontSize: 15,
-                  height: 25,
-                  paddingX: 2,
-                  paddingY: 1,
-                },
-              }}
-              error={!!errors.code?.message}
-              onChange={(e) => setValue("code", e.target.value.toUpperCase())}
+            <FormField
+              name="code"
+              control={control}
+              label="Mã loại sản phẩm"
+              placeholder="Nhập mã loại sản phẩm"
+              required
             />
-            {errors.code && (
-              <p className='mt-1 text-red-600'>{errors.code.message}</p>
-            )}
           </div>
 
           {/* Mô tả */}
           <div className='mt-3'>
-            <h4 className='font-semibold mb-2'>Mô tả</h4>
-            <TextField
-              variant='outlined'
-              fullWidth
-              multiline
+            <FormField
+              name="description"
+              control={control}
+              label="Mô tả"
+              placeholder="Nhập mô tả"
+              type="textarea"
               rows={3}
-              value={description || ""}
-              sx={{
-                "& .MuiInputBase-input": {
-                  fontSize: 15,
-                  paddingX: 2,
-                  paddingY: 1,
-                },
-              }}
-              error={!!errors.description?.message}
-              onChange={(e) => setValue("description", e.target.value)}
             />
-            {errors.description && (
-              <p className='mt-1 text-red-600'>{errors.description.message}</p>
-            )}
           </div>
 
           {/* Trạng thái hoạt động */}

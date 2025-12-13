@@ -6,18 +6,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField,
   Typography,
   CircularProgress,
   Chip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from "@mui/material"
 import { Add } from "@mui/icons-material"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { FormField, FormComboBox } from "@/components/form"
 import {
   useSuppliersQuery,
   useCreateSupplierMutation,
@@ -84,7 +80,7 @@ export const Suppliers = () => {
 
   // Form handling
   const {
-    register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -517,90 +513,76 @@ export const Suppliers = () => {
             onSubmit={handleSubmit(onSubmit)}
             sx={{ mt: 2 }}
           >
-            <TextField
-              fullWidth
-              label='Tên nhà cung cấp *'
-              {...register("name")}
-              error={!!errors.name}
-              helperText={errors.name?.message as string}
-              margin='normal'
+            <FormField
+              name="name"
+              control={control}
+              label="Tên nhà cung cấp"
+              placeholder="Nhập tên nhà cung cấp"
+              required
             />
 
-            <TextField
-              fullWidth
-              label='Mã nhà cung cấp *'
-              {...register("code")}
-              error={!!errors.code}
-              helperText={errors.code?.message as string}
-              margin='normal'
+            <FormField
+              name="code"
+              control={control}
+              label="Mã nhà cung cấp"
+              placeholder="Nhập mã nhà cung cấp"
+              required
             />
 
-            <TextField
-              fullWidth
-              label='Địa chỉ'
-              {...register("address")}
-              error={!!errors.address}
-              helperText={errors.address?.message as string}
-              margin='normal'
+            <FormField
+              name="address"
+              control={control}
+              label="Địa chỉ"
+              placeholder="Nhập địa chỉ"
             />
 
-            <TextField
-              fullWidth
-              label='Số điện thoại'
-              {...register("phone")}
-              error={!!errors.phone}
-              helperText={errors.phone?.message as string}
-              margin='normal'
+            <FormField
+              name="phone"
+              control={control}
+              label="Số điện thoại"
+              placeholder="Nhập số điện thoại"
             />
 
-            <TextField
-              fullWidth
-              label='Email'
-              type='email'
-              {...register("email")}
-              error={!!errors.email}
-              helperText={errors.email?.message as string}
-              margin='normal'
+            <FormField
+              name="email"
+              control={control}
+              label="Email"
+              type="email"
+              placeholder="Nhập email"
             />
 
-            <TextField
-              fullWidth
-              label='Người liên hệ'
-              {...register("contact_person")}
-              error={!!errors.contact_person}
-              helperText={errors.contact_person?.message as string}
-              margin='normal'
+            <FormField
+              name="contact_person"
+              control={control}
+              label="Người liên hệ"
+              placeholder="Nhập tên người liên hệ"
             />
 
-            <FormControl fullWidth margin='normal'>
-              <InputLabel>Trạng thái</InputLabel>
-              <Select
-                label='Trạng thái'
-                {...register("status")}
-                error={!!errors.status}
-                defaultValue='active'
-              >
-                <MenuItem value='active'>Hoạt động</MenuItem>
-                <MenuItem value='inactive'>Không hoạt động</MenuItem>
-                <MenuItem value='archived'>Đã lưu trữ</MenuItem>
-              </Select>
-            </FormControl>
+            <FormComboBox
+              name="status"
+              control={control}
+              label="Trạng thái"
+              options={[
+                { value: 'active', label: 'Hoạt động' },
+                { value: 'inactive', label: 'Không hoạt động' },
+                { value: 'archived', label: 'Đã lưu trữ' },
+              ]}
+              allowClear={false}
+            />
 
-            <TextField
-              fullWidth
-              label='Ghi chú'
-              multiline
+            <FormField
+              name="notes"
+              control={control}
+              label="Ghi chú"
+              type="textarea"
               rows={3}
-              {...register("notes")}
-              error={!!errors.notes}
-              helperText={errors.notes?.message as string}
-              margin='normal'
+              placeholder="Nhập ghi chú"
             />
 
             <DialogActions sx={{ mt: 3 }}>
               <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
               <Button type='submit' variant='contained' color='primary'>
-                {isEditing ? "Cập nhật" : "Thêm"}
+                {isEditing ? "Đã cập nhật" : "Thêm"}
               </Button>
             </DialogActions>
           </Box>
