@@ -10,6 +10,7 @@ import {
   mapApiResponseToAdjustment,
 } from '@/models/inventory-adjustment.model'
 import { invalidateResourceQueries } from '@/utils/query-helpers'
+import { handleApiError } from '@/utils/error-handler'
 
 // Lấy danh sách phiếu điều chỉnh
 export const useAdjustmentsQuery = () => {
@@ -58,8 +59,8 @@ export const useCreateAdjustmentMutation = () => {
       invalidateResourceQueries('adjustments')
       message.success('Tạo phiếu điều chỉnh thành công!')
     },
-    onError: () => {
-      message.error('Tạo phiếu điều chỉnh thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Tạo phiếu điều chỉnh thất bại!')
     },
   })
 }
@@ -77,8 +78,8 @@ export const useApproveAdjustmentMutation = () => {
       invalidateResourceQueries('adjustments')
       message.success('Duyệt phiếu điều chỉnh thành công!')
     },
-    onError: () => {
-      message.error('Duyệt phiếu điều chỉnh thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Duyệt phiếu điều chỉnh thất bại!')
     },
   })
 }
@@ -98,8 +99,8 @@ export const useCompleteAdjustmentMutation = () => {
       invalidateResourceQueries('products')
       message.success('Hoàn thành phiếu điều chỉnh! Tồn kho đã được cập nhật.')
     },
-    onError: () => {
-      message.error('Hoàn thành phiếu điều chỉnh thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Hoàn thành phiếu điều chỉnh thất bại!')
     },
   })
 }
@@ -117,8 +118,8 @@ export const useCancelAdjustmentMutation = () => {
       invalidateResourceQueries('adjustments')
       message.success('Hủy phiếu điều chỉnh thành công!')
     },
-    onError: () => {
-      message.error('Hủy phiếu điều chỉnh thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Hủy phiếu điều chỉnh thất bại!')
     },
   })
 }
@@ -135,8 +136,8 @@ export const useDeleteAdjustmentMutation = () => {
       invalidateResourceQueries('adjustments')
       message.success('Xóa phiếu điều chỉnh thành công!')
     },
-    onError: () => {
-      message.error('Xóa phiếu điều chỉnh thất bại!')
+    onError: (error) => {
+      handleApiError(error, 'Xóa phiếu điều chỉnh thất bại!')
     },
   })
 }

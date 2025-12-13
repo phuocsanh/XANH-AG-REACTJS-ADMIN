@@ -267,14 +267,13 @@ export const useApproveInventoryReceiptMutation = () => {
       }
     },
     onSuccess: (data, variables) => {
-      // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       toast.success("Duyệt phiếu nhập hàng thành công!")
       return data
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi duyệt phiếu nhập hàng: ${error.message}`)
+      handleApiError(error, "Lỗi khi duyệt phiếu nhập hàng")
     },
   })
 }
@@ -295,15 +294,13 @@ export const useCompleteInventoryReceiptMutation = () => {
     },
     onSuccess: (data, variables) => {
       // Cập nhật cache
-      queryClient.setQueryData(inventoryKeys.receipt(variables), data)
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
       toast.success("Hoàn thành phiếu nhập hàng thành công!")
       return data
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi hoàn thành phiếu nhập hàng: ${error.message}`)
+      handleApiError(error, "Lỗi khi hoàn thành phiếu nhập hàng")
     },
   })
 }
@@ -330,7 +327,7 @@ export const useCancelInventoryReceiptMutation = () => {
       return data
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi hủy phiếu nhập hàng: ${error.message}`)
+      handleApiError(error, "Lỗi khi hủy phiếu nhập hàng")
     },
   })
 }
@@ -860,7 +857,7 @@ export const useUploadFileMutation = () => {
       return response
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi upload file: ${error.message}`)
+      handleApiError(error, `Lỗi khi upload file`)
     },
   })
 }
@@ -892,7 +889,7 @@ export const useAttachImageToReceiptMutation = () => {
       toast.success('Gắn ảnh vào phiếu thành công!')
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi gắn ảnh: ${error.message}`)
+      handleApiError(error, "Lỗi khi gắn ảnh")
     },
   })
 }
@@ -942,7 +939,7 @@ export const useDeleteReceiptImageMutation = () => {
       toast.success('Xóa ảnh thành công!')
     },
     onError: (error: Error) => {
-      toast.error(`Lỗi khi xóa ảnh: ${error.message}`)
+      handleApiError(error, "Lỗi khi xóa ảnh")
     },
   })
 }

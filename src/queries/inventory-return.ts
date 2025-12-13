@@ -17,13 +17,13 @@ export const useReturnsQuery = () => {
   return useQuery({
     queryKey: ['returns'],
     queryFn: async () => {
-      // Đổi từ GET /inventory/returns sang POST /sales-returns/search
+      // Gọi đúng API tìm kiếm phiếu trả hàng nhập
       const response = await apiClient.postRaw<{
         data: ReturnApiResponse[]
         total: number
         page: number
         limit: number
-      }>('/sales-returns/search', {
+      }>('/inventory/returns/search', {
         limit: 1000, // Lấy tất cả
         offset: 0
       })

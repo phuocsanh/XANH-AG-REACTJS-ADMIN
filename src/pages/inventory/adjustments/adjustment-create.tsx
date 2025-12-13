@@ -1,307 +1,397 @@
-// Form tạo phiếu điều chỉnh kho - Simplified
-
-import React, { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from 'react';
 import {
-  Card,
-  Form,
-  Input,
-  Select,
+  Box,
   Button,
-  Space,
   Typography,
-  Row,
-  Col,
+  Grid,
+  Card,
+  CardContent,
+  Alert,
+  IconButton,
   Table,
-  InputNumber,
-  message as antdMessage,
-  Upload,
-  UploadFile,
-  UploadProps,
-} from "antd"
-import { PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined, UploadOutlined } from "@ant-design/icons"
-import NumberInput from "@/components/common/number-input"
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from '@mui/material';
+import { FormField, FormFieldNumber, FormImageUpload, FormComboBox } from '@/components/form';
+import NumberInput from '@/components/common/number-input';
+import ComboBox from '@/components/common/combo-box';
+import {
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { message } from 'antd';
+import { useCreateAdjustmentMutation, useAttachImageToAdjustmentMutation } from '@/queries/inventory-adjustment';
+import { useProductsQuery } from '@/queries/product';
+import { useAppStore } from '@/stores';
+import {
+  adjustmentFormSchema,
+  AdjustmentFormData,
+  defaultAdjustmentValues,
+} from './form-config';
+import { handleApiError } from '@/utils/error-handler';
 
-import { CreateAdjustmentRequest, AdjustmentItem } from "@/models/inventory-adjustment.model"
-import { useCreateAdjustmentMutation, useAttachImageToAdjustmentMutation } from "@/queries/inventory-adjustment"
-import { useUploadFileMutation } from "@/queries/inventory"
-import { useProductsQuery } from "@/queries/product"
-import { useAppStore } from "@/stores"
+const AdjustmentCreate = () => {
+  const navigate = useNavigate();
+  const userInfo = useAppStore((state) => state.userInfo);
+  const [productSearch, setProductSearch] = useState('');
+  const [tempProductSelect, setTempProductSelect] = useState<number | null>(null);
 
-const { Title } = Typography
-const { TextArea } = Input
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<AdjustmentFormData>({
+    resolver: zodResolver(adjustmentFormSchema),
+    defaultValues: defaultAdjustmentValues,
+  });
 
-const AdjustmentCreate: React.FC = () => {
-  const navigate = useNavigate()
-  const [form] = Form.useForm()
-  const userInfo = useAppStore((state) => state.userInfo)
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'items',
+  });
 
-  const [items, setItems] = useState<AdjustmentItem[]>([])
-  const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
-  const [quantityChange, setQuantityChange] = useState<number>(0)
-  
-  // State cho upload ảnh
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+  // Auto-generate code on mount
+  useEffect(() => {
+     const now = new Date();
+     const datePart = now.toISOString().split('T')[0].replace(/-/g, '');
+     const randomPart = Math.floor(1000 + Math.random() * 9000);
+     const code = `ADJ-${datePart}-${randomPart}`;
+     setValue('adjustment_code', code);
+  }, [setValue]);
 
-  const { data: productsData } = useProductsQuery({ limit: 1000 })
-  const createAdjustmentMutation = useCreateAdjustmentMutation()
-  const uploadFileMutation = useUploadFileMutation()
-  const attachImageMutation = useAttachImageToAdjustmentMutation()
+  // Queries
+  const { data: productsData } = useProductsQuery({ limit: 1000 }); // TODO: Implement server-side search if list is too long
+  const createMutation = useCreateAdjustmentMutation();
+  const attachImageMutation = useAttachImageToAdjustmentMutation();
 
-  const handleAddItem = () => {
-    if (!selectedProduct) {
-      antdMessage.error("Vui lòng chọn sản phẩm!")
-      return
+  const productList = productsData?.data?.items || [];
+
+  // Thêm sản phẩm vào danh sách
+  const handleAddProduct = (productId: number) => {
+    const product = productList.find((p) => p.id === productId);
+    if (!product) return;
+
+    // Check if duplicate
+    const exists = fields.some((field) => field.product_id === productId);
+    if (exists) {
+      message.warning('Sản phẩm đã có trong danh sách!');
+      return;
     }
-    if (quantityChange === 0) {
-      antdMessage.error("Số lượng thay đổi không được bằng 0!")
-      return
-    }
 
-    const newItem: AdjustmentItem = {
-      product_id: selectedProduct,
-      quantity_change: quantityChange,
-    }
+    append({
+      product_id: product.id,
+      product_name: product.name,
+      quantity_change: 0,
+      reason: '',
+      notes: '',
+    });
+  };
 
-    setItems([...items, newItem])
-    setSelectedProduct(null)
-    setQuantityChange(0)
-  }
-
-  // Xử lý thay đổi file upload
-  const handleFileChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
-    setFileList(newFileList)
-  }
-
-  const handleSubmit = async (values: any) => {
-    if (items.length === 0) {
-      antdMessage.error("Vui lòng thêm ít nhất 1 sản phẩm!")
-      return
-    }
-
+  // Submit form
+  const onSubmit = async (data: AdjustmentFormData) => {
     if (!userInfo?.id) {
-      antdMessage.error("Không tìm thấy thông tin người dùng!")
-      return
-    }
-
-    const adjustmentData: CreateAdjustmentRequest = {
-      adjustment_code: values.adjustment_code,
-      adjustment_type: values.adjustment_type,
-      reason: values.reason,
-      notes: values.notes,
-      created_by: userInfo.id,
-      items,
+      message.error('Không tìm thấy thông tin người dùng!');
+      return;
     }
 
     try {
+       // Sanitize items
+      const processedItems = data.items.map((item) => ({
+          product_id: item.product_id,
+          quantity_change: item.quantity_change,
+          reason: item.reason,
+          notes: item.notes,
+      }));
+
+      const adjustmentData = {
+        adjustment_code: data.adjustment_code,
+        adjustment_type: data.adjustment_type,
+        reason: data.reason,
+        notes: data.notes,
+        created_by: userInfo.id,
+        items: processedItems,
+      };
+
       // 1. Tạo phiếu điều chỉnh
-      const newAdjustment = await createAdjustmentMutation.mutateAsync(adjustmentData)
-      
-      // 2. Upload và gắn ảnh (nếu có)
-      if (fileList.length > 0 && newAdjustment?.id) {
-        const uploadPromises = fileList.map(async (file) => {
-          if (file.originFileObj) {
+      const newAdjustment = await createMutation.mutateAsync(adjustmentData as any);
+
+      // 2. Gắn ảnh (nếu có)
+      if (data.images && data.images.length > 0 && newAdjustment?.id) {
+        const imagePromises = data.images.map(async (img: any) => {
+          if (img.id) {
             try {
-              // Upload file lên server
-              const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
-              
-              // Gắn file vào phiếu
-              if (uploadResult?.data?.id) {
-                await attachImageMutation.mutateAsync({
-                  adjustmentId: newAdjustment.id,
-                  fileId: uploadResult.data.id,
-                  fieldName: 'adjustment_images',
-                })
-              }
+              await attachImageMutation.mutateAsync({
+                adjustmentId: newAdjustment.id,
+                fileId: img.id,
+                fieldName: 'adjustment_images',
+              });
             } catch (error) {
-              console.error("Error uploading image:", error)
-              antdMessage.error(`Lỗi upload ảnh: ${file.name}`)
+              console.error("Error attaching image:", error);
             }
           }
-        })
+        });
         
-        await Promise.all(uploadPromises)
+        await Promise.all(imagePromises);
       }
 
-      antdMessage.success("Tạo phiếu điều chỉnh thành công!")
-      navigate("/inventory/adjustments")
+      navigate('/inventory/adjustments');
     } catch (error) {
-      console.error("Error creating adjustment:", error)
+      console.error('Error creating adjustment:', error);
+       // Error handled by mutation onError with handleApiError or message.error
     }
-  }
+  };
 
   return (
-    <div style={{ padding: "24px" }}>
-      <Card>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/inventory/adjustments")}
-          style={{ marginBottom: "16px" }}
-        >
-          Quay lại
-        </Button>
-        <Title level={2}>Tạo phiếu điều chỉnh kho</Title>
+    <Box>
+      <Box display="flex" alignItems="center" mb={3}>
+        <IconButton onClick={() => navigate('/inventory/adjustments')} sx={{ mr: 2 }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4" fontWeight="bold">
+          Tạo phiếu điều chỉnh kho
+        </Typography>
+      </Box>
 
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="adjustment_code"
-                label="Mã phiếu"
-                rules={[
-                  { required: true, message: "Vui lòng nhập mã phiếu!" },
-                  { pattern: /^ADJ-/, message: "Mã phiếu phải bắt đầu bằng ADJ-" },
-                ]}
-              >
-                <Input placeholder="ADJ-2024-001" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="adjustment_type"
-                label="Loại điều chỉnh"
-                rules={[{ required: true, message: "Vui lòng chọn loại điều chỉnh!" }]}
-              >
-                <Select placeholder="Chọn loại điều chỉnh">
-                  <Select.Option value="IN">Tăng kho</Select.Option>
-                  <Select.Option value="OUT">Giảm kho</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Grid container spacing={3}>
+          {/* Thông tin chung */}
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" mb={2}>
+                  Thông tin phiếu
+                </Typography>
 
-          <Form.Item
-            name="reason"
-            label="Lý do điều chỉnh"
-            rules={[{ required: true, message: "Vui lòng nhập lý do điều chỉnh!" }]}
-          >
-            <TextArea rows={3} placeholder="Kiểm kê, hàng hỏng, mất mát..." />
-          </Form.Item>
-
-          <Form.Item name="notes" label="Ghi chú">
-            <TextArea rows={2} placeholder="Ghi chú thêm (nếu có)" />
-          </Form.Item>
-
-          {/* Upload ảnh */}
-          <Card title="Hình ảnh chứng từ / Hiện trạng" style={{ marginBottom: "16px" }}>
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={handleFileChange}
-              beforeUpload={() => false} // Prevent auto upload
-              accept="image/*"
-              multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
-              </div>
-            </Upload>
-          </Card>
-
-          <Card title="Thêm sản phẩm" style={{ marginBottom: "16px" }}>
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Sản phẩm">
-                  <Select
-                    placeholder="Chọn sản phẩm"
-                    value={selectedProduct}
-                    onChange={setSelectedProduct}
-                    showSearch
-                    optionFilterProp="children"
-                  >
-                    {productsData?.data?.items?.map((product) => (
-                      <Select.Option key={product.id} value={product.id}>
-                        {product.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={8}>
-                <Form.Item label="Số lượng thay đổi" help="Dương: tăng, Âm: giảm">
-                  <NumberInput
-                    value={quantityChange}
-                    onChange={(val) => setQuantityChange(val || 0)}
-                    style={{ width: "100%" }}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={4}>
-                <Form.Item label=" ">
-                  <Button
-                    type="dashed"
-                    icon={<PlusOutlined />}
-                    onClick={handleAddItem}
-                    block
-                  >
-                    Thêm
-                  </Button>
-                </Form.Item>
-              </Col>
-            </Row>
-          </Card>
-
-          <Card title="Danh sách sản phẩm" style={{ marginBottom: "16px" }}>
-            <Table
-              columns={[
-                { title: "STT", render: (_, __, index) => index + 1, width: 60 },
-                {
-                  title: "Sản phẩm",
-                  dataIndex: "product_id",
-                  render: (id: number) => {
-                    const product = productsData?.data?.items?.find((p) => p.id === id)
-                    return product?.name || `Sản phẩm #${id}`
-                  },
-                },
-                {
-                  title: "Số lượng thay đổi",
-                  dataIndex: "quantity_change",
-                  width: 150,
-                  align: "right",
-                  render: (qty: number) => (
-                    <span style={{ color: qty > 0 ? "green" : "red" }}>
-                      {qty > 0 ? `+${qty}` : qty}
-                    </span>
-                  ),
-                },
-                {
-                  title: "Thao tác",
-                  width: 80,
-                  align: "center",
-                  render: (_, __, index) => (
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={() => setItems(items.filter((_, i) => i !== index))}
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                     <FormField
+                        name="adjustment_code"
+                        control={control}
+                        label="Mã phiếu"
+                        placeholder="ADJ-..."
+                     />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormComboBox
+                      name="adjustment_type"
+                      control={control}
+                      label="Loại điều chỉnh"
+                      placeholder="Chọn loại điều chỉnh"
+                      options={[
+                        { value: 'IN', label: 'Tăng kho (IN)' },
+                        { value: 'OUT', label: 'Giảm kho (OUT)' },
+                      ]}
                     />
-                  ),
-                },
-              ]}
-              dataSource={items}
-              rowKey={(_, index) => index!}
-              pagination={false}
-            />
-          </Card>
+                  </Grid>
+                </Grid>
 
-          <Form.Item>
-            <Space>
+                <Box mt={2}>
+                  <FormField
+                    name="reason"
+                    control={control}
+                    label="Lý do điều chỉnh"
+                    type="textarea"
+                    rows={3}
+                    placeholder="VD: Kiểm kê, hư hỏng, thất lạc..."
+                  />
+                </Box>
+
+                <Box mt={2}>
+                  <FormField
+                    name="notes"
+                    control={control}
+                    label="Ghi chú"
+                    type="textarea"
+                    rows={2}
+                  />
+                </Box>
+
+                <Box mt={2}>
+                  <Typography variant="subtitle2" mb={1}>
+                    Hình ảnh chứng từ / hiện trạng
+                  </Typography>
+                  <FormImageUpload
+                    name="images"
+                    control={control}
+                    uploadType="common"
+                    returnFullObjects={true}
+                    multiple
+                    maxCount={5}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Chọn sản phẩm */}
+          <Grid item xs={12} md={6}>
+             <Card>
+                <CardContent>
+                   <Typography variant="h6" mb={2}>Thêm sản phẩm</Typography>
+                   <Box>
+                      <Typography variant="subtitle2" mb={1}>
+                        Tìm kiếm sản phẩm:
+                      </Typography>
+                      <ComboBox
+                        data={productList.map((p) => ({
+                          value: p.id,
+                          label: p.name
+                        }))}
+                        value={tempProductSelect}
+                        onChange={(value) => {
+                          if (value) {
+                             handleAddProduct(value);
+                             setTempProductSelect(null);
+                          }
+                        }}
+                        placeholder="-- Chọn sản phẩm --"
+                        showSearch
+                        allowClear
+                        filterOption={(input, option) => {
+                          const label = option?.label?.toString().toLowerCase() || '';
+                          const searchText = input.toLowerCase();
+                          return label.includes(searchText);
+                        }}
+                      />
+                   </Box>
+                   <Box mt={2}>
+                      <Alert severity="info">
+                         Tìm và chọn sản phẩm để thêm vào danh sách điều chỉnh bên dưới.
+                      </Alert>
+                   </Box>
+                </CardContent>
+             </Card>
+          </Grid>
+
+          {/* Danh sách sản phẩm */}
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" mb={2}>
+                  Danh sách sản phẩm điều chỉnh
+                </Typography>
+
+                {errors.items && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {errors.items.message}
+                  </Alert>
+                )}
+
+                {fields.length > 0 ? (
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Sản phẩm</TableCell>
+                          <TableCell align="right">Số lượng thay đổi</TableCell>
+                          <TableCell>Lý do (tuỳ chọn)</TableCell>
+                          <TableCell align="center">Xóa</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {fields.map((field, index) => (
+                          <TableRow key={field.id}>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight="bold">
+                                {field.product_name}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Controller
+                                name={`items.${index}.quantity_change`}
+                                control={control}
+                                render={({ field }) => (
+                                  <NumberInput
+                                    value={field.value ? Number(field.value) : null}
+                                    onChange={(val) => field.onChange(val)}
+                                    // Không set min/max vì có thể âm/dương tùy ý
+                                    size="small"
+                                    style={{ width: 120 }}
+                                    placeholder="+/- SL"
+                                  />
+                                )}
+                              />
+                              <Typography variant="caption" display="block" color="text.secondary">
+                                (Dương: Tăng, Âm: Giảm)
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Controller
+                                name={`items.${index}.reason`}
+                                control={control}
+                                render={({ field }) => (
+                                  <input
+                                    {...field}
+                                    placeholder="Lý do chi tiết..."
+                                    style={{
+                                      width: '100%',
+                                      padding: '4px 8px',
+                                      border: '1px solid #d9d9d9',
+                                      borderRadius: '4px',
+                                      fontSize: '14px'
+                                    }}
+                                  />
+                                )}
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => remove(index)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Alert severity="warning">
+                    Chưa có sản phẩm nào. Vui lòng thêm sản phẩm!
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Actions */}
+          <Grid item xs={12}>
+            <Box display="flex" gap={2} justifyContent="flex-end">
               <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={createAdjustmentMutation.isPending || uploadFileMutation.isPending || attachImageMutation.isPending}
+                variant="outlined"
+                onClick={() => navigate('/inventory/adjustments')}
+                disabled={createMutation.isPending}
               >
-                Tạo phiếu điều chỉnh
+                Hủy
               </Button>
-              <Button onClick={() => navigate("/inventory/adjustments")}>Hủy</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
-  )
-}
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={<SaveIcon />}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu'}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </form>
+    </Box>
+  );
+};
 
-export default AdjustmentCreate
+export default AdjustmentCreate;

@@ -45,7 +45,7 @@ import DiseaseWarningPage from "./pages/disease-warning"
 import BannedPesticidesPage from "./pages/banned-pesticides"
 // Thêm import cho trang Quản Lý Canh Tác
 import RiceCropsPage from "./pages/rice-crops"
-import RiceCropDetails from "./pages/rice-crops/details"
+
 import CostItemCategoriesPage from './pages/rice-crops/categories'
 // Thêm import cho trang so sánh sản phẩm AI
 import ProductComparisonPage from "./pages/product-comparison"
