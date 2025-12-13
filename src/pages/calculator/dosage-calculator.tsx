@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
-import { Card, Form, Select, Typography, Row, Col, Divider, Statistic, Tabs } from 'antd'
+import { Card, Form, Typography, Row, Col, Divider, Statistic, Tabs } from 'antd'
 import { ExperimentOutlined, CalculatorOutlined } from '@ant-design/icons'
 import NumberInput from '../../components/common/number-input'
+import ComboBox from '../../components/common/combo-box'
 
 const { Title, Text } = Typography
-const { Option } = Select
 const { TabPane } = Tabs
 
 // Constants for conversion (to m2)
@@ -204,17 +204,16 @@ const AreaCalculator: React.FC = () => {
                    <Form.Item label="Liều lượng khuyến cáo" name="dosageRate">
                       <NumberInput 
                         placeholder="VD: 1.5" 
-                        size="large" 
+                        size="middle" 
                       />
                    </Form.Item>
                 </Col>
                 <Col span={10}>
                     <Form.Item label="Đơn vị" name="dosageUnit">
-                        <Select size="large">
-                            {Object.values(DOSAGE_UNITS).map(u => (
-                                <Option key={u.value} value={u.value}>{u.label}</Option>
-                            ))}
-                        </Select>
+                        <ComboBox
+                            options={Object.values(DOSAGE_UNITS)}
+                            placeholder="Chọn đơn vị"
+                        />
                     </Form.Item>
                 </Col>
               </Row>
@@ -231,17 +230,20 @@ const AreaCalculator: React.FC = () => {
                    <Form.Item label="C1: Nhập Số lượng công" name="congCount">
                       <NumberInput 
                         placeholder="VD: 5" 
-                        size="large" 
+                        size="middle" 
                         addonAfter="công"
                       />
                    </Form.Item>
                 </Col>
                 <Col span={10}>
-                    <Form.Item label="Loại công" name="congType">
-                        <Select size="large">
-                            <Option value={AREA_UNITS.CONG_MT.value}>{AREA_UNITS.CONG_MT.label}</Option>
-                            <Option value={AREA_UNITS.CONG_STD.value}>{AREA_UNITS.CONG_STD.label}</Option>
-                        </Select>
+                     <Form.Item label="Loại công" name="congType">
+                        <ComboBox
+                            options={[
+                                { value: 'cong_1296', label: 'Công (1.296m²)' },
+                                { value: 'cong_1000', label: 'Công (1.000m²)' }
+                            ]}
+                            placeholder="Chọn loại công"
+                        />
                     </Form.Item>
                 </Col>
               </Row>
@@ -257,16 +259,19 @@ const AreaCalculator: React.FC = () => {
                       <Form.Item label="C2: Diện tích tổng" name="areaInput">
                          <NumberInput
                             placeholder="VD: 10000" 
-                            size="large" 
+                            size="middle" 
                          />
                       </Form.Item>
                    </Col>
                    <Col span={10}>
                        <Form.Item label="Đơn vị tính" name="areaUnit">
-                           <Select size="large">
-                               <Option value={AREA_UNITS.M2.value}>{AREA_UNITS.M2.label}</Option>
-                               <Option value={AREA_UNITS.HA.value}>{AREA_UNITS.HA.label}</Option>
-                           </Select>
+                          <ComboBox
+                              options={[
+                                  { value: 'cong_1296', label: 'Công (1.296m²)' },
+                                  { value: 'cong_1000', label: 'Công (1.000m²)' }
+                              ]}
+                              placeholder="Chọn đơn vị"
+                          />
                        </Form.Item>
                    </Col>
                </Row>
@@ -399,18 +404,21 @@ const RatioCalculator: React.FC = () => {
                     <Row gutter={10}>
                         <Col span={12}>
                              <Form.Item label="Lượng thuốc" name="chemAmount">
-                                 <NumberInput placeholder="VD: 20" size="large" />
+                                 <NumberInput placeholder="VD: 20" size="middle" />
                              </Form.Item>
                         </Col>
                         <Col span={12}>
                              <Form.Item label="Đơn vị thuốc" name="chemUnit">
-                                 <Select size="large">
-                                    <Option value="ml">ml</Option>
-                                    <Option value="l">Lít</Option>
-                                    <Option value="g">gram</Option>
-                                    <Option value="kg">kg</Option>
-                                 </Select>
-                             </Form.Item>
+                                <ComboBox
+                                    options={[
+                                        { value: 'ml', label: 'ml' },
+                                        { value: 'l', label: 'Lít' },
+                                        { value: 'g', label: 'g' },
+                                        { value: 'kg', label: 'kg' }
+                                    ]}
+                                    placeholder="Chọn đơn vị"
+                                />
+                            </Form.Item>
                         </Col>
                     </Row>
 
@@ -421,17 +429,19 @@ const RatioCalculator: React.FC = () => {
                     <Row gutter={10}>
                         <Col span={12}>
                              <Form.Item label="Lượng giống/nước" name="targetAmount">
-                                 <NumberInput placeholder="VD: 10" size="large" />
+                                 <NumberInput placeholder="VD: 10" size="middle" />
                              </Form.Item>
                         </Col>
                         <Col span={12}>
                              <Form.Item label="Đơn vị" name="targetUnit">
-                                 <Select size="large">
-                                    <Option value="kg">kg (giống)</Option>
-                                    <Option value="l">Lít (nước)</Option>
-                                    <Option value="tan">Tấn</Option>
-                                 </Select>
-                             </Form.Item>
+                                <ComboBox
+                                    options={[
+                                        { value: 'kg', label: 'kg (giống)' },
+                                        { value: 'l', label: 'Lít (nước)' }
+                                    ]}
+                                    placeholder="Chọn đơn vị"
+                                />
+                            </Form.Item>
                         </Col>
                     </Row>
 
@@ -439,7 +449,7 @@ const RatioCalculator: React.FC = () => {
 
                     <Title level={5} className="mb-4">2. Thực tế áp dụng</Title>
                     <Form.Item label={`Tổng lượng ${values.targetUnit === 'l' ? 'nước' : 'giống'} cần xử lý`} name="actualAmount">
-                        <NumberInput placeholder="VD: 400" size="large" addonAfter={values.targetUnit} />
+                        <NumberInput placeholder="VD: 400" size="middle" addonAfter={values.targetUnit} />
                     </Form.Item>
                 </Form>
             </Col>
@@ -573,12 +583,12 @@ const WaterBasedCalculator: React.FC = () => {
                     <Row gutter={10}>
                         <Col span={12}>
                              <Form.Item label="Lượng thuốc" name="chemAmount">
-                                 <NumberInput placeholder="VD: 10" size="large" addonAfter="ml" />
+                                 <NumberInput placeholder="VD: 10" size="middle" addonAfter="ml" />
                              </Form.Item>
                         </Col>
                         <Col span={12}>
                              <Form.Item label="Lượng nước" name="waterAmount">
-                                 <NumberInput placeholder="VD: 10" size="large" addonAfter="lít" />
+                                 <NumberInput placeholder="VD: 10" size="middle" addonAfter="lít" />
                              </Form.Item>
                         </Col>
                     </Row>
@@ -587,7 +597,7 @@ const WaterBasedCalculator: React.FC = () => {
 
                     <Title level={5} className="mb-4">2. Lượng nước cần cho 10.000 m² (1 ha chuẩn)</Title>
                     <Form.Item label="Lượng nước phun/tưới cho 10.000 m²" name="waterPerHa">
-                        <NumberInput placeholder="VD: 500" size="large" addonAfter="lít" />
+                        <NumberInput placeholder="VD: 500" size="middle" addonAfter="lít" />
                     </Form.Item>
 
                     <Divider />
@@ -600,31 +610,21 @@ const WaterBasedCalculator: React.FC = () => {
                     <Row gutter={10}>
                         <Col span={12}>
                              <Form.Item label="Diện tích" name="customAreaAmount">
-                                 <NumberInput placeholder="VD: 5" size="large" />
+                                 <NumberInput placeholder="VD: 5" size="middle" />
                              </Form.Item>
                         </Col>
                         <Col span={12}>
                              <Form.Item label="Đơn vị" name="customAreaUnit">
-                                 <Select size="large" onChange={(value) => {
-                                     // Khi thay đổi đơn vị, tự động cập nhật lượng nước nếu có diện tích
-                                     if (values.customAreaAmount > 0 && values.waterPerHa > 0) {
-                                         const unit = Object.values(AREA_UNITS).find(u => u.value === value)
-                                         if (unit) {
-                                             const areaM2 = values.customAreaAmount * unit.toM2
-                                             const areaHa = areaM2 / 10000
-                                             const waterForArea = values.waterPerHa * areaHa
-                                             // Hiển thị thông tin cho người dùng
-                                             console.log(`Diện tích ${values.customAreaAmount} ${unit.label} = ${areaM2}m² = ${areaHa.toFixed(4)} ha`)
-                                             console.log(`Lượng nước cần: ${waterForArea.toFixed(2)} lít`)
-                                         }
-                                     }
-                                 }}>
-                                     <Option value={AREA_UNITS.CONG_MT.value}>{AREA_UNITS.CONG_MT.label}</Option>
-                                     <Option value={AREA_UNITS.CONG_STD.value}>{AREA_UNITS.CONG_STD.label}</Option>
-                                     <Option value={AREA_UNITS.HA.value}>{AREA_UNITS.HA.label}</Option>
-                                     <Option value={AREA_UNITS.M2.value}>{AREA_UNITS.M2.label}</Option>
-                                 </Select>
-                             </Form.Item>
+                                <ComboBox
+                                    options={Object.values(AREA_UNITS)}
+                                    placeholder="Chọn đơn vị"
+                                    onChange={(value: string | number) => {
+                                        form.setFieldsValue({ customAreaUnit: value })
+                                        const allValues = form.getFieldsValue()
+                                        handleValuesChange({}, allValues)
+                                    }}
+                                />
+                            </Form.Item>
                         </Col>
                     </Row>
                     
