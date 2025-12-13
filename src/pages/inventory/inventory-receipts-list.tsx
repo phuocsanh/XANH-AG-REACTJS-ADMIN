@@ -578,71 +578,59 @@ const InventoryReceiptsList: React.FC = () => {
         {/* Thống kê tổng quan */}
         {statsData && (
           <Col span={24}>
-            <Row gutter={16}>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Badge
-                    count={statsData.totalReceipts}
-                    showZero
-                    style={{ backgroundColor: "#52c41a" }}
-                  >
-                    <div style={{ padding: "8px 0" }}>
-                      <Text strong>Tổng phiếu nhập</Text>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Badge
-                    count={statsData.draftReceipts}
-                    showZero
-                    style={{ backgroundColor: "#d9d9d9" }}
-                  >
-                    <div style={{ padding: "8px 0" }}>
-                      <Text strong>Nháp</Text>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Badge
-                    count={statsData.approvedReceipts}
-                    showZero
-                    style={{ backgroundColor: "#52c41a" }}
-                  >
-                    <div style={{ padding: "8px 0" }}>
-                      <Text strong>Đã duyệt</Text>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <Badge
-                    count={statsData.completedReceipts}
-                    showZero
-                    style={{ backgroundColor: "#1890ff" }}
-                  >
-                    <div style={{ padding: "8px 0" }}>
-                      <Text strong>Đã hoàn thành</Text>
-                    </div>
-                  </Badge>
-                </Card>
-              </Col>
-              <Col xs={24} sm={12} md={6}>
-                <Card>
-                  <div style={{ padding: "8px 0" }}>
-                    <Text strong>Tổng giá trị</Text>
-                    <br />
-                    <Text type='success'>
-                      {new Intl.NumberFormat("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      }).format(parseFloat(statsData.totalValue || "0"))}
-                    </Text>
+            <Row gutter={[8, 8]}>
+              {/* Tổng phiếu nhập */}
+              <Col xs={6} sm={12} md={6}>
+                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a', marginBottom: '2px' }}>
+                    {statsData.totalReceipts}
                   </div>
+                  <Text className="text-[10px] md:text-sm" type="secondary">Tổng</Text>
+                </Card>
+              </Col>
+              
+              {/* Đã duyệt */}
+              <Col xs={6} sm={12} md={6}>
+                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a', marginBottom: '2px' }}>
+                    {statsData.approvedReceipts}
+                  </div>
+                  <Text className="text-[10px] md:text-sm" type="secondary">Duyệt</Text>
+                </Card>
+              </Col>
+              
+              {/* Đã hoàn thành */}
+              <Col xs={6} sm={12} md={6}>
+                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff', marginBottom: '2px' }}>
+                    {statsData.completedReceipts}
+                  </div>
+                  <Text className="text-[10px] md:text-sm" type="secondary">Xong</Text>
+                </Card>
+              </Col>
+              
+              {/* Tổng giá trị */}
+              <Col xs={6} sm={12} md={6}>
+                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a', marginBottom: '2px' }}>
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                      notation: "compact",
+                      maximumFractionDigits: 0
+                    }).format(parseFloat(statsData.totalValue || "0"))}
+                  </div>
+                  <Text className="text-[10px] md:text-sm" type="secondary">Giá trị</Text>
+                </Card>
+              </Col>
+              
+              {/* Nháp - chỉ hiện trên desktop */}
+              <Col xs={0} sm={0} md={4.8}>
+                <Card size="small" bodyStyle={{ padding: '8px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#8c8c8c', marginBottom: '4px' }}>
+                    {statsData.draftReceipts}
+                  </div>
+                  <Text className="text-xs md:text-sm" type="secondary">Nháp</Text>
                 </Card>
               </Col>
             </Row>
@@ -657,23 +645,30 @@ const InventoryReceiptsList: React.FC = () => {
             marginBottom: "16px",
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
           }}
         >
-          <Title level={4}>Danh sách phiếu nhập hàng</Title>
+          <Title level={4} style={{ margin: 0 }}>
+            <span className="hidden md:inline">Danh sách phiếu nhập hàng</span>
+            <span className="md:hidden">Phiếu nhập hàng</span>
+          </Title>
           <Space>
             <Button
               icon={<ReloadOutlined />}
               onClick={() => refetchReceipts()}
               loading={isLoadingReceipts}
             >
-              Làm mới
+              <span className="hidden sm:inline">Làm mới</span>
             </Button>
             <Button
               type='primary'
               icon={<PlusOutlined />}
               onClick={handleCreateReceipt}
             >
-              Tạo phiếu nhập
+              <span className="hidden sm:inline">Tạo phiếu nhập</span>
+              <span className="sm:hidden">Tạo</span>
             </Button>
           </Space>
         </div>

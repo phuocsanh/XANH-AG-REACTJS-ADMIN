@@ -827,6 +827,27 @@ body {
   .sidebar {
     padding-top: 70px !important;
   }
+  
+  /* Override padding cho tất cả page content - QUAN TRỌNG */
+  /* Giảm p-6 (24px) xuống p-2 (8px) trên mobile */
+  .p-6 {
+    padding: 0.5rem !important; /* 8px */
+  }
+  
+  .p-4 {
+    padding: 0.5rem !important; /* 8px */
+  }
+  
+  /* Giữ padding top/bottom nhưng giảm left/right */
+  .px-6 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .px-4 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
 }
 
 /* ==========================================================================
