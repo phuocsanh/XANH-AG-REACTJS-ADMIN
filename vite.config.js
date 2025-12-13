@@ -56,7 +56,7 @@ export default defineConfig({
         name: "XANH AG Admin - Hệ Thống Quản Lý Nông Nghiệp",
         short_name: "XANH AG",
         description: "Hệ thống quản lý nông nghiệp thông minh",
-        theme_color: "#52c41a",
+        theme_color: "#059669",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
