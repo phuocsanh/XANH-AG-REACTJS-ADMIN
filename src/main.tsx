@@ -5,6 +5,7 @@ import "./index.css";
 import AppProviderTanStack from "./provider/app-provider-tanstack";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { PWAUpdatePrompt } from "./components/pwa/pwa-update-prompt";
 
 const rootElement = document.getElementById("root");
 
@@ -13,6 +14,7 @@ if (rootElement) {
     <AppProviderTanStack>
       <App />
       <ToastContainer />
+      <PWAUpdatePrompt />
     </AppProviderTanStack>
   );
 } else {
