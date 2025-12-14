@@ -174,6 +174,32 @@ const Sidebar: React.FC = () => {
     setIsToggleSubmenu(!isToggleSubmenu)
   }
 
+  // Nếu chưa đăng nhập, chỉ hiển thị Weather Forecast
+  if (!isLogin) {
+    return (
+      <div className='sidebar h-full'>
+        <div className='sidebarTabs px-2 overflow-y-auto h-[calc(100vh-80px)]'>
+          <ul className='flex gap-3 flex-col m'>
+            <li>
+              <Link to='/weather-forecast'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 31 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(31)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <TiWeatherPartlySunny className='text-blue-300' />
+                  </span>
+                  Dự báo Thời tiết
+                </Button>
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
+
+  // Đã đăng nhập - hiển thị đầy đủ menu
   return (
     <div className='sidebar h-full'>
       <div className='sidebarTabs px-2 overflow-y-auto h-[calc(100vh-80px)]'>

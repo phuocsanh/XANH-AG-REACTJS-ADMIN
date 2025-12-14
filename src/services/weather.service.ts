@@ -47,6 +47,31 @@ export interface SimplifiedWeatherData {
   humidity: number;
 }
 
+// Interface cho Daily Weather Data từ Open-Meteo
+export interface DailyWeatherData {
+  date: string; // Format: YYYY-MM-DD
+  tempMin: number;
+  tempMax: number;
+  precipitationProbabilityMax: number;
+  precipitationSum: number;
+  weatherCode: number;
+  weatherDescription: string;
+}
+
+// Interface cho Daily response từ Open-Meteo
+interface OpenMeteoDailyResponse {
+  latitude: number;
+  longitude: number;
+  daily: {
+    time: string[];
+    temperature_2m_max: number[];
+    temperature_2m_min: number[];
+    precipitation_probability_max: number[];
+    precipitation_sum: number[];
+    weather_code: number[];
+  };
+}
+
 class WeatherService {
   private readonly baseUrl = 'https://api.open-meteo.com/v1/forecast';
 
@@ -133,6 +158,53 @@ class WeatherService {
       console.error('Error fetching 7-day weather data:', error);
       throw error;
     }
+  }
+
+  /**
+   * Lấy dự báo thời tiết Daily (tổng hợp theo ngày) cho 7 ngày
+   * Dữ liệu này đã được API tính toán sẵn, chính xác hơn việc tự tính
+   */
+  async getDailyForecast7Days(lat: number = 21.0285, lon: number = 105.8542): Promise<DailyWeatherData[]> {
+    try {
+      const params = new URLSearchParams({
+        latitude: lat.toString(),
+        longitude: lon.toString(),
+        daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,weather_code',
+        timezone: 'auto',
+        forecast_days: '7'
+      });
+
+      const response = await fetch(`${this.baseUrl}?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API thời tiết daily: ${response.status}`);
+      }
+
+      const data: OpenMeteoDailyResponse = await response.json();
+      return this.mapOpenMeteoToDailyData(data);
+    } catch (error) {
+      console.error('Error fetching daily weather data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Chuyển đổi dữ liệu Daily từ Open-Meteo sang format DailyWeatherData
+   */
+  private mapOpenMeteoToDailyData(data: OpenMeteoDailyResponse): DailyWeatherData[] {
+    const { daily } = data;
+    
+    return daily.time.map((date, index) => {
+      return {
+        date: date, // YYYY-MM-DD
+        tempMin: Math.round(daily.temperature_2m_min[index]),
+        tempMax: Math.round(daily.temperature_2m_max[index]),
+        precipitationProbabilityMax: Math.round(daily.precipitation_probability_max[index]),
+        precipitationSum: parseFloat(daily.precipitation_sum[index].toFixed(1)),
+        weatherCode: daily.weather_code[index],
+        weatherDescription: this.getWeatherDescription(daily.weather_code[index])
+      };
+    });
   }
 
   /**

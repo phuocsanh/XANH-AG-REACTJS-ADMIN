@@ -3,6 +3,7 @@ import Button from "@mui/material/Button"
 import { FaRegBell } from "react-icons/fa"
 import { MdOutlineEmail } from "react-icons/md"
 import { FiMenu } from "react-icons/fi"
+import { useNavigate } from "react-router-dom"
 
 import { UserImage } from "../user-image"
 
@@ -14,6 +15,7 @@ import Divider from "@mui/material/Divider"
 import PersonAdd from "@mui/icons-material/PersonAdd"
 import Settings from "@mui/icons-material/Settings"
 import Logout from "@mui/icons-material/Logout"
+import Login from "@mui/icons-material/Login"
 import { useAppStore } from "../../stores"
 import { MyContext } from "../../App"
 
@@ -21,12 +23,19 @@ export const Header: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
   const { setIsSidebarOpen } = useContext(MyContext)
+  const navigate = useNavigate()
+  const isLogin = useAppStore((state) => state.isLogin)
 
   const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget)
   }
   const handleClose = (): void => {
     setAnchorEl(null)
+  }
+
+  const handleLogin = (): void => {
+    handleClose()
+    navigate('/sign-in')
   }
 
   const handleLogout = (): void => {
@@ -121,31 +130,43 @@ export const Header: React.FC = () => {
               transformOrigin={{ horizontal: "right", vertical: "top" }}
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
-              <MenuItem onClick={handleClose}>
-                <Avatar /> Profile
-              </MenuItem>
-              <MenuItem onClick={handleClose}>
-                <Avatar /> My account
-              </MenuItem>
-              <Divider />
-              <MenuItem onClick={handleClose}>
-                <ListItemIcon>
-                  <PersonAdd fontSize='small' />
-                </ListItemIcon>
-                Add another account
-              </MenuItem>
-              <MenuItem onClick={handleClose}>
-                <ListItemIcon>
-                  <Settings fontSize='small' />
-                </ListItemIcon>
-                Settings
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>
-                <ListItemIcon>
-                  <Logout fontSize='small' />
-                </ListItemIcon>
-                Logout
-              </MenuItem>
+              {/* Chỉ hiển thị khi đã đăng nhập */}
+              {isLogin && (
+                <>
+                  <MenuItem onClick={handleClose}>
+                    <Avatar /> My account
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleClose}>
+                    <ListItemIcon>
+                      <PersonAdd fontSize='small' />
+                    </ListItemIcon>
+                    Add another account
+                  </MenuItem>
+                  <MenuItem onClick={handleClose}>
+                    <ListItemIcon>
+                      <Settings fontSize='small' />
+                    </ListItemIcon>
+                    Settings
+                  </MenuItem>
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon>
+                      <Logout fontSize='small' />
+                    </ListItemIcon>
+                    Logout
+                  </MenuItem>
+                </>
+              )}
+
+              {/* Chỉ hiển thị khi chưa đăng nhập */}
+              {!isLogin && (
+                <MenuItem onClick={handleLogin}>
+                  <ListItemIcon>
+                    <Login fontSize='small' />
+                  </ListItemIcon>
+                  Login
+                </MenuItem>
+              )}
             </Menu>
           </li>
         </ul>

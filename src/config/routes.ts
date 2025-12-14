@@ -3,6 +3,7 @@ export const PUBLIC_ROUTES = [
   "/sign-up",
   "/forgot-password",
   "/otp",
+  "/weather-forecast",
 ]
 
 export const AI_DEMO_ROUTE = "/ai-demo"

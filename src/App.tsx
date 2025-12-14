@@ -6,7 +6,7 @@ import {
   Dispatch,
   SetStateAction,
 } from "react"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { Header } from "./components/header"
 import Sidebar from "./components/sidebar"
 import Footer from "./components/footer"
@@ -209,44 +209,76 @@ function App() {
   return (
     <>
       <BrowserRouter>
-        <MyContext.Provider value={values}>
-          <div className='flex flex-col min-h-screen overflow-x-hidden'>
-            {/* Header - luôn hiển thị trên cùng và trải dài toàn bộ chiều rộng */}
-            {isHeaderFooterShow === false && isLogin && (
-              <div className='w-full'>
-                <Header />
-              </div>
-            )}
+        <AppContent 
+          values={values}
+          isHeaderFooterShow={isHeaderFooterShow}
+          isSidebarOpen={isSidebarOpen}
+          isLogin={isLogin}
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          setIsMobileSidebarOpen={setIsMobileSidebarOpen}
+        />
+      </BrowserRouter>
+    </>
+  )
+}
 
-            <div className='flex flex-1 overflow-x-hidden'>
-              {/* Sidebar - hidden on mobile by default, shown as overlay */}
-              {isHeaderFooterShow === false && isLogin && isSidebarOpen && (
+// Component con để sử dụng useLocation
+function AppContent({ 
+  values,
+  isHeaderFooterShow, 
+  isSidebarOpen,
+  isLogin,
+  isMobileSidebarOpen,
+  setIsMobileSidebarOpen
+}: {
+  values: TypeMyContext
+  isHeaderFooterShow: boolean
+  isSidebarOpen: boolean
+  isLogin: boolean | undefined
+  isMobileSidebarOpen: boolean
+  setIsMobileSidebarOpen: Dispatch<SetStateAction<boolean>>
+}) {
+  const location = useLocation()
+  const isWeatherForecastPage = location.pathname === '/weather-forecast'
+  
+  // Hiển thị Header/Sidebar nếu: đã login HOẶC đang ở trang weather-forecast
+  const shouldShowLayout = (isHeaderFooterShow === false && isLogin) || isWeatherForecastPage
+
+  return (
+    <MyContext.Provider value={values}>
+      <div className='flex flex-col min-h-screen overflow-x-hidden'>
+        {/* Header - luôn hiển thị trên cùng và trải dài toàn bộ chiều rộng */}
+        {shouldShowLayout && (
+          <div className='w-full'>
+            <Header />
+          </div>
+        )}
+
+        <div className='flex flex-1 overflow-x-hidden'>
+          {/* Sidebar - hidden on mobile by default, shown as overlay */}
+          {shouldShowLayout && isSidebarOpen && (
                 <div className='hidden md:block md:fixed md:left-0 md:top-0 md:bottom-0 md:w-[17%] md:z-10 md:pt-[70px]' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
                   <Sidebar />
                 </div>
               )}
 
               {/* Main content area */}
-              <div className={`flex-1 overflow-x-hidden min-w-0 ${isHeaderFooterShow === false && isLogin && isSidebarOpen ? 'md:ml-[17%]' : ''}`}>
+              <div className={`flex-1 overflow-x-hidden min-w-0 ${shouldShowLayout && isSidebarOpen ? 'md:ml-[17%]' : ''}`}>
                 {/* Space for header on all devices */}
-                {isHeaderFooterShow === false && isLogin && (
+                {shouldShowLayout && (
                   <div className='h-[70px]'></div>
                 )}
 
                 <main
                   className={
-                    isHeaderFooterShow === false && isLogin ? "p-2 md:p-6" : ""
+                    shouldShowLayout ? "p-2 md:p-6" : ""
                   }
                 >
                   <Routes>
                     {/* Các trang yêu cầu đăng nhập */}
                     <Route
                       path='/'
-                      element={
-                        <ProtectedRoute>
-                          <Dashboard />
-                        </ProtectedRoute>
-                      }
+                      element={<Navigate to="/weather-forecast" replace />}
                     />
                     
                     <Route
@@ -260,11 +292,7 @@ function App() {
 
                     <Route
                       path='/weather-forecast'
-                      element={
-                        <ProtectedRoute>
-                          <WeatherForecastPage />
-                        </ProtectedRoute>
-                      }
+                      element={<WeatherForecastPage />}
                     />
 
                     <Route
@@ -608,7 +636,7 @@ function App() {
             </div>
 
             {/* Footer */}
-            {isHeaderFooterShow === false && isLogin && (
+            {shouldShowLayout && (
               <div className='w-full'>
                 <Footer />
               </div>
@@ -630,8 +658,6 @@ function App() {
             )}
           </div>
         </MyContext.Provider>
-      </BrowserRouter>
-    </>
   )
 }
 

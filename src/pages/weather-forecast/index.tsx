@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Typography, Spin, Alert, Button, Tag, List, Row, Col, Tabs, Modal } from 'antd';
 import { EnvironmentOutlined, AimOutlined, SyncOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { weatherService, WeatherData } from '@/services/weather.service';
+import { weatherService, WeatherData, DailyWeatherData } from '@/services/weather.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
 import { message } from 'antd';
@@ -15,6 +15,7 @@ const { TabPane } = Tabs;
 const WeatherForecastPage: React.FC = () => {
   // State quản lý dữ liệu thời tiết
   const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]);
+  const [dailyForecast, setDailyForecast] = useState<DailyWeatherData[]>([]); // Daily summary từ API
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -24,48 +25,21 @@ const WeatherForecastPage: React.FC = () => {
 
   /**
    * Lấy dữ liệu dự báo thời tiết 7 ngày
-   * @param forceRefresh Nếu true, sẽ bỏ qua cache và lấy dữ liệu mới
+   * Luôn lấy dữ liệu mới từ API, không cache
    */
   const fetchWeatherForecast = async (forceRefresh = false) => {
-    // Kiểm tra cache - mỗi location có cache riêng
-    const CACHE_KEY = `weather_forecast_7days_v1_${selectedLocation.id}`;
-    
-    if (!forceRefresh) {
-      const cachedData = localStorage.getItem(CACHE_KEY);
-      if (cachedData) {
-        try {
-          const { timestamp, forecast } = JSON.parse(cachedData);
-          // Cache valid for 1 hour
-          if (Date.now() - timestamp < 60 * 60 * 1000) {
-            setWeatherForecast(forecast);
-            return;
-          }
-        } catch (e) {
-          console.error('Lỗi đọc cache:', e);
-          localStorage.removeItem(CACHE_KEY);
-        }
-      }
-    }
-
     setIsWeatherLoading(true);
     setError(null);
     
     try {
-      // Lấy dữ liệu từ API - lấy 7 ngày
-      const forecastData = await weatherService.getForecast7Days(selectedLocation.latitude, selectedLocation.longitude);
+      // Lấy dữ liệu hourly và daily từ API
+      const [forecastData, dailyData] = await Promise.all([
+        weatherService.getForecast7Days(selectedLocation.latitude, selectedLocation.longitude),
+        weatherService.getDailyForecast7Days(selectedLocation.latitude, selectedLocation.longitude)
+      ]);
       
       setWeatherForecast(forecastData);
-      
-      // Lưu vào cache
-      try {
-        const cacheData = {
-          timestamp: Date.now(),
-          forecast: forecastData
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-      } catch (e) {
-        console.error('Lỗi lưu cache:', e);
-      }
+      setDailyForecast(dailyData);
 
     } catch (err) {
       const errorMessage = (err as Error).message || 'Có lỗi khi lấy dữ liệu thời tiết';
@@ -328,31 +302,62 @@ const WeatherForecastPage: React.FC = () => {
   };
 
   /**
-   * Lọc dữ liệu thời tiết - chỉ hiển thị từ giờ hiện tại trở đi cho "Hôm nay"
+   * Lọc dữ liệu thời tiết - Hiển thị tất cả giờ (bao gồm cả giờ đã qua)
    */
   const filterWeatherData = (data: WeatherData[], dateString: string): WeatherData[] => {
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('vi-VN');
-    
-    // Nếu là hôm nay, chỉ lấy từ giờ hiện tại trở đi
-    if (dateString === todayStr) {
-      const currentTime = Math.floor(Date.now() / 1000); // Timestamp hiện tại (giây)
-      return data.filter(item => item.dt >= currentTime);
-    }
-    
-    // Các ngày khác hiển thị đầy đủ
+    // Hiển thị đầy đủ tất cả các giờ, kể cả giờ đã qua
     return data;
   };
 
   /**
-   * Tính toán tóm tắt thời tiết cho một ngày
+   * Convert date từ DD/MM/YYYY sang YYYY-MM-DD
    */
-  const getDailySummary = (data: WeatherData[]) => {
+  const convertDateToAPIFormat = (dateString: string): string => {
+    const [day, month, year] = dateString.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  };
+
+  /**
+   * Lấy tóm tắt thời tiết từ Daily API
+   * Dữ liệu này đã được API tính toán sẵn, chính xác hơn việc tự tính
+   */
+  const getDailySummaryFromAPI = (dateString: string) => {
+    const apiDate = convertDateToAPIFormat(dateString);
+    const dailyData = dailyForecast.find(d => d.date === apiDate);
+    
+    if (!dailyData) return null;
+    
+    return {
+      tempMin: dailyData.tempMin,
+      tempMax: dailyData.tempMax,
+      maxPrecipitationProbability: dailyData.precipitationProbabilityMax,
+      totalRain: dailyData.precipitationSum.toString()
+    };
+  };
+
+  /**
+   * Tính toán tóm tắt thời tiết cho một ngày (DEPRECATED - dùng getDailySummaryFromAPI thay thế)
+   * Chỉ tính từ giờ hiện tại trở đi cho "Hôm nay"
+   */
+  const getDailySummary = (data: WeatherData[], dateString: string) => {
     if (data.length === 0) return null;
 
-    const temps = data.map(item => item.main.temp);
-    const pops = data.map(item => item.pop * 100); // Chuyển sang %
-    const rains = data.map(item => item.rain?.['1h'] || 0);
+    // Lọc dữ liệu: Nếu là hôm nay, chỉ lấy từ giờ hiện tại trở đi
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('vi-VN');
+    
+    let filteredData = data;
+    if (dateString === todayStr) {
+      const currentTime = Math.floor(Date.now() / 1000); // Timestamp hiện tại (giây)
+      filteredData = data.filter(item => item.dt >= currentTime);
+    }
+
+    // Nếu không còn dữ liệu sau khi lọc, return null
+    if (filteredData.length === 0) return null;
+
+    const temps = filteredData.map(item => item.main.temp);
+    const pops = filteredData.map(item => item.pop * 100); // Chuyển sang %
+    const rains = filteredData.map(item => item.rain?.['1h'] || 0);
 
     return {
       tempMin: Math.round(Math.min(...temps)),
@@ -369,6 +374,11 @@ const WeatherForecastPage: React.FC = () => {
     return dateA.getTime() - dateB.getTime();
   });
 
+  // Tự động lấy vị trí GPS khi vào trang
+  useEffect(() => {
+    detectUserLocation();
+  }, []);
+
   return (
     <div className="w-full overflow-x-hidden lg:p-4">
       <Title level={2} className="!text-xl md:!text-3xl !mb-4 break-words">
@@ -379,26 +389,25 @@ const WeatherForecastPage: React.FC = () => {
       <Card className="mb-3 md:mb-6" bodyStyle={{ padding: '12px'}}>
         <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
           {/* Tên vị trí */}
-          <div className="flex items-center gap-2 mb-3">
-            <EnvironmentOutlined className="text-blue-600 text-lg flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <Text strong className="text-base md:text-lg text-blue-800 block truncate">
+          <div className="flex items-start gap-2 mb-3">
+            <EnvironmentOutlined className="text-blue-600 text-lg flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <Text strong className="text-lg md:text-xl text-blue-800 block break-words">
                 {selectedLocation.name}
               </Text>
-              <Tag color="blue" className="mt-1">{selectedLocation.region}</Tag>
+
             </div>
           </div>
           
           {/* Các nút action */}
           <div className="flex flex-wrap gap-2">
             <Button 
-              type="text"
+              type="default"
               size="small"
               icon={<AimOutlined />} 
               onClick={detectUserLocation}
               className="!h-8 flex-1 sm:flex-none"
             >
-              <span className="hidden sm:inline">Vị trí GPS</span>
             </Button>
             <Button 
               type="primary" 
@@ -444,73 +453,78 @@ const WeatherForecastPage: React.FC = () => {
 
       {/* Weather Forecast Tabs */}
       {!isWeatherLoading && weatherForecast.length > 0 && (
-        <Card bodyStyle={{ padding: '16px' }}>
-          <Tabs defaultActiveKey="0" type="card">
+        <Card bodyStyle={{ padding: '12px' }}>
+          <Tabs 
+            defaultActiveKey="0" 
+            type="card" 
+            tabBarGutter={8}
+          >
             {sortedDates.map((date, index) => (
               <TabPane 
                 tab={
-                  <span>
-                    <ClockCircleOutlined />
-                    {` ${getDayName(date)} (${date})`}
+                  <span className="text-base md:text-lg font-medium px-2">
+                    <ClockCircleOutlined className="mr-1" />
+                    {`${getDayName(date)} (${date})`}
                   </span>
                 } 
                 key={index.toString()}
               >
-                {/* Tóm tắt thời tiết của ngày */}
-                {(() => {
-                  const filteredData = filterWeatherData(groupedData[date], date);
-                  const summary = getDailySummary(filteredData);
-                  
-                  if (!summary) return null;
-                  
-                  return (
-                    <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
-                      <Text strong className="block text-base mb-3 text-blue-900">
-                        📊 Tóm tắt ngày {date}
-                      </Text>
-                      <Row gutter={[16, 12]}>
-                        <Col xs={12} sm={6}>
-                          <div className="flex flex-col">
-                            <Text type="secondary" className="text-xs mb-1">🌡️ Nhiệt độ</Text>
-                            <Text strong className="text-lg text-orange-600">
-                              {summary.tempMin}°C - {summary.tempMax}°C
-                            </Text>
-                          </div>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <div className="flex flex-col">
-                            <Text type="secondary" className="text-xs mb-1">☔ Khả năng mưa</Text>
-                            <Tag 
-                              color={summary.maxPrecipitationProbability > 50 ? 'red' : summary.maxPrecipitationProbability > 20 ? 'orange' : 'green'}
-                              className="text-base font-semibold w-fit"
-                            >
-                              {summary.maxPrecipitationProbability}% (cao nhất)
-                            </Tag>
-                          </div>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <div className="flex flex-col">
-                            <Text type="secondary" className="text-xs mb-1">🌧️ Tổng lượng mưa</Text>
-                            <Text strong className="text-lg text-blue-600">
-                              {summary.totalRain}mm
-                            </Text>
-                          </div>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <div className="flex flex-col">
-                            <Text type="secondary" className="text-xs mb-1">📈 Số giờ dự báo</Text>
-                            <Text strong className="text-lg text-gray-700">
-                              {filteredData.length} giờ
-                            </Text>
-                          </div>
-                        </Col>
-                      </Row>
-                    </div>
-                  );
-                })()}
-
                 {/* Danh sách chi tiết theo giờ */}
-                <div className="scrollable-result-content max-h-[600px] overflow-y-auto">
+                <div>
+                  {/* Tóm tắt thời tiết của ngày */}
+                  {(() => {
+                    // Lấy summary từ Daily API thay vì tự tính
+                    const summary = getDailySummaryFromAPI(date);
+                    const filteredData = filterWeatherData(groupedData[date], date); // Vẫn cần để hiển thị số giờ
+                    
+                    if (!summary) return null;
+                    
+                    return (
+                      <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
+                        <Text strong className="block text-lg md:text-xl mb-3 text-blue-900">
+                          📊 Tóm tắt ngày {date}
+                        </Text>
+                        <Row gutter={[16, 12]}>
+                          <Col xs={12} sm={6}>
+                            <div className="flex flex-col">
+                              <Text type="secondary" className="text-sm mb-1">🌡️ Nhiệt độ</Text>
+                              <Text strong className="text-xl md:text-2xl text-orange-600">
+                                {summary.tempMin}°C - {summary.tempMax}°C
+                              </Text>
+                            </div>
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <div className="flex flex-col">
+                              <Text type="secondary" className="text-sm mb-1">☔ Khả năng mưa</Text>
+                              <Tag 
+                                color={summary.maxPrecipitationProbability > 50 ? 'red' : summary.maxPrecipitationProbability > 20 ? 'orange' : 'green'}
+                                className="text-lg md:text-xl font-semibold w-fit"
+                              >
+                                {summary.maxPrecipitationProbability}% (cao nhất)
+                              </Tag>
+                            </div>
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <div className="flex flex-col">
+                              <Text type="secondary" className="text-sm mb-1">🌧️ Tổng lượng mưa</Text>
+                              <Text strong className="text-xl md:text-2xl text-blue-600">
+                                {summary.totalRain}mm
+                              </Text>
+                            </div>
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <div className="flex flex-col">
+                              <Text type="secondary" className="text-sm mb-1">📈 Số giờ dự báo</Text>
+                              <Text strong className="text-xl md:text-2xl text-gray-700">
+                                {filteredData.length} giờ
+                              </Text>
+                            </div>
+                          </Col>
+                        </Row>
+                      </div>
+                    );
+                  })()}
+                  
                   <List
                     dataSource={filterWeatherData(groupedData[date], date)}
                     renderItem={(item) => (
@@ -522,18 +536,18 @@ const WeatherForecastPage: React.FC = () => {
                               {/* Cột trái: Giờ + Nhiệt độ */}
                               <Col span={12}>
                                 <div className="flex flex-col gap-2">
-                                  <div className="bg-blue-50 p-2 rounded min-h-[60px] flex flex-col justify-center">
-                                    <Text type="secondary" className="text-xs">⏰ Giờ</Text>
-                                    <Text strong className="block text-blue-600 text-base">
+                                  <div className="bg-blue-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                    <Text type="secondary" className="text-base">⏰ Giờ</Text>
+                                    <Text strong className="block text-blue-600 text-lg md:text-xl">
                                       {new Date(item.dt * 1000).toLocaleTimeString('vi-VN', { 
                                         hour: '2-digit', 
                                         minute: '2-digit' 
                                       })}
                                     </Text>
                                   </div>
-                                  <div className="bg-orange-50 p-2 rounded min-h-[60px] flex flex-col justify-center">
-                                    <Text type="secondary" className="text-xs">🌡️ Nhiệt độ</Text>
-                                    <Text className="block text-xl font-bold text-orange-600">
+                                  <div className="bg-orange-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                    <Text type="secondary" className="text-base">🌡️ Nhiệt độ</Text>
+                                    <Text className="block text-2xl md:text-3xl font-bold text-orange-600">
                                       {Math.round(item.main.temp)}°C
                                     </Text>
                                   </div>
@@ -543,18 +557,18 @@ const WeatherForecastPage: React.FC = () => {
                               {/* Cột phải: Mưa + Thời tiết */}
                               <Col span={12}>
                                 <div className="flex flex-col gap-2">
-                                  <div className="bg-green-50 p-2 rounded min-h-[60px] flex flex-col justify-center">
-                                    <Text type="secondary" className="text-xs">☔ Khả năng mưa</Text>
+                                  <div className="bg-green-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                    <Text type="secondary" className="text-base">☔ Khả năng mưa</Text>
                                     <Tag 
                                       color={item.pop > 0.5 ? 'red' : item.pop > 0.2 ? 'orange' : 'green'} 
-                                      className="text-sm font-semibold mt-1 block w-fit"
+                                      className="text-lg md:text-xl font-semibold mt-1 block w-fit"
                                     >
                                       {Math.round(item.pop * 100)}%
                                     </Tag>
                                   </div>
-                                  <div className="bg-cyan-50 p-2 rounded min-h-[60px] flex flex-col justify-center">
-                                    <Text type="secondary" className="text-xs">🌤️ Thời tiết</Text>
-                                    <Text className="block text-sm text-gray-700 font-medium">
+                                  <div className="bg-cyan-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                    <Text type="secondary" className="text-base">🌤️ Thời tiết</Text>
+                                    <Text className="block text-base md:text-lg text-gray-700 font-medium">
                                       {item.weather[0]?.description}
                                     </Text>
                                   </div>
@@ -564,14 +578,34 @@ const WeatherForecastPage: React.FC = () => {
                               {/* Chi tiết - Full width */}
                               <Col span={24}>
                                 <div className="pt-2 mt-2 border-t border-gray-200 bg-gray-50 -mx-3 -mb-3 px-3 pb-3 rounded-b-lg">
-                                  <Text type="secondary" className="text-xs block mb-1">📊 Chi tiết</Text>
-                                  <div className="flex gap-3 text-xs text-gray-600">
-                                    <span>💨 {item.wind.speed}m/s</span>
-                                    <span>💧 {item.main.humidity}%</span>
+                                  <Row gutter={[8, 8]}>
+                                    <Col span={12}>
+                                      <div className="flex flex-col">
+                                        <Text type="secondary" className="text-sm mb-1">💨 Tốc độ gió</Text>
+                                        <Text className="text-sm md:text-base font-semibold text-gray-700">
+                                          {item.wind.speed}m/s
+                                        </Text>
+                                      </div>
+                                    </Col>
+                                    <Col span={12}>
+                                      <div className="flex flex-col">
+                                        <Text type="secondary" className="text-sm mb-1">💧 Độ ẩm</Text>
+                                        <Text className="text-sm md:text-base font-semibold text-gray-700">
+                                          {item.main.humidity}%
+                                        </Text>
+                                      </div>
+                                    </Col>
                                     {item.rain && item.rain['1h'] > 0 && (
-                                      <span className="text-orange-600 font-semibold">🌧️ {item.rain['1h']}mm</span>
+                                      <Col span={24}>
+                                        <div className="flex flex-col">
+                                          <Text type="secondary" className="text-sm mb-1">🌧️ Lượng mưa</Text>
+                                          <Text className="text-sm md:text-base font-semibold text-orange-600">
+                                            {item.rain['1h']}mm
+                                          </Text>
+                                        </div>
+                                      </Col>
                                     )}
-                                  </div>
+                                  </Row>
                                 </div>
                               </Col>
                             </Row>
