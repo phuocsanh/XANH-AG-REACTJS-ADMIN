@@ -70,6 +70,8 @@ import AdjustmentsPage from "./pages/inventory/adjustments"
 import OperatingCostCategoriesPage from './pages/operating-costs/categories'
 import OperatingCostsPage from "./pages/operating-costs"
 import DosageCalculator from "./pages/calculator/dosage-calculator"
+// Thêm import cho trang dự báo thời tiết
+import WeatherForecastPage from "./pages/weather-forecast"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
 import { remoteConfig } from "./lib/firebase"
@@ -252,6 +254,15 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <DosageCalculator />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path='/weather-forecast'
+                      element={
+                        <ProtectedRoute>
+                          <WeatherForecastPage />
                         </ProtectedRoute>
                       }
                     />

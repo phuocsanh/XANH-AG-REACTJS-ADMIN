@@ -109,6 +109,33 @@ class WeatherService {
   }
 
   /**
+   * Lấy dự báo thời tiết 7 ngày từ Open-Meteo
+   */
+  async getForecast7Days(lat: number = 21.0285, lon: number = 105.8542): Promise<WeatherData[]> {
+    try {
+      const params = new URLSearchParams({
+        latitude: lat.toString(),
+        longitude: lon.toString(),
+        hourly: 'temperature_2m,relative_humidity_2m,precipitation_probability,rain,weather_code,wind_speed_10m',
+        timezone: 'auto',
+        forecast_days: '7' // Lấy 7 ngày
+      });
+
+      const response = await fetch(`${this.baseUrl}?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Lỗi khi gọi API thời tiết: ${response.status}`);
+      }
+
+      const data: OpenMeteoResponse = await response.json();
+      return this.mapOpenMeteoToWeatherData(data);
+    } catch (error) {
+      console.error('Error fetching 7-day weather data:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Chuyển đổi dữ liệu Open-Meteo sang format WeatherData cũ để tương thích UI
    */
   private mapOpenMeteoToWeatherData(data: OpenMeteoResponse): WeatherData[] {

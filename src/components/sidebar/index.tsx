@@ -22,6 +22,7 @@ import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
 import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney } from "react-icons/md"
+import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 
@@ -49,6 +50,11 @@ const Sidebar: React.FC = () => {
     // Tính liều lượng
     else if (path.startsWith('/dosage-calculator')) {
       setActiveTab(29)
+      setIsToggleSubmenu(false)
+    }
+    // Dự báo thời tiết
+    else if (path.startsWith('/weather-forecast')) {
+      setActiveTab(31)
       setIsToggleSubmenu(false)
     }
     // Sản phẩm - tab 1
@@ -196,6 +202,20 @@ const Sidebar: React.FC = () => {
                   <MdCalculate className='text-cyan-400' />
                 </span>
                 Tính Liều Lượng
+              </Button>
+            </Link>
+          </li>
+
+          <li>
+            <Link to='/weather-forecast'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 31 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(31)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <TiWeatherPartlySunny className='text-blue-300' />
+                </span>
+                Dự báo Thời tiết
               </Button>
             </Link>
           </li>
