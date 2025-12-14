@@ -327,10 +327,29 @@ const WeatherForecastPage: React.FC = () => {
     
     if (!dailyData) return null;
     
+    // Tìm giờ có khả năng mưa cao nhất từ hourly data
+    const groupedData = groupByDay(weatherForecast);
+    const hourlyDataForDate = groupedData[dateString] || [];
+    
+    let maxPrecipTime = '';
+    if (hourlyDataForDate.length > 0) {
+      // Tìm item có pop cao nhất
+      const maxPrecipItem = hourlyDataForDate.reduce((max, item) => 
+        item.pop > max.pop ? item : max
+      , hourlyDataForDate[0]);
+      
+      // Format giờ
+      maxPrecipTime = new Date(maxPrecipItem.dt * 1000).toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
     return {
       tempMin: dailyData.tempMin,
       tempMax: dailyData.tempMax,
       maxPrecipitationProbability: dailyData.precipitationProbabilityMax,
+      maxPrecipitationTime: maxPrecipTime, // Thêm giờ có mưa cao nhất
       totalRain: dailyData.precipitationSum.toString()
     };
   };
@@ -462,7 +481,7 @@ const WeatherForecastPage: React.FC = () => {
             {sortedDates.map((date, index) => (
               <TabPane 
                 tab={
-                  <span className="text-base md:text-lg font-medium px-2">
+                  <span className="text-lg md:text-xxl font-medium px-2 font-weight-bold">
                     <ClockCircleOutlined className="mr-1" />
                     {`${getDayName(date)} (${date})`}
                   </span>
@@ -502,6 +521,11 @@ const WeatherForecastPage: React.FC = () => {
                               >
                                 {summary.maxPrecipitationProbability}% (cao nhất)
                               </Tag>
+                              {summary.maxPrecipitationTime && (
+                                <Text type="secondary" className="text-sm mt-1" style={{ color: 'red', fontWeight: 'bold' }}>
+                                  Lúc {summary.maxPrecipitationTime}
+                                </Text>
+                              )}
                             </div>
                           </Col>
                           <Col xs={12} sm={6}>
@@ -527,16 +551,20 @@ const WeatherForecastPage: React.FC = () => {
                   
                   <List
                     dataSource={filterWeatherData(groupedData[date], date)}
-                    renderItem={(item) => (
+                    renderItem={(item, index) => (
                       <List.Item className="!p-2 md:!p-3 !border-0">
-                        <div className="w-full bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow">
+                        <div 
+                          className={`w-full bg-white rounded-lg p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow border-2 ${
+                            index % 2 === 0 ? 'border-blue-300' : 'border-green-300'
+                          }`}
+                        >
                           {/* Mobile Layout - 2 cột */}
                           <div className="block md:hidden">
                             <Row gutter={[12, 8]}>
                               {/* Cột trái: Giờ + Nhiệt độ */}
                               <Col span={12}>
                                 <div className="flex flex-col gap-2">
-                                  <div className="bg-blue-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                  <div className="bg-blue-50 p-2 rounded h-[85px] flex flex-col justify-center">
                                     <Text type="secondary" className="text-base">⏰ Giờ</Text>
                                     <Text strong className="block text-blue-600 text-lg md:text-xl">
                                       {new Date(item.dt * 1000).toLocaleTimeString('vi-VN', { 
@@ -545,7 +573,7 @@ const WeatherForecastPage: React.FC = () => {
                                       })}
                                     </Text>
                                   </div>
-                                  <div className="bg-orange-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                  <div className="bg-orange-50 p-2 rounded h-[85px] flex flex-col justify-center">
                                     <Text type="secondary" className="text-base">🌡️ Nhiệt độ</Text>
                                     <Text className="block text-2xl md:text-3xl font-bold text-orange-600">
                                       {Math.round(item.main.temp)}°C
@@ -557,7 +585,7 @@ const WeatherForecastPage: React.FC = () => {
                               {/* Cột phải: Mưa + Thời tiết */}
                               <Col span={12}>
                                 <div className="flex flex-col gap-2">
-                                  <div className="bg-green-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                  <div className="bg-green-50 p-2 rounded h-[85px] flex flex-col justify-center">
                                     <Text type="secondary" className="text-base">☔ Khả năng mưa</Text>
                                     <Tag 
                                       color={item.pop > 0.5 ? 'red' : item.pop > 0.2 ? 'orange' : 'green'} 
@@ -566,7 +594,7 @@ const WeatherForecastPage: React.FC = () => {
                                       {Math.round(item.pop * 100)}%
                                     </Tag>
                                   </div>
-                                  <div className="bg-cyan-50 p-2 rounded min-h-[70px] flex flex-col justify-center">
+                                  <div className="bg-cyan-50 p-2 rounded h-[85px] flex flex-col justify-center">
                                     <Text type="secondary" className="text-base">🌤️ Thời tiết</Text>
                                     <Text className="block text-base md:text-lg text-gray-700 font-medium">
                                       {item.weather[0]?.description}
