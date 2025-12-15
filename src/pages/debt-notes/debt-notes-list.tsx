@@ -6,6 +6,7 @@
 import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
 import { useDebtNotesQuery } from "@/queries/debt-note"
+import { useSeasonsQuery } from "@/queries/season"
 import {
   Tag,
   Card,
@@ -19,6 +20,7 @@ import { DollarOutlined, SearchOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
+import ComboBox from "@/components/common/combo-box"
 import {
   debtStatusLabels,
   debtStatusColors,
@@ -43,6 +45,16 @@ const DebtNotesList: React.FC = () => {
   const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
   const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
   const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<any>(null)
+
+  // State cho season search
+  const [seasonSearchText, setSeasonSearchText] = React.useState('')
+
+  // Load mùa vụ với search
+  const { data: seasonsData } = useSeasonsQuery({ 
+    page: 1, 
+    limit: 20,
+    ...(seasonSearchText && { name: seasonSearchText }) // Thêm filter name khi có search
+  })
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
@@ -253,17 +265,9 @@ const DebtNotesList: React.FC = () => {
       ),
     },
     {
-      key: "season_name",
-      title: (
-        <FilterHeader 
-            title="Mùa vụ" 
-            dataIndex="season_name" 
-            value={filters.season_name} 
-            onChange={(val) => handleFilterChange('season_name', val)}
-            inputType="text"
-        />
-      ),
-      width: 120,
+      key: "season_id",
+      title: "Mùa vụ",
+      width: 180,
       render: (record: ExtendedDebtNote) => (
         <div>{record.season?.name || record.season_name || "-"}</div>
       ),
@@ -361,19 +365,37 @@ const DebtNotesList: React.FC = () => {
 
   return (
     <div className='p-6'>
-      <div className='flex justify-between items-center mb-6'>
+      <div className='flex justify-between items-center mb-4'>
         <h1 className='text-2xl font-bold'>Quản lý Công nợ</h1>
       </div>
 
-      {/* Summary Cards */}
-      <Row gutter={16} className='mb-6'>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+      {/* Season Filter */}
+      <div className='mb-4'>
+        <ComboBox
+          placeholder="Lọc theo mùa vụ"
+          value={filters.season_id}
+          onChange={(val) => handleFilterChange('season_id', val)}
+          onSearch={(text) => setSeasonSearchText(text)} // Gọi API khi nhập
+          options={(seasonsData?.data?.items || []).map((season: any) => ({
+            value: season.id,
+            label: season.name
+          }))}
+          allowClear
+          showSearch
+          filterOption={false} // Tắt filter local, dùng API search
+          style={{ width: 250 }}
+        />
+      </div>
+
+      {/* Summary Cards - Optimized for Mobile */}
+      <Row gutter={[8, 8]} className='mb-6'>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
               title='Tổng công nợ'
               value={totalDebt}
               precision={0}
-              valueStyle={{ color: "#faad14" }}
+              valueStyle={{ color: "#faad14", fontSize: '18px' }}
               formatter={(value) =>
                 new Intl.NumberFormat("vi-VN", {
                   style: "currency",
@@ -383,33 +405,33 @@ const DebtNotesList: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
               title='Quá hạn'
               value={overdueCount}
               suffix='phiếu'
-              valueStyle={{ color: "#cf1322" }}
+              valueStyle={{ color: "#cf1322", fontSize: '18px' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
               title='Đang nợ'
               value={activeCount}
               suffix='phiếu'
-              valueStyle={{ color: "#1890ff" }}
+              valueStyle={{ color: "#1890ff", fontSize: '18px' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
               title='Đã trả'
               value={paidCount}
               suffix='phiếu'
-              valueStyle={{ color: "#3f8600" }}
+              valueStyle={{ color: "#3f8600", fontSize: '18px' }}
             />
           </Card>
         </Col>
