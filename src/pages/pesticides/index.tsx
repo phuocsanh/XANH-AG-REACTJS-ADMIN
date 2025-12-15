@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Button, Card, Space, Typography, Spin, Alert, Row, Col, List, Tag, Modal, Checkbox, Select, message } from 'antd';
-import { PrinterOutlined, EnvironmentOutlined, AimOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { PrinterOutlined, EnvironmentOutlined, AimOutlined, ReloadOutlined, SyncOutlined, SaveOutlined } from '@ant-design/icons';
 import ComboBox from '@/components/common/combo-box';
 import { useAiService } from '@/hooks/use-ai-service';
 import { useProductsQuery } from '@/queries/product';
@@ -9,6 +9,7 @@ import { weatherService, WeatherData, SimplifiedWeatherData } from '@/services/w
 import { frontendAiService } from '@/services/ai.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
+import { useLocationQuery, useUpdateLocationMutation } from '@/queries/rice-blast';
 
 const { Title, Text } = Typography;
 
@@ -25,6 +26,10 @@ const PesticidesPage: React.FC = () => {
     reason: string;
   }
 
+  // Lấy location từ database
+  const { data: dbLocation, isLoading: isLoadingLocation } = useLocationQuery();
+  const updateLocationMutation = useUpdateLocationMutation();
+
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [mixResult, setMixResult] = useState('');
   const [sortResult, setSortResult] = useState('');
@@ -35,8 +40,19 @@ const PesticidesPage: React.FC = () => {
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Location state
-  const [selectedLocation, setSelectedLocation] = useState<Location>(DEFAULT_LOCATION);
+  // Location state - Khởi tạo từ database
+  const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
+    if (dbLocation) {
+      return {
+        id: 'db-location',
+        name: dbLocation.name,
+        latitude: dbLocation.lat,
+        longitude: dbLocation.lon,
+        region: '📍 Vị trí từ hệ thống'
+      };
+    }
+    return DEFAULT_LOCATION;
+  });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   
   // Print states
@@ -371,6 +387,12 @@ ${productInfo}`;
           };
 
           setSelectedLocation(newLocation);
+          // Lưu vào database
+          updateLocationMutation.mutate({
+            name: detailedName,
+            lat: latitude,
+            lon: longitude
+          });
           hide();
           message.success(`Đã cập nhật: ${detailedName}`);
         } catch (error) {
@@ -401,10 +423,26 @@ ${productInfo}`;
     );
   };
 
-  // Tự động định vị khi vào trang
+  // Sync location từ database khi dbLocation thay đổi
   useEffect(() => {
-    detectUserLocation();
-  }, []);
+    if (dbLocation) {
+      setSelectedLocation({
+        id: 'db-location',
+        name: dbLocation.name,
+        latitude: dbLocation.lat,
+        longitude: dbLocation.lon,
+        region: '📍 Vị trí từ hệ thống'
+      });
+    }
+  }, [dbLocation]);
+
+  // Tự động lấy GPS nếu chưa có location trong DB
+  useEffect(() => {
+    if (!isLoadingLocation && !dbLocation) {
+      console.log('📍 Chưa có vị trí trong DB, tự động lấy GPS...');
+      detectUserLocation();
+    }
+  }, [isLoadingLocation, dbLocation]);
 
   /**
    * Xử lý phân tích cả hai chức năng - gọi tuần tự thay vì song song
@@ -513,15 +551,32 @@ ${productInfo}`;
                 <Tag color="blue">{selectedLocation.region}</Tag>
               </div>
             </div>
-            <Button 
-              type="primary" 
-              ghost
-              icon={<EnvironmentOutlined />}
-              onClick={() => setIsMapModalVisible(true)}
-              className="w-full sm:w-auto"
-            >
-              Chọn vị trí khác trên bản đồ
-            </Button>
+            <Space>
+              <Button 
+                type="primary" 
+                ghost
+                icon={<EnvironmentOutlined />}
+                onClick={() => setIsMapModalVisible(true)}
+                className="w-full sm:w-auto"
+              >
+                Chọn vị trí khác trên bản đồ
+              </Button>
+              <Button 
+                type="primary"
+                icon={<SaveOutlined />}
+                onClick={() => {
+                  updateLocationMutation.mutate({
+                    name: selectedLocation.name,
+                    lat: selectedLocation.latitude,
+                    lon: selectedLocation.longitude
+                  });
+                  message.success('Đã lưu vị trí vào hệ thống!');
+                }}
+                loading={updateLocationMutation.isPending}
+              >
+                Lưu vị trí
+              </Button>
+            </Space>
           </div>
 
           <ComboBox
@@ -955,6 +1010,12 @@ ${productInfo}`;
               selectedLocation={selectedLocation}
               onLocationSelect={(location) => {
                 setSelectedLocation(location);
+                // Lưu vào database
+                updateLocationMutation.mutate({
+                  name: location.name,
+                  lat: location.latitude,
+                  lon: location.longitude
+                });
                 setIsMapModalVisible(false);
               }}
             />

@@ -5,6 +5,7 @@ import { weatherService, WeatherData, DailyWeatherData } from '@/services/weathe
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
 import { message } from 'antd';
+import { useAppStore } from '@/stores/store';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -13,14 +14,29 @@ const { TabPane } = Tabs;
  * Trang dự báo thời tiết - Hiển thị dự báo theo giờ cho 7 ngày tới
  */
 const WeatherForecastPage: React.FC = () => {
+  // Lấy lastLocation từ store
+  const lastLocation = useAppStore((state) => state.lastLocation);
+  const setLastLocation = useAppStore((state) => state.setLastLocation);
+
   // State quản lý dữ liệu thời tiết
   const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]);
   const [dailyForecast, setDailyForecast] = useState<DailyWeatherData[]>([]); // Daily summary từ API
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // State quản lý vị trí
-  const [selectedLocation, setSelectedLocation] = useState<Location>(DEFAULT_LOCATION);
+  // State quản lý vị trí - Khởi tạo từ lastLocation nếu có
+  const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
+    if (lastLocation) {
+      return {
+        id: 'saved-location',
+        name: lastLocation.name,
+        latitude: lastLocation.latitude,
+        longitude: lastLocation.longitude,
+        region: lastLocation.region || '📍 Vị trí đã lưu'
+      };
+    }
+    return DEFAULT_LOCATION;
+  });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
   /**
@@ -147,6 +163,14 @@ const WeatherForecastPage: React.FC = () => {
         };
 
         setSelectedLocation(newLocation);
+        // Lưu vị trí vào store để dùng lại sau
+        setLastLocation({
+          name: detailedName,
+          latitude: latitude,
+          longitude: longitude,
+          region: '📍 Vị trí GPS',
+          timestamp: Date.now()
+        });
         hide2();
         message.success(`✅ Đã cập nhật vị trí: ${detailedName}`);
       } catch (error) {
@@ -162,6 +186,14 @@ const WeatherForecastPage: React.FC = () => {
         };
         
         setSelectedLocation(newLocation);
+        // Lưu vị trí vào store để dùng lại sau
+        setLastLocation({
+          name: `Vị trí GPS (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+          latitude: latitude,
+          longitude: longitude,
+          region: '📍 Vị trí GPS',
+          timestamp: Date.now()
+        });
         message.success('✅ Đã cập nhật vị trí GPS');
       }
     };
@@ -393,9 +425,15 @@ const WeatherForecastPage: React.FC = () => {
     return dateA.getTime() - dateB.getTime();
   });
 
-  // Tự động lấy vị trí GPS khi vào trang
+  // Tự động lấy vị trí GPS khi vào trang (chỉ nếu chưa có)
   useEffect(() => {
-    detectUserLocation();
+    if (!lastLocation) {
+      // Chưa có vị trí → Gọi GPS
+      console.log('📍 Lấy vị trí GPS mới...');
+      detectUserLocation();
+    } else {
+      console.log('📍 Sử dụng vị trí đã lưu:', lastLocation.name);
+    }
   }, []);
 
   return (
@@ -739,6 +777,14 @@ const WeatherForecastPage: React.FC = () => {
           selectedLocation={selectedLocation}
           onLocationSelect={(location) => {
             setSelectedLocation(location);
+            // Lưu vị trí vào store để dùng lại sau
+            setLastLocation({
+              name: location.name,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              region: location.region,
+              timestamp: Date.now()
+            });
             setIsMapModalVisible(false);
           }}
           height="500px"

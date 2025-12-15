@@ -207,12 +207,7 @@ export const LocationForm: React.FC<LocationFormProps> = ({
   return (
     <>
       <Card
-        title={
-          <Space>
-            <EnvironmentOutlined />
-            <span>Địa điểm để phân tích</span>
-          </Space>
-        }
+        
         style={{ marginBottom: 24 }}
       >
         <Form
@@ -221,16 +216,18 @@ export const LocationForm: React.FC<LocationFormProps> = ({
           onFinish={handleSubmit}
           disabled={loading}
         >
-          {/* Row 1: Tên vị trí, Vĩ độ, Kinh độ */}
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
+          {/* Single Row: Tên vị trí + 3 Action Buttons */}
+          <Row gutter={8} align="middle">
+            {/* Tên vị trí - Chiếm phần lớn */}
+            <Col xs={24} sm={12} md={14} lg={16}>
               <Form.Item
-                label="Tên vị trí"
+                
                 name="name"
                 rules={[
                   { required: true, message: 'Vui lòng nhập tên vị trí' },
                   { min: 3, message: 'Tên vị trí phải có ít nhất 3 ký tự' },
                 ]}
+                style={{ marginBottom: 0 }}
               >
                 <Input 
                   placeholder="VD: Ruộng nhà ông Tư" 
@@ -239,81 +236,29 @@ export const LocationForm: React.FC<LocationFormProps> = ({
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={8}>
-              <Form.Item
-                label="Vĩ độ (Latitude)"
-                name="lat"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập vĩ độ' },
-                  { 
-                    type: 'number', 
-                    min: -90, 
-                    max: 90, 
-                    message: 'Vĩ độ phải từ -90 đến 90' 
-                  },
-                ]}
-              >
-                <InputNumber
-                  placeholder="VD: 10.1286"
-                  style={{ width: '100%' }}
-                  step={0.0001}
-                  precision={4}
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={8}>
-              <Form.Item
-                label="Kinh độ (Longitude)"
-                name="lon"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập kinh độ' },
-                  { 
-                    type: 'number', 
-                    min: -180, 
-                    max: 180, 
-                    message: 'Kinh độ phải từ -180 đến 180' 
-                  },
-                ]}
-              >
-                <InputNumber
-                  placeholder="VD: 105.2710"
-                  style={{ width: '100%' }}
-                  step={0.0001}
-                  precision={4}
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Row 2: Action Buttons */}
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
+            {/* 3 Action Buttons - Chiếm phần nhỏ */}
+            <Col xs={8} sm={4} md={3} lg={2}>
               <Button
                 icon={<AimOutlined />}
                 onClick={detectUserLocation}
                 loading={isDetecting}
                 block
                 size="large"
-              >
-                Lấy vị trí hiện tại của tôi
-              </Button>
+                title="Lấy vị trí hiện tại"
+              />
             </Col>
             
-            <Col xs={24} md={8}>
+            <Col xs={8} sm={4} md={3} lg={2}>
               <Button
                 icon={<EnvironmentOutlined />}
                 onClick={() => setIsMapModalVisible(true)}
                 block
                 size="large"
-              >
-                Chọn vị trí trên bản đồ
-              </Button>
+                title="Chọn vị trí trên bản đồ"
+              />
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={8} sm={4} md={4} lg={4}>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -321,8 +266,9 @@ export const LocationForm: React.FC<LocationFormProps> = ({
                 loading={loading}
                 size="large"
                 block
+                title="Lưu vị trí"
               >
-                {loading ? 'Đang lưu...' : 'Lưu vị trí'}
+                {loading ? 'Đang lưu...' : 'Lưu'}
               </Button>
             </Col>
           </Row>

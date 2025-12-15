@@ -164,6 +164,26 @@ const CreateSalesInvoice = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [diseaseWarningTab, setDiseaseWarningTab] = useState('rice-blast');
 
+  // Disease Warning Queries - Phải khai báo trước để dùng trong selectedLocation
+  const { data: diseaseLocation } = useLocationQuery();
+  const { data: riceBlastWarning } = useRiceBlastWarningQuery();
+  const { data: bacterialBlightWarning } = useBacterialBlightWarningQuery();
+  const { data: stemBorerWarning } = useStemBorerWarningQuery();
+  const { data: gallMidgeWarning } = useGallMidgeWarningQuery();
+  const { data: brownPlantHopperWarning } = useBrownPlantHopperWarningQuery();
+  const { data: sheathBlightWarning } = useSheathBlightWarningQuery();
+  const { data: grainDiscolorationWarning } = useGrainDiscolorationWarningQuery();
+
+  // Disease Warning Mutations
+  const updateLocationMutation = useUpdateLocationMutation();
+  const runRiceBlastMutation = useRunRiceBlastAnalysisMutation();
+  const runBacterialBlightMutation = useRunBacterialBlightAnalysisMutation();
+  const runStemBorerMutation = useRunStemBorerAnalysisMutation();
+  const runGallMidgeMutation = useRunGallMidgeAnalysisMutation();
+  const runBrownPlantHopperMutation = useRunBrownPlantHopperAnalysisMutation();
+  const runSheathBlightMutation = useRunSheathBlightAnalysisMutation();
+  const runGrainDiscolorationMutation = useRunGrainDiscolorationAnalysisMutation();
+
   // Technical Advisory States
   const [selectedProductIdsForAdvisory, setSelectedProductIdsForAdvisory] = useState<number[]>([]);
   const [mixResult, setMixResult] = useState('');
@@ -173,7 +193,20 @@ const CreateSalesInvoice = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<Location>(DEFAULT_LOCATION);
+  
+  // Location state - Khởi tạo từ database
+  const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
+    if (diseaseLocation) {
+      return {
+        id: 'db-location',
+        name: diseaseLocation.name,
+        latitude: diseaseLocation.lat,
+        longitude: diseaseLocation.lon,
+        region: '📍 Vị trí từ hệ thống'
+      };
+    }
+    return DEFAULT_LOCATION;
+  });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPrintModalVisible, setIsPrintModalVisible] = useState(false);
   const [printSections, setPrintSections] = useState({
@@ -350,25 +383,6 @@ const CreateSalesInvoice = () => {
     }
   }, [isEditMode, invoiceData, setValue]);
 
-  // Disease Warning Queries
-  const { data: diseaseLocation } = useLocationQuery();
-  const { data: riceBlastWarning } = useRiceBlastWarningQuery();
-  const { data: bacterialBlightWarning } = useBacterialBlightWarningQuery();
-  const { data: stemBorerWarning } = useStemBorerWarningQuery();
-  const { data: gallMidgeWarning } = useGallMidgeWarningQuery();
-  const { data: brownPlantHopperWarning } = useBrownPlantHopperWarningQuery();
-  const { data: sheathBlightWarning } = useSheathBlightWarningQuery();
-  const { data: grainDiscolorationWarning } = useGrainDiscolorationWarningQuery();
-
-  // Disease Warning Mutations
-  const updateLocationMutation = useUpdateLocationMutation();
-  const runRiceBlastMutation = useRunRiceBlastAnalysisMutation();
-  const runBacterialBlightMutation = useRunBacterialBlightAnalysisMutation();
-  const runStemBorerMutation = useRunStemBorerAnalysisMutation();
-  const runGallMidgeMutation = useRunGallMidgeAnalysisMutation();
-  const runBrownPlantHopperMutation = useRunBrownPlantHopperAnalysisMutation();
-  const runSheathBlightMutation = useRunSheathBlightAnalysisMutation();
-  const runGrainDiscolorationMutation = useRunGrainDiscolorationAnalysisMutation();
   // Set active season as default
   useEffect(() => {
     // Chỉ set default nếu chưa có giá trị (để tránh override lựa chọn của user)
@@ -903,6 +917,12 @@ ${productInfo}`;
           };
 
           setSelectedLocation(newLocation);
+          // Lưu vào database
+          updateLocationMutation.mutate({
+            name: detailedName,
+            lat: latitude,
+            lon: longitude
+          });
           hide();
           message.success(`Đã cập nhật: ${detailedName}`);
         } catch (error) {
@@ -933,15 +953,29 @@ ${productInfo}`;
     );
   };
 
+  // Sync location từ database khi diseaseLocation thay đổi
+  useEffect(() => {
+    if (diseaseLocation) {
+      setSelectedLocation({
+        id: 'db-location',
+        name: diseaseLocation.name,
+        latitude: diseaseLocation.lat,
+        longitude: diseaseLocation.lon,
+        region: '📍 Vị trí từ hệ thống'
+      });
+    }
+  }, [diseaseLocation]);
+
   useEffect(() => {
     if (currentTab === 1) {
-      // Nếu chưa có vị trí (hoặc đang là mặc định), thử tự động định vị
-      if (selectedLocation.id === 'hanoi') {
+      // Nếu chưa có location trong DB, tự động lấy GPS
+      if (!diseaseLocation) {
+        console.log('📍 Chưa có vị trí trong DB, tự động lấy GPS...');
         detectUserLocation();
       }
       fetchWeatherForecast();
     }
-  }, [currentTab, selectedLocation]);
+  }, [currentTab, diseaseLocation]);
 
   const handleAnalyze = async () => {
     if (selectedProductIdsForAdvisory.length < 2) {
@@ -1755,27 +1789,53 @@ ${productInfo}`;
                 Tư vấn kỹ thuật & Thời tiết
               </Typography>
 
-              {/* Location Display */}
-              <Box sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  Vị trí dự báo thời tiết:
-                </Typography>
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
-                  <IconButton size="small" onClick={detectUserLocation} title="Lấy vị trí hiện tại">
-                    <AimOutlined />
-                  </IconButton>
-                  <EnvironmentOutlined />
-                  <Typography fontWeight="bold">{selectedLocation.name}</Typography>
-                  <Tag color="blue">{selectedLocation.region}</Tag>
+              {/* Location Display - Compact */}
+              <Box sx={{ mb: 2, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
+                <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+                  {/* Location Info */}
+                  <Box display="flex" alignItems="center" gap={1} flex={1} minWidth={0}>
+                    <EnvironmentOutlined style={{ fontSize: 18, color: '#1976d2' }} />
+                    <Typography fontWeight="bold" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                      {selectedLocation.name}
+                    </Typography>
+                  </Box>
+                  
+                  {/* Action Buttons - Icon Only */}
+                  <Box display="flex" gap={0.5}>
+                    <IconButton 
+                      size="small" 
+                      onClick={detectUserLocation} 
+                      title="Lấy vị trí hiện tại"
+                      color="default"
+                    >
+                      <AimOutlined />
+                    </IconButton>
+                    <IconButton 
+                      size="small" 
+                      onClick={() => setIsMapModalVisible(true)}
+                      title="Chọn vị trí trên bản đồ"
+                      color="primary"
+                    >
+                      <EnvironmentOutlined />
+                    </IconButton>
+                    <IconButton 
+                      size="small"
+                      onClick={() => {
+                        updateLocationMutation.mutate({
+                          name: selectedLocation.name,
+                          lat: selectedLocation.latitude,
+                          lon: selectedLocation.longitude
+                        });
+                        message.success('Đã lưu vị trí!');
+                      }}
+                      disabled={updateLocationMutation.isPending}
+                      title="Lưu vị trí"
+                      color="success"
+                    >
+                      <SaveIcon />
+                    </IconButton>
+                  </Box>
                 </Box>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<EnvironmentOutlined />}
-                  onClick={() => setIsMapModalVisible(true)}
-                >
-                  Chọn vị trí khác
-                </Button>
               </Box>
 
               {/* Product Selection */}
@@ -2295,6 +2355,12 @@ ${productInfo}`;
           selectedLocation={selectedLocation}
           onLocationSelect={(location) => {
             setSelectedLocation(location);
+            // Lưu vào database
+            updateLocationMutation.mutate({
+              name: location.name,
+              lat: location.latitude,
+              lon: location.longitude
+            });
             setIsMapModalVisible(false);
           }}
         />
