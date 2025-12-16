@@ -259,6 +259,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           ingredient: Array.isArray(productItem.ingredient)
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
+          notes: productItem.notes || "", // Ghi chú
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
@@ -430,6 +431,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               .split(",")
               .map((item: string) => item.trim())
           : [],
+        notes: convertedValues.notes || "", // Ghi chú
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -737,6 +739,19 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
 
               <div className="px-3 md:px-6 pb-3 md:pb-6">
+                {/* Ghi chú - Đặt trước Mô tả */}
+                <div className='w-full mb-4'>
+                  <FormField
+                    name='notes'
+                    control={control}
+                    label='Ghi chú'
+                    placeholder='Nhập ghi chú về sản phẩm (tùy chọn)'
+                    className='w-full'
+                    type="textarea"
+                    rows={3}
+                  />
+                </div>
+
                 <Form.Item
                   label='Mô tả sản phẩm'
                   className='w-full'

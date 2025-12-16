@@ -369,18 +369,6 @@ const ProductsList: React.FC = () => {
           <Button key='close' onClick={() => setIsViewModalVisible(false)}>
             Đóng
           </Button>,
-          currentProduct && (
-            <Button
-              key='edit'
-              type='primary'
-              onClick={() => {
-                setIsViewModalVisible(false)
-                handleEditProduct(currentProduct)
-              }}
-            >
-              Chỉnh sửa
-            </Button>
-          ),
         ]}
         width={700}
       >
@@ -404,11 +392,31 @@ const ProductsList: React.FC = () => {
             <Descriptions.Item label='Tên sản phẩm'>
               {currentProduct.name}
             </Descriptions.Item>
-            <Descriptions.Item label='Slug'>
-              {currentProduct.slug || "Không có"}
-            </Descriptions.Item>
+            {currentProduct.notes && (
+              <Descriptions.Item label='Ghi chú'>
+                <div 
+                  style={{ 
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word' 
+                  }}
+                >
+                  {currentProduct.notes}
+                </div>
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label='Mô tả'>
-              {currentProduct.description || "Không có mô tả"}
+              {currentProduct.description ? (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: currentProduct.description }}
+                  style={{ 
+                    maxHeight: '300px', 
+                    overflowY: 'auto',
+                    wordBreak: 'break-word'
+                  }}
+                />
+              ) : (
+                "Không có mô tả"
+              )}
             </Descriptions.Item>
             <Descriptions.Item label='Giá bán (Tiền mặt)'>
               {new Intl.NumberFormat("vi-VN", {
@@ -543,6 +551,9 @@ const ProductsList: React.FC = () => {
                 </div>
               </Descriptions.Item>
             )}
+            <Descriptions.Item label='Slug'>
+              {currentProduct.slug || "Không có"}
+            </Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

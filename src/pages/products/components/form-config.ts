@@ -28,6 +28,7 @@ export const productFormSchema = z.object({
   // Thêm 2 trường mới
   symbol_id: z.number().optional(),
   ingredient: z.string().min(1, "Vui lòng nhập thành phần nguyên liệu"), // Bắt buộc nhập
+  notes: z.string().optional(), // Ghi chú (tùy chọn)
   // Thêm 2 trường mới từ server
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
@@ -68,6 +69,7 @@ export interface ProductFormValues {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient: string // Bắt buộc nhập
+  notes?: string // Ghi chú
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
@@ -95,6 +97,7 @@ export interface ConvertedProductValues {
   // Thêm 2 trường mới
   symbol_id?: number
   ingredient: string[] // Chuyển thành mảng khi gửi lên server
+  notes?: string // Ghi chú
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
@@ -113,6 +116,7 @@ export const defaultProductFormValues: ProductFormValues = {
   unit_id: undefined, // Bắt buộc nhập
   status: "active",
   ingredient: "", // Bắt buộc nhập
+  notes: "", // Ghi chú
   profit_margin_percent: "", // Thêm trường mới
   average_cost_price: "", // Thêm trường mới
   // Các trường optional khác sẽ là undefined theo mặc định
