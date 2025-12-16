@@ -82,7 +82,15 @@ export const useCreateSalesReturnMutation = () => {
       return response
     },
     onSuccess: () => {
+      // Invalidate sales returns list
       queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
+      
+      // ✅ QUAN TRỌNG: Invalidate debt-notes để cập nhật công nợ
+      queryClient.invalidateQueries({ queryKey: ['debt-notes'] })
+      
+      // ✅ Invalidate sales-invoices để cập nhật trạng thái hóa đơn
+      queryClient.invalidateQueries({ queryKey: ['sales-invoices'] })
+      
       toast.success("Tạo phiếu trả hàng thành công!")
     },
     onError: (error: unknown) => {
