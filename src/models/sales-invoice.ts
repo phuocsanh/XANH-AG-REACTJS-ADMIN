@@ -13,6 +13,9 @@ export interface SalesInvoiceItem {
   unit_price: number;
   discount_amount: number;
   notes?: string;
+  // ✅ Thêm mới: Hỗ trợ tính năng trả hàng
+  returned_quantity?: number; // Tổng số lượng đã trả
+  returnable_quantity?: number; // Số lượng còn có thể trả
 }
 
 export interface SalesInvoice {

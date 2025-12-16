@@ -327,12 +327,14 @@ const SalesReturnsList: React.FC = () => {
               <Card>
                 <div className='text-gray-500 text-sm'>Hóa đơn gốc</div>
                 <div className='text-lg font-medium'>
-                  {viewingReturn.invoice_code}
+                  {viewingReturn.invoice?.code || viewingReturn.invoice_code || '-'}
                 </div>
                 <div className='text-gray-500 text-sm mt-2'>Khách hàng</div>
-                <div className='font-medium'>{viewingReturn.customer_name}</div>
+                <div className='font-medium'>
+                  {viewingReturn.customer?.name || viewingReturn.invoice?.customer_name || viewingReturn.customer_name || '-'}
+                </div>
                 <div className='text-gray-600'>
-                  {viewingReturn.customer_phone}
+                  {viewingReturn.customer?.phone || viewingReturn.invoice?.customer_phone || viewingReturn.customer_phone || '-'}
                 </div>
               </Card>
 
@@ -380,32 +382,39 @@ const SalesReturnsList: React.FC = () => {
               </div>
               {viewingReturn.items && viewingReturn.items.length > 0 ? (
                 <Space direction='vertical' className='w-full' size='small'>
-                  {viewingReturn.items.map((item, index) => (
-                    <Card key={index} size='small'>
-                      <div className='grid grid-cols-4 gap-4'>
-                        <div className='col-span-2'>
-                          <div className='font-medium'>{item.product_name}</div>
-                          {item.reason && (
-                            <div className='text-sm text-gray-500'>
-                              Lý do: {item.reason}
+                  {viewingReturn.items.map((item, index) => {
+                    // ✅ Tính refund_amount từ quantity * unit_price
+                    const refundAmount = (item.quantity || 0) * (item.unit_price || 0);
+                    
+                    return (
+                      <Card key={index} size='small'>
+                        <div className='grid grid-cols-4 gap-4'>
+                          <div className='col-span-2'>
+                            <div className='font-medium'>
+                              {item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`}
                             </div>
-                          )}
-                        </div>
-                        <div>
-                          <div className='text-sm text-gray-500'>Số lượng</div>
-                          <div>{item.quantity}</div>
-                        </div>
-                        <div>
-                          <div className='text-sm text-gray-500'>
-                            Tiền hoàn
+                            {item.reason && (
+                              <div className='text-sm text-gray-500'>
+                                Lý do: {item.reason}
+                              </div>
+                            )}
                           </div>
-                          <div className='font-medium text-red-600'>
-                            {formatCurrency(item.refund_amount)}
+                          <div>
+                            <div className='text-sm text-gray-500'>Số lượng</div>
+                            <div>{item.quantity}</div>
+                          </div>
+                          <div>
+                            <div className='text-sm text-gray-500'>
+                              Tiền hoàn
+                            </div>
+                            <div className='font-medium text-red-600'>
+                              {formatCurrency(refundAmount)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </Space>
               ) : (
                 <div className='text-center text-gray-500 py-4'>

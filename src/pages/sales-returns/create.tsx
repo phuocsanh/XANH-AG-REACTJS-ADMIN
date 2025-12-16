@@ -74,6 +74,12 @@ const CreateSalesReturn = () => {
   // Update selectedInvoice state and auto-select refund method
   useEffect(() => {
     if (invoiceDetail) {
+      // 🐛 DEBUG: Kiểm tra xem backend đã trả về returned_quantity chưa
+      console.log('📦 Invoice Detail:', invoiceDetail);
+      console.log('📦 First Item:', invoiceDetail.items?.[0]);
+      console.log('✅ Has returned_quantity?', invoiceDetail.items?.[0]?.returned_quantity !== undefined);
+      console.log('✅ Has returnable_quantity?', invoiceDetail.items?.[0]?.returnable_quantity !== undefined);
+      
       setSelectedInvoice(invoiceDetail);
       
       // Auto-select refund method based on debt
@@ -272,31 +278,51 @@ const CreateSalesReturn = () => {
                   Sản phẩm trả lại
                 </Typography>
 
-                {selectedInvoice ? (
-                  <Box mb={3}>
-                    <Typography variant="subtitle2" mb={1}>
-                      Chọn sản phẩm từ hóa đơn:
-                    </Typography>
-                    <Box display="flex" flexWrap="wrap" gap={1}>
-                      {selectedInvoice.items?.map((item) => {
-                        // Lấy tên sản phẩm từ relation product
-                        const productName = item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`;
-                        
-                        return (
-                          <Button
-                            key={item.id}
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleAddItem(item)}
-                            disabled={fields.some((f) => f.product_id === item.product_id)}
-                          >
-                            {productName}
-                          </Button>
-                        );
-                      })}
+                {selectedInvoice ? (() => {
+                  // ✅ Lọc chỉ hiển thị sản phẩm còn có thể trả
+                  const availableItems = selectedInvoice.items?.filter(
+                    item => (item.returnable_quantity ?? item.quantity) > 0
+                  ) || [];
+
+                  // Hiển thị cảnh báo nếu không còn sản phẩm nào
+                  if (availableItems.length === 0) {
+                    return (
+                      <Alert severity="warning" sx={{ mb: 2 }}>
+                        ⚠️ Hóa đơn này đã trả hết tất cả sản phẩm!
+                      </Alert>
+                    );
+                  }
+
+                  return (
+                    <Box mb={3}>
+                      <Typography variant="subtitle2" mb={1}>
+                        Chọn sản phẩm từ hóa đơn:
+                      </Typography>
+                      <Box display="flex" flexWrap="wrap" gap={1}>
+                        {availableItems.map((item) => {
+                          // Lấy tên sản phẩm từ relation product
+                          const productName = item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`;
+                          const returnableQty = item.returnable_quantity ?? item.quantity;
+                          
+                          return (
+                            <Button
+                              key={item.id}
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleAddItem(item)}
+                              disabled={fields.some((f) => f.product_id === item.product_id)}
+                            >
+                              {productName}
+                              <Box component="span" sx={{ ml: 1, color: 'success.main', fontSize: '0.85em' }}>
+                                (Còn: {returnableQty})
+                              </Box>
+                            </Button>
+                          );
+                        })}
+                      </Box>
                     </Box>
-                  </Box>
-                ) : (
+                  );
+                })() : (
                   <Alert severity="info" sx={{ mb: 2 }}>
                     Vui lòng chọn hóa đơn trước
                   </Alert>
@@ -327,11 +353,16 @@ const CreateSalesReturn = () => {
                           const unitPrice = watch(`items.${index}.unit_price`);
                           const total = quantity * unitPrice;
 
-                          // Find max quantity from invoice
+                          // ✅ Find max quantity from invoice (sử dụng returnable_quantity)
                           const invoiceItem = selectedInvoice?.items?.find(
                             (i) => i.product_id === field.product_id
                           );
-                          const maxQuantity = invoiceItem ? invoiceItem.quantity : 999;
+                          // Sử dụng returnable_quantity nếu có, fallback về quantity
+                          const maxQuantity = invoiceItem 
+                            ? (invoiceItem.returnable_quantity ?? invoiceItem.quantity) 
+                            : 999;
+                          const originalQuantity = invoiceItem?.quantity || 0;
+                          const returnedQuantity = invoiceItem?.returned_quantity || 0;
 
                           return (
                             <TableRow key={field.id}>
@@ -339,8 +370,16 @@ const CreateSalesReturn = () => {
                                 <Typography variant="body2" fontWeight="bold">
                                   {field.product_name}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  Đã mua: {maxQuantity}
+                                <Typography variant="caption" color="text.secondary" component="div">
+                                  Đã mua: {originalQuantity}
+                                  {returnedQuantity > 0 && (
+                                    <Box component="span" sx={{ color: 'warning.main', ml: 1 }}>
+                                      • Đã trả: {returnedQuantity}
+                                    </Box>
+                                  )}
+                                </Typography>
+                                <Typography variant="caption" color="success.main" fontWeight="bold">
+                                  Còn có thể trả: {maxQuantity}
                                 </Typography>
                               </TableCell>
                               <TableCell align="right">

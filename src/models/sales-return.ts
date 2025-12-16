@@ -5,6 +5,11 @@ export interface SalesReturnItem {
   sales_return_id: number;
   product_id: number;
   product_name?: string;
+  product?: {
+    id: number;
+    name: string;
+    code?: string;
+  };
   quantity: number;
   unit_price: number;
   refund_amount: number;
