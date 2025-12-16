@@ -249,7 +249,10 @@ const CreateSalesInvoice = () => {
   const { data: customers } = useCustomerSearchQuery(customerSearch);
   const { data: activeSeason } = useActiveSeasonQuery(); // Lấy mùa vụ mới nhất
   const { data: seasons } = useSeasonsQuery();
-  const { data: productsData } = useProductsQuery({ limit: 100 });
+  const { data: productsData } = useProductsQuery({ 
+    limit: 100,
+    keyword: productSearch || undefined, // Tìm kiếm theo keyword (tên sản phẩm)
+  });
   const { data: latestInvoiceResponse } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
   
   // Filter out current invoice if we are editing the latest one
@@ -1587,6 +1590,7 @@ ${productInfo}`;
                       }
                     }}
                     onSearch={setProductSearch}
+                    filterOption={false}
                     allowClear
                     showSearch
                   />

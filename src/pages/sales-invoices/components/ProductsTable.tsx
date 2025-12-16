@@ -4,8 +4,6 @@ import {
   Box,
   Card,
   Typography,
-  Select,
-  MenuItem,
   IconButton,
   Checkbox,
   Table,
@@ -22,6 +20,7 @@ import { SalesInvoiceFormData } from '../form-config';
 import { priceTypeLabels } from '../form-config';
 import { Product } from '@/models/product.model';
 import NumberInput from '@/components/common/number-input';
+import ComboBox from '@/components/common/combo-box';
 
 interface ProductsDataResponse {
   data?: {
@@ -117,12 +116,10 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         name={`items.${index}.price_type`}
                         control={control}
                         render={({ field: priceTypeField }) => (
-                          <Select
-                            {...priceTypeField}
-                            size="small"
-                            sx={{ width: 140 }}
-                            onChange={(e) => {
-                              const newPriceType = e.target.value as 'cash' | 'credit';
+                          <ComboBox
+                            value={priceTypeField.value}
+                            onChange={(value) => {
+                              const newPriceType = value as 'cash' | 'credit';
                               priceTypeField.onChange(newPriceType);
                               
                               const product = (productsData?.data?.items || []).find(
@@ -136,10 +133,15 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 setValue(`items.${index}.unit_price`, newPrice);
                               }
                             }}
-                          >
-                            <MenuItem value="cash">{priceTypeLabels.cash}</MenuItem>
-                            <MenuItem value="credit">{priceTypeLabels.credit}</MenuItem>
-                          </Select>
+                            options={[
+                              { value: 'cash', label: priceTypeLabels.cash },
+                              { value: 'credit', label: priceTypeLabels.credit }
+                            ]}
+                            size="small"
+                            style={{ width: 140 }}
+                            showSearch={false}
+                            allowClear={false}
+                          />
                         )}
                       />
                     </TableCell>
@@ -272,12 +274,10 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     name={`items.${index}.price_type`}
                     control={control}
                     render={({ field: priceTypeField }) => (
-                      <Select
-                        {...priceTypeField}
-                        fullWidth
-                        size="small"
-                        onChange={(e) => {
-                          const newPriceType = e.target.value as 'cash' | 'credit';
+                      <ComboBox
+                        value={priceTypeField.value}
+                        onChange={(value) => {
+                          const newPriceType = value as 'cash' | 'credit';
                           priceTypeField.onChange(newPriceType);
                           
                           const product = (productsData?.data?.items || []).find(
@@ -287,14 +287,19 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                           if (product) {
                             const newPrice = newPriceType === 'cash' 
                               ? Number(product.price) || 0
-                              : Number(product.credit_price) || Number(product.price) || 0;
+                              : Number(product.credit_price) || Number(product.credit_price) || Number(product.price) || 0;
                             setValue(`items.${index}.unit_price`, newPrice);
                           }
                         }}
-                      >
-                        <MenuItem value="cash">{priceTypeLabels.cash}</MenuItem>
-                        <MenuItem value="credit">{priceTypeLabels.credit}</MenuItem>
-                      </Select>
+                        options={[
+                          { value: 'cash', label: priceTypeLabels.cash },
+                          { value: 'credit', label: priceTypeLabels.credit }
+                        ]}
+                        size="small"
+                        style={{ width: '100%' }}
+                        showSearch={false}
+                        allowClear={false}
+                      />
                     )}
                   />
                 </Box>
