@@ -19,7 +19,7 @@ export const applicationRecordKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Lấy nhật ký theo vụ lúa
+ * Lấy nhật ký theo Ruộng lúa
  */
 export const useApplicationRecords = (cropId: number) => {
   return useQuery({

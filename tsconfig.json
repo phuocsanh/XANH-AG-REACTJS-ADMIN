@@ -19,5 +19,5 @@
     }
   },
   "include": ["src/**/*", "declarations.d.ts"],
-  "exclude": ["node_modules", "src copy", "src-mobile"]
+  "exclude": ["node_modules", "src-server", "src-mobile"]
 }

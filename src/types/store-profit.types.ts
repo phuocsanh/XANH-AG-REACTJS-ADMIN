@@ -174,7 +174,7 @@ export interface CustomerProfitReport {
   by_season: CustomerSeasonSummary[];
 }
 
-// ==================== Lợi Nhuận Vụ Lúa (Rice Crop) ====================
+// ==================== Lợi Nhuận Ruộng lúa (Rice Crop) ====================
 
 export interface RiceCropProfit {
   rice_crop_id: number;

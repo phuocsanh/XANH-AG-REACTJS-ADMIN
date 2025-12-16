@@ -4,6 +4,7 @@ import {
   useSalesInvoicesQuery,
   useAddPaymentMutation,
 } from "@/queries/sales-invoice"
+import { useSeasonsQuery } from "@/queries/season"
 
 import {
   Button,
@@ -27,6 +28,7 @@ import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
+import ComboBox from "@/components/common/combo-box"
 import { useNavigate } from "react-router-dom"
 import { invoiceStatusLabels, paymentMethodLabels } from "./form-config"
 import { TablePaginationConfig, TableProps } from "antd"
@@ -50,6 +52,9 @@ const SalesInvoicesList: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = React.useState(0)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
+  
+  // State cho season search
+  const [seasonSearchText, setSeasonSearchText] = React.useState('')
 
   const navigate = useNavigate()
 
@@ -158,6 +163,13 @@ const SalesInvoicesList: React.FC = () => {
     ...filters
   })
   const addPaymentMutation = useAddPaymentMutation()
+  
+  // Load mùa vụ với search
+  const { data: seasonsData } = useSeasonsQuery({ 
+    page: 1, 
+    limit: 20,
+    ...(seasonSearchText && { name: seasonSearchText })
+  })
 
 
   // Handlers
@@ -250,10 +262,10 @@ const SalesInvoicesList: React.FC = () => {
     {
       key: "customer_name",
       title: (
-        <FilterHeader 
-            title="Khách hàng" 
-            dataIndex="customer_name" 
-            value={filters.customer_name} 
+        <FilterHeader
+            title="Khách hàng"
+            dataIndex="customer_name"
+            value={filters.customer_name}
             onChange={(val) => handleFilterChange('customer_name', val)}
             inputType="text"
         />
@@ -280,19 +292,38 @@ const SalesInvoicesList: React.FC = () => {
       ),
     },
     {
-      key: "season_name",
-      title: "Mùa vụ",
-      width: 120,
+      key: "season_id",
+      title: (
+        <div className="flex flex-col gap-2 py-1" onClick={(e) => e.stopPropagation()}>
+          <div className="font-semibold text-gray-700">Mùa vụ</div>
+          <ComboBox
+            placeholder="Chọn mùa vụ"
+            value={filters.season_id}
+            onChange={(val) => handleFilterChange('season_id', val)}
+            onSearch={(text) => setSeasonSearchText(text)}
+            options={(seasonsData?.data?.items || []).map((season: any) => ({
+              value: season.id,
+              label: season.name
+            }))}
+            allowClear
+            showSearch
+            filterOption={false}
+            style={{ width: '100%', minWidth: 120 }}
+            size="small"
+          />
+        </div>
+      ),
+      width: 180,
       render: (record: ExtendedSalesInvoice) => {
         return <div>{record.season?.name || record.season_name || "-"}</div>
       },
     },
     {
       key: "rice_crop_id",
-      title: "Vụ lúa",
+      title: "Ruộng lúa",
       width: 150,
       filters: [
-          { text: "Có liên kết vụ lúa", value: "has_crop" },
+          { text: "Có liên kết Ruộng lúa", value: "has_crop" },
           { text: "Không liên kết", value: "no_crop" },
       ],
       filteredValue: filters.rice_crop_filter ? [filters.rice_crop_filter] : null,
@@ -514,10 +545,10 @@ const SalesInvoicesList: React.FC = () => {
               </Card>
             </div>
 
-            {/* Thông tin Vụ lúa (nếu có) */}
+            {/* Thông tin Ruộng lúa (nếu có) */}
             {(viewingInvoice as any).rice_crop && (
               <Alert
-                message="🌾 Hóa đơn này liên kết với vụ lúa"
+                message="🌾 Hóa đơn này liên kết với Ruộng lúa"
                 description={
                   <div className='mt-2'>
                     <div className='font-medium text-base mb-1'>
@@ -542,7 +573,7 @@ const SalesInvoicesList: React.FC = () => {
                       className='mt-2 p-0'
                       onClick={() => navigate(`/rice-crops/${(viewingInvoice as any).rice_crop_id}`)}
                     >
-                      Xem chi tiết vụ lúa →
+                      Xem chi tiết Ruộng lúa →
                     </Button>
                   </div>
                 }

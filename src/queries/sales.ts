@@ -42,7 +42,7 @@ export const useCreateInvoiceMutation = () => {
   return useMutation({
     mutationFn: async (invoiceData: CreateSalesInvoiceRequest) => {
       const response = await api.postRaw<SalesInvoice>(
-        "/sales/invoices",
+        "/sales/invoice",
         invoiceData
       )
       return response
@@ -104,7 +104,7 @@ export const useInvoiceQuery = (id: number) => {
   return useQuery({
     queryKey: salesKeys.invoice(id),
     queryFn: async () => {
-      const response = await api.get<SalesInvoice>(`/sales/invoices/${id}`)
+      const response = await api.get<SalesInvoice>(`/sales/invoice/${id}`)
       return response
     },
     enabled: !!id,
@@ -119,7 +119,7 @@ export const useInvoiceByCodeQuery = (code: string) => {
     queryKey: salesKeys.invoiceByCode(code),
     queryFn: async () => {
       const response = await api.get<SalesInvoice>(
-        `/sales/invoices/code/${code}`
+        `/sales/invoice/code/${code}`
       )
       return response
     },
@@ -140,7 +140,7 @@ export const useUpdateInvoiceMutation = () => {
       invoiceData: UpdateSalesInvoiceRequest
     }) => {
       const response = await api.patchRaw<SalesInvoice>(
-        `/sales/invoices/${id}`,
+        `/sales/invoice/${id}`,
         invoiceData
       )
       return response
@@ -162,7 +162,7 @@ export const useUpdateInvoiceMutation = () => {
 export const useDeleteInvoiceMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete(`/sales/invoices/${id}`)
+      const response = await api.delete(`/sales/invoice/${id}`)
       return response
     },
     onSuccess: (_, variables) => {
@@ -189,7 +189,7 @@ export const useUpdatePaymentStatusMutation = () => {
       paymentStatus: "PENDING" | "PAID" | "CANCELLED"
     }) => {
       const response = await api.patchRaw<SalesInvoice>(
-        `/sales/invoices/${id}/payment-status`,
+        `/sales/invoice/${id}/payment-status`,
         {
           paymentStatus,
         }
@@ -217,7 +217,7 @@ export const useInvoiceItemsQuery = (invoiceId: number) => {
     queryKey: salesKeys.invoiceItems(invoiceId),
     queryFn: async () => {
       const response = await api.get<SalesInvoiceItem[]>(
-        `/sales/invoices/${invoiceId}/items`
+        `/sales/invoice/${invoiceId}/items`
       )
       return response
     },
@@ -238,7 +238,7 @@ export const useUpdateInvoiceItemMutation = () => {
       itemData: Partial<SalesInvoiceItem>
     }) => {
       const response = await api.patchRaw<SalesInvoiceItem>(
-        `/sales/invoices/items/${itemId}`,
+        `/sales/invoice/items/${itemId}`,
         itemData
       )
       return response
@@ -259,7 +259,7 @@ export const useUpdateInvoiceItemMutation = () => {
 export const useDeleteInvoiceItemMutation = () => {
   return useMutation({
     mutationFn: async (itemId: number) => {
-      const response = await api.delete(`/sales/invoices/items/${itemId}`)
+      const response = await api.delete(`/sales/invoice/items/${itemId}`)
       return response
     },
     onSuccess: () => {

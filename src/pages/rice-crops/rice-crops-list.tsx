@@ -1,6 +1,6 @@
 /**
  * Trang danh sách Quản Lý Canh Tác
- * Bao gồm: Xem, Thêm, Sửa, Xóa vụ lúa
+ * Bao gồm: Xem, Thêm, Sửa, Xóa Ruộng lúa
  */
 
 import React, { useState } from 'react';
@@ -282,12 +282,12 @@ const RiceCropsList: React.FC = () => {
 
     try {
       await deleteMutation.mutateAsync(deletingCrop.id);
-      message.success('Xóa vụ lúa thành công!');
+      message.success('Xóa Ruộng lúa thành công!');
       setDeleteConfirmVisible(false);
       setDeletingCrop(null);
     } catch (error) {
       console.error('Error deleting crop:', error);
-      message.error('Có lỗi xảy ra khi xóa vụ lúa!');
+      message.error('Có lỗi xảy ra khi xóa Ruộng lúa!');
       setDeleteConfirmVisible(false);
       setDeletingCrop(null);
     }
@@ -311,10 +311,10 @@ const RiceCropsList: React.FC = () => {
 
       if (editingCrop) {
         await updateMutation.mutateAsync({ id: editingCrop.id, dto });
-        message.success('Cập nhật vụ lúa thành công!');
+        message.success('Cập nhật Ruộng lúa thành công!');
       } else {
         await createMutation.mutateAsync(dto);
-        message.success('Tạo vụ lúa thành công!');
+        message.success('Tạo Ruộng lúa thành công!');
       }
 
       setIsFormModalVisible(false);
@@ -489,7 +489,7 @@ const RiceCropsList: React.FC = () => {
           icon={<PlusOutlined />}
           onClick={handleAddCrop}
         >
-          Tạo vụ lúa mới
+          Tạo Ruộng lúa mới
         </Button>
       </div>
 
@@ -505,7 +505,7 @@ const RiceCropsList: React.FC = () => {
             total: cropsData?.total || 0,
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50', '100'],
-            showTotal: (total: number) => `Tổng ${total} vụ lúa`,
+            showTotal: (total: number) => `Tổng ${total} Ruộng lúa`,
           }}
           onChange={handleTableChange}
           showSearch={false}
@@ -513,9 +513,9 @@ const RiceCropsList: React.FC = () => {
         />
       </div>
 
-      {/* Modal form thêm/sửa vụ lúa */}
+      {/* Modal form thêm/sửa Ruộng lúa */}
       <Modal
-        title={editingCrop ? 'Chỉnh sửa vụ lúa' : 'Tạo vụ lúa mới'}
+        title={editingCrop ? 'Chỉnh sửa Ruộng lúa' : 'Tạo Ruộng lúa mới'}
         open={isFormModalVisible}
         onCancel={handleCloseFormModal}
         footer={[
@@ -648,7 +648,7 @@ const RiceCropsList: React.FC = () => {
           </div>
 
           <Form.Item label="Ghi chú" name="notes">
-            <Input.TextArea rows={3} placeholder="Ghi chú về vụ lúa..." />
+            <Input.TextArea rows={3} placeholder="Ghi chú về Ruộng lúa..." />
           </Form.Item>
         </Form>
       </Modal>
@@ -660,7 +660,7 @@ const RiceCropsList: React.FC = () => {
         title="Xác nhận xóa"
         content={
           deletingCrop
-            ? `Bạn có chắc chắn muốn xóa vụ lúa "${deletingCrop.field_name}"?`
+            ? `Bạn có chắc chắn muốn xóa Ruộng lúa "${deletingCrop.field_name}"?`
             : 'Xác nhận xóa'
         }
         open={deleteConfirmVisible}

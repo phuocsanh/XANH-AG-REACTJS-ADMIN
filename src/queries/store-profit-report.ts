@@ -89,8 +89,8 @@ export const useCustomerProfitReport = (
 };
 
 /**
- * Lấy báo cáo lợi nhuận theo vụ lúa (Rice Crop)
- * @param riceCropId - ID của vụ lúa
+ * Lấy báo cáo lợi nhuận theo Ruộng lúa (Rice Crop)
+ * @param riceCropId - ID của Ruộng lúa
  */
 export const useRiceCropProfitQuery = (riceCropId: number) => {
   return useQuery({

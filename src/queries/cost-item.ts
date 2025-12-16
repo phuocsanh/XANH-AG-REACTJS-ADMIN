@@ -50,7 +50,7 @@ export const useCostItems = (filters?: CostItemFilters) => {
 };
 
 /**
- * Tổng hợp chi phí theo vụ lúa
+ * Tổng hợp chi phí theo Ruộng lúa
  */
 export const useCostSummary = (cropId: number) => {
   return useQuery({

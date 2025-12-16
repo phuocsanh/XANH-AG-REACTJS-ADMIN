@@ -154,7 +154,7 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
             >
                 <Select 
                     allowClear 
-                    placeholder={selectedSeasonId ? "Chọn vụ lúa" : "Vui lòng chọn mùa vụ trước"} 
+                    placeholder={selectedSeasonId ? "Chọn Ruộng lúa" : "Vui lòng chọn mùa vụ trước"} 
                     showSearch 
                     filterOption={(input, option: any) =>
                         option?.children?.toLowerCase().includes(input.toLowerCase())

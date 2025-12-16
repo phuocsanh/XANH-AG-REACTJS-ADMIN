@@ -2,28 +2,22 @@ import * as React from "react"
 import { SalesReturn } from "@/models/sales-return"
 import {
   useSalesReturnsQuery,
-  useUpdateSalesReturnStatusMutation,
 } from "@/queries/sales-return"
-import { Button, Tag, Space, Modal, Card, Descriptions } from "antd"
+import { Button, Tag, Space, Modal, Card } from "antd"
 import {
   PlusOutlined,
   EyeOutlined,
-  CheckOutlined,
-  CloseOutlined,
   SearchOutlined,
 } from "@ant-design/icons"
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
-import { ConfirmModal } from "@/components/common"
 import { useNavigate } from "react-router-dom"
-import { TablePaginationConfig, TableProps } from "antd"
-import { FilterValue, SorterResult } from "antd/es/table/interface"
+import { TableProps } from "antd"
 import {
   returnStatusLabels,
   returnStatusColors,
-  refundMethodLabels,
 } from "./form-config"
 
 // Extend SalesReturn interface
@@ -37,13 +31,7 @@ const SalesReturnsList: React.FC = () => {
   const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [isDetailModalVisible, setIsDetailModalVisible] =
     React.useState<boolean>(false)
-  const [approveConfirmVisible, setApproveConfirmVisible] =
-    React.useState<boolean>(false)
-  const [rejectConfirmVisible, setRejectConfirmVisible] =
-    React.useState<boolean>(false)
   const [viewingReturn, setViewingReturn] =
-    React.useState<SalesReturn | null>(null)
-  const [actioningReturn, setActioningReturn] =
     React.useState<SalesReturn | null>(null)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
@@ -107,8 +95,6 @@ const SalesReturnsList: React.FC = () => {
   const handleTableChange: TableProps<ExtendedSalesReturn>['onChange'] = (
     pagination,
     tableFilters,
-    sorter,
-    extra
   ) => {
     setCurrentPage(pagination.current || 1)
     setPageSize(pagination.pageSize || 10)
@@ -147,8 +133,6 @@ const SalesReturnsList: React.FC = () => {
     ...filters
   })
 
-  const updateStatusMutation = useUpdateSalesReturnStatusMutation()
-
   // Handlers
   const handleViewReturn = (salesReturn: SalesReturn) => {
     setViewingReturn(salesReturn)
@@ -160,53 +144,7 @@ const SalesReturnsList: React.FC = () => {
     setViewingReturn(null)
   }
 
-  const handleApproveClick = (salesReturn: SalesReturn) => {
-    setActioningReturn(salesReturn)
-    setApproveConfirmVisible(true)
-  }
 
-  const handleRejectClick = (salesReturn: SalesReturn) => {
-    setActioningReturn(salesReturn)
-    setRejectConfirmVisible(true)
-  }
-
-  const handleConfirmApprove = async () => {
-    if (!actioningReturn) return
-    try {
-      await updateStatusMutation.mutateAsync({
-        id: actioningReturn.id,
-        data: { status: "approved" },
-      })
-      setApproveConfirmVisible(false)
-      setActioningReturn(null)
-    } catch (error) {
-      console.error("Error approving return:", error)
-    }
-  }
-
-  const handleConfirmReject = async () => {
-    if (!actioningReturn) return
-    try {
-      await updateStatusMutation.mutateAsync({
-        id: actioningReturn.id,
-        data: { status: "rejected" },
-      })
-      setRejectConfirmVisible(false)
-      setActioningReturn(null)
-    } catch (error) {
-      console.error("Error rejecting return:", error)
-    }
-  }
-
-  const handleCancelApprove = () => {
-    setApproveConfirmVisible(false)
-    setActioningReturn(null)
-  }
-
-  const handleCancelReject = () => {
-    setRejectConfirmVisible(false)
-    setActioningReturn(null)
-  }
 
   // Helpers
   const getReturnList = (): ExtendedSalesReturn[] => {
@@ -224,7 +162,7 @@ const SalesReturnsList: React.FC = () => {
     }).format(value)
   }
 
-  const loading = isLoading || updateStatusMutation.isPending
+  const loading = isLoading
 
   // Columns
   const columns = [
@@ -257,7 +195,7 @@ const SalesReturnsList: React.FC = () => {
       ),
       width: 150,
       render: (record: ExtendedSalesReturn) => (
-        <div className='font-medium'>{record.invoice_code}</div>
+        <div className='font-medium'>{record.invoice?.code || '-'}</div>
       ),
     },
     {
@@ -273,7 +211,7 @@ const SalesReturnsList: React.FC = () => {
       ),
       width: 180,
       render: (record: ExtendedSalesReturn) => (
-        <div className='font-medium'>{record.customer_name}</div>
+        <div className='font-medium'>{record.customer?.name || record.invoice?.customer_name || '-'}</div>
       ),
     },
     {
@@ -286,27 +224,15 @@ const SalesReturnsList: React.FC = () => {
         </div>
       ),
     },
-    {
-      key: "refund_method",
-      title: "Phương thức",
-      width: 130,
-      render: (record: ExtendedSalesReturn) => (
-        <Tag color='blue'>
-          {refundMethodLabels[
-            record.refund_method as keyof typeof refundMethodLabels
-          ] || record.refund_method}
-        </Tag>
-      ),
-    },
+
     {
       key: "status",
       title: "Trạng thái",
       width: 130,
       filters: [
-          { text: "Chờ duyệt", value: "pending" },
-          { text: "Đã duyệt", value: "approved" },
-          { text: "Từ chối", value: "rejected" },
+          { text: "Nháp", value: "draft" },
           { text: "Hoàn tất", value: "completed" },
+          { text: "Đã hủy", value: "cancelled" },
       ],
       filteredValue: filters.status ? [filters.status] : null,
       filterMultiple: false,
@@ -345,26 +271,6 @@ const SalesReturnsList: React.FC = () => {
           >
             Xem
           </Button>
-          {record.status === "pending" && (
-            <>
-              <Button
-                type='primary'
-                icon={<CheckOutlined />}
-                onClick={() => handleApproveClick(record)}
-                size='small'
-              >
-                Duyệt
-              </Button>
-              <Button
-                danger
-                icon={<CloseOutlined />}
-                onClick={() => handleRejectClick(record)}
-                size='small'
-              >
-                Từ chối
-              </Button>
-            </>
-          )}
         </Space>
       ),
     },
@@ -436,16 +342,6 @@ const SalesReturnsList: React.FC = () => {
                   {formatCurrency(viewingReturn.total_refund_amount)}
                 </div>
                 <div className='mt-2'>
-                  <span className='text-gray-600'>Phương thức: </span>
-                  <Tag color='blue'>
-                    {
-                      refundMethodLabels[
-                        viewingReturn.refund_method as keyof typeof refundMethodLabels
-                      ]
-                    }
-                  </Tag>
-                </div>
-                <div className='mt-1'>
                   <span className='text-gray-600'>Trạng thái: </span>
                   <Tag
                     color={
@@ -521,39 +417,7 @@ const SalesReturnsList: React.FC = () => {
         )}
       </Modal>
 
-      {/* Approve Confirm Modal */}
-      <ConfirmModal
-        title='Xác nhận duyệt'
-        content={
-          actioningReturn
-            ? `Bạn có chắc chắn muốn duyệt phiếu trả "${actioningReturn.code}"?`
-            : "Xác nhận duyệt"
-        }
-        open={approveConfirmVisible}
-        onOk={handleConfirmApprove}
-        onCancel={handleCancelApprove}
-        okText='Duyệt'
-        okType='primary'
-        cancelText='Hủy'
-        confirmLoading={updateStatusMutation.isPending}
-      />
 
-      {/* Reject Confirm Modal */}
-      <ConfirmModal
-        title='Xác nhận từ chối'
-        content={
-          actioningReturn
-            ? `Bạn có chắc chắn muốn từ chối phiếu trả "${actioningReturn.code}"?`
-            : "Xác nhận từ chối"
-        }
-        open={rejectConfirmVisible}
-        onOk={handleConfirmReject}
-        onCancel={handleCancelReject}
-        okText='Từ chối'
-        okType='primary'
-        cancelText='Hủy'
-        confirmLoading={updateStatusMutation.isPending}
-      />
     </div>
   )
 }

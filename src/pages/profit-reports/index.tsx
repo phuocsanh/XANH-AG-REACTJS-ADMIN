@@ -1,6 +1,6 @@
 /**
  * Trang Báo cáo Lợi nhuận Bán hàng - Phiên bản đầy đủ
- * Bao gồm 3 tabs: Tổng quan Mùa vụ, Theo Vụ lúa, Chi tiết Hóa đơn
+ * Bao gồm 3 tabs: Tổng quan Mùa vụ, Theo Ruộng lúa, Chi tiết Hóa đơn
  */
 
 import React, { useState } from 'react';
@@ -247,7 +247,7 @@ const ProfitReportsPage: React.FC = () => {
     );
   };
 
-  // ==================== TAB 2: THEO VỤ LÚA ====================
+  // ==================== TAB 2: THEO Ruộng lúa ====================
   const renderRiceCropReport = () => {
     // Lọc rice crops theo season đã chọn
     const filteredRiceCrops = selectedSeasonId
@@ -302,10 +302,10 @@ const ProfitReportsPage: React.FC = () => {
     return (
       <div>
         <div className="mb-6">
-          <label className="block mb-2 font-medium">Chọn vụ lúa:</label>
+          <label className="block mb-2 font-medium">Chọn Ruộng lúa:</label>
           <Select
             style={{ width: 400 }}
-            placeholder="Chọn vụ lúa"
+            placeholder="Chọn Ruộng lúa"
             value={selectedRiceCropId}
             onChange={setSelectedRiceCropId}
             showSearch
@@ -323,12 +323,12 @@ const ProfitReportsPage: React.FC = () => {
 
         {isLoadingRiceCropProfit && (
           <div className="flex justify-center items-center h-64">
-            <Spin size="large" tip="Đang tải báo cáo vụ lúa..." />
+            <Spin size="large" tip="Đang tải báo cáo Ruộng lúa..." />
           </div>
         )}
 
         {!selectedRiceCropId && !isLoadingRiceCropProfit && (
-          <Empty description="Vui lòng chọn vụ lúa để xem báo cáo lợi nhuận" />
+          <Empty description="Vui lòng chọn Ruộng lúa để xem báo cáo lợi nhuận" />
         )}
 
         {selectedRiceCropId && riceCropError && (
@@ -337,7 +337,7 @@ const ProfitReportsPage: React.FC = () => {
               <div>
                 <p className="text-red-500 font-medium">Không tìm thấy dữ liệu báo cáo</p>
                 <p className="text-gray-500 text-sm mt-2">
-                  Vụ lúa này chưa có hóa đơn bán hàng nào. Vui lòng chọn vụ lúa khác hoặc tạo hóa đơn cho vụ lúa này.
+                  Ruộng lúa này chưa có hóa đơn bán hàng nào. Vui lòng chọn Ruộng lúa khác hoặc tạo hóa đơn cho Ruộng lúa này.
                 </p>
               </div>
             }
@@ -346,8 +346,8 @@ const ProfitReportsPage: React.FC = () => {
 
         {selectedRiceCropId && riceCropProfit && !isLoadingRiceCropProfit && (
           <div>
-            {/* Thông tin vụ lúa */}
-            <Card title="Thông tin Vụ lúa" className="mb-6">
+            {/* Thông tin Ruộng lúa */}
+            <Card title="Thông tin Ruộng lúa" className="mb-6">
               <Row gutter={16}>
                 <Col span={8}>
                   <p><strong>Tên ruộng:</strong> {riceCropProfit.field_name}</p>
@@ -964,7 +964,7 @@ const ProfitReportsPage: React.FC = () => {
           {renderSeasonOverview()}
         </Tabs.TabPane>
 
-        <Tabs.TabPane tab="Theo Vụ lúa" key="rice-crop">
+        <Tabs.TabPane tab="Theo Ruộng lúa" key="rice-crop">
           {renderRiceCropReport()}
         </Tabs.TabPane>
 

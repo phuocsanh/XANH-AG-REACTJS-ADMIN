@@ -2,9 +2,8 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
-import { SalesReturn, CreateSalesReturnDto, UpdateSalesReturnStatusDto } from "@/models/sales-return"
+import { SalesReturn, CreateSalesReturnDto } from "@/models/sales-return"
 import { handleApiError } from "@/utils/error-handler"
-import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // ========== QUERY KEYS ==========
 export const salesReturnKeys = {
@@ -92,24 +91,6 @@ export const useCreateSalesReturnMutation = () => {
   })
 }
 
-/**
- * Hook cập nhật trạng thái phiếu trả hàng
- */
-export const useUpdateSalesReturnStatusMutation = () => {
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: UpdateSalesReturnStatusDto }) => {
-      const response = await api.patchRaw<any>(`/sales-returns/${id}/status`, data as any)
-      return response
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
-      toast.success("Cập nhật trạng thái thành công!")
-    },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi cập nhật trạng thái")
-    },
-  })
-}
 
 /**
  * Hook xóa phiếu trả hàng

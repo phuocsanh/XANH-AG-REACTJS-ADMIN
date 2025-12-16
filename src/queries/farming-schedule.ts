@@ -52,7 +52,7 @@ export const useUpcomingSchedules = (days: number = 7) => {
 };
 
 /**
- * Lấy lịch theo vụ lúa
+ * Lấy lịch theo Ruộng lúa
  */
 export const useCropSchedules = (cropId: number) => {
   return useQuery({

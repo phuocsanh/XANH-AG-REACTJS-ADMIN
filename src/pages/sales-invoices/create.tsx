@@ -262,15 +262,15 @@ const CreateSalesInvoice = () => {
     return invoice || null;
   }, [latestInvoiceResponse, id]);
   
-  // Watch season_id để filter vụ lúa
+  // Watch season_id để filter Ruộng lúa
   const selectedSeasonId = watch('season_id');
 
-  // Lấy tất cả vụ lúa đang hoạt động (để chọn trước)
+  // Lấy tất cả Ruộng lúa đang hoạt động (để chọn trước)
   const { data: allActiveRiceCrops } = useRiceCrops({ 
     status: CropStatus.ACTIVE 
   });
   
-  // Lấy vụ lúa của khách hàng đã chọn VÀ theo mùa vụ đã chọn
+  // Lấy Ruộng lúa của khách hàng đã chọn VÀ theo mùa vụ đã chọn
   const { data: customerRiceCrops, isLoading: isLoadingRiceCrops } = useRiceCrops({ 
     customer_id: selectedCustomer?.id, 
     season_id: selectedSeasonId,
@@ -420,7 +420,7 @@ const CreateSalesInvoice = () => {
       setValue('rice_crop_id', undefined);
       setSelectedRiceCropId(undefined);
       
-      message.info('Vui lòng chọn Mùa vụ và Vụ lúa cho khách hàng này');
+      message.info('Vui lòng chọn Mùa vụ và Ruộng lúa cho khách hàng này');
     } else {
       // Khách vãng lai
       setIsGuestCustomer(true);
@@ -631,7 +631,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         return;
       }
       if (!data.rice_crop_id) {
-        message.error('Vui lòng chọn Vụ lúa cho khách hàng này');
+        message.error('Vui lòng chọn Ruộng lúa cho khách hàng này');
         return;
       }
     }
@@ -1401,7 +1401,7 @@ ${productInfo}`;
                     showSearch
                   />
 
-                  {/* Chọn vụ lúa - BẮT BUỘC khi đã chọn khách hàng */}
+                  {/* Chọn Ruộng lúa - BẮT BUỘC khi đã chọn khách hàng */}
                   {selectedCustomer && (
                     <Box sx={{ mt: 2 }}>
                       {isLoadingRiceCrops ? (
@@ -1430,7 +1430,7 @@ ${productInfo}`;
                         />
                       ) : (
                         <Alert severity="warning">
-                          Khách hàng này chưa có vụ lúa nào trong mùa vụ này.
+                          Khách hàng này chưa có Ruộng lúa nào trong mùa vụ này.
                         </Alert>
                       )}
                     </Box>

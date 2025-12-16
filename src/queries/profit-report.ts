@@ -18,7 +18,7 @@ export const profitReportKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Báo cáo lợi nhuận theo vụ lúa
+ * Báo cáo lợi nhuận theo Ruộng lúa
  */
 export const useProfitReport = (cropId: number) => {
   return useQuery({

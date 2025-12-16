@@ -20,7 +20,7 @@ export type SalesReturnItemFormData = z.infer<typeof salesReturnItemSchema>;
 export type SalesReturnFormData = z.infer<typeof salesReturnSchema>;
 
 export const defaultSalesReturnValues: SalesReturnFormData = {
-  invoice_id: 0,
+  invoice_id: undefined as unknown as number, // Set to undefined to show placeholder
   refund_method: 'cash',
   reason: '',
   notes: '',
@@ -33,15 +33,14 @@ export const refundMethodLabels = {
 };
 
 export const returnStatusLabels = {
-  pending: 'Chờ duyệt',
-  approved: 'Đã duyệt',
-  rejected: 'Từ chối',
+  draft: 'Nháp',
   completed: 'Hoàn tất',
+  cancelled: 'Đã hủy',
 };
 
 export const returnStatusColors = {
-  pending: 'warning',
-  approved: 'info',
-  rejected: 'error',
+  draft: 'default',
   completed: 'success',
+  cancelled: 'error',
 } as const;
+

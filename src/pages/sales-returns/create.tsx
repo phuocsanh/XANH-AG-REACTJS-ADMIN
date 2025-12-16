@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -27,7 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateSalesReturnMutation } from '@/queries/sales-return';
-import { useSalesInvoicesQuery } from '@/queries/sales-invoice';
+import { useSalesInvoicesQuery, useSalesInvoiceQuery } from '@/queries/sales-invoice';
 import { SalesInvoice } from '@/models/sales-invoice';
 import {
   salesReturnSchema,
@@ -62,33 +62,62 @@ const CreateSalesReturn = () => {
     page: 1,
     limit: 20,
     search: invoiceSearch,
-    status: 'paid', // Only allow returning paid/confirmed invoices
+    status: ['confirmed', 'paid'], // Cho phép trả hàng với đơn đã xác nhận hoặc đã thanh toán
   });
+
+  // Get selected invoice ID
+  const selectedInvoiceId = watch('invoice_id');
+
+  // Load Invoice Details (to get items)
+  const { data: invoiceDetail } = useSalesInvoiceQuery(selectedInvoiceId || 0);
+
+  // Update selectedInvoice state and auto-select refund method
+  useEffect(() => {
+    if (invoiceDetail) {
+      setSelectedInvoice(invoiceDetail);
+      
+      // Auto-select refund method based on debt
+      const remainingResult = parseFloat(invoiceDetail.remaining_amount?.toString() || '0');
+      if (remainingResult > 0) {
+        setValue('refund_method', 'debt_credit'); // Trừ công nợ
+      } else {
+        setValue('refund_method', 'cash'); // Hoàn tiền mặt
+      }
+    } else {
+        // Only reset if we don't have an ID (cleared)
+        if (!selectedInvoiceId) {
+            setSelectedInvoice(null);
+        }
+    }
+  }, [invoiceDetail, setValue, selectedInvoiceId]);
 
   const createMutation = useCreateSalesReturnMutation();
 
-  const handleInvoiceSelect = (invoice: SalesInvoice | null) => {
-    setSelectedInvoice(invoice);
-    if (invoice) {
-      setValue('invoice_id', invoice.id);
-      // Reset items
+  const handleInvoiceSelect = (id: number | undefined) => {
+    if (id) {
+      setValue('invoice_id', id);
+      // Reset selected items when invoice changes
       replace([]);
     } else {
-      setValue('invoice_id', 0);
+      setValue('invoice_id', undefined as any);
       replace([]);
+      setSelectedInvoice(null);
     }
   };
 
-  const handleAddItem = (product: any) => {
+  const handleAddItem = (item: any) => {
     // Check if item already exists
-    const exists = fields.some((field) => field.product_id === product.product_id);
+    const exists = fields.some((field) => field.product_id === item.product_id);
     if (exists) return;
 
+    // Lấy tên sản phẩm từ relation product hoặc fallback về product_name
+    const productName = item.product?.name || item.product_name || 'Sản phẩm không xác định';
+
     append({
-      product_id: product.product_id,
-      product_name: product.product_name,
+      product_id: item.product_id,
+      product_name: productName,
       quantity: 1,
-      unit_price: product.unit_price,
+      unit_price: item.unit_price,
       reason: '',
     });
   };
@@ -143,35 +172,53 @@ const CreateSalesReturn = () => {
                   }))}
                   onSearch={setInvoiceSearch}
                   onSelectionChange={(value) => {
-                    const invoice = invoiceList.find((inv: SalesInvoice) => inv.id === value);
-                    handleInvoiceSelect(invoice || null);
+                    handleInvoiceSelect(Number(value));
                   }}
                   allowClear
                   showSearch
                 />
 
                 {selectedInvoice && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Khách hàng:
+                  <Box mt={2} p={2} sx={{ bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <strong>Khách hàng:</strong> {selectedInvoice.customer_name} - {selectedInvoice.customer_phone}
                     </Typography>
-                    <Typography variant="body1" mb={1}>
-                      {selectedInvoice.customer_name} - {selectedInvoice.customer_phone}
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      <strong>Ngày mua:</strong> {new Date(selectedInvoice.created_at).toLocaleDateString('vi-VN')}
+                      {' • '}
+                      <strong>Tổng tiền:</strong>{' '}
+                      <Box component="span" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                        {formatCurrency(selectedInvoice.final_amount)}
+                      </Box>
+                      {' • '}
+                      <strong>Thanh toán:</strong>{' '}
+                      <Box 
+                        component="span" 
+                        sx={{ 
+                          color: selectedInvoice.payment_method === 'debt' ? 'warning.main' : 'primary.main',
+                          fontWeight: 'bold' 
+                        }}
+                      >
+                        {selectedInvoice.payment_method === 'cash' && 'Tiền mặt'}
+                        {selectedInvoice.payment_method === 'debt' && 'Công nợ'}
+                        {selectedInvoice.payment_method === 'transfer' && 'Chuyển khoản'}
+                      </Box>
                     </Typography>
-                    
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Ngày mua:
-                    </Typography>
-                    <Typography variant="body1" mb={1}>
-                      {new Date(selectedInvoice.created_at).toLocaleDateString('vi-VN')}
-                    </Typography>
-
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Tổng tiền:
-                    </Typography>
-                    <Typography variant="body1" fontWeight="bold" color="success.main">
-                      {formatCurrency(selectedInvoice.final_amount)}
-                    </Typography>
+                    {(selectedInvoice.season || selectedInvoice.rice_crop) && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedInvoice.season && (
+                          <>
+                            <strong>Mùa vụ:</strong> {selectedInvoice.season.name || selectedInvoice.season_name}
+                          </>
+                        )}
+                        {selectedInvoice.season && selectedInvoice.rice_crop && ' • '}
+                        {selectedInvoice.rice_crop && (
+                          <>
+                            <strong>Ruộng lúa:</strong> {selectedInvoice.rice_crop.field_name}
+                          </>
+                        )}
+                      </Typography>
+                    )}
                   </Box>
                 )}
               </CardContent>
@@ -231,17 +278,22 @@ const CreateSalesReturn = () => {
                       Chọn sản phẩm từ hóa đơn:
                     </Typography>
                     <Box display="flex" flexWrap="wrap" gap={1}>
-                      {selectedInvoice.items?.map((item) => (
-                        <Button
-                          key={item.id}
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleAddItem(item)}
-                          disabled={fields.some((f) => f.product_id === item.product_id)}
-                        >
-                          {item.product_name}
-                        </Button>
-                      ))}
+                      {selectedInvoice.items?.map((item) => {
+                        // Lấy tên sản phẩm từ relation product
+                        const productName = item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`;
+                        
+                        return (
+                          <Button
+                            key={item.id}
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleAddItem(item)}
+                            disabled={fields.some((f) => f.product_id === item.product_id)}
+                          >
+                            {productName}
+                          </Button>
+                        );
+                      })}
                     </Box>
                   </Box>
                 ) : (
@@ -303,7 +355,7 @@ const CreateSalesReturn = () => {
                                       max={maxQuantity}
                                       size="small"
                                       style={{ width: 80 }}
-                                      status={!!errors.items?.[index]?.quantity ? "error" : undefined}
+                                      status={errors.items?.[index]?.quantity ? "error" : undefined}
                                     />
                                   )}
                                 />
@@ -317,18 +369,12 @@ const CreateSalesReturn = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Controller
+                                <FormField
                                   name={`items.${index}.reason`}
                                   control={control}
-                                  render={({ field }) => (
-                                    <FormField
-                                      name={`items.${index}.reason`}
-                                      control={control}
-                                      label=""
-                                      placeholder="Lý do..."
-                                      size="small"
-                                    />
-                                  )}
+                                  label=""
+                                  placeholder="Lý do..."
+                                  size="small"
                                 />
                               </TableCell>
                               <TableCell align="center">
@@ -350,6 +396,72 @@ const CreateSalesReturn = () => {
               </CardContent>
             </Card>
           </Grid>
+
+
+          {/* Processing Info - Thông báo xử lý */}
+          {selectedInvoice && fields.length > 0 && (() => {
+            // Tính tổng giá trị trả
+            const totalRefund = fields.reduce((sum, field, index) => {
+              const quantity = watch(`items.${index}.quantity`) || 0;
+              const unitPrice = watch(`items.${index}.unit_price`) || 0;
+              return sum + (quantity * unitPrice);
+            }, 0);
+
+            // Lấy công nợ hiện tại
+            const remainingAmount = parseFloat(selectedInvoice.remaining_amount?.toString() || '0');
+            
+            // Tính công nợ mới
+            const newRemaining = Math.max(0, remainingAmount - totalRefund);
+            
+            // Kiểm tra cần hoàn tiền không
+            const needRefund = remainingAmount === 0 && totalRefund > 0;
+
+            return (
+              <Grid item xs={12}>
+                <Card sx={{ bgcolor: 'info.lighter', borderLeft: 4, borderColor: 'info.main' }}>
+                  <CardContent>
+                    <Typography variant="h6" color="info.dark" gutterBottom>
+                      💡 Thông tin xử lý
+                    </Typography>
+                    
+                    <Typography variant="body1" fontWeight="bold" mb={1}>
+                      Tổng giá trị trả: {formatCurrency(totalRefund)}
+                    </Typography>
+
+                    {totalRefund > 0 && (
+                      <Box mt={2}>
+                        {needRefund ? (
+                          <Alert severity="warning" sx={{ mb: 1 }}>
+                            <Typography variant="body2" fontWeight="bold" gutterBottom>
+                              💰 PHIẾU HOÀN TIỀN
+                            </Typography>
+                            <Typography variant="body2">
+                              • Khách đã trả đủ tiền
+                            </Typography>
+                            <Typography variant="body2" color="error.main" fontWeight="bold">
+                              • Sẽ tạo phiếu hoàn tiền: {formatCurrency(totalRefund)}
+                            </Typography>
+                            <Typography variant="body2" color="error.main">
+                              ⚠️ Nhân viên cần hoàn tiền mặt cho khách!
+                            </Typography>
+                          </Alert>
+                        ) : (
+                          <Alert severity="success">
+                            <Typography variant="body2">
+                              • Còn nợ {formatCurrency(remainingAmount)} → Trừ vào công nợ
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold" color="success.dark">
+                              • Công nợ mới: {formatCurrency(newRemaining)}
+                            </Typography>
+                          </Alert>
+                        )}
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })()}
 
           {/* Actions */}
           <Grid item xs={12}>

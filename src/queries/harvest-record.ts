@@ -19,7 +19,7 @@ export const harvestRecordKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Lấy bản ghi thu hoạch theo vụ lúa
+ * Lấy bản ghi thu hoạch theo Ruộng lúa
  */
 export const useHarvestRecords = (cropId: number) => {
   return useQuery({

@@ -1,5 +1,5 @@
 /**
- * TypeScript types cho hệ thống quản lý mùa vụ lúa
+ * TypeScript types cho hệ thống quản lý mùa Ruộng lúa
  */
 
 // ==================== ENUMS ====================
@@ -14,7 +14,7 @@ export enum GrowthStage {
   HARVESTED = 'harvested',    // Đã thu hoạch
 }
 
-/** Trạng thái vụ lúa */
+/** Trạng thái Ruộng lúa */
 export enum CropStatus {
   ACTIVE = 'active',          // Đang canh tác
   HARVESTED = 'harvested',    // Đã thu hoạch
@@ -99,7 +99,7 @@ export interface AreaOfEachPlotOfLand {
   acreage?: number;
 }
 
-/** Vụ lúa */
+/** Ruộng lúa */
 export interface RiceCrop {
   id: number;
   customer_id: number;
@@ -260,7 +260,7 @@ export interface CustomerStats {
 
 // ==================== DTOs ====================
 
-/** DTO tạo vụ lúa */
+/** DTO tạo Ruộng lúa */
 export interface CreateRiceCropDto {
   customer_id: number;
   season_id: number;
@@ -279,7 +279,7 @@ export interface CreateRiceCropDto {
   [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
-/** DTO cập nhật vụ lúa */
+/** DTO cập nhật Ruộng lúa */
 export interface UpdateRiceCropDto {
   field_name?: string;
   amount_of_land?: number; // Đổi tên từ large_labor_days
@@ -392,7 +392,7 @@ export interface CreateGrowthTrackingDto {
 
 // ==================== FILTER PARAMS ====================
 
-/** Tham số lọc vụ lúa */
+/** Tham số lọc Ruộng lúa */
 export interface RiceCropFilters {
   customer_id?: number;
   season_id?: number;

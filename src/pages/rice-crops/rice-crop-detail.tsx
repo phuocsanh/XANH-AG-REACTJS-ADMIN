@@ -78,7 +78,7 @@ const RiceCropDetail: React.FC = () => {
   if (!riceCrop) {
     return (
       <div className="p-6 text-center">
-        <h2>Không tìm thấy thông tin vụ lúa</h2>
+        <h2>Không tìm thấy thông tin Ruộng lúa</h2>
         <Button onClick={() => navigate('/rice-crops')}>Quay lại danh sách</Button>
       </div>
     );

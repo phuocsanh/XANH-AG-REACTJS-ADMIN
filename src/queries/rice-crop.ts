@@ -60,7 +60,7 @@ export const useRiceCrops = (params?: Record<string, unknown>, options?: { enabl
 };
 
 /**
- * Lấy chi tiết vụ lúa
+ * Lấy chi tiết Ruộng lúa
  */
 export const useRiceCrop = (id: number) => {
   return useQuery({
@@ -73,7 +73,7 @@ export const useRiceCrop = (id: number) => {
 };
 
 /**
- * Thống kê vụ lúa theo khách hàng
+ * Thống kê Ruộng lúa theo khách hàng
  */
 export const useCustomerStats = (customerId: number) => {
   return useQuery({
@@ -88,7 +88,7 @@ export const useCustomerStats = (customerId: number) => {
 // ==================== MUTATIONS ====================
 
 /**
- * Tạo vụ lúa mới
+ * Tạo Ruộng lúa mới
  */
 export const useCreateRiceCrop = () => {
   const queryClient = useQueryClient();
@@ -104,7 +104,7 @@ export const useCreateRiceCrop = () => {
 };
 
 /**
- * Cập nhật vụ lúa
+ * Cập nhật Ruộng lúa
  */
 export const useUpdateRiceCrop = () => {
   const queryClient = useQueryClient();
@@ -138,7 +138,7 @@ export const useUpdateGrowthStage = () => {
 };
 
 /**
- * Cập nhật trạng thái vụ lúa
+ * Cập nhật trạng thái Ruộng lúa
  */
 export const useUpdateStatus = () => {
   const queryClient = useQueryClient();
@@ -155,7 +155,7 @@ export const useUpdateStatus = () => {
 };
 
 /**
- * Xóa vụ lúa
+ * Xóa Ruộng lúa
  */
 export const useDeleteRiceCrop = () => {
   const queryClient = useQueryClient();

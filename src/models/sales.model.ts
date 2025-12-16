@@ -50,7 +50,7 @@ export interface SalesInvoice {
   customer_email?: string
   /** Địa chỉ khách hàng */
   customer_address?: string
-  /** ID vụ lúa (liên kết với rice_crop) */
+  /** ID Ruộng lúa (liên kết với rice_crop) */
   rice_crop_id?: number
   /** ID mùa vụ */
   season_id?: number
@@ -102,7 +102,7 @@ export interface CreateSalesInvoiceRequest extends AnyObject {
   customer_email?: string
   /** Địa chỉ khách hàng */
   customer_address?: string
-  /** ID vụ lúa (liên kết với rice_crop) */
+  /** ID Ruộng lúa (liên kết với rice_crop) */
   rice_crop_id?: number
   /** ID mùa vụ */
   season_id?: number

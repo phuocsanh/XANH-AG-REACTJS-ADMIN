@@ -19,7 +19,7 @@ export const growthTrackingKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Lấy bản ghi theo dõi theo vụ lúa
+ * Lấy bản ghi theo dõi theo Ruộng lúa
  */
 export const useGrowthTrackings = (cropId: number) => {
   return useQuery({

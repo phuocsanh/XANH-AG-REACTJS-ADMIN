@@ -45,6 +45,17 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
       if (riceCropFilter) payload.rice_crop_filter = riceCropFilter
       if (params?.customer_id) payload.customer_id = params.customer_id
       if (params?.keyword) payload.keyword = params.keyword
+      if (params?.search) payload.keyword = params.search // ← Đổi search thành keyword
+      
+      // Thêm các filter từ FilterHeader
+      if (params?.code) payload.code = params.code
+      if (params?.customer_name) payload.customer_name = params.customer_name
+      if (params?.customer_phone) payload.customer_phone = params.customer_phone
+      if (params?.season_id) payload.season_id = params.season_id
+      
+      // Date range filter
+      if (params?.start_date) payload.start_date = params.start_date
+      if (params?.end_date) payload.end_date = params.end_date
 
       // Sort
       if (params?.sort_by) {
@@ -76,7 +87,7 @@ export const useSalesInvoiceQuery = (id: number) => {
   return useQuery({
     queryKey: salesInvoiceKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<SalesInvoice>(`/sales/invoices/${id}`)
+      const response = await api.get<SalesInvoice>(`/sales/invoice/${id}`)
       return response
     },
     enabled: !!id,
@@ -133,7 +144,7 @@ export const useUpdateSalesInvoiceMutation = () => {
       id: number
       invoice: Partial<CreateSalesInvoiceDto>
     }) => {
-      const response = await api.patchRaw<SalesInvoice>(`/sales/invoices/${id}`, invoice as any)
+      const response = await api.patchRaw<SalesInvoice>(`/sales/invoice/${id}`, invoice as any)
       return response
     },
     onSuccess: () => {
@@ -152,7 +163,7 @@ export const useUpdateSalesInvoiceMutation = () => {
 export const useDeleteSalesInvoiceMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete(`/sales/invoices/${id}`)
+      const response = await api.delete(`/sales/invoice/${id}`)
       return response
     },
     onSuccess: () => {

@@ -1,4 +1,4 @@
-export type SalesReturnStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+export type SalesReturnStatus = 'draft' | 'completed' | 'cancelled';
 
 export interface SalesReturnItem {
   id: number;
@@ -17,9 +17,20 @@ export interface SalesReturn {
   code: string;
   invoice_id: number;
   invoice_code?: string;
+  invoice?: {
+    id: number;
+    code: string;
+    customer_name?: string;
+    customer_phone?: string;
+  };
   customer_id?: number;
   customer_name?: string;
   customer_phone?: string;
+  customer?: {
+    id: number;
+    name: string;
+    phone?: string;
+  };
   total_refund_amount: number;
   refund_method: 'cash' | 'debt_credit';
   status: SalesReturnStatus;

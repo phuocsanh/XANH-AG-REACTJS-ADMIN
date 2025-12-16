@@ -13,10 +13,10 @@ interface InvoicesTabProps {
 }
 
 /**
- * Component hiển thị danh sách hóa đơn của một vụ lúa
+ * Component hiển thị danh sách hóa đơn của một Ruộng lúa
  */
 export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
-  // Fetch danh sách hóa đơn của vụ lúa
+  // Fetch danh sách hóa đơn của Ruộng lúa
   const { data: invoicesResponse, isLoading, refetch } = useQuery({
     queryKey: ['rice-crop-invoices', riceCropId],
     queryFn: async () => {
@@ -219,7 +219,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
           locale={{
             emptyText: (
               <Empty
-                description="Chưa có hóa đơn nào cho vụ lúa này"
+                description="Chưa có hóa đơn nào cho Ruộng lúa này"
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ),

@@ -327,7 +327,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           if (customerInvoices && customerInvoices.length > 0) {
             customerInvoices.forEach((invoice: any) => {
               const riceCropId = invoice.rice_crop_id || null;
-              const fieldName = invoice.rice_crop?.field_name || 'Không thuộc vụ lúa nào';
+              const fieldName = invoice.rice_crop?.field_name || 'Không thuộc Ruộng lúa nào';
               
               if (!invoicesByRiceCrop.has(riceCropId)) {
                 invoicesByRiceCrop.set(riceCropId, {

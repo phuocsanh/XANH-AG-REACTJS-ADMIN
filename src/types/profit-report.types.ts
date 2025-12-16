@@ -32,9 +32,9 @@ export interface InvoiceProfit {
   item_details: InvoiceItemProfit[];
 }
 
-// ==================== Lợi nhuận Vụ lúa ====================
+// ==================== Lợi nhuận Ruộng lúa ====================
 
-/** Thông tin hóa đơn trong báo cáo vụ lúa */
+/** Thông tin hóa đơn trong báo cáo Ruộng lúa */
 export interface RiceCropInvoice {
   invoice_id: number;
   invoice_code: string;
@@ -46,7 +46,7 @@ export interface RiceCropInvoice {
   customer_name?: string;
 }
 
-/** Báo cáo lợi nhuận theo vụ lúa */
+/** Báo cáo lợi nhuận theo Ruộng lúa */
 export interface RiceCropProfit {
   rice_crop_id: number;
   field_name: string;
