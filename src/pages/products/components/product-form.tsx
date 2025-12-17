@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, message, Space, Form, Spin, Modal, Row, Col } from "antd"
-import { SaveOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons"
+import { Button, message, Space, Form, Spin, Modal, Row, Col, Alert } from "antd"
+import { SaveOutlined, PlusOutlined, DeleteOutlined, WarningOutlined } from "@ant-design/icons"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -171,8 +171,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   const [description, setDescription] = useState("")
 
+  // State cho tính năng kiểm tra trùng tên sản phẩm
+  const [duplicateProducts, setDuplicateProducts] = useState<Product[]>([])
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false)
+  const [productNameInput, setProductNameInput] = useState("")
+
   // Watch form values
   const watchedType = watch("type")
+  const watchedName = watch("name")
 
   // Xác định ID sản phẩm để sử dụng từ props
   const currentProductId = productId ? parseInt(productId) : 0
@@ -289,6 +295,78 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       setDescription("")
     }
   }, [isEdit, productLoading, reset])
+
+  // Kiểm tra trùng tên sản phẩm khi người dùng nhập tên (chỉ khi tạo mới)
+  useEffect(() => {
+    console.log('🔍 useEffect kiểm tra trùng tên được gọi:', { watchedName, isEdit })
+    
+    // Chỉ kiểm tra khi đang tạo mới (không phải edit)
+    if (isEdit) {
+      console.log('⏭️ Bỏ qua kiểm tra vì đang ở chế độ edit')
+      setDuplicateProducts([])
+      return
+    }
+
+    // Debounce: Chỉ kiểm tra sau khi người dùng ngừng gõ 500ms
+    const timer = setTimeout(async () => {
+      const productName = watchedName?.trim()
+      console.log('⏰ Debounce timeout, tên sản phẩm:', productName)
+      
+      // Chỉ kiểm tra nếu tên sản phẩm có ít nhất 2 ký tự
+      if (!productName || productName.length < 2) {
+        console.log('❌ Tên sản phẩm quá ngắn (< 2 ký tự), bỏ qua kiểm tra')
+        setDuplicateProducts([])
+        return
+      }
+
+      try {
+        console.log('🚀 Bắt đầu gọi API search với keyword:', productName)
+        setIsCheckingDuplicate(true)
+        
+        // Import api từ utils
+        const api = (await import("@/utils/api")).default
+        
+        // Gọi API search để tìm sản phẩm có tên tương tự
+        const response = await api.postRaw<{
+          success: boolean
+          data: Product[]
+          pagination: {
+            total: number
+            totalPages: number | null
+          }
+        }>('/products/search', { 
+          keyword: productName,
+          limit: 5,
+          page: 1
+        })
+        
+        console.log('✅ API response:', response)
+        
+        // Lọc các sản phẩm có tên giống hoặc tương tự
+        const duplicates = response?.data?.filter((product: Product) => {
+          const normalizedProductName = product.name?.toLowerCase().trim()
+          const normalizedInputName = productName.toLowerCase().trim()
+          
+          // Kiểm tra tên giống hệt hoặc chứa tên đang nhập
+          return normalizedProductName === normalizedInputName || 
+                 normalizedProductName?.includes(normalizedInputName)
+        }) || []
+        
+        console.log('🔎 Tìm thấy', duplicates.length, 'sản phẩm trùng tên:', duplicates)
+        setDuplicateProducts(duplicates)
+      } catch (error) {
+        console.error('❌ Lỗi khi kiểm tra trùng tên sản phẩm:', error)
+        setDuplicateProducts([])
+      } finally {
+        setIsCheckingDuplicate(false)
+      }
+    }, 500) // Debounce 500ms
+
+    return () => {
+      console.log('🧹 Cleanup timer')
+      clearTimeout(timer)
+    }
+  }, [watchedName, isEdit])
 
   // Render các thuộc tính sản phẩm động
   const renderProductAttributes = () => {
@@ -551,7 +629,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               </div>
               
               <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0 px-3 md:px-6 pb-3 md:pb-6'>
-                <div className='w-full'>
+                <div className='w-full md:col-span-2'>
                   <FormField
                     name='name'
                     control={control}
@@ -560,7 +638,65 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     required
                     rules={{ required: "Vui lòng nhập tên sản phẩm" }}
                     className='w-full'
+                    autoComplete='off'
                   />
+                  
+                  {/* Hiển thị trạng thái kiểm tra */}
+                  {isCheckingDuplicate && (
+                    <Alert
+                      message="Đang kiểm tra trùng lặp..."
+                      type="info"
+                      showIcon
+                      className="mt-2"
+                      icon={<Spin size="small" />}
+                    />
+                  )}
+                  
+                  {/* Hiển thị cảnh báo nếu có sản phẩm trùng tên */}
+                  {!isCheckingDuplicate && duplicateProducts.length > 0 && (
+                    <Alert
+                      message={
+                        <div>
+                          <div className="font-semibold mb-2">
+                            ⚠️ Phát hiện {duplicateProducts.length} sản phẩm có tên tương tự:
+                          </div>
+                          {/* Danh sách sản phẩm với scroll nếu quá nhiều */}
+                          <div 
+                            className="overflow-y-auto" 
+                            style={{ maxHeight: '200px' }}
+                          >
+                            <ul className="list-disc pl-5 mb-0">
+                              {duplicateProducts.slice(0, 5).map((product) => (
+                                <li key={product.id} className="mb-1">
+                                  <strong>{product.name}</strong>
+                                  {product.price && (
+                                    <span className="text-gray-600 ml-2">
+                                      - Giá: {Number(product.price).toLocaleString('vi-VN')}đ
+                                    </span>
+                                  )}
+                                  {product.code && (
+                                    <span className="text-gray-500 ml-2 text-sm">
+                                      (Mã: {product.code})
+                                    </span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                            {/* Hiển thị thông báo nếu có nhiều hơn 5 sản phẩm */}
+                            {duplicateProducts.length > 5 && (
+                              <div className="mt-2 text-sm text-gray-500 italic">
+                                ... và {duplicateProducts.length - 5} sản phẩm khác
+                              </div>
+                            )}
+                          </div>
+                         
+                        </div>
+                      }
+                      type="warning"
+                  
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div className='w-full'>

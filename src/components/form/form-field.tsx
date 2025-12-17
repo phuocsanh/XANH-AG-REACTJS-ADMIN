@@ -33,6 +33,7 @@ interface FormFieldProps<T extends FieldValues> {
   suffix?: React.ReactNode
   size?: "large" | "middle" | "small"
   allowClear?: boolean
+  autoComplete?: string // Thêm prop autoComplete
 }
 
 /**
@@ -56,6 +57,7 @@ function FormField<T extends FieldValues>({
   suffix,
   size = "middle",
   allowClear = true,
+  autoComplete, // Thêm autoComplete vào parameters
 }: FormFieldProps<T>) {
   // Tạo validation rules cho React Hook Form
   const validationRules = {
@@ -108,6 +110,7 @@ function FormField<T extends FieldValues>({
       disabled,
       size,
       status: error ? ("error" as const) : undefined,
+      autoComplete, // Thêm autoComplete vào commonProps
     }
 
     switch (type) {
