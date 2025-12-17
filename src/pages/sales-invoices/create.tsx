@@ -400,13 +400,49 @@ const CreateSalesInvoice = () => {
   const discountAmount = watch('discount_amount');
   const partialPaymentAmount = watch('partial_payment_amount');
 
+  // Tính toán tổng tiền tự động khi có thay đổi
   useEffect(() => {
-    const total = items.reduce((sum, item) => {
-      return sum + item.quantity * item.unit_price - (item.discount_amount || 0);
-    }, 0);
-    setValue('total_amount', total);
-    setValue('final_amount', total - discountAmount);
-  }, [items, discountAmount, setValue]);
+    let isCalculating = false; // Flag để tránh infinite loop
+    
+    const subscription = watch((value, { name, type }) => {
+      // Bỏ qua nếu đang trong quá trình tính toán
+      if (isCalculating) return;
+      
+      // Chỉ tính lại khi có thay đổi liên quan đến items hoặc discount
+      // Không tính lại khi thay đổi total_amount hoặc final_amount
+      if (name?.startsWith('items') || name === 'discount_amount') {
+        // Không tính lại nếu thay đổi từ total_amount hoặc final_amount
+        if (name === 'total_amount' || name === 'final_amount') return;
+        
+        isCalculating = true; // Bắt đầu tính toán
+        
+        const currentItems = value.items || [];
+        const total = currentItems.reduce((sum: number, item: any) => {
+          const quantity = Number(item?.quantity) || 0;
+          const unitPrice = Number(item?.unit_price) || 0;
+          const itemDiscount = Number(item?.discount_amount) || 0;
+          return sum + (quantity * unitPrice) - itemDiscount;
+        }, 0);
+        
+        const currentDiscount = Number(value.discount_amount) || 0;
+        const finalAmount = total - currentDiscount;
+        
+        console.log('💰 Tính toán tổng tiền:', {
+          field: name,
+          total,
+          discount: currentDiscount,
+          finalAmount
+        });
+        
+        setValue('total_amount', total, { shouldValidate: false, shouldDirty: false });
+        setValue('final_amount', finalAmount, { shouldValidate: false, shouldDirty: false });
+        
+        isCalculating = false; // Kết thúc tính toán
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
 
   const handleCustomerSelect = (customer: Customer | null) => {
     setSelectedCustomer(customer);

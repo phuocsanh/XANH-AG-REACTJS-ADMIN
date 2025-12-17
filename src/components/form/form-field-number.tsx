@@ -119,21 +119,10 @@ function FormFieldNumber<T extends FieldValues>({
                   : ""
               }
               onValueChange={(values) => {
-                // Tự động chuyển đổi kiểu dữ liệu dựa trên tên trường và schema
-                // Nếu trường được định nghĩa trong schema là number thì trả về number
-                // Nếu không thì trả về string
-  
-                // Danh sách các trường cần trả về kiểu number (dựa trên schema)
-                const numberFields = ["quantity", "symbolId"]
-  
-                // Kiểm tra xem trường hiện tại có trong danh sách numberFields không
-                // Hoặc nếu tên trường chứa các từ khóa thường dùng cho số (attributes.*)
-                const isNumberField =
-                  numberFields.includes(name) || name.startsWith("attributes.")
-  
-                // Chuyển đổi giá trị dựa trên loại trường
-                const value = isNumberField ? Number(values.value) : values.value
-                field.onChange(value)
+                // Luôn trả về giá trị số (floatValue) vì đây là component nhập số
+                // values.floatValue sẽ là number | undefined
+                // Nếu input rỗng, trả về undefined
+                field.onChange(values.floatValue)
               }}
               // Cho phép nhập bất kỳ giá trị nào không giới hạn độ dài
               isAllowed={(values) => {

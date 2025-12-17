@@ -36,13 +36,14 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 
 const ProfitReportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('season');
+  const [activeTab, setActiveTab] = useState('rice_crop');
   
   // State cho tab Season
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | undefined>();
   
   // State cho tab Rice Crop
   const [selectedRiceCropId, setSelectedRiceCropId] = useState<number | undefined>();
+  const [selectedRiceCropCustomerId, setSelectedRiceCropCustomerId] = useState<number | undefined>();
   
   // State cho tab Invoice
   const [invoiceId, setInvoiceId] = useState<number | undefined>();
@@ -53,7 +54,17 @@ const ProfitReportsPage: React.FC = () => {
 
   // Queries
   const { data: seasonsData } = useSeasonsQuery();
-  const { data: riceCropsData } = useRiceCrops({ limit: 1000 });
+  
+  // Prepare params for Rice Crop query - React Query sẽ tự động refetch khi params thay đổi
+  const riceCropQueryParams: any = { 
+    limit: 1000,
+    ...(selectedSeasonId && { season_id: selectedSeasonId }),
+    ...(selectedRiceCropCustomerId && { customer_id: selectedRiceCropCustomerId })
+  };
+
+  const { data: riceCropsData } = useRiceCrops(riceCropQueryParams, { 
+    enabled: activeTab === 'rice_crop' // Chỉ gọi API khi ở tab Rice Crop
+  });
   const { data: customersData } = useCustomersQuery({ limit: 100 });
   const { data: seasonProfit, isLoading: isLoadingSeasonProfit } = useSeasonStoreProfit(
     selectedSeasonId || 0
@@ -249,10 +260,8 @@ const ProfitReportsPage: React.FC = () => {
 
   // ==================== TAB 2: THEO Ruộng lúa ====================
   const renderRiceCropReport = () => {
-    // Lọc rice crops theo season đã chọn
-    const filteredRiceCrops = selectedSeasonId
-      ? riceCropsData?.data?.filter((crop: any) => crop.season_id === selectedSeasonId)
-      : riceCropsData?.data;
+    // Dữ liệu đã được lọc từ Server thông qua useRiceCrops params
+    const filteredRiceCrops = riceCropsData?.data || [];
 
     // Columns cho bảng invoices của rice crop
     const invoiceColumns: ColumnsType<any> = [
@@ -301,24 +310,51 @@ const ProfitReportsPage: React.FC = () => {
 
     return (
       <div>
-        <div className="mb-6">
-          <label className="block mb-2 font-medium">Chọn Ruộng lúa:</label>
-          <Select
-            style={{ width: 400 }}
-            placeholder="Chọn Ruộng lúa"
-            value={selectedRiceCropId}
-            onChange={setSelectedRiceCropId}
-            showSearch
-            filterOption={(input, option: any) =>
-              option?.children?.toLowerCase().includes(input.toLowerCase())
-            }
-          >
-            {filteredRiceCrops?.map((crop: any) => (
-              <Select.Option key={crop.id} value={crop.id}>
-                {crop.field_name} - {crop.customer?.name} ({crop.season?.name})
-              </Select.Option>
-            ))}
-          </Select>
+        <div className="mb-6 flex gap-4">
+          <div style={{ width: 400 }}>
+            <label className="block mb-2 font-medium">Chọn Khách hàng (Lọc ruộng lúa):</label>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Tất cả khách hàng"
+              value={selectedRiceCropCustomerId}
+              onChange={(val) => {
+                setSelectedRiceCropCustomerId(val);
+                setSelectedRiceCropId(undefined); // Reset ruộng lúa khi đổi khách
+              }}
+              showSearch
+              allowClear
+              filterOption={(input, option: any) =>
+                option?.children?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {customersData?.data?.items?.map((customer: any) => (
+                <Select.Option key={customer.id} value={customer.id}>
+                  {customer.name} - {customer.phone}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <div style={{ width: 400 }}>
+            <label className="block mb-2 font-medium">Chọn Ruộng lúa:</label>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Chọn Ruộng lúa"
+              value={selectedRiceCropId}
+              onChange={setSelectedRiceCropId}
+              showSearch
+              filterOption={(input, option: any) =>
+                option?.children?.toLowerCase().includes(input.toLowerCase())
+              }
+              disabled={!filteredRiceCrops || filteredRiceCrops.length === 0}
+            >
+              {filteredRiceCrops?.map((crop: any) => (
+                <Select.Option key={crop.id} value={crop.id}>
+                  {crop.field_name} - {crop.customer?.name} ({crop.season?.name})
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
         </div>
 
         {isLoadingRiceCropProfit && (
