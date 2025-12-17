@@ -6,7 +6,7 @@
 import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
 import { useDebtNotesQuery } from "@/queries/debt-note"
-import { useSeasonsQuery } from "@/queries/season"
+import { useSeasonsQuery, useActiveSeasonQuery } from "@/queries/season"
 import {
   Tag,
   Card,
@@ -49,12 +49,24 @@ const DebtNotesList: React.FC = () => {
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState('')
 
+  // Load mùa vụ active (mới nhất)
+  const { data: activeSeason } = useActiveSeasonQuery()
+
   // Load mùa vụ với search
   const { data: seasonsData } = useSeasonsQuery({ 
     page: 1, 
     limit: 20,
     ...(seasonSearchText && { name: seasonSearchText }) // Thêm filter name khi có search
   })
+
+  // Tự động chọn mùa vụ mới nhất khi vào trang lần đầu
+  React.useEffect(() => {
+    // Chỉ set nếu chưa có season_id trong filters và có activeSeason
+    if (!filters.season_id && activeSeason?.id) {
+      console.log('🌾 Tự động chọn mùa vụ mới nhất:', activeSeason.name)
+      setFilters(prev => ({ ...prev, season_id: activeSeason.id }))
+    }
+  }, [activeSeason]) // Chỉ chạy khi activeSeason thay đổi
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({

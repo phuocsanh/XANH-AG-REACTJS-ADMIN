@@ -332,7 +332,7 @@ const Sidebar: React.FC = () => {
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                         <MdAssignmentReturn className='text-orange-200' />
                       </span>
-                      Trả hàng
+                      Khách trả hàng
                     </Button>
                   </Link>
                 </li>
