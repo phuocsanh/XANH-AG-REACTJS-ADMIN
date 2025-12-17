@@ -17,7 +17,7 @@ export interface Symbol {
 
 // Interface cho form dữ liệu ký hiệu
 export interface SymbolFormData {
-  code: string
+  code?: string
   name: string
   description?: string
   status?: BaseStatus
@@ -25,7 +25,6 @@ export interface SymbolFormData {
 
 // Giá trị mặc định cho form ký hiệu
 export const defaultSymbolValues: SymbolFormData = {
-  code: "",
   name: "",
   description: "",
   status: "active",
@@ -33,7 +32,7 @@ export const defaultSymbolValues: SymbolFormData = {
 
 // Interface cho tạo mới ký hiệu
 export interface CreateSymbolDto extends AnyObject {
-  code: string
+  code?: string
   name: string
   description?: string
   status?: BaseStatus

@@ -19,7 +19,7 @@ export interface Customer {
 }
 
 export interface CreateCustomerDto {
-  code: string;
+  code?: string;
   name: string;
   phone: string;
   email?: string;

@@ -599,15 +599,7 @@ const CustomersList: React.FC = () => {
       >
         <Form form={form} layout='vertical' className='mt-4'>
           <div className='grid grid-cols-2 gap-4'>
-            <Form.Item
-              label='Mã khách hàng'
-              name='code'
-              rules={[
-                { required: true, message: "Vui lòng nhập mã khách hàng" },
-              ]}
-            >
-              <Input placeholder='VD: KH001' />
-            </Form.Item>
+
 
             <Form.Item
               label='Tên khách hàng'

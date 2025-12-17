@@ -327,13 +327,7 @@ const AreasList: React.FC = () => {
             <Input placeholder='VD: Lô A1' />
           </Form.Item>
 
-          <Form.Item
-            label='Mã'
-            name='code'
-            rules={[{ required: true, message: "Vui lòng nhập mã" }]}
-          >
-            <Input placeholder='VD: LA1' />
-          </Form.Item>
+
 
           <Form.Item
             label='Diện tích (m²)'

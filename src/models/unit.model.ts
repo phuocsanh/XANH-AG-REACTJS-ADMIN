@@ -16,7 +16,7 @@ export interface Unit {
 // Interface cho tạo mới Unit
 export interface CreateUnitDto extends AnyObject {
   name: string
-  code: string
+  code?: string
   description?: string
   status?: BaseStatus
 }

@@ -23,7 +23,7 @@ export interface ExtendedProductSubtype
 // Interface cho tạo mới ProductSubtype
 export interface CreateProductSubtypeDto extends AnyObject {
   name: string
-  code: string
+  code?: string
   product_type_id: number
   description?: string
   status?: BaseStatus
@@ -41,7 +41,7 @@ export interface UpdateProductSubtypeDto extends AnyObject {
 // Interface cho request tạo ProductSubtype
 export interface CreateProductSubtypeRequest extends AnyObject {
   name: string
-  code: string
+  code?: string
   product_type_id: number
   description?: string
   status?: BaseStatus

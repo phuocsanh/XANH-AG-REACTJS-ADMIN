@@ -238,13 +238,7 @@ const ListSymbols = () => {
           autoComplete='off'
           initialValues={defaultSymbolValues}
         >
-          <Form.Item
-            name='code'
-            label='Mã ký hiệu'
-            rules={[{ required: true, message: "Vui lòng nhập mã ký hiệu" }]}
-          >
-            <Input placeholder='Nhập mã ký hiệu' />
-          </Form.Item>
+
 
           <Form.Item
             name='name'

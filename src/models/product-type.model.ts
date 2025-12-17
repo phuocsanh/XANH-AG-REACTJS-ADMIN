@@ -29,7 +29,7 @@ export interface ExtendedProductSubtype
 export interface ProductTypeRequest {
   [key: string]: unknown
   name: string
-  code: string
+  code?: string
   description?: string
   status?: BaseStatus
 }
@@ -49,7 +49,7 @@ export interface ProductSubtypeMappingRequest {
 
 export interface CreateProductTypeRequest extends AnyObject {
   name: string
-  code: string
+  code?: string
   description?: string
   status?: BaseStatus
 }

@@ -75,12 +75,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
           <Input placeholder="VD: Phân bón, Lương nhân viên..." />
         </Form.Item>
 
-        <Form.Item
-          name="code"
-          label="Mã loại (Tùy chọn)"
-        >
-          <Input placeholder="VD: FERTILIZER, LABOR..." />
-        </Form.Item>
+
 
         <Form.Item
           name="description"

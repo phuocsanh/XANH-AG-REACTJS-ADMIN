@@ -13,7 +13,7 @@ export interface Season {
 
 export interface CreateSeasonDto {
   name: string;
-  code: string;
+  code?: string;
   year: number;
   start_date?: string;
   end_date?: string;

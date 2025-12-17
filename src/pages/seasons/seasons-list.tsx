@@ -463,13 +463,7 @@ const SeasonsList: React.FC = () => {
             <Input placeholder='VD: Đông Xuân 2024' />
           </Form.Item>
 
-          <Form.Item
-            label='Mã mùa vụ'
-            name='code'
-            rules={[{ required: true, message: "Vui lòng nhập mã mùa vụ" }]}
-          >
-            <Input placeholder='VD: DX2024' />
-          </Form.Item>
+
 
           <Form.Item
             label='Năm'

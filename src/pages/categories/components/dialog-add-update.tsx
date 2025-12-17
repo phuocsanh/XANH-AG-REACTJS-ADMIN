@@ -51,7 +51,7 @@ function DialogAddUpdate({
     if (editingRow) {
       const data = editingRow
       setValue("name", data.name)
-      setValue("code", data.code || "")
+
       setValue("description", data.description || "")
       setValue(
         "status",
@@ -73,7 +73,7 @@ function DialogAddUpdate({
           id: editingRow.id,
           productTypeData: {
             name: data.name,
-            code: data.code,
+
             description: data.description,
             status: data.status,
           },
@@ -82,7 +82,7 @@ function DialogAddUpdate({
         // Thêm mới - toast sẽ được hiển thị trong mutation hook
         await createProductTypeMutation.mutateAsync({
           name: data.name,
-          code: data.code,
+
           description: data.description,
           status: data.status,
         })
@@ -121,17 +121,6 @@ function DialogAddUpdate({
               control={control}
               label="Tên loại sản phẩm"
               placeholder="Nhập tên loại sản phẩm"
-              required
-            />
-          </div>
-
-          {/* Mã loại sản phẩm */}
-          <div className='mt-3'>
-            <FormField
-              name="code"
-              control={control}
-              label="Mã loại sản phẩm"
-              placeholder="Nhập mã loại sản phẩm"
               required
             />
           </div>

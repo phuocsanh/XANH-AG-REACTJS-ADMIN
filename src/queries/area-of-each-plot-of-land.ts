@@ -12,7 +12,7 @@ import type { AreaOfEachPlotOfLand } from '@/types/rice-farming.types';
 /** DTO tạo vùng/lô đất */
 export interface CreateAreaDto {
   name: string;
-  code: string;
+  code?: string;
   acreage: number;
   [key: string]: any; // Index signature để tương thích với api.postRaw
 }

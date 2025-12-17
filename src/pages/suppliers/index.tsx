@@ -521,13 +521,7 @@ export const Suppliers = () => {
               required
             />
 
-            <FormField
-              name="code"
-              control={control}
-              label="Mã nhà cung cấp"
-              placeholder="Nhập mã nhà cung cấp"
-              required
-            />
+
 
             <FormField
               name="address"

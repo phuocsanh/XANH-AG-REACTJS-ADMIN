@@ -234,15 +234,7 @@ const ListUnits = () => {
             <Input placeholder='Nhập tên đơn vị tính' />
           </Form.Item>
 
-          <Form.Item
-            name='code'
-            label='Mã đơn vị tính'
-            rules={[
-              { required: true, message: "Vui lòng nhập mã đơn vị tính" },
-            ]}
-          >
-            <Input placeholder='Nhập mã đơn vị tính' />
-          </Form.Item>
+
 
           <Form.Item name='description' label='Mô tả'>
             <Input.TextArea placeholder='Nhập mô tả' rows={3} />

@@ -25,7 +25,7 @@ export interface Supplier {
 export interface CreateSupplierRequest {
   [key: string]: unknown // Index signature để tương thích với AnyObject
   name: string
-  code: string
+  code?: string
   address?: string
   phone?: string
   email?: string
