@@ -192,25 +192,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { data: productSubtypes } = useProductSubtypesQuery()
   const { data: productTypes } = useProductTypes()
   const { data: units } = useUnitsQuery()
-  console.log("🚀 ~ ProductForm ~ units:", units)
   // Thêm query cho symbols
   const { data: symbols } = useSymbolsQuery()
   // Thêm query cho danh sách sản phẩm
   const { data: allProducts } = useProductsQuery({ offset: 0, limit: 1000 })
 
   // Debug log
-  console.log("Product types data:", productTypes)
-  console.log("Product subtypes data:", productSubtypes)
-  console.log("Units data:", units)
 
-  // Debug log for options
-  console.log(
-    "Product types options:",
-    productTypes?.data?.items?.map((type: ProductType) => ({
-      label: type.name,
-      value: type.id,
-    })) || []
-  )
+
 
   useEffect(() => {
     if (isEdit && productData && !productLoading) {
@@ -219,9 +208,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
         // Lấy dữ liệu từ response
         const productItem = productData as Product
-        console.log("Product data from API:", productItem)
-        console.log("Product quantity from API:", productItem.quantity)
-        console.log("Product quantity type:", typeof productItem.quantity)
 
         if (!productItem) {
           throw new Error("Không tìm thấy thông tin sản phẩm")
@@ -298,11 +284,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   // Kiểm tra trùng tên sản phẩm khi người dùng nhập tên (chỉ khi tạo mới)
   useEffect(() => {
-    console.log('🔍 useEffect kiểm tra trùng tên được gọi:', { watchedName, isEdit })
     
     // Chỉ kiểm tra khi đang tạo mới (không phải edit)
     if (isEdit) {
-      console.log('⏭️ Bỏ qua kiểm tra vì đang ở chế độ edit')
       setDuplicateProducts([])
       return
     }
@@ -310,17 +294,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     // Debounce: Chỉ kiểm tra sau khi người dùng ngừng gõ 500ms
     const timer = setTimeout(async () => {
       const productName = watchedName?.trim()
-      console.log('⏰ Debounce timeout, tên sản phẩm:', productName)
       
       // Chỉ kiểm tra nếu tên sản phẩm có ít nhất 2 ký tự
       if (!productName || productName.length < 2) {
-        console.log('❌ Tên sản phẩm quá ngắn (< 2 ký tự), bỏ qua kiểm tra')
         setDuplicateProducts([])
         return
       }
 
       try {
-        console.log('🚀 Bắt đầu gọi API search với keyword:', productName)
         setIsCheckingDuplicate(true)
         
         // Import api từ utils
@@ -340,7 +321,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           page: 1
         })
         
-        console.log('✅ API response:', response)
         
         // Lọc các sản phẩm có tên giống hoặc tương tự
         const duplicates = response?.data?.filter((product: Product) => {
@@ -352,7 +332,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                  normalizedProductName?.includes(normalizedInputName)
         }) || []
         
-        console.log('🔎 Tìm thấy', duplicates.length, 'sản phẩm trùng tên:', duplicates)
         setDuplicateProducts(duplicates)
       } catch (error) {
         console.error('❌ Lỗi khi kiểm tra trùng tên sản phẩm:', error)
@@ -363,7 +342,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     }, 500) // Debounce 500ms
 
     return () => {
-      console.log('🧹 Cleanup timer')
       clearTimeout(timer)
     }
   }, [watchedName, isEdit])
@@ -513,7 +491,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
-      console.log("Data being sent to server:", serverData)
 
       // Đảm bảo các trường mảng luôn là mảng ngay cả khi là null hoặc undefined
       if (!Array.isArray(serverData.pictures)) {
@@ -557,7 +534,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
    * Xử lý khi AI trích xuất được thông tin từ ảnh
    */
   const handleDataExtracted = (data: ExtractedProductData) => {
-    console.log('📊 Dữ liệu trích xuất từ ảnh:', data);
     
     // Tự động điền thông tin vào form
     if (data.name) {

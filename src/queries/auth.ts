@@ -51,7 +51,7 @@ export const useLoginMutation = () => {
       const axios = (await import("axios")).default
 
       // Log để debug
-      console.log("Sending login request with credentials:", credentials)
+
 
       // Gọi trực tiếp axios mà không qua interceptor
       // Sử dụng đúng tên trường mà server expect: 'account' và 'password'
@@ -69,17 +69,14 @@ export const useLoginMutation = () => {
       )
 
       // Log để debug
-      console.log("Raw axios response:", response)
-      console.log("Raw axios response data:", response.data)
-      console.log("Raw axios response status:", response.status)
-      console.log("Raw axios response headers:", response.headers)
+
 
       // Trả về response.data (đây là phần dữ liệu đầy đủ từ API)
       return response.data
     },
     onSuccess: (response) => {
       // Xử lý token và user info trong onSuccess callback của component
-      console.log("Login successful - Response received:", response)
+
 
       // Kiểm tra response có tồn tại không
       if (!response) {
@@ -224,7 +221,7 @@ export const useRegisterMutation = () => {
       const axios = (await import("axios")).default
 
       // Log để debug
-      console.log("Sending register request with user data:", userData)
+
 
       // Chuẩn bị payload - chỉ gửi email nếu có
       const payload: { account: string; password: string; email?: string } = {
@@ -249,17 +246,14 @@ export const useRegisterMutation = () => {
       )
 
       // Log để debug
-      console.log("Raw axios response:", response)
-      console.log("Raw axios response data:", response.data)
-      console.log("Raw axios response status:", response.status)
-      console.log("Raw axios response headers:", response.headers)
+
 
       // Trả về response.data (đây là phần dữ liệu đầy đủ từ API)
       return response.data
     },
     onSuccess: (response) => {
       // Xử lý kết quả đăng ký thành công
-      console.log("Register successful - Response received:", response)
+
 
       // Kiểm tra response có tồn tại không
       if (!response) {
@@ -350,7 +344,7 @@ export const useChangePasswordMutation = () => {
       const axios = (await import("axios")).default
 
       // Log để debug (không log mật khẩu thực tế)
-      console.log("Sending change password request")
+
 
       // Gọi API với access token
       const response = await axios.put(
@@ -367,11 +361,11 @@ export const useChangePasswordMutation = () => {
         }
       )
 
-      console.log("Change password response:", response.data)
+
       return response.data
     },
     onSuccess: (response) => {
-      console.log("Change password successful:", response)
+
 
       // Kiểm tra response
       if (!response || typeof response !== "object") {

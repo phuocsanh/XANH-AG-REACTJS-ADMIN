@@ -45,7 +45,7 @@ const refreshToken = async (): Promise<string> => {
       refresh_token: refreshToken,
     })
 
-    console.log("🔄 Refresh token response:", response.data)
+
 
     // Server wrap response trong { success, data }
     // Cần lấy từ response.data.data thay vì response.data
@@ -63,7 +63,7 @@ const refreshToken = async (): Promise<string> => {
       localStorage.setItem("refresh_token", newRefreshToken)
       localStorage.setItem("access_token", access_token)
       
-      console.log("✅ Refresh token thành công")
+
       return access_token
     } else {
       console.error("❌ Không nhận được token mới:", responseData)
@@ -133,7 +133,7 @@ export class Api {
     params?: unknown
   ): Promise<T> {
     const response = await this.instance.get<T>(url, { params })
-    console.log("__RESPONSE__GET", response)
+
     // Trả về response thay vì response.data vì interceptor đã xử lý
     return response as unknown as T
   }
@@ -236,7 +236,7 @@ api.instance.interceptors.request.use(
     // Sửa lại key để phù hợp với auth.ts
     const token =
       useAppStore.getState().accessToken || localStorage.getItem("access_token")
-    console.log("🚀 ~ token:", token)
+
 
     if (token) {
       config.headers.setAuthorization(`Bearer ${token}`)
@@ -250,7 +250,7 @@ api.instance.interceptors.request.use(
 
 api.instance.interceptors.response.use(
   (response) => {
-    console.log("Interceptor received response:", response)
+
 
     if (import.meta.env.MODE === "development") {
       console.log(
@@ -262,13 +262,10 @@ api.instance.interceptors.response.use(
 
     // Kiểm tra nếu response có dữ liệu
     if (!response || !response.data) {
-      console.log("Response is empty or has no data")
-      return response?.data
+
     }
 
-    console.log("Response data:", response.data)
-    console.log("Response data type:", typeof response.data)
-    console.log("Response data keys:", Object.keys(response.data))
+
 
     // Kiểm tra nếu response có cấu trúc thành công mới (có trường success)
     if (
@@ -276,7 +273,7 @@ api.instance.interceptors.response.use(
       response.data !== null &&
       "success" in response.data
     ) {
-      console.log("Response has success field:", response.data)
+
       // Kiểm tra nếu success là boolean
       if (typeof response.data.success !== "boolean") {
         console.error("Response success field is not boolean:", response.data)
@@ -285,19 +282,17 @@ api.instance.interceptors.response.use(
 
       // Nếu success = true
       if (response.data.success === true) {
-        console.log("Response success is true")
+
         
         // ✨ QUAN TRỌNG: Nếu response có pagination, giữ nguyên toàn bộ response
         // Đây là response từ search endpoints
         if ("pagination" in response.data) {
-          console.log("Response has pagination, returning full response:", response.data)
-          return response.data
+
         }
         
         // Nếu không có pagination, unwrap data như cũ
         if ("data" in response.data) {
-          console.log("Returning response.data.data:", response.data.data)
-          return response.data.data
+
         } else {
           console.error("Response data is missing 'data' field:", response.data)
           return response.data
@@ -305,7 +300,7 @@ api.instance.interceptors.response.use(
       }
       // Nếu success = false, ném lỗi
       else {
-        console.log("Response success is false, throwing error")
+
         throw { response }
       }
     }
@@ -317,7 +312,7 @@ api.instance.interceptors.response.use(
       "type" in response.data &&
       "title" in response.data
     ) {
-      console.log("RFC 7807 Error detected:", response.data)
+
       throw { response }
     }
 
@@ -328,12 +323,12 @@ api.instance.interceptors.response.use(
       "code" in response.data &&
       response.data.code !== 200
     ) {
-      console.log("Legacy API Error detected:", response.data)
+
       throw { response }
     }
 
     // Trả về data như trước cho các response cũ không có cấu trúc đặc biệt
-    console.log("Returning response.data as-is:", response.data)
+
     return response.data
   },
   async (error) => {

@@ -88,7 +88,7 @@ const InventoryReceiptCreate: React.FC = () => {
   // Flatten data từ tất cả pages
   const productOptions = useMemo(() => {
     if (!data?.pages) {
-      console.log("No pages data available")
+
       return []
     }
 
@@ -100,7 +100,7 @@ const InventoryReceiptCreate: React.FC = () => {
       return page.data
     })
     
-    console.log("Product options flattened:", flattened)
+
     return flattened
   }, [data?.pages])
 
@@ -115,7 +115,7 @@ const InventoryReceiptCreate: React.FC = () => {
         isFetchingNextPage,
         fetchNextPage,
       }
-      console.log("ComboBox props:", props)
+
       return props
     },
     [
@@ -264,19 +264,18 @@ const InventoryReceiptCreate: React.FC = () => {
   })
 
   const handleSubmit = async (values: Record<string, unknown>) => {
-    console.log("🚀 ~ handleSubmit ~ values:", values)
+
     try {
       // 1. Lọc ra các sản phẩm hợp lệ (đã chọn sản phẩm)
       const validItems = items.filter(
         (item) => item.product_id && item.product_id !== 0
       )
       
-      console.log("DEBUG: All Items:", items);
-      console.log("DEBUG: Valid Items:", validItems);
+
 
       // 2. Kiểm tra nếu không có sản phẩm nào hợp lệ
       if (validItems.length === 0) {
-        console.log("DEBUG: BLOCKED - No valid items");
+
         message.error("Vui lòng thêm ít nhất một sản phẩm")
         return
       }
@@ -285,10 +284,10 @@ const InventoryReceiptCreate: React.FC = () => {
       const hasInvalidDetails = validItems.some(
         (item) => !item.quantity || item.quantity < 1 || item.unit_cost < 0
       )
-      console.log("DEBUG: Has Invalid Details:", hasInvalidDetails);
+
 
       if (hasInvalidDetails) {
-        console.log("DEBUG: BLOCKED - Invalid details");
+
         message.error("Vui lòng kiểm tra số lượng và đơn giá của các sản phẩm")
         return
        
@@ -438,7 +437,7 @@ const InventoryReceiptCreate: React.FC = () => {
           layout='vertical' 
           onFinish={handleSubmit}
           onFinishFailed={(errorInfo) => {
-            console.log('Form validation failed:', errorInfo);
+
             message.error("Vui lòng kiểm tra các trường bắt buộc (Nhà cung cấp, Trạng thái...)");
           }}
         >

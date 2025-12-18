@@ -142,7 +142,7 @@ const WeatherForecastPage: React.FC = () => {
 
       const { latitude, longitude } = position.coords;
       
-      console.log('✅ Vị trí GPS:', { latitude, longitude, accuracy: position.coords.accuracy });
+
       
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
@@ -239,7 +239,7 @@ const WeatherForecastPage: React.FC = () => {
     navigator.geolocation.getCurrentPosition(
       handleSuccess,
       async (error) => {
-        console.log('⚠️ GPS lần 1 thất bại, đang thử lại...');
+
         
         // Nếu lỗi là POSITION_UNAVAILABLE, thử dùng watchPosition
         if (error.code === error.POSITION_UNAVAILABLE) {
@@ -429,10 +429,10 @@ const WeatherForecastPage: React.FC = () => {
   useEffect(() => {
     if (!lastLocation) {
       // Chưa có vị trí → Gọi GPS
-      console.log('📍 Lấy vị trí GPS mới...');
+
       detectUserLocation();
     } else {
-      console.log('📍 Sử dụng vị trí đã lưu:', lastLocation.name);
+
     }
   }, []);
 

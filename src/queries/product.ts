@@ -49,7 +49,7 @@ export const searchProductsApi = async ({
 }: SearchProductsParams): Promise<ProductSearchResponse> => {
   try {
     // Log để debug
-    console.log("Searching products with params:", { page, limit, search })
+
 
     // Luôn gọi API POST /products/search cho cả trường hợp mặc định và tìm kiếm
     // Tạo search DTO theo format mới của server - dùng flat params
@@ -75,7 +75,7 @@ export const searchProductsApi = async ({
     >("/products/search", searchDto)
 
     // Log để debug
-    console.log("Search product response:", response)
+
 
     // Xử lý response - có thể là array trực tiếp hoặc object có data property
     let products: Product[] = []
@@ -87,7 +87,7 @@ export const searchProductsApi = async ({
       // Server trả về array trực tiếp
       products = response
       total = response.length
-      console.log("Response is array, products:", products)
+
     } else if (response && (response as { data: Product[] }).data) {
       // Server trả về object có data property
       const responseObject = response as {
@@ -100,11 +100,8 @@ export const searchProductsApi = async ({
       total = responseObject.total || 0
       currentPage = responseObject.page || page
       currentLimit = responseObject.limit || limit
-      console.log("Response is object, products:", products)
+
     } else {
-      console.log(
-        "Search product response is invalid or empty, returning empty result"
-      )
       return {
         data: [],
         total: 0,
@@ -120,7 +117,7 @@ export const searchProductsApi = async ({
     }))
 
     // Log để debug
-    console.log("Mapped search data for ComboBox:", data)
+
 
     // Tính toán hasMore dựa trên total và page/limit
     const hasMore = total > currentPage * currentLimit
@@ -203,17 +200,14 @@ export const useProductSearch = (
       })
 
       // Log để debug
-      console.log("useProductSearch response:", response)
-      console.log("useProductSearch pageParam:", pageParam)
+
 
       return response
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       // Log để debug
-      console.log("getNextPageParam lastPage:", lastPage)
-      console.log("getNextPageParam hasMore:", lastPage.hasMore)
-      console.log("getNextPageParam nextPage:", lastPage.nextPage)
+
 
       // Nếu còn dữ liệu thì trả về page tiếp theo
       return lastPage.hasMore ? lastPage.nextPage : undefined

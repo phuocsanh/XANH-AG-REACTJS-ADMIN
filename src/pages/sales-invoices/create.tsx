@@ -435,7 +435,7 @@ const CreateSalesInvoice = () => {
           profit: calProfit,
           margin: calMargin
         });
-        console.log('💰 Kết quả tính toán lợi nhuận:', { totalRev, totalCst, calProfit });
+
         
         setValue('total_amount', total, { shouldValidate: false, shouldDirty: false });
         setValue('final_amount', finalAmount, { shouldValidate: false, shouldDirty: false });
@@ -458,12 +458,12 @@ const CreateSalesInvoice = () => {
         // Nếu chọn tiền mặt hoặc chuyển khoản → Tự động set đã trả đủ
         if (paymentMethod === 'cash' || paymentMethod === 'bank_transfer') {
           setValue('partial_payment_amount', currentFinalAmount, { shouldValidate: false });
-          console.log(`✅ Auto-set partial_payment: ${paymentMethod} → ${currentFinalAmount.toLocaleString()}đ`);
+
         }
         // Nếu chọn công nợ → Set về 0
         else if (paymentMethod === 'debt') {
           setValue('partial_payment_amount', 0, { shouldValidate: false });
-          console.log(`✅ Auto-set partial_payment: debt → 0đ`);
+
         }
       }
     });
@@ -502,7 +502,7 @@ const CreateSalesInvoice = () => {
   };
 
   const handleRiceCropSelect = (riceCropId: number | undefined) => {
-    console.log('🌾 Selected Rice Crop ID:', riceCropId);
+
     setSelectedRiceCropId(riceCropId);
     setValue('rice_crop_id', riceCropId);
     // Không cần auto-fill ngược lại season/customer vì flow hiện tại là xuôi: Customer -> Season -> Rice Crop
@@ -1032,7 +1032,7 @@ ${productInfo}`;
     if (currentTab === 1) {
       // Nếu chưa có location trong DB, tự động lấy GPS
       if (!diseaseLocation) {
-        console.log('📍 Chưa có vị trí trong DB, tự động lấy GPS...');
+
         detectUserLocation();
       }
       fetchWeatherForecast();

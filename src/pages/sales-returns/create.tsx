@@ -75,10 +75,7 @@ const CreateSalesReturn = () => {
   useEffect(() => {
     if (invoiceDetail) {
       // 🐛 DEBUG: Kiểm tra xem backend đã trả về returned_quantity chưa
-      console.log('📦 Invoice Detail:', invoiceDetail);
-      console.log('📦 First Item:', invoiceDetail.items?.[0]);
-      console.log('✅ Has returned_quantity?', invoiceDetail.items?.[0]?.returned_quantity !== undefined);
-      console.log('✅ Has returnable_quantity?', invoiceDetail.items?.[0]?.returnable_quantity !== undefined);
+
       
       setSelectedInvoice(invoiceDetail);
       
@@ -100,7 +97,7 @@ const CreateSalesReturn = () => {
           break;
       }
       
-      console.log(`✅ Auto-selected refund method: ${paymentMethod} → refund_method`);
+
     } else {
         // Only reset if we don't have an ID (cleared)
         if (!selectedInvoiceId) {
