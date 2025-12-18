@@ -131,32 +131,30 @@ export const Header: React.FC = () => {
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
               {/* Chỉ hiển thị khi đã đăng nhập */}
-              {isLogin && (
-                <>
-                  <MenuItem onClick={handleClose}>
-                    <Avatar /> My account
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleClose}>
-                    <ListItemIcon>
-                      <PersonAdd fontSize='small' />
-                    </ListItemIcon>
-                    Add another account
-                  </MenuItem>
-                  <MenuItem onClick={handleClose}>
-                    <ListItemIcon>
-                      <Settings fontSize='small' />
-                    </ListItemIcon>
-                    Settings
-                  </MenuItem>
-                  <MenuItem onClick={handleLogout}>
-                    <ListItemIcon>
-                      <Logout fontSize='small' />
-                    </ListItemIcon>
-                    Logout
-                  </MenuItem>
-                </>
-              )}
+              {isLogin && [
+                <MenuItem key="account" onClick={handleClose}>
+                  <Avatar /> My account
+                </MenuItem>,
+                <Divider key="divider" />,
+                <MenuItem key="add" onClick={handleClose}>
+                  <ListItemIcon>
+                    <PersonAdd fontSize='small' />
+                  </ListItemIcon>
+                  Add another account
+                </MenuItem>,
+                <MenuItem key="settings" onClick={handleClose}>
+                  <ListItemIcon>
+                    <Settings fontSize='small' />
+                  </ListItemIcon>
+                  Settings
+                </MenuItem>,
+                <MenuItem key="logout" onClick={handleLogout}>
+                  <ListItemIcon>
+                    <Logout fontSize='small' />
+                  </ListItemIcon>
+                  Logout
+                </MenuItem>
+              ]}
 
               {/* Chỉ hiển thị khi chưa đăng nhập */}
               {!isLogin && (

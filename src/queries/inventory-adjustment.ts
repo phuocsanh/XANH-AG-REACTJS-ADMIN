@@ -40,8 +40,10 @@ export const useAdjustmentQuery = (id: number) => {
   return useQuery({
     queryKey: ['adjustment', id],
     queryFn: async () => {
-      const data = await apiClient.get<AdjustmentApiResponse>(`/inventory/adjustment/${id}`)
-      return mapApiResponseToAdjustment(data) as InventoryAdjustment
+      const response = await apiClient.get<any>(`/inventory/adjustment/${id}`)
+      // Unwrap data từ response wrapper { success, data }
+      const adjustmentData = response.data || response
+      return mapApiResponseToAdjustment(adjustmentData) as InventoryAdjustment
     },
     enabled: !!id,
   })
@@ -52,8 +54,8 @@ export const useCreateAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: CreateAdjustmentRequest) => {
-      const response = await apiClient.postRaw<AdjustmentApiResponse>('/inventory/adjustment', data as any)
-      return response
+      const response = await apiClient.postRaw<any>('/inventory/adjustment', data as any)
+      return response.data || response
     },
     onSuccess: () => {
       // Invalidate queries để refresh danh sách
@@ -67,13 +69,33 @@ export const useCreateAdjustmentMutation = () => {
   })
 }
 
+// Cập nhật phiếu điều chỉnh
+export const useUpdateAdjustmentMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: CreateAdjustmentRequest }) => {
+      const response = await apiClient.patchRaw<any>(`/inventory/adjustment/${id}`, data as any)
+      return response.data || response
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['adjustments'] })
+      queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
+      invalidateResourceQueries('adjustments')
+      message.success('Cập nhật phiếu điều chỉnh thành công!')
+    },
+    onError: (error) => {
+      handleApiError(error, 'Cập nhật phiếu điều chỉnh thất bại!')
+    },
+  })
+}
+
 // Duyệt phiếu điều chỉnh (và tự động tác động kho)
 export const useApproveAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiClient.postRaw<AdjustmentApiResponse>(`/inventory/adjustment/${id}/approve`)
-      return response
+      const response = await apiClient.postRaw<any>(`/inventory/adjustment/${id}/approve`)
+      return response.data || response
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
@@ -93,8 +115,8 @@ export const useCancelAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
-      const response = await apiClient.postRaw<AdjustmentApiResponse>(`/inventory/adjustment/${id}/cancel`, { reason })
-      return response
+      const response = await apiClient.postRaw<any>(`/inventory/adjustment/${id}/cancel`, { reason })
+      return response.data || response
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
@@ -112,8 +134,8 @@ export const useDeleteAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiClient.delete<boolean>(`/inventory/adjustment/${id}`)
-      return response
+      const response = await apiClient.delete<any>(`/inventory/adjustment/${id}`)
+      return response.data !== undefined ? response.data : response
     },
     onSuccess: () => {
       invalidateResourceQueries('adjustments')

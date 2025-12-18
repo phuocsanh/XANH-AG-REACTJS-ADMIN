@@ -10,6 +10,7 @@ const AdjustmentsPage = () => {
     <Routes>
       <Route index element={<AdjustmentsList />} />
       <Route path="create" element={<AdjustmentCreate />} />
+      <Route path=":id/edit" element={<AdjustmentCreate />} />
       <Route path=":id" element={<AdjustmentDetail />} />
     </Routes>
   )

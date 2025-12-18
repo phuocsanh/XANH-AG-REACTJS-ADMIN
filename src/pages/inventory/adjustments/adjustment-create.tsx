@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -24,11 +24,16 @@ import {
   Save as SaveIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { message } from 'antd';
-import { useCreateAdjustmentMutation, useAttachImageToAdjustmentMutation } from '@/queries/inventory-adjustment';
+import { 
+  useCreateAdjustmentMutation, 
+  useUpdateAdjustmentMutation,
+  useAttachImageToAdjustmentMutation,
+  useAdjustmentQuery 
+} from '@/queries/inventory-adjustment';
 import { useProductsQuery } from '@/queries/product';
 import { useAppStore } from '@/stores';
 import {
@@ -37,9 +42,14 @@ import {
   defaultAdjustmentValues,
 } from './form-config';
 import { handleApiError } from '@/utils/error-handler';
+import { LoadingSpinner } from '@/components/common';
 
 const AdjustmentCreate = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const adjustmentId = id ? Number(id) : undefined;
+  const isEditMode = !!adjustmentId;
+
   const userInfo = useAppStore((state) => state.userInfo);
   const [productSearch, setProductSearch] = useState('');
   const [tempProductSelect, setTempProductSelect] = useState<number | null>(null);
@@ -49,6 +59,7 @@ const AdjustmentCreate = () => {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<AdjustmentFormData>({
     resolver: zodResolver(adjustmentFormSchema),
@@ -60,16 +71,40 @@ const AdjustmentCreate = () => {
     name: 'items',
   });
 
-
   // Queries
+  const { data: existingAdjustment, isLoading: isLoadingAdjustment } = useAdjustmentQuery(adjustmentId || 0);
+  
   const { data: productsData } = useProductsQuery({ 
     limit: 100,
-    keyword: productSearch || undefined, // Tìm kiếm theo keyword (tên sản phẩm)
+    keyword: productSearch || undefined,
   });
+  
   const createMutation = useCreateAdjustmentMutation();
+  const updateMutation = useUpdateAdjustmentMutation();
   const attachImageMutation = useAttachImageToAdjustmentMutation();
 
   const productList = productsData?.data?.items || [];
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (isEditMode && existingAdjustment) {
+      reset({
+        adjustment_type: existingAdjustment.adjustment_type as 'IN' | 'OUT',
+        reason: existingAdjustment.reason,
+        notes: existingAdjustment.notes || '',
+        items: existingAdjustment.items?.map(item => {
+           const product = productList.find(p => p.id === item.product_id);
+           return {
+             product_id: item.product_id,
+             product_name: product?.name || `Sản phẩm #${item.product_id}`,
+             quantity_change: item.quantity_change,
+             reason: item.reason || '',
+             notes: item.notes || '',
+           };
+        }) || [],
+      });
+    }
+  }, [isEditMode, existingAdjustment, reset, productList]);
 
   // Thêm sản phẩm vào danh sách
   const handleAddProduct = (productId: number) => {
@@ -114,36 +149,44 @@ const AdjustmentCreate = () => {
         notes: data.notes,
         created_by: userInfo.id,
         items: processedItems,
+        adjustment_code: existingAdjustment?.code || '', // Cần thiết cho backend nếu có validate
       };
 
-      // 1. Tạo phiếu điều chỉnh
-      const newAdjustment = await createMutation.mutateAsync(adjustmentData as any);
+      if (isEditMode && adjustmentId) {
+        await updateMutation.mutateAsync({ id: adjustmentId, data: adjustmentData as any });
+      } else {
+        // 1. Tạo phiếu điều chỉnh
+        const newAdjustment = await createMutation.mutateAsync(adjustmentData as any);
 
-      // 2. Gắn ảnh (nếu có)
-      if (data.images && data.images.length > 0 && newAdjustment?.id) {
-        const imagePromises = data.images.map(async (img: any) => {
-          if (img.id) {
-            try {
-              await attachImageMutation.mutateAsync({
-                adjustmentId: newAdjustment.id,
-                fileId: img.id,
-                fieldName: 'adjustment_images',
-              });
-            } catch (error) {
-              console.error("Error attaching image:", error);
+        // 2. Gắn ảnh (nếu có, chỉ làm khi tạo mới, edit thì dùng detail page để quản lý ảnh cho đơn giản)
+        if (data.images && data.images.length > 0 && newAdjustment?.id) {
+          const imagePromises = data.images.map(async (img: any) => {
+            if (img.id) {
+              try {
+                await attachImageMutation.mutateAsync({
+                  adjustmentId: newAdjustment.id,
+                  fileId: img.id,
+                  fieldName: 'adjustment_images',
+                });
+              } catch (error) {
+                console.error("Error attaching image:", error);
+              }
             }
-          }
-        });
-        
-        await Promise.all(imagePromises);
+          });
+          
+          await Promise.all(imagePromises);
+        }
       }
 
       navigate('/inventory/adjustments');
     } catch (error) {
-      console.error('Error creating adjustment:', error);
-       // Error handled by mutation onError with handleApiError or message.error
+      console.error('Error saving adjustment:', error);
     }
   };
+
+  if (isEditMode && isLoadingAdjustment) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <Box>
@@ -151,266 +194,290 @@ const AdjustmentCreate = () => {
         <IconButton onClick={() => navigate('/inventory/adjustments')} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4" fontWeight="bold">
-          Tạo phiếu điều chỉnh kho
-        </Typography>
-      </Box>
-
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Grid container spacing={3}>
-          {/* Thông tin chung */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" mb={2}>
-                  Thông tin phiếu
-                </Typography>
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <FormComboBox
-                      name="adjustment_type"
-                      control={control}
-                      label="Loại điều chỉnh"
-                      placeholder="Chọn loại điều chỉnh"
-                      options={[
-                        { value: 'IN', label: 'Tăng kho (IN)' },
-                        { value: 'OUT', label: 'Giảm kho (OUT)' },
-                      ]}
-                    />
-                  </Grid>
-                </Grid>
-
-                <Box mt={2}>
-                  <FormField
-                    name="reason"
-                    control={control}
-                    label="Lý do điều chỉnh"
-                    type="textarea"
-                    rows={3}
-                    placeholder="VD: Kiểm kê, hư hỏng, thất lạc..."
-                  />
-                </Box>
-
-                <Box mt={2}>
-                  <FormField
-                    name="notes"
-                    control={control}
-                    label="Ghi chú"
-                    type="textarea"
-                    rows={2}
-                  />
-                </Box>
-
-                <Box mt={2}>
-                  <Typography variant="subtitle2" mb={1}>
-                    Hình ảnh chứng từ / hiện trạng
-                  </Typography>
-                  <FormImageUpload
-                    name="images"
-                    control={control}
-                    uploadType="common"
-                    returnFullObjects={true}
-                    multiple
-                    maxCount={5}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Chọn sản phẩm */}
-          <Grid item xs={12}>
-             <Card>
+          <Typography variant="h4" fontWeight="bold">
+            {isEditMode ? 'Chỉnh sửa phiếu điều chỉnh kho' : 'Tạo phiếu điều chỉnh kho'}
+          </Typography>
+        </Box>
+  
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Grid container spacing={3}>
+            {/* Thông tin chung */}
+            <Grid item xs={12}>
+              <Card>
                 <CardContent>
-                   <Typography variant="h6" mb={2}>Thêm sản phẩm</Typography>
-                   <Box>
-                      <Typography variant="subtitle2" mb={1}>
-                        Tìm kiếm sản phẩm:
-                      </Typography>
-                      <ComboBox
-                        data={productList.map((p) => ({
-                          value: p.id,
-                          label: p.name
-                        }))}
-                        value={tempProductSelect}
-                        onChange={(value) => {
-                          if (value) {
-                             handleAddProduct(value);
-                             setTempProductSelect(null);
-                          }
-                        }}
-                        placeholder="-- Chọn sản phẩm --"
-                        showSearch
-                        allowClear
-                        onSearch={setProductSearch}
-                        filterOption={false}
+                  <Typography variant="h6" mb={2}>
+                    Thông tin phiếu
+                  </Typography>
+  
+                  <Grid container spacing={2}>
+                    {isEditMode && (
+                      <Grid item xs={12}>
+                        <Box 
+                          mb={2} 
+                          p={2} 
+                          sx={{ 
+                            backgroundColor: '#f0f7ff', 
+                            border: '1px solid #bae7ff',
+                            borderRadius: 1 
+                          }}
+                        >
+                          <Typography variant="subtitle2" color="textSecondary">
+                            Mã phiếu điều chỉnh:
+                          </Typography>
+                          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                            {existingAdjustment?.code || (isLoadingAdjustment ? 'Đang tải...' : `Phiếu #${adjustmentId}`)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    <Grid item xs={12}>
+                      <FormComboBox
+                        name="adjustment_type"
+                        control={control}
+                        label="Loại điều chỉnh"
+                        placeholder="Chọn loại điều chỉnh"
+                        options={[
+                          { value: 'IN', label: 'Tăng kho (IN)' },
+                          { value: 'OUT', label: 'Giảm kho (OUT)' },
+                        ]}
                       />
-                   </Box>
-                   <Box mt={2}>
-                      <Alert severity="info">
-                         Tìm và chọn sản phẩm để thêm vào danh sách điều chỉnh bên dưới.
-                      </Alert>
-                   </Box>
+                    </Grid>
+                  </Grid>
+  
+                  <Box mt={2}>
+                    <FormField
+                      name="reason"
+                      control={control}
+                      label="Lý do điều chỉnh"
+                      type="textarea"
+                      rows={3}
+                      placeholder="VD: Kiểm kê, hư hỏng, thất lạc..."
+                    />
+                  </Box>
+  
+                  <Box mt={2}>
+                    <FormField
+                      name="notes"
+                      control={control}
+                      label="Ghi chú"
+                      type="textarea"
+                      rows={2}
+                    />
+                  </Box>
+  
+                  {!isEditMode && (
+                    <Box mt={2}>
+                      <Typography variant="subtitle2" mb={1}>
+                        Hình ảnh chứng từ / hiện trạng
+                      </Typography>
+                      <FormImageUpload
+                        name="images"
+                        control={control}
+                        uploadType="common"
+                        returnFullObjects={true}
+                        multiple
+                        maxCount={5}
+                      />
+                    </Box>
+                  )}
                 </CardContent>
-             </Card>
-          </Grid>
-
-          {/* Danh sách sản phẩm */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" mb={2}>
-                  Danh sách sản phẩm điều chỉnh
-                </Typography>
-
-                {errors.items && (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    {errors.items.message}
-                  </Alert>
-                )}
-
-                {fields.length > 0 ? (
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Sản phẩm</TableCell>
-                          <TableCell align="right">Số lượng thay đổi</TableCell>
-                          <TableCell>Lý do (tuỳ chọn)</TableCell>
-                          <TableCell align="center">Xóa</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {fields.map((field, index) => (
-                          <TableRow key={field.id}>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight="bold">
-                                {field.product_name}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                              <Controller
-                                name={`items.${index}.quantity_change`}
-                                control={control}
-                                render={({ field }) => {
-                                  const adjustmentType = watch('adjustment_type'); // Lấy loại điều chỉnh
-                                  const isIncrease = (field.value || 0) >= 0;
-                                  const absValue = Math.abs(field.value || 0);
-                                  
-                                  return (
-                                    <Box display="flex" alignItems="center" gap={1} justifyContent="flex-end">
-                                      {/* Toggle button - chỉ hiện 1 nút tương ứng */}
-                                      {adjustmentType === 'IN' && (
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          color="success"
-                                          sx={{ minWidth: 60, fontSize: '12px' }}
-                                        >
-                                          Tăng
-                                        </Button>
-                                      )}
-                                      {adjustmentType === 'OUT' && (
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          color="error"
-                                          sx={{ minWidth: 60, fontSize: '12px' }}
-                                        >
-                                          Giảm
-                                        </Button>
-                                      )}
-                                      
-                                      {/* Number input */}
-                                      <NumberInput
-                                        value={absValue || null}
-                                        onChange={(val) => {
-                                          const newVal = val || 0;
-                                          // Tự động set dấu theo loại điều chỉnh
-                                          if (adjustmentType === 'IN') {
-                                            field.onChange(newVal); // Luôn dương
-                                          } else if (adjustmentType === 'OUT') {
-                                            field.onChange(-newVal); // Luôn âm
-                                          } else {
-                                            field.onChange(isIncrease ? newVal : -newVal);
-                                          }
-                                        }}
-                                        min={0}
-                                        size="small"
-                                        style={{ width: 100 }}
-                                        placeholder="Số lượng"
-                                      />
-                                    </Box>
-                                  );
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Controller
-                                name={`items.${index}.reason`}
-                                control={control}
-                                render={({ field }) => (
-                                  <input
-                                    {...field}
-                                    placeholder="Lý do chi tiết..."
-                                    style={{
-                                      width: '100%',
-                                      padding: '4px 8px',
-                                      border: '1px solid #d9d9d9',
-                                      borderRadius: '4px',
-                                      fontSize: '14px'
-                                    }}
-                                  />
-                                )}
-                              />
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => remove(index)}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </TableCell>
+              </Card>
+            </Grid>
+  
+            {/* Chọn sản phẩm */}
+            <Grid item xs={12}>
+               <Card>
+                  <CardContent>
+                     <Typography variant="h6" mb={2}>Thêm sản phẩm</Typography>
+                     <Box>
+                        <Typography variant="subtitle2" mb={1}>
+                          Tìm kiếm sản phẩm:
+                        </Typography>
+                        <ComboBox
+                          data={productList.map((p) => ({
+                            value: p.id,
+                            label: p.name
+                          }))}
+                          value={tempProductSelect}
+                          onChange={(value) => {
+                            if (value) {
+                               handleAddProduct(value);
+                               setTempProductSelect(null);
+                            }
+                          }}
+                          placeholder="-- Chọn sản phẩm --"
+                          showSearch
+                          allowClear
+                          onSearch={setProductSearch}
+                          filterOption={false}
+                        />
+                     </Box>
+                     <Box mt={2}>
+                        <Alert severity="info">
+                           Tìm và chọn sản phẩm để thêm vào danh sách điều chỉnh bên dưới.
+                        </Alert>
+                     </Box>
+                  </CardContent>
+               </Card>
+            </Grid>
+  
+            {/* Danh sách sản phẩm */}
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" mb={2}>
+                    Danh sách sản phẩm điều chỉnh
+                  </Typography>
+  
+                  {errors.items && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {errors.items.message}
+                    </Alert>
+                  )}
+  
+                  {fields.length > 0 ? (
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Sản phẩm</TableCell>
+                            <TableCell align="right">Số lượng thay đổi</TableCell>
+                            <TableCell>Lý do (tuỳ chọn)</TableCell>
+                            <TableCell align="center">Xóa</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <Alert severity="warning">
-                    Chưa có sản phẩm nào. Vui lòng thêm sản phẩm!
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
+                        </TableHead>
+                        <TableBody>
+                          {fields.map((field, index) => (
+                            <TableRow key={field.id}>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="bold">
+                                  {field.product_name}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                <Controller
+                                  name={`items.${index}.quantity_change`}
+                                  control={control}
+                                  render={({ field }) => {
+                                    const adjustmentType = watch('adjustment_type'); // Lấy loại điều chỉnh
+                                    const absValue = Math.abs(field.value || 0);
+                                    
+                                    return (
+                                      <Box display="flex" alignItems="center" gap={1} justifyContent="flex-end">
+                                        {/* Toggle button - chỉ hiện 1 nút tương ứng */}
+                                        {adjustmentType === 'IN' && (
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            color="success"
+                                            sx={{ minWidth: 60, fontSize: '12px' }}
+                                          >
+                                            Tăng
+                                          </Button>
+                                        )}
+                                        {adjustmentType === 'OUT' && (
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            color="error"
+                                            sx={{ minWidth: 60, fontSize: '12px' }}
+                                          >
+                                            Giảm
+                                          </Button>
+                                        )}
+                                        
+                                        {/* Number input */}
+                                        <NumberInput
+                                          value={absValue || null}
+                                          onChange={(val) => {
+                                            const newVal = val || 0;
+                                            // Tự động set dấu theo loại điều chỉnh
+                                            if (adjustmentType === 'IN') {
+                                              field.onChange(newVal); // Luôn dương
+                                            } else if (adjustmentType === 'OUT') {
+                                              field.onChange(-newVal); // Luôn âm
+                                            } else {
+                                              field.onChange(newVal);
+                                            }
+                                          }}
+                                          min={0}
+                                          size="small"
+                                          style={{ width: 100 }}
+                                          placeholder="Số lượng"
+                                        />
+                                      </Box>
+                                    );
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Controller
+                                  name={`items.${index}.reason`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <input
+                                      {...field}
+                                      placeholder="Lý do chi tiết..."
+                                      style={{
+                                        width: '100%',
+                                        padding: '4px 8px',
+                                        border: '1px solid #d9d9d9',
+                                        borderRadius: '4px',
+                                        fontSize: '14px'
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </TableCell>
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => remove(index)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    <Alert severity="warning">
+                      Chưa có sản phẩm nào. Vui lòng thêm sản phẩm!
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+  
+            {/* Actions */}
+            <Grid item xs={12}>
+              <Box display="flex" gap={2} justifyContent="flex-end">
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate('/inventory/adjustments')}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<SaveIcon />}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {isEditMode 
+                    ? (updateMutation.isPending ? 'Đang cập nhật...' : 'Cập nhật phiếu')
+                    : (createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu')
+                  }
+                </Button>
+              </Box>
+            </Grid>
           </Grid>
-
-          {/* Actions */}
-          <Grid item xs={12}>
-            <Box display="flex" gap={2} justifyContent="flex-end">
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/inventory/adjustments')}
-                disabled={createMutation.isPending}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={<SaveIcon />}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu'}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </form>
+        </form>
     </Box>
   );
 };
