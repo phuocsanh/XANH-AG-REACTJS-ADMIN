@@ -1,5 +1,14 @@
 export type CustomerType = 'regular' | 'vip' | 'wholesale';
 
+export const getCustomerTypeText = (type: CustomerType): string => {
+  const map: Record<CustomerType, string> = {
+    'regular': 'Thành viên',
+    'vip': 'Khách hàng thân thiết',
+    'wholesale': 'Đại lý/Sỉ',
+  };
+  return map[type] || type;
+};
+
 export interface Customer {
   id: number;
   code: string;

@@ -1,5 +1,14 @@
 export type SalesReturnStatus = 'draft' | 'approved' | 'cancelled';
 
+export const getSalesReturnStatusText = (status: SalesReturnStatus): string => {
+  const statusMap: Record<SalesReturnStatus, string> = {
+    'draft': 'Nháp',
+    'approved': 'Đã duyệt',
+    'cancelled': 'Đã hủy',
+  };
+  return statusMap[status] || status;
+};
+
 export interface SalesReturnItem {
   id: number;
   sales_return_id: number;

@@ -412,3 +412,92 @@ export interface FarmingScheduleFilters {
   status?: ScheduleStatus;
   activity_type?: ActivityType;
 }
+
+// ==================== HELPER FUNCTIONS ====================
+
+/** Lấy tên hiển thị giai đoạn sinh trưởng */
+export const getGrowthStageText = (stage: any): string => {
+  const s = String(stage).toLowerCase();
+  const map: Record<string, string> = {
+    'seedling': 'Mạ',
+    'tillering': 'Đẻ nhánh',
+    'panicle': 'Làm đòng',
+    'heading': 'Trổ bông',
+    'ripening': 'Chín',
+    'harvested': 'Đã thu hoạch',
+  };
+  return map[s] || 'Không xác định';
+};
+
+/** Lấy tên hiển thị trạng thái vụ lúa */
+export const getCropStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const map: Record<string, string> = {
+    'active': 'Đang canh tác',
+    'harvested': 'Đã thu hoạch',
+    'failed': 'Thất bại',
+  };
+  return map[s] || 'Không xác định';
+};
+
+/** Lấy tên hiển thị loại hoạt động canh tác */
+export const getActivityTypeText = (type: any): string => {
+  const t = String(type).toLowerCase();
+  const map: Record<string, string> = {
+    'spraying': 'Phun thuốc',
+    'fertilizing': 'Bón phân',
+    'irrigation': 'Tưới nước',
+    'weeding': 'Làm cỏ',
+    'pest_control': 'Diệt sâu bệnh',
+    'observation': 'Quan sát',
+    'other': 'Khác',
+  };
+  return map[t] || 'Khác';
+};
+
+/** Lấy tên hiển thị tình trạng sức khỏe cây trồng */
+export const getHealthStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const map: Record<string, string> = {
+    'healthy': 'Khỏe mạnh',
+    'stressed': 'Bị stress',
+    'diseased': 'Bị bệnh',
+  };
+  return map[s] || 'Không xác định';
+};
+
+/** Lấy tên hiển thị mức độ nghiêm trọng */
+export const getSeverityText = (severity: any): string => {
+  const s = String(severity).toLowerCase();
+  const map: Record<string, string> = {
+    'low': 'Thấp',
+    'medium': 'Trung bình',
+    'high': 'Cao',
+    'severe': 'Nghiêm trọng',
+  };
+  return map[s] || 'Không xác định';
+};
+
+/** Lấy tên hiển thị trạng thái thanh toán */
+export const getPaymentStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const map: Record<string, string> = {
+    'pending': 'Chưa thanh toán',
+    'partial': 'Thanh toán một phần',
+    'paid': 'Đã thanh toán',
+  };
+  return map[s] || 'Không xác định';
+};
+
+/** Lấy tên hiển thị trạng thái lịch */
+export const getScheduleStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const map: Record<string, string> = {
+    'pending': 'Chờ thực hiện',
+    'completed': 'Đã hoàn thành',
+    'cancelled': 'Đã hủy',
+    'overdue': 'Quá hạn',
+  };
+  return map[s] || 'Không xác định';
+}
+

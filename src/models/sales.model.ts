@@ -1,6 +1,52 @@
 import { AnyObject } from "@/models/common"
 
 /**
+ * Enum cho trạng thái hóa đơn bán hàng
+ */
+export enum SalesInvoiceStatus {
+  DRAFT = 'draft',
+  CONFIRMED = 'confirmed',
+  PAID = 'paid',
+  CANCELLED = 'cancelled',
+  REFUNDED = 'refunded',
+}
+
+/**
+ * Enum cho trạng thái thanh toán
+ */
+export enum SalesPaymentStatus {
+  PENDING = 'pending',
+  PARTIAL = 'partial',
+  PAID = 'paid',
+  REFUNDED = 'refunded',
+  CANCELLED = 'cancelled',
+}
+
+export const getSalesStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const statusMap: { [key: string]: string } = {
+    'draft': 'Nháp',
+    'confirmed': 'Đã xác nhận',
+    'paid': 'Đã thanh toán',
+    'cancelled': 'Đã hủy',
+    'refunded': 'Đã hoàn tiền',
+  }
+  return statusMap[s] || 'Không xác định';
+}
+
+export const getSalesPaymentStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const statusMap: { [key: string]: string } = {
+    'pending': 'Chờ thanh toán',
+    'partial': 'Thanh toán một phần',
+    'paid': 'Đã thanh toán',
+    'cancelled': 'Đã hủy',
+    'refunded': 'Đã hoàn tiền',
+  }
+  return statusMap[s] || 'Không xác định';
+}
+
+/**
  * Interface định nghĩa cấu trúc dữ liệu cho chi tiết hóa đơn bán hàng
  */
 export interface SalesInvoiceItem {
@@ -60,8 +106,10 @@ export interface SalesInvoice {
   discount_amount?: number
   /** Số tiền cuối cùng */
   final_amount: number
+  /** Trạng thái hóa đơn */
+  status: SalesInvoiceStatus
   /** Trạng thái thanh toán */
-  payment_status: "PENDING" | "PAID" | "CANCELLED"
+  payment_status: SalesPaymentStatus
   /** Ghi chú */
   notes?: string
   /** Danh sách chi tiết hóa đơn */

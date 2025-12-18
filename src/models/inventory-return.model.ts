@@ -69,17 +69,40 @@ export interface ReturnApiResponse {
   }
 }
 
-// Hàm map status từ number sang string
-export const getReturnStatusText = (status: number | string): string => {
-  const statusMap: { [key: string | number]: string } = {
-    0: 'Nháp',
-    2: 'Đã duyệt',
-    4: 'Đã hủy',
+// Enum cho trạng thái phiếu trả hàng (Chuẩn hóa dạng chuỗi tiếng Anh)
+export enum ReturnStatus {
+  DRAFT = 'draft',
+  APPROVED = 'approved',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+// Hàm map status sang tên hiển thị Tiếng Việt
+export const getReturnStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const statusMap: { [key: string]: string } = {
     'draft': 'Nháp',
+    '0': 'Nháp',
     'approved': 'Đã duyệt',
+    '2': 'Đã duyệt',
+    'completed': 'Hoàn thành',
+    '3': 'Hoàn thành',
     'cancelled': 'Đã hủy',
+    '4': 'Đã hủy',
   }
-  return statusMap[status] || String(status)
+  return statusMap[s] || 'Không xác định';
+}
+
+/**
+ * Hàm chuẩn hóa trạng thái về dạng Enum chuỗi tiếng Anh
+ */
+export const normalizeReturnStatus = (status: any): ReturnStatus => {
+  const s = String(status).toLowerCase();
+  if (s === 'draft' || s === '0') return ReturnStatus.DRAFT;
+  if (s === 'approved' || s === '2') return ReturnStatus.APPROVED;
+  if (s === 'completed' || s === '3') return ReturnStatus.COMPLETED;
+  if (s === 'cancelled' || s === '4') return ReturnStatus.CANCELLED;
+  return ReturnStatus.DRAFT;
 }
 
 // Hàm map API response sang InventoryReturn
@@ -120,11 +143,4 @@ export const mapApiResponseToReturn = (
   }
 }
 
-// Enum cho trạng thái phiếu trả hàng
-export enum ReturnStatus {
-  DRAFT = 0,
-  PENDING = 1,
-  APPROVED = 2,
-  COMPLETED = 3,
-  CANCELLED = 4,
-}
+// Xóa Enum cũ vì đã định nghĩa ở trên

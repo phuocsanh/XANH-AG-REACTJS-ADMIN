@@ -208,27 +208,33 @@ export function mapApiResponseToInventoryHistory(
   }
 }
 
-// Helper functions
-export const getInventoryReceiptStatusText = (status: number | string): string => {
-  const statusStr = String(status).toLowerCase();
-  
-  switch (statusStr) {
-    case InventoryReceiptStatus.DRAFT:
-    case '1':
-      return "Nháp"
-    case InventoryReceiptStatus.APPROVED:
-    case '2':
-    case '3':
-      return "Đã duyệt"
-    case InventoryReceiptStatus.COMPLETED:
-    case '4':
-      return "Hoàn thành"
-    case InventoryReceiptStatus.CANCELLED:
-    case '5':
-      return "Đã hủy"
-    default:
-      return "Không xác định"
+// Hàm map status sang tên hiển thị Tiếng Việt
+export const getInventoryReceiptStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const statusMap: { [key: string]: string } = {
+    'draft': 'Nháp',
+    '1': 'Nháp',
+    'approved': 'Đã duyệt',
+    '2': 'Đã duyệt',
+    '3': 'Đã duyệt',
+    'completed': 'Hoàn thành',
+    '4': 'Hoàn thành',
+    'cancelled': 'Đã hủy',
+    '5': 'Đã hủy',
   }
+  return statusMap[s] || 'Không xác định';
+}
+
+/**
+ * Hàm chuẩn hóa trạng thái về dạng Enum chuỗi tiếng Anh
+ */
+export const normalizeReceiptStatus = (status: any): InventoryReceiptStatus => {
+  const s = String(status).toLowerCase();
+  if (s === 'draft' || s === '1') return InventoryReceiptStatus.DRAFT;
+  if (s === 'approved' || s === '2' || s === '3') return InventoryReceiptStatus.APPROVED;
+  if (s === 'completed' || s === '4') return InventoryReceiptStatus.COMPLETED;
+  if (s === 'cancelled' || s === '5') return InventoryReceiptStatus.CANCELLED;
+  return InventoryReceiptStatus.DRAFT;
 }
 
 export const getInventoryTransactionTypeText = (type: InventoryTransactionType): string => {

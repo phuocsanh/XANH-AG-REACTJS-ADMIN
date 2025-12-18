@@ -49,18 +49,28 @@ export interface AdjustmentApiResponse {
   items?: AdjustmentItem[]
 }
 
-// Hàm map status từ number sang string
-export const getAdjustmentStatusText = (status: number | string): string => {
-  if (typeof status === 'string') return status
-  
-  const statusMap: { [key: number]: string } = {
-    0: 'Nháp',
-    1: 'Chờ duyệt',
-    2: 'Đã duyệt',
-    3: 'Hoàn thành',
-    4: 'Đã hủy',
+// Enum cho trạng thái phiếu điều chỉnh (Chuẩn hóa dạng chuỗi tiếng Anh)
+export enum AdjustmentStatus {
+  DRAFT = 'draft',
+  APPROVED = 'approved',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+// Hàm map status sang tên hiển thị Tiếng Việt
+export const getAdjustmentStatusText = (status: any): string => {
+  const s = String(status).toLowerCase();
+  const statusMap: { [key: string]: string } = {
+    'draft': 'Nháp',
+    '0': 'Nháp',
+    'approved': 'Đã duyệt',
+    '2': 'Đã duyệt',
+    'completed': 'Hoàn thành',
+    '3': 'Hoàn thành',
+    'cancelled': 'Đã hủy',
+    '4': 'Đã hủy',
   }
-  return statusMap[status] || 'Không xác định'
+  return statusMap[s] || 'Không xác định';
 }
 
 // Hàm map API response sang InventoryAdjustment
@@ -84,13 +94,16 @@ export const mapApiResponseToAdjustment = (
   }
 }
 
-// Enum cho trạng thái phiếu điều chỉnh
-export enum AdjustmentStatus {
-  DRAFT = 0,
-  PENDING = 1,
-  APPROVED = 2,
-  COMPLETED = 3,
-  CANCELLED = 4,
+/**
+ * Hàm chuẩn hóa trạng thái về dạng Enum chuỗi tiếng Anh
+ */
+export const normalizeAdjustmentStatus = (status: any): AdjustmentStatus => {
+  const s = String(status).toLowerCase();
+  if (s === 'draft' || s === '0') return AdjustmentStatus.DRAFT;
+  if (s === 'approved' || s === '2') return AdjustmentStatus.APPROVED;
+  if (s === 'completed' || s === '3') return AdjustmentStatus.COMPLETED;
+  if (s === 'cancelled' || s === '4') return AdjustmentStatus.CANCELLED;
+  return AdjustmentStatus.DRAFT;
 }
 
 // Enum cho loại điều chỉnh
