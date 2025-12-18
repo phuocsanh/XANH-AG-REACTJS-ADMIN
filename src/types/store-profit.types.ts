@@ -190,11 +190,12 @@ export interface RiceCropProfit {
     
     // New fields
     operating_costs: number;
+    production_costs: number; // Chi phí canh tác (phân thuốc)
     net_profit: number;
     net_margin: number;
     
     gift_value_from_invoices: number;
-    total_profit: number; // Keep specifically for backward compatibility if needed, though net_profit replaces it effectively
+    total_profit: number;
     avg_margin: number;
   };
   
@@ -202,6 +203,12 @@ export interface RiceCropProfit {
       name: string;
       amount: number;
       date?: string;
+  }[];
+
+  production_costs_breakdown?: {
+      name: string;
+      amount: number;
+      quantity?: string;
   }[];
 
   invoices: CustomerInvoice[];

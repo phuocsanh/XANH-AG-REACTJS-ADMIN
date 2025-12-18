@@ -91,10 +91,10 @@ function ComboBox({
           clearTimeout(searchTimerRef.current)
         }
         
-        // Set timeout mới
+        // Set timeout mới (giảm xuống 500ms để snappy hơn)
         searchTimerRef.current = setTimeout(() => {
           externalOnSearch(value)
-        }, 1500)
+        }, 500)
       }
     },
     [externalOnSearch]

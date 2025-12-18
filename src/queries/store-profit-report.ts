@@ -34,9 +34,25 @@ export const useInvoiceProfit = (invoiceId: number) => {
   return useQuery({
     queryKey: storeProfitReportKeys.invoice(invoiceId),
     queryFn: async () => {
-      return await api.get<InvoiceProfit>(`/store-profit-report/invoice/${invoiceId}`);
+      const response = await api.get<any>(`/store-profit-report/invoice/${invoiceId}`);
+      return response.data as InvoiceProfit;
     },
     enabled: !!invoiceId && invoiceId > 0,
+  });
+};
+
+/**
+ * Lấy báo cáo lợi nhuận chi tiết của một đơn hàng theo mã (code)
+ * @param code - Mã của hóa đơn
+ */
+export const useInvoiceProfitByCodeQuery = (code: string) => {
+  return useQuery({
+    queryKey: [...storeProfitReportKeys.all, 'invoice-code', code] as const,
+    queryFn: async () => {
+      const response = await api.get<any>(`/store-profit-report/invoice/code/${code}`);
+      return response.data as InvoiceProfit;
+    },
+    enabled: !!code && code.length > 0,
   });
 };
 
@@ -49,7 +65,8 @@ export const useSeasonStoreProfit = (seasonId: number) => {
   return useQuery({
     queryKey: storeProfitReportKeys.season(seasonId),
     queryFn: async () => {
-      return await api.get<SeasonStoreProfit>(`/store-profit-report/season/${seasonId}`);
+      const response = await api.get<any>(`/store-profit-report/season/${seasonId}`);
+      return response.data as SeasonStoreProfit;
     },
     enabled: !!seasonId && seasonId > 0,
   });
@@ -82,7 +99,8 @@ export const useCustomerProfitReport = (
       const queryString = params.toString();
       const url = `/store-profit-report/customer/${customerId}${queryString ? `?${queryString}` : ''}`;
       
-      return await api.get<CustomerProfitReport>(url);
+      const response = await api.get<any>(url);
+      return response.data as CustomerProfitReport;
     },
     enabled: !!customerId && customerId > 0,
   });
@@ -96,7 +114,8 @@ export const useRiceCropProfitQuery = (riceCropId: number) => {
   return useQuery({
     queryKey: [...storeProfitReportKeys.all, 'rice-crop', riceCropId] as const,
     queryFn: async () => {
-      return await api.get<RiceCropProfit>(`/store-profit-report/rice-crop/${riceCropId}`);
+      const response = await api.get<any>(`/store-profit-report/rice-crop/${riceCropId}`);
+      return response.data as RiceCropProfit;
     },
     enabled: !!riceCropId && riceCropId > 0,
   });
