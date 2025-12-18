@@ -287,12 +287,12 @@ const DebtNotesList: React.FC = () => {
     {
       key: "amount",
       dataIndex: "amount",
-      title: "Số tiền nợ",
-      width: 130,
+      title: "Giá trị đơn hiện tại",
+      width: 150,
       sorter: true,
       sortOrder: filters.sort_by === 'amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
       render: (value: number) => (
-        <div className='text-gray-600'>{formatCurrency(value)}</div>
+        <div className='text-blue-600 font-medium'>{formatCurrency(value)}</div>
       ),
     },
     {

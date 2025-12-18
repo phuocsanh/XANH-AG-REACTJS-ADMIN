@@ -71,7 +71,7 @@ const CreateSalesReturn = () => {
   // Load Invoice Details (to get items)
   const { data: invoiceDetail } = useSalesInvoiceQuery(selectedInvoiceId || 0);
 
-  // Update selectedInvoice state and auto-select refund method
+  // Update selectedInvoice state and auto-select refund method based on payment method
   useEffect(() => {
     if (invoiceDetail) {
       // 🐛 DEBUG: Kiểm tra xem backend đã trả về returned_quantity chưa
@@ -82,13 +82,25 @@ const CreateSalesReturn = () => {
       
       setSelectedInvoice(invoiceDetail);
       
-      // Auto-select refund method based on debt
-      const remainingResult = parseFloat(invoiceDetail.remaining_amount?.toString() || '0');
-      if (remainingResult > 0) {
-        setValue('refund_method', 'debt_credit'); // Trừ công nợ
-      } else {
-        setValue('refund_method', 'cash'); // Hoàn tiền mặt
+      // ✅ Auto-select refund method based on PAYMENT METHOD (not debt amount)
+      // Quy tắc: Tiền vào bằng cách nào thì phải ra bằng cách đó
+      const paymentMethod = invoiceDetail.payment_method?.toLowerCase() || 'debt';
+      
+      switch (paymentMethod) {
+        case 'cash':
+          setValue('refund_method', 'cash'); // Hoàn tiền mặt
+          break;
+        case 'bank_transfer':
+        case 'transfer':
+          setValue('refund_method', 'bank_transfer'); // Hoàn chuyển khoản
+          break;
+        case 'debt':
+        default:
+          setValue('refund_method', 'debt_credit'); // Trừ công nợ
+          break;
       }
+      
+      console.log(`✅ Auto-selected refund method: ${paymentMethod} → refund_method`);
     } else {
         // Only reset if we don't have an ID (cleared)
         if (!selectedInvoiceId) {
@@ -249,7 +261,14 @@ const CreateSalesReturn = () => {
                     label,
                   }))}
                   className="mb-4"
+                  disabled={!!selectedInvoice}
                 />
+                
+                {selectedInvoice && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    ⚠️ Phương thức hoàn tiền được tự động chọn dựa trên phương thức thanh toán của hóa đơn
+                  </Alert>
+                )}
 
                 <FormField
                   name="reason"

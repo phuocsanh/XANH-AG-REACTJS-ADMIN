@@ -9,6 +9,7 @@ export const salesInvoiceItemSchema = z.object({
   discount_amount: z.number().min(0, 'Giảm giá phải lớn hơn hoặc bằng 0').default(0),
   notes: z.string().optional(),
   price_type: z.enum(['cash', 'credit']).default('cash'), // Loại giá: tiền mặt hoặc nợ
+  average_cost_price: z.number().min(0).optional(), // ✅ Giá vốn để tính lợi nhuận
 });
 
 // Schema cho hóa đơn

@@ -289,38 +289,20 @@ const CreateSalesInvoice = () => {
   const pressTimerRef = useRef<any>(null);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Tính lợi nhuận real-time
-  const calculatedProfit = useMemo(() => {
-    const items = watch('items') || [];
-    let totalRevenue = 0;
-    let totalCost = 0;
 
-    const productsList = productsData?.data?.items || [];
+  // State để lưu kết quả tính toán
+  const [calculatedProfit, setCalculatedProfit] = useState({
+    revenue: 0,
+    cost: 0,
+    profit: 0,
+    margin: 0,
+  });
 
-    items.forEach((item: any) => {
-      if (item.product_id && item.quantity) {
-        const product = productsList.find((p: any) => p.id === item.product_id);
-        const avgCost = Number(product?.average_cost_price || 0);
-        const unitPrice = Number(item.unit_price || 0);
-        const quantity = Number(item.quantity || 0);
-        const itemRevenue = quantity * unitPrice;
-        const itemCost = quantity * avgCost;
-        
-        totalRevenue += itemRevenue;
-        totalCost += itemCost;
-      }
-    });
+  const items = watch('items') || [];
+  const discountAmount = watch('discount_amount');
+  const partialPaymentAmount = watch('partial_payment_amount');
 
-    const profit = totalRevenue - totalCost;
-    const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
 
-    return {
-      revenue: totalRevenue,
-      cost: totalCost,
-      profit,
-      margin,
-    };
-  }, [watch('items'), productsData]);
 
   // Reset rice_crop_id khi thay đổi season_id
   useEffect(() => {
@@ -396,9 +378,6 @@ const CreateSalesInvoice = () => {
   }, [activeSeason, selectedSeasonId, isEditMode, setValue]);
 
   // Watch items to calculate totals
-  const items = watch('items');
-  const discountAmount = watch('discount_amount');
-  const partialPaymentAmount = watch('partial_payment_amount');
 
   // Tính toán tổng tiền tự động khi có thay đổi
   useEffect(() => {
@@ -426,18 +405,66 @@ const CreateSalesInvoice = () => {
         
         const currentDiscount = Number(value.discount_amount) || 0;
         const finalAmount = total - currentDiscount;
-        
-        console.log('💰 Tính toán tổng tiền:', {
-          field: name,
-          total,
-          discount: currentDiscount,
-          finalAmount
+        // ✅ TÍNH LỢI NHUẬN TẠI ĐÂY
+        let totalRev = 0;
+        let totalCst = 0;
+        currentItems.forEach((item: any) => {
+          if (item?.product_id && item?.quantity) {
+             let rawCost = item.average_cost_price;
+             if (!rawCost) {
+                const prod = productsData?.data?.items?.find((p: any) => p.id === item.product_id);
+                rawCost = prod?.average_cost_price;
+             }
+             const cstPrice = typeof rawCost === 'string' 
+                ? (rawCost.includes('.') && rawCost.split('.').pop()?.length === 2 
+                    ? Number(rawCost) 
+                    : Number(rawCost.replace(/[^0-9]/g, '')))
+                : Number(rawCost || 0);
+             const uPrice = Number(item.unit_price || 0);
+             const qty = Number(item.quantity || 0);
+             const iDiscount = Number(item.discount_amount || 0);
+             totalRev += (qty * uPrice) - iDiscount;
+             totalCst += (qty * cstPrice);
+          }
         });
+        const calProfit = totalRev - totalCst;
+        const calMargin = totalRev > 0 ? (calProfit / totalRev) * 100 : 0;
+        setCalculatedProfit({
+          revenue: totalRev,
+          cost: totalCst,
+          profit: calProfit,
+          margin: calMargin
+        });
+        console.log('💰 Kết quả tính toán lợi nhuận:', { totalRev, totalCst, calProfit });
         
         setValue('total_amount', total, { shouldValidate: false, shouldDirty: false });
         setValue('final_amount', finalAmount, { shouldValidate: false, shouldDirty: false });
         
         isCalculating = false; // Kết thúc tính toán
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [watch, setValue, productsData]);
+
+  // ✅ Tự động set số tiền khách trả trước khi chọn phương thức thanh toán
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      // Xử lý khi thay đổi payment_method HOẶC final_amount
+      if (name === 'payment_method' || name === 'final_amount') {
+        const paymentMethod = value.payment_method?.toLowerCase();
+        const currentFinalAmount = Number(value.final_amount || 0);
+        
+        // Nếu chọn tiền mặt hoặc chuyển khoản → Tự động set đã trả đủ
+        if (paymentMethod === 'cash' || paymentMethod === 'bank_transfer') {
+          setValue('partial_payment_amount', currentFinalAmount, { shouldValidate: false });
+          console.log(`✅ Auto-set partial_payment: ${paymentMethod} → ${currentFinalAmount.toLocaleString()}đ`);
+        }
+        // Nếu chọn công nợ → Set về 0
+        else if (paymentMethod === 'debt') {
+          setValue('partial_payment_amount', 0, { shouldValidate: false });
+          console.log(`✅ Auto-set partial_payment: debt → 0đ`);
+        }
       }
     });
     
@@ -592,16 +619,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     }
   };
 
-  // Auto-generate warning when items change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (items.length > 0) {
-        handleGenerateWarning(true);
-      }
-    }, 2000); // Debounce 2s
 
-    return () => clearTimeout(timer);
-  }, [items]); // Re-run when items change
 
   // Auto-check conflict when previous warning or selected products change
   useEffect(() => {
@@ -651,6 +669,11 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       discount_amount: 0,
       notes: '',
       price_type: priceType,
+      average_cost_price: typeof product.average_cost_price === 'string' 
+        ? (product.average_cost_price.includes('.') && product.average_cost_price.split('.').pop()?.length === 2
+            ? Number(product.average_cost_price)
+            : Number(product.average_cost_price.replace(/[^0-9]/g, '')))
+        : Number(product.average_cost_price || 0),
     });
     setProductSearch('');
   };
@@ -1609,13 +1632,9 @@ ${productInfo}`;
                     label="Thêm sản phẩm"
                     placeholder="Tìm kiếm sản phẩm..."
                     data={productsData?.data?.items?.map((product: Product) => {
-                      const cashPrice = formatCurrency(Number(product.price) || 0);
-                      const creditPrice = product.credit_price 
-                        ? formatCurrency(Number(product.credit_price) || 0)
-                        : 'Chưa thiết lập';
                       return {
                         value: product.id,
-                        label: `${product.name} - Tiền mặt: ${cashPrice} | Nợ: ${creditPrice}`
+                        label: product.name
                       };
                     }) || []}
                     value={undefined}

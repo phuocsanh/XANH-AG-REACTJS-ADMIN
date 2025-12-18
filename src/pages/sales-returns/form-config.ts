@@ -10,7 +10,7 @@ export const salesReturnItemSchema = z.object({
 
 export const salesReturnSchema = z.object({
   invoice_id: z.number().min(1, 'Vui lòng chọn hóa đơn'),
-  refund_method: z.enum(['cash', 'debt_credit']).default('cash'),
+  refund_method: z.enum(['cash', 'debt_credit', 'bank_transfer']).default('debt_credit'),
   reason: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(salesReturnItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm trả'),
@@ -21,7 +21,7 @@ export type SalesReturnFormData = z.infer<typeof salesReturnSchema>;
 
 export const defaultSalesReturnValues: SalesReturnFormData = {
   invoice_id: undefined as unknown as number, // Set to undefined to show placeholder
-  refund_method: 'cash',
+  refund_method: 'debt_credit',
   reason: '',
   notes: '',
   items: [],
@@ -30,6 +30,7 @@ export const defaultSalesReturnValues: SalesReturnFormData = {
 export const refundMethodLabels = {
   cash: 'Hoàn tiền mặt',
   debt_credit: 'Trừ công nợ',
+  bank_transfer: 'Hoàn chuyển khoản',
 };
 
 export const returnStatusLabels = {

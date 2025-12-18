@@ -37,7 +37,7 @@ export interface SalesReturn {
     phone?: string;
   };
   total_refund_amount: number;
-  refund_method: 'cash' | 'debt_credit';
+  refund_method: 'cash' | 'debt_credit' | 'bank_transfer';
   status: SalesReturnStatus;
   reason?: string;
   notes?: string;
@@ -51,7 +51,7 @@ export interface SalesReturn {
 
 export interface CreateSalesReturnDto {
   invoice_id: number;
-  refund_method: 'cash' | 'debt_credit';
+  refund_method: 'cash' | 'debt_credit' | 'bank_transfer';
   reason?: string;
   notes?: string;
   items: {
