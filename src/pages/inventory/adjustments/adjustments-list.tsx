@@ -60,18 +60,39 @@ const AdjustmentsList: React.FC = () => {
     })
   }, [adjustments, searchTerm, statusFilter])
 
-  const renderStatus = (statusText: string) => {
-    const statusConfig: Record<string, { color: string }> = {
-      "Nháp": { color: "default" },
-      "Đã duyệt": { color: "success" },
-      "Đã hủy": { color: "error" },
+  const renderStatus = (statusText: string | number) => {
+    // Chuẩn hóa status sang string và lowercase nếu là string
+    const status = typeof statusText === 'string' ? statusText.toLowerCase() : statusText;
+
+    const statusConfig: Record<string, { color: string, label: string }> = {
+      "nháp": { color: "default", label: "Nháp" },
+      "draft": { color: "default", label: "Nháp" },
+      "0": { color: "default", label: "Nháp" },
+      
+      "đã duyệt": { color: "success", label: "Đã duyệt" },
+      "approved": { color: "success", label: "Đã duyệt" },
+      "2": { color: "success", label: "Đã duyệt" },
+      
+      "đã hủy": { color: "error", label: "Đã hủy" },
+      "cancelled": { color: "error", label: "Đã hủy" },
+      "4": { color: "error", label: "Đã hủy" },
+      
+      "hoàn thành": { color: "success", label: "Hoàn thành" },
+      "completed": { color: "success", label: "Hoàn thành" },
+      "3": { color: "success", label: "Hoàn thành" },
     }
-    const config = statusConfig[statusText] || { color: "default" }
-    return <Tag color={config.color}>{statusText}</Tag>
+
+    // Tìm config dựa trên status (string)
+    const config = statusConfig[String(status)] || { color: "default", label: String(statusText) }
+    return <Tag color={config.color}>{config.label}</Tag>
   }
 
   const renderActions = (record: InventoryAdjustment) => {
     const actions = []
+    const status = typeof record.status === 'string' ? record.status.toLowerCase() : String(record.status);
+    const isDraft = status === 'nháp' || status === 'draft' || status === '0';
+    const isApproved = status === 'đã duyệt' || status === 'approved' || status === '2';
+    const isCancelled = status === 'đã hủy' || status === 'cancelled' || status === '4';
 
     actions.push(
       <Tooltip key='view' title='Xem chi tiết'>
@@ -83,7 +104,7 @@ const AdjustmentsList: React.FC = () => {
       </Tooltip>
     )
 
-    if (record.status === "Nháp") {
+    if (isDraft) {
       actions.push(
         <Tooltip key='approve' title='Duyệt phiếu'>
           <Popconfirm
@@ -98,9 +119,7 @@ const AdjustmentsList: React.FC = () => {
       )
     }
 
-
-
-    if (record.status === "Nháp" || record.status === "Đã duyệt") {
+    if (isDraft || isApproved) {
       actions.push(
         <Tooltip key='cancel' title='Hủy phiếu'>
           <Popconfirm
@@ -115,7 +134,7 @@ const AdjustmentsList: React.FC = () => {
       )
     }
 
-    if (record.status === "Nháp" || record.status === "Đã hủy") {
+    if (isDraft || isCancelled) {
       actions.push(
         <Tooltip key='delete' title='Xóa phiếu'>
           <Popconfirm

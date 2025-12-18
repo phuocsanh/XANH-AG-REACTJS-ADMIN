@@ -28,7 +28,6 @@ import { ReturnItem } from "@/models/inventory-return.model"
 import {
   useReturnQuery,
   useApproveReturnMutation,
-  useCompleteReturnMutation,
   useCancelReturnMutation,
   useDeleteReturnMutation,
 } from "@/queries/inventory-return"
@@ -47,7 +46,6 @@ const ReturnDetail: React.FC = () => {
 
   // Mutations
   const approveReturnMutation = useApproveReturnMutation()
-  const completeReturnMutation = useCompleteReturnMutation()
   const cancelReturnMutation = useCancelReturnMutation()
   const deleteReturnMutation = useDeleteReturnMutation()
 
@@ -60,13 +58,7 @@ const ReturnDetail: React.FC = () => {
     }
   }
 
-  const handleComplete = async () => {
-    try {
-      await completeReturnMutation.mutateAsync(Number(id))
-    } catch (error) {
-      console.error("Error completing return:", error)
-    }
-  }
+
 
   const handleCancel = async () => {
     try {
@@ -207,23 +199,7 @@ const ReturnDetail: React.FC = () => {
                   </Button>
                 </Popconfirm>
               )}
-              {returnData.status === "Đã duyệt" && (
-                <Popconfirm
-                  title="Hoàn thành trả hàng"
-                  description="Bạn có chắc chắn muốn hoàn thành? Tồn kho sẽ được cập nhật."
-                  onConfirm={handleComplete}
-                  okText="Hoàn thành"
-                  cancelText="Hủy"
-                >
-                  <Button
-                    type="primary"
-                    icon={<CheckOutlined />}
-                    loading={completeReturnMutation.isPending}
-                  >
-                    Hoàn thành
-                  </Button>
-                </Popconfirm>
-              )}
+
               {(returnData.status === "Nháp" || returnData.status === "Đã duyệt") && (
                 <Popconfirm
                   title="Hủy phiếu"

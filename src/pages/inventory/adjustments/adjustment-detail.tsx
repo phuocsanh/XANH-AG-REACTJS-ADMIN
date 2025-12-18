@@ -31,7 +31,6 @@ import dayjs from "dayjs"
 import {
   useAdjustmentQuery,
   useApproveAdjustmentMutation,
-  useCompleteAdjustmentMutation,
   useCancelAdjustmentMutation,
   useDeleteAdjustmentMutation,
   useAdjustmentImagesQuery,
@@ -54,7 +53,6 @@ const AdjustmentDetail: React.FC = () => {
   const { data: images } = useAdjustmentImagesQuery(Number(id))
 
   const approveAdjustmentMutation = useApproveAdjustmentMutation()
-  const completeAdjustmentMutation = useCompleteAdjustmentMutation()
   const cancelAdjustmentMutation = useCancelAdjustmentMutation()
   const deleteAdjustmentMutation = useDeleteAdjustmentMutation()
   
@@ -83,10 +81,11 @@ const AdjustmentDetail: React.FC = () => {
       const uploadResult = await uploadFileMutation.mutateAsync(file)
       
       // 2. Gắn file vào phiếu
-      if (uploadResult?.data?.id) {
+      const fileData = uploadResult?.data as { id?: number } | undefined
+      if (fileData?.id) {
         await attachImageMutation.mutateAsync({
           adjustmentId: Number(id),
-          fileId: uploadResult.data.id,
+          fileId: fileData.id,
           fieldName: 'adjustment_images',
         })
       }
@@ -135,17 +134,7 @@ const AdjustmentDetail: React.FC = () => {
                 <Button type="primary" icon={<CheckOutlined />}>Duyệt</Button>
               </Popconfirm>
             )}
-            {adjustmentData.status === "Đã duyệt" && (
-              <Popconfirm
-                title="Hoàn thành điều chỉnh"
-                description="Tồn kho sẽ được cập nhật."
-                onConfirm={() => completeAdjustmentMutation.mutateAsync(Number(id))}
-                okText="Hoàn thành"
-                cancelText="Hủy"
-              >
-                <Button type="primary" icon={<CheckOutlined />}>Hoàn thành</Button>
-              </Popconfirm>
-            )}
+
             {(adjustmentData.status === "Nháp" || adjustmentData.status === "Đã duyệt") && (
               <Popconfirm
                 title="Hủy phiếu"

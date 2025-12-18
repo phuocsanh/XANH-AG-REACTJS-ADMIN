@@ -33,8 +33,8 @@ import {
   useInvoiceProfit,
   useRiceCropProfitQuery,
   useCustomerProfitReport,
+  useInvoiceProfitByCodeQuery,
 } from '@/queries/store-profit-report';
-import { useInvoiceByCodeQuery } from '@/queries/sales';
 import type { RiceCropProfit } from '@/types/store-profit.types';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -116,7 +116,7 @@ const ProfitReportsPage: React.FC = () => {
   const riceCropProfit = riceCropProfitData as RiceCropProfit;
 
   const { 
-    data: invoiceProfit, isLoading: isLoadingInvoiceProfit } = useInvoiceByCodeQuery(
+    data: invoiceProfit, isLoading: isLoadingInvoiceProfit } = useInvoiceProfitByCodeQuery(
     debouncedInvoiceCode
   );
   const { 

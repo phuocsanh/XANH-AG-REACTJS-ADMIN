@@ -56,6 +56,8 @@ export const useCreateAdjustmentMutation = () => {
       return response
     },
     onSuccess: () => {
+      // Invalidate queries để refresh danh sách
+      queryClient.invalidateQueries({ queryKey: ['adjustments'] })
       invalidateResourceQueries('adjustments')
       message.success('Tạo phiếu điều chỉnh thành công!')
     },
