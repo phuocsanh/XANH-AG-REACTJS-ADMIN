@@ -31,6 +31,7 @@ import { message } from 'antd';
 import { 
   useCreateAdjustmentMutation, 
   useUpdateAdjustmentMutation,
+  useApproveAdjustmentMutation,
   useAttachImageToAdjustmentMutation,
   useAdjustmentQuery 
 } from '@/queries/inventory-adjustment';
@@ -81,6 +82,7 @@ const AdjustmentCreate = () => {
   
   const createMutation = useCreateAdjustmentMutation();
   const updateMutation = useUpdateAdjustmentMutation();
+  const approveMutation = useApproveAdjustmentMutation();
   const attachImageMutation = useAttachImageToAdjustmentMutation();
 
   const productList = productsData?.data?.items || [];
@@ -88,10 +90,12 @@ const AdjustmentCreate = () => {
   // Pre-fill form when editing
   useEffect(() => {
     if (isEditMode && existingAdjustment) {
+      const statusValue = existingAdjustment.status === 'Đã duyệt' || existingAdjustment.status === 'approved' ? 'approved' : 'draft';
       reset({
         adjustment_type: existingAdjustment.adjustment_type as 'IN' | 'OUT',
         reason: existingAdjustment.reason,
         notes: existingAdjustment.notes || '',
+        status: statusValue,
         items: existingAdjustment.items?.map(item => {
            const product = productList.find(p => p.id === item.product_id);
            return {
@@ -147,24 +151,28 @@ const AdjustmentCreate = () => {
         adjustment_type: data.adjustment_type,
         reason: data.reason,
         notes: data.notes,
+        status: data.status,
         created_by: userInfo.id,
         items: processedItems,
-        adjustment_code: existingAdjustment?.code || '', // Cần thiết cho backend nếu có validate
+        adjustment_code: existingAdjustment?.code || '',
       };
+
+      let finalAdjustmentId = adjustmentId;
 
       if (isEditMode && adjustmentId) {
         await updateMutation.mutateAsync({ id: adjustmentId, data: adjustmentData as any });
       } else {
         // 1. Tạo phiếu điều chỉnh
         const newAdjustment = await createMutation.mutateAsync(adjustmentData as any);
+        finalAdjustmentId = newAdjustment?.id;
 
-        // 2. Gắn ảnh (nếu có, chỉ làm khi tạo mới, edit thì dùng detail page để quản lý ảnh cho đơn giản)
-        if (data.images && data.images.length > 0 && newAdjustment?.id) {
+        // 2. Gắn ảnh (nếu có)
+        if (data.images && data.images.length > 0 && finalAdjustmentId) {
           const imagePromises = data.images.map(async (img: any) => {
             if (img.id) {
               try {
                 await attachImageMutation.mutateAsync({
-                  adjustmentId: newAdjustment.id,
+                  adjustmentId: finalAdjustmentId!,
                   fileId: img.id,
                   fieldName: 'adjustment_images',
                 });
@@ -178,9 +186,20 @@ const AdjustmentCreate = () => {
         }
       }
 
+      // 3. Nếu chọn trạng thái 'approved', gọi mutation duyệt
+      if (data.status === 'approved' && finalAdjustmentId) {
+         // Kiểm tra nếu chưa được duyệt thì mới gọi duyệt
+         const currentStatus = existingAdjustment?.status;
+         if (currentStatus !== 'Đã duyệt' && currentStatus !== 'approved') {
+            await approveMutation.mutateAsync(finalAdjustmentId);
+         }
+      }
+
+      message.success(isEditMode ? 'Cập nhật thành công!' : 'Tạo thành công!');
       navigate('/inventory/adjustments');
     } catch (error) {
       console.error('Error saving adjustment:', error);
+      handleApiError(error);
     }
   };
 
@@ -230,7 +249,7 @@ const AdjustmentCreate = () => {
                         </Box>
                       </Grid>
                     )}
-                    <Grid item xs={12}>
+                    <Grid item xs={12} sm={6}>
                       <FormComboBox
                         name="adjustment_type"
                         control={control}
@@ -240,6 +259,20 @@ const AdjustmentCreate = () => {
                           { value: 'IN', label: 'Tăng kho (IN)' },
                           { value: 'OUT', label: 'Giảm kho (OUT)' },
                         ]}
+                        disabled={isEditMode && (existingAdjustment?.status === 'Đã duyệt' || existingAdjustment?.status === 'approved')}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormComboBox
+                        name="status"
+                        control={control}
+                        label="Trạng thái phiếu"
+                        placeholder="Chọn trạng thái"
+                        options={[
+                          { value: 'draft', label: 'Nháp' },
+                          { value: 'approved', label: 'Duyệt (Cập nhật tồn kho)' },
+                        ]}
+                        disabled={isEditMode && (existingAdjustment?.status === 'Đã duyệt' || existingAdjustment?.status === 'approved')}
                       />
                     </Grid>
                   </Grid>

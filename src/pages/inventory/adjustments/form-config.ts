@@ -18,8 +18,9 @@ export const adjustmentFormSchema = z.object({
   }),
   reason: z.string().min(5, 'Lý do phải có ít nhất 5 ký tự'),
   notes: z.string().optional(),
+  status: z.enum(['draft', 'approved']).default('draft'),
   items: z.array(adjustmentItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
-  images: z.any().optional(), // Có thể là string[] (URLs) hoặc object objects[] (IDs + URLs)
+  images: z.any().optional(),
 });
 
 // TypeScript types
@@ -31,6 +32,7 @@ export const defaultAdjustmentValues: Partial<AdjustmentFormData> = {
   adjustment_type: 'IN',
   reason: '',
   notes: '',
+  status: 'draft',
   items: [],
   images: [],
 };

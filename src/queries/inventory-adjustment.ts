@@ -40,7 +40,7 @@ export const useAdjustmentQuery = (id: number) => {
   return useQuery({
     queryKey: ['adjustment', id],
     queryFn: async () => {
-      const response = await apiClient.get<any>(`/inventory/adjustment/${id}`)
+      const response = await apiClient.get<any>(`/inventory/adjustments/${id}`)
       // Unwrap data từ response wrapper { success, data }
       const adjustmentData = response.data || response
       return mapApiResponseToAdjustment(adjustmentData) as InventoryAdjustment
@@ -54,7 +54,7 @@ export const useCreateAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: CreateAdjustmentRequest) => {
-      const response = await apiClient.postRaw<any>('/inventory/adjustment', data as any)
+      const response = await apiClient.postRaw<any>('/inventory/adjustments', data as any)
       return response.data || response
     },
     onSuccess: () => {
@@ -74,13 +74,13 @@ export const useUpdateAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: CreateAdjustmentRequest }) => {
-      const response = await apiClient.patchRaw<any>(`/inventory/adjustment/${id}`, data as any)
+      // Revert lại PUT theo chuẩn RESTful
+      const response = await apiClient.putRaw<any>(`/inventory/adjustments/${id}`, data as any)
       return response.data || response
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['adjustments'] })
-      queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
-      invalidateResourceQueries('adjustments')
+    onSuccess: async (_, { id }) => {
+      await queryClient.refetchQueries({ queryKey: ['adjustments'] })
+      await queryClient.refetchQueries({ queryKey: ['adjustment', id] })
       message.success('Cập nhật phiếu điều chỉnh thành công!')
     },
     onError: (error) => {
@@ -94,7 +94,7 @@ export const useApproveAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiClient.postRaw<any>(`/inventory/adjustment/${id}/approve`)
+      const response = await apiClient.postRaw<any>(`/inventory/adjustments/${id}/approve`)
       return response.data || response
     },
     onSuccess: (_, id) => {
@@ -115,7 +115,7 @@ export const useCancelAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
-      const response = await apiClient.postRaw<any>(`/inventory/adjustment/${id}/cancel`, { reason })
+      const response = await apiClient.postRaw<any>(`/inventory/adjustments/${id}/cancel`, { reason })
       return response.data || response
     },
     onSuccess: (_, { id }) => {
@@ -134,7 +134,7 @@ export const useDeleteAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiClient.delete<any>(`/inventory/adjustment/${id}`)
+      const response = await apiClient.delete<any>(`/inventory/adjustments/${id}`)
       return response.data !== undefined ? response.data : response
     },
     onSuccess: () => {
@@ -165,7 +165,7 @@ export const useAttachImageToAdjustmentMutation = () => {
       fieldName?: string
     }) => {
       const response = await apiClient.postRaw(
-        `/inventory/adjustment/${adjustmentId}/upload-image`,
+        `/inventory/adjustments/${adjustmentId}/upload-image`,
         { fileId, fieldName }
       )
       return response
@@ -196,7 +196,7 @@ export const useAdjustmentImagesQuery = (adjustmentId: number) => {
         type: string
         size: number
         created_at: string
-      }[]>(`/inventory/adjustment/${adjustmentId}/images`)
+      }[]>(`/inventory/adjustments/${adjustmentId}/images`)
       return response
     },
     enabled: !!adjustmentId,
@@ -217,7 +217,7 @@ export const useDeleteAdjustmentImageMutation = () => {
       fileId: number
     }) => {
       const response = await apiClient.delete(
-        `/inventory/adjustment/${adjustmentId}/image/${fileId}`
+        `/inventory/adjustments/${adjustmentId}/image/${fileId}`
       )
       return response
     },
