@@ -35,7 +35,6 @@ import {
   useInventoryReceiptQuery,
   useInventoryReceiptItemsQuery,
   useApproveInventoryReceiptMutation,
-  useCompleteInventoryReceiptMutation,
   useCancelInventoryReceiptMutation,
   useDeleteInventoryReceiptMutation,
 } from "@/queries/inventory"
@@ -63,7 +62,6 @@ const InventoryReceiptDetail: React.FC = () => {
 
   // Mutations
   const approveReceiptMutation = useApproveInventoryReceiptMutation()
-  const completeReceiptMutation = useCompleteInventoryReceiptMutation()
   const cancelReceiptMutation = useCancelInventoryReceiptMutation()
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
 
@@ -81,14 +79,6 @@ const InventoryReceiptDetail: React.FC = () => {
       await approveReceiptMutation.mutateAsync(receiptId)
     } catch (error) {
       console.error("Error approving receipt:", error)
-    }
-  }
-
-  const handleComplete = async () => {
-    try {
-      await completeReceiptMutation.mutateAsync(receiptId)
-    } catch (error) {
-      console.error("Error completing receipt:", error)
     }
   }
 
@@ -121,19 +111,13 @@ const InventoryReceiptDetail: React.FC = () => {
   // Render trạng thái
   const renderStatus = (statusText: string) => {
     // Xác định status enum từ statusText
-    let status: InventoryReceiptStatus = InventoryReceiptStatus.DRAFT
     switch (statusText) {
       case "Nháp":
+      case "Chờ duyệt": // Map Chờ duyệt sang Nháp nếu còn tồn tại trong DB cũ
         status = InventoryReceiptStatus.DRAFT
-        break
-      case "Chờ duyệt":
-        status = InventoryReceiptStatus.PENDING
         break
       case "Đã duyệt":
         status = InventoryReceiptStatus.APPROVED
-        break
-      case "Hoàn thành":
-        status = InventoryReceiptStatus.COMPLETED
         break
       case "Đã hủy":
         status = InventoryReceiptStatus.CANCELLED
@@ -142,11 +126,9 @@ const InventoryReceiptDetail: React.FC = () => {
         status = InventoryReceiptStatus.DRAFT
     }
 
-    const statusConfig = {
+    const statusConfig: Record<string, { color: string }> = {
       [InventoryReceiptStatus.DRAFT]: { color: "default" },
-      [InventoryReceiptStatus.PENDING]: { color: "processing" },
       [InventoryReceiptStatus.APPROVED]: { color: "success" },
-      [InventoryReceiptStatus.COMPLETED]: { color: "success" },
       [InventoryReceiptStatus.CANCELLED]: { color: "error" },
     }
 
@@ -278,32 +260,12 @@ const InventoryReceiptDetail: React.FC = () => {
 
     // === APPROVED (Đã duyệt) ===
     if (receipt.status === "Đã duyệt") {
-      // Hoàn thành nhập kho
-      buttons.push(
-        <Popconfirm
-          key='complete'
-          title='Hoàn thành nhập kho'
-          description='Bạn có chắc chắn muốn hoàn thành việc nhập kho cho phiếu này? Hành động này sẽ cập nhật tồn kho.'
-          onConfirm={handleComplete}
-          okText='Hoàn thành'
-          cancelText='Hủy'
-        >
-          <Button
-            type='primary'
-            icon={<CheckOutlined />}
-            loading={completeReceiptMutation.isPending}
-          >
-            Hoàn thành
-          </Button>
-        </Popconfirm>
-      )
-      
       // Hủy (nếu có vấn đề)
       buttons.push(
         <Popconfirm
           key='cancel'
-          title='Hủy phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
+          title='Hủy phiếu nhập kho'
+          description='Khi hủy phiếu, hệ thống sẽ thực hiện hoàn kho. Bạn có chắc chắn muốn hủy?'
           onConfirm={handleCancel}
           okText='Hủy phiếu'
           cancelText='Không'
@@ -311,15 +273,13 @@ const InventoryReceiptDetail: React.FC = () => {
           <Button
             icon={<CloseOutlined />}
             loading={cancelReceiptMutation.isPending}
+            danger
           >
-            Hủy phiếu
+            Hủy phiếu (Hoàn kho)
           </Button>
         </Popconfirm>
       )
     }
-
-    // === COMPLETED (Hoàn thành) ===
-    // Chỉ có nút in và xem lịch sử (đã thêm ở trên)
 
     // === CANCELLED (Đã hủy) ===
     if (receipt.status === "Đã hủy") {
@@ -540,22 +500,12 @@ const InventoryReceiptDetail: React.FC = () => {
                   {dayjs(receipt.approved_at).format("DD/MM/YYYY HH:mm:ss")}
                 </Descriptions.Item>
               )}
-              {receipt.completed_at && (
-                <Descriptions.Item label='Ngày hoàn thành'>
-                  {dayjs(receipt.completed_at).format("DD/MM/YYYY HH:mm:ss")}
-                </Descriptions.Item>
-              )}
               <Descriptions.Item label='Người tạo'>
                 ID: {receipt.created_by}
               </Descriptions.Item>
               {receipt.approved_by && (
                 <Descriptions.Item label='Người duyệt'>
                   ID: {receipt.approved_by}
-                </Descriptions.Item>
-              )}
-              {receipt.completed_by && (
-                <Descriptions.Item label='Người hoàn thành'>
-                  ID: {receipt.completed_by}
                 </Descriptions.Item>
               )}
             </Descriptions>

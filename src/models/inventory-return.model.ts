@@ -35,7 +35,6 @@ export interface InventoryReturn {
   created_at: string
   updated_at: string
   approved_at?: string
-  completed_at?: string
   cancelled_at?: string
   items?: ReturnItem[]
   supplier?: {
@@ -73,7 +72,6 @@ export interface ReturnApiResponse {
 export enum ReturnStatus {
   DRAFT = 'draft',
   APPROVED = 'approved',
-  COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
 
@@ -85,8 +83,8 @@ export const getReturnStatusText = (status: any): string => {
     '0': 'Nháp',
     'approved': 'Đã duyệt',
     '2': 'Đã duyệt',
-    'completed': 'Hoàn thành',
-    '3': 'Hoàn thành',
+    'completed': 'Đã duyệt', // Legacy mapping
+    '3': 'Đã duyệt',
     'cancelled': 'Đã hủy',
     '4': 'Đã hủy',
   }
@@ -99,8 +97,7 @@ export const getReturnStatusText = (status: any): string => {
 export const normalizeReturnStatus = (status: any): ReturnStatus => {
   const s = String(status).toLowerCase();
   if (s === 'draft' || s === '0') return ReturnStatus.DRAFT;
-  if (s === 'approved' || s === '2') return ReturnStatus.APPROVED;
-  if (s === 'completed' || s === '3') return ReturnStatus.COMPLETED;
+  if (s === 'approved' || s === '2' || s === 'completed' || s === '3') return ReturnStatus.APPROVED;
   if (s === 'cancelled' || s === '4') return ReturnStatus.CANCELLED;
   return ReturnStatus.DRAFT;
 }
@@ -136,7 +133,6 @@ export const mapApiResponseToReturn = (
     created_at: apiReturn.created_at,
     updated_at: apiReturn.updated_at,
     approved_at: apiReturn.approved_at,
-    completed_at: apiReturn.completed_at,
     cancelled_at: apiReturn.cancelled_at,
     items: apiReturn.items,
     supplier: apiReturn.supplier,

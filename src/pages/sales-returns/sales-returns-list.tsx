@@ -231,7 +231,7 @@ const SalesReturnsList: React.FC = () => {
       width: 130,
       filters: [
           { text: "Nháp", value: "draft" },
-          { text: "Hoàn tất", value: "completed" },
+          { text: "Đã duyệt", value: "approved" },
           { text: "Đã hủy", value: "cancelled" },
       ],
       filteredValue: filters.status ? [filters.status] : null,

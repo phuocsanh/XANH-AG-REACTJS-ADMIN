@@ -208,8 +208,8 @@ const ReturnsList: React.FC = () => {
       )
     }
 
-    // Hủy (chỉ khi ở trạng thái Nháp hoặc Đã duyệt)
-    if (record.status === 'draft' || record.status === 'approved') {
+    // Hủy (chỉ khi ở trạng thái Đã duyệt)
+    if (record.status === 'approved') {
       actions.push(
         <Tooltip key='cancel' title='Hủy phiếu'>
           <Popconfirm
@@ -372,9 +372,7 @@ const ReturnsList: React.FC = () => {
               style={{ width: "100%" }}
             >
               <Select.Option value="Nháp">Nháp</Select.Option>
-              <Select.Option value="Chờ duyệt">Chờ duyệt</Select.Option>
               <Select.Option value="Đã duyệt">Đã duyệt</Select.Option>
-              <Select.Option value="Hoàn thành">Hoàn thành</Select.Option>
               <Select.Option value="Đã hủy">Đã hủy</Select.Option>
             </Select>
           </Col>

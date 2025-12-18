@@ -35,13 +35,13 @@ export const refundMethodLabels = {
 
 export const returnStatusLabels = {
   draft: 'Nháp',
-  completed: 'Hoàn tất',
+  approved: 'Đã duyệt',
   cancelled: 'Đã hủy',
 };
 
 export const returnStatusColors = {
   draft: 'default',
-  completed: 'success',
+  approved: 'success',
   cancelled: 'error',
 } as const;
 

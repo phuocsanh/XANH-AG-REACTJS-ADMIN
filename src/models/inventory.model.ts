@@ -19,11 +19,10 @@ export interface UploadImageRequest {
 }
 
 // Enum cho trạng thái phiếu nhập hàng (sử dụng string lowercase)
-// Backend chỉ có 4 status: draft, approved, completed, cancelled
+// Backend chỉ có 3 status: draft, approved, cancelled
 export enum InventoryReceiptStatus {
   DRAFT = 'draft',
   APPROVED = 'approved',
-  COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
 
@@ -47,11 +46,9 @@ export interface InventoryReceipt {
   supplier?: { id: number; name: string; code?: string }
   created_by: number
   approved_by?: number
-  completed_by?: number
   created_at: string
   updated_at: string
   approved_at?: string
-  completed_at?: string
   items?: InventoryReceiptItem[]
 }
 
@@ -80,11 +77,9 @@ export interface InventoryReceiptApiResponse {
   supplier_contact?: string // Thay supplierContact thành supplier_contact
   created_by: number
   approved_by?: number
-  completed_by?: number
   created_at: string
   updated_at: string
   approved_at?: string
-  completed_at?: string
   items?: InventoryReceiptItemApiResponse[]
 }
 
@@ -159,11 +154,9 @@ export function mapApiResponseToInventoryReceipt(
     supplier_name: apiReceipt.supplier_name,
     created_by: apiReceipt.created_by,
     approved_by: apiReceipt.approved_by,
-    completed_by: apiReceipt.completed_by,
     created_at: apiReceipt.created_at,
     updated_at: apiReceipt.updated_at,
     approved_at: apiReceipt.approved_at,
-    completed_at: apiReceipt.completed_at,
     items: apiReceipt.items?.map(mapApiResponseToInventoryReceiptItem),
   }
 }
@@ -217,8 +210,8 @@ export const getInventoryReceiptStatusText = (status: any): string => {
     'approved': 'Đã duyệt',
     '2': 'Đã duyệt',
     '3': 'Đã duyệt',
-    'completed': 'Hoàn thành',
-    '4': 'Hoàn thành',
+    'completed': 'Đã duyệt', // Legacy mapping
+    '4': 'Đã duyệt',
     'cancelled': 'Đã hủy',
     '5': 'Đã hủy',
   }
@@ -231,8 +224,7 @@ export const getInventoryReceiptStatusText = (status: any): string => {
 export const normalizeReceiptStatus = (status: any): InventoryReceiptStatus => {
   const s = String(status).toLowerCase();
   if (s === 'draft' || s === '1') return InventoryReceiptStatus.DRAFT;
-  if (s === 'approved' || s === '2' || s === '3') return InventoryReceiptStatus.APPROVED;
-  if (s === 'completed' || s === '4') return InventoryReceiptStatus.COMPLETED;
+  if (s === 'approved' || s === '2' || s === '3' || s === 'completed' || s === '4') return InventoryReceiptStatus.APPROVED;
   if (s === 'cancelled' || s === '5') return InventoryReceiptStatus.CANCELLED;
   return InventoryReceiptStatus.DRAFT;
 }
@@ -258,7 +250,7 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   supplier_id: number // ID nhà cung cấp (bắt buộc)
   total_amount: number // Tổng tiền (bắt buộc)
   notes?: string // Ghi chú (tùy chọn)
-  status: string // Trạng thái phiếu nhập: draft, approved, completed, cancelled (bắt buộc)
+  status: string // Trạng thái phiếu nhập: draft, approved, cancelled (bắt buộc)
   created_by: number // ID người tạo (bắt buộc)
   items: CreateInventoryReceiptItemRequest[] // Danh sách chi tiết phiếu nhập
   

@@ -28,7 +28,6 @@ export interface InventoryAdjustment {
   created_at: string
   updated_at: string
   approved_at?: string
-  completed_at?: string
   cancelled_at?: string
   items?: AdjustmentItem[]
 }
@@ -53,7 +52,6 @@ export interface AdjustmentApiResponse {
 export enum AdjustmentStatus {
   DRAFT = 'draft',
   APPROVED = 'approved',
-  COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
 
@@ -65,8 +63,8 @@ export const getAdjustmentStatusText = (status: any): string => {
     '0': 'Nháp',
     'approved': 'Đã duyệt',
     '2': 'Đã duyệt',
-    'completed': 'Hoàn thành',
-    '3': 'Hoàn thành',
+    'completed': 'Đã duyệt', // Legacy mapping
+    '3': 'Đã duyệt',
     'cancelled': 'Đã hủy',
     '4': 'Đã hủy',
   }
@@ -88,7 +86,6 @@ export const mapApiResponseToAdjustment = (
     created_at: apiAdjustment.created_at,
     updated_at: apiAdjustment.updated_at,
     approved_at: apiAdjustment.approved_at,
-    completed_at: apiAdjustment.completed_at,
     cancelled_at: apiAdjustment.cancelled_at,
     items: apiAdjustment.items,
   }
@@ -100,8 +97,7 @@ export const mapApiResponseToAdjustment = (
 export const normalizeAdjustmentStatus = (status: any): AdjustmentStatus => {
   const s = String(status).toLowerCase();
   if (s === 'draft' || s === '0') return AdjustmentStatus.DRAFT;
-  if (s === 'approved' || s === '2') return AdjustmentStatus.APPROVED;
-  if (s === 'completed' || s === '3') return AdjustmentStatus.COMPLETED;
+  if (s === 'approved' || s === '2' || s === 'completed' || s === '3') return AdjustmentStatus.APPROVED;
   if (s === 'cancelled' || s === '4') return AdjustmentStatus.CANCELLED;
   return AdjustmentStatus.DRAFT;
 }

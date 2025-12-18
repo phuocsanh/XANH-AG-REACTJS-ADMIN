@@ -67,7 +67,6 @@ const AdjustmentDetail: React.FC = () => {
     const statusConfig: Record<string, { color: string }> = {
       "Nháp": { color: "default" },
       "Đã duyệt": { color: "success" },
-      "Hoàn thành": { color: "success" },
       "Đã hủy": { color: "error" },
     }
     const config = statusConfig[status] || { color: "default" }
@@ -187,9 +186,9 @@ const AdjustmentDetail: React.FC = () => {
                 <Descriptions.Item label="Ngày tạo">
                   {dayjs(adjustmentData.created_at).format("DD/MM/YYYY HH:mm")}
                 </Descriptions.Item>
-                {adjustmentData.completed_at && (
-                  <Descriptions.Item label="Ngày hoàn thành">
-                    {dayjs(adjustmentData.completed_at).format("DD/MM/YYYY HH:mm")}
+                {adjustmentData.approved_at && (
+                  <Descriptions.Item label="Ngày duyệt">
+                    {dayjs(adjustmentData.approved_at).format("DD/MM/YYYY HH:mm")}
                   </Descriptions.Item>
                 )}
               </Descriptions>
@@ -291,15 +290,6 @@ const AdjustmentDetail: React.FC = () => {
                     <br />
                     <Text type="secondary">
                       {dayjs(adjustmentData.approved_at).format("DD/MM/YYYY HH:mm")}
-                    </Text>
-                  </Timeline.Item>
-                )}
-                {adjustmentData.completed_at && (
-                  <Timeline.Item color="green">
-                    <Text strong>Hoàn thành</Text>
-                    <br />
-                    <Text type="secondary">
-                      {dayjs(adjustmentData.completed_at).format("DD/MM/YYYY HH:mm")}
                     </Text>
                   </Timeline.Item>
                 )}

@@ -40,7 +40,6 @@ import {
   useInventoryReceiptsQuery,
   useDeleteInventoryReceiptMutation,
   useApproveInventoryReceiptMutation,
-  useCompleteInventoryReceiptMutation,
   useCancelInventoryReceiptMutation,
   useInventoryStatsQuery,
 } from "@/queries/inventory"
@@ -110,7 +109,6 @@ const InventoryReceiptsList: React.FC = () => {
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
   const approveReceiptMutation = useApproveInventoryReceiptMutation()
-  const completeReceiptMutation = useCompleteInventoryReceiptMutation()
   const cancelReceiptMutation = useCancelInventoryReceiptMutation()
 
   // Handlers
@@ -235,14 +233,6 @@ const InventoryReceiptsList: React.FC = () => {
     }
   }
 
-  const handleCompleteReceipt = async (id: number) => {
-    try {
-      await completeReceiptMutation.mutateAsync(id)
-    } catch (error) {
-      console.error("Error completing receipt:", error)
-    }
-  }
-
   const handleCancelReceipt = async (id: number) => {
     try {
       await cancelReceiptMutation.mutateAsync(id)
@@ -266,9 +256,6 @@ const InventoryReceiptsList: React.FC = () => {
       case "Đã duyệt":
         color = "success"
         break
-      case "Hoàn thành":
-        color = "success"
-        break
       case "Đã hủy":
         color = "error"
         break
@@ -283,7 +270,7 @@ const InventoryReceiptsList: React.FC = () => {
     )
   }
 
-  // Render hành động cho mỗi phiếu theo đúng nghiệp vụ (4 status: draft, approved, completed, cancelled)
+  // Render hành động cho mỗi phiếu theo đúng nghiệp vụ (3 status: draft, approved, cancelled)
   const renderActions = (record: InventoryReceipt) => {
     const actions = []
     
@@ -344,79 +331,16 @@ const InventoryReceiptsList: React.FC = () => {
           </Popconfirm>
         </Tooltip>
       )
-      
-      // Hủy
-      actions.push(
-        <Tooltip key='cancel' title='Hủy phiếu'>
-          <Popconfirm
-            title='Hủy phiếu nhập hàng'
-            description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
-            onConfirm={() => handleCancelReceipt(record.id)}
-            okText='Hủy phiếu'
-            cancelText='Không'
-          >
-            <Button
-              type='text'
-              icon={<CloseOutlined />}
-              style={{ color: "#ff4d4f" }}
-              loading={cancelReceiptMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
     }
 
     // === APPROVED (Đã duyệt) ===
     else if (statusCode === InventoryReceiptStatus.APPROVED || statusText === "Đã duyệt") {
-      // Hoàn thành (nhập kho)
-      actions.push(
-        <Tooltip key='complete' title='Hoàn thành nhập kho'>
-          <Popconfirm
-            title='Hoàn thành nhập kho'
-            description='Bạn có chắc chắn muốn hoàn thành việc nhập kho cho phiếu này? Hành động này sẽ cập nhật tồn kho.'
-            onConfirm={() => handleCompleteReceipt(record.id)}
-            okText='Hoàn thành'
-            cancelText='Hủy'
-          >
-            <Button
-              type='text'
-              icon={<CheckOutlined />}
-              style={{ color: "#1890ff" }}
-              loading={completeReceiptMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
-      
       // Hủy (nếu có vấn đề)
       actions.push(
         <Tooltip key='cancel' title='Hủy phiếu'>
           <Popconfirm
             title='Hủy phiếu nhập hàng'
             description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
-            onConfirm={() => handleCancelReceipt(record.id)}
-            okText='Hủy phiếu'
-            cancelText='Không'
-          >
-            <Button
-              type='text'
-              icon={<CloseOutlined />}
-              style={{ color: "#ff4d4f" }}
-              loading={cancelReceiptMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
-    }
-
-    // === COMPLETED (Hoàn thành) ===
-    else if (statusCode === InventoryReceiptStatus.COMPLETED || statusText === "Hoàn thành") {
-      // Hủy (để hoàn tác nhập kho)
-      actions.push(
-        <Tooltip key='cancel' title='Hủy phiếu (Hoàn tác nhập kho)'>
-          <Popconfirm
-            title='Hủy phiếu nhập hàng'
-            description='Hủy phiếu này sẽ trừ tồn kho tương ứng. Bạn có chắc chắn muốn hủy?'
             onConfirm={() => handleCancelReceipt(record.id)}
             okText='Hủy phiếu'
             cancelText='Không'
@@ -521,7 +445,6 @@ const InventoryReceiptsList: React.FC = () => {
       filters: [
         { text: "Nháp", value: InventoryReceiptStatus.DRAFT },
         { text: "Đã duyệt", value: InventoryReceiptStatus.APPROVED },
-        { text: "Hoàn thành", value: InventoryReceiptStatus.COMPLETED },
         { text: "Đã hủy", value: InventoryReceiptStatus.CANCELLED },
       ],
       filteredValue: filters.status ? [filters.status] : null,
@@ -599,13 +522,13 @@ const InventoryReceiptsList: React.FC = () => {
                 </Card>
               </Col>
               
-              {/* Đã hoàn thành */}
-              <Col xs={6} sm={12} md={6}>
+              {/* Nháp */}
+              <Col xs={8} sm={8} md={6}>
                 <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1890ff', marginBottom: '2px' }}>
-                    {statsData.completedReceipts}
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#8c8c8c', marginBottom: '2px' }}>
+                    {statsData.draftReceipts}
                   </div>
-                  <Text className="text-[10px] md:text-sm" type="secondary">Xong</Text>
+                  <Text className="text-[10px] md:text-sm" type="secondary">Nháp</Text>
                 </Card>
               </Col>
               
@@ -624,15 +547,7 @@ const InventoryReceiptsList: React.FC = () => {
                 </Card>
               </Col>
               
-              {/* Nháp - chỉ hiện trên desktop */}
-              <Col xs={0} sm={0} md={4.8}>
-                <Card size="small" bodyStyle={{ padding: '8px 12px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#8c8c8c', marginBottom: '4px' }}>
-                    {statsData.draftReceipts}
-                  </div>
-                  <Text className="text-xs md:text-sm" type="secondary">Nháp</Text>
-                </Card>
-              </Col>
+
             </Row>
           </Col>
         )}

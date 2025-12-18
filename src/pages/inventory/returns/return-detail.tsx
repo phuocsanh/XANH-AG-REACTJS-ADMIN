@@ -86,7 +86,6 @@ const ReturnDetail: React.FC = () => {
       "Nháp": { color: "default" },
       "Chờ duyệt": { color: "processing" },
       "Đã duyệt": { color: "success" },
-      "Hoàn thành": { color: "success" },
       "Đã hủy": { color: "error" },
     }
 
@@ -276,9 +275,9 @@ const ReturnDetail: React.FC = () => {
                     {dayjs(returnData.approved_at).format("DD/MM/YYYY HH:mm")}
                   </Descriptions.Item>
                 )}
-                {returnData.completed_at && (
-                  <Descriptions.Item label="Ngày hoàn thành">
-                    {dayjs(returnData.completed_at).format("DD/MM/YYYY HH:mm")}
+                {returnData.approved_at && (
+                  <Descriptions.Item label="Ngày duyệt">
+                    {dayjs(returnData.approved_at).format("DD/MM/YYYY HH:mm")}
                   </Descriptions.Item>
                 )}
                 {returnData.cancelled_at && (
@@ -318,15 +317,6 @@ const ReturnDetail: React.FC = () => {
                     <br />
                     <Text type="secondary">
                       {dayjs(returnData.approved_at).format("DD/MM/YYYY HH:mm")}
-                    </Text>
-                  </Timeline.Item>
-                )}
-                {returnData.completed_at && (
-                  <Timeline.Item color="green">
-                    <Text strong>Hoàn thành</Text>
-                    <br />
-                    <Text type="secondary">
-                      {dayjs(returnData.completed_at).format("DD/MM/YYYY HH:mm")}
                     </Text>
                   </Timeline.Item>
                 )}

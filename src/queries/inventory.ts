@@ -280,32 +280,7 @@ export const useApproveInventoryReceiptMutation = () => {
   })
 }
 
-/**
- * Hook hoàn thành phiếu nhập hàng (nhập kho)
- */
-export const useCompleteInventoryReceiptMutation = () => {
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await api.postRaw<InventoryReceiptApiResponse>(
-        `/inventory/receipt/${id}/complete`
-      )
-      return {
-        ...response,
-        statusText: getInventoryReceiptStatusText(response.status),
-      }
-    },
-    onSuccess: (data, variables) => {
-      // Cập nhật cache
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.history() })
-      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() })
-      toast.success("Hoàn thành phiếu nhập hàng thành công!")
-      return data
-    },
-    onError: (error: Error) => {
-      handleApiError(error, "Lỗi khi hoàn thành phiếu nhập hàng")
-    },
-  })
-}
+
 
 /**
  * Hook hủy phiếu nhập hàng
@@ -660,14 +635,10 @@ export const useInventoryStatsQuery = () => {
       const approvedReceipts = receipts.filter(
         (r: InventoryReceiptApiResponse) => r.status === 'approved'
       ).length
-      
-      const completedReceipts = receipts.filter(
-        (r: InventoryReceiptApiResponse) => r.status === 'completed'
-      ).length
 
-      // Tính tổng giá trị (chỉ các phiếu đã hoàn thành)
+      // Tính tổng giá trị (chỉ các phiếu đã duyệt)
       const totalValue = receipts
-        .filter((r: InventoryReceiptApiResponse) => r.status === 'completed')
+        .filter((r: InventoryReceiptApiResponse) => r.status === 'approved')
         .reduce(
           (sum: number, r: InventoryReceiptApiResponse) =>
             sum + parseFloat(r.total_amount || "0"),
@@ -679,7 +650,6 @@ export const useInventoryStatsQuery = () => {
         totalReceipts,
         draftReceipts,
         approvedReceipts,
-        completedReceipts,
         totalValue,
       }
     },

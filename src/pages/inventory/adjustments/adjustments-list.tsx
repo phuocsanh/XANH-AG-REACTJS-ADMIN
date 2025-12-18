@@ -22,6 +22,7 @@ import {
   CloseOutlined,
   ReloadOutlined,
   SearchOutlined,
+  EditOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
@@ -77,9 +78,6 @@ const AdjustmentsList: React.FC = () => {
       "cancelled": { color: "error", label: "Đã hủy" },
       "4": { color: "error", label: "Đã hủy" },
       
-      "hoàn thành": { color: "success", label: "Hoàn thành" },
-      "completed": { color: "success", label: "Hoàn thành" },
-      "3": { color: "success", label: "Hoàn thành" },
     }
 
     // Tìm config dựa trên status (string)
@@ -106,6 +104,19 @@ const AdjustmentsList: React.FC = () => {
 
     if (isDraft) {
       actions.push(
+        <Tooltip key='edit' title='Chỉnh sửa'>
+          <Button
+            type='text'
+            icon={<EditOutlined />}
+            style={{ color: "#1890ff" }}
+            onClick={() => navigate(`/inventory/adjustments/${record.id}/edit`)}
+          />
+        </Tooltip>
+      )
+    }
+
+    if (isDraft) {
+      actions.push(
         <Tooltip key='approve' title='Duyệt phiếu'>
           <Popconfirm
             title='Duyệt phiếu điều chỉnh'
@@ -119,7 +130,7 @@ const AdjustmentsList: React.FC = () => {
       )
     }
 
-    if (isDraft || isApproved) {
+    if (isApproved) {
       actions.push(
         <Tooltip key='cancel' title='Hủy phiếu'>
           <Popconfirm
