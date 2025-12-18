@@ -13,7 +13,6 @@ export const adjustmentItemSchema = z.object({
 
 // Schema cho form tạo phiếu điều chỉnh
 export const adjustmentFormSchema = z.object({
-  adjustment_code: z.string().min(1, 'Mã phiếu không được để trống').regex(/^ADJ-/, 'Mã phiếu phải bắt đầu bằng ADJ-'),
   adjustment_type: z.enum(['IN', 'OUT'], {
     errorMap: () => ({ message: 'Vui lòng chọn loại điều chỉnh' }),
   }),
@@ -29,7 +28,6 @@ export type AdjustmentFormData = z.infer<typeof adjustmentFormSchema>;
 
 // Default values
 export const defaultAdjustmentValues: Partial<AdjustmentFormData> = {
-  adjustment_code: '',
   adjustment_type: 'IN',
   reason: '',
   notes: '',

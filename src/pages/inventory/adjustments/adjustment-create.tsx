@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -60,17 +60,12 @@ const AdjustmentCreate = () => {
     name: 'items',
   });
 
-  // Auto-generate code on mount
-  useEffect(() => {
-     const now = new Date();
-     const datePart = now.toISOString().split('T')[0].replace(/-/g, '');
-     const randomPart = Math.floor(1000 + Math.random() * 9000);
-     const code = `ADJ-${datePart}-${randomPart}`;
-     setValue('adjustment_code', code);
-  }, [setValue]);
 
   // Queries
-  const { data: productsData } = useProductsQuery({ limit: 1000 }); // TODO: Implement server-side search if list is too long
+  const { data: productsData } = useProductsQuery({ 
+    limit: 100,
+    keyword: productSearch || undefined, // Tìm kiếm theo keyword (tên sản phẩm)
+  });
   const createMutation = useCreateAdjustmentMutation();
   const attachImageMutation = useAttachImageToAdjustmentMutation();
 
@@ -114,7 +109,6 @@ const AdjustmentCreate = () => {
       }));
 
       const adjustmentData = {
-        adjustment_code: data.adjustment_code,
         adjustment_type: data.adjustment_type,
         reason: data.reason,
         notes: data.notes,
@@ -165,7 +159,7 @@ const AdjustmentCreate = () => {
       <form onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={3}>
           {/* Thông tin chung */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6" mb={2}>
@@ -173,15 +167,7 @@ const AdjustmentCreate = () => {
                 </Typography>
 
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                     <FormField
-                        name="adjustment_code"
-                        control={control}
-                        label="Mã phiếu"
-                        placeholder="ADJ-..."
-                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12}>
                     <FormComboBox
                       name="adjustment_type"
                       control={control}
@@ -234,7 +220,7 @@ const AdjustmentCreate = () => {
           </Grid>
 
           {/* Chọn sản phẩm */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
              <Card>
                 <CardContent>
                    <Typography variant="h6" mb={2}>Thêm sản phẩm</Typography>
@@ -257,11 +243,8 @@ const AdjustmentCreate = () => {
                         placeholder="-- Chọn sản phẩm --"
                         showSearch
                         allowClear
-                        filterOption={(input, option) => {
-                          const label = option?.label?.toString().toLowerCase() || '';
-                          const searchText = input.toLowerCase();
-                          return label.includes(searchText);
-                        }}
+                        onSearch={setProductSearch}
+                        filterOption={false}
                       />
                    </Box>
                    <Box mt={2}>
@@ -310,20 +293,58 @@ const AdjustmentCreate = () => {
                               <Controller
                                 name={`items.${index}.quantity_change`}
                                 control={control}
-                                render={({ field }) => (
-                                  <NumberInput
-                                    value={field.value ? Number(field.value) : null}
-                                    onChange={(val) => field.onChange(val)}
-                                    // Không set min/max vì có thể âm/dương tùy ý
-                                    size="small"
-                                    style={{ width: 120 }}
-                                    placeholder="+/- SL"
-                                  />
-                                )}
+                                render={({ field }) => {
+                                  const adjustmentType = watch('adjustment_type'); // Lấy loại điều chỉnh
+                                  const isIncrease = (field.value || 0) >= 0;
+                                  const absValue = Math.abs(field.value || 0);
+                                  
+                                  return (
+                                    <Box display="flex" alignItems="center" gap={1} justifyContent="flex-end">
+                                      {/* Toggle button - chỉ hiện 1 nút tương ứng */}
+                                      {adjustmentType === 'IN' && (
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          color="success"
+                                          sx={{ minWidth: 60, fontSize: '12px' }}
+                                        >
+                                          Tăng
+                                        </Button>
+                                      )}
+                                      {adjustmentType === 'OUT' && (
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          color="error"
+                                          sx={{ minWidth: 60, fontSize: '12px' }}
+                                        >
+                                          Giảm
+                                        </Button>
+                                      )}
+                                      
+                                      {/* Number input */}
+                                      <NumberInput
+                                        value={absValue || null}
+                                        onChange={(val) => {
+                                          const newVal = val || 0;
+                                          // Tự động set dấu theo loại điều chỉnh
+                                          if (adjustmentType === 'IN') {
+                                            field.onChange(newVal); // Luôn dương
+                                          } else if (adjustmentType === 'OUT') {
+                                            field.onChange(-newVal); // Luôn âm
+                                          } else {
+                                            field.onChange(isIncrease ? newVal : -newVal);
+                                          }
+                                        }}
+                                        min={0}
+                                        size="small"
+                                        style={{ width: 100 }}
+                                        placeholder="Số lượng"
+                                      />
+                                    </Box>
+                                  );
+                                }}
                               />
-                              <Typography variant="caption" display="block" color="text.secondary">
-                                (Dương: Tăng, Âm: Giảm)
-                              </Typography>
                             </TableCell>
                             <TableCell>
                               <Controller

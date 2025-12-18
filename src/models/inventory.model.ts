@@ -169,19 +169,20 @@ export function mapApiResponseToInventoryReceipt(
 }
 
 export function mapApiResponseToInventoryReceiptItem(
-  apiItem: InventoryReceiptItemApiResponse
+  apiItem: any  // Đổi type để nhận cả product relation
 ): InventoryReceiptItem {
   return {
     id: apiItem.id,
     receipt_id: apiItem.receipt_id,
     product_id: apiItem.product_id,
     quantity: apiItem.quantity,
-    unit_cost: parseFloat(apiItem.unit_price), // Thay unit_price thành unit_cost và chuyển string thành number
-    total_price: parseFloat(apiItem.total_price), // Chuyển string thành number
+    unit_cost: parseFloat(apiItem.unit_cost || apiItem.unit_price || '0'), // Hỗ trợ cả 2 field
+    total_price: parseFloat(apiItem.total_price || '0'),
     notes: apiItem.notes,
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
-  }
+    ...(apiItem.product && { product: apiItem.product }),  // Giữ lại product relation nếu có
+  } as any
 }
 
 export function mapApiResponseToInventoryHistory(
@@ -247,7 +248,7 @@ export const getInventoryTransactionTypeText = (type: InventoryTransactionType):
 // Interface cho request tạo phiếu nhập hàng
 export interface CreateInventoryReceiptRequest extends AnyObject {
   [key: string]: unknown // Index signature để tương thích với AnyObject
-  receipt_code: string // Mã phiếu nhập (đổi từ code thành receipt_code)
+  receipt_code?: string // Mã phiếu nhập (tùy chọn - backend tự sinh nếu không có)
   supplier_id: number // ID nhà cung cấp (bắt buộc)
   total_amount: number // Tổng tiền (bắt buộc)
   notes?: string // Ghi chú (tùy chọn)

@@ -65,7 +65,7 @@ export const useCreateAdjustmentMutation = () => {
   })
 }
 
-// Duyệt phiếu điều chỉnh
+// Duyệt phiếu điều chỉnh (và tự động tác động kho)
 export const useApproveAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -76,31 +76,12 @@ export const useApproveAdjustmentMutation = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
       invalidateResourceQueries('adjustments')
-      message.success('Duyệt phiếu điều chỉnh thành công!')
+      // Invalidate inventory vì tồn kho đã thay đổi
+      invalidateResourceQueries('products')
+      message.success('Duyệt phiếu điều chỉnh thành công! Tồn kho đã được cập nhật.')
     },
     onError: (error) => {
       handleApiError(error, 'Duyệt phiếu điều chỉnh thất bại!')
-    },
-  })
-}
-
-// Hoàn thành phiếu điều chỉnh (cập nhật kho)
-export const useCompleteAdjustmentMutation = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiClient.postRaw<AdjustmentApiResponse>(`/inventory/adjustment/${id}/complete`)
-      return response
-    },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
-      invalidateResourceQueries('adjustments')
-      // Invalidate inventory vì tồn kho đã thay đổi
-      invalidateResourceQueries('products')
-      message.success('Hoàn thành phiếu điều chỉnh! Tồn kho đã được cập nhật.')
-    },
-    onError: (error) => {
-      handleApiError(error, 'Hoàn thành phiếu điều chỉnh thất bại!')
     },
   })
 }

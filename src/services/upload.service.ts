@@ -88,8 +88,12 @@ export const uploadService = {
       formData.append('type', uploadType);
 
       // 5. Gọi API
-      const response = await api.postForm<UploadResponse>('/upload/image', formData);
-      return response as unknown as UploadResponse;
+      const response = await api.postForm<any>('/upload/image', formData);
+      
+      // Unwrap data từ response wrapper { success, data, meta }
+      const uploadData = response.data || response;
+      
+      return uploadData as UploadResponse;
     } catch (error) {
       console.error('❌ Lỗi upload:', error);
       throw error;

@@ -207,6 +207,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
              return item.url;
           });
 
+        console.log('📸 Upload thành công, calling onChange with:', result);
         onChange?.(result as any[])
       } catch (error) {
         console.error("Upload error:", error)

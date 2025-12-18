@@ -1,4 +1,4 @@
-export type SalesReturnStatus = 'draft' | 'completed' | 'cancelled';
+export type SalesReturnStatus = 'draft' | 'approved' | 'cancelled';
 
 export interface SalesReturnItem {
   id: number;

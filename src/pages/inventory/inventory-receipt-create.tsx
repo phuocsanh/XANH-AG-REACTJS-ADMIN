@@ -333,12 +333,10 @@ const InventoryReceiptCreate: React.FC = () => {
         navigate("/inventory/receipts")
       } else {
         // === CREATE MODE ===
-        // Tạo mã phiếu nhập tự động
-        const receiptCode = `PN${Date.now()}`
+        // Backend sẽ tự sinh mã phiếu nhập
 
         // Tạo request data theo đúng cấu trúc backend
         const requestData: CreateInventoryReceiptRequest = {
-          receipt_code: receiptCode,
           supplier_id: values.supplierId as number,
           total_amount: grandTotal,
           notes: values.description as string | undefined,

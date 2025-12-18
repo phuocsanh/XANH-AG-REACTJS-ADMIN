@@ -20,6 +20,7 @@ export const returnFormSchema = z.object({
   notes: z.string().optional(),
   items: z.array(returnItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm trả'),
   images: z.any().optional(), // Có thể là string[] (URLs) hoặc object objects[] (IDs + URLs)
+  status: z.enum(['draft', 'approved', 'completed', 'cancelled']).default('draft'),
 });
 
 // TypeScript types
@@ -33,4 +34,5 @@ export const defaultReturnValues: Partial<ReturnFormData> = {
   notes: '',
   items: [],
   images: [],
+  status: 'draft',
 };

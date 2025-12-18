@@ -38,8 +38,10 @@ export const useReturnQuery = (id: number) => {
   return useQuery({
     queryKey: ['return', id],
     queryFn: async () => {
-      const data = await apiClient.get<ReturnApiResponse>(`/inventory/return/${id}`)
-      return mapApiResponseToReturn(data) as InventoryReturn
+      const response = await apiClient.get<any>(`/inventory/return/${id}`)
+      // Unwrap data từ response wrapper { success, data, meta }
+      const returnData = response.data || response
+      return mapApiResponseToReturn(returnData) as InventoryReturn
     },
     enabled: !!id,
   })
@@ -64,7 +66,26 @@ export const useCreateReturnMutation = () => {
   })
 }
 
-// Duyệt phiếu trả hàng
+// Cập nhật phiếu trả hàng
+export const useUpdateReturnMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateReturnRequest> }) => {
+      const response = await apiClient.patchRaw<ReturnApiResponse>(`/inventory/return/${id}`, data)
+      return response
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['return', variables.id] })
+      invalidateResourceQueries('returns')
+      message.success('Cập nhật phiếu trả hàng thành công!')
+    },
+    onError: (error) => {
+      handleApiError(error, 'Cập nhật phiếu trả hàng thất bại!')
+    },
+  })
+}
+
+// Duyệt phiếu trả hàng (và tự động trừ kho)
 export const useApproveReturnMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -75,31 +96,12 @@ export const useApproveReturnMutation = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['return', id] })
       invalidateResourceQueries('returns')
-      message.success('Duyệt phiếu trả hàng thành công!')
+      // Invalidate inventory vì tồn kho đã thay đổi
+      invalidateResourceQueries('products')
+      message.success('Duyệt phiếu trả hàng thành công! Tồn kho đã được cập nhật.')
     },
     onError: (error) => {
       handleApiError(error, 'Duyệt phiếu trả hàng thất bại!')
-    },
-  })
-}
-
-// Hoàn thành phiếu trả hàng (xuất kho)
-export const useCompleteReturnMutation = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiClient.postRaw<ReturnApiResponse>(`/inventory/return/${id}/complete`)
-      return response
-    },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['return', id] })
-      invalidateResourceQueries('returns')
-      // Invalidate inventory vì tồn kho đã thay đổi
-      invalidateResourceQueries('products')
-      message.success('Hoàn thành phiếu trả hàng! Tồn kho đã được cập nhật.')
-    },
-    onError: (error) => {
-      handleApiError(error, 'Hoàn thành phiếu trả hàng thất bại!')
     },
   })
 }
@@ -165,35 +167,15 @@ export const useAttachImageToReturnMutation = () => {
       return response
     },
     onSuccess: (_, variables) => {
+      // Invalidate return query để reload images
       queryClient.invalidateQueries({
-        queryKey: ['return-images', variables.returnId],
+        queryKey: ['return', variables.returnId],
       })
       message.success('Gắn ảnh vào phiếu thành công!')
     },
     onError: (error: Error) => {
       message.error(`Lỗi khi gắn ảnh: ${error.message}`)
     },
-  })
-}
-
-/**
- * Hook lấy danh sách ảnh của phiếu trả hàng
- */
-export const useReturnImagesQuery = (returnId: number) => {
-  return useQuery({
-    queryKey: ['return-images', returnId],
-    queryFn: async () => {
-      const response = await apiClient.get<{
-        id: number
-        url: string
-        name: string
-        type: string
-        size: number
-        created_at: string
-      }[]>(`/inventory/return/${returnId}/images`)
-      return response
-    },
-    enabled: !!returnId,
   })
 }
 
@@ -216,8 +198,9 @@ export const useDeleteReturnImageMutation = () => {
       return response
     },
     onSuccess: (_, variables) => {
+      // Invalidate return query để reload images
       queryClient.invalidateQueries({
-        queryKey: ['return-images', variables.returnId],
+        queryKey: ['return', variables.returnId],
       })
       message.success('Xóa ảnh thành công!')
     },

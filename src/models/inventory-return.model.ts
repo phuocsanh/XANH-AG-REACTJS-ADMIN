@@ -15,7 +15,7 @@ export interface CreateReturnRequest {
   supplier_id: number
   total_amount: number
   reason: string
-  status?: 'draft' | 'approved' | 'completed' | 'cancelled'
+  status?: 'draft' | 'approved' | 'cancelled'
   notes?: string
   created_by: number
   items: ReturnItem[]
@@ -53,7 +53,7 @@ export interface ReturnApiResponse {
   supplier_name?: string
   total_amount: string
   reason: string
-  status: number
+  status: string | number  // Hỗ trợ cả string ('draft') và number (0)
   notes?: string
   created_by: number
   created_at: string
@@ -71,22 +71,34 @@ export interface ReturnApiResponse {
 
 // Hàm map status từ number sang string
 export const getReturnStatusText = (status: number | string): string => {
-  if (typeof status === 'string') return status
-  
-  const statusMap: { [key: number]: string } = {
+  const statusMap: { [key: string | number]: string } = {
     0: 'Nháp',
-    1: 'Chờ duyệt',
     2: 'Đã duyệt',
-    3: 'Hoàn thành',
     4: 'Đã hủy',
+    'draft': 'Nháp',
+    'approved': 'Đã duyệt',
+    'cancelled': 'Đã hủy',
   }
-  return statusMap[status] || 'Không xác định'
+  return statusMap[status] || String(status)
 }
 
 // Hàm map API response sang InventoryReturn
 export const mapApiResponseToReturn = (
   apiReturn: ReturnApiResponse
 ): InventoryReturn => {
+  // Normalize status: nếu là number thì convert sang string code
+  let normalizedStatus: string;
+  if (typeof apiReturn.status === 'number') {
+    const statusCodeMap: { [key: number]: string } = {
+      0: 'draft',
+      2: 'approved',
+      4: 'cancelled',
+    };
+    normalizedStatus = statusCodeMap[apiReturn.status] || 'draft';
+  } else {
+    normalizedStatus = apiReturn.status;
+  }
+
   return {
     id: apiReturn.id,
     code: apiReturn.code,
@@ -95,7 +107,7 @@ export const mapApiResponseToReturn = (
     supplier_name: apiReturn.supplier_name,
     total_amount: apiReturn.total_amount,
     reason: apiReturn.reason,
-    status: getReturnStatusText(apiReturn.status),
+    status: normalizedStatus,  // Giữ nguyên status code ('draft', 'approved', ...)
     notes: apiReturn.notes,
     created_by: apiReturn.created_by,
     created_at: apiReturn.created_at,

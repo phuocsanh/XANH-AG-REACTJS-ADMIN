@@ -1,6 +1,6 @@
 // Form tạo phiếu trả hàng - React Hook Form version
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { message } from 'antd';
 import {
   Box,
@@ -28,11 +28,16 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateReturnMutation, useAttachImageToReturnMutation } from '@/queries/inventory-return';
-import { useUploadFileMutation, useInventoryReceiptsQuery } from '@/queries/inventory';
+import { 
+  useCreateReturnMutation, 
+  useUpdateReturnMutation,
+  useReturnQuery,
+  useAttachImageToReturnMutation
+} from '@/queries/inventory-return';
+import { useUploadFileMutation, useInventoryReceiptsQuery, useInventoryReceiptQuery } from '@/queries/inventory';
 import { useAppStore } from '@/stores';
 import { InventoryReceiptApiResponse } from '@/models/inventory.model';
 import {
@@ -43,6 +48,10 @@ import {
 
 const ReturnCreate = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const returnId = id ? Number(id) : undefined;
+  const isEditMode = !!returnId;
+  
   const userInfo = useAppStore((state) => state.userInfo);
   const [receiptSearch, setReceiptSearch] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState<InventoryReceiptApiResponse | null>(null);
@@ -69,15 +78,82 @@ const ReturnCreate = () => {
     receiptSearch ? { limit: 20, code: receiptSearch } : undefined
   );
   const createMutation = useCreateReturnMutation();
+  const updateMutation = useUpdateReturnMutation();
   const attachImageMutation = useAttachImageToReturnMutation();
 
+  // Debug: Kiểm tra returnId
+  console.log('🔍 Debug return-create:', { id, returnId, isEditMode });
+
+  // Load existing data for edit mode (images đã có sẵn trong existingReturn)
+  const { data: existingReturn, isLoading: isLoadingReturn } = useReturnQuery(returnId as number);
+  
+  // Load receipt if edit mode to get available products
+  const { data: editStageReceipt } = useInventoryReceiptQuery(existingReturn?.receipt_id || 0);
+
+  // Set form data khi có existingReturn
+  useEffect(() => {
+    if (isEditMode && existingReturn) {
+      console.log('📝 Setting form data:', existingReturn);
+      
+      // Reset form with existing data
+      setValue('receipt_id', existingReturn.receipt_id || 0);
+      setValue('supplier_id', existingReturn.supplier_id);
+      setValue('return_code', existingReturn.code);
+      setValue('reason', existingReturn.reason);
+      setValue('notes', existingReturn.notes || '');
+      
+      console.log('🔍 Setting status:', existingReturn.status, typeof existingReturn.status);
+      setValue('status', existingReturn.status as any || 'draft');
+      
+      console.log('✅ Form values set:', {
+        receipt_id: existingReturn.receipt_id,
+        reason: existingReturn.reason,
+        notes: existingReturn.notes,
+        status: existingReturn.status
+      });
+      
+      if (existingReturn.items) {
+        setValue('items', existingReturn.items.map(item => ({
+          product_id: item.product_id,
+          product_name: (item as any).product?.name || `Sản phẩm #${item.product_id}`,
+          quantity: item.quantity,
+          unit_cost: typeof item.unit_cost === 'string' ? parseFloat(item.unit_cost) : item.unit_cost,
+          total_price: typeof item.total_price === 'string' ? parseFloat(item.total_price) : item.total_price,
+          reason: item.reason || '',
+          notes: item.notes || '',
+        })));
+      }
+
+      // Images đã có sẵn trong existingReturn.images
+      if ((existingReturn as any).images) {
+        setValue('images', (existingReturn as any).images.map((img: any) => ({
+          id: img.id,
+          url: img.url,
+          name: img.name
+        })));
+      }
+    }
+  }, [isEditMode, existingReturn, setValue]);
+
+  // Set selectedReceipt khi có editStageReceipt
+  useEffect(() => {
+    if (isEditMode && editStageReceipt) {
+      setSelectedReceipt(editStageReceipt as any);
+    }
+  }, [isEditMode, editStageReceipt]);
+
   // Lấy danh sách sản phẩm từ phiếu nhập đã chọn
-  const availableProducts = (selectedReceipt as any)?.items?.map((item: any) => ({
-    product_id: item.product_id,
-    product_name: item.product?.name || `Sản phẩm #${item.product_id}`,
-    quantity: item.quantity,
-    unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
-  })) || [];
+  const availableProducts = useMemo(() => {
+    // Khi edit mode, dùng editStageReceipt
+    const sourceReceipt = isEditMode ? editStageReceipt : selectedReceipt;
+    
+    return (sourceReceipt as any)?.items?.map((item: any) => ({
+      product_id: item.product_id,
+      product_name: item.product?.name || `Sản phẩm #${item.product_id}`,
+      quantity: item.quantity,
+      unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
+    })) || [];
+  }, [isEditMode, editStageReceipt, selectedReceipt]);
 
   // Xử lý chọn phiếu nhập kho
   const handleReceiptSelect = (receiptId: number | null) => {
@@ -139,21 +215,27 @@ const ReturnCreate = () => {
         total_amount: processedItems.reduce((sum, item) => sum + item.total_price, 0),
         reason: data.reason,
         notes: data.notes,
+        status: data.status,
         created_by: userInfo.id,
         items: processedItems,
       };
 
-      // 1. Tạo phiếu trả
-      const newReturn = await createMutation.mutateAsync(returnData as any);
+      // 1. Lưu phiếu (Tạo hoặc Cập nhật)
+      let savedReturn;
+      if (isEditMode && returnId) {
+        savedReturn = await updateMutation.mutateAsync({ id: returnId, data: returnData as any });
+      } else {
+        savedReturn = await createMutation.mutateAsync(returnData as any);
+      }
 
       // 2. Gắn ảnh (nếu có)
-      // data.images sẽ chứa mảng các object { id, url, name } do FormImageUpload trả về (nhờ prop returnFullObjects)
-      if (data.images && data.images.length > 0 && newReturn?.id) {
+      const newReturnId = isEditMode ? returnId : (savedReturn as any)?.id;
+      if (data.images && data.images.length > 0 && newReturnId) {
         const imagePromises = data.images.map(async (img: any) => {
           if (img.id) {
             try {
               await attachImageMutation.mutateAsync({
-                returnId: newReturn.id,
+                returnId: newReturnId as number,
                 fileId: img.id,
                 fieldName: 'return_images',
               });
@@ -189,7 +271,7 @@ const ReturnCreate = () => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
-          Tạo phiếu trả hàng
+          {isEditMode ? 'Chỉnh sửa phiếu trả hàng' : 'Tạo phiếu trả hàng'}
         </Typography>
       </Box>
 
@@ -210,7 +292,7 @@ const ReturnCreate = () => {
                   placeholder="Nhập mã phiếu nhập..."
                   data={receiptList.map((receipt: any) => ({
                     value: receipt.id,
-                    label: `${receipt.code} - ${receipt.supplier?.name || 'N/A'} - ${formatCurrency(parseFloat(String(receipt.total_amount) || '0'))}`
+                    label: receipt.code  // Chỉ hiển thị mã phiếu
                   }))}
                   onSearch={setReceiptSearch}
                   onSelectionChange={(value) => {
@@ -218,15 +300,30 @@ const ReturnCreate = () => {
                   }}
                   allowClear
                   showSearch
+                  disabled={isEditMode}  // Khóa khi chỉnh sửa
                 />
 
-                {selectedReceipt && (
+                {/* Hiển thị thông tin phiếu nhập */}
+                {(isEditMode && existingReturn) || selectedReceipt ? (
                   <Box mt={2}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Nhà cung cấp:
                     </Typography>
                     <Typography variant="body1" mb={1}>
-                      {(selectedReceipt as any)?.supplier?.name || 'N/A'}
+                      {isEditMode 
+                        ? (existingReturn as any)?.supplier?.name || 'N/A'
+                        : (selectedReceipt as any)?.supplier?.name || 'N/A'
+                      }
+                    </Typography>
+                    
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Tổng tiền phiếu nhập:
+                    </Typography>
+                    <Typography variant="body1" mb={1} fontWeight="bold" color="primary">
+                      {isEditMode
+                        ? formatCurrency(parseFloat(String((existingReturn as any)?.total_amount || '0')))
+                        : formatCurrency(parseFloat(String((selectedReceipt as any)?.total_amount || '0')))
+                      }
                     </Typography>
                     
                     <Typography variant="subtitle2" color="text.secondary">
@@ -236,7 +333,7 @@ const ReturnCreate = () => {
                       {watch('return_code')}
                     </Typography>
                   </Box>
-                )}
+                ) : null}
               </CardContent>
             </Card>
           </Grid>
@@ -266,6 +363,19 @@ const ReturnCreate = () => {
                   type="textarea"
                   rows={2}
                 />
+
+                <Box mt={2}>
+                  <FormComboBox
+                    name="status"
+                    control={control}
+                    label="Trạng thái"
+                    data={[
+                      { value: 'draft', label: 'Nháp' },
+                      { value: 'approved', label: 'Đã duyệt' },
+                      { value: 'cancelled', label: 'Đã hủy' },
+                    ]}
+                  />
+                </Box>
 
                 <Box mt={2}>
                   <Typography variant="subtitle2" mb={1}>
@@ -471,7 +581,7 @@ const ReturnCreate = () => {
               <Button
                 variant="outlined"
                 onClick={() => navigate('/inventory/returns')}
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
               >
                 Hủy
               </Button>
@@ -480,9 +590,12 @@ const ReturnCreate = () => {
                 variant="contained"
                 color="primary"
                 startIcon={<SaveIcon />}
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
               >
-                {createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu trả'}
+                {isEditMode 
+                  ? (updateMutation.isPending ? 'Đang cập nhật...' : 'Cập nhật phiếu trả')
+                  : (createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu trả')
+                }
               </Button>
             </Box>
           </Grid>

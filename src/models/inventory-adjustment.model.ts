@@ -11,7 +11,7 @@ export interface CreateAdjustmentRequest {
   adjustment_code: string
   adjustment_type: 'IN' | 'OUT'
   reason: string
-  status?: 'draft' | 'approved' | 'completed' | 'cancelled'
+  status?: 'draft' | 'approved' | 'cancelled'
   notes?: string
   created_by: number
   items: AdjustmentItem[]

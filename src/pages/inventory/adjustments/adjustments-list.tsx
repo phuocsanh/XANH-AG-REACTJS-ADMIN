@@ -31,7 +31,6 @@ import {
   useAdjustmentsQuery,
   useDeleteAdjustmentMutation,
   useApproveAdjustmentMutation,
-  useCompleteAdjustmentMutation,
   useCancelAdjustmentMutation,
 } from "@/queries/inventory-adjustment"
 import { LoadingSpinner } from "@/components/common"
@@ -46,7 +45,6 @@ const AdjustmentsList: React.FC = () => {
   const { data: adjustments, isLoading, refetch } = useAdjustmentsQuery()
   const deleteAdjustmentMutation = useDeleteAdjustmentMutation()
   const approveAdjustmentMutation = useApproveAdjustmentMutation()
-  const completeAdjustmentMutation = useCompleteAdjustmentMutation()
   const cancelAdjustmentMutation = useCancelAdjustmentMutation()
 
   const filteredAdjustments = useMemo(() => {
@@ -65,9 +63,7 @@ const AdjustmentsList: React.FC = () => {
   const renderStatus = (statusText: string) => {
     const statusConfig: Record<string, { color: string }> = {
       "Nháp": { color: "default" },
-      "Chờ duyệt": { color: "processing" },
       "Đã duyệt": { color: "success" },
-      "Hoàn thành": { color: "success" },
       "Đã hủy": { color: "error" },
     }
     const config = statusConfig[statusText] || { color: "default" }
@@ -102,21 +98,7 @@ const AdjustmentsList: React.FC = () => {
       )
     }
 
-    if (record.status === "Đã duyệt") {
-      actions.push(
-        <Tooltip key='complete' title='Hoàn thành điều chỉnh'>
-          <Popconfirm
-            title='Hoàn thành điều chỉnh'
-            description='Tồn kho sẽ được cập nhật.'
-            onConfirm={() => completeAdjustmentMutation.mutateAsync(record.id)}
-            okText='Hoàn thành'
-            cancelText='Hủy'
-          >
-            <Button type='text' icon={<CheckOutlined />} style={{ color: "#1890ff" }} />
-          </Popconfirm>
-        </Tooltip>
-      )
-    }
+
 
     if (record.status === "Nháp" || record.status === "Đã duyệt") {
       actions.push(
@@ -232,7 +214,6 @@ const AdjustmentsList: React.FC = () => {
           >
             <Select.Option value="Nháp">Nháp</Select.Option>
             <Select.Option value="Đã duyệt">Đã duyệt</Select.Option>
-            <Select.Option value="Hoàn thành">Hoàn thành</Select.Option>
             <Select.Option value="Đã hủy">Đã hủy</Select.Option>
           </Select>
         </Space>

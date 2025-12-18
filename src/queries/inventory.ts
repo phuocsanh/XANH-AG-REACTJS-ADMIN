@@ -137,11 +137,13 @@ export const useInventoryReceiptQuery = (id: number) => {
   return useQuery({
     queryKey: inventoryKeys.receipt(id),
     queryFn: async () => {
-      const response = await api.get<InventoryReceiptApiResponse>(
-        `/inventory/receipt/${id}` // Thay đổi từ /inventory/receipts/${id} thành /inventory/receipt/${id}
+      const response = await api.get<any>(
+        `/inventory/receipt/${id}`
       )
+      // Unwrap data từ response wrapper { success, data, meta }
+      const receiptData = response.data || response
       // Map dữ liệu từ API response sang interface mới
-      return mapApiResponseToInventoryReceipt(response)
+      return mapApiResponseToInventoryReceipt(receiptData)
     },
     enabled: !!id,
   })

@@ -27,6 +27,7 @@ import {
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
+import { getReturnStatusText } from '@/models/inventory-return.model'
 
 import {
   InventoryReturn,
@@ -36,7 +37,6 @@ import {
   useReturnsQuery,
   useDeleteReturnMutation,
   useApproveReturnMutation,
-  useCompleteReturnMutation,
   useCancelReturnMutation,
 } from "@/queries/inventory-return"
 import { useSuppliersQuery } from "@/queries/supplier"
@@ -63,7 +63,6 @@ const ReturnsList: React.FC = () => {
   // Mutations
   const deleteReturnMutation = useDeleteReturnMutation()
   const approveReturnMutation = useApproveReturnMutation()
-  const completeReturnMutation = useCompleteReturnMutation()
   const cancelReturnMutation = useCancelReturnMutation()
 
   // Filter data
@@ -131,14 +130,6 @@ const ReturnsList: React.FC = () => {
     }
   }
 
-  const handleCompleteReturn = async (id: number) => {
-    try {
-      await completeReturnMutation.mutateAsync(id)
-    } catch (error) {
-      console.error("Error completing return:", error)
-    }
-  }
-
   const handleCancelReturn = async (id: number, reason: string) => {
     try {
       await cancelReturnMutation.mutateAsync({ id, reason })
@@ -148,12 +139,13 @@ const ReturnsList: React.FC = () => {
   }
 
   // Render trạng thái
-  const renderStatus = (statusText: string) => {
+  const renderStatus = (statusCode: string) => {
+    // Convert status code sang tiếng Việt (dùng function đã import)
+    const statusText = getReturnStatusText(statusCode);
+    
     const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
       "Nháp": { color: "default", icon: <EditOutlined /> },
-      "Chờ duyệt": { color: "processing", icon: <CheckOutlined /> },
       "Đã duyệt": { color: "success", icon: <CheckOutlined /> },
-      "Hoàn thành": { color: "success", icon: <CheckOutlined /> },
       "Đã hủy": { color: "error", icon: <CloseOutlined /> },
     }
 
@@ -182,7 +174,7 @@ const ReturnsList: React.FC = () => {
     )
 
     // Chỉnh sửa (chỉ khi ở trạng thái Nháp)
-    if (record.status === "Nháp") {
+    if (record.status === 'draft') {
       actions.push(
         <Tooltip key='edit' title='Chỉnh sửa'>
           <Button
@@ -195,7 +187,7 @@ const ReturnsList: React.FC = () => {
     }
 
     // Duyệt (chỉ khi ở trạng thái Nháp)
-    if (record.status === "Nháp") {
+    if (record.status === 'draft') {
       actions.push(
         <Tooltip key='approve' title='Duyệt phiếu'>
           <Popconfirm
@@ -216,30 +208,8 @@ const ReturnsList: React.FC = () => {
       )
     }
 
-    // Hoàn thành (chỉ khi ở trạng thái Đã duyệt)
-    if (record.status === "Đã duyệt") {
-      actions.push(
-        <Tooltip key='complete' title='Hoàn thành trả hàng'>
-          <Popconfirm
-            title='Hoàn thành trả hàng'
-            description='Bạn có chắc chắn muốn hoàn thành việc trả hàng? Tồn kho sẽ được cập nhật.'
-            onConfirm={() => handleCompleteReturn(record.id)}
-            okText='Hoàn thành'
-            cancelText='Hủy'
-          >
-            <Button
-              type='text'
-              icon={<CheckOutlined />}
-              style={{ color: "#1890ff" }}
-              loading={completeReturnMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
-    }
-
     // Hủy (chỉ khi ở trạng thái Nháp hoặc Đã duyệt)
-    if (record.status === "Nháp" || record.status === "Đã duyệt") {
+    if (record.status === 'draft' || record.status === 'approved') {
       actions.push(
         <Tooltip key='cancel' title='Hủy phiếu'>
           <Popconfirm
@@ -261,7 +231,7 @@ const ReturnsList: React.FC = () => {
     }
 
     // Xóa (chỉ khi ở trạng thái Nháp hoặc Đã hủy)
-    if (record.status === "Nháp" || record.status === "Đã hủy") {
+    if (record.status === 'draft' || record.status === 'cancelled') {
       actions.push(
         <Tooltip key='delete' title='Xóa phiếu'>
           <Popconfirm

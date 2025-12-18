@@ -10,6 +10,7 @@ const ReturnsPage = () => {
     <Routes>
       <Route index element={<ReturnsList />} />
       <Route path="create" element={<ReturnCreate />} />
+      <Route path="edit/:id" element={<ReturnCreate />} />
       <Route path=":id" element={<ReturnDetail />} />
     </Routes>
   )
