@@ -36,7 +36,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 
 const ProfitReportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('rice_crop');
+  const [activeTab, setActiveTab] = useState('rice-crop');
   
   // State cho tab Season
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | undefined>();
@@ -56,14 +56,14 @@ const ProfitReportsPage: React.FC = () => {
   const { data: seasonsData } = useSeasonsQuery();
   
   // Prepare params for Rice Crop query - React Query sẽ tự động refetch khi params thay đổi
-  const riceCropQueryParams: any = { 
+  const riceCropQueryParams = React.useMemo(() => ({ 
     limit: 1000,
     ...(selectedSeasonId && { season_id: selectedSeasonId }),
     ...(selectedRiceCropCustomerId && { customer_id: selectedRiceCropCustomerId })
-  };
+  }), [selectedSeasonId, selectedRiceCropCustomerId]);
 
   const { data: riceCropsData } = useRiceCrops(riceCropQueryParams, { 
-    enabled: activeTab === 'rice_crop' // Chỉ gọi API khi ở tab Rice Crop
+    enabled: activeTab === 'rice-crop' // Chỉ gọi API khi ở tab Rice Crop
   });
   const { data: customersData } = useCustomersQuery({ limit: 100 });
   const { data: seasonProfit, isLoading: isLoadingSeasonProfit } = useSeasonStoreProfit(
