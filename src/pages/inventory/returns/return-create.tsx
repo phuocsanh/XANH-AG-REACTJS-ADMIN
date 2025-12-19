@@ -208,6 +208,16 @@ const ReturnCreate = () => {
           notes: item.notes,
       }));
 
+      // Xử lý danh sách ảnh: lấy URL từ response upload hoặc property url có sẵn
+      const imageUrls = data.images?.map((img: any) => {
+        // Trường hợp ảnh đã có sẵn (khi edit)
+        if (img.url) return img.url;
+        // Trường hợp ảnh mới upload (response từ server)
+        if (img.response?.data?.url) return img.response.data.url;
+        // Fallback
+        return img.response?.url || img.thumbUrl;
+      }).filter(Boolean) || [];
+
       const returnData = {
         return_code: data.return_code,
         supplier_id: data.supplier_id,
@@ -218,35 +228,17 @@ const ReturnCreate = () => {
         status: data.status,
         created_by: userInfo.id,
         items: processedItems,
+        images: imageUrls, // Gửi trực tiếp mảng URL
       };
 
       // 1. Lưu phiếu (Tạo hoặc Cập nhật)
-      let savedReturn;
       if (isEditMode && returnId) {
-        savedReturn = await updateMutation.mutateAsync({ id: returnId, data: returnData as any });
+        await updateMutation.mutateAsync({ id: returnId, data: returnData as any });
       } else {
-        savedReturn = await createMutation.mutateAsync(returnData as any);
+        await createMutation.mutateAsync(returnData as any);
       }
 
-      // 2. Gắn ảnh (nếu có)
-      const newReturnId = isEditMode ? returnId : (savedReturn as any)?.id;
-      if (data.images && data.images.length > 0 && newReturnId) {
-        const imagePromises = data.images.map(async (img: any) => {
-          if (img.id) {
-            try {
-              await attachImageMutation.mutateAsync({
-                returnId: newReturnId as number,
-                fileId: img.id,
-                fieldName: 'return_images',
-              });
-            } catch (error) {
-              console.error("Error attaching image:", error);
-            }
-          }
-        });
-        
-        await Promise.all(imagePromises);
-      }
+      // Không cần bước 2 (gắn ảnh thủ công) nữa vì đã gửi trong payload
 
       navigate('/inventory/returns');
     } catch (error) {

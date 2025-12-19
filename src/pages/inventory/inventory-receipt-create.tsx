@@ -171,6 +171,17 @@ const InventoryReceiptCreate: React.FC = () => {
       if (receipt.shipping_allocation_method) {
         setAllocationMethod(receipt.shipping_allocation_method as 'by_value' | 'by_quantity')
       }
+
+      // Set images
+      if (receipt.images && Array.isArray(receipt.images)) {
+        const images = receipt.images.map((url: string, index: number) => ({
+          uid: `-${index}`,
+          name: `Image ${index + 1}`,
+          status: 'done',
+          url: url,
+        }));
+        setFileList(images as any);
+      }
     }
   }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, form])
 
@@ -299,101 +310,77 @@ const InventoryReceiptCreate: React.FC = () => {
       const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
       const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
 
+      // 1. Xử lý upload ảnh
+      let imageUrls: string[] = [];
+      if (fileList.length > 0) {
+        try {
+          const needsUpload = fileList.some(f => f.originFileObj);
+          if (needsUpload) message.loading("Đang xử lý hình ảnh...");
+
+          for (const file of fileList) {
+            if (file.url) {
+              // Ảnh đã có sẵn (từ server)
+              imageUrls.push(file.url);
+            } else if (file.originFileObj) {
+              // Ảnh mới cần upload
+              const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj);
+              imageUrls.push((uploadResult as any).data.url);
+            } else if (file.response?.data?.url) {
+              // Ảnh vừa upload xong (nếu component upload tự xử lý)
+              imageUrls.push(file.response.data.url);
+            }
+          }
+        } catch (uploadError) {
+          console.error("Lỗi khi upload ảnh:", uploadError);
+          message.error("Có lỗi khi upload ảnh");
+          return;
+        }
+      }
+
+      // 2. Chuẩn bị dữ liệu chung
+      const commonData = {
+        supplier_id: values.supplierId as number,
+        total_amount: grandTotal,
+        notes: values.description as string | undefined,
+        status: (values.status as string) || "draft",
+        created_by: 1, // Dùng cho Create, ignore ở Update
+        
+        // Phí vận chuyển chung
+        ...(hasSharedShipping && {
+          shared_shipping_cost: sharedShippingCost,
+          shipping_allocation_method: allocationMethod,
+        }),
+        
+        // Images (chỉ gửi nếu có)
+        ...(imageUrls.length > 0 && { images: imageUrls }),
+        
+        // Items
+        items: validItems.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_cost: item.unit_cost,
+          total_price: item.total_price,
+          notes: item.notes || undefined,
+          
+          // Phí vận chuyển riêng
+          ...((item.individual_shipping_cost || 0) > 0 && {
+            individual_shipping_cost: item.individual_shipping_cost,
+          }),
+        })),
+      };
+
+      // 3. Gọi API Create hoặc Update
       if (isEditMode && receiptId) {
         // === UPDATE MODE ===
-        const updateData: any = {
-          supplier_id: values.supplierId as number,
-          total_amount: grandTotal,
-          notes: values.description as string | undefined,
-          status: (values.status as string) || "draft",
-          
-          // Phí vận chuyển chung (chỉ gửi nếu có)
-          ...(hasSharedShipping && {
-            shared_shipping_cost: sharedShippingCost,
-            shipping_allocation_method: allocationMethod,
-          }),
-          
-          // Items (backend sẽ xử lý update items)
-          items: validItems.map((item) => ({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_price: item.total_price,
-            notes: item.notes || undefined,
-            
-            // Phí vận chuyển riêng (chỉ gửi nếu có)
-            ...((item.individual_shipping_cost || 0) > 0 && {
-              individual_shipping_cost: item.individual_shipping_cost,
-            }),
-          })),
-        }
-
-        await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: updateData })
+        await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: commonData as any })
         message.success("Cập nhật phiếu nhập hàng thành công!")
-        navigate("/inventory/receipts")
       } else {
         // === CREATE MODE ===
-        // Backend sẽ tự sinh mã phiếu nhập
-
-        // Tạo request data theo đúng cấu trúc backend
-        const requestData: CreateInventoryReceiptRequest = {
-          supplier_id: values.supplierId as number,
-          total_amount: grandTotal,
-          notes: values.description as string | undefined,
-          status: (values.status as string) || "draft",
-          created_by: 1, // TODO: lấy từ auth context
-          
-          // Phí vận chuyển chung (chỉ gửi nếu có)
-          ...(hasSharedShipping && {
-            shared_shipping_cost: sharedShippingCost,
-            shipping_allocation_method: allocationMethod,
-          }),
-          
-          // Chỉ gửi validItems
-          items: validItems.map((item) => ({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_cost: item.unit_cost,
-            total_price: item.total_price,
-            notes: item.notes || undefined,
-            
-            // Phí vận chuyển riêng (chỉ gửi nếu có)
-            ...((item.individual_shipping_cost || 0) > 0 && {
-              individual_shipping_cost: item.individual_shipping_cost,
-            }),
-          })),
-        }
-
-        const newReceipt = await createReceiptMutation.mutateAsync(requestData)
-      
-        // Upload ảnh nếu có
-        if (fileList.length > 0) {
-          try {
-            message.loading("Đang upload hình ảnh...")
-            
-            for (const file of fileList) {
-              if (file.originFileObj) {
-                // 1. Upload file lên server
-                const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj)
-                
-                // 2. Gắn file vào phiếu
-                await attachImageMutation.mutateAsync({
-                  receiptId: newReceipt.id,
-                  fileId: (uploadResult as any).data.id,
-                  fieldName: "invoice_images",
-                })
-              }
-            }
-            message.success("Upload hình ảnh thành công!")
-          } catch (uploadError) {
-            console.error("Lỗi khi upload ảnh:", uploadError)
-            message.warning("Tạo phiếu thành công nhưng có lỗi khi upload ảnh")
-          }
-        }
-
+        await createReceiptMutation.mutateAsync(commonData as CreateInventoryReceiptRequest)
         message.success("Tạo phiếu nhập hàng thành công!")
-        navigate("/inventory/receipts")
       }
+      
+      navigate("/inventory/receipts")
     } catch (error) {
       console.error("Error saving receipt:", error)
       message.error(isEditMode ? "Có lỗi xảy ra khi cập nhật phiếu nhập hàng" : "Có lỗi xảy ra khi tạo phiếu nhập hàng")
