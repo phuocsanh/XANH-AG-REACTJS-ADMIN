@@ -8,6 +8,7 @@ import {
   InventoryAdjustment,
   AdjustmentApiResponse,
   mapApiResponseToAdjustment,
+  getAdjustmentStatusText,
 } from '@/models/inventory-adjustment.model'
 import { invalidateResourceQueries } from '@/utils/query-helpers'
 import { handleApiError } from '@/utils/error-handler'
@@ -36,16 +37,21 @@ export const useAdjustmentsQuery = () => {
 }
 
 // Lấy chi tiết phiếu điều chỉnh
-export const useAdjustmentQuery = (id: number) => {
+export const useAdjustmentQuery = (id: number, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['adjustment', id],
     queryFn: async () => {
       const response = await apiClient.get<any>(`/inventory/adjustments/${id}`)
       // Unwrap data từ response wrapper { success, data }
       const adjustmentData = response.data || response
-      return mapApiResponseToAdjustment(adjustmentData) as InventoryAdjustment
+      
+      // Map status sang tiếng Việt nếu cần, nhưng GIỮ NGUYÊN images
+      return {
+        ...adjustmentData,
+        status: getAdjustmentStatusText(adjustmentData.status),
+      } as InventoryAdjustment
     },
-    enabled: !!id,
+    enabled: options?.enabled !== false && !!id,
   })
 }
 
@@ -57,10 +63,9 @@ export const useCreateAdjustmentMutation = () => {
       const response = await apiClient.postRaw<any>('/inventory/adjustments', data as any)
       return response.data || response
     },
-    onSuccess: () => {
-      // Invalidate queries để refresh danh sách
-      queryClient.invalidateQueries({ queryKey: ['adjustments'] })
-      invalidateResourceQueries('adjustments')
+    onSuccess: async () => {
+      // Refetch để refresh danh sách ngay lập tức
+      await queryClient.refetchQueries({ queryKey: ['adjustments'] })
       message.success('Tạo phiếu điều chỉnh thành công!')
     },
     onError: (error) => {
@@ -97,9 +102,9 @@ export const useApproveAdjustmentMutation = () => {
       const response = await apiClient.postRaw<any>(`/inventory/adjustments/${id}/approve`)
       return response.data || response
     },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
-      invalidateResourceQueries('adjustments')
+    onSuccess: async (_, id) => {
+      await queryClient.refetchQueries({ queryKey: ['adjustments'] })
+      await queryClient.refetchQueries({ queryKey: ['adjustment', id] })
       // Invalidate inventory vì tồn kho đã thay đổi
       invalidateResourceQueries('products')
       message.success('Duyệt phiếu điều chỉnh thành công! Tồn kho đã được cập nhật.')
@@ -118,9 +123,9 @@ export const useCancelAdjustmentMutation = () => {
       const response = await apiClient.postRaw<any>(`/inventory/adjustments/${id}/cancel`, { reason })
       return response.data || response
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['adjustment', id] })
-      invalidateResourceQueries('adjustments')
+    onSuccess: async (_, { id }) => {
+      await queryClient.refetchQueries({ queryKey: ['adjustments'] })
+      await queryClient.refetchQueries({ queryKey: ['adjustment', id] })
       message.success('Hủy phiếu điều chỉnh thành công!')
     },
     onError: (error) => {
@@ -137,8 +142,8 @@ export const useDeleteAdjustmentMutation = () => {
       const response = await apiClient.delete<any>(`/inventory/adjustments/${id}`)
       return response.data !== undefined ? response.data : response
     },
-    onSuccess: () => {
-      invalidateResourceQueries('adjustments')
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['adjustments'] })
       message.success('Xóa phiếu điều chỉnh thành công!')
     },
     onError: (error) => {
@@ -165,15 +170,15 @@ export const useAttachImageToAdjustmentMutation = () => {
       fieldName?: string
     }) => {
       const response = await apiClient.postRaw(
-        `/inventory/adjustments/${adjustmentId}/upload-image`,
+        `/inventory/adjustments/${adjustmentId}/attach-image`,
         { fileId, fieldName }
       )
       return response
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['adjustment-images', variables.adjustmentId],
-      })
+    onSuccess: async (_, variables) => {
+      // Refresh cả danh sách ảnh riêng lẻ (nếu còn dùng) và chi tiết phiếu
+      await queryClient.refetchQueries({ queryKey: ['adjustment-images', variables.adjustmentId] })
+      await queryClient.refetchQueries({ queryKey: ['adjustment', variables.adjustmentId] })
       message.success('Gắn ảnh vào phiếu thành công!')
     },
     onError: (error: Error) => {
@@ -221,10 +226,9 @@ export const useDeleteAdjustmentImageMutation = () => {
       )
       return response
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['adjustment-images', variables.adjustmentId],
-      })
+    onSuccess: async (_, variables) => {
+      await queryClient.refetchQueries({ queryKey: ['adjustment-images', variables.adjustmentId] })
+      await queryClient.refetchQueries({ queryKey: ['adjustment', variables.adjustmentId] })
       message.success('Xóa ảnh thành công!')
     },
     onError: (error: Error) => {

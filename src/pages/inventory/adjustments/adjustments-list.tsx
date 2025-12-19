@@ -92,23 +92,25 @@ const AdjustmentsList: React.FC = () => {
     const isApproved = status === 'đã duyệt' || status === 'approved' || status === '2';
     const isCancelled = status === 'đã hủy' || status === 'cancelled' || status === '4';
 
-    actions.push(
-      <Tooltip key='view' title='Xem chi tiết'>
-        <Button
-          type='text'
-          icon={<EyeOutlined />}
-          onClick={() => navigate(`/inventory/adjustments/${record.id}`)}
-        />
-      </Tooltip>
-    )
-
     if (isDraft) {
+      // Phiếu nháp: Hiển thị nút "Sửa" (có thể chỉnh sửa)
       actions.push(
         <Tooltip key='edit' title='Chỉnh sửa'>
           <Button
             type='text'
             icon={<EditOutlined />}
             style={{ color: "#1890ff" }}
+            onClick={() => navigate(`/inventory/adjustments/${record.id}/edit`)}
+          />
+        </Tooltip>
+      )
+    } else {
+      // Phiếu đã duyệt/hủy: Hiển thị nút "Xem" (chỉ xem, không sửa)
+      actions.push(
+        <Tooltip key='view' title='Xem chi tiết'>
+          <Button
+            type='text'
+            icon={<EyeOutlined />}
             onClick={() => navigate(`/inventory/adjustments/${record.id}/edit`)}
           />
         </Tooltip>
@@ -172,7 +174,7 @@ const AdjustmentsList: React.FC = () => {
       render: (code: string, record: InventoryAdjustment) => (
         <Button
           type='link'
-          onClick={() => navigate(`/inventory/adjustments/${record.id}`)}
+          onClick={() => navigate(`/inventory/adjustments/${record.id}`, { state: { adjustment: record } })}
           style={{ padding: 0, height: "auto" }}
         >
           {code}

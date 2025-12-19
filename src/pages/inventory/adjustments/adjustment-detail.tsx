@@ -1,7 +1,7 @@
 // Chi tiết phiếu điều chỉnh kho - Simplified
 
 import React, { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {
   Card,
   Button,
@@ -46,11 +46,17 @@ const { Title, Text } = Typography
 const AdjustmentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [uploading, setUploading] = useState(false)
 
-  const { data: adjustmentData, isLoading } = useAdjustmentQuery(Number(id))
-  const { data: productsData } = useProductsQuery({ limit: 1000 })
-  const { data: images } = useAdjustmentImagesQuery(Number(id))
+  // Lấy data từ navigation state (nếu có) để hiển thị ngay lập tức
+  const adjustmentFromState = (location.state as any)?.adjustment
+  
+  // Luôn fetch từ API để có data mới nhất (đặc biệt sau khi upload/delete ảnh)
+  const { data: adjustmentFromApi, isLoading } = useAdjustmentQuery(Number(id))
+
+  // Ưu tiên data từ API (mới nhất) nếu đã có, nếu không thì dùng state tạm
+  const adjustmentData = adjustmentFromApi || adjustmentFromState
 
   const approveAdjustmentMutation = useApproveAdjustmentMutation()
   const cancelAdjustmentMutation = useCancelAdjustmentMutation()
@@ -60,7 +66,7 @@ const AdjustmentDetail: React.FC = () => {
   const attachImageMutation = useAttachImageToAdjustmentMutation()
   const deleteImageMutation = useDeleteAdjustmentImageMutation()
 
-  if (isLoading) return <LoadingSpinner />
+  if (!adjustmentFromState && isLoading) return <LoadingSpinner />
   if (!adjustmentData) return <Card><Text type="danger">Không tìm thấy phiếu điều chỉnh!</Text></Card>
 
   const renderStatus = (status: string) => {
@@ -212,32 +218,34 @@ const AdjustmentDetail: React.FC = () => {
                   </div>
                 </Upload>
                 
-                {images?.map((image) => (
+                {adjustmentData.images?.map((image: any) => (
                   <div key={image.id} style={{ position: 'relative', width: 104, height: 104 }}>
                     <Image
                       src={image.url}
                       alt={image.name}
                       style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
                     />
-                    <Button
-                      type="primary"
-                      danger
-                      size="small"
-                      icon={<XOutlined />}
-                      style={{ 
-                        position: 'absolute', 
-                        top: -8, 
-                        right: -8, 
-                        borderRadius: '50%', 
-                        width: 20, 
-                        height: 20, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        padding: 0
-                      }}
-                      onClick={() => handleDeleteImage(image.id)}
-                    />
+                    {adjustmentData.status === 'Nháp' && (
+                      <Button
+                        type="primary"
+                        danger
+                        size="small"
+                        icon={<XOutlined />}
+                        style={{ 
+                          position: 'absolute', 
+                          top: -8, 
+                          right: -8, 
+                          borderRadius: '50%', 
+                          width: 20, 
+                          height: 20, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          padding: 0
+                        }}
+                        onClick={() => handleDeleteImage(image.id)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -249,11 +257,8 @@ const AdjustmentDetail: React.FC = () => {
                   { title: "STT", render: (_, __, index) => index + 1, width: 60 },
                   {
                     title: "Sản phẩm",
-                    dataIndex: "product_id",
-                    render: (id: number) => {
-                      const product = productsData?.data?.items?.find((p) => p.id === id)
-                      return product?.name || `Sản phẩm #${id}`
-                    },
+                    dataIndex: "product",
+                    render: (product: any) => product?.name || "N/A",
                   },
                   {
                     title: "Số lượng thay đổi",

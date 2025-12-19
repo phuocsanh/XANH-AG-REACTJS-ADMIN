@@ -17,6 +17,16 @@ export interface CreateAdjustmentRequest {
   items: AdjustmentItem[]
 }
 
+// Interface cho ảnh đính kèm
+export interface AdjustmentImage {
+  id: number
+  url: string
+  name: string
+  type: string
+  size: number
+  created_at: string
+}
+
 export interface InventoryAdjustment {
   id: number
   code: string
@@ -30,6 +40,7 @@ export interface InventoryAdjustment {
   approved_at?: string
   cancelled_at?: string
   items?: AdjustmentItem[]
+  images?: AdjustmentImage[]
 }
 
 export interface AdjustmentApiResponse {
@@ -46,6 +57,7 @@ export interface AdjustmentApiResponse {
   completed_at?: string
   cancelled_at?: string
   items?: AdjustmentItem[]
+  images?: AdjustmentImage[]
 }
 
 // Enum cho trạng thái phiếu điều chỉnh (Chuẩn hóa dạng chuỗi tiếng Anh)
@@ -88,6 +100,7 @@ export const mapApiResponseToAdjustment = (
     approved_at: apiAdjustment.approved_at,
     cancelled_at: apiAdjustment.cancelled_at,
     items: apiAdjustment.items,
+    images: apiAdjustment.images,
   }
 }
 

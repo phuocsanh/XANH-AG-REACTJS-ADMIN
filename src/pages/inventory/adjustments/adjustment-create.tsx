@@ -33,8 +33,10 @@ import {
   useUpdateAdjustmentMutation,
   useApproveAdjustmentMutation,
   useAttachImageToAdjustmentMutation,
+  useDeleteAdjustmentImageMutation,
   useAdjustmentQuery 
 } from '@/queries/inventory-adjustment';
+import { useUploadFileMutation } from '@/queries/inventory';
 import { useProductsQuery } from '@/queries/product';
 import { useAppStore } from '@/stores';
 import {
@@ -84,12 +86,22 @@ const AdjustmentCreate = () => {
   const updateMutation = useUpdateAdjustmentMutation();
   const approveMutation = useApproveAdjustmentMutation();
   const attachImageMutation = useAttachImageToAdjustmentMutation();
+  const deleteImageMutation = useDeleteAdjustmentImageMutation();
+  const uploadFileMutation = useUploadFileMutation();
 
   const productList = productsData?.data?.items || [];
+
+  // Kiểm tra phiếu có phải draft không (chỉ draft mới sửa được)
+  const isDraft = !existingAdjustment || 
+    existingAdjustment.status === 'draft' || 
+    existingAdjustment.status === 'Nháp' ||
+    existingAdjustment.status === '0';
+  const isReadOnly = isEditMode && !isDraft;
 
   // Pre-fill form when editing
   useEffect(() => {
     if (isEditMode && existingAdjustment) {
+      console.log('🖼️ Setting images to form:', existingAdjustment.images);
       const statusValue = existingAdjustment.status === 'Đã duyệt' || existingAdjustment.status === 'approved' ? 'approved' : 'draft';
       reset({
         adjustment_type: existingAdjustment.adjustment_type as 'IN' | 'OUT',
@@ -106,6 +118,7 @@ const AdjustmentCreate = () => {
              notes: item.notes || '',
            };
         }) || [],
+        images: existingAdjustment.images || [], // Set ảnh từ API vào form
       });
     }
   }, [isEditMode, existingAdjustment, reset, productList]);
@@ -147,6 +160,11 @@ const AdjustmentCreate = () => {
           notes: item.notes,
       }));
 
+       // Chuyển images thành array URL (giống sản phẩm)
+      const imageUrls = (data.images || []).map((img: any) => 
+        typeof img === 'string' ? img : img.url || ''
+      ).filter(Boolean);
+
       const adjustmentData = {
         adjustment_type: data.adjustment_type,
         reason: data.reason,
@@ -155,35 +173,19 @@ const AdjustmentCreate = () => {
         created_by: userInfo.id,
         items: processedItems,
         adjustment_code: existingAdjustment?.code || '',
+        images: imageUrls, // Gửi array URL trong body
       };
 
       let finalAdjustmentId = adjustmentId;
 
+      console.log('📸 Sending images:', imageUrls);
+
       if (isEditMode && adjustmentId) {
         await updateMutation.mutateAsync({ id: adjustmentId, data: adjustmentData as any });
       } else {
-        // 1. Tạo phiếu điều chỉnh
+        // Tạo phiếu điều chỉnh
         const newAdjustment = await createMutation.mutateAsync(adjustmentData as any);
         finalAdjustmentId = newAdjustment?.id;
-
-        // 2. Gắn ảnh (nếu có)
-        if (data.images && data.images.length > 0 && finalAdjustmentId) {
-          const imagePromises = data.images.map(async (img: any) => {
-            if (img.id) {
-              try {
-                await attachImageMutation.mutateAsync({
-                  adjustmentId: finalAdjustmentId!,
-                  fileId: img.id,
-                  fieldName: 'adjustment_images',
-                });
-              } catch (error) {
-                console.error("Error attaching image:", error);
-              }
-            }
-          });
-          
-          await Promise.all(imagePromises);
-        }
       }
 
       // 3. Nếu chọn trạng thái 'approved', gọi mutation duyệt
@@ -259,7 +261,7 @@ const AdjustmentCreate = () => {
                           { value: 'IN', label: 'Tăng kho (IN)' },
                           { value: 'OUT', label: 'Giảm kho (OUT)' },
                         ]}
-                        disabled={isEditMode && (existingAdjustment?.status === 'Đã duyệt' || existingAdjustment?.status === 'approved')}
+                        disabled={isReadOnly}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -272,7 +274,7 @@ const AdjustmentCreate = () => {
                           { value: 'draft', label: 'Nháp' },
                           { value: 'approved', label: 'Duyệt (Cập nhật tồn kho)' },
                         ]}
-                        disabled={isEditMode && (existingAdjustment?.status === 'Đã duyệt' || existingAdjustment?.status === 'approved')}
+                        disabled={isReadOnly}
                       />
                     </Grid>
                   </Grid>
@@ -285,6 +287,7 @@ const AdjustmentCreate = () => {
                       type="textarea"
                       rows={3}
                       placeholder="VD: Kiểm kê, hư hỏng, thất lạc..."
+                      disabled={isReadOnly}
                     />
                   </Box>
   
@@ -295,24 +298,24 @@ const AdjustmentCreate = () => {
                       label="Ghi chú"
                       type="textarea"
                       rows={2}
+                      disabled={isReadOnly}
                     />
                   </Box>
   
-                  {!isEditMode && (
-                    <Box mt={2}>
-                      <Typography variant="subtitle2" mb={1}>
-                        Hình ảnh chứng từ / hiện trạng
-                      </Typography>
-                      <FormImageUpload
-                        name="images"
-                        control={control}
-                        uploadType="common"
-                        returnFullObjects={true}
-                        multiple
-                        maxCount={5}
-                      />
-                    </Box>
-                  )}
+                  <Box mt={2}>
+                    <Typography variant="subtitle2" mb={1}>
+                      Hình ảnh chứng từ / hiện trạng
+                    </Typography>
+                    <FormImageUpload
+                      name="images"
+                      control={control}
+                      uploadType="common"
+                      returnFullObjects={true}
+                      multiple
+                      maxCount={5}
+                      disabled={isReadOnly}
+                    />
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -362,7 +365,7 @@ const AdjustmentCreate = () => {
                     Danh sách sản phẩm điều chỉnh
                   </Typography>
   
-                  {errors.items && (
+                  {errors.items?.message && (
                     <Alert severity="error" sx={{ mb: 2 }}>
                       {errors.items.message}
                     </Alert>
@@ -380,14 +383,19 @@ const AdjustmentCreate = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {fields.map((field, index) => (
+                          {fields.map((field, index) => {
+                             // Access error for this specific item
+                             const itemErrors = (errors.items as any)?.[index];
+                             const qtyError = itemErrors?.quantity_change?.message;
+
+                             return (
                             <TableRow key={field.id}>
                               <TableCell>
                                 <Typography variant="body2" fontWeight="bold">
                                   {field.product_name}
                                 </Typography>
                               </TableCell>
-                              <TableCell align="right">
+                              <TableCell align="right" sx={{ verticalAlign: 'top' }}>
                                 <Controller
                                   name={`items.${index}.quantity_change`}
                                   control={control}
@@ -396,48 +404,55 @@ const AdjustmentCreate = () => {
                                     const absValue = Math.abs(field.value || 0);
                                     
                                     return (
-                                      <Box display="flex" alignItems="center" gap={1} justifyContent="flex-end">
-                                        {/* Toggle button - chỉ hiện 1 nút tương ứng */}
-                                        {adjustmentType === 'IN' && (
-                                          <Button
+                                      <Box>
+                                        <Box display="flex" alignItems="center" gap={1} justifyContent="flex-end">
+                                          {/* Toggle button - chỉ hiện 1 nút tương ứng */}
+                                          {adjustmentType === 'IN' && (
+                                            <Button
+                                              size="small"
+                                              variant="contained"
+                                              color="success"
+                                              sx={{ minWidth: 60, fontSize: '12px' }}
+                                            >
+                                              Tăng
+                                            </Button>
+                                          )}
+                                          {adjustmentType === 'OUT' && (
+                                            <Button
+                                              size="small"
+                                              variant="contained"
+                                              color="error"
+                                              sx={{ minWidth: 60, fontSize: '12px' }}
+                                            >
+                                              Giảm
+                                            </Button>
+                                          )}
+                                          
+                                          {/* Number input */}
+                                          <NumberInput
+                                            value={absValue || null}
+                                            onChange={(val) => {
+                                              const newVal = val || 0;
+                                              // Tự động set dấu theo loại điều chỉnh
+                                              if (adjustmentType === 'IN') {
+                                                field.onChange(newVal); // Luôn dương
+                                              } else if (adjustmentType === 'OUT') {
+                                                field.onChange(-newVal); // Luôn âm
+                                              } else {
+                                                field.onChange(newVal);
+                                              }
+                                            }}
+                                            min={0}
                                             size="small"
-                                            variant="contained"
-                                            color="success"
-                                            sx={{ minWidth: 60, fontSize: '12px' }}
-                                          >
-                                            Tăng
-                                          </Button>
+                                            style={{ width: 100, borderColor: qtyError ? '#d32f2f' : undefined }}
+                                            placeholder="Số lượng"
+                                          />
+                                        </Box>
+                                        {qtyError && (
+                                          <Typography variant="caption" color="error" display="block" textAlign="right" mt={0.5}>
+                                            {qtyError}
+                                          </Typography>
                                         )}
-                                        {adjustmentType === 'OUT' && (
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            color="error"
-                                            sx={{ minWidth: 60, fontSize: '12px' }}
-                                          >
-                                            Giảm
-                                          </Button>
-                                        )}
-                                        
-                                        {/* Number input */}
-                                        <NumberInput
-                                          value={absValue || null}
-                                          onChange={(val) => {
-                                            const newVal = val || 0;
-                                            // Tự động set dấu theo loại điều chỉnh
-                                            if (adjustmentType === 'IN') {
-                                              field.onChange(newVal); // Luôn dương
-                                            } else if (adjustmentType === 'OUT') {
-                                              field.onChange(-newVal); // Luôn âm
-                                            } else {
-                                              field.onChange(newVal);
-                                            }
-                                          }}
-                                          min={0}
-                                          size="small"
-                                          style={{ width: 100 }}
-                                          placeholder="Số lượng"
-                                        />
                                       </Box>
                                     );
                                   }}
@@ -472,7 +487,8 @@ const AdjustmentCreate = () => {
                                 </IconButton>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          );
+                          })}
                         </TableBody>
                       </Table>
                     </TableContainer>
@@ -493,20 +509,22 @@ const AdjustmentCreate = () => {
                   onClick={() => navigate('/inventory/adjustments')}
                   disabled={createMutation.isPending || updateMutation.isPending}
                 >
-                  Hủy
+                  {isReadOnly ? 'Đóng' : 'Hủy'}
                 </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  startIcon={<SaveIcon />}
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
-                  {isEditMode 
-                    ? (updateMutation.isPending ? 'Đang cập nhật...' : 'Cập nhật phiếu')
-                    : (createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu')
-                  }
-                </Button>
+                {!isReadOnly && (
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    startIcon={<SaveIcon />}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                  >
+                    {isEditMode 
+                      ? (updateMutation.isPending ? 'Đang cập nhật...' : 'Cập nhật phiếu')
+                      : (createMutation.isPending ? 'Đang tạo...' : 'Tạo phiếu')
+                    }
+                  </Button>
+                )}
               </Box>
             </Grid>
           </Grid>
