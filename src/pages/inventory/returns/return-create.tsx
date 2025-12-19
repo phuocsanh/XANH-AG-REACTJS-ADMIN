@@ -126,11 +126,27 @@ const ReturnCreate = () => {
 
       // Images đã có sẵn trong existingReturn.images
       if ((existingReturn as any).images) {
-        setValue('images', (existingReturn as any).images.map((img: any) => ({
-          id: img.id,
-          url: img.url,
-          name: img.name
-        })));
+        const rawImages = (existingReturn as any).images;
+        if (Array.isArray(rawImages)) {
+          setValue('images', rawImages.map((img: any, index: number) => {
+            if (typeof img === 'string') {
+              return {
+                uid: `-${index}`, // Ant Design Upload prefers uid
+                name: `Image ${index + 1}`,
+                status: 'done',
+                url: img,
+                thumbUrl: img,
+              };
+            }
+            // Legacy object format fallback (nếu backend trả về format cũ)
+            return {
+              uid: img.id || `-${index}`,
+              url: img.url,
+              name: img.name || `Image ${index + 1}`,
+              status: 'done'
+            };
+          }));
+        }
       }
     }
   }, [isEditMode, existingReturn, setValue]);
