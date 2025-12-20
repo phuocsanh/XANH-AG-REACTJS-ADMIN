@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { Table, Tag, Typography, Card, Statistic, Row, Col, Empty, Spin, Button, Modal, Select, Space, Form, Input, InputNumber } from 'antd';
-import { PlusOutlined, LinkOutlined, ShopOutlined, FileTextOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, LinkOutlined, ShopOutlined, FileTextOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/utils/api';
 import { formatCurrency } from '@/utils/format';
 import type { ColumnsType } from 'antd/es/table';
-import { useMergedPurchases, useCreateExternalPurchase, useDeleteExternalPurchase } from '@/queries/external-purchase';
+import { 
+  useMergedPurchases, 
+  useCreateExternalPurchase, 
+  useUpdateExternalPurchase, 
+  useDeleteExternalPurchase 
+} from '@/queries/external-purchase';
 import type { MergedPurchase } from '@/models/external-purchase.model';
 import { SalesInvoice } from '@/models/sales-invoice';
 import dayjs from 'dayjs';
 import { message } from 'antd';
 import { DatePicker } from '@/components/common';
+import { useAppStore } from '@/stores';
 
 const { Title, Text } = Typography;
 
@@ -25,15 +31,23 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const queryClient = useQueryClient();
   const [isLinkModalVisible, setIsLinkModalVisible] = useState(false);
   const [isExternalModalVisible, setIsExternalModalVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MergedPurchase | null>(null);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [externalForm] = Form.useForm();
+  
+  // Lấy thông tin người dùng hiện tại
+  const userInfo = useAppStore((state) => state.userInfo);
+  const currentUserId = userInfo?.id || userInfo?.user_id;
+  const isAdmin = userInfo?.role?.code === 'admin';
 
   // Fetch thông tin rice crop để lấy customer_id
   const { data: riceCropData } = useQuery({
     queryKey: ['rice-crop', riceCropId],
     queryFn: async () => {
-      return await api.get<any>(`/rice-crops/${riceCropId}`);
+      const response = await api.get<any>(`/rice-crops/${riceCropId}`);
+      return response.data || response;
     },
     enabled: !!riceCropId,
   });
@@ -99,19 +113,20 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
 
   // Mutations
   const createExternalMutation = useCreateExternalPurchase();
+  const updateExternalMutation = useUpdateExternalPurchase();
   const deleteExternalMutation = useDeleteExternalPurchase();
 
   const purchases = allPurchases || [];
-  const availableInvoices = availableInvoicesResponse?.data || [];
+  const availableInvoices = (availableInvoicesResponse as any)?.data || [];
 
   // Tính tổng tiền
-  const totalAmount = purchases.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
-  const totalPaid = purchases.reduce((sum, inv) => sum + Number(inv.paid_amount || 0), 0);
-  const totalRemaining = purchases.reduce((sum, inv) => sum + Number(inv.remaining_amount || 0), 0);
+  const totalAmount = purchases.reduce((sum: number, inv: MergedPurchase) => sum + Number(inv.total_amount || 0), 0);
+  const totalPaid = purchases.reduce((sum: number, inv: MergedPurchase) => sum + Number(inv.paid_amount || 0), 0);
+  const totalRemaining = purchases.reduce((sum: number, inv: MergedPurchase) => sum + Number(inv.remaining_amount || 0), 0);
 
   // Tách riêng system và external
-  const systemCount = purchases.filter(p => p.source === 'system').length;
-  const externalCount = purchases.filter(p => p.source === 'external').length;
+  const systemCount = purchases.filter((p: MergedPurchase) => p.source === 'system').length;
+  const externalCount = purchases.filter((p: MergedPurchase) => p.source === 'external').length;
 
   const handleLinkSystemInvoice = () => {
     setIsLinkModalVisible(true);
@@ -126,11 +141,41 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   };
 
   const handleCreateExternal = () => {
+    setIsEditMode(false);
+    setEditingRecord(null);
+    externalForm.resetFields();
     setIsExternalModalVisible(true);
   };
 
-  const handleDeleteExternal = (id: string) => {
+  const handleEditExternal = (record: MergedPurchase) => {
+    setIsEditMode(true);
+    setEditingRecord(record);
+    
+    externalForm.setFieldsValue({
+      purchase_date: dayjs(record.date),
+      supplier_name: record.supplier,
+      notes: record.notes,
+      payment_status: record.status,
+      paid_amount: record.paid_amount,
+      items: record.items.map(item => ({
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        notes: item.notes,
+      })),
+    });
+    setIsExternalModalVisible(true);
+  };
+
+  const handleDeleteExternal = (record: MergedPurchase) => {
+    const id = record.id as string;
     const numericId = parseInt(id.replace('ext-', ''));
+    
+    if (!isAdmin && record.created_by !== currentUserId) {
+      message.error('Bạn không có quyền xóa hóa đơn này');
+      return;
+    }
+
     Modal.confirm({
       title: 'Xác nhận xóa',
       content: 'Bạn có chắc chắn muốn xóa hóa đơn này?',
@@ -144,16 +189,17 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   };
 
   const handleExternalFormSubmit = async (values: any) => {
-    // Tính tổng tiền
     const total = values.items.reduce((sum: number, item: any) => 
       sum + (Number(item.quantity) * Number(item.unit_price)), 0
     );
 
-    await createExternalMutation.mutateAsync({
+    const dto = {
       rice_crop_id: riceCropId,
       purchase_date: values.purchase_date.format('YYYY-MM-DD'),
       supplier_name: values.supplier_name,
       total_amount: total,
+      paid_amount: values.payment_status === 'paid' ? total : (values.paid_amount || 0),
+      payment_status: values.payment_status,
       notes: values.notes,
       items: values.items.map((item: any) => ({
         product_name: item.product_name,
@@ -162,10 +208,24 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
         total_price: Number(item.quantity) * Number(item.unit_price),
         notes: item.notes,
       })),
-    });
+    };
 
-    setIsExternalModalVisible(false);
-    externalForm.resetFields();
+    try {
+      if (isEditMode && editingRecord) {
+        const id = (editingRecord.id as string).replace('ext-', '');
+        await updateExternalMutation.mutateAsync({
+          id: parseInt(id),
+          dto,
+        });
+      } else {
+        await createExternalMutation.mutateAsync(dto);
+      }
+
+      setIsExternalModalVisible(false);
+      externalForm.resetFields();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
   };
 
   // Cấu hình columns cho bảng
@@ -263,6 +323,8 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
           draft: { text: 'Nháp', color: 'default' },
           confirmed: { text: 'Đã xác nhận', color: 'blue' },
           paid: { text: 'Đã thanh toán', color: 'green' },
+          partial: { text: 'Thanh toán một phần', color: 'orange' },
+          pending: { text: 'Chưa thanh toán', color: 'red' },
           cancelled: { text: 'Đã hủy', color: 'red' },
         };
         const config = statusConfig[status] || { text: status, color: 'default' };
@@ -272,20 +334,36 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
     {
       title: 'Hành động',
       key: 'action',
-      width: 80,
-      render: (_, record) => (
-        record.source === 'external' ? (
-          <Button
-            type="text"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDeleteExternal(record.id as string)}
-          >
-            Xóa
-          </Button>
-        ) : null
-      ),
+      width: 150,
+      render: (_, record) => {
+        const canEdit = isAdmin || record.created_by === currentUserId;
+        
+        return record.source === 'external' ? (
+          <Space>
+            {canEdit && (
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined style={{ color: '#1890ff' }} />}
+                onClick={() => handleEditExternal(record)}
+              >
+                Sửa
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteExternal(record)}
+              >
+                Xóa
+              </Button>
+            )}
+          </Space>
+        ) : null;
+      },
     },
   ];
 
@@ -351,11 +429,11 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
         title={<Title level={5}>Danh sách hóa đơn mua hàng</Title>}
         extra={
           <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={handleCreateExternal}
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreateExternal}
           >
-            Tự nhập hóa đơn
+              Tự nhập hóa đơn
           </Button>
         }
       >
@@ -406,7 +484,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
           showSearch
           optionFilterProp="children"
         >
-          {availableInvoices.map((invoice) => (
+          {availableInvoices.map((invoice: any) => (
             <Select.Option key={invoice.id} value={invoice.id}>
               <Space>
                 <Text strong>{invoice.code}</Text>
@@ -429,16 +507,17 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
 
       {/* Modal tự nhập hóa đơn */}
       <Modal
-        title="Tự nhập hóa đơn mua hàng"
+        title={isEditMode ? "Chỉnh sửa hóa đơn" : "Tự nhập hóa đơn mua hàng"}
         open={isExternalModalVisible}
         onCancel={() => {
           setIsExternalModalVisible(false);
+          setEditingRecord(null);
           externalForm.resetFields();
         }}
         onOk={() => externalForm.submit()}
         width={900}
-        confirmLoading={createExternalMutation.isPending}
-        okText="Lưu hóa đơn"
+        confirmLoading={createExternalMutation.isPending || updateExternalMutation.isPending}
+        okText={isEditMode ? "Cập nhật" : "Lưu hóa đơn"}
         cancelText="Hủy"
       >
         <Form
@@ -466,6 +545,48 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
                   style={{ width: '100%' }} 
                   placeholder="Chọn ngày mua"
                 />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="payment_status"
+                label="Trạng thái thanh toán"
+                initialValue="paid"
+                rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
+              >
+                <Select>
+                  <Select.Option value="paid">Đã thanh toán</Select.Option>
+                  <Select.Option value="partial">Thanh toán một phần</Select.Option>
+                  <Select.Option value="pending">Chưa thanh toán</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.payment_status !== currentValues.payment_status}>
+                {({ getFieldValue }) => {
+                  const status = getFieldValue('payment_status');
+                  if (status === 'partial') {
+                    return (
+                      <Form.Item
+                        name="paid_amount"
+                        label="Số tiền đã trả"
+                        rules={[{ required: true, message: 'Vui lòng nhập số tiền đã trả' }]}
+                      >
+                        <InputNumber
+                          style={{ width: '100%' }}
+                          min={0}
+                          formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          placeholder="0"
+                          addonAfter="₫"
+                        />
+                      </Form.Item>
+                    );
+                  }
+                  return null;
+                }}
               </Form.Item>
             </Col>
           </Row>

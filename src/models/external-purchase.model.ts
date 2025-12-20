@@ -9,6 +9,8 @@ export interface ExternalPurchase {
   supplier_name: string;
   total_amount: number;
   notes?: string;
+  paid_amount: number;
+  payment_status: string;
   created_by: number;
   created_at: string;
   updated_at: string;
@@ -31,6 +33,8 @@ export interface CreateExternalPurchaseDto {
   supplier_name: string;
   total_amount: number;
   notes?: string;
+  paid_amount?: number;
+  payment_status?: string;
   items: CreateExternalPurchaseItemDto[];
 }
 
@@ -58,4 +62,5 @@ export interface MergedPurchase {
   source: 'system' | 'external';
   items: any[];
   notes?: string | undefined;
+  created_by?: number;
 }
