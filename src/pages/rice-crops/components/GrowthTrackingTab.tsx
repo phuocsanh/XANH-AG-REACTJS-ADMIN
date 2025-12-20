@@ -9,11 +9,11 @@ import {
   Input,
   InputNumber,
   Select,
-  DatePicker,
-  message,
   Row,
   Col,
+  message,
 } from 'antd';
+import { DatePicker } from '@/components/common';
 import {
   PlusOutlined,
   EditOutlined,
@@ -36,7 +36,8 @@ const growthStageLabels: Record<GrowthStage, string> = {
   seedling: 'Giai đoạn mạ',
   tillering: 'Đẻ nhánh',
   panicle: 'Làm đòng',
-  heading: 'Trỗ bông',
+  heading: 'Trổ bông',
+  grain_filling: 'Vô gạo',
   ripening: 'Chín',
   harvested: 'Đã thu hoạch',
 };
@@ -46,6 +47,7 @@ const growthStageColors: Record<GrowthStage, string> = {
   tillering: 'cyan',
   panicle: 'blue',
   heading: 'purple',
+  grain_filling: 'geekblue',
   ripening: 'orange',
   harvested: 'gold',
 };
@@ -206,6 +208,8 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
         onOk={handleSubmit}
         onCancel={() => setIsModalVisible(false)}
         width={600}
+        okText={editingItem ? 'Cập nhật' : 'Lưu'}
+        cancelText="Hủy"
       >
         <Form form={form} layout="vertical">
           <Row gutter={16}>
@@ -215,7 +219,7 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
                 label="Ngày kiểm tra"
                 rules={[{ required: true, message: 'Vui lòng chọn ngày' }]}
               >
-                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={12}>

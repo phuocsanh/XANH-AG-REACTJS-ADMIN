@@ -46,7 +46,6 @@ import BannedPesticidesPage from "./pages/banned-pesticides"
 // Thêm import cho trang Quản Lý Canh Tác
 import RiceCropsPage from "./pages/rice-crops"
 
-import CostItemCategoriesPage from './pages/rice-crops/categories'
 // Thêm import cho trang so sánh sản phẩm AI
 import ProductComparisonPage from "./pages/product-comparison"
 // Thêm import cho trang test upload
@@ -69,6 +68,7 @@ import ReturnsPage from "./pages/inventory/returns"
 import AdjustmentsPage from "./pages/inventory/adjustments"
 import OperatingCostCategoriesPage from './pages/operating-costs/categories'
 import OperatingCostsPage from "./pages/operating-costs"
+import CostItemCategoriesPage from './pages/cost-item-categories'
 import DosageCalculator from "./pages/calculator/dosage-calculator"
 // Thêm import cho trang dự báo thời tiết
 import WeatherForecastPage from "./pages/weather-forecast"
@@ -624,6 +624,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="OPERATING_COST_VIEW">
                           <OperatingCostCategoriesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/cost-item-categories'
+                      element={
+                        <ProtectedRoute requiredPermission="COST_ITEM_MANAGE">
+                          <CostItemCategoriesPage />
                         </ProtectedRoute>
                       }
                     />

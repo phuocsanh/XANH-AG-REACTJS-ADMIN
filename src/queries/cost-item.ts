@@ -7,9 +7,19 @@ import api from '@/utils/api';
 import type {
   CostItem,
   CreateCostItemDto,
-  CostItemFilters,
-  CostSummary,
-} from '@/types/rice-farming.types';
+} from '@/models/cost-item';
+
+// Temporary types (nếu chưa có trong model)
+interface CostItemFilters {
+  rice_crop_id?: number;
+  category?: string;
+}
+
+interface CostSummary {
+  total_cost: number;
+  count: number;
+}
+
 
 // ==================== QUERY KEYS ====================
 
@@ -56,7 +66,8 @@ export const useCostSummary = (cropId: number) => {
   return useQuery({
     queryKey: costItemKeys.summary(cropId),
     queryFn: async () => {
-      return await api.get<CostSummary>(`/cost-items/crop/${cropId}/summary`);
+      const response = await api.get<any>(`/cost-items/crop/${cropId}/summary`);
+      return response.data || response;
     },
     enabled: !!cropId,
   });
@@ -72,7 +83,7 @@ export const useCreateCostItem = () => {
 
   return useMutation({
     mutationFn: async (dto: CreateCostItemDto) => {
-      return await api.postRaw<CostItem>('/cost-items', dto);
+      return await api.postRaw<CostItem>('/cost-items', dto as any);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: costItemKeys.lists() });

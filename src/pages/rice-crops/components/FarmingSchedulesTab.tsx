@@ -8,11 +8,11 @@ import {
   Form,
   Input,
   Select,
-  DatePicker,
-  message,
   Row,
   Col,
+  message,
 } from 'antd';
+import { DatePicker } from '@/components/common';
 import {
   PlusOutlined,
   EditOutlined,
@@ -27,27 +27,12 @@ import {
   useDeleteFarmingSchedule,
   useCompleteFarmingSchedule,
 } from '@/queries/farming-schedule';
-import { FarmingSchedule, CreateFarmingScheduleDto, ScheduleType, ScheduleStatus } from '@/types/rice-farming.types';
+import { FarmingSchedule, CreateFarmingScheduleDto, ScheduleStatus } from '@/types/rice-farming.types';
 
 interface FarmingSchedulesTabProps {
   riceCropId: number;
 }
 
-const scheduleTypeLabels: Record<ScheduleType, string> = {
-  sowing: 'Gieo sạ',
-  fertilizing: 'Bón phân',
-  spraying: 'Phun thuốc',
-  harvesting: 'Thu hoạch',
-  other: 'Khác',
-};
-
-const scheduleTypeColors: Record<ScheduleType, string> = {
-  sowing: 'green',
-  fertilizing: 'cyan',
-  spraying: 'red',
-  harvesting: 'gold',
-  other: 'default',
-};
 
 const scheduleStatusLabels: Record<ScheduleStatus, string> = {
   pending: 'Chờ thực hiện',
@@ -87,6 +72,8 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
     form.setFieldsValue({
       ...item,
       scheduled_date: item.scheduled_date ? dayjs(item.scheduled_date) : null,
+      activity_name: item.activity_name,
+      instructions: item.instructions,
     });
     setIsModalVisible(true);
   };
@@ -161,22 +148,12 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
     },
     {
       title: 'Công việc',
-      dataIndex: 'title',
-      key: 'title',
+      dataIndex: 'activity_name',
+      key: 'activity_name',
       render: (text: string, record: FarmingSchedule) => (
         <span className={record.status === 'completed' ? 'line-through text-gray-400' : 'font-medium'}>
           {text}
         </span>
-      ),
-    },
-    {
-      title: 'Loại',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: ScheduleType) => (
-        <Tag color={scheduleTypeColors[type]}>
-          {scheduleTypeLabels[type]}
-        </Tag>
       ),
     },
     {
@@ -239,7 +216,7 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
 
       <Table
         columns={columns}
-        dataSource={schedules}
+        dataSource={Array.isArray(schedules) ? schedules : []}
         rowKey="id"
         loading={isLoading}
         pagination={{ pageSize: 10 }}
@@ -251,10 +228,12 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
         onOk={handleSubmit}
         onCancel={() => setIsModalVisible(false)}
         width={600}
+        okText={editingItem ? 'Cập nhật' : 'Lưu'}
+        cancelText="Hủy"
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            name="title"
+            name="activity_name"
             label="Tên công việc"
             rules={[{ required: true, message: 'Vui lòng nhập tên công việc' }]}
           >
@@ -262,28 +241,13 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
           </Form.Item>
 
           <Row gutter={16} style={{ display: 'flex', flexWrap: 'wrap' }}>
-            <Col span={12}>
-              <Form.Item
-                name="type"
-                label="Loại công việc"
-                rules={[{ required: true, message: 'Vui lòng chọn loại công việc' }]}
-              >
-                <Select>
-                  {Object.entries(scheduleTypeLabels).map(([key, label]) => (
-                    <Select.Option key={key} value={key}>
-                      {label}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="scheduled_date"
                 label="Ngày dự kiến"
                 rules={[{ required: true, message: 'Vui lòng chọn ngày dự kiến' }]}
               >
-                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
@@ -306,7 +270,7 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
             </Col>
           </Row>
 
-          <Form.Item name="description" label="Mô tả chi tiết">
+          <Form.Item name="instructions" label="Mô tả chi tiết">
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>

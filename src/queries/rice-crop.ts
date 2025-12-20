@@ -66,7 +66,9 @@ export const useRiceCrop = (id: number) => {
   return useQuery({
     queryKey: riceCropKeys.detail(id),
     queryFn: async () => {
-      return await api.get<RiceCrop>(`/rice-crops/${id}`);
+      const response = await api.get<any>(`/rice-crops/${id}`);
+      // Backend trả về { data: { data: {...} } }, cần unwrap
+      return response.data || response;
     },
     enabled: !!id,
   });
@@ -113,8 +115,8 @@ export const useUpdateRiceCrop = () => {
     mutationFn: async ({ id, dto }: { id: number; dto: UpdateRiceCropDto }) => {
       return await api.patchRaw<RiceCrop>(`/rice-crops/${id}`, dto);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: riceCropKeys.detail(data.id) });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: riceCropKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: riceCropKeys.lists() });
     },
   });
@@ -130,8 +132,8 @@ export const useUpdateGrowthStage = () => {
     mutationFn: async ({ id, dto }: { id: number; dto: UpdateGrowthStageDto }) => {
       return await api.patchRaw<RiceCrop>(`/rice-crops/${id}/growth-stage`, dto);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: riceCropKeys.detail(data.id) });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: riceCropKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: riceCropKeys.lists() });
     },
   });
@@ -147,8 +149,8 @@ export const useUpdateStatus = () => {
     mutationFn: async ({ id, dto }: { id: number; dto: UpdateStatusDto }) => {
       return await api.patchRaw<RiceCrop>(`/rice-crops/${id}/status`, dto);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: riceCropKeys.detail(data.id) });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: riceCropKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: riceCropKeys.lists() });
     },
   });

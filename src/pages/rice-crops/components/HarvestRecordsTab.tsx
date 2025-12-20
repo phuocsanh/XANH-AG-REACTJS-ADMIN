@@ -7,13 +7,13 @@ import {
   Form,
   Input,
   InputNumber,
-  DatePicker,
+  Row,
+  Col,
   message,
   Card,
   Statistic,
-  Row,
-  Col,
 } from 'antd';
+import { DatePicker } from '@/components/common';
 import {
   PlusOutlined,
   EditOutlined,
@@ -221,6 +221,8 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
         onOk={handleSubmit}
         onCancel={() => setIsModalVisible(false)}
         width={600}
+        okText={editingItem ? 'Cập nhật' : 'Lưu'}
+        cancelText="Hủy"
       >
         <Form form={form} layout="vertical">
           <Row gutter={16}>
@@ -230,7 +232,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
                 label="Ngày thu hoạch"
                 rules={[{ required: true, message: 'Vui lòng chọn ngày' }]}
               >
-                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={12}>

@@ -14,9 +14,9 @@ import {
   Form,
   Select,
   InputNumber,
-  DatePicker,
   message,
 } from 'antd';
+import { DatePicker } from '@/components/common';
 import {
   PlusOutlined,
   EditOutlined,
@@ -54,6 +54,7 @@ const growthStageColors: Record<GrowthStage, string> = {
   tillering: 'cyan',
   panicle: 'blue',
   heading: 'purple',
+  grain_filling: 'geekblue',
   ripening: 'orange',
   harvested: 'gold',
 };
@@ -70,7 +71,8 @@ const growthStageLabels: Record<GrowthStage, string> = {
   seedling: 'Giai đoạn mạ',
   tillering: 'Đẻ nhánh',
   panicle: 'Làm đòng',
-  heading: 'Trỗ bông',
+  heading: 'Trổ bông',
+  grain_filling: 'Vô gạo',
   ripening: 'Chín',
   harvested: 'Đã thu hoạch',
 };
@@ -105,7 +107,7 @@ const RiceCropsList: React.FC = () => {
                 ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
                 : undefined
             }
-            onChange={(dates) => {
+            onChange={(dates: any) => {
                 if (dates && dates[0] && dates[1]) {
                     setSelectedKeys([
                         dates[0].startOf('day').toISOString(), 
@@ -463,11 +465,6 @@ const RiceCropsList: React.FC = () => {
             title="Xem chi tiết"
           />
           <Button
-            icon={<EditOutlined />}
-            onClick={() => handleEditCrop(record)}
-            title="Chỉnh sửa"
-          />
-          <Button
             danger
             icon={<DeleteOutlined />}
             title="Xóa"
@@ -635,15 +632,15 @@ const RiceCropsList: React.FC = () => {
             </Form.Item>
 
             <Form.Item label="Ngày gieo mạ" name="sowing_date">
-              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+              <DatePicker style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item label="Ngày cấy" name="transplanting_date">
-              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+              <DatePicker style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item label="Ngày thu hoạch dự kiến" name="expected_harvest_date">
-              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+              <DatePicker style={{ width: '100%' }} />
             </Form.Item>
           </div>
 

@@ -10,6 +10,7 @@ export enum GrowthStage {
   TILLERING = 'tillering',    // Giai đoạn đẻ nhánh
   PANICLE = 'panicle',        // Giai đoạn làm đòng
   HEADING = 'heading',        // Giai đoạn trỗ bông
+  GRAIN_FILLING = 'grain_filling',  // Giai đoạn vô gạo
   RIPENING = 'ripening',      // Giai đoạn chín
   HARVESTED = 'harvested',    // Đã thu hoạch
 }
@@ -80,14 +81,6 @@ export enum ScheduleStatus {
   OVERDUE = 'overdue',      // Quá hạn
 }
 
-/** Loại công việc trong lịch canh tác */
-export enum ScheduleType {
-  SOWING = 'sowing',           // Gieo sạ
-  FERTILIZING = 'fertilizing', // Bón phân
-  SPRAYING = 'spraying',       // Phun thuốc
-  HARVESTING = 'harvesting',   // Thu hoạch
-  OTHER = 'other',             // Khác
-}
 
 // ==================== INTERFACES ====================
 
@@ -347,12 +340,12 @@ export interface CreateHarvestRecordDto {
 /** DTO tạo lịch canh tác */
 export interface CreateFarmingScheduleDto {
   rice_crop_id: number;
-  type: ScheduleType;  // Đổi từ activity_type
-  title: string;       // Đổi từ activity_name
+  activity_type?: ActivityType; 
+  activity_name: string;      
   scheduled_date: string;
   actual_date?: string;
   status?: ScheduleStatus;
-  description?: string;
+  instructions?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
@@ -423,6 +416,7 @@ export const getGrowthStageText = (stage: any): string => {
     'tillering': 'Đẻ nhánh',
     'panicle': 'Làm đòng',
     'heading': 'Trổ bông',
+    'grain_filling': 'Vô gạo',
     'ripening': 'Chín',
     'harvested': 'Đã thu hoạch',
   };

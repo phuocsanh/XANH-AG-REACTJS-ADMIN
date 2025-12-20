@@ -25,7 +25,8 @@ export const useApplicationRecords = (cropId: number) => {
   return useQuery({
     queryKey: applicationRecordKeys.byCrop(cropId),
     queryFn: async () => {
-      return await api.get<ApplicationRecord[]>(`/application-records/crop/${cropId}`);
+      const response = await api.get<any>(`/application-records/crop/${cropId}`);
+      return response.data || response;
     },
     enabled: !!cropId,
   });

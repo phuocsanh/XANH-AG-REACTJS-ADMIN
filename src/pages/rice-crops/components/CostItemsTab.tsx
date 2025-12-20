@@ -10,7 +10,8 @@ import {
   Row,
   Col,
   Statistic,
-  Popconfirm
+  Popconfirm,
+  Empty
 } from 'antd';
 import {
   PlusOutlined,
@@ -19,93 +20,102 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import {
-  useOperatingCosts,
-  useDeleteOperatingCost,
-} from '@/queries/operating-cost';
-import { useRiceCrop } from '@/queries/rice-crop';
-import { OperatingCost } from '@/types/operating-cost.types';
-import CreateOperatingCostModal from '@/pages/operating-costs/create-modal';
+import { useCostItems, useDeleteCostItem } from '@/queries/cost-item';
+import type { CostItem } from '@/models/cost-item';
+import { formatCurrency } from '@/utils/format';
+import CreateCostItemModal from './CreateCostItemModal';
 
 interface CostItemsTabProps {
   riceCropId: number;
 }
 
+/**
+ * Tab hiển thị chi phí canh tác của ruộng lúa
+ * (Giống, phân bón, thuốc, nhân công...)
+ */
 const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState<OperatingCost | null>(null);
+  const [editingItem, setEditingItem] = useState<CostItem | null>(null);
 
-  // Get Rice Crop details (for season_id)
-  const { data: riceCrop } = useRiceCrop(riceCropId);
-
-  // Queries - Filter by rice_crop_id
-  const { data: costsData, isLoading } = useOperatingCosts({
-    limit: 100, // Load all for this crop (assumption)
-    filters: {
-        rice_crop_id: riceCropId 
-    }
+  // Lấy danh sách chi phí canh tác
+  const { data: costItems, isLoading } = useCostItems({
+    rice_crop_id: riceCropId
   });
 
-  const deleteMutation = useDeleteOperatingCost();
+  const deleteMutation = useDeleteCostItem();
 
   const handleAdd = () => {
     setEditingItem(null);
     setIsModalVisible(true);
   };
 
-  const handleEdit = (item: OperatingCost) => {
+  const handleEdit = (item: CostItem) => {
     setEditingItem(item);
     setIsModalVisible(true);
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteMutation.mutateAsync(id);
-      message.success('Đã xóa chi phí');
+      await deleteMutation.mutateAsync({ id, cropId: riceCropId });
+      message.success('Đã xóa chi phí canh tác');
     } catch (error) {
-      message.error('Có lỗi xảy ra khi xóa chi phí');
+      message.error('Có lỗi xảy ra khi xóa');
     }
   };
 
-  // Calculate total
-  const totalCost = costsData?.data?.reduce((sum, item) => sum + Number(item.value), 0) || 0;
+  const items = costItems || [];
+  const totalCost = items.reduce((sum, item) => sum + Number(item.total_cost || 0), 0);
+
+  // Màu sắc cho loại chi phí
+  const categoryColors: Record<string, string> = {
+    seed: 'green',
+    fertilizer: 'cyan',
+    pesticide: 'red',
+    labor: 'orange',
+    machinery: 'blue',
+    irrigation: 'purple',
+    other: 'default'
+  };
+
+  const categoryLabels: Record<string, string> = {
+    seed: 'Giống',
+    fertilizer: 'Phân bón',
+    pesticide: 'Thuốc BVTV',
+    labor: 'Nhân công',
+    machinery: 'Máy móc',
+    irrigation: 'Tưới tiêu',
+    other: 'Khác'
+  };
 
   const columns = [
     {
       title: 'Tên chi phí',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'item_name',
+      key: 'item_name',
       render: (text: string) => <span className="font-medium">{text}</span>
     },
     {
-      title: 'Số tiền',
-      dataIndex: 'value',
-      key: 'value',
-      render: (val: any) => <span className="text-red-600 font-bold">{Number(val).toLocaleString('vi-VN')} đ</span>,
-    },
-    {
       title: 'Loại',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: string) => {
-          const colors: Record<string, string> = {
-              fertilizer: 'green',
-              pesticide: 'red',
-              labor: 'orange',
-              machinery: 'blue',
-              fuel: 'purple',
-              other: 'default'
-          };
-          const labels: Record<string, string> = {
-              fertilizer: 'Phân bón',
-              pesticide: 'Thuốc BVTV',
-              labor: 'Nhân công',
-              machinery: 'Máy móc',
-              fuel: 'Nhiên liệu',
-              other: 'Khác'
-          };
-          return <Tag color={colors[type] || 'default'}>{labels[type] || type}</Tag>;
-      }
+      dataIndex: 'category',
+      key: 'category',
+      render: (category: string) => (
+        <Tag color={categoryColors[category] || 'default'}>
+          {categoryLabels[category] || category}
+        </Tag>
+      )
+    },
+
+
+    {
+      title: 'Tổng tiền',
+      dataIndex: 'total_cost',
+      key: 'total_cost',
+      align: 'right' as const,
+      render: (val: number) => (
+        <span className="text-red-600 font-bold">
+          {formatCurrency(val)}
+        </span>
+      )
     },
     {
       title: 'Ngày chi',
@@ -114,15 +124,16 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
       render: (date: string) => date ? dayjs(date).format('DD/MM/YYYY') : '-',
     },
     {
-        title: 'Ghi chú',
-        dataIndex: 'description',
-        key: 'description',
-        ellipsis: true,
+      title: 'Ghi chú',
+      dataIndex: 'notes',
+      key: 'notes',
+      ellipsis: true,
     },
     {
       title: 'Hành động',
       key: 'action',
-      render: (_: any, record: OperatingCost) => (
+      width: 120,
+      render: (_: any, record: CostItem) => (
         <Space size="small">
           <Button
             type="text"
@@ -137,10 +148,10 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
             cancelText="Hủy"
             okButtonProps={{ danger: true }}
           >
-             <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
             />
           </Popconfirm>
         </Space>
@@ -152,10 +163,10 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
     <div>
       <div className="mb-4">
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} md={8}>
             <Card bodyStyle={{ padding: '12px 24px' }}>
               <Statistic
-                title="Tổng chi phí"
+                title="Tổng chi phí canh tác"
                 value={totalCost}
                 precision={0}
                 valueStyle={{ color: '#cf1322', fontWeight: 'bold' }}
@@ -164,11 +175,22 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
               />
             </Card>
           </Col>
-          <Col span={16} className="flex justify-end items-end">
+          <Col xs={24} sm={12} md={8}>
+            <Card bodyStyle={{ padding: '12px 24px' }}>
+              <Statistic
+                title="Số khoản chi"
+                value={items.length}
+                valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
+                suffix="khoản"
+              />
+            </Card>
+          </Col>
+          <Col xs={24} md={8} className="flex justify-end items-end">
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleAdd}
+              style={{ marginTop: 16 }}
             >
               Thêm chi phí
             </Button>
@@ -178,20 +200,29 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
 
       <Table
         columns={columns}
-        dataSource={costsData?.data || []}
+        dataSource={items}
         rowKey="id"
         loading={isLoading}
-        pagination={{ pageSize: 10 }}
+        pagination={{ 
+          pageSize: 10,
+          showTotal: (total) => `Tổng ${total} khoản chi`
+        }}
+        locale={{
+          emptyText: (
+            <Empty
+              description="Chưa có chi phí canh tác nào"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          )
+        }}
+        scroll={{ x: 1000 }}
       />
 
-      <CreateOperatingCostModal
+      <CreateCostItemModal
         visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         initialData={editingItem}
-        defaultValues={{
-            rice_crop_id: riceCropId,
-            season_id: riceCrop?.season_id // Pre-fill season from current rice crop
-        }}
+        riceCropId={riceCropId}
       />
     </div>
   );

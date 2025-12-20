@@ -7,6 +7,9 @@ export interface CostItemCategory {
   name: string;
   code?: string;
   description?: string;
+  icon?: string;
+  color?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }

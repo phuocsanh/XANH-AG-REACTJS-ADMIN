@@ -24,17 +24,21 @@ export const farmingScheduleKeys = {
 
 /**
  * Lấy danh sách lịch canh tác
+ * Nếu có rice_crop_id thì dùng endpoint /crop/:id
  */
 export const useFarmingSchedules = (filters?: FarmingScheduleFilters) => {
   return useQuery({
     queryKey: farmingScheduleKeys.list(filters || {}),
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.rice_crop_id) params.append('rice_crop_id', filters.rice_crop_id.toString());
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.activity_type) params.append('activity_type', filters.activity_type);
-
-      return await api.get<FarmingSchedule[]>(`/farming-schedules?${params.toString()}`);
+      // Nếu có rice_crop_id, dùng endpoint crop
+      if (filters?.rice_crop_id) {
+        const response = await api.get<any>(`/farming-schedules/crop/${filters.rice_crop_id}`);
+        return response.data || response;
+      }
+      
+      // Fallback: lấy lịch sắp tới
+      const response = await api.get<any>(`/farming-schedules/upcoming?days=30`);
+      return response.data || response;
     },
   });
 };
@@ -46,7 +50,8 @@ export const useUpcomingSchedules = (days: number = 7) => {
   return useQuery({
     queryKey: farmingScheduleKeys.upcoming(days),
     queryFn: async () => {
-      return await api.get<FarmingSchedule[]>(`/farming-schedules/upcoming?days=${days}`);
+      const response = await api.get<any>(`/farming-schedules/upcoming?days=${days}`);
+      return response.data || response;
     },
   });
 };
@@ -58,7 +63,8 @@ export const useCropSchedules = (cropId: number) => {
   return useQuery({
     queryKey: farmingScheduleKeys.byCrop(cropId),
     queryFn: async () => {
-      return await api.get<FarmingSchedule[]>(`/farming-schedules/crop/${cropId}`);
+      const response = await api.get<any>(`/farming-schedules/crop/${cropId}`);
+      return response.data || response;
     },
     enabled: !!cropId,
   });
