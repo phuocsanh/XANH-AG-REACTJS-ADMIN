@@ -27,7 +27,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
-import { ConfirmModal } from "@/components/common"
+import { ConfirmModal, NumberInput, Field } from "@/components/common"
 import type { AreaOfEachPlotOfLand } from "@/types/rice-farming.types"
 
 // Extend AreaOfEachPlotOfLand interface để tương thích với DataTable
@@ -324,7 +324,7 @@ const AreasList: React.FC = () => {
             name='name'
             rules={[{ required: true, message: "Vui lòng nhập tên" }]}
           >
-            <Input placeholder='VD: Lô A1' />
+            <Field placeholder='VD: Lô A1' />
           </Form.Item>
 
 
@@ -334,10 +334,9 @@ const AreasList: React.FC = () => {
             name='acreage'
             rules={[{ required: true, message: "Vui lòng nhập diện tích" }]}
           >
-            <InputNumber 
+            <NumberInput 
               className='w-full' 
               min={0} 
-              step={0.01}
               placeholder='VD: 1000'
             />
           </Form.Item>
