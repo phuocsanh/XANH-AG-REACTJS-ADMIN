@@ -12,6 +12,7 @@ import {
   Row,
   Col,
   message,
+  Popconfirm,
 } from 'antd';
 import { DatePicker } from '@/components/common';
 import {
@@ -74,36 +75,36 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
     setEditingItem(item);
     form.setFieldsValue({
       ...item,
-      check_date: item.check_date ? dayjs(item.check_date) : null,
+      check_date: item.tracking_date ? dayjs(item.tracking_date) : null,
+      stage: item.growth_stage,
+      height_cm: item.plant_height,
+      pest_status: item.pest_disease_detected,
     });
     setIsModalVisible(true);
   };
 
-  const handleDelete = (id: number) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa bản ghi này?',
-      okText: 'Xóa',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync({ id, cropId: riceCropId });
-          message.success('Xóa bản ghi thành công');
-        } catch (error) {
-          message.error('Có lỗi xảy ra khi xóa bản ghi');
-        }
-      },
-    });
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync({ id, cropId: riceCropId });
+      message.success('Xóa bản ghi thành công');
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi xóa bản ghi');
+    }
   };
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      
       const dto: CreateGrowthTrackingDto = {
-        ...values,
         rice_crop_id: riceCropId,
-        check_date: values.check_date?.format('YYYY-MM-DD'),
+        tracking_date: values.check_date?.format('YYYY-MM-DD'),
+        growth_stage: values.stage,
+        plant_height: values.height_cm,
+        leaf_color: values.leaf_color,
+        pest_disease_detected: values.pest_status,
+        photo_urls: values.images ? [values.images] : [], // Tạm thời để mảng 1 phần tử
+        notes: values.notes,
       };
 
       if (editingItem) {
@@ -125,15 +126,15 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
   const columns = [
     {
       title: 'Ngày kiểm tra',
-      dataIndex: 'check_date',
-      key: 'check_date',
+      dataIndex: 'tracking_date',
+      key: 'tracking_date',
       render: (date: string) => date ? dayjs(date).format('DD/MM/YYYY') : '-',
-      sorter: (a: GrowthTracking, b: GrowthTracking) => dayjs(a.check_date).unix() - dayjs(b.check_date).unix(),
+      sorter: (a: GrowthTracking, b: GrowthTracking) => dayjs(a.tracking_date).unix() - dayjs(b.tracking_date).unix(),
     },
     {
       title: 'Giai đoạn',
-      dataIndex: 'stage',
-      key: 'stage',
+      dataIndex: 'growth_stage',
+      key: 'growth_stage',
       render: (stage: GrowthStage) => (
         <Tag color={growthStageColors[stage]}>
           {growthStageLabels[stage]}
@@ -142,8 +143,8 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
     },
     {
       title: 'Chiều cao (cm)',
-      dataIndex: 'height_cm',
-      key: 'height_cm',
+      dataIndex: 'plant_height',
+      key: 'plant_height',
       render: (val: number) => val ? `${val} cm` : '-',
     },
     {
@@ -153,8 +154,8 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
     },
     {
       title: 'Tình trạng sâu bệnh',
-      dataIndex: 'pest_status',
-      key: 'pest_status',
+      dataIndex: 'pest_disease_detected',
+      key: 'pest_disease_detected',
       render: (text: string) => (
         <span className={text && text !== 'Không có' ? 'text-red-600' : 'text-green-600'}>
           {text || 'Không có'}
@@ -175,16 +176,25 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
               handleEdit(record);
             }}
           />
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            className="flex items-center justify-center w-10 h-10"
-            onClick={(e) => {
-              e.stopPropagation();
+          <Popconfirm
+            title="Xóa bản ghi"
+            description="Bạn có chắc chắn muốn xóa bản ghi này?"
+            onConfirm={(e) => {
+              e?.stopPropagation();
               handleDelete(record.id);
             }}
-          />
+            onCancel={(e) => e?.stopPropagation()}
+            okText="Xóa"
+            cancelText="Hủy"
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              className="flex items-center justify-center w-10 h-10"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popconfirm>
         </Space>
       ),
     },

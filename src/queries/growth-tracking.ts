@@ -44,8 +44,8 @@ export const useCreateGrowthTracking = () => {
     mutationFn: async (dto: CreateGrowthTrackingDto) => {
       return await api.postRaw<GrowthTracking>('/growth-trackings', dto);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: growthTrackingKeys.byCrop(data.rice_crop_id) });
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: growthTrackingKeys.byCrop(variables.rice_crop_id) });
     },
   });
 };
@@ -60,8 +60,12 @@ export const useUpdateGrowthTracking = () => {
     mutationFn: async ({ id, dto }: { id: number; dto: Partial<CreateGrowthTrackingDto> }) => {
       return await api.patchRaw<GrowthTracking>(`/growth-trackings/${id}`, dto);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: growthTrackingKeys.byCrop(data.rice_crop_id) });
+    onSuccess: (data, variables) => {
+      // Sử dụng variables.dto.rice_crop_id nếu có, nếu không thì dùng data.rice_crop_id (fallback)
+      const cropId = variables.dto.rice_crop_id || data.rice_crop_id;
+      if (cropId) {
+        queryClient.invalidateQueries({ queryKey: growthTrackingKeys.byCrop(cropId) });
+      }
     },
   });
 };

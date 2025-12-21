@@ -189,13 +189,13 @@ export interface ApplicationProduct {
 export interface GrowthTracking {
   id: number;
   rice_crop_id: number;
-  check_date: string; // Đổi từ tracking_date sang check_date
-  stage: GrowthStage; // Đổi từ growth_stage sang stage
-  height_cm?: number; // Đổi từ plant_height sang height_cm
+  tracking_date: string;
+  growth_stage: GrowthStage;
+  plant_height?: number;
   leaf_color?: string;
-  pest_status?: string; // Đổi từ pest_disease_detected
+  pest_disease_detected?: string;
   notes?: string;
-  images?: string[]; // Đổi từ photo_urls
+  photo_urls?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -340,7 +340,6 @@ export interface CreateGrowthTrackingDto {
   plant_height?: number;
   tiller_count?: number;
   leaf_color?: string;
-  health_status: HealthStatus;
   pest_disease_detected?: string;
   severity?: Severity;
   photo_urls?: string[];
