@@ -339,27 +339,29 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
         const canEdit = isAdmin || record.created_by === currentUserId;
         
         return record.source === 'external' ? (
-          <Space>
+          <Space size="middle">
             {canEdit && (
               <Button
                 type="text"
-                size="small"
                 icon={<EditOutlined style={{ color: '#1890ff' }} />}
-                onClick={() => handleEditExternal(record)}
-              >
-                Sửa
-              </Button>
+                className="flex items-center justify-center w-10 h-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditExternal(record);
+                }}
+              />
             )}
             {canEdit && (
               <Button
                 type="text"
                 danger
-                size="small"
                 icon={<DeleteOutlined />}
-                onClick={() => handleDeleteExternal(record)}
-              >
-                Xóa
-              </Button>
+                className="flex items-center justify-center w-10 h-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteExternal(record);
+                }}
+              />
             )}
           </Space>
         ) : null;
@@ -378,47 +380,49 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   return (
     <div>
       {/* Thống kê tổng quan */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+      <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '8px 10px' }} className="h-full shadow-none border-gray-100">
             <Statistic
-              title="Tổng hóa đơn"
+              title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Tổng hóa đơn</span>}
               value={purchases.length}
-              suffix="hóa đơn"
-              valueStyle={{ color: '#1890ff' }}
+              suffix={<span className="text-[10px] ml-0.5 text-gray-400">HĐ</span>}
+              valueStyle={{ color: '#1890ff', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.2' }}
             />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
-              <ShopOutlined /> {systemCount} hệ thống • <FileTextOutlined /> {externalCount} tự nhập
+            <div className="text-[9px] text-gray-400 mt-0.5 flex gap-1">
+              <span>{systemCount} HT</span>
+              <span>•</span>
+              <span>{externalCount} TN</span>
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '8px 10px' }} className="h-full shadow-none border-gray-100 flex flex-col justify-center">
             <Statistic
-              title="Tổng chi phí"
+              title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Tổng chi phí</span>}
               value={totalAmount}
               formatter={(value) => formatCurrency(Number(value))}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#52c41a', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.2' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '8px 10px' }} className="h-full shadow-none border-gray-100 flex flex-col justify-center">
             <Statistic
-              title="Đã thanh toán"
+              title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Đã thanh toán</span>}
               value={totalPaid}
               formatter={(value) => formatCurrency(Number(value))}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#1890ff', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.2' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
+        <Col xs={12} sm={12} md={6}>
+          <Card bodyStyle={{ padding: '8px 10px' }} className="h-full shadow-none border-gray-100 flex flex-col justify-center">
             <Statistic
-              title="Còn nợ"
+              title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Còn nợ</span>}
               value={totalRemaining}
               formatter={(value) => formatCurrency(Number(value))}
-              valueStyle={{ color: totalRemaining > 0 ? '#ff4d4f' : '#52c41a' }}
+              valueStyle={{ color: totalRemaining > 0 ? '#ff4d4f' : '#52c41a', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.2' }}
             />
           </Card>
         </Col>
@@ -426,14 +430,17 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
 
       {/* Bảng danh sách hóa đơn */}
       <Card 
-        title={<Title level={5}>Danh sách hóa đơn mua hàng</Title>}
+        className="shadow-sm"
+        title={<Title level={5} className="m-0 text-base sm:text-lg">Danh sách hóa đơn</Title>}
         extra={
           <Button 
               type="primary" 
               icon={<PlusOutlined />}
               onClick={handleCreateExternal}
+              className="px-2 sm:px-4"
           >
-              Tự nhập hóa đơn
+              <span className="hidden sm:inline">Tự nhập hóa đơn</span>
+              <span className="sm:hidden">Tự nhập</span>
           </Button>
         }
       >
@@ -446,6 +453,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} hóa đơn`,
           }}
+          scroll={{ x: 1000 }}
           locale={{
             emptyText: (
               <Empty
@@ -454,7 +462,6 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
               />
             ),
           }}
-          scroll={{ x: 1200 }}
         />
       </Card>
 

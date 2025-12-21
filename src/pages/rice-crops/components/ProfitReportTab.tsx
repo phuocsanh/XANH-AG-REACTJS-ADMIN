@@ -13,18 +13,14 @@ import {
   DollarOutlined,
   FallOutlined,
   RiseOutlined,
-  PieChartOutlined,
 } from '@ant-design/icons';
 import { useProfitReport } from '@/queries/profit-report';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ProfitReportTabProps {
   riceCropId: number;
 }
 
 const { Title } = Typography;
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
   const { data: report, isLoading } = useProfitReport(riceCropId);
@@ -47,12 +43,6 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
 
   // Ensure cost_breakdown is an array
   const safeCostBreakdown = Array.isArray(cost_breakdown) ? cost_breakdown : [];
-
-  // Dữ liệu cho biểu đồ tròn
-  const pieData = safeCostBreakdown.map((item: any) => ({
-    name: item.category,
-    value: item.amount,
-  }));
 
   const columns = [
     {
@@ -77,85 +67,64 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
 
   return (
     <div>
-      <Row gutter={16} className="mb-6">
-        <Col span={8}>
-          <Card>
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={12} sm={8}>
+          <Card bodyStyle={{ padding: '12px' }} className="h-full">
             <Statistic
-              title="Tổng doanh thu"
+              title={<span className="text-xs sm:text-base">Doanh thu</span>}
               value={total_revenue}
               precision={0}
-              valueStyle={{ color: '#3f8600' }}
-              prefix={<RiseOutlined />}
+              valueStyle={{ color: '#3f8600', fontSize: '18px', fontWeight: 'bold' }}
+              prefix={<RiseOutlined style={{ fontSize: '14px' }} />}
               suffix="₫"
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
+        <Col xs={12} sm={8}>
+          <Card bodyStyle={{ padding: '12px' }} className="h-full">
             <Statistic
-              title="Tổng chi phí"
+              title={<span className="text-xs sm:text-base">Chi phí</span>}
               value={total_cost}
               precision={0}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<FallOutlined />}
+              valueStyle={{ color: '#cf1322', fontSize: '18px', fontWeight: 'bold' }}
+              prefix={<FallOutlined style={{ fontSize: '14px' }} />}
               suffix="₫"
             />
           </Card>
         </Col>
-        <Col span={8}>
-          <Card>
+        <Col xs={24} sm={8}>
+          <Card bodyStyle={{ padding: '12px' }} className="h-full">
             <Statistic
-              title="Lợi nhuận ròng"
+              title={<span className="text-sm sm:text-base">Lợi nhuận ròng</span>}
               value={net_profit}
               precision={0}
-              valueStyle={{ color: net_profit >= 0 ? '#3f8600' : '#cf1322' }}
-              prefix={<DollarOutlined />}
+              valueStyle={{ color: net_profit >= 0 ? '#3f8600' : '#cf1322', fontSize: '20px', fontWeight: 'bold' }}
+              prefix={<DollarOutlined style={{ fontSize: '16px' }} />}
               suffix="₫"
             />
-            <div className="mt-2">
-              <Tag color={roi >= 0 ? 'green' : 'red'}>
-                ROI: {roi.toFixed(2)}%
+            <div className="mt-1">
+              <Tag color={roi >= 0 ? 'green' : 'red'} className="text-xs">
+                ROI: {roi.toFixed(1)}%
               </Tag>
             </div>
           </Card>
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
-          <Card title="Phân bổ chi phí" className="h-full">
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {pieData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => value.toLocaleString('vi-VN') + ' ₫'} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-        <Col span={12}>
-          <Card title="Chi tiết chi phí" className="h-full">
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Card 
+            title={<span className="text-sm sm:text-base">Chi tiết chi phí</span>} 
+            className="shadow-sm" 
+            bodyStyle={{ padding: '0' }}
+          >
             <Table
               columns={columns}
               dataSource={safeCostBreakdown}
-              rowKey="category"
               pagination={false}
-              size="small"
+              size="middle"
+              rowKey="category"
+              locale={{ emptyText: 'Chưa có chi tiết chi phí' }}
             />
           </Card>
         </Col>

@@ -5,6 +5,7 @@ import {
   Tag,
   Space,
   Modal,
+  Popconfirm,
   Form,
   Input,
   Select,
@@ -78,39 +79,22 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
     setIsModalVisible(true);
   };
 
-  const handleDelete = (id: number) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa lịch canh tác này?',
-      okText: 'Xóa',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync({ id, cropId: riceCropId });
-          message.success('Xóa lịch canh tác thành công');
-        } catch (error) {
-          message.error('Có lỗi xảy ra khi xóa lịch canh tác');
-        }
-      },
-    });
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync({ id, cropId: riceCropId });
+      message.success('Xóa lịch canh tác thành công');
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi xóa lịch canh tác');
+    }
   };
 
-  const handleComplete = (id: number) => {
-    Modal.confirm({
-      title: 'Xác nhận hoàn thành',
-      content: 'Đánh dấu công việc này đã hoàn thành hôm nay?',
-      okText: 'Hoàn thành',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await completeMutation.mutateAsync(id);
-          message.success('Đã đánh dấu hoàn thành');
-        } catch (error) {
-          message.error('Có lỗi xảy ra');
-        }
-      },
-    });
+  const handleComplete = async (id: number) => {
+    try {
+      await completeMutation.mutateAsync(id);
+      message.success('Đã đánh dấu hoàn thành');
+    } catch (error) {
+      message.error('Có lỗi xảy ra');
+    }
   };
 
   const handleSubmit = async () => {
@@ -175,28 +159,45 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
     {
       title: 'Hành động',
       key: 'action',
-      render: (text: any, record: FarmingSchedule) => (
-        <Space size="small">
+      render: (_: any, record: FarmingSchedule) => (
+        <Space size="middle">
           {record.status === 'pending' && (
-            <Button
-              type="text"
-              icon={<CheckOutlined />}
-              className="text-green-600"
-              onClick={() => handleComplete(record.id)}
-              title="Đánh dấu hoàn thành"
-            />
+            <Popconfirm
+              title="Xác nhận hoàn thành"
+              description="Đánh dấu công việc này đã hoàn thành hôm nay?"
+              onConfirm={() => handleComplete(record.id)}
+              okText="Đồng ý"
+              cancelText="Hủy"
+            >
+              <Button
+                type="text"
+                icon={<CheckOutlined />}
+                className="text-green-600 flex items-center justify-center w-10 h-10"
+                title="Đánh dấu hoàn thành"
+              />
+            </Popconfirm>
           )}
           <Button
             type="text"
             icon={<EditOutlined />}
+            className="flex items-center justify-center w-10 h-10"
             onClick={() => handleEdit(record)}
           />
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
-          />
+          <Popconfirm
+            title="Xác nhận xóa"
+            description="Bạn có chắc chắn muốn xóa lịch canh tác này?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              className="flex items-center justify-center w-10 h-10"
+            />
+          </Popconfirm>
         </Space>
       ),
     },
@@ -204,11 +205,12 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
 
   return (
     <div>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex sm:justify-end">
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleAdd}
+          className="w-full sm:w-auto"
         >
           Thêm công việc
         </Button>
@@ -220,6 +222,7 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
         rowKey="id"
         loading={isLoading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
       />
 
       <Modal

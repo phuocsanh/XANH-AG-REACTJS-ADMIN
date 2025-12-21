@@ -150,19 +150,26 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
     {
       title: 'Hành động',
       key: 'action',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (text: any, record: HarvestRecord) => (
-        <Space size="small">
+      render: (_: any, record: HarvestRecord) => (
+        <Space size="middle">
           <Button
             type="text"
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            className="flex items-center justify-center w-10 h-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
           />
           <Button
             type="text"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
+            className="flex items-center justify-center w-10 h-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(record.id);
+            }}
           />
         </Space>
       ),
@@ -171,37 +178,40 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
 
   return (
     <div>
-      <div className="mb-4">
-        <Row gutter={16}>
-          <Col span={8}>
-            <Card>
+      <div className="mb-6">
+        <Row gutter={[16, 16]}>
+          <Col xs={12} sm={8}>
+            <Card bodyStyle={{ padding: '12px' }} className="h-full">
               <Statistic
-                title="Tổng sản lượng"
+                title={<span className="text-xs sm:text-base">Tổng sản lượng</span>}
                 value={totalYield}
                 precision={0}
-                suffix="kg"
-                prefix={<GoldOutlined />}
+                suffix={<span className="text-xs sm:text-base ml-0.5">kg</span>}
+                prefix={<GoldOutlined style={{ fontSize: '14px' }} />}
+                valueStyle={{ fontSize: '18px', fontWeight: 'bold' }}
               />
             </Card>
           </Col>
-          <Col span={8}>
-            <Card>
+          <Col xs={12} sm={8}>
+            <Card bodyStyle={{ padding: '12px' }} className="h-full">
               <Statistic
-                title="Tổng doanh thu"
+                title={<span className="text-xs sm:text-base">Tổng doanh thu</span>}
                 value={totalRevenue}
                 precision={0}
-                valueStyle={{ color: '#3f8600' }}
-                suffix="₫"
+                valueStyle={{ color: '#3f8600', fontSize: '18px', fontWeight: 'bold' }}
+                suffix={<span className="text-xs sm:text-base ml-0.5">₫</span>}
               />
             </Card>
           </Col>
-          <Col span={8} className="flex justify-end items-end">
+          <Col xs={24} sm={8} className="flex sm:justify-end items-center">
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleAdd}
+              className="w-full sm:w-auto mt-2 sm:mt-0"
+              size="middle"
             >
-              Thêm đợt thu hoạch
+              Thêm bản ghi
             </Button>
           </Col>
         </Row>
@@ -213,6 +223,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
         rowKey="id"
         loading={isLoading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1000 }}
       />
 
       <Modal

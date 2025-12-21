@@ -319,34 +319,46 @@ const RiceCropDetail: React.FC = () => {
         />
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <Space>
-          <Button 
-            icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate('/rice-crops')}
-          >
-            Quay lại
-          </Button>
-          <h1 className="text-2xl font-bold m-0">{riceCrop.field_name}</h1>
-          <Tag color={(statusColors as any)[riceCrop.status]} className="ml-2 text-base py-1 px-2">
-            {(statusLabels as any)[riceCrop.status]}
-          </Tag>
-        </Space>
+      <div className="flex justify-between items-center gap-2 mb-4">
+        <Button 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate('/rice-crops')}
+          className="flex-shrink-0"
+          size="middle"
+        >
+          Quay lại
+        </Button>
         <Button 
           type="primary" 
           icon={<EditOutlined />} 
           onClick={handleEdit}
+          className="flex-shrink-0"
+          size="middle"
         >
-          Chỉnh sửa thông tin
+          <span className="hidden sm:inline">Chỉnh sửa thông tin</span>
+          <span className="sm:hidden">Chỉnh sửa</span>
         </Button>
       </div>
 
-      <div className="bg-white rounded shadow p-4">
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold m-0 break-words">
+          {riceCrop.field_name}
+        </h1>
+        <Tag color={(statusColors as any)[riceCrop.status]} className="m-0 text-sm sm:text-base py-0.5 px-2">
+          {(statusLabels as any)[riceCrop.status]}
+        </Tag>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden min-h-[500px]">
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={detailTabItems}
-          type="card"
+          type="line"
+          tabPosition="top"
+          className="px-2"
+          tabBarGutter={16}
+          size="middle"
         />
       </div>
 

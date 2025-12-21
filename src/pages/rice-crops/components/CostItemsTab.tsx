@@ -133,12 +133,16 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
       title: 'Hành động',
       key: 'action',
       width: 120,
-      render: (_: any, record: CostItem) => (
-        <Space size="small">
+      render: (_: any, record: any) => (
+        <Space size="middle">
           <Button
             type="text"
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            className="flex items-center justify-center w-10 h-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
           />
           <Popconfirm
             title="Xác nhận xóa"
@@ -152,6 +156,8 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
               type="text"
               danger
               icon={<DeleteOutlined />}
+              className="flex items-center justify-center w-10 h-10"
+              onClick={(e) => e.stopPropagation()}
             />
           </Popconfirm>
         </Space>
@@ -161,38 +167,38 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
 
   return (
     <div>
-      <div className="mb-4">
-        <Row gutter={16}>
-          <Col xs={24} sm={12} md={8}>
-            <Card bodyStyle={{ padding: '12px 24px' }}>
+      <div className="mb-6">
+        <Row gutter={[8, 8]} align="middle">
+          <Col xs={9} sm={9} md={8}>
+            <Card bodyStyle={{ padding: '8px 12px' }} className="h-full shadow-none border-gray-100">
               <Statistic
-                title="Tổng chi phí canh tác"
+                title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Tổng chi phí</span>}
                 value={totalCost}
                 precision={0}
-                valueStyle={{ color: '#cf1322', fontWeight: 'bold' }}
-                prefix={<DollarOutlined />}
-                suffix="₫"
+                valueStyle={{ color: '#cf1322', fontWeight: 'bold', fontSize: '14px' }}
+                suffix={<span className="text-[10px] ml-0.5">đ</span>}
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Card bodyStyle={{ padding: '12px 24px' }}>
+          <Col xs={9} sm={9} md={8}>
+            <Card bodyStyle={{ padding: '8px 12px' }} className="h-full shadow-none border-gray-100">
               <Statistic
-                title="Số khoản chi"
+                title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Số khoản</span>}
                 value={items.length}
-                valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
-                suffix="khoản"
+                valueStyle={{ color: '#1890ff', fontWeight: 'bold', fontSize: '14px' }}
+                suffix={<span className="text-[10px] ml-0.5">mục</span>}
               />
             </Card>
           </Col>
-          <Col xs={24} md={8} className="flex justify-end items-end">
+          <Col xs={6} sm={6} md={8} className="flex justify-end">
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleAdd}
-              style={{ marginTop: 16 }}
+              className="w-full h-[52px] md:h-auto md:w-auto flex flex-col md:flex-row items-center justify-center gap-1"
+              size="middle"
             >
-              Thêm chi phí
+              <span className="text-[10px] sm:text-sm md:inline">Thêm</span>
             </Button>
           </Col>
         </Row>

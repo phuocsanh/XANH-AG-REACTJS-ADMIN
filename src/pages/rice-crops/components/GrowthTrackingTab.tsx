@@ -164,18 +164,26 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
     {
       title: 'Hành động',
       key: 'action',
-      render: (text: any, record: GrowthTracking) => (
-        <Space size="small">
+      render: (_: any, record: GrowthTracking) => (
+        <Space size="middle">
           <Button
             type="text"
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            className="flex items-center justify-center w-10 h-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(record);
+            }}
           />
           <Button
             type="text"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
+            className="flex items-center justify-center w-10 h-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(record.id);
+            }}
           />
         </Space>
       ),
@@ -184,11 +192,12 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
 
   return (
     <div>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex sm:justify-end">
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleAdd}
+          className="w-full sm:w-auto"
         >
           Thêm bản ghi
         </Button>
@@ -200,6 +209,7 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
         rowKey="id"
         loading={isLoading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 1000 }}
       />
 
       <Modal
