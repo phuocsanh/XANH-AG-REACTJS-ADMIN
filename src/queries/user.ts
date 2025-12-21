@@ -3,12 +3,34 @@ import api from "@/utils/api";
 import { queryClient } from "@/provider/app-provider-tanstack";
 import { toast } from "react-toastify";
 import { handleApiError } from "@/utils/error-handler";
-import { UserResponse } from "@/models/auth.model";
+import { UserResponse, Role } from "@/models/auth.model";
 
 export const userKeys = {
   all: () => ["users"] as const,
   pending: () => ["users", "pending"] as const,
+  roles: () => ["roles"] as const,
 } as const;
+
+export const useRolesQuery = () => {
+    return useQuery({
+        queryKey: userKeys.roles(),
+        queryFn: async () => {
+             const response = await api.get<any>("/users/roles-list");
+             
+             if (Array.isArray(response)) {
+                 return response as Role[];
+             }
+             
+             if (response?.data && Array.isArray(response.data)) {
+                 return response.data as Role[];
+             }
+             
+             // Ensure we always return an array
+             return [] as Role[];
+        },
+        staleTime: 60 * 60 * 1000, // 1 hour
+    });
+};
 
 export interface CreateUserByAdminDto {
   account: string;
@@ -45,6 +67,7 @@ export const useAllUsersQuery = (params?: Record<string, unknown>) => {
       }>('/users/search', {
         page,
         limit,
+        ...params
       })
 
       return {

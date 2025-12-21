@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Tabs, Table, Button, Tag, Card, Form, Input, Select, Space, Popconfirm, Dropdown } from 'antd';
 import { UserOutlined, CheckOutlined, UserAddOutlined, MoreOutlined, CheckCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
-import { usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCreateUserByAdminMutation, CreateUserByAdminDto, useActivateUserMutation, useDeactivateUserMutation, useDeleteUserMutation } from '@/queries/user';
+import { useRolesQuery, usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCreateUserByAdminMutation, CreateUserByAdminDto, useActivateUserMutation, useDeactivateUserMutation, useDeleteUserMutation } from '@/queries/user';
 import { UserResponse } from '@/models/auth.model';
 import { useAppStore } from '@/stores';
 import { canManageUser } from '@/utils/permission';
 import { RoleCode } from '@/constant/role';
 import dayjs from 'dayjs';
+import FilterHeader from '@/components/common/filter-header';
 
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -170,8 +171,23 @@ const PendingUsersTab: React.FC = () => {
 };
 
 const AllUsersTab: React.FC = () => {
-  const { data: usersResponse, isLoading } = useAllUsersQuery();
+  const [filters, setFilters] = useState<Record<string, any>>({});
+  const { data: usersResponse, isLoading } = useAllUsersQuery(filters);
+  const { data: roles } = useRolesQuery();
+  
   const users = usersResponse?.data?.items || [];
+  
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => {
+        const newFilters = { ...prev, [key]: value };
+        // Remove empty keys
+        if (value === undefined || value === null || value === '') {
+            delete newFilters[key];
+        }
+        return newFilters;
+    });
+  };
+
   const activateMutation = useActivateUserMutation();
   const deactivateMutation = useDeactivateUserMutation();
   const deleteMutation = useDeleteUserMutation();
@@ -190,13 +206,32 @@ const AllUsersTab: React.FC = () => {
       key: 'account',
     },
     {
-      title: 'Nickname',
+      title: (
+        <FilterHeader 
+            title="Nickname" 
+            dataIndex="nickname"
+            value={filters.nickname}
+            onChange={(val) => handleFilterChange('nickname', val)}
+        />
+      ),
       dataIndex: 'nickname',
       key: 'nickname',
       render: (text: string, record: any) => record.nickname || record.profile?.nickname || 'N/A',
     },
     {
-      title: 'Role',
+      title: (
+        <FilterHeader 
+            title="Role" 
+            dataIndex="role_id"
+            inputType="select"
+            value={filters.role_id}
+            onChange={(val) => handleFilterChange('role_id', val)}
+            options={roles?.map(role => ({
+                label: role.name,
+                value: role.id
+            })) || []}
+        />
+      ),
       dataIndex: 'role',
       key: 'role',
       render: (_: any, record: any) => {
@@ -234,7 +269,20 @@ const AllUsersTab: React.FC = () => {
       render: (text: string) => text ? dayjs(text).format('DD/MM/YYYY HH:mm') : 'N/A',
     },
     {
-      title: 'Trạng thái',
+      title: (
+        <FilterHeader 
+            title="Trạng thái" 
+            dataIndex="status"
+            inputType="select"
+            value={filters.status}
+            onChange={(val) => handleFilterChange('status', val)}
+            options={[
+                { label: 'Hoạt động (Active)', value: 'active' },
+                { label: 'Ngưng (Inactive)', value: 'inactive' },
+                { label: 'Chờ duyệt (Pending)', value: 'pending' },
+            ]}
+        />
+      ),
       dataIndex: 'status',
       key: 'status',
       render: (text: string) => {
