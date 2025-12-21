@@ -94,16 +94,6 @@ const CostItemsTab: React.FC<CostItemsTabProps> = ({ riceCropId }) => {
       key: 'item_name',
       render: (text: string) => <span className="font-medium">{text}</span>
     },
-    {
-      title: 'Loại',
-      dataIndex: 'category',
-      key: 'category',
-      render: (category: string) => (
-        <Tag color={categoryColors[category] || 'default'}>
-          {categoryLabels[category] || category}
-        </Tag>
-      )
-    },
 
 
     {

@@ -104,7 +104,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
             />
             <div className="mt-1">
               <Tag color={roi >= 0 ? 'green' : 'red'} className="text-xs">
-                ROI: {roi.toFixed(1)}%
+                Tỉ suất lãi: {roi.toFixed(1)}%
               </Tag>
             </div>
           </Card>

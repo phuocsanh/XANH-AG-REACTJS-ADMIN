@@ -6,7 +6,7 @@ import { NumericFormat } from "react-number-format"
 interface FormFieldNumberProps<T extends FieldValues> {
   name: FieldPath<T>
   control: Control<T>
-  label: string
+  label?: React.ReactNode
   placeholder?: string
   required?: boolean
   rules?: {
@@ -22,6 +22,8 @@ interface FormFieldNumberProps<T extends FieldValues> {
   className?: string
   prefix?: string
   suffix?: string
+  addonAfter?: React.ReactNode
+  addonBefore?: React.ReactNode
   size?: "large" | "middle" | "small"
   // Các thuộc tính đặc biệt cho number field
   min?: number
@@ -48,6 +50,8 @@ function FormFieldNumber<T extends FieldValues>({
   className,
   prefix,
   suffix,
+  addonAfter,
+  addonBefore,
   size = "middle",
   min,
   max,
@@ -61,7 +65,7 @@ function FormFieldNumber<T extends FieldValues>({
       required:
         typeof required === "string"
           ? required
-          : `Vui lòng nhập ${label.toLowerCase()}`,
+          : `Vui lòng nhập ${typeof label === 'string' ? label.toLowerCase() : "giá trị"}`,
     }),
     ...(rules.min && {
       min: { value: rules.min, message: `Giá trị tối thiểu là ${rules.min}` },
@@ -138,6 +142,8 @@ function FormFieldNumber<T extends FieldValues>({
               }}
               prefix={prefix}
               suffix={suffix}
+              addonAfter={addonAfter}
+              addonBefore={addonBefore}
             />
             {error && (
               <div

@@ -53,10 +53,13 @@ export const useCreateExternalPurchase = () => {
     mutationFn: async (dto: CreateExternalPurchaseDto) => {
       return await api.postRaw<ExternalPurchase>('/external-purchases', dto as any);
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       message.success('Đã thêm hóa đơn mua hàng');
-      queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.byRiceCrop(data.rice_crop_id) });
-      queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.merged(data.rice_crop_id) });
+      const cropId = variables.rice_crop_id;
+      if (cropId) {
+        queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.byRiceCrop(cropId) });
+        queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.merged(cropId) });
+      }
     },
     onError: () => {
       message.error('Có lỗi xảy ra khi thêm hóa đơn');
@@ -74,10 +77,14 @@ export const useUpdateExternalPurchase = () => {
     mutationFn: async ({ id, dto }: { id: number; dto: Partial<CreateExternalPurchaseDto> }) => {
       return await api.patchRaw<ExternalPurchase>(`/external-purchases/${id}`, dto);
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       message.success('Đã cập nhật hóa đơn');
-      queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.byRiceCrop(data.rice_crop_id) });
-      queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.merged(data.rice_crop_id) });
+      // variables.dto có thể không có rice_crop_id nếu update partial, nhưng trong form mình luôn gửi full dto hoặc data trả về phải có
+      const cropId = data?.rice_crop_id || variables.dto.rice_crop_id;
+      if (cropId) {
+        queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.byRiceCrop(cropId) });
+        queryClient.invalidateQueries({ queryKey: externalPurchaseKeys.merged(cropId) });
+      }
     },
     onError: () => {
       message.error('Có lỗi xảy ra khi cập nhật');

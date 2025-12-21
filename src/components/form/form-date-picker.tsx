@@ -1,5 +1,6 @@
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
-import { DatePicker, Form } from 'antd';
+import { Form } from 'antd';
+import { DatePicker } from '@/components/common';
 import dayjs from 'dayjs';
 
 // Type cho dayjs object
@@ -63,6 +64,7 @@ function FormDatePicker<T extends FieldValues>({
       label={label}
       required={required}
       className={className}
+      layout="vertical"
     >
       <Controller
         name={name}
@@ -80,7 +82,7 @@ function FormDatePicker<T extends FieldValues>({
               allowClear={allowClear}
               disabledDate={disabledDate}
               value={value ? dayjs(value) : null}
-              onChange={(date) => {
+              onChange={(date: any) => {
                 // Chuyển đổi dayjs object thành ISO string hoặc null
                 onChange(date ? date.toISOString() : null);
               }}

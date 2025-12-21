@@ -28,7 +28,6 @@ import { GrowthStage, CropStatus } from '@/types/rice-farming.types';
 import CostItemsTab from './components/CostItemsTab';
 import HarvestRecordsTab from './components/HarvestRecordsTab';
 import FarmingSchedulesTab from './components/FarmingSchedulesTab';
-import ApplicationRecordsTab from './components/ApplicationRecordsTab';
 import GrowthTrackingTab from './components/GrowthTrackingTab';
 import ProfitReportTab from './components/ProfitReportTab';
 import { InvoicesTab } from './components/InvoicesTab';
@@ -183,17 +182,17 @@ const RiceCropDetail: React.FC = () => {
                 {riceCrop.season?.name || '-'} ({riceCrop.season?.year || '-'})
               </span>
             </Descriptions.Item>
-            <Descriptions.Item label="Diện tích">
+            <Descriptions.Item label="Tổng diện tích (m²)">
               <span style={{ color: '#000' }}>
                 {riceCrop.field_area?.toLocaleString('vi-VN') || '-'} m²
               </span>
             </Descriptions.Item>
-            <Descriptions.Item label="Số lượng đất">
+            <Descriptions.Item label="Số công đất">
               <span style={{ color: '#000' }}>
                 {riceCrop.amount_of_land || '-'}
               </span>
             </Descriptions.Item>
-            <Descriptions.Item label="Diện tích mỗi công đất">
+            <Descriptions.Item label="Diện tích mỗi công">
               <span style={{ color: '#000' }}>
                 {riceCrop.areaOfEachPlotOfLand 
                   ? `${riceCrop.areaOfEachPlotOfLand.name || ''} ${riceCrop.areaOfEachPlotOfLand.code ? `(${riceCrop.areaOfEachPlotOfLand.code})` : ''}`
@@ -262,11 +261,6 @@ const RiceCropDetail: React.FC = () => {
       key: 'schedules',
       label: 'Lịch canh tác',
       children: <FarmingSchedulesTab riceCropId={riceCrop.id} />,
-    },
-    {
-      key: 'applications',
-      label: 'Nhật ký phun/bón',
-      children: <ApplicationRecordsTab riceCropId={riceCrop.id} />,
     },
     {
       key: 'growth',
@@ -413,15 +407,15 @@ const RiceCropDetail: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Số lượng đất"
+              label="Số công đất"
               name="amount_of_land"
-              rules={[{ required: true, message: 'Vui lòng nhập số lượng đất' }]}
+              rules={[{ required: true, message: 'Vui lòng nhập số công đất' }]}
             >
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item
-              label="Diện tích mỗi công đất"
+              label="Diện tích mỗi công"
               name="area_of_each_plot_of_land_id"
             >
               <Select placeholder="Chọn diện tích" allowClear>
@@ -434,7 +428,7 @@ const RiceCropDetail: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Diện tích (m²)"
+              label="Tổng diện tích (m²)"
               name="field_area"
               rules={[{ required: true, message: 'Vui lòng nhập diện tích' }]}
             >

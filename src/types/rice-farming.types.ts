@@ -44,12 +44,6 @@ export enum ActivityType {
   OTHER = 'other',                // Khác
 }
 
-/** Loại ứng dụng (cho ApplicationRecord) */
-export enum ApplicationType {
-  FERTILIZER = 'fertilizer',
-  PESTICIDE = 'pesticide',
-  OTHER = 'other',
-}
 
 /** Tình trạng sức khỏe cây trồng */
 export enum HealthStatus {
@@ -145,6 +139,7 @@ export interface HarvestRecord {
   rice_crop_id: number;
   harvest_date: string;
   yield_amount: number;
+  yield_unit?: string;
   moisture_content?: number;
   quality_grade: string;
   selling_price_per_unit: number;
@@ -189,22 +184,6 @@ export interface ApplicationProduct {
   total_price: number;
 }
 
-/** Nhật ký phun thuốc/bón phân */
-export interface ApplicationRecord {
-  id: number;
-  rice_crop_id: number;
-  farming_schedule_id?: number;
-  type: ApplicationType; // Đổi từ activity_type sang type để khớp với frontend
-  application_date: string;
-  product_name: string; // Thêm trường này cho đơn giản hóa UI
-  dosage: number;       // Thêm trường này
-  unit: string;         // Thêm trường này
-  area_applied?: number;
-  applicator_name?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 /** Theo dõi sinh trưởng */
 export interface GrowthTracking {
@@ -325,6 +304,7 @@ export interface CreateHarvestRecordDto {
   rice_crop_id: number;
   harvest_date: string;
   yield_amount: number;
+  yield_unit?: string;
   moisture_content?: number;
   quality_grade: string;
   selling_price_per_unit: number;
@@ -346,25 +326,11 @@ export interface CreateFarmingScheduleDto {
   actual_date?: string;
   status?: ScheduleStatus;
   instructions?: string;
+  completed_date?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;  // Index signature để tương thích với api.postRaw
 }
 
-/** DTO tạo nhật ký */
-export interface CreateApplicationRecordDto {
-  rice_crop_id: number;
-  farming_schedule_id?: number;
-  type: ApplicationType;
-  application_date: string;
-  product_name: string;
-  dosage: number;
-  unit: string;
-  area_applied?: number;
-  applicator_name?: string;
-  notes?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any; // Index signature để tránh lỗi dư thừa
-}
 
 /** DTO tạo theo dõi sinh trưởng */
 export interface CreateGrowthTrackingDto {

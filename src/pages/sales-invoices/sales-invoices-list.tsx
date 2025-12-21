@@ -171,6 +171,43 @@ const SalesInvoicesList: React.FC = () => {
     ...(seasonSearchText && { name: seasonSearchText })
   })
 
+  // State to track if we have set the default season
+  const [hasSetDefaultSeason, setHasSetDefaultSeason] = React.useState(false)
+
+  // Effect to set default season
+  React.useEffect(() => {
+    const items = seasonsData?.data?.items;
+    if (items && items.length > 0 && !hasSetDefaultSeason) {
+      const seasons = items
+      const today = dayjs()
+      
+      // 1. Tìm mùa vụ đang diễn ra (today between start and end)
+      let targetSeason = seasons.find((s: any) => {
+        if (!s.start_date || !s.end_date) return false
+        const start = dayjs(s.start_date)
+        const end = dayjs(s.end_date)
+        return (today.isAfter(start) || today.isSame(start)) && (today.isBefore(end) || today.isSame(end))
+      })
+
+      // 2. Nếu không có, lấy mùa vụ mới nhất (dựa trên end_date sort desc)
+      if (!targetSeason) {
+        // Copy để không mutate mảng gốc
+        const sortedSeasons = [...seasons].sort((a: any, b: any) => {
+           const dateA = a.end_date ? new Date(a.end_date).getTime() : 0
+           const dateB = b.end_date ? new Date(b.end_date).getTime() : 0
+           return dateB - dateA
+        })
+        targetSeason = sortedSeasons[0]
+      }
+
+      if (targetSeason) {
+        setFilters((prev) => ({ ...prev, season_id: targetSeason.id }))
+      }
+      
+      setHasSetDefaultSeason(true)
+    }
+  }, [seasonsData, hasSetDefaultSeason])
+
 
   // Handlers
   const handleViewInvoice = (invoice: SalesInvoice) => {

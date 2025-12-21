@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Select, Row, Col, message } from 'antd';
 import { useCreateCostItem, useUpdateCostItem } from '@/queries/cost-item';
-import { useCostItemCategories } from '@/queries/cost-item-category';
 import type { CostItem } from '@/models/cost-item';
 import { DatePicker } from '@/components/common';
 import dayjs from 'dayjs';
@@ -23,10 +22,6 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
   const createMutation = useCreateCostItem();
   const updateMutation = useUpdateCostItem();
   
-  // Load categories từ database
-  const { data: categoriesData, isLoading: loadingCategories } = useCostItemCategories();
-  const categories = categoriesData?.data || [];
-
   const isEdit = !!initialData;
 
   useEffect(() => {
@@ -50,11 +45,12 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
     try {
       const values = await form.validateFields();
 
-      const payload = {
+      const payload: any = {
         ...values,
         rice_crop_id: riceCropId,
         expense_date: values.expense_date.format('YYYY-MM-DD'),
       };
+
 
       if (isEdit && initialData) {
         await updateMutation.mutateAsync({
@@ -74,11 +70,6 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
     }
   };
 
-  // Map categories từ DB sang options
-  const categoryOptions = categories.map(cat => ({
-    value: cat.id,
-    label: `${cat.icon || ''} ${cat.name}`.trim(),
-  }));
 
 
   return (
@@ -105,19 +96,7 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
         </Form.Item>
 
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="category"
-              label="Loại chi phí"
-              rules={[{ required: true, message: 'Vui lòng chọn loại' }]}
-            >
-              <Select
-                options={categoryOptions}
-                placeholder="Chọn loại chi phí"
-              />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
+          <Col span={24}>
             <Form.Item
               name="expense_date"
               label="Ngày chi"

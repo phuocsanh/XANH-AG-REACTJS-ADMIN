@@ -73,6 +73,7 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
     form.setFieldsValue({
       ...item,
       scheduled_date: item.scheduled_date ? dayjs(item.scheduled_date) : null,
+      completed_date: item.completed_date ? dayjs(item.completed_date) : null,
       activity_name: item.activity_name,
       instructions: item.instructions,
     });
@@ -104,6 +105,7 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
         ...values,
         rice_crop_id: riceCropId,
         scheduled_date: values.scheduled_date?.format('YYYY-MM-DD'),
+        completed_date: values.completed_date?.format('YYYY-MM-DD'),
       };
 
       if (editingItem) {
@@ -134,8 +136,8 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
       title: 'Công việc',
       dataIndex: 'activity_name',
       key: 'activity_name',
-      render: (text: string, record: FarmingSchedule) => (
-        <span className={record.status === 'completed' ? 'line-through text-gray-400' : 'font-medium'}>
+      render: (text: string) => (
+        <span className="font-medium">
           {text}
         </span>
       ),
@@ -269,6 +271,20 @@ const FarmingSchedulesTab: React.FC<FarmingSchedulesTabProps> = ({ riceCropId })
                     </Select.Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.status !== currentValues.status}
+              >
+                {({ getFieldValue }) =>
+                  getFieldValue('status') === 'completed' ? (
+                    <Form.Item name="completed_date" label="Ngày hoàn thành thực tế">
+                      <DatePicker style={{ width: '100%' }} />
+                    </Form.Item>
+                  ) : null
+                }
               </Form.Item>
             </Col>
           </Row>

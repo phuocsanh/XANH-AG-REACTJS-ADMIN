@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Table, Tag, Typography, Card, Statistic, Row, Col, Empty, Spin, Button, Modal, Select, Space, Form, Input, InputNumber } from 'antd';
-import { PlusOutlined, LinkOutlined, ShopOutlined, FileTextOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { Table, Tag, Typography, Card, Statistic, Row, Col, Empty, Spin, Button, Modal, Select, Space, Input } from 'antd';
+import { PlusOutlined, ShopOutlined, FileTextOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useForm, useFieldArray, useWatch, Control } from 'react-hook-form';
 import api from '@/utils/api';
 import { formatCurrency } from '@/utils/format';
 import type { ColumnsType } from 'antd/es/table';
@@ -15,8 +16,8 @@ import type { MergedPurchase } from '@/models/external-purchase.model';
 import { SalesInvoice } from '@/models/sales-invoice';
 import dayjs from 'dayjs';
 import { message } from 'antd';
-import { DatePicker } from '@/components/common';
 import { useAppStore } from '@/stores';
+import { FormField, FormFieldNumber, FormDatePicker } from '@/components/form';
 
 const { Title, Text } = Typography;
 
@@ -24,9 +25,63 @@ interface InvoicesTabProps {
   riceCropId: number;
 }
 
-/**
- * Component hiển thị danh sách hóa đơn của một Ruộng lúa (cả system và external)
- */
+interface ExternalPurchaseFormValues {
+  supplier_name: string;
+  purchase_date: string | null;
+  payment_status: string;
+  paid_amount?: number;
+  notes?: string;
+  items: {
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    notes?: string;
+  }[];
+}
+
+const TotalCalculator = ({ control }: { control: Control<ExternalPurchaseFormValues> }) => {
+  const items = useWatch({
+    control,
+    name: "items",
+    defaultValue: []
+  });
+
+  // Tính tổng tiền an toàn với fallback value
+  const total = items?.reduce((sum, item) => {
+    const qty = Number(item?.quantity) || 0;
+    const price = Number(item?.unit_price) || 0;
+    return sum + (qty * price);
+  }, 0) || 0;
+
+  return (
+    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded mb-4">
+      <span className="font-semibold text-gray-700">Tổng cộng:</span>
+      <span className="text-lg font-bold text-green-600">{formatCurrency(total)}</span>
+    </div>
+  );
+};
+
+const ItemTotal = ({ control, index }: { control: Control<ExternalPurchaseFormValues>, index: number }) => {
+  const qty = useWatch({
+    control,
+    name: `items.${index}.quantity`,
+  });
+  const price = useWatch({
+    control,
+    name: `items.${index}.unit_price`,
+  });
+
+  const total = (Number(qty) || 0) * (Number(price) || 0);
+
+  return (
+    <Input 
+      value={formatCurrency(total)} 
+      disabled 
+      className="text-green-600 font-bold"
+    />
+  );
+};
+
 export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const queryClient = useQueryClient();
   const [isLinkModalVisible, setIsLinkModalVisible] = useState(false);
@@ -35,7 +90,25 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const [editingRecord, setEditingRecord] = useState<MergedPurchase | null>(null);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [customerId, setCustomerId] = useState<number | null>(null);
-  const [externalForm] = Form.useForm();
+  
+  // React Hook Form
+  const { control, handleSubmit, reset, watch, setValue } = useForm<ExternalPurchaseFormValues>({
+    defaultValues: {
+      items: [{ product_name: '', quantity: 0, unit_price: 0 }],
+      payment_status: 'paid',
+      purchase_date: new Date().toISOString() // Mặc định là ngày hiện tại
+    }
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items"
+  });
+
+  const paymentStatus = useWatch({
+    control,
+    name: 'payment_status',
+  });
   
   // Lấy thông tin người dùng hiện tại
   const userInfo = useAppStore((state) => state.userInfo);
@@ -52,7 +125,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
     enabled: !!riceCropId,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (riceCropData?.customer_id) {
       setCustomerId(riceCropData.customer_id);
     }
@@ -128,10 +201,6 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const systemCount = purchases.filter((p: MergedPurchase) => p.source === 'system').length;
   const externalCount = purchases.filter((p: MergedPurchase) => p.source === 'external').length;
 
-  const handleLinkSystemInvoice = () => {
-    setIsLinkModalVisible(true);
-  };
-
   const handleLinkInvoice = () => {
     if (!selectedInvoiceId) {
       message.warning('Vui lòng chọn hóa đơn');
@@ -143,7 +212,13 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const handleCreateExternal = () => {
     setIsEditMode(false);
     setEditingRecord(null);
-    externalForm.resetFields();
+    reset({
+      items: [{ product_name: '', quantity: 0, unit_price: 0 }],
+      payment_status: 'paid',
+      purchase_date: new Date().toISOString(),
+      supplier_name: '',
+      notes: ''
+    });
     setIsExternalModalVisible(true);
   };
 
@@ -151,12 +226,12 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
     setIsEditMode(true);
     setEditingRecord(record);
     
-    externalForm.setFieldsValue({
-      purchase_date: dayjs(record.date),
+    reset({
       supplier_name: record.supplier,
-      notes: record.notes,
+      purchase_date: record.date ? new Date(record.date).toISOString() : null,
       payment_status: record.status,
       paid_amount: record.paid_amount,
+      notes: record.notes,
       items: record.items.map(item => ({
         product_name: item.product_name,
         quantity: item.quantity,
@@ -188,20 +263,21 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
     });
   };
 
-  const handleExternalFormSubmit = async (values: any) => {
-    const total = values.items.reduce((sum: number, item: any) => 
+  const onExternalFormSubmit = async (values: ExternalPurchaseFormValues) => {
+    // Tính lại tổng tiền để đảm bảo chính xác
+    const total = values.items.reduce((sum, item) => 
       sum + (Number(item.quantity) * Number(item.unit_price)), 0
     );
 
     const dto = {
       rice_crop_id: riceCropId,
-      purchase_date: values.purchase_date.format('YYYY-MM-DD'),
+      purchase_date: values.purchase_date ? dayjs(values.purchase_date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
       supplier_name: values.supplier_name,
       total_amount: total,
       paid_amount: values.payment_status === 'paid' ? total : (values.paid_amount || 0),
       payment_status: values.payment_status,
       notes: values.notes,
-      items: values.items.map((item: any) => ({
+      items: values.items.map(item => ({
         product_name: item.product_name,
         quantity: Number(item.quantity),
         unit_price: Number(item.unit_price),
@@ -222,7 +298,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       }
 
       setIsExternalModalVisible(false);
-      externalForm.resetFields();
+      reset(); // Reset form
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -234,7 +310,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       title: 'Nguồn',
       dataIndex: 'source',
       key: 'source',
-      width: 100,
+      width: 150,
       render: (source: string) => (
         source === 'external' ? (
           <Tag color="orange" icon={<FileTextOutlined />}>Tự nhập</Tag>
@@ -252,14 +328,14 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       title: 'Mã HĐ',
       dataIndex: 'code',
       key: 'code',
-      width: 120,
+      width: 150,
       render: (code: string) => <Text strong>{code}</Text>,
     },
     {
       title: 'Ngày',
       dataIndex: 'date',
       key: 'date',
-      width: 120,
+      width: 150,
       render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
       sorter: (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     },
@@ -267,20 +343,20 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       title: 'Nhà cung cấp',
       dataIndex: 'supplier',
       key: 'supplier',
-      width: 150,
+      width: 250,
     },
     {
       title: 'Sản phẩm',
       dataIndex: 'items',
       key: 'items',
-      width: 100,
+      width: 120,
       render: (items: any[]) => `${items?.length || 0} SP`,
     },
     {
       title: 'Tổng tiền',
       dataIndex: 'total_amount',
       key: 'total_amount',
-      width: 150,
+      width: 180,
       align: 'right',
       render: (amount: number) => (
         <Text strong style={{ color: '#52c41a' }}>
@@ -293,7 +369,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       title: 'Đã trả',
       dataIndex: 'paid_amount',
       key: 'paid_amount',
-      width: 150,
+      width: 180,
       align: 'right',
       render: (amount: number) => (
         <Text style={{ color: '#1890ff' }}>
@@ -305,7 +381,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       title: 'Còn nợ',
       dataIndex: 'remaining_amount',
       key: 'remaining_amount',
-      width: 150,
+      width: 180,
       align: 'right',
       render: (amount: number) => (
         <Text style={{ color: amount > 0 ? '#ff4d4f' : '#52c41a' }}>
@@ -317,7 +393,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
+      width: 180,
       render: (status: string) => {
         const statusConfig: Record<string, { text: string; color: string }> = {
           draft: { text: 'Nháp', color: 'default' },
@@ -453,7 +529,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} hóa đơn`,
           }}
-          scroll={{ x: 1000 }}
+          scroll={{ x: 1500 }}
           locale={{
             emptyText: (
               <Empty
@@ -512,224 +588,166 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
         )}
       </Modal>
 
-      {/* Modal tự nhập hóa đơn */}
+      {/* Modal tự nhập hóa đơn (React Hook Form + Custom Components) */}
       <Modal
         title={isEditMode ? "Chỉnh sửa hóa đơn" : "Tự nhập hóa đơn mua hàng"}
         open={isExternalModalVisible}
         onCancel={() => {
           setIsExternalModalVisible(false);
           setEditingRecord(null);
-          externalForm.resetFields();
+          reset();
         }}
-        onOk={() => externalForm.submit()}
+        onOk={handleSubmit(onExternalFormSubmit)}
         width={900}
         confirmLoading={createExternalMutation.isPending || updateExternalMutation.isPending}
         okText={isEditMode ? "Cập nhật" : "Lưu hóa đơn"}
         cancelText="Hủy"
+        maskClosable={false} // Chặn click ra ngoài
       >
-        <Form
-          form={externalForm}
-          layout="vertical"
-          onFinish={handleExternalFormSubmit}
-        >
+        <form onSubmit={handleSubmit(onExternalFormSubmit)} className="flex flex-col gap-4 mt-4">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+              <FormField
+                control={control}
                 name="supplier_name"
                 label="Tên cửa hàng/nhà cung cấp"
-                rules={[{ required: true, message: 'Vui lòng nhập tên nhà cung cấp' }]}
-              >
-                <Input placeholder="VD: Cửa hàng phân bón Bến Tre" />
-              </Form.Item>
+                placeholder="VD: Cửa hàng phân bón Bến Tre"
+                required
+              />
             </Col>
             <Col span={12}>
-              <Form.Item
+              <FormDatePicker
+                control={control}
                 name="purchase_date"
                 label="Ngày mua"
-                rules={[{ required: true, message: 'Vui lòng chọn ngày mua' }]}
-              >
-                <DatePicker 
-                  style={{ width: '100%' }} 
-                  placeholder="Chọn ngày mua"
-                />
-              </Form.Item>
+                placeholder="Chọn ngày mua"
+                required
+              />
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+              <FormField
+                control={control}
                 name="payment_status"
                 label="Trạng thái thanh toán"
-                initialValue="paid"
-                rules={[{ required: true, message: 'Vui lòng chọn trạng thái' }]}
-              >
-                <Select>
-                  <Select.Option value="paid">Đã thanh toán</Select.Option>
-                  <Select.Option value="partial">Thanh toán một phần</Select.Option>
-                  <Select.Option value="pending">Chưa thanh toán</Select.Option>
-                </Select>
-              </Form.Item>
+                type="select"
+                options={[
+                  { label: "Đã thanh toán", value: "paid" },
+                  { label: "Thanh toán một phần", value: "partial" },
+                  { label: "Chưa thanh toán", value: "pending" },
+                ]}
+                required
+              />
             </Col>
             <Col span={12}>
-              <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.payment_status !== currentValues.payment_status}>
-                {({ getFieldValue }) => {
-                  const status = getFieldValue('payment_status');
-                  if (status === 'partial') {
-                    return (
-                      <Form.Item
-                        name="paid_amount"
-                        label="Số tiền đã trả"
-                        rules={[{ required: true, message: 'Vui lòng nhập số tiền đã trả' }]}
-                      >
-                        <InputNumber
-                          style={{ width: '100%' }}
-                          min={0}
-                          formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          placeholder="0"
-                          addonAfter="₫"
-                        />
-                      </Form.Item>
-                    );
-                  }
-                  return null;
-                }}
-              </Form.Item>
+              {paymentStatus === 'partial' && (
+                <FormFieldNumber
+                  control={control}
+                  name="paid_amount"
+                  label="Số tiền đã trả"
+                  placeholder="0"
+                  suffix="₫"
+                  required
+                  rules={{ required: "Vui lòng nhập số tiền đã trả" }}
+                  min={0}
+                />
+              )}
             </Col>
           </Row>
 
-          <Form.Item label="Danh sách sản phẩm">
-            <Form.List name="items" initialValue={[{}]}>
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field, index) => (
-                    <Card 
-                      key={field.key} 
-                      size="small" 
-                      style={{ marginBottom: 12 }}
-                      title={`Sản phẩm ${index + 1}`}
-                      extra={
-                        fields.length > 1 && (
-                          <Button 
-                            type="text" 
-                            danger 
-                            size="small"
-                            onClick={() => remove(field.name)}
-                          >
-                            Xóa
-                          </Button>
-                        )
-                      }
-                    >
-                      <Row gutter={12}>
-                        <Col span={10}>
-                          <Form.Item
-                            {...field}
-                            name={[field.name, 'product_name']}
-                            label="Tên sản phẩm"
-                            rules={[{ required: true, message: 'Nhập tên sản phẩm' }]}
-                          >
-                            <Input placeholder="VD: Phân DAP" />
-                          </Form.Item>
-                        </Col>
-                        <Col span={5}>
-                          <Form.Item
-                            {...field}
-                            name={[field.name, 'quantity']}
-                            label="Số lượng"
-                            rules={[{ required: true, message: 'Nhập số lượng' }]}
-                          >
-                            <InputNumber 
-                              min={0.01} 
-                              style={{ width: '100%' }} 
-                              placeholder="0"
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={5}>
-                          <Form.Item
-                            {...field}
-                            name={[field.name, 'unit_price']}
-                            label="Đơn giá"
-                            rules={[{ required: true, message: 'Nhập đơn giá' }]}
-                          >
-                            <InputNumber 
-                              min={0} 
-                              style={{ width: '100%' }}
-                              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                              placeholder="0"
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={4}>
-                          <Form.Item label="Thành tiền">
-                            <Form.Item noStyle shouldUpdate>
-                              {() => {
-                                const items = externalForm.getFieldValue('items') || [];
-                                const item = items[field.name];
-                                const total = (item?.quantity || 0) * (item?.unit_price || 0);
-                                return (
-                                  <Input 
-                                    value={formatCurrency(total)} 
-                                    disabled 
-                                    style={{ fontWeight: 'bold', color: '#52c41a' }}
-                                  />
-                                );
-                              }}
-                            </Form.Item>
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                      <Form.Item
-                        {...field}
-                        name={[field.name, 'notes']}
-                        label="Ghi chú"
-                      >
-                        <Input.TextArea rows={1} placeholder="Ghi chú (nếu có)" />
-                      </Form.Item>
-                    </Card>
-                  ))}
-                  <Button 
-                    type="dashed" 
-                    onClick={() => add()} 
-                    block 
-                    icon={<PlusOutlined />}
-                  >
-                    Thêm sản phẩm
-                  </Button>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
-
-          <Form.Item name="notes" label="Ghi chú chung">
-            <Input.TextArea rows={2} placeholder="Ghi chú cho hóa đơn (nếu có)" />
-          </Form.Item>
-
-          {/* Tổng tiền */}
-          <Form.Item label="Tổng cộng">
-            <Form.Item noStyle shouldUpdate>
-              {() => {
-                const items = externalForm.getFieldValue('items') || [];
-                const total = items.reduce((sum: number, item: any) => 
-                  sum + ((item?.quantity || 0) * (item?.unit_price || 0)), 0
-                );
-                return (
-                  <Input 
-                    value={formatCurrency(total)} 
-                    disabled 
-                    style={{ 
-                      fontWeight: 'bold', 
-                      fontSize: 18, 
-                      color: '#52c41a',
-                      textAlign: 'right'
-                    }}
+          <div className="border rounded-md p-4 bg-gray-50/50">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-medium">Danh sách sản phẩm</span>
+              <Button 
+                type="dashed" 
+                onClick={() => append({ product_name: '', quantity: 1, unit_price: 0 })} 
+                icon={<PlusOutlined />}
+                size="small"
+              >
+                Thêm sản phẩm
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <Card 
+                  key={field.id} 
+                  size="small"
+                  title={`Sản phẩm ${index + 1}`}
+                  extra={
+                    fields.length > 1 && (
+                      <Button 
+                        type="text" 
+                        danger 
+                        size="small"
+                        onClick={() => remove(index)}
+                        icon={<DeleteOutlined />}
+                      />
+                    )
+                  }
+                  className="shadow-sm border-gray-200"
+                >
+                  <Row gutter={12}>
+                    <Col span={10}>
+                      <FormField
+                        control={control}
+                        name={`items.${index}.product_name`}
+                        label="Tên sản phẩm"
+                        placeholder="VD: Phân DAP"
+                        required
+                      />
+                    </Col>
+                    <Col span={5}>
+                      <FormFieldNumber
+                        control={control}
+                        name={`items.${index}.quantity`}
+                        label="Số lượng"
+                        placeholder="0"
+                        min={0}
+                        required
+                      />
+                    </Col>
+                    <Col span={5}>
+                      <FormFieldNumber
+                        control={control}
+                        name={`items.${index}.unit_price`}
+                        label="Đơn giá"
+                        placeholder="0"
+                        min={0}
+                        required
+                      />
+                    </Col>
+                    <Col span={4}>
+                      <div className="ant-form-item-label">
+                        <label className="">Thành tiền</label>
+                      </div>
+                      <ItemTotal control={control} index={index} />
+                    </Col>
+                  </Row>
+                  <FormField
+                    control={control}
+                    name={`items.${index}.notes`}
+                    label="Ghi chú"
+                    placeholder="Ghi chú (nếu có)"
                   />
-                );
-              }}
-            </Form.Item>
-          </Form.Item>
-        </Form>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <FormField
+            control={control}
+            name="notes"
+            label="Ghi chú chung"
+            type="textarea"
+            rows={2}
+            placeholder="Ghi chú cho hóa đơn (nếu có)"
+          />
+
+          <TotalCalculator control={control} />
+        </form>
       </Modal>
     </div>
   );

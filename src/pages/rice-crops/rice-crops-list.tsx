@@ -399,10 +399,10 @@ const RiceCropsList: React.FC = () => {
     },
     {
       key: 'field_area',
-      title: 'Diện tích (m²)',
+      title: 'Tổng diện tích (m²)',
       width: 120,
       render: (record: ExtendedRiceCrop) => (
-        <div>{record.field_area.toLocaleString('vi-VN')}</div>
+        <div>{Number(record.field_area).toLocaleString('vi-VN')}</div>
       ),
     },
     {
@@ -571,21 +571,24 @@ const RiceCropsList: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Số lượng đất"
+              label="Số công đất"
               name="amount_of_land"
-              rules={[{ required: true, message: 'Vui lòng nhập số lượng đất' }]}
+              rules={[{ required: true, message: 'Vui lòng nhập số công đất' }]}
             >
               <InputNumber
                 min={0}
                 style={{ width: '100%' }}
                 placeholder="VD: 10"
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                parser={(value) => value?.replace(/\./g, '').replace(',', '.') as any}
+                decimalSeparator=","
               />
             </Form.Item>
 
             <Form.Item
-              label="Diện tích mỗi công đất"
+              label="Diện tích mỗi công"
               name="area_of_each_plot_of_land_id"
-              tooltip="Chọn diện tích mỗi công đất (Không bắt buộc)"
+              tooltip="Chọn diện tích mỗi công (Không bắt buộc)"
             >
               <Select 
                 placeholder="Chọn diện tích"
@@ -604,7 +607,7 @@ const RiceCropsList: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Diện tích (m²)"
+              label="Tổng diện tích (m²)"
               name="field_area"
               rules={[{ required: true, message: 'Vui lòng nhập diện tích' }]}
             >
@@ -612,6 +615,9 @@ const RiceCropsList: React.FC = () => {
                 min={0}
                 style={{ width: '100%' }}
                 placeholder="VD: 5000"
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                parser={(value) => value?.replace(/\./g, '').replace(',', '.') as any}
+                decimalSeparator=","
               />
             </Form.Item>
 

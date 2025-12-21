@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Table,
   Space,
   Modal,
-  Form,
-  Input,
-  InputNumber,
   Row,
   Col,
   message,
   Card,
   Statistic,
+  Select,
+  Popconfirm,
 } from 'antd';
-import { DatePicker } from '@/components/common';
 import {
   PlusOutlined,
   EditOutlined,
@@ -21,6 +19,7 @@ import {
   GoldOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import {
   useHarvestRecords,
   useCreateHarvestRecord,
@@ -28,6 +27,7 @@ import {
   useDeleteHarvestRecord,
 } from '@/queries/harvest-record';
 import { HarvestRecord, CreateHarvestRecordDto } from '@/types/rice-farming.types';
+import { FormField, FormFieldNumber, FormDatePicker } from '@/components/form';
 
 interface HarvestRecordsTabProps {
   riceCropId: number;
@@ -36,7 +36,18 @@ interface HarvestRecordsTabProps {
 const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<HarvestRecord | null>(null);
-  const [form] = Form.useForm();
+  
+  // React Hook Form
+  const { control, handleSubmit, reset, setValue, watch } = useForm<any>({
+    defaultValues: {
+      harvest_date: new Date().toISOString(),
+      yield_amount: undefined,
+      selling_price_per_unit: undefined,
+      total_revenue: 0,
+      quality_grade: '',
+      yield_unit: 'tan', // Đơn vị mặc định
+    }
+  });
 
   // Queries
   const { data: harvestRecords, isLoading } = useHarvestRecords(riceCropId);
@@ -45,50 +56,84 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
   const updateMutation = useUpdateHarvestRecord();
   const deleteMutation = useDeleteHarvestRecord();
 
-  // Tính tổng sản lượng và doanh thu
-  const totalYield = harvestRecords?.reduce((sum: number, item: HarvestRecord) => sum + item.yield_amount, 0) || 0;
-  const totalRevenue = harvestRecords?.reduce((sum: number, item: HarvestRecord) => sum + item.total_revenue, 0) || 0;
+  // Watch values for auto-calculation
+  const yieldAmount = useWatch({ control, name: 'yield_amount' });
+  const sellingPrice = useWatch({ control, name: 'selling_price_per_unit' });
+  const yieldUnit = useWatch({ control, name: 'yield_unit' });
+
+  // Auto calculate total revenue
+  // Nếu đơn vị là "Tấn", phải nhân 1000 để ra kg, vì giá là đ/kg
+  useEffect(() => {
+    // Mặc định là Tấn nếu chưa chọn hoặc là undefined
+    const isKg = yieldUnit === 'kg';
+    
+    const quantityInKg = isKg 
+      ? (Number(yieldAmount) || 0) 
+      : (Number(yieldAmount) || 0) * 1000;
+      
+    const revenue = quantityInKg * (Number(sellingPrice) || 0);
+    setValue('total_revenue', revenue);
+  }, [yieldAmount, sellingPrice, yieldUnit, setValue]);
+
+  // Tính tổng sản lượng (quy đổi về kg) và doanh thu
+  const totalYield = harvestRecords?.reduce((sum: number, item: HarvestRecord) => {
+    const isKg = !item.yield_unit || item.yield_unit === 'kg';
+    const amountInKg = isKg ? Number(item.yield_amount) : Number(item.yield_amount) * 1000;
+    return sum + amountInKg;
+  }, 0) || 0;
+  
+  const totalRevenue = harvestRecords?.reduce((sum: number, item: HarvestRecord) => sum + Number(item.total_revenue), 0) || 0;
 
   const handleAdd = () => {
     setEditingItem(null);
-    form.resetFields();
+    reset({
+      harvest_date: new Date().toISOString(),
+      yield_amount: undefined,
+      selling_price_per_unit: undefined,
+      total_revenue: 0,
+      moisture_content: null,
+      quality_grade: '',
+      buyer: '',
+      notes: '',
+      yield_unit: 'tan',
+    });
     setIsModalVisible(true);
   };
 
   const handleEdit = (item: HarvestRecord) => {
     setEditingItem(item);
-    form.setFieldsValue({
-      ...item,
-      harvest_date: item.harvest_date ? dayjs(item.harvest_date) : null,
+    reset({
+      harvest_date: item.harvest_date ? new Date(item.harvest_date).toISOString() : null,
+      yield_amount: item.yield_amount,
+      selling_price_per_unit: item.selling_price_per_unit,
+      total_revenue: item.total_revenue,
+      moisture_content: item.moisture_content,
+      quality_grade: item.quality_grade,
+      buyer: item.buyer,
+      notes: item.notes,
+      yield_unit: item.yield_unit || 'kg', // Mặc định kg nếu data cũ không có
     });
     setIsModalVisible(true);
   };
 
-  const handleDelete = (id: number) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa đợt thu hoạch này?',
-      okText: 'Xóa',
-      okType: 'danger',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          await deleteMutation.mutateAsync({ id, cropId: riceCropId });
-          message.success('Xóa đợt thu hoạch thành công');
-        } catch {
-          message.error('Có lỗi xảy ra khi xóa đợt thu hoạch');
-        }
-      },
-    });
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync({ id, cropId: riceCropId });
+      message.success('Xóa đợt thu hoạch thành công');
+    } catch {
+      message.error('Có lỗi xảy ra khi xóa đợt thu hoạch');
+    }
   };
 
-  const handleSubmit = async () => {
+  const onSubmit = async (values: any) => {
     try {
-      const values = await form.validateFields();
       const dto: CreateHarvestRecordDto = {
         ...values,
         rice_crop_id: riceCropId,
-        harvest_date: values.harvest_date?.format('YYYY-MM-DD'),
+        harvest_date: values.harvest_date ? dayjs(values.harvest_date).format('YYYY-MM-DD') : undefined,
+        // Giữ nguyên giá trị nhập vào và đơn vị
+        yield_amount: Number(values.yield_amount),
+        yield_unit: values.yield_unit,
       };
 
       if (editingItem) {
@@ -100,10 +145,10 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       }
 
       setIsModalVisible(false);
-      form.resetFields();
+      reset();
       setEditingItem(null);
     } catch (error) {
-      console.error('Validate failed:', error);
+      console.error('Submit failed:', error);
     }
   };
 
@@ -115,10 +160,13 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       render: (date: string) => date ? dayjs(date).format('DD/MM/YYYY') : '-',
     },
     {
-      title: 'Sản lượng (kg)',
+      title: 'Sản lượng',
       dataIndex: 'yield_amount',
       key: 'yield_amount',
-      render: (val: number) => val.toLocaleString('vi-VN'),
+      render: (val: number, record: HarvestRecord) => {
+        const unit = record.yield_unit === 'tan' ? 'Tấn' : 'kg';
+        return `${Number(val)?.toLocaleString('vi-VN')} ${unit}`;
+      },
     },
     {
       title: 'Độ ẩm (%)',
@@ -127,10 +175,15 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       render: (val: number) => val ? `${val}%` : '-',
     },
     {
+      title: 'Chất lượng',
+      dataIndex: 'quality_grade',
+      key: 'quality_grade',
+    },
+    {
       title: 'Giá bán (đ/kg)',
-      dataIndex: 'unit_price',
-      key: 'unit_price',
-      render: (val: number) => val.toLocaleString('vi-VN'),
+      dataIndex: 'selling_price_per_unit',
+      key: 'selling_price_per_unit',
+      render: (val: number) => Number(val)?.toLocaleString('vi-VN'),
     },
     {
       title: 'Thành tiền',
@@ -138,14 +191,14 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       key: 'total_revenue',
       render: (val: number) => (
         <span className="font-medium text-green-600">
-          {val.toLocaleString('vi-VN')}
+          {Number(val)?.toLocaleString('vi-VN')}
         </span>
       ),
     },
     {
       title: 'Người mua',
-      dataIndex: 'buyer_name',
-      key: 'buyer_name',
+      dataIndex: 'buyer',
+      key: 'buyer',
     },
     {
       title: 'Hành động',
@@ -161,16 +214,26 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
               handleEdit(record);
             }}
           />
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            className="flex items-center justify-center w-10 h-10"
-            onClick={(e) => {
-              e.stopPropagation();
+          <Popconfirm
+            title="Xác nhận xóa"
+            description="Bạn có chắc chắn muốn xóa đợt thu hoạch này?"
+            onConfirm={(e) => {
+              e?.stopPropagation();
               handleDelete(record.id);
             }}
-          />
+            onCancel={(e) => e?.stopPropagation()}
+            okText="Xóa"
+            cancelText="Hủy"
+            okType="danger"
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              className="flex items-center justify-center w-10 h-10"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popconfirm>
         </Space>
       ),
     },
@@ -229,96 +292,120 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       <Modal
         title={editingItem ? 'Sửa đợt thu hoạch' : 'Thêm đợt thu hoạch mới'}
         open={isModalVisible}
-        onOk={handleSubmit}
+        onOk={handleSubmit(onSubmit)}
         onCancel={() => setIsModalVisible(false)}
-        width={600}
+        width={700}
         okText={editingItem ? 'Cập nhật' : 'Lưu'}
         cancelText="Hủy"
       >
-        <Form form={form} layout="vertical">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex flex-col gap-4">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+              <FormDatePicker
+                control={control}
                 name="harvest_date"
                 label="Ngày thu hoạch"
-                rules={[{ required: true, message: 'Vui lòng chọn ngày' }]}
-              >
-                <DatePicker style={{ width: '100%' }} />
-              </Form.Item>
+                placeholder="Chọn ngày"
+                required
+              />
             </Col>
             <Col span={12}>
-              <Form.Item
+              <FormFieldNumber
+                control={control}
                 name="moisture_content"
                 label="Độ ẩm (%)"
-              >
-                <InputNumber style={{ width: '100%' }} min={0} max={100} />
-              </Form.Item>
+                placeholder="VD: 14"
+                min={0}
+                max={100}
+                decimalScale={3}
+              />
             </Col>
           </Row>
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
+             <FormFieldNumber
+                control={control}
                 name="yield_amount"
-                label="Sản lượng (kg)"
-                rules={[{ required: true, message: 'Vui lòng nhập sản lượng' }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '0') as any}
-                  onChange={(val) => {
-                    const price = form.getFieldValue('unit_price') || 0;
-                    form.setFieldsValue({ total_revenue: (val || 0) * price });
-                  }}
-                />
-              </Form.Item>
+                label="Sản lượng"
+                placeholder="0"
+                required
+                min={0}
+                decimalScale={3}
+                addonAfter={
+                  <Controller
+                    control={control}
+                    name="yield_unit"
+                    render={({ field }) => (
+                      <Select
+                        {...field}
+                        style={{ width: 80 }}
+                        options={[
+                          { label: 'kg', value: 'kg' },
+                          { label: 'Tấn', value: 'tan' },
+                        ]}
+                        onChange={(val) => {
+                          field.onChange(val);
+                          // Reset giá trị khi đổi đơn vị để tránh nhầm lẫn
+                          setValue('yield_amount', undefined);
+                        }}
+                      />
+                    )}
+                  />
+                }
+              />
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="unit_price"
+              <FormFieldNumber
+                control={control}
+                name="selling_price_per_unit"
                 label="Đơn giá (đ/kg)"
-                rules={[{ required: true, message: 'Vui lòng nhập đơn giá' }]}
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  min={0}
-                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '0') as any}
-                  onChange={(val) => {
-                    const qty = form.getFieldValue('yield_amount') || 0;
-                    form.setFieldsValue({ total_revenue: qty * (val || 0) });
-                  }}
-                />
-              </Form.Item>
+                placeholder="0"
+                required
+                min={0}
+                decimalScale={0}
+              />
             </Col>
           </Row>
 
-          <Form.Item
+          <FormFieldNumber
+            control={control}
             name="total_revenue"
             label="Thành tiền"
-            rules={[{ required: true, message: 'Vui lòng nhập thành tiền' }]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              min={0}
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              parser={(value) => (value ? value.replace(/\$\s?|(,*)/g, '') : '0') as any}
-            />
-          </Form.Item>
+            placeholder="0"
+            required
+            disabled
+            decimalScale={0}
+          />
 
-          <Form.Item name="buyer_name" label="Người mua">
-            <Input placeholder="Tên thương lái hoặc công ty" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <FormField
+                control={control}
+                name="quality_grade"
+                label="Chất lượng lúa"
+                placeholder="VD: Loại 1, Đạt chuẩn..."
+              />
+            </Col>
+            <Col span={12}>
+              <FormField
+                control={control}
+                name="buyer"
+                label="Người mua"
+                placeholder="Tên thương lái hoặc công ty"
+              />
+            </Col>
+          </Row>
 
-          <Form.Item name="notes" label="Ghi chú">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
+          <FormField
+            control={control}
+            name="notes"
+            label="Ghi chú"
+            type="textarea"
+            rows={2}
+            placeholder="Ghi chú thêm"
+          />
+        </form>
       </Modal>
     </div>
   );
