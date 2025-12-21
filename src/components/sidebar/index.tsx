@@ -352,7 +352,7 @@ const Sidebar: React.FC = () => {
             </Link>
           </li>
 
-          {/* {hasPermission(userInfo, "SALES_VIEW") && (
+          {/* {hasPermission(userInfo, "sales:read") && (
             <li>
               <Button
                 className={`w-full !justify-start !text-left ${activeTab === 2 ? "active" : ""}`}
@@ -366,8 +366,8 @@ const Sidebar: React.FC = () => {
             </li>
           )} */}
           {/* Quản lý bán hàng */}
-          {(hasPermission(userInfo, "SALES_VIEW") ||
-            hasPermission(userInfo, "SALES_MANAGE")) && (
+          {(hasPermission(userInfo, "sales:read") ||
+            hasPermission(userInfo, "sales:manage")) && (
             <>
               <li>
                 <h6 className='text-green-100 capitalize px-3 mt-4'>
@@ -377,7 +377,7 @@ const Sidebar: React.FC = () => {
 
 
               {/* Hóa đơn bán hàng */}
-              {hasPermission(userInfo, "SALES_VIEW") && (
+              {hasPermission(userInfo, "sales:read") && (
                 <li>
                   <Link to='/sales-invoices'>
                     <Button
@@ -394,7 +394,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Thanh toán */}
-              {hasPermission(userInfo, "SALES_VIEW") && (
+              {hasPermission(userInfo, "sales:read") && (
                 <li>
                   <Link to='/payments'>
                     <Button
@@ -411,7 +411,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Công nợ */}
-              {hasPermission(userInfo, "SALES_VIEW") && (
+              {hasPermission(userInfo, "sales:read") && (
                 <li>
                   <Link to='/debt-notes'>
                     <Button
@@ -428,7 +428,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Trả hàng */}
-              {hasPermission(userInfo, "SALES_VIEW") && (
+              {hasPermission(userInfo, "sales:read") && (
                 <li>
                   <Link to='/sales-returns'>
                     <Button
@@ -445,7 +445,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Báo cáo Lợi nhuận */}
-              {hasPermission(userInfo, "SALES_VIEW") && (
+              {hasPermission(userInfo, "sales:read") && (
                 <li>
                   <Link to='/profit-reports'>
                     <Button
@@ -464,7 +464,7 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* Thêm menu cho supplier */}
-          {hasPermission(userInfo, "INVENTORY_MANAGE") && (
+          {hasPermission(userInfo, "inventory:manage") && (
             <li>
               <Link to='/suppliers'>
                 <Button
@@ -480,7 +480,7 @@ const Sidebar: React.FC = () => {
             </li>
           )}
           {/* Quản lý nhập hàng */}
-          {hasPermission(userInfo, "INVENTORY_VIEW") && (
+          {hasPermission(userInfo, "inventory:read") && (
             <li>
               <Button
                 className={`w-full !justify-start !text-left ${activeTab === 10 ? "active" : ""}`}
@@ -542,7 +542,7 @@ const Sidebar: React.FC = () => {
                     </Button>
                   </Link>
 
-                  {hasPermission(userInfo, "INVENTORY_MANAGE") && (
+                  {hasPermission(userInfo, "inventory:manage") && (
                     <Link to='/inventory/receipts/create'>
                       <Button
                         className={`w-full !justify-start !text-left ${
@@ -560,7 +560,7 @@ const Sidebar: React.FC = () => {
             </li>
           )}
 
-          {hasPermission(userInfo, "PRODUCT_VIEW") && (
+          {hasPermission(userInfo, "product:read") && (
             <li>
               <Button
                 className={`w-full !justify-start !text-left ${activeTab === 1 ? "active" : ""}`}
@@ -597,7 +597,7 @@ const Sidebar: React.FC = () => {
                       </Button>
                     </Link>
                   </li>
-                  {hasPermission(userInfo, "PRODUCT_MANAGE") && (
+                  {hasPermission(userInfo, "product:manage") && (
                     <li >
                       <Link to='/products/new'>
                         <Button
@@ -629,7 +629,7 @@ const Sidebar: React.FC = () => {
               </div>
             </li>
           )}
-          {hasPermission(userInfo, "PRODUCT_MANAGE") && (
+          {hasPermission(userInfo, "product:manage") && (
             <>
               <li>
                 <Link to='/category/list'>
@@ -722,7 +722,7 @@ const Sidebar: React.FC = () => {
 
 
           {/* Thêm menu cho disease warning */}
-          {hasPermission(userInfo, "RICE_BLAST_VIEW") && (
+          {hasPermission(userInfo, "ai:rice_blast:read") && (
             <li>
               <Link to='/disease-warning'>
                 <Button
@@ -807,7 +807,7 @@ const Sidebar: React.FC = () => {
               </div>
           </li>
 
-          {hasPermission(userInfo, "SALES_MANAGE") && (
+          {hasPermission(userInfo, "sales:manage") && (
             <li>
               <Link to='/seasons'>
                 <Button
@@ -824,7 +824,7 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* Chi phí vận hành */}
-          {hasPermission(userInfo, "SALES_MANAGE") && (
+          {hasPermission(userInfo, "sales:manage") && (
             <li>
               <Button
                 className={`w-full !justify-start !text-left ${activeTab === 30 ? "active" : ""}`}
@@ -879,7 +879,7 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* Diện tích mỗi công đất */}
-          {hasPermission(userInfo, "SALES_MANAGE") && (
+          {hasPermission(userInfo, "sales:manage") && (
             <li>
               <Link to='/area-of-each-plot-of-land'>
                 <Button
@@ -896,7 +896,7 @@ const Sidebar: React.FC = () => {
           )}
 
           {/* Khách hàng */}
-          {hasPermission(userInfo, "SALES_VIEW") && (
+          {hasPermission(userInfo, "sales:read") && (
             <li>
               <Link to='/customers'>
                 <Button

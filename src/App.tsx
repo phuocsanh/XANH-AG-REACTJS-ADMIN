@@ -298,7 +298,7 @@ function AppContent({
                     <Route
                       path='/products/list'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_VIEW">
+                        <ProtectedRoute requiredPermission="product:read">
                           <ProductsList />
                         </ProtectedRoute>
                       }
@@ -306,7 +306,7 @@ function AppContent({
                     <Route
                       path='/product/:id?'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <ProtectedRoute requiredPermission="product:manage">
                           <Products />
                         </ProtectedRoute>
                       }
@@ -314,7 +314,7 @@ function AppContent({
                     <Route
                       path='/product-comparison'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_VIEW">
+                        <ProtectedRoute requiredPermission="product:read">
                           <ProductComparisonPage />
                         </ProtectedRoute>
                       }
@@ -322,7 +322,7 @@ function AppContent({
                     <Route
                       path='/category/list'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <ProtectedRoute requiredPermission="product:manage">
                           <ListCategory />
                         </ProtectedRoute>
                       }
@@ -330,7 +330,7 @@ function AppContent({
                     <Route
                       path='/sub-category/list'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <ProtectedRoute requiredPermission="product:manage">
                           <ListSubCategory />
                         </ProtectedRoute>
                       }
@@ -338,7 +338,7 @@ function AppContent({
                     <Route
                       path='/users'
                       element={
-                        <ProtectedRoute requiredPermission="USER_VIEW">
+                        <ProtectedRoute requiredPermission="user:read">
                           <Users />
                         </ProtectedRoute>
                       }
@@ -346,7 +346,7 @@ function AppContent({
                     <Route
                       path='/products/*'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_VIEW">
+                        <ProtectedRoute requiredPermission="product:read">
                           <Products />
                         </ProtectedRoute>
                       }
@@ -354,7 +354,7 @@ function AppContent({
                     <Route
                       path='/units'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <ProtectedRoute requiredPermission="product:manage">
                           <ListUnits />
                         </ProtectedRoute>
                       }
@@ -363,7 +363,7 @@ function AppContent({
                     <Route
                       path='/symbols'
                       element={
-                        <ProtectedRoute requiredPermission="PRODUCT_MANAGE">
+                        <ProtectedRoute requiredPermission="product:manage">
                           <ListSymbols />
                         </ProtectedRoute>
                       }
@@ -372,7 +372,7 @@ function AppContent({
                     <Route
                       path='/suppliers'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
+                        <ProtectedRoute requiredPermission="inventory:manage">
                           <Suppliers />
                         </ProtectedRoute>
                       }
@@ -453,7 +453,7 @@ function AppContent({
                     <Route
                       path='/inventory/receipts'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_VIEW">
+                        <ProtectedRoute requiredPermission="inventory:read">
                           <InventoryReceiptsList />
                         </ProtectedRoute>
                       }
@@ -461,7 +461,7 @@ function AppContent({
                     <Route
                       path='/inventory/receipts/create'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
+                        <ProtectedRoute requiredPermission="inventory:manage">
                           <InventoryReceiptCreate />
                         </ProtectedRoute>
                       }
@@ -469,7 +469,7 @@ function AppContent({
                     <Route
                       path='/inventory/receipts/edit/:id'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
+                        <ProtectedRoute requiredPermission="inventory:manage">
                           <InventoryReceiptCreate />
                         </ProtectedRoute>
                       }
@@ -477,7 +477,7 @@ function AppContent({
                     <Route
                       path='/inventory/receipt/:id'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_VIEW">
+                        <ProtectedRoute requiredPermission="inventory:read">
                           <InventoryReceiptDetail />
                         </ProtectedRoute>
                       }
@@ -487,7 +487,7 @@ function AppContent({
                     <Route
                       path='/inventory/returns/*'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_VIEW">
+                        <ProtectedRoute requiredPermission="inventory:read">
                           <ReturnsPage />
                         </ProtectedRoute>
                       }
@@ -497,7 +497,7 @@ function AppContent({
                     <Route
                       path='/inventory/adjustments/*'
                       element={
-                        <ProtectedRoute requiredPermission="INVENTORY_MANAGE">
+                        <ProtectedRoute requiredPermission="inventory:manage">
                           <AdjustmentsPage />
                         </ProtectedRoute>
                       }
@@ -507,7 +507,7 @@ function AppContent({
                     <Route
                       path='/seasons'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_MANAGE">
+                        <ProtectedRoute requiredPermission="sales:manage">
                           <Seasons />
                         </ProtectedRoute>
                       }
@@ -515,7 +515,7 @@ function AppContent({
                     <Route
                       path='/area-of-each-plot-of-land'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_MANAGE">
+                        <ProtectedRoute requiredPermission="sales:manage">
                           <Areas />
                         </ProtectedRoute>
                       }
@@ -523,7 +523,7 @@ function AppContent({
                     <Route
                       path='/customers'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_VIEW">
+                        <ProtectedRoute requiredPermission="sales:read">
                           <Customers />
                         </ProtectedRoute>
                       }
@@ -531,7 +531,7 @@ function AppContent({
                     <Route
                       path='/sales-invoices'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_VIEW">
+                        <ProtectedRoute requiredPermission="sales:read">
                           <SalesInvoicesList />
                         </ProtectedRoute>
                       }
@@ -539,7 +539,7 @@ function AppContent({
                     <Route
                       path='/sales-invoices/create'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_CREATE">
+                        <ProtectedRoute requiredPermission="sales:create">
                           <CreateSalesInvoice />
                         </ProtectedRoute>
                       }
@@ -547,7 +547,7 @@ function AppContent({
                     <Route
                       path='/payments'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_VIEW">
+                        <ProtectedRoute requiredPermission="sales:read">
                           <PaymentsList />
                         </ProtectedRoute>
                       }
@@ -555,7 +555,7 @@ function AppContent({
                     <Route
                       path='/debt-notes'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_VIEW">
+                        <ProtectedRoute requiredPermission="sales:read">
                           <DebtNotesList />
                         </ProtectedRoute>
                       }
@@ -563,7 +563,7 @@ function AppContent({
                     <Route
                       path='/sales-returns'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_VIEW">
+                        <ProtectedRoute requiredPermission="sales:read">
                           <SalesReturnsList />
                         </ProtectedRoute>
                       }
@@ -571,7 +571,7 @@ function AppContent({
                     <Route
                       path='/sales-returns/create'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_MANAGE">
+                        <ProtectedRoute requiredPermission="sales:manage">
                           <CreateSalesReturn />
                         </ProtectedRoute>
                       }
@@ -587,7 +587,7 @@ function AppContent({
                     <Route
                       path='/operating-costs'
                       element={
-                        <ProtectedRoute requiredPermission="SALES_MANAGE">
+                        <ProtectedRoute requiredPermission="sales:manage">
                           <OperatingCostsPage />
                         </ProtectedRoute>
                       }
