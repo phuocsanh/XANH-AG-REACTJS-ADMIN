@@ -7,6 +7,7 @@ import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
   useDeleteCustomerMutation,
+  useCreateCustomerAccountMutation,
 } from "@/queries/customer"
 import {
   Button,
@@ -19,12 +20,14 @@ import {
   Tabs,
   Card,
   Descriptions,
+  Checkbox,
 } from "antd"
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
+  UserAddOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -71,6 +74,7 @@ const CustomersList: React.FC = () => {
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
   const [detailTab, setDetailTab] = React.useState("info")
+  const [createAccountOnCreate, setCreateAccountOnCreate] = React.useState(false)
 
   // Form instance
   const [form] = Form.useForm<CustomerFormValues>()
@@ -124,6 +128,7 @@ const CustomersList: React.FC = () => {
   const createMutation = useCreateCustomerMutation()
   const updateMutation = useUpdateCustomerMutation()
   const deleteMutation = useDeleteCustomerMutation()
+  const createAccountMutation = useCreateCustomerAccountMutation()
 
   // Hàm xử lý thêm khách hàng
   const handleAddCustomer = () => {
@@ -203,12 +208,24 @@ const CustomersList: React.FC = () => {
           customer: values,
         })
       } else {
-        await createMutation.mutateAsync(values)
+        // Tạo khách hàng mới
+        const newCustomer = await createMutation.mutateAsync(values)
+        
+        // Nếu checkbox "Tạo tài khoản" được chọn
+        if (createAccountOnCreate && newCustomer?.id) {
+          try {
+            await createAccountMutation.mutateAsync(newCustomer.id)
+          } catch (accountError) {
+            console.error('Error creating account:', accountError)
+            // Không throw error vì khách hàng đã được tạo thành công
+          }
+        }
       }
 
       setIsFormModalVisible(false)
       form.resetFields()
       setEditingCustomer(null)
+      setCreateAccountOnCreate(false) // Reset checkbox
     } catch (error) {
       console.error("Form validation failed:", error)
     }
@@ -219,12 +236,23 @@ const CustomersList: React.FC = () => {
     setIsFormModalVisible(false)
     form.resetFields()
     setEditingCustomer(null)
+    setCreateAccountOnCreate(false) // Reset checkbox
   }
 
   // Xử lý đóng detail modal
   const handleCloseDetailModal = () => {
     setIsDetailModalVisible(false)
     setViewingCustomer(null)
+  }
+
+  // Xử lý tạo tài khoản cho khách hàng
+  const handleCreateAccount = async (customer: Customer) => {
+    // Tạm thời bỏ confirm để test
+    try {
+      await createAccountMutation.mutateAsync(customer.id)
+    } catch (error) {
+      console.error('Error in handleCreateAccount:', error)
+    }
   }
 
   // Lấy danh sách khách hàng
@@ -354,27 +382,42 @@ const CustomersList: React.FC = () => {
     {
       key: "action",
       title: "Hành động",
-      width: 200,
-      render: (record: ExtendedCustomer) => (
-        <Space size='middle'>
-          <Button
-            icon={<EyeOutlined />}
-            onClick={() => handleViewCustomer(record)}
-            title='Xem chi tiết'
-          />
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => handleEditCustomer(record)}
-            title='Chỉnh sửa'
-          />
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            title='Xóa'
-            onClick={() => handleDelete(record)}
-          />
-        </Space>
-      ),
+      width: 250,
+      render: (record: ExtendedCustomer) => {
+        // Check xem khách hàng đã có tài khoản chưa
+        const hasAccount = record.users && record.users.length > 0
+        
+        return (
+          <Space size='middle'>
+            <Button
+              icon={<EyeOutlined />}
+              onClick={() => handleViewCustomer(record)}
+              title='Xem chi tiết'
+            />
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => handleEditCustomer(record)}
+              title='Chỉnh sửa'
+            />
+            {/* Chỉ hiển thị nút tạo tài khoản nếu CHƯA có tài khoản */}
+            {!hasAccount && (
+              <Button
+                type="dashed"
+                icon={<UserAddOutlined />}
+                onClick={() => handleCreateAccount(record)}
+                title='Tạo tài khoản đăng nhập'
+                loading={createAccountMutation.isPending}
+              />
+            )}
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              title='Xóa'
+              onClick={() => handleDelete(record)}
+            />
+          </Space>
+        )
+      },
     },
   ]
 
@@ -650,6 +693,23 @@ const CustomersList: React.FC = () => {
           <Form.Item label='Ghi chú' name='notes'>
             <Input.TextArea rows={3} placeholder='Nhập ghi chú' />
           </Form.Item>
+
+          {/* Checkbox tạo tài khoản - chỉ hiển thị khi thêm mới */}
+          {!editingCustomer && (
+            <Form.Item>
+              <Checkbox
+                checked={createAccountOnCreate}
+                onChange={(e) => setCreateAccountOnCreate(e.target.checked)}
+              >
+                <span className='font-medium'>
+                  🔐 Tạo tài khoản đăng nhập ngay
+                </span>
+                <div className='text-xs text-gray-500 mt-1'>
+                  Hệ thống sẽ tự động tạo tài khoản với username = SĐT và mật khẩu tạm: <strong>123456</strong>
+                </div>
+              </Checkbox>
+            </Form.Item>
+          )}
         </Form>
       </Modal>
 

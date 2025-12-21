@@ -29,12 +29,8 @@ import FilterHeader from '@/components/common/filter-header';
 import { ConfirmModal } from '@/components/common';
 import { TablePaginationConfig, TableProps } from 'antd';
 import { FilterValue, SorterResult } from 'antd/es/table/interface';
-import {
-  useRiceCrops,
-  useCreateRiceCrop,
-  useUpdateRiceCrop,
-  useDeleteRiceCrop,
-} from '@/queries/rice-crop';
+import { useRiceCrops, useCreateRiceCrop, useUpdateRiceCrop, useDeleteRiceCrop } from '@/queries/rice-crop';
+import { useAppStore } from '@/stores/store';
 import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
 // Import query cho diện tích mỗi công đất
@@ -208,6 +204,10 @@ const RiceCropsList: React.FC = () => {
   // Form instance
   const [form] = Form.useForm();
 
+  // Get user info
+  const { userInfo } = useAppStore();
+  const isCustomer = userInfo?.role?.code === 'CUSTOMER';
+
   // Queries
   const { data: cropsData, isLoading } = useRiceCrops({
       page: currentPage,
@@ -365,7 +365,8 @@ const RiceCropsList: React.FC = () => {
         <div className="font-medium">{record.field_name}</div>
       ),
     },
-    {
+    // Chỉ hiển thị cột Khách hàng nếu không phải CUSTOMER
+    ...(!isCustomer ? [{
       key: 'customer_name',
       title: (
         <FilterHeader 
@@ -380,7 +381,7 @@ const RiceCropsList: React.FC = () => {
       render: (record: ExtendedRiceCrop) => (
         <div>{record.customer?.name || '-'}</div>
       ),
-    },
+    }] : []),
     {
       key: 'season_name',
       title: (
@@ -464,12 +465,14 @@ const RiceCropsList: React.FC = () => {
             onClick={() => handleViewCrop(record)}
             title="Xem chi tiết"
           />
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            title="Xóa"
-            onClick={() => handleDelete(record)}
-          />
+          {!isCustomer && (
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              title="Xóa"
+              onClick={() => handleDelete(record)}
+            />
+          )}
         </Space>
       ),
     },
@@ -481,13 +484,19 @@ const RiceCropsList: React.FC = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">🌾 Quản Lý Canh Tác</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleAddCrop}
-        >
-          Tạo Ruộng lúa mới
-        </Button>
+        {!isCustomer && (
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingCrop(null);
+              form.resetFields();
+              setIsFormModalVisible(true);
+            }}
+          >
+            Tạo Ruộng lúa mới
+          </Button>
+        )}
       </div>
 
       {/*  Danh sách ruộng lúa */}

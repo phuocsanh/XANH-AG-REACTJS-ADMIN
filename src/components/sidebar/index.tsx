@@ -38,6 +38,9 @@ const Sidebar: React.FC = () => {
   console.log("User Info:", userInfo)
   console.log("User Role:", userInfo?.role)
 
+  // Check nếu user là CUSTOMER
+  const isCustomer = userInfo?.role?.code === 'CUSTOMER'
+
   // Tự động set activeTab và mở submenu dựa trên URL hiện tại
   useEffect(() => {
     const path = location.pathname
@@ -199,7 +202,110 @@ const Sidebar: React.FC = () => {
     )
   }
 
-  // Đã đăng nhập - hiển thị đầy đủ menu
+  // Nếu là CUSTOMER - chỉ hiển thị rice-crops
+  if (isCustomer) {
+    return (
+      <div className='sidebar h-full'>
+        <div className='sidebarTabs px-2 overflow-y-auto h-[calc(100vh-80px)]'>
+          <ul className='flex gap-3 flex-col m'>
+            <li>
+              <Link to='/'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 0 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(0)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <MdOutlineDashboard className='text-blue-200' />
+                  </span>
+                  Dashboard
+                </Button>
+              </Link>
+            </li>
+
+            <li>
+              <Link to='/weather-forecast'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 31 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(31)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <TiWeatherPartlySunny className='text-blue-300' />
+                  </span>
+                  Dự báo Thời tiết
+                </Button>
+              </Link>
+            </li>
+
+
+
+            {/* Quản Lý Canh Tác */}
+            <li>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(25)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <GiGrain className='text-green-200' />
+                </span>
+                Ruộng Lúa Của Tôi
+                <span
+                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                    activeTab === 25 && isToggleSubmenu === true ? "rotate" : ""
+                  }`}
+                >
+                  <FaAngleRight />
+                </span>
+              </Button>
+              <div
+                className={`submenuWrapper ${
+                  activeTab === 25 && isToggleSubmenu === true
+                    ? "colapse"
+                    : "colapsed"
+                }`}
+              >
+                <div className='submenu pl-2'>
+                  <Link to='/rice-crops'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname === "/rice-crops"
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Danh sách ruộng lúa
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </li>
+
+
+            <li>
+              <h6 className='text-green-100 capitalize px-3 mt-4'>
+                Authentication
+              </h6>
+            </li>
+            
+            <li>
+              <Link to='/change-password'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 26 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(26)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <RiLockPasswordLine className='text-green-200' />
+                  </span>
+                  Đổi mật khẩu
+                </Button>
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
+
+  // Đã đăng nhập - hiển thị đầy đủ menu (ADMIN/STAFF)
   return (
     <div className='sidebar h-full'>
       <div className='sidebarTabs px-2 overflow-y-auto h-[calc(100vh-80px)]'>

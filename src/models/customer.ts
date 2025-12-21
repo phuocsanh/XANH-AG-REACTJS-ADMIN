@@ -25,6 +25,7 @@ export interface Customer {
   current_debt?: number;
   created_at: Date | string;
   updated_at: Date | string;
+  users?: Array<{ id: number }>; // Danh sách tài khoản liên kết (để check đã có tài khoản chưa)
 }
 
 export interface CreateCustomerDto {

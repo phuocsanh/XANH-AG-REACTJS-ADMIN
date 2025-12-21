@@ -106,45 +106,28 @@ const RiceCropDetail: React.FC = () => {
 
   const detailTabItems = [
     {
-      key: 'info',
-      label: 'Thông tin chung',
+      key: 'information',
+      label: 'ℹ️ Thông tin chung',
       children: (
         <Card title="Thông tin chi tiết" bordered={false}>
-          <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}>
-            <Descriptions.Item label="Tên ruộng" span={2}>
-              <span className="font-medium text-lg" style={{ color: '#000', fontSize: '16px', fontWeight: 'bold' }}>
-                {riceCrop.field_name || 'N/A'}
-              </span>
+          <Descriptions column={2} bordered>
+            <Descriptions.Item label="Mùa vụ">
+              <span style={{ color: '#000' }}>{riceCrop.season?.name || '-'} ({riceCrop.season?.year})</span>
             </Descriptions.Item>
             <Descriptions.Item label="Khách hàng">
-              <span style={{ color: '#000', fontSize: '14px' }}>
-                {riceCrop.customer?.name || '-'}
-              </span>
+              <span style={{ color: '#000' }}>{riceCrop.customer?.name || '-'}</span>
             </Descriptions.Item>
-            <Descriptions.Item label="Mùa vụ">
-              <span style={{ color: '#000' }}>
-                {riceCrop.season?.name || '-'} ({riceCrop.season?.year || '-'})
-              </span>
+            <Descriptions.Item label="Tên ruộng">
+              <span style={{ color: '#000' }}>{riceCrop.field_name}</span>
             </Descriptions.Item>
-            <Descriptions.Item label="Tổng diện tích (m²)">
+            <Descriptions.Item label="Diện tích">
               <span style={{ color: '#000' }}>
-                {formatVietnameseNumber(riceCrop.field_area, 1)} m²
-              </span>
-            </Descriptions.Item>
-            <Descriptions.Item label="Số công đất">
-              <span style={{ color: '#000' }}>
-                {formatVietnameseNumber(riceCrop.amount_of_land, 1)}
-              </span>
-            </Descriptions.Item>
-            <Descriptions.Item label="Diện tích mỗi công">
-              <span style={{ color: '#000' }}>
-                {riceCrop.areaOfEachPlotOfLand 
-                  ? `${riceCrop.areaOfEachPlotOfLand.name || ''} - ${formatVietnameseNumber(riceCrop.areaOfEachPlotOfLand.acreage, 0)}m²`
-                  : '-'}
+                {Number(riceCrop.field_area).toLocaleString('vi-VN')} m² 
+                ({Number(riceCrop.amount_of_land).toLocaleString('vi-VN')} công)
               </span>
             </Descriptions.Item>
             <Descriptions.Item label="Giống lúa">
-              <span style={{ color: '#000' }}>{riceCrop.rice_variety || '-'}</span>
+              <span style={{ color: '#000' }}>{riceCrop.rice_variety}</span>
             </Descriptions.Item>
             <Descriptions.Item label="Nguồn giống">
               <span style={{ color: '#000' }}>{riceCrop.seed_source || '-'}</span>
@@ -203,12 +186,12 @@ const RiceCropDetail: React.FC = () => {
     },
     {
       key: 'schedules',
-      label: 'Lịch canh tác',
+      label: '📅 Lịch canh tác',
       children: <FarmingSchedulesTab riceCropId={riceCrop.id} />,
     },
     {
       key: 'growth',
-      label: 'Theo dõi sinh trưởng',
+      label: '📈 Theo dõi sinh trưởng',
       children: <GrowthTrackingTab riceCropId={riceCrop.id} />,
     },
     {
@@ -223,12 +206,12 @@ const RiceCropDetail: React.FC = () => {
     },
     {
       key: 'harvest',
-      label: 'Thu hoạch',
+      label: '🌾 Thu hoạch',
       children: <HarvestRecordsTab riceCropId={riceCrop.id} />,
     },
     {
       key: 'profit',
-      label: 'Báo cáo lợi nhuận',
+      label: '📊 Báo cáo lợi nhuận',
       children: <ProfitReportTab riceCropId={riceCrop.id} />,
     },
   ];

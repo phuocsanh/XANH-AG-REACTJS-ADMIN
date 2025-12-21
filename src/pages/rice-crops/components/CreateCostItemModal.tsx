@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Row, Col, message } from 'antd';
+import { Modal, message } from 'antd';
+import { useForm } from 'react-hook-form';
 import { useCreateCostItem, useUpdateCostItem } from '@/queries/cost-item';
 import type { CostItem } from '@/models/cost-item';
-import { DatePicker } from '@/components/common';
+import FormField from '@/components/form/form-field';
+import FormFieldNumber from '@/components/form/form-field-number';
+import FormDatePicker from '@/components/form/form-date-picker';
 import dayjs from 'dayjs';
 
 interface CreateCostItemModalProps {
@@ -12,45 +15,59 @@ interface CreateCostItemModalProps {
   riceCropId: number;
 }
 
+interface CostItemFormValues {
+  item_name: string;
+  expense_date: string;
+  total_cost: number;
+  notes?: string;
+}
+
 const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
   visible,
   onCancel,
   initialData,
   riceCropId,
 }) => {
-  const [form] = Form.useForm();
   const createMutation = useCreateCostItem();
   const updateMutation = useUpdateCostItem();
-  
   const isEdit = !!initialData;
+
+  const { control, handleSubmit, reset } = useForm<CostItemFormValues>({
+    defaultValues: {
+      item_name: '',
+      expense_date: dayjs().toISOString(),
+      total_cost: 0,
+      notes: '',
+    },
+  });
 
   useEffect(() => {
     if (visible) {
       if (initialData) {
-        form.setFieldsValue({
-          ...initialData,
-          expense_date: dayjs(initialData.expense_date),
+        reset({
+          item_name: initialData.item_name,
+          expense_date: initialData.expense_date,
+          total_cost: Number(initialData.total_cost),
+          notes: initialData.notes || '',
         });
       } else {
-        form.resetFields();
-        form.setFieldsValue({
-          rice_crop_id: riceCropId,
-          expense_date: dayjs(),
+        reset({
+          item_name: '',
+          expense_date: dayjs().toISOString(),
+          total_cost: 0,
+          notes: '',
         });
       }
     }
-  }, [visible, initialData, form, riceCropId]);
+  }, [visible, initialData, reset]);
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data: CostItemFormValues) => {
     try {
-      const values = await form.validateFields();
-
       const payload: any = {
-        ...values,
+        ...data,
         rice_crop_id: riceCropId,
-        expense_date: values.expense_date.format('YYYY-MM-DD'),
+        expense_date: dayjs(data.expense_date).format('YYYY-MM-DD'),
       };
-
 
       if (isEdit && initialData) {
         await updateMutation.mutateAsync({
@@ -63,71 +80,61 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
         message.success('Đã thêm chi phí canh tác');
       }
 
-      form.resetFields();
       onCancel();
     } catch (error) {
-      console.error('Validation failed:', error);
+      console.error('Submit failed:', error);
+      message.error('Có lỗi xảy ra');
     }
   };
-
-
 
   return (
     <Modal
       title={isEdit ? 'Sửa chi phí canh tác' : 'Thêm chi phí canh tác'}
       open={visible}
       onCancel={onCancel}
-      onOk={handleSubmit}
+      onOk={handleSubmit(onSubmit)}
       confirmLoading={createMutation.isPending || updateMutation.isPending}
       width={600}
       okText={isEdit ? 'Cập nhật' : 'Thêm'}
       cancelText="Hủy"
     >
-      <Form
-        form={form}
-        layout="vertical"
-      >
-        <Form.Item
+      <form className="mt-4 flex flex-col gap-4">
+        <FormField
           name="item_name"
+          control={control}
           label="Tên chi phí"
-          rules={[{ required: true, message: 'Vui lòng nhập tên chi phí' }]}
-        >
-          <Input placeholder="VD: Mua phân DAP" />
-        </Form.Item>
+          required
+          placeholder="VD: Mua phân DAP"
+        />
 
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="expense_date"
-              label="Ngày chi"
-              rules={[{ required: true, message: 'Vui lòng chọn ngày' }]}
-            >
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-        </Row>
+        <FormDatePicker
+          name="expense_date"
+          control={control}
+          label="Ngày chi"
+          required
+          placeholder="Chọn ngày chi"
+          className="w-full"
+        />
 
-        <Form.Item
+        <FormFieldNumber
           name="total_cost"
+          control={control}
           label="Số tiền"
-          rules={[{ required: true, message: 'Vui lòng nhập số tiền' }]}
-        >
-          <InputNumber
-            min={0}
-            style={{ width: '100%' }}
-            formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            placeholder="0"
-            addonAfter="₫"
-          />
-        </Form.Item>
+          required
+          suffix="đ"
+          placeholder="Nhập số tiền"
+          className="w-full"
+        />
 
-        <Form.Item
+        <FormField
           name="notes"
+          control={control}
           label="Ghi chú"
-        >
-          <Input.TextArea rows={3} placeholder="Ghi chú thêm (nếu có)" />
-        </Form.Item>
-      </Form>
+          type="textarea"
+          rows={3}
+          placeholder="Ghi chú thêm (nếu có)"
+        />
+      </form>
     </Modal>
   );
 };

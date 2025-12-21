@@ -16,6 +16,7 @@ import PersonAdd from "@mui/icons-material/PersonAdd"
 import Settings from "@mui/icons-material/Settings"
 import Logout from "@mui/icons-material/Logout"
 import Login from "@mui/icons-material/Login"
+import VpnKey from "@mui/icons-material/VpnKey"
 import { useAppStore } from "../../stores"
 import { MyContext } from "../../App"
 
@@ -36,6 +37,11 @@ export const Header: React.FC = () => {
   const handleLogin = (): void => {
     handleClose()
     navigate('/sign-in')
+  }
+
+  const handleChangePassword = (): void => {
+    handleClose()
+    navigate('/change-password')
   }
 
   const handleLogout = (): void => {
@@ -133,26 +139,26 @@ export const Header: React.FC = () => {
               {/* Chỉ hiển thị khi đã đăng nhập */}
               {isLogin && [
                 <MenuItem key="account" onClick={handleClose}>
-                  <Avatar /> My account
+                  <Avatar /> Tài khoản của tôi
                 </MenuItem>,
                 <Divider key="divider" />,
-                <MenuItem key="add" onClick={handleClose}>
+                <MenuItem key="change-password" onClick={handleChangePassword}>
                   <ListItemIcon>
-                    <PersonAdd fontSize='small' />
+                    <VpnKey fontSize='small' />
                   </ListItemIcon>
-                  Add another account
+                  Đổi mật khẩu
                 </MenuItem>,
                 <MenuItem key="settings" onClick={handleClose}>
                   <ListItemIcon>
                     <Settings fontSize='small' />
                   </ListItemIcon>
-                  Settings
+                  Cài đặt
                 </MenuItem>,
                 <MenuItem key="logout" onClick={handleLogout}>
                   <ListItemIcon>
                     <Logout fontSize='small' />
                   </ListItemIcon>
-                  Logout
+                  Đăng xuất
                 </MenuItem>
               ]}
 
@@ -162,7 +168,7 @@ export const Header: React.FC = () => {
                   <ListItemIcon>
                     <Login fontSize='small' />
                   </ListItemIcon>
-                  Login
+                  Đăng nhập
                 </MenuItem>
               )}
             </Menu>

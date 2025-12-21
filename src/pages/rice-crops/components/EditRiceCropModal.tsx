@@ -10,6 +10,7 @@ import { useCustomersQuery } from '@/queries/customer';
 import { useSeasonsQuery } from '@/queries/season';
 import { useAreasQuery } from '@/queries/area-of-each-plot-of-land';
 import { GrowthStage, CropStatus, type RiceCrop } from '@/types/rice-farming.types';
+import { useAppStore } from '@/stores/store';
 import dayjs from 'dayjs';
 
 interface EditRiceCropModalProps {
@@ -64,6 +65,8 @@ export const EditRiceCropModal: React.FC<EditRiceCropModalProps> = ({
   const { data: customersData } = useCustomersQuery({ limit: 100 });
   const { data: seasonsData } = useSeasonsQuery();
   const { data: areasData } = useAreasQuery({ limit: 100 });
+  const { userInfo } = useAppStore();
+  const isCustomer = userInfo?.role?.code === 'CUSTOMER';
 
   const { control, handleSubmit, reset, watch, setValue } = useForm<RiceCropFormValues>({
     defaultValues: {
@@ -198,6 +201,7 @@ export const EditRiceCropModal: React.FC<EditRiceCropModalProps> = ({
             required
             placeholder="Chọn khách hàng"
             showSearch
+            disabled={isCustomer}
           />
 
           <FormComboBox

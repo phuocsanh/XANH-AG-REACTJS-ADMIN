@@ -29,7 +29,7 @@ export const customerKeys = {
 /**
  * Hook lấy danh sách khách hàng (POST /customers/search)
  */
-export const useCustomersQuery = (params?: Record<string, unknown>) => {
+export const useCustomersQuery = (params?: Record<string, unknown>, options?: { enabled?: boolean }) => {
   const page = (params?.page as number) || 1
   const limit = (params?.limit as number) || 10
   const search = params?.search as string | undefined
@@ -54,6 +54,7 @@ export const useCustomersQuery = (params?: Record<string, unknown>) => {
     },
     refetchOnMount: true,
     staleTime: 0,
+    enabled: options?.enabled !== false, // Mặc định enabled = true
   })
 }
 
@@ -273,6 +274,32 @@ export const useDeleteCustomerMutation = () => {
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi xóa khách hàng")
+    },
+  })
+}
+
+/**
+ * Hook tạo tài khoản đăng nhập cho khách hàng
+ */
+export const useCreateCustomerAccountMutation = () => {
+  return useMutation({
+    mutationFn: async (customerId: number) => {
+      const response = await api.postRaw<{ 
+        data: { account: string; temp_password: string; customer_name: string } 
+      }>('/users/customer/create-account', {
+        customer_id: customerId,
+      })
+      return response.data
+    },
+    onSuccess: (data: { account: string; temp_password: string; customer_name: string }) => {
+      invalidateResourceQueries("/customers")
+      toast.success(
+        `Tạo tài khoản thành công!\nSố điện thoại: ${data.account}`,
+        { autoClose: 3000 }
+      )
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo tài khoản")
     },
   })
 }

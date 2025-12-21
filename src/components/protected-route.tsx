@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react"
 import { Navigate, useLocation } from "react-router-dom"
 import { useAppStore } from "@/stores"
-import { isPublicRoute } from "@/config/routes"
+import { isPublicRoute, isCustomerAllowedRoute } from "@/config/routes"
 import { toast } from "react-toastify"
 
 interface ProtectedRouteProps {
@@ -11,8 +11,12 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation()
   const isAuthenticated = useAppStore((state) => state.isLogin)
+  const userInfo = useAppStore((state) => state.userInfo)
   const [hasShownToast, setHasShownToast] = useState(false)
   const currentPath = location.pathname
+
+  // Check nếu user là CUSTOMER
+  const isCustomer = userInfo?.role?.code === 'CUSTOMER'
 
   useEffect(() => {
     // Reset toast state khi authentication status thay đổi
@@ -33,6 +37,15 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // Nếu chưa đăng nhập và không phải trang công khai, chuyển hướng đến trang đăng nhập
   if (!isAuthenticated && !isPublicRoute(currentPath)) {
     return <Navigate to='/sign-in' state={{ from: currentPath }} replace />
+  }
+
+  // Nếu là CUSTOMER và truy cập trang không được phép
+  if (isAuthenticated && isCustomer && !isPublicRoute(currentPath) && !isCustomerAllowedRoute(currentPath)) {
+    if (!hasShownToast) {
+      toast.error("Bạn không có quyền truy cập trang này")
+      setHasShownToast(true)
+    }
+    return <Navigate to='/rice-crops' replace />
   }
 
   return <>{children}</>
