@@ -9,7 +9,6 @@ import {
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { Header } from "./components/header"
 import Sidebar from "./components/sidebar"
-import Footer from "./components/footer"
 import { Dashboard } from "./pages/dashboard"
 import Products from "./pages/products"
 import ProductsList from "./pages/products/products-list"
@@ -643,12 +642,6 @@ function AppContent({
               </div>
             </div>
 
-            {/* Footer */}
-            {shouldShowLayout && (
-              <div className='w-full'>
-                <Footer />
-              </div>
-            )}
 
             {/* Mobile sidebar overlay */}
             {isMobileSidebarOpen && (
