@@ -315,11 +315,11 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
         source === 'external' ? (
           <Tag color="orange" icon={<FileTextOutlined />}>Tự nhập</Tag>
         ) : (
-          <Tag color="blue" icon={<ShopOutlined />}>Hệ thống</Tag>
+          <Tag color="blue" icon={<ShopOutlined />}>Cửa hàng XANH</Tag>
         )
       ),
       filters: [
-        { text: 'Hệ thống', value: 'system' },
+        { text: 'Cửa hàng XANH', value: 'system' },
         { text: 'Tự nhập', value: 'external' },
       ],
       onFilter: (value, record) => record.source === value,
@@ -344,6 +344,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       dataIndex: 'supplier',
       key: 'supplier',
       width: 250,
+      render: (supplier: string) => supplier === 'Hệ thống' ? 'Cửa hàng XANH' : supplier,
     },
     {
       title: 'Sản phẩm',

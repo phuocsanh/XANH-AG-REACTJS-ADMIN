@@ -229,8 +229,8 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   const debtorOptions = displayDebtors.map((c: CustomerDebtor) => {
     // Lấy debt summary từ API nếu đây là customer đang được chọn
     const isSelected = c.id === customerId
-    const displayDebt = isSelected && debtSummary ? debtSummary.total_debt : (c.total_debt || 0)
-    const displayCount = isSelected && debtSummary ? debtSummary.debt_note_count : (c.debt_count || 0)
+    const displayDebt = isSelected && debtSummary ? (debtSummary.total_debt || 0) : (c.total_debt || 0)
+    const displayCount = isSelected && debtSummary ? (debtSummary.debt_note_count || 0) : (c.debt_count || 0)
     
     return {
       value: c.id,
@@ -243,7 +243,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
              </span>
            ) : (
              <span className="text-red-500 font-medium ml-2">
-               Nợ: {formatCurrency(displayDebt)} ({displayCount} phiếu)
+               Nợ: {formatCurrency(Number(displayDebt) || 0)} ({Number(displayCount) || 0} phiếu)
              </span>
            )}
         </div>

@@ -134,7 +134,8 @@ export const useCustomerDebtSummaryQuery = (id: number) => {
         total_debt: number
         debt_note_count: number
       }>(`/customers/${id}/debt-summary`)
-      return response
+      // Unwrap response.data vì interceptor không tự động unwrap
+      return (response as any)?.data || response
     },
     enabled: !!id,
   })
