@@ -24,7 +24,8 @@ export const WarningMessageDisplay: React.FC<WarningMessageDisplayProps> = ({ me
   // KHUYẾN NGHỊ:
   // ...
 
-  const sections = message.split('\n\n');
+
+  const sections = (message || '').split('\n\n');
   
   // Helper to safely get section content
   const getSection = (index: number) => sections[index] || '';
@@ -54,7 +55,7 @@ export const WarningMessageDisplay: React.FC<WarningMessageDisplayProps> = ({ me
       )}
       
       {/* Phân tích chi tiết */}
-      {message.includes('PHÂN TÍCH CHI TIẾT:') && (
+      {message && message.includes('PHÂN TÍCH CHI TIẾT:') && (
         <>
           <Title level={5}>🔍 PHÂN TÍCH CHI TIẾT:</Title>
           <Paragraph>
@@ -65,7 +66,7 @@ export const WarningMessageDisplay: React.FC<WarningMessageDisplayProps> = ({ me
       )}
       
       {/* Khuyến nghị */}
-      {message.includes('KHUYẾN NGHỊ:') && (
+      {message && message.includes('KHUYẾN NGHỊ:') && (
         <>
           <Title level={5}>💊 KHUYẾN NGHỊ:</Title>
           <Paragraph style={{ color: '#1890ff', fontWeight: 500 }}>

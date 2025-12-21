@@ -188,7 +188,13 @@ export const LocationForm: React.FC<LocationFormProps> = ({
   };
 
   const handleSubmit = (values: UpdateLocationDto) => {
-    onSubmit(values);
+    // Đảm bảo lat và lon là number
+    const submitData = {
+      ...values,
+      lat: Number(values.lat),
+      lon: Number(values.lon),
+    };
+    onSubmit(submitData);
   };
 
   // Construct current location for map
@@ -233,6 +239,14 @@ export const LocationForm: React.FC<LocationFormProps> = ({
                   placeholder="VD: Ruộng nhà ông Tư" 
                   size="large"
                 />
+              </Form.Item>
+              
+              {/* Hidden fields cho lat và lon */}
+              <Form.Item name="lat" hidden>
+                <InputNumber />
+              </Form.Item>
+              <Form.Item name="lon" hidden>
+                <InputNumber />
               </Form.Item>
             </Col>
 

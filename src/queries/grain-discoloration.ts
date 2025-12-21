@@ -48,7 +48,7 @@ export const useGrainDiscolorationWarningQuery = () => {
     queryKey: grainDiscolorationKeys.warning(),
     queryFn: async () => {
       const response = await api.get<GrainDiscolorationWarning>("/ai-grain-discoloration/warning")
-      return response
+      return (response as any)?.data || response
     },
     // Tự động refetch mỗi 5 phút
     refetchInterval: 5 * 60 * 1000,

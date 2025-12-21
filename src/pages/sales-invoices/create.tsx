@@ -2111,6 +2111,231 @@ ${productInfo}`;
                 </CardContent>
               </Card>
             </Grid>
+
+            {/* Bảng thông tin dạng thuốc BVTV */}
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" mb={2}>
+                    📋 Danh sách Mã Dạng Thuốc BVTV (Từ Mát → Gây Nóng)
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Danh sách dưới đây sắp xếp các mã dạng thuốc từ an toàn nhất (mát) đến cần thận trọng nhất (gây nóng).
+                  </Typography>
+                  
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: 1.5,
+                    p: 2,
+                    bgcolor: '#f5f5f5',
+                    borderRadius: 1
+                  }}>
+                    {/* Mát nhất */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
+                      <code style={{ 
+                        backgroundColor: '#f6ffed', 
+                        border: '1px solid #b7eb8f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#52c41a'
+                      }}>SL</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
+                      <code style={{ 
+                        backgroundColor: '#f6ffed', 
+                        border: '1px solid #b7eb8f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#52c41a'
+                      }}>AL</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
+                      <code style={{ 
+                        backgroundColor: '#f6ffed', 
+                        border: '1px solid #b7eb8f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#52c41a'
+                      }}>SP</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
+                      <code style={{ 
+                        backgroundColor: '#f6ffed', 
+                        border: '1px solid #b7eb8f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#52c41a'
+                      }}>SG</code>
+                    </Box>
+
+                    {/* Mát vừa */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
+                      <code style={{ 
+                        backgroundColor: '#fffbe6', 
+                        border: '1px solid #ffe58f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#faad14'
+                      }}>SC</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
+                      <code style={{ 
+                        backgroundColor: '#fffbe6', 
+                        border: '1px solid #ffe58f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#faad14'
+                      }}>WG</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
+                      <code style={{ 
+                        backgroundColor: '#fffbe6', 
+                        border: '1px solid #ffe58f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#faad14'
+                      }}>WP</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
+                      <code style={{ 
+                        backgroundColor: '#fffbe6', 
+                        border: '1px solid #ffe58f',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#faad14'
+                      }}>DC</code>
+                    </Box>
+
+                    {/* Trung bình */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
+                      <code style={{ 
+                        backgroundColor: '#fff7e6', 
+                        border: '1px solid #ffd591',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#fa8c16'
+                      }}>CS</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
+                      <code style={{ 
+                        backgroundColor: '#fff7e6', 
+                        border: '1px solid #ffd591',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#fa8c16'
+                      }}>SE</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
+                      <code style={{ 
+                        backgroundColor: '#fff7e6', 
+                        border: '1px solid #ffd591',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#fa8c16'
+                      }}>ME</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
+                      <code style={{ 
+                        backgroundColor: '#fff7e6', 
+                        border: '1px solid #ffd591',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#fa8c16'
+                      }}>EW</code>
+                    </Box>
+
+                    {/* Gây nóng */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
+                      <code style={{ 
+                        backgroundColor: '#fff1f0', 
+                        border: '1px solid #ffa39e',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#ff4d4f'
+                      }}>EC</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
+                      <code style={{ 
+                        backgroundColor: '#fff1f0', 
+                        border: '1px solid #ffa39e',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#ff4d4f'
+                      }}>OD</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
+                      <code style={{ 
+                        backgroundColor: '#fff1f0', 
+                        border: '1px solid #ffa39e',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#ff4d4f'
+                      }}>DP</code>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
+                      <code style={{ 
+                        backgroundColor: '#fff1f0', 
+                        border: '1px solid #ffa39e',
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontWeight: 600,
+                        color: '#ff4d4f'
+                      }}>DS</code>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ mt: 2, p: 2, bgcolor: '#e6f7ff', borderRadius: 1 }}>
+                    <Typography variant="body2" color="primary.main">
+                      💡 <strong>Lưu ý:</strong> Dạng thuốc "mát" (🟢 SL, AL, SP, SG) an toàn khi phun trưa nắng. Dạng "gây nóng" (🔴 EC, OD, DP, DS) chỉ nên phun sáng sớm hoặc chiều mát để tránh phỏng lá.
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
         </TabPanel>
 

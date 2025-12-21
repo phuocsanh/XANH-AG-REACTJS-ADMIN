@@ -22,7 +22,7 @@ export const useLocationQuery = () => {
     queryKey: riceBlastKeys.location(),
     queryFn: async () => {
       const response = await api.get<Location>("/location")
-      return response
+      return (response as any)?.data || response
     },
   })
 }
@@ -59,7 +59,7 @@ export const useWarningQuery = () => {
     queryKey: riceBlastKeys.warning(),
     queryFn: async () => {
       const response = await api.get<RiceBlastWarning>("/ai-rice-blast/warning")
-      return response
+      return (response as any)?.data || response
     },
     // Tự động refetch mỗi 5 phút
     refetchInterval: 5 * 60 * 1000,

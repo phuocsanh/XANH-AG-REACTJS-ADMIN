@@ -47,7 +47,7 @@ export const useStemBorerWarningQuery = () => {
     queryKey: stemBorerKeys.warning(),
     queryFn: async () => {
       const response = await api.get<StemBorerWarning>("/ai-stem-borer/warning")
-      return response
+      return (response as any)?.data || response
     },
     // Tự động refetch mỗi 5 phút
     refetchInterval: 5 * 60 * 1000,
