@@ -1,14 +1,16 @@
 
 import React from 'react';
 import { Input, Select } from 'antd';
+import ComboBox, { ComboBoxProps } from './combo-box';
 
 interface FilterHeaderProps {
   title: string;
   dataIndex?: string; // Optional if not used for binding directly
   value: any;
   onChange: (value: any) => void;
-  inputType?: 'text' | 'select' | 'date';
+  inputType?: 'text' | 'select' | 'date' | 'combobox';
   options?: { label: string; value: any }[]; // For select input
+  comboBoxProps?: Partial<ComboBoxProps>; // For combobox input
 }
 
 const FilterHeader: React.FC<FilterHeaderProps> = ({ 
@@ -16,7 +18,8 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
   value, 
   onChange, 
   inputType = 'text',
-  options
+  options,
+  comboBoxProps
 }) => {
   const [innerValue, setInnerValue] = React.useState(value);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -78,6 +81,17 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
             allowClear
             className="font-normal w-full"
             options={options}
+        />
+      )}
+      {inputType === 'combobox' && (
+        <ComboBox
+            placeholder="Tất cả" 
+            size="small" 
+            value={innerValue} 
+            onChange={handleSelectChange}
+            allowClear
+            className="font-normal w-full"
+            {...comboBoxProps}
         />
       )}
     </div>

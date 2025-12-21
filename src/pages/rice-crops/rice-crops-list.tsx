@@ -80,8 +80,44 @@ const statusLabels: Record<CropStatus, string> = {
 };
 
 const RiceCropsList: React.FC = () => {
+  const navigate = useNavigate();
+  const { confirm: confirmModal } = Modal;
+  const [form] = Form.useForm();
+  
+  // State for combobox search
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [seasonSearch, setSeasonSearch] = useState('');
+
+  // Load Customers for filter options
+  const { data: customersData, isLoading: isCustomerLoading } = useCustomersQuery({ 
+      page: 1, limit: 20, keyword: customerSearch 
+  });
+  const customerOptions = React.useMemo(() => 
+    customersData?.data?.items?.map((c: any) => ({ label: c.name, value: c.id })) || [], 
+    [customersData]
+  );
+
+  // Load Seasons for filter options
+  const { data: seasonsData, isLoading: isSeasonLoading } = useSeasonsQuery({ 
+      page: 1, limit: 20, keyword: seasonSearch 
+  });
+  const seasonOptions = React.useMemo(() => 
+    seasonsData?.data?.items?.map((s: any) => ({ label: s.name, value: s.id })) || [], 
+    [seasonsData]
+  );
   // State quản lý UI
   const [filters, setFilters] = useState<Record<string, any>>({});
+
+  // Set default season filter
+  const hasInitializedSeasonRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!hasInitializedSeasonRef.current && seasonOptions.length > 0) {
+      const latestSeason = seasonOptions[0];
+      setFilters((prev) => ({ ...prev, season_id: latestSeason.value }));
+      hasInitializedSeasonRef.current = true;
+    }
+  }, [seasonOptions]);
   const [isFormModalVisible, setIsFormModalVisible] = useState<boolean>(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState<boolean>(false);
   const [deletingCrop, setDeletingCrop] = useState<RiceCrop | null>(null);
@@ -89,7 +125,7 @@ const RiceCropsList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const navigate = useNavigate();
+
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
@@ -202,8 +238,6 @@ const RiceCropsList: React.FC = () => {
   }
 
   // Form instance
-  const [form] = Form.useForm();
-
   // Get user info
   const { userInfo } = useAppStore();
   const isCustomer = userInfo?.role?.code === 'CUSTOMER';
@@ -214,8 +248,8 @@ const RiceCropsList: React.FC = () => {
       limit: pageSize,
       ...filters
   });
-  const { data: customersData } = useCustomersQuery({ limit: 100 });
-  const { data: seasonsData } = useSeasonsQuery();
+  // Hooks for customers and seasons are moved to the top
+
   const { data: areasData } = useAreasQuery({ limit: 100 }); // Load danh sách diện tích
   const createMutation = useCreateRiceCrop();
   const updateMutation = useUpdateRiceCrop();
@@ -372,9 +406,16 @@ const RiceCropsList: React.FC = () => {
         <FilterHeader 
             title="Khách hàng" 
             dataIndex="customer_name" 
-            value={filters.customer_name} 
-            onChange={(val) => handleFilterChange('customer_name', val)}
-            inputType="text"
+            value={filters.customer_id} 
+            onChange={(val) => handleFilterChange('customer_id', val)}
+            inputType="combobox"
+            comboBoxProps={{
+                data: customerOptions,
+                onSearch: setCustomerSearch,
+                isLoading: isCustomerLoading,
+                filterOption: false,
+                placeholder: "Tìm khách hàng..."
+            }}
         />
       ),
       width: 180,
@@ -388,9 +429,16 @@ const RiceCropsList: React.FC = () => {
         <FilterHeader 
             title="Mùa vụ" 
             dataIndex="season_name" 
-            value={filters.season_name} 
-            onChange={(val) => handleFilterChange('season_name', val)}
-            inputType="text"
+            value={filters.season_id} 
+            onChange={(val) => handleFilterChange('season_id', val)}
+            inputType="combobox"
+            comboBoxProps={{
+                data: seasonOptions,
+                onSearch: setSeasonSearch,
+                isLoading: isSeasonLoading,
+                filterOption: false,
+                placeholder: "Tìm mùa vụ..."
+            }}
         />
       ),
       width: 150,
