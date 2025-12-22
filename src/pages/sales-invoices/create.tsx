@@ -1217,6 +1217,22 @@ ${productInfo}`;
             ${partialPaymentAmount > 0 ? `<div class="row" style="justify-content: flex-end"><span class="label">Đã trả:</span><span class="value" style="flex: 0 auto">${formatCurrency(partialPaymentAmount)}</span></div>` : ''}
             ${remainingAmount > 0 ? `<div class="row" style="justify-content: flex-end"><span class="label">Còn nợ:</span><span class="value" style="flex: 0 auto; font-weight: bold;">${formatCurrency(remainingAmount)}</span></div>` : ''}
           </div>
+          
+          ${customerId && seasonId && customerSeasonStats ? `
+            <div style="margin-top: 15px; padding: 10px; background-color: #f5f5f5; border-left: 4px solid #1976d2;">
+              <div style="font-weight: bold; color: #1976d2; margin-bottom: 8px;">
+                📊 Thống kê mùa vụ: ${seasons?.data?.items?.find((s: Season) => s.id === seasonId)?.name || ''}
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Tổng tiền mua hàng:</span>
+                <span style="font-weight: bold; color: #2e7d32;">${formatCurrency(customerSeasonStats.totalPurchase || 0)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Tổng nợ:</span>
+                <span style="font-weight: bold; color: #d32f2f;">${formatCurrency(customerSeasonStats.totalDebt || 0)}</span>
+              </div>
+            </div>
+          ` : ''}
         </div>
       `;
     }
