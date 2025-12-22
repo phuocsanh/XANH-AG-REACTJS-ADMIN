@@ -87,8 +87,9 @@ export const useSalesInvoiceQuery = (id: number) => {
   return useQuery({
     queryKey: salesInvoiceKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<SalesInvoice>(`/sales/invoice/${id}`)
-      return response
+      const response = await api.get<any>(`/sales/invoice/${id}`)
+      // Unwrap data if it's wrapped in { success: true, data: ... }
+      return (response?.success && response?.data) ? response.data : response
     },
     enabled: !!id,
   })

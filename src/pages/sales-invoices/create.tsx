@@ -29,6 +29,8 @@ import {
   Checkbox,
   FormControlLabel,
   CircularProgress,
+  Radio,
+  RadioGroup,
 } from '@mui/material';
 import { FormFieldNumber, FormField, FormComboBox } from '@/components/form';
 import {
@@ -212,6 +214,8 @@ const CreateSalesInvoice = () => {
   });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPrintModalVisible, setIsPrintModalVisible] = useState(false);
+  const [paperSize, setPaperSize] = useState<'A4' | 'K80'>('A4'); // Khổ giấy: A4 hoặc K80
+
   const [printSections, setPrintSections] = useState({
     invoice: true,
     advisory: true,
@@ -347,7 +351,7 @@ const CreateSalesInvoice = () => {
         // Suy luận price_type từ payment_method của invoice
         const inferredPriceType = invoice.payment_method === 'debt' ? 'credit' : 'cash';
         
-        setValue('items', invoice.items.map(item => ({
+        setValue('items', invoice.items.map((item: any) => ({
           product_id: item.product_id,
           product_name: item.product_name,
           quantity: item.quantity,
@@ -1136,9 +1140,11 @@ ${productInfo}`;
   ].filter(w => w.data);
 
   const generatePrintContent = () => {
-    const styles = `
+    // CSS cho A4 (210mm) - Layout đầy đủ
+    const stylesA4 = `
       <style>
-        body { font-family: 'Times New Roman', serif; line-height: 1.5; color: #000; }
+        @page { size: A4; margin: 15mm; }
+        body { font-family: 'Times New Roman', serif; line-height: 1.5; color: #000; font-size: 14px; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .section { margin-bottom: 25px; }
         .section-title { font-size: 16px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 5px; text-transform: uppercase; }
@@ -1166,6 +1172,37 @@ ${productInfo}`;
         .disease-content { font-size: 14px; line-height: 1.6; }
       </style>
     `;
+
+    // CSS cho K80 (80mm) - Layout đơn giản, font nhỏ hơn
+    const stylesK80 = `
+      <style>
+        @page { size: 80mm auto; margin: 2mm; }
+        body { font-family: 'Arial', sans-serif; line-height: 1.3; color: #000; font-size: 11px; max-width: 76mm; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+        .header h2 { font-size: 14px; margin: 5px 0; }
+        .section { margin-bottom: 10px; }
+        .section-title { font-size: 12px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 5px; padding-bottom: 3px; }
+        .row { margin-bottom: 3px; }
+        .label { font-weight: bold; display: inline-block; }
+        .value { display: inline; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 10px; }
+        th, td { border: 1px solid #ccc; padding: 3px; text-align: left; }
+        th { background-color: #f0f0f0; font-size: 10px; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .total-section { margin-top: 8px; text-align: right; font-size: 11px; }
+        .warning-box { border: 1px solid #faad14; background-color: #fffbe6; padding: 5px; margin-bottom: 8px; }
+        .warning-header { font-weight: bold; color: #d46b08; margin-bottom: 3px; font-size: 11px; }
+        .warning-content { white-space: pre-line; font-size: 10px; }
+        .footer { margin-top: 15px; text-align: center; font-style: italic; font-size: 9px; }
+        .disease-warning-item { margin-bottom: 8px; padding: 5px; border-left: 2px solid #fa8c16; }
+        .disease-title { font-weight: bold; font-size: 11px; color: #d46b08; margin-bottom: 3px; }
+        .disease-content { font-size: 10px; line-height: 1.4; }
+      </style>
+    `;
+
+    const styles = paperSize === 'K80' ? stylesK80 : stylesA4;
+
 
     let content = `
       <html>
@@ -2796,6 +2833,33 @@ ${productInfo}`;
           {/* Left Column: Settings */}
           <Grid item xs={12} md={4}>
             <Box display="flex" flexDirection="column" gap={2}>
+              <Typography variant="h6" fontSize="1rem">Khổ giấy</Typography>
+              
+              <RadioGroup value={paperSize} onChange={(e) => setPaperSize(e.target.value as 'A4' | 'K80')}>
+                <FormControlLabel 
+                  value="A4" 
+                  control={<Radio />} 
+                  label={
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">A4 (210mm)</Typography>
+                      <Typography variant="caption" color="text.secondary">Máy in văn phòng - Layout đầy đủ</Typography>
+                    </Box>
+                  } 
+                />
+                <FormControlLabel 
+                  value="K80" 
+                  control={<Radio />} 
+                  label={
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold">K80 (80mm)</Typography>
+                      <Typography variant="caption" color="text.secondary">Máy in nhiệt/hóa đơn - Layout đơn giản</Typography>
+                    </Box>
+                  } 
+                />
+              </RadioGroup>
+
+              <Divider />
+
               <Typography variant="h6" fontSize="1rem">Tùy chọn nội dung</Typography>
               
               {/* Invoice Section */}
