@@ -72,6 +72,7 @@ import {
   priceTypeLabels,
 } from './form-config';
 import { ProductsTable } from './components/ProductsTable';
+import { WeatherForecastTabs } from './weather-forecast-tabs';
 
 // Disease Warning Imports
 import {
@@ -188,11 +189,13 @@ const CreateSalesInvoice = () => {
   const [selectedProductIdsForAdvisory, setSelectedProductIdsForAdvisory] = useState<number[]>([]);
   const [mixResult, setMixResult] = useState('');
   const [sortResult, setSortResult] = useState('');
-  const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]);
+  const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]); // Dữ liệu đã filter (chỉ khung giờ tốt) cho "Thời điểm phun thuốc"
+  const [fullWeatherForecast, setFullWeatherForecast] = useState<WeatherData[]>([]); // Dữ liệu đầy đủ tất cả giờ cho "Dự báo 2 ngày"
   const [sprayingRecommendations, setSprayingRecommendations] = useState<Recommendation[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [weatherTabValue, setWeatherTabValue] = useState(0); // Tab index cho dự báo thời tiết
   
   // Location state - Khởi tạo từ database
   const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
@@ -789,16 +792,16 @@ ${productInfo}`;
       `- Thời gian: ${item.time}, Nhiệt độ: ${item.temperature}°C, Trời: ${item.description}, Khả năng mưa: ${item.precipitation_probability}%, Lượng mưa: ${item.rain_amount}mm, Gió: ${item.wind_speed}m/s, Độ ẩm: ${item.humidity}%`
     ).join('\n');
     
-    return `Dựa trên dữ liệu dự báo thời tiết đã lọc (chỉ bao gồm các giờ từ 07:00 đến 22:00), hãy phân tích và tìm ra các thời điểm phun thuốc tốt nhất.
+    return `Dựa trên dữ liệu dự báo thời tiết đã lọc (CHỈ BAO GỒM KHUNG GIỜ PHUN THUỐC TỐT NHẤT: Sáng 7:30-9:00 và Chiều 16:00-19:00), hãy phân tích và tìm ra các thời điểm phun thuốc tốt nhất.
     
     DỮ LIỆU DỰ BÁO THỜI TIẾT:
     ${forecastInfo}
     
     YÊU CẦU QUAN TRỌNG VỀ CHỌN KHUNG GIỜ:
-    1. Với MỖI NGÀY có trong dữ liệu, hãy chọn ra 3 mốc thời gian đại diện cho 3 buổi:
-       - Buổi Sáng (07:00 - 11:59): Chọn 1 mốc tốt nhất, ưu tiên từ 08:00 đến 10:00.
-       - Buổi Trưa/Chiều (12:00 - 16:59): Chọn 1 mốc tốt nhất, ưu tiên từ 15:00 đến 16:59.
-       - Buổi Tối (17:00 - 22:00): Chọn 1 mốc tốt nhất, ưu tiên từ 17:00 đến 19:00.
+    1. Với MỖI NGÀY có trong dữ liệu, hãy chọn ra ĐÚNG 3 mốc thời gian theo thứ tự ưu tiên:
+       - BUỔI SÁNG (7:30 - 9:00): Chọn 1 mốc tốt nhất.
+       - BUỔI CHIỀU (16:00 - 19:00): Chọn 2 mốc tốt nhất.
+       - Chỉ khi KHÔNG ĐỦ giờ ở buổi sáng hoặc chiều, mới lấy thêm từ buổi trưa (12:00-15:59).
     
     2. QUAN TRỌNG - Thứ tự ưu tiên khi chọn (từ cao đến thấp):
        a) Khả năng mưa THẤP NHẤT (<20% là tốt, <10% là rất tốt, 0% là hoàn hảo)
@@ -851,15 +854,34 @@ ${productInfo}`;
       const forecastData = await weatherService.getForecast(selectedLocation.latitude, selectedLocation.longitude);
       const filteredData = weatherService.filterNextTwoDays(forecastData);
       
-      const daytimeData = filteredData.filter(item => {
+      // Lọc lấy khung giờ phun thuốc (ưu tiên sáng + chiều, fallback trưa):
+      // - Sáng: 7:30 - 9:00
+      // - Chiều: 16:00 - 19:00
+      // - Trưa: 12:00 - 15:59 (fallback)
+      const optimalHoursData = filteredData.filter(item => {
         const date = new Date(item.dt * 1000);
         const hour = date.getHours();
-        return hour >= 7 && hour <= 22;
+        const minute = date.getMinutes();
+        
+        // Sáng: 7:30 - 9:00 (7h30 đến trước 9h)
+        const isMorning = (hour === 7 && minute >= 30) || (hour === 8);
+        
+        // Chiều: 16:00 - 19:00 (4h chiều đến 7h tối)
+        const isAfternoon = hour >= 16 && hour < 19;
+        
+        // Trưa: 12:00 - 15:59 (fallback khi không đủ sáng/chiều)
+        const isNoon = hour >= 12 && hour < 16;
+        
+        return isMorning || isAfternoon || isNoon;
       });
       
-      setWeatherForecast(daytimeData);
+      // Lưu dữ liệu đầy đủ (tất cả giờ trong 2 ngày) cho phần hiển thị tabs
+      setFullWeatherForecast(filteredData);
       
-      const simplifiedData = weatherService.simplifyWeatherData(daytimeData);
+      // Lưu dữ liệu đã filter (chỉ khung giờ tốt) cho phần "Thời điểm phun thuốc"
+      setWeatherForecast(optimalHoursData);
+      
+      const simplifiedData = weatherService.simplifyWeatherData(optimalHoursData);
       
       let recommendations: Recommendation[] = [];
       if (simplifiedData.length > 0) {
@@ -885,7 +907,7 @@ ${productInfo}`;
       try {
         const cacheData = {
           timestamp: Date.now(),
-          forecast: daytimeData,
+          forecast: optimalHoursData,
           recommendations: recommendations
         };
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
@@ -1191,6 +1213,37 @@ ${productInfo}`;
         </div>
       `;
     }
+    
+    // Thêm Lưu ý quan trọng và Ghi chú nếu có
+    if (printSections.invoice) {
+      const warning = watch('warning');
+      const notes = watch('notes');
+      
+      if (warning || notes) {
+        content += `<div class="section">`;
+        
+        if (warning) {
+          content += `
+            <div style="margin-bottom: 15px;">
+              <strong>Lưu ý quan trọng:</strong>
+              <div style="margin-top: 5px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107;">${warning.replace(/\n/g, '<br>')}</div>
+            </div>
+          `;
+        }
+        
+        if (notes) {
+          content += `
+            <div style="margin-bottom: 15px;">
+              <strong>Ghi chú:</strong>
+              <div style="margin-top: 5px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #6c757d;">${notes.replace(/\n/g, '<br>')}</div>
+            </div>
+          `;
+        }
+        
+        content += `</div>`;
+      }
+    }
+
 
     // 2. TECHNICAL ADVISORY SECTION
     const showMix = printSections.advisory && selectedAdvisorySections.mix && mixResult;
@@ -1482,7 +1535,7 @@ ${productInfo}`;
                           required
                           options={customerRiceCrops.data.map((crop: RiceCrop) => ({
                             value: crop.id,
-                            label: `${crop.field_name} - ${crop.rice_variety} (${crop.field_area.toLocaleString('vi-VN')} m²)`
+                            label: `${crop.field_name} - ${crop.rice_variety} (${new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(crop.field_area))} m²)`
                           }))}
                           onSelectionChange={(value) => {
                             setSelectedRiceCropId(value as number);
@@ -1911,7 +1964,7 @@ ${productInfo}`;
                           onChange={() => handleProductToggleForAdvisory(product.id)}
                         />
                         <Box ml={2}>
-                          <Typography fontWeight="bold">{product.name}</Typography>
+                          <Typography fontWeight="bold">{product.trade_name || product.name}</Typography>
                           <Box>
                             {product.ingredient?.map((ing: string, index: number) => (
                               <Tag key={index} color="blue">{ing}</Tag>
@@ -2076,38 +2129,10 @@ ${productInfo}`;
                       <SyncOutlined spin={isWeatherLoading} />
                     </IconButton>
                   </Box>
-                  {weatherForecast.length > 0 ? (
-                    <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-                      {weatherForecast.map((item, index) => (
-                        <ListItem key={index} sx={{ borderBottom: '1px solid #eee' }}>
-                          <Box width="100%">
-                            <Box display="flex" justifyContent="space-between" mb={0.5}>
-                              <Typography fontWeight="bold" color="primary">
-                                🕒 {formatTime(item.dt)}
-                              </Typography>
-                              <Typography fontWeight="bold" color="success.main">
-                                ☔ Khả năng mưa: {Math.round(item.pop * 100)}%
-                              </Typography>
-                            </Box>
-                            <Box display="flex" gap={2} flexWrap="wrap" fontSize="0.875rem">
-                              <span>🌡️ Nhiệt độ: {item.main.temp}°C</span>
-                              <span>💨 Tốc độ gió: {item.wind.speed}m/s</span>
-                              <span>🌤️ {item.weather[0]?.description}</span>
-                            </Box>
-                            {item.rain && (item.rain['1h'] || 0) > 0 && (
-                              <Typography fontSize="0.75rem" color="warning.main" mt={0.5}>
-                                🌧️ Lượng mưa: {item.rain['1h']}mm
-                              </Typography>
-                            )}
-                          </Box>
-                        </ListItem>
-                      ))}
-                    </List>
-                  ) : (
-                    <Typography color="text.secondary">
-                      Đang tải dữ liệu thời tiết...
-                    </Typography>
-                  )}
+                  <WeatherForecastTabs 
+                    weatherData={fullWeatherForecast}
+                    formatTime={formatTime}
+                  />
                 </CardContent>
               </Card>
             </Grid>

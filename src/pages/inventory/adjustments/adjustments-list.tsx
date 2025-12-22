@@ -35,6 +35,7 @@ import {
   useCancelAdjustmentMutation,
 } from "@/queries/inventory-adjustment"
 import { LoadingSpinner } from "@/components/common"
+import FilterHeader from "@/components/common/filter-header"
 
 const { Title } = Typography
 
@@ -167,7 +168,13 @@ const AdjustmentsList: React.FC = () => {
 
   const columns: ColumnsType<InventoryAdjustment> = [
     {
-      title: "Mã phiếu",
+      title: (
+        <FilterHeader
+          title="Mã phiếu"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+      ),
       dataIndex: "code",
       key: "code",
       width: 180,
@@ -200,7 +207,19 @@ const AdjustmentsList: React.FC = () => {
       ellipsis: true,
     },
     {
-      title: "Trạng thái",
+      title: (
+        <FilterHeader
+          title="Trạng thái"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          inputType="select"
+          options={[
+             { value: 'draft', label: 'Nháp' },
+             { value: 'approved', label: 'Đã duyệt' },
+             { value: 'cancelled', label: 'Đã hủy' }
+          ]}
+        />
+      ),
       dataIndex: "status",
       key: "status",
       width: 120,
@@ -227,29 +246,7 @@ const AdjustmentsList: React.FC = () => {
     <div style={{ padding: "24px" }}>
       <Title level={2}>Quản lý phiếu điều chỉnh kho</Title>
 
-      <Card style={{ marginBottom: "16px" }}>
-        <Space>
-          <Input.Search
-            placeholder='Tìm theo mã phiếu...'
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            allowClear
-            prefix={<SearchOutlined />}
-            style={{ width: 300 }}
-          />
-          <Select
-            placeholder='Lọc theo trạng thái'
-            value={statusFilter}
-            onChange={setStatusFilter}
-            allowClear
-            style={{ width: 200 }}
-          >
-            <Select.Option value="Nháp">Nháp</Select.Option>
-            <Select.Option value="Đã duyệt">Đã duyệt</Select.Option>
-            <Select.Option value="Đã hủy">Đã hủy</Select.Option>
-          </Select>
-        </Space>
-      </Card>
+
 
       <Card>
         <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between" }}>

@@ -210,9 +210,26 @@ const SalesInvoicesList: React.FC = () => {
 
 
   // Handlers
-  const handleViewInvoice = (invoice: SalesInvoice) => {
-    setViewingInvoice(invoice)
-    setIsDetailModalVisible(true)
+  const handleViewInvoice = async (invoice: SalesInvoice) => {
+    try {
+      // Gọi API để lấy chi tiết đầy đủ (bao gồm items)
+      const response = await fetch(`http://localhost:3003/sales/invoice/${invoice.id}`)
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        setViewingInvoice(result.data)
+        setIsDetailModalVisible(true)
+      } else {
+        // Fallback: dùng data từ list nếu API lỗi
+        setViewingInvoice(invoice)
+        setIsDetailModalVisible(true)
+      }
+    } catch (error) {
+      console.error('Error fetching invoice details:', error)
+      // Fallback: dùng data từ list nếu API lỗi
+      setViewingInvoice(invoice)
+      setIsDetailModalVisible(true)
+    }
   }
 
   const handleCloseDetailModal = () => {
@@ -338,10 +355,11 @@ const SalesInvoicesList: React.FC = () => {
             value={filters.season_id}
             onChange={(val) => handleFilterChange('season_id', val)}
             onSearch={(text) => setSeasonSearchText(text)}
-            options={(seasonsData?.data?.items || []).map((season: any) => ({
+            data={(seasonsData?.data?.items || []).map((season: any) => ({
               value: season.id,
               label: season.name
             }))}
+            isLoading={false}
             allowClear
             showSearch
             filterOption={false}
@@ -645,7 +663,7 @@ const SalesInvoicesList: React.FC = () => {
                     <Card key={index} size='small'>
                       <div className='grid grid-cols-4 gap-4'>
                         <div className='col-span-2'>
-                          <div className='font-medium'>{item.product_name}</div>
+                          <div className='font-medium'>{item.product_name || (item.product as any)?.trade_name || item.product?.name || 'Sản phẩm không xác định'}</div>
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>

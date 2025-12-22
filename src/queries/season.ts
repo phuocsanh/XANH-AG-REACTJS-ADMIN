@@ -109,7 +109,7 @@ export const useCreateSeasonMutation = () => {
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries("/season")
+      queryClient.invalidateQueries({ queryKey: seasonKeys.all })
       toast.success("Tạo mùa vụ thành công!")
     },
     onError: (error: unknown) => {
@@ -134,7 +134,7 @@ export const useUpdateSeasonMutation = () => {
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries("/season")
+      queryClient.invalidateQueries({ queryKey: seasonKeys.all })
       toast.success("Cập nhật mùa vụ thành công!")
     },
     onError: (error: unknown) => {
@@ -153,7 +153,7 @@ export const useDeleteSeasonMutation = () => {
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries("/season")
+      queryClient.invalidateQueries({ queryKey: seasonKeys.all })
       toast.success("Xóa mùa vụ thành công!")
     },
     onError: (error: unknown) => {

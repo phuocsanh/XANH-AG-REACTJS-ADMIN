@@ -378,8 +378,9 @@ const InventoryReceiptsList: React.FC = () => {
 
     // === CANCELLED (Đã hủy) ===
     else if (statusCode === InventoryReceiptStatus.CANCELLED || statusText === "Đã hủy") {
-      // Xóa (để dọn dẹp)
-      actions.push(
+      // Chỉ cho phép xóa nếu chưa từng approved (chưa tác động kho)
+      if (!(record as any).approved_at) {
+        actions.push(
         <Tooltip key='delete' title='Xóa phiếu'>
           <Popconfirm
             title='Xóa phiếu nhập hàng'
@@ -397,6 +398,7 @@ const InventoryReceiptsList: React.FC = () => {
           </Popconfirm>
         </Tooltip>
       )
+      }
     }
 
     return <Space size='small'>{actions}</Space>
@@ -465,18 +467,23 @@ const InventoryReceiptsList: React.FC = () => {
         }).format(amount),
     },
     {
-      title: "Trạng thái",
+      title: (
+        <FilterHeader 
+            title="Trạng thái" 
+            value={filters.status} 
+            onChange={(val) => handleFilterChange('status', val)}
+            inputType="select"
+            options={[
+              { label: "Nháp", value: InventoryReceiptStatus.DRAFT },
+              { label: "Đã duyệt", value: InventoryReceiptStatus.APPROVED },
+              { label: "Đã hủy", value: InventoryReceiptStatus.CANCELLED },
+            ]}
+        />
+      ),
       dataIndex: "status",
       key: "status",
       width: 150,
       align: "center",
-      filters: [
-        { text: "Nháp", value: InventoryReceiptStatus.DRAFT },
-        { text: "Đã duyệt", value: InventoryReceiptStatus.APPROVED },
-        { text: "Đã hủy", value: InventoryReceiptStatus.CANCELLED },
-      ],
-      filteredValue: filters.status ? [filters.status] : null,
-      filterMultiple: false,
       render: (status: string) => renderStatus(status),
     },
     {

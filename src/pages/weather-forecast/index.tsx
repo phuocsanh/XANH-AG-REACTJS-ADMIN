@@ -377,12 +377,18 @@ const WeatherForecastPage: React.FC = () => {
       });
     }
     
+    // Tính độ ẩm trung bình từ hourly data
+    const avgHumidity = hourlyDataForDate.length > 0
+      ? Math.round(hourlyDataForDate.reduce((sum, item) => sum + item.main.humidity, 0) / hourlyDataForDate.length)
+      : 0;
+    
     return {
       tempMin: dailyData.tempMin,
       tempMax: dailyData.tempMax,
       maxPrecipitationProbability: dailyData.precipitationProbabilityMax,
       maxPrecipitationTime: maxPrecipTime, // Thêm giờ có mưa cao nhất
-      totalRain: dailyData.precipitationSum.toString()
+      totalRain: dailyData.precipitationSum.toString(),
+      avgHumidity: avgHumidity // Thêm độ ẩm trung bình
     };
   };
 
@@ -571,6 +577,14 @@ const WeatherForecastPage: React.FC = () => {
                               <Text type="secondary" className="text-sm mb-1">🌧️ Tổng lượng mưa</Text>
                               <Text strong className="text-xl md:text-2xl text-blue-600">
                                 {summary.totalRain}mm
+                              </Text>
+                            </div>
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <div className="flex flex-col">
+                              <Text type="secondary" className="text-sm mb-1">💧 Độ ẩm TB</Text>
+                              <Text strong className="text-xl md:text-2xl text-cyan-600">
+                                {summary.avgHumidity}%
                               </Text>
                             </div>
                           </Col>

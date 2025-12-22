@@ -38,6 +38,7 @@ import {
   useAttachImageToReturnMutation
 } from '@/queries/inventory-return';
 import { useUploadFileMutation, useInventoryReceiptsQuery, useInventoryReceiptQuery } from '@/queries/inventory';
+import { useProductSearch } from '@/queries/product';
 import { useAppStore } from '@/stores';
 import { InventoryReceiptApiResponse } from '@/models/inventory.model';
 import {
@@ -56,6 +57,16 @@ const ReturnCreate = () => {
   const [receiptSearch, setReceiptSearch] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState<InventoryReceiptApiResponse | null>(null);
   const [tempProductSelect, setTempProductSelect] = useState<number | null>(null);
+
+  // State tìm kiếm sản phẩm server-side
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const { 
+    data: productSearchData, 
+    isLoading: isProductSearchLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useProductSearch(productSearchTerm, 20);
 
   const {
     control,
@@ -81,10 +92,9 @@ const ReturnCreate = () => {
   const updateMutation = useUpdateReturnMutation();
   const attachImageMutation = useAttachImageToReturnMutation();
 
-  // Debug: Kiểm tra returnId
   console.log('🔍 Debug return-create:', { id, returnId, isEditMode });
 
-  // Load existing data for edit mode (images đã có sẵn trong existingReturn)
+  // Load existing data for edit mode
   const { data: existingReturn, isLoading: isLoadingReturn } = useReturnQuery(returnId as number);
   
   // Load receipt if edit mode to get available products
@@ -95,27 +105,18 @@ const ReturnCreate = () => {
     if (isEditMode && existingReturn) {
       console.log('📝 Setting form data:', existingReturn);
       
-      // Reset form with existing data
       setValue('receipt_id', existingReturn.receipt_id || 0);
       setValue('supplier_id', existingReturn.supplier_id);
       setValue('return_code', existingReturn.code);
       setValue('reason', existingReturn.reason);
       setValue('notes', existingReturn.notes || '');
       
-      console.log('🔍 Setting status:', existingReturn.status, typeof existingReturn.status);
       setValue('status', existingReturn.status as any || 'draft');
-      
-      console.log('✅ Form values set:', {
-        receipt_id: existingReturn.receipt_id,
-        reason: existingReturn.reason,
-        notes: existingReturn.notes,
-        status: existingReturn.status
-      });
       
       if (existingReturn.items) {
         setValue('items', existingReturn.items.map(item => ({
           product_id: item.product_id,
-          product_name: (item as any).product?.name || `Sản phẩm #${item.product_id}`,
+          product_name: (item as any).product?.trade_name || (item as any).product?.name || (item as any).product_name || `Sản phẩm #${item.product_id}`,
           quantity: item.quantity,
           unit_cost: typeof item.unit_cost === 'string' ? parseFloat(item.unit_cost) : item.unit_cost,
           total_price: typeof item.total_price === 'string' ? parseFloat(item.total_price) : item.total_price,
@@ -124,21 +125,19 @@ const ReturnCreate = () => {
         })));
       }
 
-      // Images đã có sẵn trong existingReturn.images
       if ((existingReturn as any).images) {
         const rawImages = (existingReturn as any).images;
         if (Array.isArray(rawImages)) {
           setValue('images', rawImages.map((img: any, index: number) => {
             if (typeof img === 'string') {
               return {
-                uid: `-${index}`, // Ant Design Upload prefers uid
+                uid: `-${index}`,
                 name: `Image ${index + 1}`,
                 status: 'done',
                 url: img,
                 thumbUrl: img,
               };
             }
-            // Legacy object format fallback (nếu backend trả về format cũ)
             return {
               uid: img.id || `-${index}`,
               url: img.url,
@@ -160,18 +159,43 @@ const ReturnCreate = () => {
 
   // Lấy danh sách sản phẩm từ phiếu nhập đã chọn
   const availableProducts = useMemo(() => {
-    // Khi edit mode, dùng editStageReceipt
     const sourceReceipt = isEditMode ? editStageReceipt : selectedReceipt;
     
     return (sourceReceipt as any)?.items?.map((item: any) => ({
       product_id: item.product_id,
-      product_name: item.product?.name || `Sản phẩm #${item.product_id}`,
+      product_name: item.product?.trade_name || item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`,
       quantity: item.quantity,
       unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
     })) || [];
   }, [isEditMode, editStageReceipt, selectedReceipt]);
 
-  // Xử lý chọn phiếu nhập kho
+  // Compute options for ComboBox based on search results
+  const productOptions = useMemo(() => {
+    // Nếu không tìm kiếm, hiển thị list available (client-side)
+    if (!productSearchTerm) {
+        return availableProducts.map((p: any) => ({
+            value: p.product_id,
+            label: `${p.product_name} (Đã nhập: ${p.quantity})`,
+            productData: p
+        }));
+    }
+
+    // Nếu tìm kiếm, hiển thị kết quả từ server merge với info receipt
+    if (!productSearchData?.pages) return [];
+
+    return productSearchData.pages.flatMap((page: any) => page?.data || []).map((product: any) => {
+        // Tìm info trong receipt
+        const inReceipt = availableProducts.find((ap: any) => ap.product_id === product.id);
+        
+        return {
+            value: product.id,
+            label: `${product.trade_name || product.name} ${inReceipt ? `(Đã nhập: ${inReceipt.quantity})` : '(Không có trong phiếu)'}`,
+            disabled: !inReceipt, // Disable nếu không có trong phiếu
+            productData: inReceipt // Null nếu không có
+        };
+    });
+  }, [availableProducts, productSearchTerm, productSearchData]);
+
   const handleReceiptSelect = (receiptId: number | null) => {
     const receipt = receiptsData?.data?.items?.find((r) => r.id === receiptId);
     setSelectedReceipt(receipt || null);
@@ -179,7 +203,6 @@ const ReturnCreate = () => {
       setValue('receipt_id', receipt.id);
       setValue('supplier_id', receipt.supplier_id || 0);
       setValue('return_code', `RT-${receipt.code}`);
-      // Reset items khi đổi phiếu
       setValue('items', []);
     } else {
       setValue('receipt_id', 0);
@@ -189,9 +212,7 @@ const ReturnCreate = () => {
     }
   };
 
-  // Thêm sản phẩm vào danh sách
   const handleAddProduct = (product: typeof availableProducts[0]) => {
-    // Check if already exists
     const exists = fields.some((field) => field.product_id === product.product_id);
     if (exists) return;
 
@@ -206,7 +227,6 @@ const ReturnCreate = () => {
     });
   };
 
-  // Submit form
   const onSubmit = async (data: ReturnFormData) => {
     if (!userInfo?.id) {
       alert('Không tìm thấy thông tin người dùng!');
@@ -214,7 +234,6 @@ const ReturnCreate = () => {
     }
 
     try {
-      // Recalculate derived values to ensure consistency
       const processedItems = data.items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
@@ -224,13 +243,9 @@ const ReturnCreate = () => {
           notes: item.notes,
       }));
 
-      // Xử lý danh sách ảnh: lấy URL từ response upload hoặc property url có sẵn
       const imageUrls = data.images?.map((img: any) => {
-        // Trường hợp ảnh đã có sẵn (khi edit)
         if (img.url) return img.url;
-        // Trường hợp ảnh mới upload (response từ server)
         if (img.response?.data?.url) return img.response.data.url;
-        // Fallback
         return img.response?.url || img.thumbUrl;
       }).filter(Boolean) || [];
 
@@ -244,17 +259,14 @@ const ReturnCreate = () => {
         status: data.status,
         created_by: userInfo.id,
         items: processedItems,
-        images: imageUrls, // Gửi trực tiếp mảng URL
+        images: imageUrls,
       };
 
-      // 1. Lưu phiếu (Tạo hoặc Cập nhật)
       if (isEditMode && returnId) {
         await updateMutation.mutateAsync({ id: returnId, data: returnData as any });
       } else {
         await createMutation.mutateAsync(returnData as any);
       }
-
-      // Không cần bước 2 (gắn ảnh thủ công) nữa vì đã gửi trong payload
 
       navigate('/inventory/returns');
     } catch (error) {
@@ -269,8 +281,13 @@ const ReturnCreate = () => {
     }).format(value);
   };
 
-  // Get receipt list
-  const receiptList = receiptsData?.data?.items || [];
+  const receiptList = useMemo(() => {
+    const list = receiptsData?.data?.items || [];
+    if (editStageReceipt && !list.find((r: any) => r.id === editStageReceipt.id)) {
+      return [editStageReceipt, ...list];
+    }
+    return list;
+  }, [receiptsData, editStageReceipt]);
 
   return (
     <Box>
@@ -285,9 +302,8 @@ const ReturnCreate = () => {
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={3}>
-          {/* Phiếu nhập kho */}
           <Grid item xs={12} md={6}>
-            <Card>
+            <Card sx={{ height: '100%' }}>
               <CardContent>
                 <Typography variant="h6" mb={2}>
                   Thông tin phiếu nhập
@@ -300,7 +316,7 @@ const ReturnCreate = () => {
                   placeholder="Nhập mã phiếu nhập..."
                   data={receiptList.map((receipt: any) => ({
                     value: receipt.id,
-                    label: receipt.code  // Chỉ hiển thị mã phiếu
+                    label: receipt.code
                   }))}
                   onSearch={setReceiptSearch}
                   onSelectionChange={(value) => {
@@ -308,10 +324,9 @@ const ReturnCreate = () => {
                   }}
                   allowClear
                   showSearch
-                  disabled={isEditMode}  // Khóa khi chỉnh sửa
+                  disabled={isEditMode}
                 />
 
-                {/* Hiển thị thông tin phiếu nhập */}
                 {(isEditMode && existingReturn) || selectedReceipt ? (
                   <Box mt={2}>
                     <Typography variant="subtitle2" color="text.secondary">
@@ -342,13 +357,25 @@ const ReturnCreate = () => {
                     </Typography>
                   </Box>
                 ) : null}
+
+                <Box mt={2}>
+                  <FormComboBox
+                    name="status"
+                    control={control}
+                    label="Trạng thái"
+                    data={[
+                      { value: 'draft', label: 'Nháp' },
+                      { value: 'approved', label: 'Đã duyệt' },
+                      { value: 'cancelled', label: 'Đã hủy' },
+                    ]}
+                  />
+                </Box>
               </CardContent>
             </Card>
           </Grid>
 
-          {/* Thông tin trả hàng */}
           <Grid item xs={12} md={6}>
-            <Card>
+            <Card sx={{ height: '100%' }}>
               <CardContent>
                 <Typography variant="h6" mb={2}>
                   Thông tin trả hàng
@@ -372,18 +399,7 @@ const ReturnCreate = () => {
                   rows={2}
                 />
 
-                <Box mt={2}>
-                  <FormComboBox
-                    name="status"
-                    control={control}
-                    label="Trạng thái"
-                    data={[
-                      { value: 'draft', label: 'Nháp' },
-                      { value: 'approved', label: 'Đã duyệt' },
-                      { value: 'cancelled', label: 'Đã hủy' },
-                    ]}
-                  />
-                </Box>
+                {/* Status moved to left column */}
 
                 <Box mt={2}>
                   <Typography variant="subtitle2" mb={1}>
@@ -402,7 +418,6 @@ const ReturnCreate = () => {
             </Card>
           </Grid>
 
-          {/* Sản phẩm */}
           <Grid item xs={12}>
             <Card>
               <CardContent>
@@ -417,7 +432,6 @@ const ReturnCreate = () => {
                         Chọn sản phẩm từ phiếu nhập:
                       </Typography>
                       
-                      {/* Quick-add buttons - chỉ hiển thị 10 sản phẩm đầu */}
                       {availableProducts.length > 0 && (
                         <>
                           <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
@@ -443,32 +457,39 @@ const ReturnCreate = () => {
                         </>
                       )}
 
-                      {/* Dropdown để chọn tất cả sản phẩm */}
                       <Box>
                         <Typography variant="subtitle2" mb={1}>
                           Hoặc tìm kiếm sản phẩm:
                         </Typography>
                         <ComboBox
-                          data={availableProducts.map((p: any) => ({
-                            value: p.product_id,
-                            label: `${p.product_name} (Đã nhập: ${p.quantity})`
-                          }))}
+                          data={productOptions}
                           value={tempProductSelect}
-                          onChange={(value) => {
-                            const product = availableProducts.find((p: any) => p.product_id === value);
-                            if (product) {
-                              handleAddProduct(product);
+                          onChange={(value, option: any) => {
+                            if (option?.disabled) {
+                                message.warning('Sản phẩm này không có trong phiếu nhập đã chọn');
+                                return;
+                            }
+                            
+                            const productToAdd = option?.productData || availableProducts.find((p: any) => p.product_id === value);
+                            
+                            if (productToAdd) {
+                              handleAddProduct(productToAdd);
                               setTempProductSelect(null);
+                              setProductSearchTerm('');
                             }
                           }}
-                          placeholder="-- Chọn sản phẩm --"
+                          placeholder="-- Tìm kiếm và chọn sản phẩm --"
                           showSearch
                           allowClear
-                          filterOption={(input, option) => {
-                            const label = option?.label?.toString().toLowerCase() || '';
-                            const searchText = input.toLowerCase();
-                            return label.includes(searchText);
+                          onSearch={setProductSearchTerm}
+                          loading={isProductSearchLoading}
+                          onPopupScroll={(e) => {
+                              const target = e.target as HTMLDivElement;
+                              if (target.scrollTop + target.offsetHeight === target.scrollHeight && hasNextPage) {
+                                  fetchNextPage();
+                              }
                           }}
+                          filterOption={false}
                         />
                       </Box>
                     </Box>
@@ -498,7 +519,6 @@ const ReturnCreate = () => {
                               const unitCost = watch(`items.${index}.unit_cost`) || 0;
                               const total = quantity * unitCost;
 
-                              // Find max quantity from receipt
                               const receiptItem = (selectedReceipt as any)?.items?.find(
                                 (i: any) => i.product_id === field.product_id
                               );
@@ -583,7 +603,6 @@ const ReturnCreate = () => {
             </Card>
           </Grid>
 
-          {/* Actions */}
           <Grid item xs={12}>
             <Box display="flex" gap={2} justifyContent="flex-end">
               <Button

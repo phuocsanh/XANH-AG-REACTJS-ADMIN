@@ -112,7 +112,7 @@ const AdjustmentCreate = () => {
            const product = productList.find(p => p.id === item.product_id);
            return {
              product_id: item.product_id,
-             product_name: product?.name || `Sản phẩm #${item.product_id}`,
+             product_name: product?.trade_name || product?.name || (item as any).product?.trade_name || (item as any).product?.name || (item as any).product_name || `Sản phẩm #${item.product_id}`,
              quantity_change: item.quantity_change,
              reason: item.reason || '',
              notes: item.notes || '',
@@ -137,7 +137,7 @@ const AdjustmentCreate = () => {
 
     append({
       product_id: product.id,
-      product_name: product.name,
+      product_name: product.trade_name || product.name,
       quantity_change: 0,
       reason: '',
       notes: '',
@@ -332,7 +332,7 @@ const AdjustmentCreate = () => {
                         <ComboBox
                           data={productList.map((p) => ({
                             value: p.id,
-                            label: p.name
+                            label: p.trade_name || p.name
                           }))}
                           value={tempProductSelect}
                           onChange={(value) => {
@@ -346,6 +346,7 @@ const AdjustmentCreate = () => {
                           allowClear
                           onSearch={setProductSearch}
                           filterOption={false}
+                          style={{ width: '100%' }}
                         />
                      </Box>
                      <Box mt={2}>

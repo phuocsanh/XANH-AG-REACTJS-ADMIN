@@ -41,6 +41,7 @@ import {
 } from "@/queries/inventory-return"
 import { useSuppliersQuery } from "@/queries/supplier"
 import { LoadingSpinner } from "@/components/common"
+import FilterHeader from "@/components/common/filter-header"
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -230,8 +231,8 @@ const ReturnsList: React.FC = () => {
       )
     }
 
-    // Xóa (chỉ khi ở trạng thái Nháp hoặc Đã hủy)
-    if (record.status === 'draft' || record.status === 'cancelled') {
+    // Xóa (chỉ khi ở trạng thái Nháp hoặc Đã hủy và chưa từng duyệt)
+    if (record.status === 'draft' || (record.status === 'cancelled' && !(record as any).approved_at)) {
       actions.push(
         <Tooltip key='delete' title='Xóa phiếu'>
           <Popconfirm
@@ -258,7 +259,13 @@ const ReturnsList: React.FC = () => {
   // Cấu hình cột cho bảng
   const columns: ColumnsType<InventoryReturn> = [
     {
-      title: "Mã phiếu",
+      title: (
+        <FilterHeader
+          title="Mã phiếu"
+          value={searchTerm}
+          onChange={setSearchTerm}
+        />
+      ),
       dataIndex: "code",
       key: "code",
       width: 180,
@@ -276,7 +283,6 @@ const ReturnsList: React.FC = () => {
       title: "Nhà cung cấp",
       dataIndex: "supplier_name",
       key: "supplier_name",
-      width: 200,
       render: (_: string, record: InventoryReturn) => {
         if (record.supplier_name) return record.supplier_name
         
@@ -292,7 +298,6 @@ const ReturnsList: React.FC = () => {
       title: "Tổng tiền",
       dataIndex: "total_amount",
       key: "total_amount",
-      width: 120,
       align: "right",
       render: (amount: string) =>
         new Intl.NumberFormat("vi-VN", {
@@ -308,10 +313,22 @@ const ReturnsList: React.FC = () => {
       render: (reason: string) => reason || "-",
     },
     {
-      title: "Trạng thái",
+      title: (
+        <FilterHeader
+          title="Trạng thái"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          inputType="select"
+          options={[
+             { value: 'draft', label: 'Nháp' },
+             { value: 'approved', label: 'Đã duyệt' },
+             { value: 'cancelled', label: 'Đã hủy' }
+          ]}
+        />
+      ),
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 150,
       align: "center",
       render: (status: string) => renderStatus(status),
     },
@@ -350,34 +367,7 @@ const ReturnsList: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Bộ lọc và tìm kiếm */}
-      <Card style={{ marginBottom: "16px" }}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={8}>
-            <Input.Search
-              placeholder='Tìm theo mã phiếu...'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onSearch={handleSearch}
-              allowClear
-              prefix={<SearchOutlined />}
-            />
-          </Col>
-          <Col xs={24} sm={12} md={8}>
-            <Select
-              placeholder='Lọc theo trạng thái'
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              allowClear
-              style={{ width: "100%" }}
-            >
-              <Select.Option value="Nháp">Nháp</Select.Option>
-              <Select.Option value="Đã duyệt">Đã duyệt</Select.Option>
-              <Select.Option value="Đã hủy">Đã hủy</Select.Option>
-            </Select>
-          </Col>
-        </Row>
-      </Card>
+
 
       {/* Bảng dữ liệu */}
       <Card>

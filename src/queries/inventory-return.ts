@@ -16,6 +16,7 @@ import { handleApiError } from '@/utils/error-handler'
 export const useReturnsQuery = () => {
   return useQuery({
     queryKey: ['returns'],
+    refetchOnMount: true,
     queryFn: async () => {
       // Gọi đúng API tìm kiếm phiếu trả hàng nhập
       const response = await apiClient.postRaw<{
@@ -37,6 +38,7 @@ export const useReturnsQuery = () => {
 export const useReturnQuery = (id: number) => {
   return useQuery({
     queryKey: ['return', id],
+    refetchOnMount: true,
     queryFn: async () => {
       const response = await apiClient.get<any>(`/inventory/return/${id}`)
       // Unwrap data từ response wrapper { success, data, meta }
@@ -57,7 +59,7 @@ export const useCreateReturnMutation = () => {
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries('returns')
+      queryClient.invalidateQueries({ queryKey: ['returns'] })
       message.success('Tạo phiếu trả hàng thành công!')
     },
     onError: (error) => {
@@ -76,7 +78,7 @@ export const useUpdateReturnMutation = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['return', variables.id] })
-      invalidateResourceQueries('returns')
+      queryClient.invalidateQueries({ queryKey: ['returns'] })
       message.success('Cập nhật phiếu trả hàng thành công!')
     },
     onError: (error) => {
@@ -95,9 +97,9 @@ export const useApproveReturnMutation = () => {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['return', id] })
-      invalidateResourceQueries('returns')
+      queryClient.invalidateQueries({ queryKey: ['returns'] })
       // Invalidate inventory vì tồn kho đã thay đổi
-      invalidateResourceQueries('products')
+      queryClient.invalidateQueries({ queryKey: ['products'] })
       message.success('Duyệt phiếu trả hàng thành công! Tồn kho đã được cập nhật.')
     },
     onError: (error) => {
@@ -116,7 +118,7 @@ export const useCancelReturnMutation = () => {
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['return', id] })
-      invalidateResourceQueries('returns')
+      queryClient.invalidateQueries({ queryKey: ['returns'] })
       message.success('Hủy phiếu trả hàng thành công!')
     },
     onError: (error) => {
@@ -134,7 +136,7 @@ export const useDeleteReturnMutation = () => {
       return response
     },
     onSuccess: () => {
-      invalidateResourceQueries('returns')
+      queryClient.invalidateQueries({ queryKey: ['returns'] })
       message.success('Xóa phiếu trả hàng thành công!')
     },
     onError: (error) => {
