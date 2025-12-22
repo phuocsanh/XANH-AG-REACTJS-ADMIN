@@ -43,6 +43,7 @@ import {
   useCancelInventoryReceiptMutation,
   useInventoryStatsQuery,
 } from "@/queries/inventory"
+import { useSupplierSearch } from "@/queries/supplier"
 import { LoadingSpinner } from "@/components/common"
 
 import FilterHeader from '@/components/common/filter-header'
@@ -60,6 +61,26 @@ const InventoryReceiptsList: React.FC = () => {
     limit: 10,
   })
 
+  // State tìm kiếm nhà cung cấp cho Filter ComboBox
+  const [searchTermSupplier, setSearchTermSupplier] = useState("")
+  const { data: suppliersData, isLoading: isLoadingSuppliers } = useSupplierSearch(searchTermSupplier, 20, true)
+
+  const supplierOptions = useMemo(() => {
+    if (!suppliersData?.pages) return []
+    const uniqueSuppliers = new Map();
+    suppliersData.pages.forEach(page => {
+        page.data.forEach((s: any) => {
+            if (s.id && !uniqueSuppliers.has(s.id)) {
+                uniqueSuppliers.set(s.id, {
+                    value: s.id, 
+                    label: s.name
+                })
+            }
+        })
+    })
+    return Array.from(uniqueSuppliers.values());
+  }, [suppliersData])
+
   // Tạo params cho API call
   const queryParams = useMemo<InventoryReceiptListParams>(() => {
     const params: InventoryReceiptListParams = {
@@ -75,10 +96,9 @@ const InventoryReceiptsList: React.FC = () => {
       params.status = filters.status
     }
 
-    // Nếu API hỗ trợ lọc theo tên nhà cung cấp
-    if (filters.supplier_name) {
-       // params.supplierName = filters.supplier_name 
-       // Tạm thời chưa biết field chính xác, để lại logic mở
+    // Filter theo ID nhà cung cấp
+    if (filters.supplier_id) {
+       params.supplier_id = filters.supplier_id 
     }
 
     if (filters.start_date && filters.end_date) {
@@ -146,7 +166,7 @@ const InventoryReceiptsList: React.FC = () => {
 
   const handleFilterChange = (key: string, value: any) => {
     const newFilters = { ...filters, [key]: value }
-    if (!value) delete newFilters[key]
+    if (!value && value !== 0) delete newFilters[key] // Fix: cho phép value = 0 (nếu ID start from 0)
     setFilters(newFilters)
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
@@ -411,10 +431,18 @@ const InventoryReceiptsList: React.FC = () => {
       title: (
         <FilterHeader 
             title="Nhà cung cấp" 
-            dataIndex="supplier_name" 
-            value={filters.supplier_name} 
-            onChange={(val) => handleFilterChange('supplier_name', val)}
-            inputType="text"
+            dataIndex="supplier_id" 
+            value={filters.supplier_id} 
+            onChange={(val) => handleFilterChange('supplier_id', val)}
+            inputType="combobox"
+            comboBoxProps={{
+                placeholder: "Tìm nhà cung cấp...",
+                data: supplierOptions,
+                onSearch: setSearchTermSupplier,
+                loading: isLoadingSuppliers,
+                allowClear: true,
+                filterOption: false,
+            }}
         />
       ),
       dataIndex: "supplier_id",

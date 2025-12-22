@@ -663,7 +663,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
 
     append({
       product_id: product.id,
-      product_name: product.name,
+      product_name: product.trade_name || product.name,
       quantity: 1,
       unit_price: unitPrice,
       discount_amount: 0,
@@ -1634,7 +1634,7 @@ ${productInfo}`;
                     data={productsData?.data?.items?.map((product: Product) => {
                       return {
                         value: product.id,
-                        label: product.name
+                        label: product.trade_name || product.name // Ưu tiên hiển thị Hiệu thuốc
                       };
                     }) || []}
                     value={undefined}

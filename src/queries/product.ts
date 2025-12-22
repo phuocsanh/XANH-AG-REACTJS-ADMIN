@@ -29,7 +29,7 @@ export const productKeys = {
 
 // Interface cho API response theo đúng format của ComboBox
 export interface ProductSearchResponse {
-  data: Array<{ value: number; label: string }>
+  data: Array<any>
   total: number
   hasMore: boolean
   nextPage?: number
@@ -83,37 +83,46 @@ export const searchProductsApi = async ({
     let currentPage = page
     let currentLimit = limit
 
+    // Xử lý response linh hoạt cho mọi trường hợp
     if (Array.isArray(response)) {
-      // Server trả về array trực tiếp
+      // Case 1: Response là array trực tiếp
       products = response
       total = response.length
+    } 
+    else if (response && typeof response === 'object') {
+      const respAny = response as any;
+      
+      // Case 2: Response chuẩn { data: [], pagination: {} }
+      if (Array.isArray(respAny.data)) {
+          products = respAny.data;
 
-    } else if (response && (response as { data: Product[] }).data) {
-      // Server trả về object có data property
-      const responseObject = response as {
-        data: Product[]
-        page: number
-        limit: number
-        total: number
+          if (respAny.pagination) {
+             total = respAny.pagination.total;
+             currentPage = respAny.pagination.page;
+             currentLimit = respAny.pagination.limit;
+          } else {
+             total = respAny.total || products.length;
+             currentPage = respAny.page || page;
+             currentLimit = respAny.limit || limit;
+          }
       }
-      products = responseObject.data
-      total = responseObject.total || 0
-      currentPage = responseObject.page || page
-      currentLimit = responseObject.limit || limit
-
-    } else {
-      return {
-        data: [],
-        total: 0,
-        hasMore: false,
-        nextPage: undefined,
+      // Case 3: Double wrap { data: { data: [] } } - phòng hờ
+      else if (respAny.data && Array.isArray(respAny.data.data)) {
+          products = respAny.data.data;
+          
+          if (respAny.data.pagination) {
+             total = respAny.data.pagination.total;
+          } else {
+             total = respAny.data.total || products.length;
+          }
       }
     }
 
     // Chuyển đổi dữ liệu sang format của ComboBox
     const data = products.map((product: Product) => ({
+      ...product,
       value: product.id,
-      label: product.name?.trim() || `Sản phẩm ${product.id}`,
+      label: product.trade_name?.trim() || product.name?.trim() || `Sản phẩm ${product.id}`,
     }))
 
     // Log để debug
@@ -213,6 +222,8 @@ export const useProductSearch = (
       return lastPage.hasMore ? lastPage.nextPage : undefined
     },
     enabled: enabled, // Luôn enable để fetch dữ liệu mặc định
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 

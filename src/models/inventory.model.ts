@@ -43,7 +43,7 @@ export interface InventoryReceipt {
   total_amount: number // Thay totalAmount thành total_amount và string thành number để khớp với backend
   supplier_id?: number // Thay supplierName thành supplier_id để khớp với backend
   supplier_name?: string // Thêm supplier_name để hiển thị
-  supplier?: { id: number; name: string; code?: string }
+  supplier?: { id: number; name: string; code?: string; contact_person?: string; phone?: string; address?: string }
   created_by: number
   approved_by?: number
   created_at: string
@@ -63,6 +63,8 @@ export interface InventoryReceiptItem {
   notes?: string
   created_at: string
   updated_at: string
+  product_name?: string
+  product?: any // Thay bằng Product interface nếu có thể import
 }
 
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
@@ -74,6 +76,7 @@ export interface InventoryReceiptApiResponse {
   total_amount: string // Thay totalAmount thành total_amount
   supplier_id?: number // Thêm supplier_id
   supplier_name?: string // Thay supplierName thành supplier_name
+  supplier?: { id: number; name: string; code?: string; contact_person?: string; phone?: string; address?: string } // Thêm object supplier đầy đủ
   supplier_contact?: string // Thay supplierContact thành supplier_contact
   created_by: number
   approved_by?: number
@@ -150,8 +153,9 @@ export function mapApiResponseToInventoryReceipt(
     status: getInventoryReceiptStatusText(apiReceipt.status), // Chuyển status number thành text
     status_code: apiReceipt.status, // Giữ nguyên status code raw
     total_amount: parseFloat(apiReceipt.total_amount), // Chuyển string thành number
-    supplier_id: apiReceipt.supplier_id || 0,
-    supplier_name: apiReceipt.supplier_name,
+    supplier_id: apiReceipt.supplier_id || (apiReceipt.supplier?.id || 0),
+    supplier_name: apiReceipt.supplier?.name || apiReceipt.supplier_name,
+    supplier: apiReceipt.supplier,
     created_by: apiReceipt.created_by,
     approved_by: apiReceipt.approved_by,
     created_at: apiReceipt.created_at,
@@ -174,6 +178,7 @@ export function mapApiResponseToInventoryReceiptItem(
     notes: apiItem.notes,
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
+    product_name: apiItem.product?.trade_name || apiItem.product?.name || apiItem.product_name || '',
     ...(apiItem.product && { product: apiItem.product }),  // Giữ lại product relation nếu có
   } as any
 }
@@ -345,6 +350,7 @@ export interface InventoryReceiptListParams {
   status?: string // Backend mong đợi string
   code?: string
   supplierName?: string
+  supplier_id?: number // Thêm supplier_id param
   startDate?: string
   endDate?: string
 }

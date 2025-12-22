@@ -103,10 +103,11 @@ export const useInventoryReceiptsQuery = (
         page,
         limit,
         keyword: params?.code, // Global search
-        filters: {
-          ...(params?.status && { status: params.status }),
-          ...(params?.supplierName && { supplier_name: params.supplierName }),
-        },
+        ...(params?.status && { status: params.status }),
+        ...(params?.supplierName && { supplier_name: params.supplierName }),
+        ...(params?.supplier_id && { supplier_id: params.supplier_id }),
+        ...(params?.startDate && { start_date: params.startDate }),
+        ...(params?.endDate && { end_date: params.endDate }),
         sort: 'created_at:DESC',
       })
 
@@ -318,11 +319,30 @@ export const useInventoryReceiptItemsQuery = (receiptId: number) => {
   return useQuery({
     queryKey: inventoryKeys.receiptItems(receiptId),
     queryFn: async () => {
-      const response = await api.get<InventoryReceiptItemApiResponse[]>(
-        `/inventory/receipt/${receiptId}/items` // Thay đổi từ /inventory/receipts/${receiptId}/items thành /inventory/receipt/${receiptId}/items
-      )
-      // Map dữ liệu từ API response sang interface mới
-      return response.map(mapApiResponseToInventoryReceiptItem)
+      try {
+        console.log("DEBUG: Fetching items for receipt", receiptId)
+        const response = await api.get<any>(
+          `/inventory/receipt/${receiptId}/items`
+        )
+        console.log("DEBUG: Items API Response:", response)
+
+        // Unwrap data if wrapped in { data: [...] } or { success: true, data: [...] }
+        const items = Array.isArray(response) ? response : (response.data || [])
+        console.log("DEBUG: Extracted items array:", items)
+        
+        if (!Array.isArray(items)) {
+           console.error("DEBUG: Items is not an array!", items)
+           return []
+        }
+
+        // Map dữ liệu từ API response sang interface mới
+        const mapped = items.map(mapApiResponseToInventoryReceiptItem)
+        console.log("DEBUG: Mapped items:", mapped)
+        return mapped
+      } catch (err) {
+        console.error("DEBUG: Error in items queryFn:", err)
+        throw err
+      }
     },
     enabled: !!receiptId,
   })

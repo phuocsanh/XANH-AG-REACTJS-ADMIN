@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
@@ -18,6 +18,8 @@ export const supplierKeys = {
     [...supplierKeys.lists(), params] as const,
   details: () => [...supplierKeys.all, "detail"] as const,
   detail: (id: number) => [...supplierKeys.details(), id] as const,
+  search: (searchTerm: string) =>
+    [...supplierKeys.all, "search", searchTerm] as const,
 } as const
 
 // ========== SUPPLIER HOOKS ==========
@@ -155,5 +157,88 @@ export const useDeleteSupplierMutation = () => {
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi xóa nhà cung cấp")
     },
+  })
+}
+
+// Helper để gọi API search supplier
+const searchSuppliersApi = async ({
+  page,
+  limit,
+  search,
+}: {
+  page: number
+  limit: number
+  search: string
+}) => {
+  const payload: any = {
+    page,
+    limit,
+  }
+  if (search) payload.keyword = search;
+
+  const response = await api.postRaw<any>('/suppliers/search', payload)
+
+  let suppliers: Supplier[] = []
+  let total = 0
+  let currentPage = page
+  
+  // Logic parse robust
+  if (Array.isArray(response)) {
+    suppliers = response
+    total = response.length
+  } 
+  else if (response && typeof response === 'object') {
+    const respAny = response as any;
+    
+    if (Array.isArray(respAny.data)) {
+        suppliers = respAny.data;
+        if (respAny.pagination) {
+           total = respAny.pagination.total;
+        } else {
+           total = respAny.total || suppliers.length;
+        }
+    }
+    else if (respAny.data && Array.isArray(respAny.data.data)) {
+        suppliers = respAny.data.data;
+        if (respAny.data.pagination) {
+           total = respAny.data.pagination.total;
+        } else {
+           total = respAny.data.total || suppliers.length;
+        }
+    }
+  }
+
+  return {
+    data: suppliers,
+    total,
+    page: currentPage,
+    nextPage: suppliers.length === limit ? currentPage + 1 : undefined,
+    hasMore: suppliers.length === limit
+  }
+}
+
+/**
+ * Hook search nhà cung cấp (Infinite Query)
+ */
+export const useSupplierSearch = (
+  searchTerm: string = "",
+  limit: number = 20,
+  enabled: boolean = true
+) => {
+  return useInfiniteQuery({
+    queryKey: supplierKeys.search(searchTerm),
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await searchSuppliersApi({
+        page: pageParam as number,
+        limit,
+        search: searchTerm,
+      })
+      return response
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextPage : undefined,
+    enabled: enabled,
+    staleTime: 0,
+    gcTime: 0,
   })
 }

@@ -32,6 +32,7 @@ interface FormFieldNumberProps<T extends FieldValues> {
   decimalScale?: number
   fixedDecimalScale?: boolean
   allowClear?: boolean
+  outputType?: 'number' | 'string'
 }
 
 /**
@@ -58,6 +59,7 @@ function FormFieldNumber<T extends FieldValues>({
   decimalScale = 0, // Mặc định là 0 (số nguyên)
   fixedDecimalScale = false,
   allowClear = true,
+  outputType = 'number', // Mặc định trả về number
 }: FormFieldNumberProps<T>) {
   // Tạo validation rules cho React Hook Form
   const validationRules = {
@@ -123,10 +125,14 @@ function FormFieldNumber<T extends FieldValues>({
                   : ""
               }
               onValueChange={(values) => {
-                // Luôn trả về giá trị số (floatValue) vì đây là component nhập số
-                // values.floatValue sẽ là number | undefined
-                // Nếu input rỗng, trả về undefined
-                field.onChange(values.floatValue)
+                // Trả về giá trị theo outputType
+                if (outputType === 'string') {
+                   // Trả về chuỗi raw (không format) nếu có giá trị, ngược lại trả về rỗng hoặc undefined
+                   field.onChange(values.value || "")
+                } else {
+                   // Mặc định trả về number (floatValue)
+                   field.onChange(values.floatValue)
+                }
               }}
               // Cho phép nhập bất kỳ giá trị nào không giới hạn độ dài
               isAllowed={(values) => {

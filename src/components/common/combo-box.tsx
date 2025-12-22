@@ -27,7 +27,7 @@ interface ComboBoxProps extends Omit<SelectProps, "options" | "children"> {
   label?: string
   required?: boolean
   enableLoadMore?: boolean
-  // searchDebounceMs?: number  // Đã loại bỏ vì không được sử dụng trong component này
+  searchDebounceMs?: number
   className?: string
   style?: React.CSSProperties
   onSelectionChange?: (
@@ -59,9 +59,9 @@ function ComboBox({
   placeholder,
   allowClear = true,
   showSearch = true,
-  filterOption = true,
+  filterOption,
   enableLoadMore = true,
-  // searchDebounceMs = 500,  // Đã loại bỏ vì không được sử dụng trong component này
+  searchDebounceMs = 1000, 
   mode,
   maxTagCount,
   maxTagTextLength,
@@ -73,16 +73,22 @@ function ComboBox({
   onChange,
   ...selectProps
 }: ComboBoxProps) {
+  // Xác định filterOption: Nếu không truyền vào, tự động tắt (false) khi có search async
+  const finalFilterOption = filterOption !== undefined 
+    ? filterOption 
+    : (externalOnSearch ? false : true)
+
   // Log để debug
-  console.log("ComboBox render")
+  console.log("ComboBox render", { finalFilterOption, hasExternalSearch: !!externalOnSearch })
 
   // Sử dụng data từ bên ngoài nếu có, ngược lại dùng static options
   const displayOptions = externalData || staticOptions
 
+
   // Debounce timer ref
   const searchTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
-  // Handle search với debounce 1.5s
+  // Handle search với debounce
   const handleSearch = React.useCallback(
     (value: string) => {
       if (externalOnSearch) {
@@ -91,13 +97,13 @@ function ComboBox({
           clearTimeout(searchTimerRef.current)
         }
         
-        // Set timeout mới (giảm xuống 500ms để snappy hơn)
+        // Set timeout mới
         searchTimerRef.current = setTimeout(() => {
           externalOnSearch(value)
-        }, 500)
+        }, searchDebounceMs)
       }
     },
-    [externalOnSearch]
+    [externalOnSearch, searchDebounceMs]
   )
 
   // Cleanup khi unmount
@@ -184,7 +190,7 @@ function ComboBox({
       placeholder={placeholder}
       allowClear={allowClear}
       showSearch={showSearch}
-      filterOption={filterOption}
+      filterOption={finalFilterOption}
       onSearch={handleSearch}
       onPopupScroll={handlePopupScroll}
       loading={isLoading || isFetching}

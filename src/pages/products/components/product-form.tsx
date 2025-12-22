@@ -208,7 +208,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         setInitialLoading(true)
 
         // Lấy dữ liệu từ response
-        const productItem = productData as Product
+        // Cần handle trường hợp response bọc trong object { data: ... }
+        let productItem = productData as any;
+        if (productItem && productItem.data) {
+            productItem = productItem.data;
+        }
 
         if (!productItem) {
           throw new Error("Không tìm thấy thông tin sản phẩm")
@@ -235,8 +239,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           name: productItem.name?.trim() || "",
           trade_name: productItem.trade_name?.trim() || productItem.name?.trim() || "",
           volume: productItem.volume?.trim() || "",
-          price: productItem.price || "",
-          credit_price: productItem.credit_price || "", // Giá bán nợ
+          price: String(productItem.price || ""),
+          credit_price: String(productItem.credit_price || ""), // Giá bán nợ
           type: productItem.type || undefined,
           quantity: productItem.quantity || 0,
           attributes: productItem.attributes || {},
@@ -249,8 +253,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           pictures: normalizeFileList(productItem.pictures), // Danh sách ảnh
           videos: productItem.videos || [], // Danh sách video
           description: productItem.description || "", // Mô tả
-          profit_margin_percent: productItem.profit_margin_percent || "", // Thêm trường mới
-          average_cost_price: productItem.average_cost_price || "", // Thêm trường mới
+          profit_margin_percent: String(productItem.profit_margin_percent || ""), // Chuyển sang string
+          average_cost_price: String(productItem.average_cost_price || ""), // Chuyển sang string
           ingredient: Array.isArray(productItem.ingredient)
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
@@ -769,6 +773,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     required
                     className='w-full'
                     fixedDecimalScale={false}
+                    outputType="string"
                     // Trường price theo schema là string nên component sẽ tự động trả về string
                   />
                 </div>
@@ -782,6 +787,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     required
                     className='w-full'
                     fixedDecimalScale={false}
+                    outputType="string"
                   />
                 </div>
 
@@ -823,6 +829,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     label='Phần trăm lợi nhuận mong muốn (%)'
                     placeholder='Nhập phần trăm lợi nhuận mong muốn'
                     className='w-full'
+                    outputType="string"
                   />
                 </div>
 
@@ -834,6 +841,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     label='Giá vốn trung bình (VNĐ)'
                     placeholder='Nhập giá vốn trung bình'
                     className='w-full'
+                    outputType="string"
                   />
                 </div>
 
@@ -897,6 +905,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     label='Giảm giá (%)'
                     placeholder='Nhập giảm giá'
                     className='w-full'
+                    outputType="string"
                     min={0}
                     max={100}
                   />

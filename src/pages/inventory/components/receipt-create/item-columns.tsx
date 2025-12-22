@@ -62,7 +62,7 @@ const useItemColumns = ({
                   const selectedOpt = optArray[0] as any
 
                   if (selectedOpt) {
-                    const name = selectedOpt.name || selectedOpt.label || ""
+                    const name = selectedOpt.trade_name || selectedOpt.name || selectedOpt.label || ""
                     if (name) {
                       handleItemChange(record.key, "product_name", name)
                     }

@@ -162,7 +162,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = ({
                     
                     if (selectedOpt) {
                          // Lấy tên sản phẩm
-                         const name = selectedOpt.name || selectedOpt.label || "";
+                         const name = selectedOpt.trade_name || selectedOpt.name || selectedOpt.label || "";
                          if (name) {
                              handleItemChange(item.key, "product_name", name);
                          }

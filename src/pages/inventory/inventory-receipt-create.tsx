@@ -74,6 +74,9 @@ const InventoryReceiptCreate: React.FC = () => {
   const [hasSharedShipping, setHasSharedShipping] = useState(false)
   const [sharedShippingCost, setSharedShippingCost] = useState(0)
   const [allocationMethod, setAllocationMethod] = useState<'by_value' | 'by_quantity'>('by_value')
+  
+  // State tìm kiếm sản phẩm
+  const [searchTerm, setSearchTerm] = useState("")
 
   // Sử dụng hook product search ở cấp cao hơn
   const {
@@ -83,25 +86,28 @@ const InventoryReceiptCreate: React.FC = () => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useProductSearch("", 20, true)
+  } = useProductSearch(searchTerm, 20, true)
 
   // Flatten data từ tất cả pages
   const productOptions = useMemo(() => {
     if (!data?.pages) {
-
       return []
     }
 
-    const flattened = data.pages.flatMap((page) => {
+    // Map product data để hiển thị trade_name
+    return data.pages.flatMap((page) => {
       if (!page || !page.data) {
         return []
       }
 
-      return page.data
+      return page.data.map((product: any) => ({
+        ...product,
+        // Ưu tiên hiển thị trade_name (hiệu thuốc), fallback về name
+        label: product.trade_name || product.name,
+        // Giữ các trường khác để sử dụng cho logic chọn
+        value: product.id,
+      }))
     })
-    
-
-    return flattened
   }, [data?.pages])
 
   // Tạo object chứa tất cả props cho ComboBox
@@ -114,6 +120,7 @@ const InventoryReceiptCreate: React.FC = () => {
         hasNextPage,
         isFetchingNextPage,
         fetchNextPage,
+        onSearch: setSearchTerm, // Thêm hàm search
       }
 
       return props
@@ -133,7 +140,7 @@ const InventoryReceiptCreate: React.FC = () => {
   const updateReceiptMutation = useUpdateInventoryReceiptMutation()
   const uploadFileMutation = useUploadFileMutation()
   const attachImageMutation = useAttachImageToReceiptMutation()
-  const { data: suppliersData, isLoading: suppliersLoading } = useSuppliersQuery()
+  const { data: suppliersData, isLoading: suppliersLoading } = useSuppliersQuery({ limit: 100 })
   
   // Load dữ liệu khi edit mode (hooks đã có enabled built-in)
   const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(receiptId || 0)
@@ -153,7 +160,7 @@ const InventoryReceiptCreate: React.FC = () => {
       const mappedItems: InventoryReceiptItemForm[] = existingItems.map((item: any, index) => ({
         key: `${item.id || index}`,
         product_id: item.product_id,
-        product_name: item.productName || item.product_name || '',
+        product_name: item.product_name || item.product?.trade_name || item.product?.name || '',
         quantity: item.quantity,
         unit_cost: Number(item.unit_cost || item.unitPrice || 0),
         total_price: Number(item.total_price || 0),
@@ -239,7 +246,7 @@ const InventoryReceiptCreate: React.FC = () => {
             const selectedProduct = productOptions.find((p: any) => p.id === (value as number)) as any
             if (selectedProduct) {
                // Fallback: dùng label nếu không có name
-               updatedItem.product_name = selectedProduct.name || selectedProduct.label || ""
+               updatedItem.product_name = selectedProduct.trade_name || selectedProduct.name || selectedProduct.label || ""
                
                if (selectedProduct.cost_price !== undefined) {
                    updatedItem.unit_cost = selectedProduct.cost_price;
