@@ -197,3 +197,46 @@ export const useLatestInvoiceByCustomerQuery = (customerId: number | undefined) 
     enabled: !!customerId,
   })
 }
+
+/**
+ * Hook lấy thống kê khách hàng trong mùa vụ (tổng tiền mua và tổng nợ)
+ */
+export const useCustomerSeasonStatsQuery = (customerId: number | undefined, seasonId: number | undefined) => {
+  return useQuery({
+    queryKey: [...salesInvoiceKeys.all, 'customer-season-stats', customerId, seasonId],
+    queryFn: async () => {
+      if (!customerId || !seasonId) {
+        return { totalPurchase: 0, totalDebt: 0 }
+      }
+
+      const response = await api.postRaw<{
+        success: boolean
+        data: SalesInvoice[]
+      }>('/sales/invoices/search', {
+        customer_id: customerId,
+        season_id: seasonId,
+        limit: 1000, // Lấy tất cả
+      })
+
+      if (response.success && response.data) {
+        const invoices = response.data
+
+        // Tính tổng tiền mua hàng (final_amount)
+        const totalPurchase = invoices.reduce((sum, inv) => {
+          return sum + Number(inv.final_amount || 0)
+        }, 0)
+
+        // Tính tổng nợ (remaining_amount)
+        const totalDebt = invoices.reduce((sum, inv) => {
+          return sum + Number(inv.remaining_amount || 0)
+        }, 0)
+
+        return { totalPurchase, totalDebt }
+      }
+
+      return { totalPurchase: 0, totalDebt: 0 }
+    },
+    enabled: !!customerId && !!seasonId,
+    staleTime: 30000, // Cache 30 giây
+  })
+}

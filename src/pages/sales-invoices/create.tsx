@@ -49,7 +49,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery } from '@/queries/sales-invoice';
+import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery } from '@/queries/product';
@@ -304,6 +304,12 @@ const CreateSalesInvoice = () => {
   const items = watch('items') || [];
   const discountAmount = watch('discount_amount');
   const partialPaymentAmount = watch('partial_payment_amount');
+  const seasonId = watch('season_id');
+  const customerId = watch('customer_id');
+
+  // Hook lấy thống kê khách hàng trong mùa vụ
+  const { data: customerSeasonStats } = useCustomerSeasonStatsQuery(customerId, seasonId);
+
 
 
 
@@ -1061,6 +1067,7 @@ ${productInfo}`;
     }
   }, [currentTab, diseaseLocation]);
 
+
   const handleAnalyze = async () => {
     if (selectedProductIdsForAdvisory.length < 2) {
       setError('Vui lòng chọn ít nhất 2 sản phẩm để phân tích phối trộn');
@@ -1489,6 +1496,33 @@ ${productInfo}`;
                     disabled={!isGuestCustomer}
                   />
 
+                  {/* Hiển thị thống kê khách hàng trong mùa vụ */}
+                  {selectedCustomer && watch('season_id') && (
+                    <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                      <Typography variant="subtitle2" color="primary" gutterBottom>
+                        📊 Thống kê mùa vụ: {seasons?.data?.items?.find((s: Season) => s.id === watch('season_id'))?.name || ''}
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Tổng tiền mua hàng:
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold" color="success.main">
+                            {formatCurrency(customerSeasonStats?.totalPurchase || 0)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Tổng nợ:
+                          </Typography>
+                          <Typography variant="body2" fontWeight="bold" color="error.main">
+                            {formatCurrency(customerSeasonStats?.totalDebt || 0)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
+
 
                 </CardContent>
               </Card>
@@ -1735,13 +1769,66 @@ ${productInfo}`;
             <Grid item xs={12}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" mb={2}>
+                  <Typography variant="h6" mb={1}>
                     Thanh toán
                   </Typography>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
-                      <Box display="flex" justifyContent="space-between" mb={1}>
+                  {/* Layout for MOBILE - Single column with correct order */}
+                  <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                    <Box display="flex" justifyContent="space-between" mb={0.5}>
+                      <Typography>Tổng tiền hàng:</Typography>
+                      <Typography fontWeight="bold">{formatCurrency(totalAmount)}</Typography>
+                    </Box>
+
+                    <FormFieldNumber
+                      name="discount_amount"
+                      control={control}
+                      label="Giảm giá tổng đơn"
+                      min={0}
+                      size="large"
+                      placeholder="0"
+                      className="mb-4"
+                    />
+
+                    <FormFieldNumber
+                      name="partial_payment_amount"
+                      control={control}
+                      label="Số tiền khách trả trước"
+                      min={0}
+                      max={finalAmount}
+                      size="large"
+                      placeholder="0"
+                      className="mb-4"
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 1, display: 'block' }}>
+                      Nhập số tiền khách trả trước (nếu trả một phần)
+                    </Typography>
+
+                    <Divider sx={{ my: 1 }} />
+
+                    <Box display="flex" justifyContent="space-between" mb={1}>
+                      <Typography variant="h6">Tổng thanh toán:</Typography>
+                      <Typography variant="h6" color="success.main" fontWeight="bold">
+                        {formatCurrency(finalAmount)}
+                      </Typography>
+                    </Box>
+
+                    {remainingAmount > 0 && (
+                      <Alert severity="warning">
+                        <Typography variant="body2">
+                          Số tiền còn nợ: <strong>{formatCurrency(remainingAmount)}</strong>
+                        </Typography>
+                        <Typography variant="caption">
+                          Hệ thống sẽ tự động tạo công nợ cho số tiền này
+                        </Typography>
+                      </Alert>
+                    )}
+                  </Box>
+
+                  {/* Layout for DESKTOP - Two columns */}
+                  <Grid container spacing={2} sx={{ display: { xs: 'none', md: 'flex' } }}>
+                    <Grid item xs={12} md={6} sx={{ order: { xs: 1, md: 1 } }}>
+                      <Box display="flex" justifyContent="space-between" mb={0.5}>
                         <Typography>Tổng tiền hàng:</Typography>
                         <Typography fontWeight="bold">{formatCurrency(totalAmount)}</Typography>
                       </Box>
@@ -1756,19 +1843,22 @@ ${productInfo}`;
                         className="mb-4"
                       />
 
-                      <Divider sx={{ my: 2 }} />
+                      {/* Divider and Total - Order 3 on mobile, 2 on desktop */}
+                      <Box sx={{ order: { xs: 3, md: 2 } }}>
+                        <Divider sx={{ my: 1 }} />
 
-                      <Box display="flex" justifyContent="space-between" mb={2}>
+                      <Box display="flex" justifyContent="space-between" mb={1}>
                         <Typography variant="h6">Tổng thanh toán:</Typography>
                         <Typography variant="h6" color="success.main" fontWeight="bold">
                           {formatCurrency(finalAmount)}
                         </Typography>
+                        </Box>
                       </Box>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
-                      {/* Spacer to align with "Tổng tiền hàng" on the left */}
-                      <Box display="flex" justifyContent="space-between" mb={1} sx={{ visibility: 'hidden' }}>
+                    <Grid item xs={12} md={6} sx={{ order: { xs: 2, md: 2 } }}>
+                      {/* Spacer to align with "Tổng tiền hàng" on the left - Only on desktop */}
+                      <Box display={{ xs: 'none', md: 'flex' }} justifyContent="space-between" mb={0.5} sx={{ visibility: 'hidden' }}>
                         <Typography>Spacer</Typography>
                       </Box>
 
@@ -1782,7 +1872,7 @@ ${productInfo}`;
                         placeholder="0"
                         className="mb-4"
                       />
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 2, display: 'block' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 1, display: 'block' }}>
                         Nhập số tiền khách trả trước (nếu trả một phần)
                       </Typography>
 
