@@ -3,7 +3,7 @@ import { z } from "zod"
 // Schema validation cho form nhà cung cấp
 export const supplierSchema = z.object({
   name: z.string().min(1, "Tên nhà cung cấp là bắt buộc"),
-  code: z.string().min(1, "Mã nhà cung cấp là bắt buộc"),
+  code: z.string().optional(), // Code sẽ được tự động generate bởi backend nếu không cung cấp
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),

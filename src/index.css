@@ -486,10 +486,10 @@ p {
   transition: all 0.3s;
   background: transparent;
 }
-.form .form-group textarea.input {
+/* .form .form-group textarea.input {
   height: 120px;
   padding-top: 15px;
-}
+} */
 .form .form-group .input:hover {
   border: 1px solid rgba(0, 0, 0, 0.4);
 }
@@ -890,10 +890,8 @@ body {
 }
 
 /* Exception: textarea should have auto height for multiple lines */
-.product-form textarea.ant-input {
-  height: auto !important;
-  min-height: 80px !important;
-}
+/* Exception: textarea should have auto height for multiple lines */
+/* Rule removed to allow AntD autoSize to work */
 
 .product-form .ant-select-selection-item,
 .product-form .ant-select-selection-placeholder {

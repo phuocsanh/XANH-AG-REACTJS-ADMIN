@@ -7,6 +7,9 @@ import { getGeminiApiUrl } from '../config/gemini.config';
 export interface ProductInfo {
   id?: number;
   name: string;
+  trade_name?: string; // Hiệu thuốc / Tên thương mại
+  volume?: string; // Dung tích/Khối lượng
+  notes?: string; // Ghi chú tự động
   product_type?: string;
   product_subtype?: string;
   active_ingredient?: string;
@@ -190,15 +193,55 @@ Chỉ trả về JSON, không thêm text nào khác.
 Hãy đóng vai một chuyên gia xử lý dữ liệu OCR. Nhiệm vụ của bạn là trích xuất thông tin từ nhãn thuốc BVTV và CHUẨN HÓA nội dung.
 
 QUY TẮC QUAN TRỌNG ĐỂ TRÁNH LẶP TIÊU ĐỀ:
-1. Khi trích xuất nội dung của một mục, BẮT BUỘC PHẢI LOẠI BỎ TIÊU ĐỀ của mục đó trong giá trị trả về.
+1. Khi trích xuất nội dung của một mục, BẮT BUỘC PHẢI LOẠI Bỏ TIÊU ĐỀ của mục đó trong giá trị trả về.
    - Ví dụ SAI: "usage": "CÔNG DỤNG: Trừ các loại cỏ..."
    - Ví dụ ĐÚNG: "usage": "Trừ các loại cỏ..." (Đã xóa bỏ chữ "CÔNG DỤNG:")
    
 2. Vẫn phải giữ nguyên vẹn nội dung chi tiết, các mốc thời gian, số liệu, không được tóm tắt sai lệch.
 
+QUY TẮC VỀ TÊN SẢN PHẨM VÀ DUNG TÍCH:
+**QUAN TRỌNG**: Phải tìm và thêm dung tích vào cả name và trade_name!
+
+1. **Tìm dung tích trên nhãn**:
+   - Tìm thông tin về dung tích chai/gói: ml, lít, g, kg, cc, v.v.
+   - Thường nằm ở: "Dung tích:", "Quy cách:", "Net:", "Thể tích:", hoặc ghi rõ trên nhãn
+   - Ví dụ: "450ml", "1 lít", "500g", "100cc"
+
+2. **name**: Tên chính thức + Dung tích (BẮT BUỘC nếu có)
+   - Định dạng: "TÊN SẢN PHẨM (dung tích)"
+   - Ví dụ: "BEAMMY KASU 300SC (450ml)", "SIÊU BỆNH 300SC (1 lít)", "KARATE 50EC (100ml)"
+   - Nếu KHÔNG tìm thấy dung tích: Chỉ lấy tên "BEAMMY KASU 300SC"
+
+3. **trade_name**: Hiệu thuốc + Dung tích (BẮT BUỘC nếu có)
+   - Nếu có hiệu thuốc tiếng Việt: Dùng hiệu + dung tích
+     + Ví dụ: name="BEAMMY KASU 300SC (450ml)", trade_name="Siêu Bệnh (450ml)"
+   - Nếu KHÔNG có hiệu thuốc: Dùng tên chính thức + dung tích (giống name)
+     + Ví dụ: name="BEAMMY KASU 300SC (450ml)", trade_name="BEAMMY KASU 300SC (450ml)"
+
+
+TÍNH TOÁN LIỀU LƯỢNG (GHI VÀO NOTES):
+**CHỈ TÍNH 2 THÔNG TIN CHÍNH**:
+
+1. **Liều lượng/bình 25 lít**: Tìm thông tin ml/bình hoặc tính từ liều/ha
+   - VD: Nếu nhãn ghi "30ml/bình" → Ghi: "30ml/bình 25L"
+   - VD: Nếu ghi "600ml/ha" → Tính: 600ml/ha ÷ 10 bình/ha = 60ml/bình
+
+2. **Số công phun được**: Tính từ dung tích chai
+   - Công thức: (Dung tích chai ÷ Liều/bình) × 200m² ÷ 1296m²
+   - VD: Chai 450ml, liều 30ml/bình → (450÷30) × 200 ÷ 1296 = 2.31 công
+   - 1 công = 1296m²
+
+**FORMAT KẾT QUẢ (CHỈ 2 DÒNG)**:
+• Liều lượng: [X]ml/bình 25L
+• Phun được: ~[Y] công (1 chai [Z]ml)
+
+VD: "• Liều lượng: 30ml/bình 25L\n• Phun được: ~2.31 công (1 chai 450ml)"
 Cấu trúc JSON trả về:
 {
-  "name": "Tên sản phẩm (viết hoa)",
+  "name": "Tên sản phẩm (viết hoa) + (dung tích) - VD: BEAMMY KASU 300SC (450ml)",
+  "volume": "Dung tích/Khối lượng (VD: 450ml, 1 lít, 500g) - Tìm trên nhãn ở mục Dung tích, Quy cách, Net, hoặc ghi rõ",
+  "notes": "Ghi chú tự động (bao gồm tính toán liều lượng nếu có thông tin)",
+  "trade_name": "Hiệu thuốc tiếng Việt + (dung tích) HOẶC tên chính thức + (dung tích) - VD: Siêu Bệnh (450ml) hoặc BEAMMY KASU 300SC (450ml)",
   "active_ingredient": "Hoạt chất VÀ Hàm lượng (BẮT BUỘC: Phải lấy cả tên hoạt chất và nồng độ/hàm lượng đi kèm. Ví dụ: 'Butachlor 150g/l' hoặc 'Mancozeb 20%'. Nếu có nhiều hoạt chất thì liệt kê đầy đủ, ngăn cách bằng dấu phẩy)",
   "concentration": "Hàm lượng (Nếu đã gộp vào active_ingredient thì trường này có thể để trống hoặc lặp lại)",
   "manufacturer": "Nhà sản xuất/đăng ký",

@@ -9,6 +9,9 @@ import heic2any from 'heic2any';
  */
 export interface ExtractedProductData {
   name?: string;
+  trade_name?: string; // Hiệu thuốc / Tên thương mại
+  volume?: string; // Dung tích/Khối lượng
+  notes?: string; // Ghi chú tự động
   active_ingredient?: string;
   concentration?: string;
   manufacturer?: string;
@@ -38,6 +41,7 @@ interface ImageAnalyzerProps {
 const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading: externalLoading }) => {
   const [analyzing, setAnalyzing] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false); // Loading khi đang upload ảnh
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -61,12 +65,15 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
       // Gọi callback với dữ liệu đã trích xuất
       onDataExtracted({
         name: result.name,
+        trade_name: result.trade_name, // Hiệu thuốc
+        volume: result.volume, // Dung tích
         active_ingredient: result.active_ingredient,
         concentration: result.concentration,
         manufacturer: result.manufacturer,
         usage: result.usage,
         description: result.usage, // Sử dụng usage làm description fallback
         details: result.details,    // Truyền thêm chi tiết
+        notes: result.notes, // Ghi chú tự động
       });
 
     } catch (error) {
@@ -82,21 +89,28 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
    */
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
-    let hasImage = false;
+    const imageFiles: File[] = [];
 
+    // Collect tất cả image files từ clipboard
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
         const file = items[i].getAsFile();
         if (file) {
-          hasImage = true;
-          await handleFileSelect(file);
+          imageFiles.push(file);
         }
       }
     }
     
-    if (hasImage) {
-       message.success('Đã thêm ảnh từ clipboard');
-       e.preventDefault();
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      setUploadingImages(true);
+      try {
+        // Xử lý tất cả ảnh song song
+        await Promise.all(imageFiles.map(file => handleFileSelect(file)));
+        message.success(`Đã thêm ${imageFiles.length} ảnh từ clipboard`);
+      } finally {
+        setUploadingImages(false);
+      }
     }
   };
 
@@ -157,8 +171,12 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
   const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        await handleFileSelect(files[i]);
+      setUploadingImages(true);
+      try {
+        // Xử lý tất cả files song song
+        await Promise.all(Array.from(files).map(file => handleFileSelect(file)));
+      } finally {
+        setUploadingImages(false);
       }
     }
     // Reset input value để cho phép chọn lại file cũ nếu muốn
@@ -171,7 +189,7 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const isLoading = analyzing || externalLoading;
+  const isLoading = analyzing || externalLoading || uploadingImages;
 
   return (
     <div 
@@ -188,7 +206,18 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
         <div className="flex items-center justify-between">
            <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
             Trích xuất thông tin từ hình ảnh ({images.length} ảnh)
-            {isLoading && <Spin indicator={<LoadingOutlined style={{ fontSize: 14 }} spin />} />}
+            {uploadingImages && (
+              <>
+                <Spin indicator={<LoadingOutlined style={{ fontSize: 14 }} spin />} />
+                <span className="text-blue-600 text-xs">Đang tải ảnh...</span>
+              </>
+            )}
+            {analyzing && (
+              <>
+                <Spin indicator={<LoadingOutlined style={{ fontSize: 14 }} spin />} />
+                <span className="text-blue-600 text-xs">Đang phân tích...</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -295,7 +324,7 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
         
          {/* Helper Text */}
          <div className="text-xs text-gray-400 mt-[-8px]">
-             * Click vào khung để dán ảnh (Ctrl+V). <strong>Click vào ảnh để xem phóng to.</strong> Nhấn "Trích xuất thông tin" để AI xử lý.
+             * Click vào khung để dán ảnh (Ctrl+V). <strong>Click vào ảnh để xem phóng to.</strong> Nhấn &quot;Trích xuất thông tin&quot; để AI xử lý.
          </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import * as z from 'zod';
 
 export const seasonSchema = z.object({
   name: z.string().min(1, 'Tên mùa vụ là bắt buộc'),
-  code: z.string().min(1, 'Mã mùa vụ là bắt buộc'),
+  code: z.string().optional(), // Backend tự động generate code nếu không cung cấp
   year: z.number().min(2000, 'Năm phải từ 2000 trở lên'),
   start_date: z.string().optional(),
   end_date: z.string().optional(),

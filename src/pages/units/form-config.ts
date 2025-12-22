@@ -6,7 +6,7 @@ export type { Unit } from "@/models/unit.model"
 // Schema validation cho form đơn vị tính
 export const unitSchema = z.object({
   name: z.string().min(1, "Tên đơn vị tính là bắt buộc"),
-  code: z.string().min(1, "Mã đơn vị tính là bắt buộc"),
+  code: z.string().optional(), // Backend tự động generate code nếu không cung cấp
   description: z.string().optional(),
   status: z.enum(["active", "inactive", "pending", "archived"]).default("active"),
 })

@@ -192,6 +192,22 @@ const ProductsList: React.FC = () => {
       ),
     },
     {
+      key: "trade_name",
+      title: (
+        <FilterHeader 
+            title="Hiệu thuốc" 
+            dataIndex="trade_name" 
+            value={filters.trade_name} 
+            onChange={(val) => handleFilterChange('trade_name', val)}
+            inputType="text"
+        />
+      ),
+      width: 200,
+      render: (_: unknown, record: ExtendedProduct) => (
+        <div className='font-medium text-gray-500'>{record.trade_name || '---'}</div>
+      ),
+    },
+    {
         key: "category",
         title: "Danh mục",
         width: 150,

@@ -33,7 +33,6 @@ function DialogAddUpdate({
     setValue,
     watch,
     reset,
-    formState: { errors },
   } = useForm<ProductTypeFormData>({
     resolver: zodResolver(productTypeSchema),
     defaultValues: defaultProductTypeValues,
@@ -87,6 +86,8 @@ function DialogAddUpdate({
           status: data.status,
         })
       }
+      // Reset form về giá trị mặc định sau khi thành công
+      reset(defaultProductTypeValues)
       setOpenDialog(false)
     } catch (error) {
       console.error("Lỗi khi lưu loại sản phẩm:", error)

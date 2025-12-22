@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import {
   Box,
   Button,
@@ -20,7 +20,7 @@ import {
   useUpdateSupplierMutation,
   useDeleteSupplierMutation,
 } from "@/queries/supplier"
-import { Supplier, PaginatedSuccessResponse } from "@/models/supplier.model"
+import { Supplier } from "@/models/supplier.model"
 import DataTable from "@/components/common/data-table"
 import {
   supplierSchema,
@@ -32,24 +32,11 @@ import FilterHeader from "@/components/common/filter-header"
 import { DatePicker, Space, Button as AntButton } from "antd"
 import { SearchOutlined } from "@ant-design/icons"
 import dayjs from "dayjs"
+import type { FilterValue, TablePaginationConfig } from "antd/es/table/interface"
+import type { SorterResult } from "antd/es/table/interface"
 
 // Extend Supplier interface để tương thích với DataTable
 interface ExtendedSupplier extends Supplier, Record<string, unknown> {}
-
-// Type guard để kiểm tra cấu trúc response
-const isPaginatedResponse = (
-  data: unknown
-): data is PaginatedSuccessResponse<Supplier> => {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    "success" in data &&
-    data.success === true &&
-    "data" in data &&
-    Array.isArray((data as PaginatedSuccessResponse<Supplier>).data) &&
-    "pagination" in data
-  )
-}
 
 // Component chính quản lý nhà cung cấp
 export const Suppliers = () => {
@@ -63,7 +50,7 @@ export const Suppliers = () => {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [filters, setFilters] = useState<Record<string, any>>({})
+  const [filters, setFilters] = useState<Record<string, unknown>>({})
 
   // React Query hooks
   const { data: suppliersData, isLoading, error } = useSuppliersQuery({
@@ -83,22 +70,26 @@ export const Suppliers = () => {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
     defaultValues: defaultSupplierValues,
   })
 
   // Date Filter UI Helper
-  const getDateColumnSearchProps = (dataIndex: string): any => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+  const getDateColumnSearchProps = () => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: {
+      setSelectedKeys: (keys: React.Key[]) => void;
+      selectedKeys: React.Key[];
+      confirm: (param?: { closeDropdown: boolean }) => void;
+      clearFilters?: () => void;
+    }) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
         <DatePicker.RangePicker 
             style={{ marginBottom: 8, display: 'flex' }}
             format="DD/MM/YYYY"
             value={
                 selectedKeys && selectedKeys[0] 
-                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                ? [dayjs(String(selectedKeys[0])), dayjs(String(selectedKeys[1]))] 
                 : undefined
             }
             onChange={(dates) => {
@@ -126,7 +117,7 @@ export const Suppliers = () => {
             onClick={() => {
                 if (clearFilters) {
                     clearFilters()
-                    confirm()
+                    confirm({ closeDropdown: true })
                 }
             }}
             size="small"
@@ -143,32 +134,39 @@ export const Suppliers = () => {
   })
 
   // Handle Table Change
-  const handleTableChange: any = (pagination: any, tableFilters: any, sorter: any) => {
+  const handleTableChange = (
+    pagination: TablePaginationConfig,
+    tableFilters: Record<string, FilterValue | null>,
+    sorter: SorterResult<ExtendedSupplier> | SorterResult<ExtendedSupplier>[]
+  ) => {
     setCurrentPage(pagination.current || 1)
     setPageSize(pagination.pageSize || 10)
 
-    const newFilters = { ...filters }
+    const newFilters: Record<string, unknown> = { ...filters }
 
-    // Handle Sorting
-    if (sorter.field && sorter.order) {
-      newFilters.sort_by = sorter.field
-      newFilters.sort_direction = sorter.order === 'ascend' ? 'ASC' : 'DESC'
+    // Handle Sorting - chỉ xử lý single sorter
+    const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter
+    if (singleSorter?.field && singleSorter?.order) {
+      newFilters.sort_by = String(singleSorter.field)
+      newFilters.sort_direction = singleSorter.order === 'ascend' ? 'ASC' : 'DESC'
     } else {
       delete newFilters.sort_by
       delete newFilters.sort_direction
     }
     
     // Handle Native Filters (Status)
-    if (tableFilters.status?.[0]) {
-       newFilters.status = tableFilters.status[0]
+    const statusFilter = tableFilters.status
+    if (statusFilter && statusFilter.length > 0) {
+       newFilters.status = String(statusFilter[0])
     } else {
        delete newFilters.status
     }
 
     // Handle Date Range (created_at)
-    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
-      newFilters.start_date = tableFilters.created_at[0]
-      newFilters.end_date = tableFilters.created_at[1]
+    const dateFilter = tableFilters.created_at
+    if (dateFilter && dateFilter.length === 2) {
+      newFilters.start_date = String(dateFilter[0])
+      newFilters.end_date = String(dateFilter[1])
     } else {
         delete newFilters.start_date
         delete newFilters.end_date
@@ -178,8 +176,8 @@ export const Suppliers = () => {
   }
   
   // Handler update filter trực tiếp (Controlled mode)
-  const handleFilterChange = (key: string, value: any) => {
-      const newFilters = { ...filters, [key]: value };
+  const handleFilterChange = (key: string, value: string | undefined) => {
+      const newFilters: Record<string, unknown> = { ...filters, [key]: value };
       if (!value) delete newFilters[key];
       
       setFilters(newFilters);
@@ -236,8 +234,9 @@ export const Suppliers = () => {
           created_by: userInfo?.user_id || 1, // Sử dụng ID người dùng hiện tại hoặc mặc định là 1
         })
       }
+      // Reset form về giá trị mặc định sau khi thành công
+      reset(defaultSupplierValues)
       setOpenDialog(false)
-      reset()
     } catch (error) {
       console.error("Lỗi khi xử lý form:", error)
     }
@@ -405,7 +404,7 @@ export const Suppliers = () => {
         { text: 'Không hoạt động', value: 'inactive' },
         { text: 'Đã lưu trữ', value: 'archived' },
       ],
-      filteredValue: filters.status ? [filters.status] : null,
+      filteredValue: filters.status ? [String(filters.status)] : null,
       filterMultiple: false,
       render: (value: unknown) => {
         const status = String(value)
@@ -435,8 +434,8 @@ export const Suppliers = () => {
       dataIndex: "created_at" as const,
       key: "created_at",
       width: 120,
-      ...getDateColumnSearchProps('created_at'),
-      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
+      ...getDateColumnSearchProps(),
+      filteredValue: (filters.start_date && filters.end_date) ? [String(filters.start_date), String(filters.end_date)] : null,
       render: (value: unknown) => {
         const date = String(value)
         return date ? new Date(date).toLocaleDateString("vi-VN") : "N/A"
@@ -521,8 +520,6 @@ export const Suppliers = () => {
               required
             />
 
-
-
             <FormField
               name="address"
               control={control}
@@ -573,10 +570,10 @@ export const Suppliers = () => {
               placeholder="Nhập ghi chú"
             />
 
-            <DialogActions sx={{ mt: 3 }}>
+            <DialogActions sx={{ mt: 3, px: 0 }}>
               <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
               <Button type='submit' variant='contained' color='primary'>
-                {isEditing ? "Đã cập nhật" : "Thêm"}
+                {isEditing ? "Cập nhật" : "Thêm"}
               </Button>
             </DialogActions>
           </Box>

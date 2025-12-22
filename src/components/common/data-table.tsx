@@ -192,7 +192,6 @@ const DataTable = <T extends Record<string, unknown>>({
     title: actionColumnTitle,
     key: "actions",
     width: actionColumnWidth,
-    fixed: "right" as const,
     render: (_: unknown, record: T) => (
       <Space size='small'>
         {allActionButtons.map((button) => {

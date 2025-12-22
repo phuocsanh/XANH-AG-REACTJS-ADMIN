@@ -8,6 +8,8 @@ export interface Product {
   id: number
   code: string
   name: string
+  trade_name?: string // Hiệu thuốc / Tên thương mại
+  volume?: string // Dung tích / Khối lượng
   price: string
   status: BaseStatus
   thumb: string
@@ -118,6 +120,8 @@ export interface ProductStats {
 
 // Interface cho converted values
 export interface ConvertedProductValues {
+  trade_name: string // Hiệu thuốc / Tên thương mại
+  volume?: string // Dung tích / Khối lượng
   [key: string]: unknown
   name: string
   price: string

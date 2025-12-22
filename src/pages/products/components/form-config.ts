@@ -4,6 +4,8 @@ import { UploadFile } from "antd/lib/upload/interface"
 // Schema validation cho form sản phẩm
 export const productFormSchema = z.object({
   name: z.string().min(1, "Tên sản phẩm không được để trống"),
+  trade_name: z.string().min(1, "Hiệu thuốc không được để trống"),
+  volume: z.string().optional(), // Dung tích/Khối lượng
   price: z.string()
     .min(1, "Giá bán tiền mặt không được để trống")
     .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
@@ -53,6 +55,8 @@ export type UpdateProductFormData = z.infer<typeof updateProductFormSchema>
 // Interface cho ProductFormValues (phù hợp với cấu trúc hiện tại)
 export interface ProductFormValues {
   name: string
+  trade_name: string // Hiệu thuốc / Tên thương mại
+  volume?: string // Dung tích/Khối lượng
   price: string // Giữ nguyên là string
   credit_price?: string // Giá bán nợ
   type: number | undefined
@@ -81,6 +85,8 @@ export interface ProductFormValues {
 export interface ConvertedProductValues {
   [key: string]: unknown
   name: string
+  trade_name: string // Hiệu thuốc / Tên thương mại
+  volume?: string // Dung tích/Khối lượng
   price: string // Giữ nguyên là string
   credit_price?: string // Giá bán nợ
   type: number
@@ -107,6 +113,8 @@ export interface ConvertedProductValues {
 // Giá trị mặc định cho form
 export const defaultProductFormValues: ProductFormValues = {
   name: "",
+  trade_name: "", // Hiệu thuốc mặc định
+  volume: "", // Dung tích mặc định
   price: "0", // Giá bán tiền mặt mặc định là 0
   credit_price: "0", // Giá bán nợ mặc định là 0
   type: undefined,

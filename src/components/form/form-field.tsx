@@ -34,6 +34,7 @@ interface FormFieldProps<T extends FieldValues> {
   size?: "large" | "middle" | "small"
   allowClear?: boolean
   autoComplete?: string // Thêm prop autoComplete
+  autoSize?: boolean | { minRows?: number; maxRows?: number } // Thêm prop autoSize
 }
 
 /**
@@ -58,6 +59,7 @@ function FormField<T extends FieldValues>({
   size = "middle",
   allowClear = true,
   autoComplete, // Thêm autoComplete vào parameters
+  autoSize, // Thêm autoSize vào parameters
 }: FormFieldProps<T>) {
   // Tạo validation rules cho React Hook Form
   const validationRules = {
@@ -130,7 +132,7 @@ function FormField<T extends FieldValues>({
         )
 
       case "textarea":
-        return <Input.TextArea {...commonProps} rows={rows} />
+        return <Input.TextArea {...commonProps} rows={autoSize ? undefined : rows} autoSize={autoSize} />
 
       default:
         return (

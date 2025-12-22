@@ -179,6 +179,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   // Watch form values
   const watchedType = watch("type")
   const watchedName = watch("name")
+  const watchedTradeName = watch("trade_name")
 
   // Xác định ID sản phẩm để sử dụng từ props
   const currentProductId = productId ? parseInt(productId) : 0
@@ -232,6 +233,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Reset form với dữ liệu sản phẩm
         reset({
           name: productItem.name?.trim() || "",
+          trade_name: productItem.trade_name?.trim() || productItem.name?.trim() || "",
+          volume: productItem.volume?.trim() || "",
           price: productItem.price || "",
           credit_price: productItem.credit_price || "", // Giá bán nợ
           type: productItem.type || undefined,
@@ -294,9 +297,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     // Debounce: Chỉ kiểm tra sau khi người dùng ngừng gõ 500ms
     const timer = setTimeout(async () => {
       const productName = watchedName?.trim()
+      const tradeName = watchedTradeName?.trim()
       
-      // Chỉ kiểm tra nếu tên sản phẩm có ít nhất 2 ký tự
-      if (!productName || productName.length < 2) {
+      // Chỉ kiểm tra nếu có ít nhất tên sản phẩm hoặc hiệu thuốc (ít nhất 2 ký tự)
+      if ((!productName || productName.length < 2) && (!tradeName || tradeName.length < 2)) {
         setDuplicateProducts([])
         return
       }
@@ -307,7 +311,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Import api từ utils
         const api = (await import("@/utils/api")).default
         
-        // Gọi API search để tìm sản phẩm có tên tương tự
+        // Gọi API search để tìm sản phẩm có tên hoặc hiệu thuốc tương tự
         const response = await api.postRaw<{
           success: boolean
           data: Product[]
@@ -316,20 +320,34 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             totalPages: number | null
           }
         }>('/products/search', { 
-          keyword: productName,
-          limit: 5,
+          keyword: productName || tradeName, // Tìm theo tên hoặc hiệu thuốc
+          limit: 10, // Tăng limit để tìm nhiều hơn
           page: 1
         })
         
         
-        // Lọc các sản phẩm có tên giống hoặc tương tự
+        // Lọc các sản phẩm có tên hoặc hiệu thuốc giống/tương tự
         const duplicates = response?.data?.filter((product: Product) => {
           const normalizedProductName = product.name?.toLowerCase().trim()
-          const normalizedInputName = productName.toLowerCase().trim()
+          const normalizedProductTradeName = (product as any).trade_name?.toLowerCase().trim()
+          const normalizedInputName = productName?.toLowerCase().trim()
+          const normalizedInputTradeName = tradeName?.toLowerCase().trim()
           
-          // Kiểm tra tên giống hệt hoặc chứa tên đang nhập
-          return normalizedProductName === normalizedInputName || 
-                 normalizedProductName?.includes(normalizedInputName)
+          // Kiểm tra trùng tên sản phẩm
+          const nameMatch = normalizedInputName && (
+            normalizedProductName === normalizedInputName || 
+            normalizedProductName?.includes(normalizedInputName)
+          )
+          
+          // Kiểm tra trùng hiệu thuốc
+          const tradeNameMatch = normalizedInputTradeName && (
+            normalizedProductTradeName === normalizedInputTradeName ||
+            normalizedProductTradeName?.includes(normalizedInputTradeName) ||
+            normalizedProductName === normalizedInputTradeName || // Tên sản phẩm trùng với hiệu thuốc đang nhập
+            normalizedProductName?.includes(normalizedInputTradeName)
+          )
+          
+          return nameMatch || tradeNameMatch
         }) || []
         
         setDuplicateProducts(duplicates)
@@ -344,7 +362,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     return () => {
       clearTimeout(timer)
     }
-  }, [watchedName, isEdit])
+  }, [watchedName, watchedTradeName, isEdit])
 
   // Render các thuộc tính sản phẩm động
   const renderProductAttributes = () => {
@@ -457,6 +475,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       // TODO: Cập nhật service API để tự động mapping tên các trường thay vì phải convert thủ công
       const serverData = {
         name: convertedValues.name,
+        trade_name: convertedValues.trade_name,
+        volume: convertedValues.volume,
         price: convertedValues.price,
         credit_price: convertedValues.credit_price, // Giá bán nợ
         type: convertedValues.type,
@@ -538,6 +558,25 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     // Tự động điền thông tin vào form
     if (data.name) {
       setValue('name', data.name);
+    
+    // Set trade_name: Nếu AI trả về trade_name thì dùng, không thì dùng name (loại bỏ dung tích)
+    if (data.trade_name) {
+      setValue('trade_name', data.trade_name);
+    } else if (data.name) {
+      // Nếu không có trade_name, dùng name nhưng loại bỏ phần dung tích (nếu có)
+      const nameWithoutVolume = data.name.replace(/\s*\([^)]*\)\s*$/g, '').trim();
+      setValue('trade_name', nameWithoutVolume);
+    }
+    
+    // Set volume nếu AI trả về
+    if (data.volume) {
+      setValue('volume', data.volume);
+    }
+    
+    // Set notes nếu AI trả về (bao gồm tính toán liều lượng)
+    if (data.notes) {
+      setValue('notes', data.notes);
+    }
     }
     
     if (data.active_ingredient) {
@@ -634,7 +673,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       message={
                         <div>
                           <div className="font-semibold mb-2">
-                            ⚠️ Phát hiện {duplicateProducts.length} sản phẩm có tên tương tự:
+                            ⚠️ Phát hiện {duplicateProducts.length} sản phẩm có tên hoặc hiệu thuốc tương tự:
                           </div>
                           {/* Danh sách sản phẩm với scroll nếu quá nhiều */}
                           <div 
@@ -673,6 +712,34 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       className="mt-2"
                     />
                   )}
+                </div>
+
+                {/* Hiệu thuốc / Tên thương mại */}
+                <div className='w-full md:col-span-2'>
+                  <FormField
+                    name='trade_name'
+                    control={control}
+                    label='Hiệu thuốc / Tên thương mại'
+                    placeholder='Nhập hiệu thuốc (nếu không có sẽ dùng tên sản phẩm)'
+                    required
+                    rules={{ required: "Vui lòng nhập hiệu thuốc" }}
+                    className='w-full'
+                    autoComplete='off'
+                  />
+                  
+                </div>
+
+                {/* Dung tích / Khối lượng */}
+                <div className='w-full md:col-span-2'>
+                  <FormField
+                    name='volume'
+                    control={control}
+                    label='Dung tích / Khối lượng'
+                    placeholder='VD: 450ml, 1 lít, 500g'
+                    className='w-full'
+                    autoComplete='off'
+                  />
+                 
                 </div>
 
                 <div className='w-full'>
@@ -860,7 +927,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     placeholder='Nhập ghi chú về sản phẩm (tùy chọn)'
                     className='w-full'
                     type="textarea"
-                    rows={3}
+                    autoSize={{ minRows: 7 }}
                   />
                 </div>
 
