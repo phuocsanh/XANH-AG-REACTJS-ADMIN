@@ -32,7 +32,7 @@ import { useSeasonsQuery } from '@/queries/season';
 import type {
   CustomerInvoice,
   CustomerSeasonSummary,
-} from '@/types/store-profit.types';
+} from '@/models/store-profit';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 

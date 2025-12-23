@@ -4,7 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import DataTable from '@/components/common/data-table';
 import FilterHeader from '@/components/common/filter-header';
 import { useCostItemCategories, useDeleteCostItemCategory } from '@/queries/cost-item-category';
-import { CostItemCategory } from '@/types/cost-item-category.types';
+import { CostItemCategory } from '@/models/cost-item-category';
 import CategoryModal from './modal';
 import dayjs from 'dayjs';
 

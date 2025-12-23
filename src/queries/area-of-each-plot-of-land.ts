@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/utils/api';
 import { message } from 'antd';
-import type { AreaOfEachPlotOfLand } from '@/types/rice-farming.types';
+import type { AreaOfEachPlotOfLand } from '@/models/rice-farming';
 
 // ==================== INTERFACES ====================
 

@@ -28,7 +28,7 @@ import {
   useDeleteFarmingSchedule,
   useCompleteFarmingSchedule,
 } from '@/queries/farming-schedule';
-import { FarmingSchedule, CreateFarmingScheduleDto, ScheduleStatus } from '@/types/rice-farming.types';
+import { FarmingSchedule, CreateFarmingScheduleDto, ScheduleStatus } from '@/models/rice-farming';
 
 interface FarmingSchedulesTabProps {
   riceCropId: number;

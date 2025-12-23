@@ -26,7 +26,7 @@ import {
   useUpdateHarvestRecord,
   useDeleteHarvestRecord,
 } from '@/queries/harvest-record';
-import { HarvestRecord, CreateHarvestRecordDto } from '@/types/rice-farming.types';
+import { HarvestRecord, CreateHarvestRecordDto } from '@/models/rice-farming';
 import { FormField, FormFieldNumber, FormDatePicker } from '@/components/form';
 
 interface HarvestRecordsTabProps {

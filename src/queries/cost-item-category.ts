@@ -5,7 +5,7 @@ import {
   CreateCostItemCategoryDto,
   UpdateCostItemCategoryDto,
   CostItemCategoryFilters
-} from '@/types/cost-item-category.types';
+} from '@/models/cost-item-category';
 
 export const costItemCategoryKeys = {
   all: ['cost-item-categories'] as const,

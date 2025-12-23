@@ -115,7 +115,7 @@ import {
 } from '@/components/disease-warning';
 import { UpdateLocationDto } from '@/models/rice-blast';
 import { useRiceCrops } from '@/queries/rice-crop';
-import { CropStatus, RiceCrop } from '@/types/rice-farming.types';
+import { CropStatus, RiceCrop } from '@/models/rice-farming';
 
 const { TabPane } = AntTabs;
 

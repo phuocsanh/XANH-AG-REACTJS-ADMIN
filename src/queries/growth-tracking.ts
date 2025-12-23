@@ -7,7 +7,7 @@ import api from '@/utils/api';
 import type {
   GrowthTracking,
   CreateGrowthTrackingDto,
-} from '@/types/rice-farming.types';
+} from '@/models/rice-farming';
 
 // ==================== QUERY KEYS ====================
 

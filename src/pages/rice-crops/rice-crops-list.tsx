@@ -35,7 +35,7 @@ import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
 // Import query cho diện tích mỗi công đất
 import { useAreasQuery } from "@/queries/area-of-each-plot-of-land";
-import type { RiceCrop, CreateRiceCropDto, GrowthStage, CropStatus } from '@/types/rice-farming.types';
+import type { RiceCrop, CreateRiceCropDto, GrowthStage, CropStatus } from '@/models/rice-farming';
 import dayjs from 'dayjs';
 
 // Extend RiceCrop interface để tương thích với DataTable

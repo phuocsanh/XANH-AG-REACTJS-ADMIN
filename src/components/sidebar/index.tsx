@@ -792,6 +792,20 @@ const Sidebar: React.FC = () => {
                     </Button>
                   </Link>
 
+                  {hasPermission(userInfo, "sales:manage") && (
+                    <Link to='/farm-service-costs'>
+                      <Button
+                        className={`w-full !justify-start !text-left mb-2 ${
+                          location.pathname === "/farm-service-costs"
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        Chi phí Dịch vụ
+                      </Button>
+                    </Link>
+                  )}
+
                   <Link to='/rice-crops/categories'>
                     <Button
                       className={`w-full !justify-start !text-left mb-2 ${

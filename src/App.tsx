@@ -44,6 +44,8 @@ import DiseaseWarningPage from "./pages/disease-warning"
 import BannedPesticidesPage from "./pages/banned-pesticides"
 // Thêm import cho trang Quản Lý Canh Tác
 import RiceCropsPage from "./pages/rice-crops"
+// Thêm import cho trang Chi phí Dịch vụ
+import FarmServiceCostsPage from "./pages/farm-service-costs"
 
 // Thêm import cho trang so sánh sản phẩm AI
 import ProductComparisonPage from "./pages/product-comparison"
@@ -436,6 +438,14 @@ function AppContent({
                       element={
                         <ProtectedRoute>
                           <CostItemCategoriesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/farm-service-costs'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:manage">
+                          <FarmServiceCostsPage />
                         </ProtectedRoute>
                       }
                     />

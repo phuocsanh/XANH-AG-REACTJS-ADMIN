@@ -4,7 +4,7 @@ import {
   useCreateCostItemCategory,
   useUpdateCostItemCategory,
 } from '@/queries/cost-item-category';
-import type { CostItemCategory } from '@/types/cost-item-category.types';
+import type { CostItemCategory } from '@/models/cost-item-category';
 
 interface CreateCostItemCategoryModalProps {
   visible: boolean;

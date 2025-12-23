@@ -9,7 +9,7 @@ import type {
   SeasonStoreProfit,
   CustomerProfitReport,
   RiceCropProfit,
-} from '@/types/store-profit.types';
+} from '@/models/store-profit';
 
 // ==================== QUERY KEYS ====================
 

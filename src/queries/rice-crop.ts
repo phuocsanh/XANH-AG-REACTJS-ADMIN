@@ -12,7 +12,7 @@ import type {
   UpdateStatusDto,
   RiceCropFilters,
   CustomerStats,
-} from '@/types/rice-farming.types';
+} from '@/models/rice-farming';
 
 // ==================== QUERY KEYS ====================
 

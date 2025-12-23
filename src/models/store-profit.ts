@@ -93,7 +93,8 @@ export interface ProfitSummary {
   cost_of_goods_sold: number;
   gross_profit: number;
   gross_margin: number;
-  operating_costs: number;
+  operating_costs: number;  // Deprecated: dùng farm_service_costs thay thế
+  farm_service_costs: number;  // Chi phí dịch vụ/quà tặng
   net_profit: number;      // Lợi nhuận ròng (sau khi trừ chi phí vận hành)
   net_margin: number;
 }
@@ -109,7 +110,7 @@ export interface SeasonStoreProfit {
     end_date?: Date;
   };
   summary: ProfitSummary;
-  operating_costs_breakdown: OperatingCostBreakdown[];
+  farm_service_costs_breakdown: OperatingCostBreakdown[];  // Chi tiết chi phí dịch vụ
   delivery_stats?: DeliveryStats;
   top_customers: TopCustomerProfit[];
   top_products: TopProductProfit[];
@@ -188,9 +189,8 @@ export interface RiceCropProfit {
     cost_of_goods_sold: number;
     gross_profit: number;
     
-    // New fields
-    operating_costs: number;
-    production_costs: number; // Chi phí canh tác (phân thuốc)
+    // Chi phí dịch vụ/quà tặng của cửa hàng dành cho ruộng lúa
+    farm_service_costs: number;
     net_profit: number;
     net_margin: number;
     
@@ -199,16 +199,13 @@ export interface RiceCropProfit {
     avg_margin: number;
   };
   
-  operating_costs_breakdown?: {
+  // Chi tiết chi phí dịch vụ/quà tặng
+  farm_service_costs_breakdown?: {
       name: string;
       amount: number;
       date?: string;
-  }[];
-
-  production_costs_breakdown?: {
-      name: string;
-      amount: number;
-      quantity?: string;
+      notes?: string;
+      source?: string; // 'manual' hoặc 'gift_from_invoice'
   }[];
 
   invoices: CustomerInvoice[];

@@ -8,7 +8,7 @@ import type {
   FarmingSchedule,
   CreateFarmingScheduleDto,
   FarmingScheduleFilters,
-} from '@/types/rice-farming.types';
+} from '@/models/rice-farming';
 
 // ==================== QUERY KEYS ====================
 

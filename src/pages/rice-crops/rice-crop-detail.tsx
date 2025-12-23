@@ -17,7 +17,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useRiceCrop } from '@/queries/rice-crop';
-import { GrowthStage, CropStatus } from '@/types/rice-farming.types';
+import { GrowthStage, CropStatus } from '@/models/rice-farming';
 import CostItemsTab from './components/CostItemsTab';
 import HarvestRecordsTab from './components/HarvestRecordsTab';
 import FarmingSchedulesTab from './components/FarmingSchedulesTab';
@@ -25,6 +25,9 @@ import GrowthTrackingTab from './components/GrowthTrackingTab';
 import ProfitReportTab from './components/ProfitReportTab';
 import { InvoicesTab } from './components/InvoicesTab';
 import { EditRiceCropModal } from './components/EditRiceCropModal';
+import FarmServiceCostTab from './components/FarmServiceCostTab';
+import { useAppStore } from '@/stores/store';
+import { hasPermission } from '@/utils/permission';
 
 // Màu sắc cho giai đoạn sinh trưởng
 const growthStageColors: Record<GrowthStage, string> = {
@@ -86,6 +89,7 @@ const RiceCropDetail: React.FC = () => {
 
   const riceCropId = id ? parseInt(id, 10) : 0;
   const { data: riceCrop, isLoading } = useRiceCrop(riceCropId);
+  const { userInfo } = useAppStore();
 
   if (isLoading) {
     return (
@@ -204,6 +208,12 @@ const RiceCropDetail: React.FC = () => {
       label: '🧾 Hóa đơn mua hàng',
       children: <InvoicesTab riceCropId={riceCrop.id} />,
     },
+    // Chỉ hiển thị tab Chi phí Dịch vụ cho admin
+    ...(hasPermission(userInfo, 'sales:manage') ? [{
+      key: 'farm-service-costs',
+      label: '🎁 Chi phí Dịch vụ',
+      children: <FarmServiceCostTab riceCropId={riceCrop.id} />,
+    }] : []),
     {
       key: 'harvest',
       label: '🌾 Thu hoạch',

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, Button, message } from 'antd';
 import { useCreateOperatingCostCategory, useUpdateOperatingCostCategory } from '@/queries/operating-cost-category';
-import { OperatingCostCategory } from '@/types/operating-cost-category.types';
+import { OperatingCostCategory } from '@/models/operating-cost-category';
 
 interface CategoryModalProps {
   visible: boolean;

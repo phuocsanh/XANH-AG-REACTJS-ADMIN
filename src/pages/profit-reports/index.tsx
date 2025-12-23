@@ -35,7 +35,7 @@ import {
   useCustomerProfitReport,
   useInvoiceProfitByCodeQuery,
 } from '@/queries/store-profit-report';
-import type { RiceCropProfit } from '@/types/store-profit.types';
+import type { RiceCropProfit } from '@/models/store-profit';
 import type { ColumnsType } from 'antd/es/table';
 
 const ProfitReportsPage: React.FC = () => {
@@ -214,8 +214,8 @@ const ProfitReportsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 <Card>
                   <Statistic
-                    title="Chi phí Vận hành"
-                    value={seasonProfit.summary?.operating_costs || 0}
+                    title="Chi phí Dịch vụ/Quà tặng"
+                    value={seasonProfit.summary?.farm_service_costs || 0}
                     formatter={(value) => formatCurrency(Number(value))}
                     prefix={<FallOutlined />}
                     valueStyle={{ color: '#cf1322' }}
@@ -504,7 +504,7 @@ const ProfitReportsPage: React.FC = () => {
 
             {/* Cards tổng hợp */}
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} sm={12} lg={4}>
+              <Col xs={24} sm={12} lg={6}>
                 <Card>
                   <Statistic
                     title="Tổng Doanh thu"
@@ -515,7 +515,7 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
               
-              <Col xs={24} sm={12} lg={4}>
+              <Col xs={24} sm={12} lg={6}>
                 <Card>
                   <Statistic
                     title="Lợi nhuận Gộp"
@@ -526,29 +526,18 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
 
-              <Col xs={24} sm={12} lg={4}>
+              <Col xs={24} sm={12} lg={6}>
                 <Card>
                   <Statistic
-                    title="CP Vận hành"
-                    value={riceCropProfit.summary?.operating_costs || 0}
+                    title="Chi phí Dịch vụ/Quà tặng"
+                    value={riceCropProfit.summary?.farm_service_costs || 0}
                     formatter={(val) => formatCurrency(Number(val))}
                     valueStyle={{ color: '#cf1322' }}
                   />
                 </Card>
               </Col>
 
-              <Col xs={24} sm={12} lg={4}>
-                <Card>
-                  <Statistic
-                    title="CP Canh tác"
-                    value={riceCropProfit.summary?.production_costs || 0}
-                    formatter={(val) => formatCurrency(Number(val))}
-                    valueStyle={{ color: '#faad14' }}
-                  />
-                </Card>
-              </Col>
-
-              <Col xs={24} sm={12} lg={8}>
+              <Col xs={24} sm={12} lg={6}>
                 <Card>
                   <Statistic
                     title="LỢI NHUẬN RÒNG"
@@ -567,53 +556,43 @@ const ProfitReportsPage: React.FC = () => {
               </Col>
             </Row>
 
-            {/* Chi tiết chi phí */}
-            <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} md={12}>
-                <Card title="⚙️ Chi phí Vận hành (Quản lý)">
-                  <Table
-                    columns={[
-                      { title: 'Tên chi phí', dataIndex: 'name', key: 'name' },
-                      { 
-                        title: 'Số tiền', 
-                        dataIndex: 'amount', 
-                        key: 'amount',
-                        render: (val) => formatCurrency(val)
-                      },
-                      { 
-                        title: 'Ngày', 
-                        dataIndex: 'date', 
-                        key: 'date',
-                        render: (date) => new Date(date).toLocaleDateString('vi-VN')
-                      },
-                    ]}
-                    dataSource={riceCropProfit.operating_costs_breakdown || []}
-                    pagination={false}
-                    size="small"
-                  />
-                </Card>
-              </Col>
 
-              <Col xs={24} md={12}>
-                <Card title="🌱 Chi phí Canh tác (Phân, Thuốc...)">
-                  <Table
-                    columns={[
-                      { title: 'Vật tư', dataIndex: 'name', key: 'name' },
-                      { 
-                        title: 'Số tiền', 
-                        dataIndex: 'amount', 
-                        key: 'amount',
-                        render: (val) => formatCurrency(val)
-                      },
-                      { title: 'Số lượng', dataIndex: 'quantity', key: 'quantity' },
-                    ]}
-                    dataSource={riceCropProfit.production_costs_breakdown || []}
-                    pagination={false}
-                    size="small"
-                  />
-                </Card>
-              </Col>
-            </Row>
+            {/* Chi tiết chi phí dịch vụ/quà tặng */}
+            {riceCropProfit.farm_service_costs_breakdown && riceCropProfit.farm_service_costs_breakdown.length > 0 && (
+              <Row gutter={[16, 16]} className="mb-6">
+                <Col xs={24}>
+                  <Card title="🎁 Chi phí Dịch vụ/Quà tặng (Cửa hàng chi)">
+                    <Table
+                      columns={[
+                        { title: 'Tên', dataIndex: 'name', key: 'name' },
+                        { 
+                          title: 'Số tiền', 
+                          dataIndex: 'amount', 
+                          key: 'amount',
+                          render: (val) => formatCurrency(val)
+                        },
+                        { 
+                          title: 'Ngày', 
+                          dataIndex: 'date', 
+                          key: 'date',
+                          render: (date) => new Date(date).toLocaleDateString('vi-VN')
+                        },
+                        { 
+                          title: 'Nguồn', 
+                          dataIndex: 'source', 
+                          key: 'source',
+                          render: (source) => source === 'gift_from_invoice' ? 'Quà tặng HĐ' : 'Nhập tay'
+                        },
+                        { title: 'Ghi chú', dataIndex: 'notes', key: 'notes' },
+                      ]}
+                      dataSource={riceCropProfit.farm_service_costs_breakdown || []}
+                      pagination={false}
+                      size="small"
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            )}
 
             {/* Danh sách hóa đơn gắn với ruộng này */}
             <Card title="📄 Hóa đơn liên quan">

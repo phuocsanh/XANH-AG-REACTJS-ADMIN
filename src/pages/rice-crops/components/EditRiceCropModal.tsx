@@ -9,7 +9,7 @@ import { useUpdateRiceCrop } from '@/queries/rice-crop';
 import { useCustomersQuery } from '@/queries/customer';
 import { useSeasonsQuery } from '@/queries/season';
 import { useAreasQuery } from '@/queries/area-of-each-plot-of-land';
-import { GrowthStage, CropStatus, type RiceCrop } from '@/types/rice-farming.types';
+import { GrowthStage, CropStatus, type RiceCrop } from '@/models/rice-farming';
 import { useAppStore } from '@/stores/store';
 import dayjs from 'dayjs';
 

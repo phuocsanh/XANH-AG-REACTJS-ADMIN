@@ -33,7 +33,7 @@ import type {
   TopCustomerProfit,
   TopProductProfit,
   OperatingCostBreakdown,
-} from '@/types/store-profit.types';
+} from '@/models/store-profit';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;

@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import api from '@/utils/api';
-import type { ProfitReport } from '@/types/rice-farming.types';
+import type { ProfitReport } from '@/models/rice-farming';
 
 // ==================== QUERY KEYS ====================
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Space, Tag, Popconfirm, message, Modal, DatePicker } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
 import { useOperatingCosts, useDeleteOperatingCost } from '@/queries/operating-cost';
-import { OperatingCost } from '@/types/operating-cost.types';
+import { OperatingCost } from '@/models/operating-cost';
 import CreateOperatingCostModal from './create-modal';
 import dayjs from 'dayjs';
 import { useSeasonsQuery } from '@/queries/season';

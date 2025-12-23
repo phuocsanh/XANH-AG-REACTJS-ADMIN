@@ -7,7 +7,7 @@ import React from 'react';
 import { Card, Statistic, Table, Alert, Spin, Row, Col, Divider } from 'antd';
 import { DollarOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';
 import { useInvoiceProfit } from '@/queries/store-profit-report';
-import type { InvoiceItemProfit } from '@/types/store-profit.types';
+import type { InvoiceItemProfit } from '@/models/store-profit';
 import type { ColumnsType } from 'antd/es/table';
 
 interface InvoiceProfitCardProps {

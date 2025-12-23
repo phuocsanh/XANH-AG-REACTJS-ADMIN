@@ -10,5 +10,5 @@ trigger: always_on
 - Luôn comment code bằng tiếng việt chức năng của file, hàm, code hay biến.
 - Hàm, code, hay file nào sau khi thêm chức năng mới hoặc chỉnh sửa xong mà không dùng nữa xóa đi.
 - Code có thể có component ở mobile nữa nên để ý code cả dạng desktop mobile luôn chỉ làm nếu code của font-end
-- Không sửa code của server hoặc be. Thường sẽ nằm trong folder src copy hoặc src-server
+
 - Ưu tiên dùng các component viết sẵn trong /Users/phuocsanh/My-Document/My-Tech/Xanh-AG-Source/XANH-AG-REACTJS-ADMIN/src/components

@@ -6,7 +6,7 @@ import {
   useCostItemCategories,
   useDeleteCostItemCategory,
 } from '@/queries/cost-item-category';
-import type { CostItemCategory } from '@/types/cost-item-category.types';
+import type { CostItemCategory } from '@/models/cost-item-category';
 import CreateCostItemCategoryModal from './create-modal';
 
 /**

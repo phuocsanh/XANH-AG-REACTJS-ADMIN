@@ -7,7 +7,7 @@ import api from '@/utils/api';
 import type {
   HarvestRecord,
   CreateHarvestRecordDto,
-} from '@/types/rice-farming.types';
+} from '@/models/rice-farming';
 
 // ==================== QUERY KEYS ====================
 

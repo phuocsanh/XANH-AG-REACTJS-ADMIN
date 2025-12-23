@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, Button, message } from 'antd';
 import { useCreateCostItemCategory, useUpdateCostItemCategory } from '@/queries/cost-item-category';
-import { CostItemCategory } from '@/types/cost-item-category.types';
+import { CostItemCategory } from '@/models/cost-item-category';
 
 interface CategoryModalProps {
   visible: boolean;

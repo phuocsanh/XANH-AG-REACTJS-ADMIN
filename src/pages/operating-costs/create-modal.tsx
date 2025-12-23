@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Select, DatePicker, Button, message } from 'antd';
-import { CreateOperatingCostDto, OperatingCost } from '@/types/operating-cost.types';
+import { CreateOperatingCostDto, OperatingCost } from '@/models/operating-cost';
 import { useCreateOperatingCost, useUpdateOperatingCost } from '@/queries/operating-cost';
 import { useSeasonsQuery } from '@/queries/season';
 import { useRiceCrops } from '@/queries/rice-crop';

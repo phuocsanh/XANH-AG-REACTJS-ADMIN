@@ -27,7 +27,7 @@ import {
   useUpdateGrowthTracking,
   useDeleteGrowthTracking,
 } from '@/queries/growth-tracking';
-import { GrowthTracking, CreateGrowthTrackingDto, GrowthStage } from '@/types/rice-farming.types';
+import { GrowthTracking, CreateGrowthTrackingDto, GrowthStage } from '@/models/rice-farming';
 
 interface GrowthTrackingTabProps {
   riceCropId: number;

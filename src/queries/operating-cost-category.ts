@@ -5,7 +5,7 @@ import {
   CreateOperatingCostCategoryDto,
   UpdateOperatingCostCategoryDto,
   OperatingCostCategoryFilters
-} from '@/types/operating-cost-category.types';
+} from '@/models/operating-cost-category';
 
 export const operatingCostCategoryKeys = {
   all: ['operating-cost-categories'] as const,
