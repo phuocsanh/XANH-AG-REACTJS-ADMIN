@@ -7,6 +7,7 @@ export interface SalesInvoiceItem {
   product?: {
     id: number;
     name: string;
+    trade_name?: string;
     code?: string;
   };
   quantity: number;

@@ -39,7 +39,7 @@ import type { RiceCropProfit } from '@/types/store-profit.types';
 import type { ColumnsType } from 'antd/es/table';
 
 const ProfitReportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('rice-crop');
+  const [activeTab, setActiveTab] = useState('season');
   
   // State cho tab Season
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | undefined>();

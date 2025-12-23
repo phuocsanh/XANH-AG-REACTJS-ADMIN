@@ -88,8 +88,21 @@ export const useCreateSalesReturnMutation = () => {
       // ✅ QUAN TRỌNG: Invalidate debt-notes để cập nhật công nợ
       queryClient.invalidateQueries({ queryKey: ['debt-notes'] })
       
-      // ✅ Invalidate sales-invoices để cập nhật trạng thái hóa đơn
+      // ✅ Invalidate sales-invoices & sales (nếu có dùng salesKeys từ sales.ts) để cập nhật trạng thái hóa đơn
       queryClient.invalidateQueries({ queryKey: ['sales-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      
+      // ✅ Invalidate customers để cập nhập công nợ khách hàng (cả 2 dạng key có/không có slash tùy file)
+      queryClient.invalidateQueries({ queryKey: ['/customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      
+      // ✅ Invalidate inventory & products để cập nhập tồn kho vì hàng đã được trả lại
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+
+      // ✅ Invalidate reports vì doanh thu và lợi nhuận đã thay đổi
+      queryClient.invalidateQueries({ queryKey: ['profit-reports'] })
+      queryClient.invalidateQueries({ queryKey: ['store-profit-reports'] })
       
       toast.success("Tạo phiếu trả hàng thành công!")
     },
@@ -111,6 +124,18 @@ export const useDeleteSalesReturnMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
+      
+      // ✅ Invalidate các dữ liệu liên quan
+      queryClient.invalidateQueries({ queryKey: ['debt-notes'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['/customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['profit-reports'] })
+      queryClient.invalidateQueries({ queryKey: ['store-profit-reports'] })
+      
       toast.success("Xóa phiếu trả hàng thành công!")
     },
     onError: (error: unknown) => {

@@ -17,6 +17,7 @@ export interface SalesReturnItem {
   product?: {
     id: number;
     name: string;
+    trade_name?: string;
     code?: string;
   };
   quantity: number;

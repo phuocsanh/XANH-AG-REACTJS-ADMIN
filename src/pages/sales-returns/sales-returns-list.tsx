@@ -391,7 +391,7 @@ const SalesReturnsList: React.FC = () => {
                         <div className='grid grid-cols-4 gap-4'>
                           <div className='col-span-2'>
                             <div className='font-medium'>
-                              {item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`}
+                              {item.product?.trade_name || item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`}
                             </div>
                             {item.reason && (
                               <div className='text-sm text-gray-500'>

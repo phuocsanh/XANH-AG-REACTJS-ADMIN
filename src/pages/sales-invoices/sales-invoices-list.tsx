@@ -663,7 +663,7 @@ const SalesInvoicesList: React.FC = () => {
                     <Card key={index} size='small'>
                       <div className='grid grid-cols-4 gap-4'>
                         <div className='col-span-2'>
-                          <div className='font-medium'>{item.product_name || (item.product as any)?.trade_name || item.product?.name || 'Sản phẩm không xác định'}</div>
+                          <div className='font-medium'>{item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định'}</div>
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>

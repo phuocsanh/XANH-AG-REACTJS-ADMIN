@@ -126,7 +126,7 @@ const CreateSalesReturn = () => {
     if (exists) return;
 
     // Lấy tên sản phẩm từ relation product hoặc fallback về product_name
-    const productName = item.product?.name || item.product_name || 'Sản phẩm không xác định';
+    const productName = item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định';
 
     append({
       product_id: item.product_id,
@@ -317,7 +317,7 @@ const CreateSalesReturn = () => {
                       <Box display="flex" flexWrap="wrap" gap={1}>
                         {availableItems.map((item) => {
                           // Lấy tên sản phẩm từ relation product
-                          const productName = item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`;
+                          const productName = item.product?.trade_name || item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`;
                           const returnableQty = item.returnable_quantity ?? item.quantity;
                           
                           return (

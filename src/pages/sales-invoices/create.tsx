@@ -538,7 +538,7 @@ const CreateSalesInvoice = () => {
         .map(item => {
           const product = (productsData?.data?.items || []).find((p: Product) => p.id === item.product_id);
           if (product) {
-            return `- ${product.name}: ${product.description || 'Không có mô tả'}`;
+            return `- ${product.trade_name || product.name}: ${product.description || 'Không có mô tả'}`;
           }
           return null;
         })
@@ -593,7 +593,7 @@ Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.
     
     try {
       const productInfo = currentProducts
-        .map(product => `- ${product.name}: ${product.description || product.ingredient?.join(', ') || 'Không có thông tin'}`)
+        .map(product => `- ${product.trade_name || product.name}: ${product.description || product.ingredient?.join(', ') || 'Không có thông tin'}`)
         .join('\n');
 
       const prompt = `Phân tích xem có xung đột giữa lưu ý đơn hàng trước và sản phẩm hiện tại không.
@@ -767,7 +767,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
 
   const createMixPrompt = (products: Product[]): string => {
     const productInfo = products.map((product: Product) => 
-      `- ${product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
+      `- ${product.trade_name || product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
     ).join('\n');
     
     return `Phân tích khả năng phối trộn các loại thuốc sau.
@@ -783,7 +783,7 @@ ${productInfo}`;
 
   const createSortPrompt = (products: Product[]): string => {
     const productInfo = products.map((product: Product) => 
-      `- ${product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
+      `- ${product.trade_name || product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
     ).join('\n');
     
     return `Sắp xếp thứ tự sử dụng các loại thuốc sau để đạt hiệu quả tốt nhất.
