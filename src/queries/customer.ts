@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
@@ -55,6 +55,107 @@ export const useCustomersQuery = (params?: Record<string, unknown>, options?: { 
     refetchOnMount: true,
     staleTime: 0,
     enabled: options?.enabled !== false, // Mặc định enabled = true
+  })
+}
+
+// ========== COMBOBOX SEARCH HOOKS ==========
+
+/**
+ * Interface cho API response theo đúng format của ComboBox
+ */
+export interface CustomerSearchResponse {
+  data: Array<any>
+  total: number
+  hasMore: boolean
+  nextPage?: number
+}
+
+interface SearchCustomersParams {
+  page: number
+  limit: number
+  search?: string
+}
+
+/**
+ * Hàm search khách hàng cho ComboBox
+ */
+export const searchCustomersApi = async ({
+  page,
+  limit,
+  search = "",
+}: SearchCustomersParams): Promise<CustomerSearchResponse> => {
+  try {
+    const searchDto: any = {
+      page,
+      limit,
+    }
+
+    if (search.trim()) {
+      searchDto.keyword = search.trim()
+    }
+
+    const response = await api.postRaw<{
+      data: Customer[]
+      total: number
+      page: number
+      limit: number
+    }>('/customers/search', searchDto)
+
+    // Chuyển đổi dữ liệu sang format của ComboBox
+    const mappedData = (response.data || []).map((customer: Customer) => ({
+      ...customer,
+      value: customer.id,
+      label: `${customer.name} - ${customer.phone || 'N/A'}`,
+    }))
+
+    const total = response.total || mappedData.length
+    const currentPage = response.page || page
+    const currentLimit = response.limit || limit
+    const hasMore = total > currentPage * currentLimit
+
+    return {
+      data: mappedData,
+      total,
+      hasMore,
+      nextPage: hasMore ? currentPage + 1 : undefined,
+    }
+  } catch (error) {
+    console.error("Error searching customers:", error)
+    handleApiError(error, "Có lỗi xảy ra khi tìm kiếm khách hàng")
+    return {
+      data: [],
+      total: 0,
+      hasMore: false,
+      nextPage: undefined,
+    }
+  }
+}
+
+/**
+ * Hook search khách hàng cho ComboBox với infinite loading
+ */
+export const useCustomerSearch = (
+  searchTerm: string = "",
+  limit: number = 20,
+  enabled: boolean = true
+) => {
+  return useInfiniteQuery<CustomerSearchResponse, Error>({
+    queryKey: [...customerKeys.all, "search-infinite", searchTerm],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await searchCustomersApi({
+        page: pageParam as number,
+        limit,
+        search: searchTerm,
+      })
+      return response
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextPage : undefined
+    },
+    enabled: enabled,
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 

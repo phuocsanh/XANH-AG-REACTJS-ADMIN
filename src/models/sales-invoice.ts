@@ -1,3 +1,5 @@
+import { CreateDeliveryLogDto } from './delivery-log.model';
+
 export type SalesInvoiceStatus = 'draft' | 'confirmed' | 'paid' | 'cancelled' | 'refunded';
 
 export interface SalesInvoiceItem {
@@ -57,6 +59,7 @@ export interface CreateSalesInvoiceDto {
   customer_phone: string;
   customer_address?: string;
   season_id?: number;
+  rice_crop_id?: number;
   invoice_code?: string;
   notes?: string;
   warning?: string;
@@ -75,6 +78,8 @@ export interface CreateSalesInvoiceDto {
     discount_amount?: number;
     notes?: string;
   }[];
+  // Thông tin giao hàng (tùy chọn)
+  delivery_log?: CreateDeliveryLogDto;
 }
 
 export interface AddPaymentDto {

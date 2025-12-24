@@ -187,49 +187,56 @@ const ProfitReportsPage: React.FC = () => {
           <div>
             {/* Cards tổng hợp */}
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} sm={12} lg={6}>
-                <Card>
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Tổng Doanh thu"
                     value={seasonProfit.summary?.total_revenue || 0}
                     formatter={(value) => formatCurrency(Number(value))}
-                    prefix={<DollarOutlined />}
                     valueStyle={{ color: '#3f8600' }}
                   />
                 </Card>
               </Col>
               
-              <Col xs={24} sm={12} lg={6}>
-                <Card>
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Lợi nhuận Gộp"
                     value={seasonProfit.summary?.gross_profit || 0}
                     formatter={(value) => formatCurrency(Number(value))}
-                    prefix={<RiseOutlined />}
                     valueStyle={{ color: getProfitColor(seasonProfit.summary?.gross_profit || 0) }}
                   />
                 </Card>
               </Col>
 
-              <Col xs={24} sm={12} lg={6}>
-                <Card>
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Chi phí Dịch vụ/Quà tặng"
                     value={seasonProfit.summary?.farm_service_costs || 0}
                     formatter={(value) => formatCurrency(Number(value))}
-                    prefix={<FallOutlined />}
                     valueStyle={{ color: '#cf1322' }}
                   />
                 </Card>
               </Col>
 
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
+                  <Statistic
+                    title="🚚 Tổng Chi phí Giao hàng"
+                    value={seasonProfit.delivery_stats?.total_delivery_cost || 0}
+                    formatter={(value) => formatCurrency(Number(value))}
+                    valueStyle={{ color: '#fa8c16' }}
+                  />
+                </Card>
+              </Col>
+
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Lợi nhuận Ròng"
                     value={seasonProfit.summary?.net_profit || 0}
                     formatter={(value) => formatCurrency(Number(value))}
-                    prefix={<DollarOutlined />}
                     valueStyle={{ color: getProfitColor(seasonProfit.summary?.net_profit || 0) }}
                   />
                 </Card>
@@ -238,26 +245,24 @@ const ProfitReportsPage: React.FC = () => {
 
             {/* Tỷ suất lợi nhuận */}
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} sm={12}>
-                <Card>
+              <Col xs={12} sm={12}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Tỷ suất Lợi nhuận Gộp"
                     value={seasonProfit.summary?.gross_margin || 0}
                     suffix="%"
-                    prefix={<PercentageOutlined />}
                     precision={2}
                     valueStyle={{ color: getMarginColor(seasonProfit.summary?.gross_margin || 0) }}
                   />
                 </Card>
               </Col>
 
-              <Col xs={24} sm={12}>
-                <Card>
+              <Col xs={12} sm={12}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Tỷ suất Lợi nhuận Ròng"
                     value={seasonProfit.summary?.net_margin || 0}
                     suffix="%"
-                    prefix={<PercentageOutlined />}
                     precision={2}
                     valueStyle={{ color: getMarginColor(seasonProfit.summary?.net_margin || 0) }}
                   />
@@ -324,6 +329,7 @@ const ProfitReportsPage: React.FC = () => {
                     dataSource={seasonProfit.top_customers || []}
                     rowKey="customer_id"
                     pagination={false}
+                    scroll={{ x: true }}
                   />
                 </Card>
               </Col>
@@ -363,6 +369,7 @@ const ProfitReportsPage: React.FC = () => {
                     dataSource={seasonProfit.top_products || []}
                     rowKey="product_id"
                     pagination={false}
+                    scroll={{ x: true }}
                   />
                 </Card>
               </Col>
@@ -425,8 +432,8 @@ const ProfitReportsPage: React.FC = () => {
 
     return (
       <div>
-        <div className="mb-6 flex gap-4">
-          <div style={{ width: 400 }}>
+        <Row gutter={[16, 16]} className="mb-6">
+          <Col xs={24} sm={12}>
             <label className="block mb-2 font-medium">Chọn Khách hàng (Lọc ruộng lúa):</label>
             <ComboBox
               style={{ width: '100%' }}
@@ -444,9 +451,9 @@ const ProfitReportsPage: React.FC = () => {
               })) || []}
               isLoading={isLoadingCustomers}
             />
-          </div>
+          </Col>
 
-          <div style={{ width: 400 }}>
+          <Col xs={24} sm={12}>
             <label className="block mb-2 font-medium">Chọn Ruộng lúa:</label>
             <ComboBox
               style={{ width: '100%' }}
@@ -459,8 +466,8 @@ const ProfitReportsPage: React.FC = () => {
               })) || []}
               disabled={!filteredRiceCrops || filteredRiceCrops.length === 0}
             />
-          </div>
-        </div>
+          </Col>
+        </Row>
 
         {isLoadingRiceCropProfit && (
           <div className="flex justify-center items-center h-64">
@@ -504,8 +511,8 @@ const ProfitReportsPage: React.FC = () => {
 
             {/* Cards tổng hợp */}
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} sm={12} lg={6}>
-                <Card>
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Tổng Doanh thu"
                     value={riceCropProfit.summary?.total_revenue || 0}
@@ -515,8 +522,8 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
               
-              <Col xs={24} sm={12} lg={6}>
-                <Card>
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Lợi nhuận Gộp"
                     value={riceCropProfit.summary?.gross_profit || 0}
@@ -526,8 +533,8 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
 
-              <Col xs={24} sm={12} lg={6}>
-                <Card>
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="Chi phí Dịch vụ/Quà tặng"
                     value={riceCropProfit.summary?.farm_service_costs || 0}
@@ -537,16 +544,25 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
 
+              <Col xs={12} sm={12} lg={6}>
+                <Card style={{ height: '100%' }}>
+                  <Statistic
+                    title="🚚 Chi phí Giao hàng"
+                    value={riceCropProfit.summary?.delivery_cost || 0}
+                    formatter={(val) => formatCurrency(Number(val))}
+                    valueStyle={{ color: '#fa8c16' }}
+                  />
+                </Card>
+              </Col>
+
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card style={{ height: '100%' }}>
                   <Statistic
                     title="LỢI NHUẬN RÒNG"
                     value={riceCropProfit.summary?.net_profit || 0}
                     formatter={(val) => formatCurrency(Number(val))}
                     valueStyle={{ 
-                      color: getProfitColor(riceCropProfit.summary?.net_profit || 0),
-                      fontSize: '24px',
-                      fontWeight: 'bold'
+                      color: getProfitColor(riceCropProfit.summary?.net_profit || 0)
                     }}
                   />
                   <div className="mt-2 text-xs text-gray-500">
@@ -784,6 +800,12 @@ const ProfitReportsPage: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-blue-800">
+                  🚚 <strong>Chi phí giao hàng:</strong> <strong>{formatCurrency(invoiceProfit.delivery_cost || 0)}</strong>
+                </p>
+              </div>
             </Card>
           </div>
         )}
@@ -814,7 +836,7 @@ const ProfitReportsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block mb-2 font-medium">Lọc theo mùa vụ (tùy chọn):</label>
+            <label className="block mb-2 font-medium">Lọc theo mùa vụ:</label>
             <ComboBox
               style={{ width: '100%' }}
               placeholder="Tìm kiếm mùa vụ..."
@@ -855,13 +877,13 @@ const ProfitReportsPage: React.FC = () => {
               </Row>
             </div>
 
-            {/* Lifetime Summary */}
-            {customerProfit.lifetime_summary && (
+            {/* Lifetime Summary - chỉ hiển thị khi KHÔNG lọc mùa vụ */}
+            {customerProfit.lifetime_summary && !customerSeasonFilter && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-4 text-gray-700">💎 Tổng hợp trọn đời (Lifetime)</h3>
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} md={6}>
-                    <Card style={{ borderLeft: '4px solid #1890ff' }}>
+                  <Col xs={12} sm={12} md={6}>
+                    <Card style={{ borderLeft: '4px solid #1890ff', height: '100%' }}>
                       <Statistic
                         title="Tổng số HĐ"
                         value={customerProfit.lifetime_summary.total_invoices}
@@ -869,8 +891,8 @@ const ProfitReportsPage: React.FC = () => {
                       />
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Card style={{ borderLeft: '4px solid #3f8600' }}>
+                  <Col xs={12} sm={12} md={6}>
+                    <Card style={{ borderLeft: '4px solid #3f8600', height: '100%' }}>
                       <Statistic
                         title="Doanh thu trọn đời"
                         value={customerProfit.lifetime_summary.total_revenue}
@@ -879,8 +901,8 @@ const ProfitReportsPage: React.FC = () => {
                       />
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Card style={{ borderLeft: '4px solid #52c41a' }}>
+                  <Col xs={12} sm={12} md={6}>
+                    <Card style={{ borderLeft: '4px solid #52c41a', height: '100%' }}>
                       <Statistic
                         title="Lợi nhuận trọn đời"
                         value={customerProfit.lifetime_summary.total_profit}
@@ -889,14 +911,24 @@ const ProfitReportsPage: React.FC = () => {
                       />
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <Card style={{ borderLeft: '4px solid #faad14' }}>
+                  <Col xs={12} sm={12} md={6}>
+                    <Card style={{ borderLeft: '4px solid #faad14', height: '100%' }}>
                       <Statistic
                         title="Tỷ suất TB"
                         value={customerProfit.lifetime_summary.avg_margin}
                         suffix="%"
                         precision={2}
                         valueStyle={{ color: getMarginColor(customerProfit.lifetime_summary.avg_margin) }}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={12} md={6}>
+                    <Card style={{ borderLeft: '4px solid #fa8c16', height: '100%' }}>
+                      <Statistic
+                        title="🚚 Chi phí Giao hàng"
+                        value={customerProfit.lifetime_summary.delivery_cost || 0}
+                        formatter={(value) => formatCurrency(Number(value))}
+                        valueStyle={{ color: '#fa8c16' }}
                       />
                     </Card>
                   </Col>
@@ -911,16 +943,16 @@ const ProfitReportsPage: React.FC = () => {
                   📊 Lợi nhuận vụ này: {customerProfit.current_season_summary.season_name}
                 </h3>
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} md={3}>
-                    <Card>
+                  <Col xs={12} sm={12} md={3}>
+                    <Card style={{ height: '100%' }}>
                       <Statistic
                         title="Số HĐ"
                         value={customerProfit.current_season_summary.total_invoices}
                       />
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={7}>
-                    <Card>
+                  <Col xs={12} sm={12} md={7}>
+                    <Card style={{ height: '100%' }}>
                       <Statistic
                         title="Doanh thu"
                         value={customerProfit.current_season_summary.total_revenue}
@@ -928,8 +960,8 @@ const ProfitReportsPage: React.FC = () => {
                       />
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={7}>
-                    <Card>
+                  <Col xs={12} sm={12} md={7}>
+                    <Card style={{ height: '100%' }}>
                       <Statistic
                         title="Lợi nhuận"
                         value={customerProfit.current_season_summary.total_profit}
@@ -938,14 +970,24 @@ const ProfitReportsPage: React.FC = () => {
                       />
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={7}>
-                    <Card>
+                  <Col xs={12} sm={12} md={7}>
+                    <Card style={{ height: '100%' }}>
                       <Statistic
                         title="Tỷ suất"
                         value={customerProfit.current_season_summary.avg_margin}
                         suffix="%"
                         precision={2}
                         valueStyle={{ color: getMarginColor(customerProfit.current_season_summary.avg_margin) }}
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={12} md={7}>
+                    <Card style={{ height: '100%' }}>
+                      <Statistic
+                        title="🚚 Chi phí Giao hàng"
+                        value={customerProfit.current_season_summary.delivery_cost || 0}
+                        formatter={(value) => formatCurrency(Number(value))}
+                        valueStyle={{ color: '#fa8c16' }}
                       />
                     </Card>
                   </Col>
@@ -961,35 +1003,41 @@ const ProfitReportsPage: React.FC = () => {
                     title: 'Mã HĐ',
                     dataIndex: 'invoice_code',
                     key: 'invoice_code',
+                    width: 200,
                   },
                   {
                     title: 'Ngày',
                     dataIndex: 'date',
                     key: 'date',
+                    width: 130,
                     render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
                   },
                   {
                     title: 'Mùa vụ',
                     dataIndex: 'season_name',
                     key: 'season_name',
+                    width: 300,
                     render: (name: string) => name || '-',
                   },
                   {
                     title: 'Doanh thu',
                     dataIndex: 'revenue',
                     key: 'revenue',
+                    width: 160,
                     render: (value: number) => formatCurrency(value),
                   },
                   {
                     title: 'Giá vốn',
                     dataIndex: 'cost',
                     key: 'cost',
+                    width: 160,
                     render: (value: number) => formatCurrency(value),
                   },
                   {
                     title: 'Lợi nhuận',
                     dataIndex: 'profit',
                     key: 'profit',
+                    width: 160,
                     render: (value: number) => (
                       <span style={{ color: getProfitColor(value), fontWeight: 'bold' }}>
                         {formatCurrency(value)}
@@ -1000,6 +1048,7 @@ const ProfitReportsPage: React.FC = () => {
                     title: 'Tỷ suất (%)',
                     dataIndex: 'margin',
                     key: 'margin',
+                    width: 130,
                     render: (value: number) => (
                       <Tag color={getMarginColor(value)}>{formatPercent(value)}</Tag>
                     ),
@@ -1008,6 +1057,7 @@ const ProfitReportsPage: React.FC = () => {
                 dataSource={customerProfit.invoices || []}
                 rowKey={(record) => `inv-${record.invoice_id}`}
                 pagination={{ pageSize: 10 }}
+                scroll={{ x: true }}
               />
             </Card>
           </div>

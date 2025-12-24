@@ -21,12 +21,21 @@ export default function DialogCustom({
       <Dialog
         open={open}
         onClose={(event, reason) => {
-          if (reason !== "backdropClick" && !disableBackdropClick) {
-            handleClose()
+          // Chỉ chặn đóng khi click backdrop nếu disableBackdropClick = true
+          if (disableBackdropClick && reason === "backdropClick") {
+            return
           }
+          handleClose()
         }}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        PaperProps={{
+          sx: {
+            margin: { xs: 0, sm: '32px' },
+            maxWidth: { xs: '100%', sm: '600px' },
+            width: '100%',
+          }
+        }}
       >
         {children}
       </Dialog>

@@ -35,6 +35,7 @@ export interface InvoiceProfit {
   net_profit: number;          // Lợi nhuận ròng (sau khi trừ quà tặng/giảm giá nếu có)
   gift_value: number;          // Giá trị quà tặng
   gift_description?: string;   // Mô tả quà tặng
+  delivery_cost?: number;      // Chi phí giao hàng
 }
 
 // ==================== Báo Cáo Mùa Vụ ====================
@@ -124,6 +125,7 @@ export interface CustomerSummaryStats {
   total_cost?: number;
   total_profit: number;
   avg_margin: number;
+  delivery_cost?: number;
   season_name?: string;
 }
 
@@ -138,6 +140,7 @@ export interface CustomerInvoice {
   cost: number;
   profit: number;
   margin: number;
+  delivery_cost?: number;
   season_id?: number;
   season_name?: string;
 }
@@ -191,6 +194,7 @@ export interface RiceCropProfit {
     
     // Chi phí dịch vụ/quà tặng của cửa hàng dành cho ruộng lúa
     farm_service_costs: number;
+    delivery_cost?: number;  // Chi phí giao hàng
     net_profit: number;
     net_margin: number;
     

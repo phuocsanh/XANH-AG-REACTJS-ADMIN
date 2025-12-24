@@ -74,7 +74,9 @@ import {
   priceTypeLabels,
 } from './form-config';
 import { ProductsTable } from './components/ProductsTable';
+import { DeliveryInfoSection } from './components/DeliveryInfoSection';
 import { WeatherForecastTabs } from './weather-forecast-tabs';
+import { CreateDeliveryLogDto } from '@/models/delivery-log.model';
 
 // Disease Warning Imports
 import {
@@ -234,6 +236,9 @@ const CreateSalesInvoice = () => {
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [isCheckingConflict, setIsCheckingConflict] = useState(false);
 
+  // Delivery Log State
+  const [deliveryData, setDeliveryData] = useState<CreateDeliveryLogDto | null>(null);
+
   const { mixPesticides, sortPesticides } = useAiService();
 
   const {
@@ -377,6 +382,11 @@ const CreateSalesInvoice = () => {
       // Khôi phục trạng thái selectedRiceCropId
       if (invoice.rice_crop_id) {
         setSelectedRiceCropId(invoice.rice_crop_id);
+      }
+
+      // Khôi phục thông tin giao hàng nếu có
+      if (invoice.delivery_logs && invoice.delivery_logs.length > 0) {
+        setDeliveryData(invoice.delivery_logs[0] as any);
       }
     }
   }, [isEditMode, invoiceData, setValue]);
@@ -713,10 +723,25 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     
     const remainingAmount = data.final_amount - data.partial_payment_amount;
     
+    // Chuẩn bị delivery_log nếu có
+    let deliveryLogData = deliveryData;
+    if (deliveryData && deliveryData.items) {
+      // Map sales_invoice_item_id từ index sang ID thực tế
+      // Lưu ý: Backend sẽ tự động map sau khi tạo invoice items
+      deliveryLogData = {
+        ...deliveryData,
+        items: deliveryData.items.map((item) => ({
+          ...item,
+          // sales_invoice_item_id hiện tại là index, backend sẽ map lại
+        })),
+      };
+    }
+    
     const submitData = {
       ...data,
       remaining_amount: remainingAmount,
       customer_id: data.customer_id || null,
+      delivery_log: deliveryLogData || undefined,
     };
 
     if (isEditMode && id) {
@@ -1816,6 +1841,24 @@ ${productInfo}`;
                   />
                 </CardContent>
               </Card>
+            </Grid>
+
+            {/* Delivery Information Section */}
+            <Grid item xs={12}>
+              <DeliveryInfoSection
+                items={items.map((item, index) => ({
+                  id: index,
+                  product_id: item.product_id,
+                  product_name: item.product_name || '',
+                  quantity: item.quantity,
+                  unit_price: item.unit_price,
+                }))}
+                customerAddress={watch('customer_address')}
+                customerName={watch('customer_name')}
+                customerPhone={watch('customer_phone')}
+                onChange={setDeliveryData}
+                initialValue={deliveryData || undefined}
+              />
             </Grid>
 
             {/* Payment Summary */}

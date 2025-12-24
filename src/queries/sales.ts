@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
@@ -14,6 +14,7 @@ import {
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 import { invalidateResourceQueries } from "@/utils/query-helpers"
+import { formatCurrency } from "@/utils/format"
 
 // ========== QUERY KEYS ==========
 export const salesKeys = {
@@ -94,6 +95,107 @@ export const useInvoicesQuery = (params?: Record<string, unknown>) => {
     },
     refetchOnMount: true,
     staleTime: 0,
+  })
+}
+
+// ========== COMBOBOX SEARCH HOOKS ==========
+
+/**
+ * Interface cho API response theo đúng format của ComboBox
+ */
+export interface InvoiceSearchResponse {
+  data: Array<any>
+  total: number
+  hasMore: boolean
+  nextPage?: number
+}
+
+interface SearchInvoicesParams {
+  page: number
+  limit: number
+  search?: string
+}
+
+/**
+ * Hàm search hóa đơn cho ComboBox
+ */
+export const searchInvoicesApi = async ({
+  page,
+  limit,
+  search = "",
+}: SearchInvoicesParams): Promise<InvoiceSearchResponse> => {
+  try {
+    const searchDto: any = {
+      page,
+      limit,
+    }
+
+    if (search.trim()) {
+      searchDto.keyword = search.trim()
+    }
+
+    const response = await api.postRaw<{
+      data: SalesInvoice[]
+      total: number
+      page: number
+      limit: number
+    }>('/sales/invoices/search', searchDto)
+
+    // Chuyển đổi dữ liệu sang format của ComboBox
+    const mappedData = (response.data || []).map((invoice: SalesInvoice) => ({
+      ...invoice,
+      value: invoice.id,
+      label: `${invoice.code || invoice.invoice_code} - ${invoice.customer_name} - ${formatCurrency(invoice.final_amount)}`,
+    }))
+
+    const total = response.total || mappedData.length
+    const currentPage = response.page || page
+    const currentLimit = response.limit || limit
+    const hasMore = total > currentPage * currentLimit
+
+    return {
+      data: mappedData,
+      total,
+      hasMore,
+      nextPage: hasMore ? currentPage + 1 : undefined,
+    }
+  } catch (error) {
+    console.error("Error searching invoices:", error)
+    handleApiError(error, "Có lỗi xảy ra khi tìm kiếm hóa đơn")
+    return {
+      data: [],
+      total: 0,
+      hasMore: false,
+      nextPage: undefined,
+    }
+  }
+}
+
+/**
+ * Hook search hóa đơn cho ComboBox với infinite loading
+ */
+export const useInvoiceSearch = (
+  searchTerm: string = "",
+  limit: number = 20,
+  enabled: boolean = true
+) => {
+  return useInfiniteQuery<InvoiceSearchResponse, Error>({
+    queryKey: [...salesKeys.invoices(), "search", searchTerm],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await searchInvoicesApi({
+        page: pageParam as number,
+        limit,
+        search: searchTerm,
+      })
+      return response
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextPage : undefined
+    },
+    enabled: enabled,
+    staleTime: 0,
+    gcTime: 0,
   })
 }
 

@@ -101,15 +101,18 @@ function DialogAddUpdate({
 
   return (
     <DialogCustom open={openDialog} setOpen={setOpenDialog}>
-      <div className='relative w-[600px] min-h-[400px] max-h-[800px] px-10 py-4 flex flex-col'>
+      <div className='relative w-full sm:max-w-[600px] min-h-[300px] max-h-[90vh] px-3 sm:px-10 py-3 sm:py-4 flex flex-col overflow-y-auto'>
         <IoCloseCircleSharp
-          className='absolute right-4 cursor-pointer'
-          size={30}
-          onClick={() => setOpenDialog(false)}
+          className='absolute right-3 top-3 cursor-pointer z-50 hover:opacity-70 transition-opacity'
+          size={32}
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpenDialog(false)
+          }}
         />
 
-        <div className='relative flex items-center justify-center h-[50px]'>
-          <span className='font-bold text-lg'>
+        <div className='relative flex items-center justify-center h-[40px] sm:h-[50px]'>
+          <span className='font-bold text-base sm:text-lg'>
             {editingRow?.id ? "Cập nhật" : "Thêm"} loại sản phẩm
           </span>
         </div>

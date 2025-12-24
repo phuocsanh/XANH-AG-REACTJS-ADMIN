@@ -86,6 +86,8 @@ export interface SalesInvoiceItem {
 export interface SalesInvoice {
   /** ID của hóa đơn */
   id: number
+  /** Mã hóa đơn (tên trường từ backend) */
+  code?: string
   /** Mã hóa đơn */
   invoice_code: string
   /** Tên khách hàng */

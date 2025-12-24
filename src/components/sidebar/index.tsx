@@ -145,6 +145,11 @@ const Sidebar: React.FC = () => {
       setActiveTab(22)
       setIsToggleSubmenu(false)
     }
+    // Giao hàng
+    else if (path.startsWith('/delivery-logs')) {
+      setActiveTab(32)
+      setIsToggleSubmenu(false)
+    }
     // Báo cáo Lợi nhuận
     else if (path.startsWith('/profit-reports')) {
       setActiveTab(28)
@@ -439,6 +444,23 @@ const Sidebar: React.FC = () => {
                         <MdAssignmentReturn className='text-orange-200' />
                       </span>
                       Khách trả hàng
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {/* Giao hàng */}
+              {hasPermission(userInfo, "sales:read") && (
+                <li>
+                  <Link to='/delivery-logs'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 32 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(32)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <MdLocalShipping className='text-purple-200' />
+                      </span>
+                      Phiếu Giao Hàng
                     </Button>
                   </Link>
                 </li>
