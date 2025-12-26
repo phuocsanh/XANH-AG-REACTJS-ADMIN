@@ -15,18 +15,8 @@ export const useRolesQuery = () => {
     return useQuery({
         queryKey: userKeys.roles(),
         queryFn: async () => {
-             const response = await api.get<any>("/users/roles-list");
-             
-             if (Array.isArray(response)) {
-                 return response as Role[];
-             }
-             
-             if (response?.data && Array.isArray(response.data)) {
-                 return response.data as Role[];
-             }
-             
-             // Ensure we always return an array
-             return [] as Role[];
+             const response = await api.get<Role[]>("/users/roles-list");
+             return response;
         },
         staleTime: 60 * 60 * 1000, // 1 hour
     });
@@ -46,8 +36,14 @@ export const usePendingUsersQuery = () => {
   return useQuery({
     queryKey: userKeys.pending(),
     queryFn: async () => {
-      const response = await api.get<UserResponse[]>("/users/admin/pending");
-      return response;
+      const response = await api.postRaw<{
+        data: UserResponse[]
+      }>("/users/search", { 
+        status: "pending",
+        page: 1,
+        limit: 1000 
+      });
+      return response.data;
     },
   });
 };
