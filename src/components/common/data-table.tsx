@@ -73,6 +73,8 @@ interface DataTableProps<T = Record<string, unknown>>
     showQuickJumper?: boolean
     showTotal?: (total: number, range: [number, number]) => string
   }
+  // Tính năng STT (Số thứ tự)
+  showSTT?: boolean // Mặc định là true
   // Callbacks
   onChange?: (
     pagination: TablePaginationConfig,
@@ -111,6 +113,7 @@ const DataTable = <T extends Record<string, unknown>>({
     showQuickJumper: true,
     showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
   },
+  showSTT = true, // Mặc định hiển thị STT
   onChange,
   ...tableProps
 }: DataTableProps<T>) => {
@@ -221,11 +224,33 @@ const DataTable = <T extends Record<string, unknown>>({
     ),
   }
 
-  // Kết hợp columns với action column
-  const finalColumns =
-    showActions && allActionButtons.length > 0
-      ? [...columns, actionColumn]
-      : columns
+  // Tạo cột STT (Số thứ tự)
+  const sttColumn: ColumnType<T> = {
+    title: 'STT',
+    key: 'stt',
+    width: 60,
+    align: 'center',
+    render: (_: unknown, __: T, index: number) => {
+      // Lấy current page và pageSize từ pagination
+      const currentPage = (tableProps.pagination as TablePaginationConfig)?.current || 1;
+      const pageSize = (tableProps.pagination as TablePaginationConfig)?.pageSize || paginationConfig.pageSize || 10;
+      const stt = (currentPage - 1) * pageSize + index + 1;
+      return <div className='font-medium text-gray-600'>{stt}</div>;
+    },
+  };
+
+  // Kết hợp columns: STT + columns + action column
+  let finalColumns = [...columns];
+  
+  // Thêm STT column ở đầu nếu showSTT = true
+  if (showSTT) {
+    finalColumns = [sttColumn, ...finalColumns];
+  }
+  
+  // Thêm action column ở cuối nếu cần
+  if (showActions && allActionButtons.length > 0) {
+    finalColumns = [...finalColumns, actionColumn];
+  }
 
   // Handle filter change
   const handleFilterChange = (

@@ -35,7 +35,7 @@ export const useInvoiceProfit = (invoiceId: number) => {
     queryKey: storeProfitReportKeys.invoice(invoiceId),
     queryFn: async () => {
       const response = await api.get<any>(`/store-profit-report/invoice/${invoiceId}`);
-      return response.data as InvoiceProfit;
+      return response as InvoiceProfit;
     },
     enabled: !!invoiceId && invoiceId > 0,
   });
@@ -50,7 +50,7 @@ export const useInvoiceProfitByCodeQuery = (code: string) => {
     queryKey: [...storeProfitReportKeys.all, 'invoice-code', code] as const,
     queryFn: async () => {
       const response = await api.get<any>(`/store-profit-report/invoice/code/${code}`);
-      return response.data as InvoiceProfit;
+      return response as InvoiceProfit;
     },
     enabled: !!code && code.length > 0,
   });
@@ -66,7 +66,7 @@ export const useSeasonStoreProfit = (seasonId: number) => {
     queryKey: storeProfitReportKeys.season(seasonId),
     queryFn: async () => {
       const response = await api.get<any>(`/store-profit-report/season/${seasonId}`);
-      return response.data as SeasonStoreProfit;
+      return response as SeasonStoreProfit;
     },
     enabled: !!seasonId && seasonId > 0,
   });
@@ -100,7 +100,7 @@ export const useCustomerProfitReport = (
       const url = `/store-profit-report/customer/${customerId}${queryString ? `?${queryString}` : ''}`;
       
       const response = await api.get<any>(url);
-      return response.data as CustomerProfitReport;
+      return response as CustomerProfitReport;
     },
     enabled: !!customerId && customerId > 0,
   });
@@ -115,7 +115,7 @@ export const useRiceCropProfitQuery = (riceCropId: number) => {
     queryKey: [...storeProfitReportKeys.all, 'rice-crop', riceCropId] as const,
     queryFn: async () => {
       const response = await api.get<any>(`/store-profit-report/rice-crop/${riceCropId}`);
-      return response.data as RiceCropProfit;
+      return response as RiceCropProfit;
     },
     enabled: !!riceCropId && riceCropId > 0,
   });

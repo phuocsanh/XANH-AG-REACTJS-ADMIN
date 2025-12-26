@@ -236,8 +236,7 @@ export const useCustomerDebtSummaryQuery = (id: number) => {
         total_debt: number
         debt_note_count: number
       }>(`/customers/${id}/debt-summary`)
-      // Unwrap response.data vì interceptor không tự động unwrap
-      return (response as any)?.data || response
+      return response
     },
     enabled: !!id,
   })
@@ -386,11 +385,13 @@ export const useCreateCustomerAccountMutation = () => {
   return useMutation({
     mutationFn: async (customerId: number) => {
       const response = await api.postRaw<{ 
-        data: { account: string; temp_password: string; customer_name: string } 
+        account: string; 
+        temp_password: string; 
+        customer_name: string 
       }>('/users/customer/create-account', {
         customer_id: customerId,
       })
-      return response.data
+      return response
     },
     onSuccess: (data: { account: string; temp_password: string; customer_name: string }) => {
       invalidateResourceQueries("/customers")

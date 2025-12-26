@@ -390,21 +390,23 @@ const ProductsList: React.FC = () => {
       >
         {currentProduct && (
           <Descriptions bordered column={1}>
-            <Descriptions.Item label='Hình ảnh'>
-              <Image
-                src={getImageUrl(
-                  currentProduct.thumb ||
-                    (currentProduct.pictures &&
-                    currentProduct.pictures.length > 0
-                      ? currentProduct.pictures[0]
-                      : undefined)
-                )}
-                width={80}
-                height={80}
-                style={{ objectFit: "cover", borderRadius: "4px" }}
-                alt={currentProduct.name}
-              />
-            </Descriptions.Item>
+            {(currentProduct.thumb || (currentProduct.pictures && currentProduct.pictures.length > 0)) && (
+              <Descriptions.Item label='Hình ảnh'>
+                <Image
+                  src={getImageUrl(
+                    currentProduct.thumb ||
+                      (currentProduct.pictures &&
+                      currentProduct.pictures.length > 0
+                        ? currentProduct.pictures[0]
+                        : undefined)
+                  )}
+                  width={80}
+                  height={80}
+                  style={{ objectFit: "cover", borderRadius: "4px" }}
+                  alt={currentProduct.name}
+                />
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label='Tên sản phẩm'>
               {currentProduct.name}
             </Descriptions.Item>
@@ -519,13 +521,22 @@ const ProductsList: React.FC = () => {
                   {currentProduct.ingredient.join(", ")}
                 </Descriptions.Item>
               )}
+            {(currentProduct.unit || currentProduct.unit_id) && (
+              <Descriptions.Item label='Đơn vị tính'>
+                {typeof currentProduct.unit === 'object' && currentProduct.unit !== null
+                  ? currentProduct.unit.name
+                  : currentProduct.unit || currentProduct.unit_id}
+              </Descriptions.Item>
+            )}
             {currentProduct.attributes && (
               <Descriptions.Item label='Thuộc tính'>
                 <div className='grid grid-cols-2 gap-2'>
                   {(currentProduct.attributes as Record<string, unknown>)
                     ? Object.entries(
                         currentProduct.attributes as Record<string, unknown>
-                      ).map(([key, value]) => (
+                      )
+                        .filter(([key]) => key !== 'unit') // Lọc bỏ unit khỏi attributes
+                        .map(([key, value]) => (
                         <div key={key} className='flex'>
                           <span className='font-medium mr-2'>{key}:</span>
                           <span>
@@ -537,7 +548,9 @@ const ProductsList: React.FC = () => {
                       ))
                     : Object.entries(
                         currentProduct.attributes as Record<string, unknown>
-                      ).map(([key, value]) => (
+                      )
+                        .filter(([key]) => key !== 'unit') // Lọc bỏ unit khỏi attributes
+                        .map(([key, value]) => (
                         <div key={key} className='flex'>
                           <span className='font-medium mr-2'>{key}:</span>
                           <span>

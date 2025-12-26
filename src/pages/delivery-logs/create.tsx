@@ -12,6 +12,7 @@ import {
   Divider,
   Row,
   Col,
+  Spin,
 } from 'antd';
 import NumberInput from '../../components/common/number-input';
 import DatePicker from '../../components/common/DatePicker';
@@ -299,9 +300,17 @@ const CreateDeliveryLog: React.FC = () => {
     }
   };
 
+  // Kiểm tra loading state
+  const isPageLoading = isLoadingEdit || (isEditMode && !editData);
+
   return (
     <div style={{ padding: '24px' }}>
       <Card title={isEditMode ? "Chỉnh Sửa Phiếu Giao Hàng" : "Tạo Phiếu Giao Hàng"}>
+        {isPageLoading ? (
+          <div style={{ textAlign: 'center', padding: '50px 0' }}>
+            <Spin size="large" tip="Đang tải dữ liệu..." />
+          </div>
+        ) : (
         <Form
           form={form}
           layout="vertical"
@@ -351,8 +360,8 @@ const CreateDeliveryLog: React.FC = () => {
           )}
 
           {mode === 'standalone' && (
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={24} md={12}>
                 <Form.Item
                   label="Mùa vụ"
                   name="season_id"
@@ -367,7 +376,7 @@ const CreateDeliveryLog: React.FC = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={24} md={12}>
                 <Form.Item label="Chọn khách hàng (Hệ thống)" name="customer_id">
                   <ComboBox
                     placeholder="Tìm kiếm khách hàng..."
@@ -386,8 +395,8 @@ const CreateDeliveryLog: React.FC = () => {
             </Row>
           )}
 
-          <Row gutter={16}>
-            <Col span={8}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item
                 label="Ngày giao"
                 name="delivery_date"
@@ -396,7 +405,7 @@ const CreateDeliveryLog: React.FC = () => {
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item 
                 label="Giờ xuất phát" 
                 name="delivery_start_time"
@@ -405,7 +414,7 @@ const CreateDeliveryLog: React.FC = () => {
                 <TimePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={24} md={8}>
               <Form.Item label="Trạng thái" name="status">
                 <Select>
                   <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
@@ -418,8 +427,8 @@ const CreateDeliveryLog: React.FC = () => {
             </Col>
           </Row>
 
-          <Row gutter={16}>
-            <Col span={12}>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={24} md={12}>
               <Form.Item 
                 label="Tên người nhận" 
                 name="receiver_name"
@@ -428,7 +437,7 @@ const CreateDeliveryLog: React.FC = () => {
                 <Input placeholder="Nhập tên người nhận" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={24} md={12}>
               <Form.Item 
                 label="SĐT người nhận" 
                 name="receiver_phone"
@@ -448,7 +457,7 @@ const CreateDeliveryLog: React.FC = () => {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={24} md={12}>
               <Form.Item label="Tài xế" name="driver_id">
                 <Select
                   showSearch
@@ -480,30 +489,30 @@ const CreateDeliveryLog: React.FC = () => {
                 <Input placeholder="Nhập tên tài xế nếu không chọn từ danh sách" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={24} md={12}>
               <Form.Item label="Biển số xe" name="vehicle_number">
                 <Input placeholder="Biển số xe" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
-            <Col span={6}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={12} md={6}>
               <Form.Item label="Khoảng cách (km)" name="distance_km">
                 <NumberInput placeholder="Số km" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={12} md={6}>
               <Form.Item label="Tiền xăng" name="fuel_cost">
                 <NumberInput addonAfter="VND" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={12} md={6}>
               <Form.Item label="Tiền tài xế" name="driver_cost">
                 <NumberInput addonAfter="VND" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={12} md={6}>
               <Form.Item label="Chi phí khác" name="other_costs">
                 <NumberInput addonAfter="VND" />
               </Form.Item>
@@ -526,16 +535,33 @@ const CreateDeliveryLog: React.FC = () => {
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }) => (
-                  <Row key={key} gutter={16} align="middle" style={{ marginBottom: 8 }}>
+                  <Row key={key} gutter={[16, 16]} align="top" style={{ marginBottom: 16 }}>
                     {mode === 'from_invoice' ? (
-                      <Col span={8}>
+                      <Col xs={24} sm={24} md={12}>
                         <Form.Item
                           {...restField}
                           name={[name, 'sales_invoice_item_id']}
                           label="Sản phẩm (từ hóa đơn)"
                           rules={[{ required: true, message: 'Chọn sản phẩm' }]}
                         >
-                          <Select placeholder="Chọn sản phẩm">
+                          <Select 
+                            placeholder="Chọn sản phẩm"
+                            onChange={(value) => {
+                              // Tự động điền đơn vị khi chọn sản phẩm
+                              const selectedItem = invoiceItems?.find((item: any) => item.id === value);
+                              console.log('🔍 Selected item:', selectedItem);
+                              if (selectedItem) {
+                                const unit = selectedItem.product?.unit || selectedItem.unit || '';
+                                console.log('📦 Unit found:', unit);
+                                const items = form.getFieldValue('items') || [];
+                                items[name] = {
+                                  ...items[name],
+                                  unit: unit,
+                                };
+                                form.setFieldsValue({ items });
+                              }
+                            }}
+                          >
                             {invoiceItems?.map((item: any) => (
                               <Option key={item.id} value={item.id}>
                                 {item.product?.trade_name || item.product?.name || item.product_name} (Max: {item.quantity})
@@ -545,7 +571,7 @@ const CreateDeliveryLog: React.FC = () => {
                         </Form.Item>
                       </Col>
                     ) : (
-                      <Col span={8}>
+                      <Col xs={24} sm={24} md={12}>
                          <Form.Item
                           {...restField}
                           name={[name, 'product_id']}
@@ -561,23 +587,35 @@ const CreateDeliveryLog: React.FC = () => {
                              fetchNextPage={fetchNextProducts}
                              hasNextPage={hasNextProducts}
                              isFetchingNextPage={isFetchingMoreProducts}
+                             onChange={(value) => {
+                               // Tự động điền đơn vị khi chọn sản phẩm
+                               const selectedProduct = productOptions.find((p: any) => p.id === value);
+                               if (selectedProduct) {
+                                 const items = form.getFieldValue('items') || [];
+                                 items[name] = {
+                                   ...items[name],
+                                   unit: selectedProduct.unit,
+                                 };
+                                 form.setFieldsValue({ items });
+                               }
+                             }}
                              style={{ width: '100%' }}
                            />
                          </Form.Item>
                       </Col>
                     )}
 
-                    <Col span={6}>
+                    <Col xs={12} sm={8} md={4}>
                       <Form.Item
                         {...restField}
                         name={[name, 'quantity']}
                         label="Số lượng"
                         rules={[{ required: true, message: 'Nhập số lượng' }]}
                       >
-                        <NumberInput min={0} />
+                        <NumberInput min={0} decimalScale={0} />
                       </Form.Item>
                     </Col>
-                    <Col span={4}>
+                    <Col xs={12} sm={8} md={4}>
                       <Form.Item
                         {...restField}
                         name={[name, 'unit']}
@@ -586,7 +624,7 @@ const CreateDeliveryLog: React.FC = () => {
                         <Input placeholder="Đơn vị" />
                       </Form.Item>
                     </Col>
-                    <Col span={4}>
+                    <Col xs={24} sm={8} md={4}>
                       <Form.Item
                         {...restField}
                         name={[name, 'notes']}
@@ -595,8 +633,8 @@ const CreateDeliveryLog: React.FC = () => {
                         <Input placeholder="..." />
                       </Form.Item>
                     </Col>
-                    <Col span={2}>
-                      <Button danger onClick={() => remove(name)}>
+                    <Col xs={24} sm={24} md={24} style={{ textAlign: 'right' }}>
+                      <Button danger onClick={() => remove(name)} style={{ marginTop: 4 }}>
                         Xóa
                       </Button>
                     </Col>
@@ -620,6 +658,7 @@ const CreateDeliveryLog: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
+        )}
       </Card>
     </div>
   );

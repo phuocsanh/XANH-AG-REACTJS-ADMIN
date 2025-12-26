@@ -25,8 +25,8 @@ export const useGrowthTrackings = (cropId: number) => {
   return useQuery({
     queryKey: growthTrackingKeys.byCrop(cropId),
     queryFn: async () => {
-      const response = await api.get<any>(`/growth-trackings/crop/${cropId}`);
-      return response.data || response;
+      const response = await api.get<GrowthTracking[]>(`/growth-trackings/crop/${cropId}`);
+      return response;
     },
     enabled: !!cropId,
   });

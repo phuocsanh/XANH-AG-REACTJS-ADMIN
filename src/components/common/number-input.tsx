@@ -10,6 +10,7 @@ interface NumberInputProps {
   disabled?: boolean
   min?: number
   max?: number
+  decimalScale?: number // Số chữ số thập phân (0 = không có thập phân)
   size?: "large" | "middle" | "small"
   style?: React.CSSProperties
   className?: string
@@ -20,7 +21,7 @@ interface NumberInputProps {
 
 const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
   (props, ref) => {
-    const { value, onChange, min, max, ...rest } = props
+    const { value, onChange, min, max, decimalScale, ...rest } = props
 
     return (
       <NumericFormat
@@ -31,6 +32,8 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         customInput={Input}
         thousandSeparator='.'
         decimalSeparator=','
+        decimalScale={decimalScale}
+        fixedDecimalScale={decimalScale !== undefined}
         disabled={props.disabled}
         size={props.size}
         placeholder={props.placeholder}

@@ -72,9 +72,8 @@ export const useSupplierQuery = (id: number) => {
   return useQuery({
     queryKey: supplierKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<SupplierApiResponse>(`/suppliers/${id}`)
-      // Trả về response.data thay vì toàn bộ response để phù hợp với interceptor
-      return response.data
+      const response = await api.get<Supplier>(`/suppliers/${id}`)
+      return response
     },
     enabled: !!id,
   })

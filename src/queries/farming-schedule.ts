@@ -32,13 +32,13 @@ export const useFarmingSchedules = (filters?: FarmingScheduleFilters) => {
     queryFn: async () => {
       // Nếu có rice_crop_id, dùng endpoint crop
       if (filters?.rice_crop_id) {
-        const response = await api.get<any>(`/farming-schedules/crop/${filters.rice_crop_id}`);
-        return response.data || response;
+        const response = await api.get<FarmingSchedule[]>(`/farming-schedules/crop/${filters.rice_crop_id}`);
+        return response;
       }
       
       // Fallback: lấy lịch sắp tới
-      const response = await api.get<any>(`/farming-schedules/upcoming?days=30`);
-      return response.data || response;
+      const response = await api.get<FarmingSchedule[]>(`/farming-schedules/upcoming?days=30`);
+      return response;
     },
   });
 };
@@ -50,8 +50,8 @@ export const useUpcomingSchedules = (days: number = 7) => {
   return useQuery({
     queryKey: farmingScheduleKeys.upcoming(days),
     queryFn: async () => {
-      const response = await api.get<any>(`/farming-schedules/upcoming?days=${days}`);
-      return response.data || response;
+      const response = await api.get<FarmingSchedule[]>(`/farming-schedules/upcoming?days=${days}`);
+      return response;
     },
   });
 };
@@ -63,8 +63,8 @@ export const useCropSchedules = (cropId: number) => {
   return useQuery({
     queryKey: farmingScheduleKeys.byCrop(cropId),
     queryFn: async () => {
-      const response = await api.get<any>(`/farming-schedules/crop/${cropId}`);
-      return response.data || response;
+      const response = await api.get<FarmingSchedule[]>(`/farming-schedules/crop/${cropId}`);
+      return response;
     },
     enabled: !!cropId,
   });

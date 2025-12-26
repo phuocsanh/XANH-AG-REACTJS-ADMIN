@@ -35,21 +35,24 @@ export const useSeasonsQuery = (params?: Record<string, unknown>) => {
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/season/search', {
         page,
         limit,
         ...params
       })
 
+      // Interceptor giữ nguyên response có pagination
+      // response = { success, data: [...], total, page, limit, pagination }
       return {
         data: {
-          items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
-          has_prev: response.page > 1,
+          items: response.data || [],
+          total: response.total || 0,
+          page: response.page || 1,
+          limit: response.limit || 100,
+          total_pages: Math.ceil((response.total || 0) / (response.limit || 100)),
+          has_next: (response.page || 1) * (response.limit || 100) < (response.total || 0),
+          has_prev: (response.page || 1) > 1,
         },
         status: 200,
         message: 'Success',

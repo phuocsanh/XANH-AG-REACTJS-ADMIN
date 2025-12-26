@@ -44,6 +44,7 @@ const DeliveryLogDetail: React.FC = () => {
 
   const statusConfig = {
     [DeliveryStatus.PENDING]: { color: 'orange', text: 'Chờ giao' },
+    [DeliveryStatus.DELIVERING]: { color: 'blue', text: 'Đang giao' },
     [DeliveryStatus.COMPLETED]: { color: 'green', text: 'Đã giao' },
     [DeliveryStatus.FAILED]: { color: 'red', text: 'Thất bại' },
     [DeliveryStatus.CANCELLED]: { color: 'default', text: 'Đã hủy' },
@@ -56,23 +57,27 @@ const DeliveryLogDetail: React.FC = () => {
       title: 'Sản phẩm',
       dataIndex: 'product_name',
       key: 'product_name',
-    },
-    {
-      title: 'Số lượng',
-      dataIndex: 'quantity_delivered',
-      key: 'quantity_delivered',
-      align: 'right' as const,
+      width: 200,
     },
     {
       title: 'Đơn vị',
       dataIndex: 'unit',
       key: 'unit',
+      width: 100,
     },
     {
       title: 'Ghi chú',
       dataIndex: 'notes',
       key: 'notes',
+      width: 150,
       render: (text: string) => text || '-',
+    },
+    {
+      title: 'Số lượng',
+      dataIndex: 'quantity_delivered',
+      key: 'quantity_delivered',
+      width: 100,
+      align: 'right' as const,
     },
   ];
 
@@ -87,7 +92,11 @@ const DeliveryLogDetail: React.FC = () => {
         </Button>
 
         <Card title={`Chi tiết phiếu giao hàng #${deliveryLog.id}`}>
-          <Descriptions bordered column={2}>
+          <Descriptions 
+            bordered 
+            column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2 }}
+            size="small"
+          >
             <Descriptions.Item label="Ngày giao">
               {deliveryLog.delivery_date ? dayjs(deliveryLog.delivery_date).format('DD/MM/YYYY') : '-'}
             </Descriptions.Item>
@@ -139,6 +148,8 @@ const DeliveryLogDetail: React.FC = () => {
               dataSource={deliveryLog.items}
               rowKey="id"
               pagination={false}
+              scroll={{ x: 'max-content' }}
+              size="small"
             />
           </Card>
         )}

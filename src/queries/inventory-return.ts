@@ -40,10 +40,8 @@ export const useReturnQuery = (id: number) => {
     queryKey: ['return', id],
     refetchOnMount: true,
     queryFn: async () => {
-      const response = await apiClient.get<any>(`/inventory/return/${id}`)
-      // Unwrap data từ response wrapper { success, data, meta }
-      const returnData = response.data || response
-      return mapApiResponseToReturn(returnData) as InventoryReturn
+      const response = await apiClient.get<ReturnApiResponse>(`/inventory/return/${id}`)
+      return mapApiResponseToReturn(response) as InventoryReturn
     },
     enabled: !!id,
   })

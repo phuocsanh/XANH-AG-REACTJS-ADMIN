@@ -33,6 +33,7 @@ interface DeliveryInfoSectionProps {
     product_name: string;
     quantity: number;
     unit_price: number;
+    unit?: string;
   }>;
   /** Địa chỉ khách hàng (auto-fill) */
   customerAddress?: string;
@@ -348,14 +349,15 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
               <Typography variant="subtitle1" gutterBottom>
                 Chọn sản phẩm cần giao <span style={{ color: 'red' }}>*</span>
               </Typography>
-              <TableContainer component={Paper}>
-                <Table size="small">
+              <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+                <Table size="small" sx={{ minWidth: 650 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell padding="checkbox">Chọn</TableCell>
-                      <TableCell>Sản phẩm</TableCell>
-                      <TableCell align="right">SL trong đơn</TableCell>
-                      <TableCell align="right">SL giao</TableCell>
+                      <TableCell padding="checkbox" sx={{ width: 60 }}>Chọn</TableCell>
+                      <TableCell sx={{ minWidth: 250 }}>Sản phẩm</TableCell>
+                      <TableCell sx={{ width: 120 }}>Đơn vị</TableCell>
+                      <TableCell align="right" sx={{ width: 150 }}>SL giao</TableCell>
+                      <TableCell align="right" sx={{ width: 120 }}>SL trong đơn</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -379,7 +381,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                               />
                             </TableCell>
                             <TableCell>{item.product_name}</TableCell>
-                            <TableCell align="right">{item.quantity}</TableCell>
+                            <TableCell>{item.unit || '-'}</TableCell>
                             <TableCell align="right">
                               {isSelected ? (
                                 <NumberInput
@@ -396,6 +398,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                                 '-'
                               )}
                             </TableCell>
+                            <TableCell align="right">{item.quantity}</TableCell>
                           </TableRow>
                         );
                       })

@@ -108,6 +108,8 @@ const ProfitReportsPage: React.FC = () => {
   const { data: seasonProfit, isLoading: isLoadingSeasonProfit } = useSeasonStoreProfit(
     selectedSeasonId || 0
   );
+  
+  
   const { 
     data: riceCropProfitData, 
     isLoading: isLoadingRiceCropProfit,

@@ -407,6 +407,17 @@ const InventoryReceiptsList: React.FC = () => {
   // Cấu hình cột cho bảng
   const columns: ColumnsType<InventoryReceipt> = [
     {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_: unknown, __: InventoryReceipt, index: number) => {
+        // Tính STT dựa trên trang hiện tại và pageSize
+        const stt = (pagination.page - 1) * pagination.limit + index + 1;
+        return <div className='font-medium text-gray-600'>{stt}</div>;
+      },
+    },
+    {
       title: (
         <FilterHeader 
             title="Mã phiếu" 

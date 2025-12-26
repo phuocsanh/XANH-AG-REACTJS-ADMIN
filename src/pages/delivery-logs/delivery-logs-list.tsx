@@ -66,24 +66,55 @@ const DeliveryLogsList: React.FC = () => {
   // Table columns
   const columns: ColumnsType<DeliveryLog> = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_: unknown, __: DeliveryLog, index: number) => {
+        // Tính STT dựa trên trang hiện tại và limit
+        const stt = (page - 1) * limit + index + 1;
+        return <div className='font-medium text-gray-600'>{stt}</div>;
+      },
     },
     {
       title: 'Ngày giao',
       dataIndex: 'delivery_date',
       key: 'delivery_date',
+      width: 150,
+      render: (_: string, record: DeliveryLog) => {
+        const date = new Date(record.delivery_date).toLocaleDateString('vi-VN');
+        const timeStr = (record as any).delivery_start_time || '';
+        // Chuyển HH:mm:ss thành HH:mm
+        const time = timeStr ? timeStr.substring(0, 5) : '';
+        return (
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 500 }}>{date}</div>
+            {time && <div style={{ fontSize: '14px', color: '#595959', marginTop: '2px', fontWeight: 500 }}>{time}</div>}
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Loại phiếu',
+      key: 'type',
       width: 120,
-      render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
+      align: 'center',
+      render: (_: unknown, record: DeliveryLog) => {
+        const hasInvoice = record.invoice_id || (record as any).invoice?.code || (record as any).invoice_code;
+        return hasInvoice 
+          ? <Tag color="blue">Từ hóa đơn</Tag>
+          : <Tag color="green">Tự tạo</Tag>;
+      },
     },
     {
       title: 'Hóa đơn',
       dataIndex: 'invoice_id',
       key: 'invoice_id',
-      width: 100,
-      render: (invoiceId: number) => invoiceId || '-',
+      width: 150,
+      render: (_: number, record: DeliveryLog) => {
+        // Hiển thị mã hóa đơn nếu có, nếu không thì hiển thị '-'
+        return (record as any).invoice?.code || (record as any).invoice_code || '-';
+      },
     },
     {
       title: 'Địa chỉ',

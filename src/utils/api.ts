@@ -134,8 +134,8 @@ export class Api {
   ): Promise<T> {
     const response = await this.instance.get<T>(url, { params })
 
-    // Trả về response thay vì response.data vì interceptor đã xử lý
-    return response as unknown as T
+    // Trả về response.data vì interceptor đã unwrap
+    return response.data as unknown as T
   }
 
   /** form-data */
@@ -146,7 +146,7 @@ export class Api {
   ): Promise<T> {
     const data = transformPostFormData(body)
     const response = await this.instance.postForm<T>(url, data, { params })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 
   /** raw-JSON */
@@ -160,7 +160,7 @@ export class Api {
       params,
       headers: { "Content-Type": "application/json" },
     })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 
   /** form-data */
@@ -171,7 +171,7 @@ export class Api {
   ): Promise<T> {
     const data = transformPostFormData(body)
     const response = await this.instance.putForm<T>(url, data, { params })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 
   /** raw-JSON */
@@ -185,7 +185,7 @@ export class Api {
       params,
       headers: { "Content-Type": "application/json" },
     })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 
   /** form-data */
@@ -196,7 +196,7 @@ export class Api {
   ): Promise<T> {
     const data = transformPostFormData(body)
     const response = await this.instance.patchForm<T>(url, data, { params })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 
   /** raw-JSON */
@@ -210,7 +210,7 @@ export class Api {
       params,
       headers: { "Content-Type": "application/json" },
     })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 
   async delete<T = SuccessResponse<unknown>>(
@@ -218,7 +218,7 @@ export class Api {
     params?: unknown
   ): Promise<T> {
     const response = await this.instance.delete<T>(url, { params })
-    return response as unknown as T
+    return response.data as unknown as T
   }
 }
 
@@ -277,7 +277,7 @@ api.instance.interceptors.response.use(
       // Kiểm tra nếu success là boolean
       if (typeof response.data.success !== "boolean") {
         console.error("Response success field is not boolean:", response.data)
-        return response.data
+        return response
       }
 
       // Nếu success = true
@@ -286,15 +286,18 @@ api.instance.interceptors.response.use(
         // ✨ QUAN TRỌNG: Nếu response có pagination, giữ nguyên toàn bộ response
         // Đây là response từ search endpoints
         if ("pagination" in response.data) {
-          return response.data;
+          // Không unwrap, giữ nguyên response.data
+          return response;
         }
         
-        // Nếu không có pagination, unwrap data như cũ
+        // Nếu không có pagination, unwrap data
         if ("data" in response.data) {
-          return response.data.data;
+          // ✅ GÁN LẠI response.data để unwrap
+          response.data = response.data.data;
+          return response;
         } else {
           console.error("Response data is missing 'data' field:", response.data)
-          return response.data
+          return response
         }
       }
       // Nếu success = false, ném lỗi
@@ -326,9 +329,9 @@ api.instance.interceptors.response.use(
       throw { response }
     }
 
-    // Trả về data như trước cho các response cũ không có cấu trúc đặc biệt
+    // Trả về response cho các response cũ không có cấu trúc đặc biệt
 
-    return response.data
+    return response
   },
   async (error) => {
     const originalRequest = error.config

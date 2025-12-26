@@ -22,8 +22,8 @@ export const useExternalPurchases = (riceCropId: number) => {
   return useQuery({
     queryKey: externalPurchaseKeys.byRiceCrop(riceCropId),
     queryFn: async () => {
-      const response = await api.get<any>(`/external-purchases/rice-crop/${riceCropId}`);
-      return response.data || response;
+      const response = await api.get<ExternalPurchase[]>(`/external-purchases/rice-crop/${riceCropId}`);
+      return response;
     },
     enabled: !!riceCropId,
   });
@@ -36,8 +36,8 @@ export const useMergedPurchases = (riceCropId: number) => {
   return useQuery({
     queryKey: externalPurchaseKeys.merged(riceCropId),
     queryFn: async () => {
-      const response = await api.get<any>(`/rice-crops/${riceCropId}/all-purchases`);
-      return response.data || response;
+      const response = await api.get<MergedPurchase[]>(`/rice-crops/${riceCropId}/all-purchases`);
+      return response;
     },
     enabled: !!riceCropId,
   });

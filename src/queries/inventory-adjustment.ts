@@ -18,8 +18,6 @@ export const useAdjustmentsQuery = () => {
   return useQuery({
     queryKey: ['adjustments'],
     queryFn: async () => {
-      console.log('🔍 [DEBUG] useAdjustmentsQuery called at:', new Date().toISOString())
-      console.trace('Call stack:')
       // Đổi từ GET /inventory/adjustments sang POST /inventory/adjustments/search
       const response = await apiClient.postRaw<{
         data: AdjustmentApiResponse[]
@@ -30,7 +28,6 @@ export const useAdjustmentsQuery = () => {
         limit: 1000,
         offset: 0
       })
-      console.log('✅ [DEBUG] useAdjustmentsQuery response:', response)
       return response.data.map(mapApiResponseToAdjustment) as InventoryAdjustment[]
     },
   })
@@ -41,9 +38,8 @@ export const useAdjustmentQuery = (id: number, options?: { enabled?: boolean }) 
   return useQuery({
     queryKey: ['adjustment', id],
     queryFn: async () => {
-      const response = await apiClient.get<any>(`/inventory/adjustments/${id}`)
-      // Unwrap data từ response wrapper { success, data }
-      const adjustmentData = response.data || response
+      const response = await apiClient.get<InventoryAdjustment>(`/inventory/adjustments/${id}`)
+      const adjustmentData = response
       
       // Map status sang tiếng Việt nếu cần, nhưng GIỮ NGUYÊN images
       return {
@@ -60,8 +56,8 @@ export const useCreateAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: CreateAdjustmentRequest) => {
-      const response = await apiClient.postRaw<any>('/inventory/adjustments', data as any)
-      return response.data || response
+      const response = await apiClient.postRaw<InventoryAdjustment>('/inventory/adjustments', data as any)
+      return response
     },
     onSuccess: async () => {
       // Refetch để refresh danh sách ngay lập tức
@@ -80,8 +76,8 @@ export const useUpdateAdjustmentMutation = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: CreateAdjustmentRequest }) => {
       // Revert lại PUT theo chuẩn RESTful
-      const response = await apiClient.putRaw<any>(`/inventory/adjustments/${id}`, data as any)
-      return response.data || response
+      const response = await apiClient.putRaw<InventoryAdjustment>(`/inventory/adjustments/${id}`, data as any)
+      return response
     },
     onSuccess: async (_, { id }) => {
       await queryClient.refetchQueries({ queryKey: ['adjustments'] })
@@ -99,8 +95,8 @@ export const useApproveAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiClient.postRaw<any>(`/inventory/adjustments/${id}/approve`)
-      return response.data || response
+      const response = await apiClient.postRaw<InventoryAdjustment>(`/inventory/adjustments/${id}/approve`)
+      return response
     },
     onSuccess: async (_, id) => {
       await queryClient.refetchQueries({ queryKey: ['adjustments'] })
@@ -120,8 +116,8 @@ export const useCancelAdjustmentMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
-      const response = await apiClient.postRaw<any>(`/inventory/adjustments/${id}/cancel`, { reason })
-      return response.data || response
+      const response = await apiClient.postRaw<InventoryAdjustment>(`/inventory/adjustments/${id}/cancel`, { reason })
+      return response
     },
     onSuccess: async (_, { id }) => {
       await queryClient.refetchQueries({ queryKey: ['adjustments'] })
@@ -140,7 +136,7 @@ export const useDeleteAdjustmentMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
       const response = await apiClient.delete<any>(`/inventory/adjustments/${id}`)
-      return response.data !== undefined ? response.data : response
+      return response
     },
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['adjustments'] })

@@ -66,9 +66,8 @@ export const useRiceCrop = (id: number) => {
   return useQuery({
     queryKey: riceCropKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get<any>(`/rice-crops/${id}`);
-      // Backend trả về { data: { data: {...} } }, cần unwrap
-      return response.data || response;
+      const response = await api.get<RiceCrop>(`/rice-crops/${id}`);
+      return response;
     },
     enabled: !!id,
   });

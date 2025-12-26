@@ -66,8 +66,8 @@ export const useCostSummary = (cropId: number) => {
   return useQuery({
     queryKey: costItemKeys.summary(cropId),
     queryFn: async () => {
-      const response = await api.get<any>(`/cost-items/crop/${cropId}/summary`);
-      return response.data || response;
+      const response = await api.get<CostSummary>(`/cost-items/crop/${cropId}/summary`);
+      return response;
     },
     enabled: !!cropId,
   });

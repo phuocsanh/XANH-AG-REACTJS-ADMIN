@@ -25,9 +25,8 @@ export const useHarvestRecords = (cropId: number) => {
   return useQuery({
     queryKey: harvestRecordKeys.byCrop(cropId),
     queryFn: async () => {
-      const response = await api.get<any>(`/harvest-records/crop/${cropId}`);
-      // Backend có thể wrap trong { data: [...] }
-      return response.data || response;
+      const response = await api.get<HarvestRecord[]>(`/harvest-records/crop/${cropId}`);
+      return response;
     },
     enabled: !!cropId,
   });
