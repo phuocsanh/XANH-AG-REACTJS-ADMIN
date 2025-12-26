@@ -19,7 +19,8 @@ import {
   Paper,
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import { TimePicker, Input, InputNumber, Row, Col, Select as AntSelect, Form, Divider as AntDivider } from 'antd';
+import { TimePicker, Input, Row, Col, Select as AntSelect, Form, Divider as AntDivider } from 'antd';
+import NumberInput from '@/components/common/number-input';
 import DatePicker from '@/components/common/DatePicker';
 import dayjs, { Dayjs } from 'dayjs';
 import { CreateDeliveryLogDto, DeliveryStatus } from '@/models/delivery-log.model';
@@ -97,7 +98,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
         const itemMap = new Map<number, number>();
         initialValue.items.forEach(item => {
           if (item.sales_invoice_item_id !== undefined) {
-            itemMap.set(item.sales_invoice_item_id, item.quantity);
+            itemMap.set(item.sales_invoice_item_id, item.quantity || 0);
           }
         });
         setSelectedItems(itemMap);
@@ -125,15 +126,15 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
       return;
     }
 
-    // Validate: phải có ngày giao, tên, sđt, địa chỉ và ít nhất 1 sản phẩm
-    if (!deliveryDate || !receiverName || !receiverPhone || !deliveryAddress || selectedItems.size === 0) {
+    // Validate: phải có ngày giao, giờ giao, tên, sđt, địa chỉ và ít nhất 1 sản phẩm
+    if (!deliveryDate || !deliveryTime || !receiverName || !receiverPhone || !deliveryAddress || selectedItems.size === 0) {
       onChange(null);
       return;
     }
 
     const deliveryData: CreateDeliveryLogDto = {
       delivery_date: deliveryDate.format('YYYY-MM-DD'),
-      delivery_start_time: deliveryTime?.format('HH:mm:ss'),
+      delivery_start_time: deliveryTime!.format('HH:mm:ss'),
       delivery_address: deliveryAddress,
       receiver_name: receiverName,
       receiver_phone: receiverPhone,
@@ -231,7 +232,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
               </Col>
               <Col span={8}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Giờ bắt đầu giao
+                  Giờ bắt đầu giao <span style={{ color: 'red' }}>*</span>
                 </Typography>
                 <TimePicker
                   value={deliveryTime}
@@ -322,13 +323,11 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
               <Typography variant="subtitle2" gutterBottom>
                 Chi phí giao hàng ước tính (đ)
               </Typography>
-              <InputNumber
+              <NumberInput
                 style={{ width: '100%' }}
                 value={totalCost}
-                onChange={(val) => setTotalCost(Number(val) || 0)}
+                onChange={(val) => setTotalCost(val || 0)}
                 placeholder="0"
-                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
               />
             </Box>
 
@@ -383,10 +382,10 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                             <TableCell align="right">{item.quantity}</TableCell>
                             <TableCell align="right">
                               {isSelected ? (
-                                <InputNumber
+                                <NumberInput
                                   size="small"
                                   value={deliveryQty}
-                                  onChange={(val: any) =>
+                                  onChange={(val) =>
                                     handleQuantityChange(index, val || 0)
                                   }
                                   min={0}

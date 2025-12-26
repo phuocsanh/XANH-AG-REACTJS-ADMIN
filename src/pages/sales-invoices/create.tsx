@@ -737,12 +737,18 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       };
     }
     
+    
     const submitData = {
       ...data,
       remaining_amount: remainingAmount,
       customer_id: data.customer_id || null,
       delivery_log: deliveryLogData || undefined,
     };
+
+    // Debug logs
+    console.log('📦 Delivery Data:', deliveryData);
+    console.log('📤 Submit Data:', submitData);
+    console.log('🚚 Delivery Log in Submit:', submitData.delivery_log);
 
     if (isEditMode && id) {
       // Update existing invoice

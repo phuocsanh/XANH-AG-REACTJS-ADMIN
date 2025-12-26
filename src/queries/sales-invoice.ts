@@ -5,6 +5,7 @@ import { queryClient } from "@/provider/app-provider-tanstack"
 import { SalesInvoice, CreateSalesInvoiceDto, AddPaymentDto } from "@/models/sales-invoice"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
+import { deliveryLogKeys } from "./delivery-logs"
 
 import { mapSearchResponse } from "@/utils/api-response-mapper"
 
@@ -106,6 +107,7 @@ export const useCreateSalesInvoiceMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: deliveryLogKeys.lists() })
       toast.success("Tạo hóa đơn thành công!")
     },
     onError: (error: unknown) => {

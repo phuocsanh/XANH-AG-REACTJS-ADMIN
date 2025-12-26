@@ -321,7 +321,7 @@ export const useInvoiceItemsQuery = (invoiceId: number) => {
       const response = await api.get<SalesInvoiceItem[]>(
         `/sales/invoice/${invoiceId}/items`
       )
-      return response
+      return response || []
     },
     enabled: !!invoiceId,
   })

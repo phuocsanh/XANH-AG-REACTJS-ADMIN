@@ -41,11 +41,13 @@ const DeliveryLogsList: React.FC = () => {
   };
 
   const handleEdit = (id: number) => {
-    navigate(`/delivery-logs/${id}/edit`);
+    const deliveryLog = data?.data?.find(log => log.id === id);
+    navigate(`/delivery-logs/edit/${id}`, { state: { deliveryLog } });
   };
 
   const handleView = (id: number) => {
-    navigate(`/delivery-logs/${id}`);
+    const deliveryLog = data?.data?.find(log => log.id === id);
+    navigate(`/delivery-logs/${id}`, { state: { deliveryLog } });
   };
 
   // Render status tag
@@ -123,34 +125,26 @@ const DeliveryLogsList: React.FC = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
+      width: 150,
       render: (status: DeliveryStatus, record: DeliveryLog) => (
         <Select
           value={status}
           style={{ width: '100%' }}
           onChange={(value) => handleStatusChange(record.id!, value)}
           size="small"
+          bordered={false}
         >
-          <Option value={DeliveryStatus.PENDING}>
-            <Tag color="orange">Chờ giao</Tag>
-          </Option>
-          <Option value={DeliveryStatus.COMPLETED}>
-            <Tag color="green">Đã giao</Tag>
-          </Option>
-          <Option value={DeliveryStatus.FAILED}>
-            <Tag color="red">Thất bại</Tag>
-          </Option>
-          <Option value={DeliveryStatus.CANCELLED}>
-            <Tag color="default">Đã hủy</Tag>
-          </Option>
+          <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
+          <Option value={DeliveryStatus.COMPLETED}>Đã giao</Option>
+          <Option value={DeliveryStatus.FAILED}>Thất bại</Option>
+          <Option value={DeliveryStatus.CANCELLED}>Đã hủy</Option>
         </Select>
       ),
     },
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 150,
-      fixed: 'right',
+      width: 120,
       render: (_, record: DeliveryLog) => (
         <Space size="small">
           <Button
@@ -158,17 +152,13 @@ const DeliveryLogsList: React.FC = () => {
             size="small"
             icon={<EyeOutlined />}
             onClick={() => handleView(record.id!)}
-          >
-            Xem
-          </Button>
+          />
           <Button
             type="link"
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record.id!)}
-          >
-            Sửa
-          </Button>
+          />
           <Popconfirm
             title="Xác nhận xóa?"
             description="Bạn có chắc chắn muốn xóa phiếu giao hàng này?"
@@ -176,9 +166,7 @@ const DeliveryLogsList: React.FC = () => {
             okText="Xóa"
             cancelText="Hủy"
           >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              Xóa
-            </Button>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ),
@@ -211,7 +199,7 @@ const DeliveryLogsList: React.FC = () => {
       >
         <Table
           columns={columns}
-          dataSource={data?.items || []}
+          dataSource={data?.data || []}
           rowKey="id"
           loading={isLoading}
           scroll={{ x: 1400 }}

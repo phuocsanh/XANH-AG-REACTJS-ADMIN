@@ -282,17 +282,16 @@ api.instance.interceptors.response.use(
 
       // Nếu success = true
       if (response.data.success === true) {
-
         
         // ✨ QUAN TRỌNG: Nếu response có pagination, giữ nguyên toàn bộ response
         // Đây là response từ search endpoints
         if ("pagination" in response.data) {
-
+          return response.data;
         }
         
         // Nếu không có pagination, unwrap data như cũ
         if ("data" in response.data) {
-
+          return response.data.data;
         } else {
           console.error("Response data is missing 'data' field:", response.data)
           return response.data

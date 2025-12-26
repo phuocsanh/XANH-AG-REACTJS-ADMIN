@@ -61,6 +61,8 @@ import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
 import CreateDeliveryLog from "./pages/delivery-logs/create"
 import DeliveryLogsList from "./pages/delivery-logs"
+import DeliveryLogDetail from "./pages/delivery-logs/detail"
+import EditDeliveryLog from "./pages/delivery-logs/edit"
 // Thêm import cho trang báo cáo lợi nhuận
 import ProfitReportsPage from "./pages/profit-reports"
 // Thêm import cho trang quản lý diện tích mỗi công đất
@@ -600,6 +602,22 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="sales:create">
                           <CreateDeliveryLog />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/delivery-logs/:id'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <DeliveryLogDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/delivery-logs/edit/:id'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:manage">
+                          <EditDeliveryLog />
                         </ProtectedRoute>
                       }
                     />

@@ -26,12 +26,28 @@ export const useDeliveryLogs = (params: {
   invoiceId?: number;
   status?: DeliveryStatus;
 }) => {
-  return useQuery({
+  return useQuery<DeliveryLogListResponse>({
     queryKey: deliveryLogKeys.list(params),
     queryFn: async () => {
-      // api.get returns the data directly (interceptors handle response.data)
-      const response = await api.get<DeliveryLogListResponse>('/delivery-logs', params);
-      return response;
+      const response = await api.postRaw<{
+        data: DeliveryLog[];
+        total: number;
+        page: number;
+        limit: number;
+      }>('/delivery-logs/search', {
+        page: params.page || 1,
+        limit: params.limit || 10,
+        ...(params.invoiceId && { invoice_id: params.invoiceId }),
+        ...(params.status && { status: params.status }),
+      });
+      
+      return {
+        data: response.data,
+        total: response.total,
+        page: response.page,
+        limit: response.limit,
+        totalPages: Math.ceil(response.total / response.limit),
+      };
     },
   });
 };

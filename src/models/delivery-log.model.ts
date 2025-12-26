@@ -31,7 +31,7 @@ export interface DeliveryLog {
   invoice_id?: number; // Null nếu tạo độc lập
   season_id?: number; // Liên kết với mùa vụ
   delivery_date: string; // Format: YYYY-MM-DD
-  delivery_start_time?: string; // Format: HH:mm:ss
+  delivery_start_time: string; // Format: HH:mm:ss
   delivery_address?: string;
   receiver_name?: string; // Tên người nhận
   receiver_phone?: string; // SĐT người nhận
@@ -39,6 +39,9 @@ export interface DeliveryLog {
   driver_name?: string;
   vehicle_number?: string; // Số xe (biển số)
   vehicle_plate?: string; // Alias (backward compatibility)
+  fuel_cost?: number; // Chi phí nhiên liệu
+  driver_cost?: number; // Chi phí tài xế
+  other_costs?: number; // Chi phí khác
   total_cost?: number;
   status?: DeliveryStatus;
   notes?: string;
@@ -57,7 +60,7 @@ export interface CreateDeliveryLogDto {
   invoice_id?: number; // Optional - null nếu tạo độc lập
   season_id?: number; // ID mùa vụ
   delivery_date: string;
-  delivery_start_time?: string;
+  delivery_start_time: string;
   delivery_address?: string;
   receiver_name?: string;
   receiver_phone?: string;
@@ -73,7 +76,7 @@ export interface CreateDeliveryLogDto {
   items?: {
     sales_invoice_item_id?: number; // Optional khi tạo độc lập
     product_id?: number; // Optional khi tạo từ hóa đơn
-    quantity: number;
+    quantity: number; // Số lượng giao
     unit?: string;
     notes?: string;
   }[];
@@ -83,7 +86,7 @@ export interface CreateDeliveryLogDto {
  * Response phân trang
  */
 export interface DeliveryLogListResponse {
-  items: DeliveryLog[];
+  data: DeliveryLog[];
   total: number;
   page: number;
   limit: number;

@@ -4,7 +4,6 @@ import {
   Form,
   Input,
   TimePicker,
-  InputNumber,
   Select,
   Button,
   Space,
@@ -14,10 +13,11 @@ import {
   Row,
   Col,
 } from 'antd';
+import NumberInput from '../../components/common/number-input';
 import DatePicker from '../../components/common/DatePicker';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { useCreateDeliveryLog } from '../../queries/delivery-logs';
+import { useCreateDeliveryLog, useUpdateDeliveryLog, useDeliveryLog } from '../../queries/delivery-logs';
 import { useInvoicesQuery, useInvoiceItemsQuery, useInvoiceSearch } from '../../queries/sales';
 import { useSeasonsQuery } from '../../queries/season';
 import { CreateDeliveryLogDto, DeliveryStatus } from '../../models/delivery-log.model';
@@ -36,12 +36,38 @@ type CreationMode = 'standalone' | 'from_invoice';
 
 const CreateDeliveryLog: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('id');
+  const isEditMode = !!editId;
+  
   const [form] = Form.useForm();
   const [mode, setMode] = useState<CreationMode>('from_invoice');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   
+  // Load data nếu đang edit
+  const stateData = location.state?.deliveryLog;
+  
+  // Chỉ fetch nếu có editId và không có stateData
+  const shouldFetch = isEditMode && !stateData;
+  const { data: apiData, isLoading: isLoadingEdit } = useDeliveryLog(
+    shouldFetch && editId ? Number(editId) : 0
+  );
+  
+  const editData = stateData || apiData;
+  
+  // Debug log
+  console.log('🔍 Edit Mode Debug:', {
+    isEditMode,
+    editId,
+    hasStateData: !!stateData,
+    hasApiData: !!apiData,
+    editData,
+  });
+  
   // Queries
   const createMutation = useCreateDeliveryLog();
+  const updateMutation = useUpdateDeliveryLog();
   const { data: invoicesData, isLoading: isLoadingInvoices } = useInvoicesQuery({ page: 1, limit: 100 });
   const { data: invoiceItems, isLoading: isLoadingItems } = useInvoiceItemsQuery(selectedInvoiceId || 0);
 
@@ -100,6 +126,16 @@ const CreateDeliveryLog: React.FC = () => {
   // Computed
   const isLoading = createMutation.isPending;
 
+  // Watch cost fields for automatic calculation
+  const fuelCost = Form.useWatch('fuel_cost', form);
+  const driverCost = Form.useWatch('driver_cost', form);
+  const otherCosts = Form.useWatch('other_costs', form);
+
+  useEffect(() => {
+    const total = Number(fuelCost || 0) + Number(driverCost || 0) + Number(otherCosts || 0);
+    form.setFieldsValue({ total_cost: total });
+  }, [fuelCost, driverCost, otherCosts, form]);
+
   // Effects
   useEffect(() => {
     form.setFieldsValue({
@@ -107,6 +143,71 @@ const CreateDeliveryLog: React.FC = () => {
       status: DeliveryStatus.PENDING,
     });
   }, [form]);
+
+  // 1. Xác định Mode và InvoiceId (luôn chạy khi có editData)
+  useEffect(() => {
+    if (isEditMode && editData) {
+      const data = editData.data || editData;
+      console.log('🔄 Mode detection:', { 
+        hasInvoiceId: !!data.invoice_id, 
+        invoiceId: data.invoice_id 
+      });
+      
+      if (data.invoice_id) {
+        setMode('from_invoice');
+        setSelectedInvoiceId(data.invoice_id);
+      } else {
+        setMode('standalone');
+      }
+    }
+  }, [isEditMode, editData]);
+
+  // 2. Điền form khi dữ liệu đã sẵn sàng
+  useEffect(() => {
+    const data = editData?.data || editData;
+    const items = data?.items || [];
+    const availableItems = invoiceItems || [];
+    
+    // Điều kiện để điền form: 
+    // - Có data của phiếu giao hàng
+    // - Nếu là from_invoice thì phải có list invoiceItems (để match dropdown)
+    const canSetValues = isEditMode && data && (
+      mode === 'from_invoice' 
+        ? (Array.isArray(availableItems) && availableItems.length > 0) 
+        : true
+    );
+
+    if (canSetValues) {
+      console.log('⏰ Setting form values now...');
+      
+      form.setFieldsValue({
+        invoice_id: data.invoice_id,
+        season_id: data.season_id,
+        delivery_date: data.delivery_date ? dayjs(data.delivery_date) : dayjs(),
+        delivery_start_time: data.delivery_start_time ? dayjs(data.delivery_start_time, 'HH:mm:ss') : null,
+        delivery_address: data.delivery_address || data.invoice?.customer?.address,
+        receiver_name: data.receiver_name || data.invoice?.customer?.name,
+        receiver_phone: data.receiver_phone || data.invoice?.customer?.phone,
+        driver_name: data.driver_name,
+        vehicle_number: data.vehicle_number || data.vehicle_plate,
+        fuel_cost: data.fuel_cost || 0,
+        driver_cost: data.driver_cost || 0,
+        other_costs: data.other_costs || 0,
+        total_cost: data.total_cost || 0,
+        status: data.status || DeliveryStatus.PENDING,
+        delivery_notes: data.delivery_notes,
+        items: items.map((item: any) => ({
+          sales_invoice_item_id: item.sales_invoice_item_id || item.id,
+          product_id: item.product_id,
+          quantity: item.quantity_delivered || item.quantity,
+          unit: item.unit || item.product?.unit,
+          notes: item.notes,
+        })) || [],
+      });
+      
+      console.log('✅ Form values set successfully!');
+    }
+  }, [isEditMode, editData, invoiceItems, mode, form]);
 
   // Handle invoice selection
   const handleInvoiceChange = (invoiceId: number) => {
@@ -144,16 +245,19 @@ const CreateDeliveryLog: React.FC = () => {
       invoice_id: mode === 'from_invoice' ? selectedInvoiceId! : undefined,
       season_id: mode === 'standalone' ? values.season_id : undefined,
       delivery_date: values.delivery_date.format('YYYY-MM-DD'),
-      delivery_start_time: values.delivery_start_time?.format('HH:mm:ss'),
+      delivery_start_time: values.delivery_start_time.format('HH:mm:ss'),
       delivery_address: values.delivery_address,
       receiver_name: values.receiver_name,
       receiver_phone: values.receiver_phone,
       delivery_notes: values.delivery_notes,
       driver_name: values.driver_name,
       vehicle_number: values.vehicle_number,
+      fuel_cost: values.fuel_cost,
+      driver_cost: values.driver_cost,
+      other_costs: values.other_costs,
       total_cost: values.total_cost,
       status: values.status,
-      items: values.items?.map((item: any) => ({
+      items: (values.items || []).map((item: any) => ({
         sales_invoice_item_id: mode === 'from_invoice' ? item.sales_invoice_item_id : undefined,
         product_id: mode === 'standalone' ? item.product_id : undefined,
         quantity: item.quantity,
@@ -162,24 +266,42 @@ const CreateDeliveryLog: React.FC = () => {
       })),
     };
 
-    createMutation.mutate(payload, {
-      onSuccess: () => {
-        navigate('/delivery-logs');
-      },
-    });
+    if (isEditMode && editId) {
+      // Update mode
+      updateMutation.mutate(
+        { id: Number(editId), data: payload },
+        {
+          onSuccess: () => {
+            toast.success('Cập nhật phiếu giao hàng thành công!');
+            navigate('/delivery-logs');
+          },
+        }
+      );
+    } else {
+      // Create mode
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          toast.success('Tạo phiếu giao hàng thành công!');
+          navigate('/delivery-logs');
+        },
+      });
+    }
   };
 
   return (
     <div style={{ padding: '24px' }}>
-      <Card title="Tạo Phiếu Giao Hàng">
+      <Card title={isEditMode ? "Chỉnh Sửa Phiếu Giao Hàng" : "Tạo Phiếu Giao Hàng"}>
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           initialValues={{ mode: 'from_invoice' }}
         >
-          {/* Mode Selection */}
-          <Form.Item label="Phương thức tạo" name="mode">
+          {/* Mode Selection - Chỉ hiện khi tạo mới */}
+
+          {!isEditMode && (
+
+            <Form.Item label="Phương thức tạo" name="mode">
               <Radio.Group
                 onChange={(e) => {
                   setMode(e.target.value);
@@ -192,6 +314,7 @@ const CreateDeliveryLog: React.FC = () => {
                 <Radio.Button value="standalone">Tạo mới (Độc lập)</Radio.Button>
               </Radio.Group>
           </Form.Item>
+          )}
 
           <Divider orientation="left">Thông tin chung</Divider>
 
@@ -263,7 +386,11 @@ const CreateDeliveryLog: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Giờ xuất phát" name="delivery_start_time">
+              <Form.Item 
+                label="Giờ xuất phát" 
+                name="delivery_start_time"
+                rules={[{ required: true, message: 'Chọn giờ xuất phát' }]}
+              >
                 <TimePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -321,11 +448,31 @@ const CreateDeliveryLog: React.FC = () => {
             </Col>
           </Row>
 
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item label="Khoảng cách (km)" name="distance_km">
+                <NumberInput placeholder="Số km" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="Tiền xăng" name="fuel_cost">
+                <NumberInput addonAfter="VND" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="Tiền tài xế" name="driver_cost">
+                <NumberInput addonAfter="VND" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="Chi phí khác" name="other_costs">
+                <NumberInput addonAfter="VND" />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Form.Item label="Tổng chi phí ước tính" name="total_cost">
-            <InputNumber
-              style={{ width: '100%' }}
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+            <NumberInput
               addonAfter="VND"
             />
           </Form.Item>
@@ -350,17 +497,15 @@ const CreateDeliveryLog: React.FC = () => {
                           rules={[{ required: true, message: 'Chọn sản phẩm' }]}
                         >
                           <Select placeholder="Chọn sản phẩm">
-                            {invoiceItems?.map((item) => (
+                            {invoiceItems?.map((item: any) => (
                               <Option key={item.id} value={item.id}>
-                                {item.product?.name} (Max: {item.quantity})
+                                {item.product?.trade_name || item.product?.name || item.product_name} (Max: {item.quantity})
                               </Option>
                             ))}
                           </Select>
                         </Form.Item>
                       </Col>
                     ) : (
-                      // TODO: Implement product search/select properly for standalone
-                      // For now, let's use manual entry or a simple ID input as quick fix
                       <Col span={8}>
                          <Form.Item
                           {...restField}
@@ -390,7 +535,7 @@ const CreateDeliveryLog: React.FC = () => {
                         label="Số lượng"
                         rules={[{ required: true, message: 'Nhập số lượng' }]}
                       >
-                        <InputNumber style={{ width: '100%' }} min={0} />
+                        <NumberInput min={0} />
                       </Form.Item>
                     </Col>
                     <Col span={4}>
@@ -430,7 +575,7 @@ const CreateDeliveryLog: React.FC = () => {
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={isLoading}>
-                Tạo phiếu giao hàng
+                {isEditMode ? "Cập Nhật" : "Tạo Phiếu Giao Hàng"}
               </Button>
               <Button onClick={() => navigate('/delivery-logs')}>Hủy</Button>
             </Space>
