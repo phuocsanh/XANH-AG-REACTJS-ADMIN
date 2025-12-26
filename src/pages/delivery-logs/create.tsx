@@ -24,6 +24,7 @@ import { CreateDeliveryLogDto, DeliveryStatus } from '../../models/delivery-log.
 import { SalesInvoice, SalesInvoiceItem } from '../../models/sales.model';
 import { useProductSearch } from '../../queries/product';
 import { useCustomerSearch } from '../../queries/customer';
+import { useAllUsersQuery } from '../../queries/user';
 import ComboBox from '../../components/common/combo-box';
 
 import { toast } from 'react-toastify';
@@ -122,6 +123,14 @@ const CreateDeliveryLog: React.FC = () => {
   } = useCustomerSearch(customerSearchTerm, 20);
 
   const customerOptions = customerSearchData?.pages.flatMap((page) => page.data) || [];
+
+  // User Search for Driver selection
+  const { data: usersData, isLoading: isLoadingUsers } = useAllUsersQuery({ page: 1, limit: 100 });
+  const userOptions = usersData?.data?.items?.map((u: any) => ({
+    value: u.id,
+    label: `${u.profile?.nickname || u.account} (${u.profile?.mobile || 'Chưa có SĐT'})`,
+    name: u.profile?.nickname || u.account,
+  })) || [];
 
   // Computed
   const isLoading = createMutation.isPending;
@@ -250,8 +259,10 @@ const CreateDeliveryLog: React.FC = () => {
       receiver_name: values.receiver_name,
       receiver_phone: values.receiver_phone,
       delivery_notes: values.delivery_notes,
+      driver_id: values.driver_id,
       driver_name: values.driver_name,
       vehicle_number: values.vehicle_number,
+      distance_km: values.distance_km,
       fuel_cost: values.fuel_cost,
       driver_cost: values.driver_cost,
       other_costs: values.other_costs,
@@ -398,6 +409,7 @@ const CreateDeliveryLog: React.FC = () => {
               <Form.Item label="Trạng thái" name="status">
                 <Select>
                   <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
+                  <Option value={DeliveryStatus.DELIVERING}>Đang giao</Option>
                   <Option value={DeliveryStatus.COMPLETED}>Đã giao</Option>
                   <Option value={DeliveryStatus.FAILED}>Thất bại</Option>
                   <Option value={DeliveryStatus.CANCELLED}>Đã hủy</Option>
@@ -437,8 +449,35 @@ const CreateDeliveryLog: React.FC = () => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Tài xế" name="driver_name">
-                <Input placeholder="Tên tài xế" />
+              <Form.Item label="Tài xế" name="driver_id">
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Chọn tài xế từ hệ thống hoặc nhập tên"
+                  loading={isLoadingUsers}
+                  filterOption={(input, option) =>
+                    (option?.label?.toString() || '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  onChange={(value) => {
+                    // Khi chọn từ danh sách, tự động điền tên
+                    if (value) {
+                      const selectedUser = userOptions.find(u => u.value === value);
+                      if (selectedUser) {
+                        form.setFieldsValue({ driver_name: selectedUser.name });
+                      }
+                    } else {
+                      form.setFieldsValue({ driver_name: '' });
+                    }
+                  }}
+                  options={userOptions}
+                />
+              </Form.Item>
+              <Form.Item 
+                label="Tên tài xế (Hiển thị)" 
+                name="driver_name"
+                tooltip="Tự động điền khi chọn từ danh sách, hoặc nhập tay nếu là tài xế ngoài"
+              >
+                <Input placeholder="Nhập tên tài xế nếu không chọn từ danh sách" />
               </Form.Item>
             </Col>
             <Col span={12}>

@@ -3,6 +3,7 @@
  */
 export enum DeliveryStatus {
   PENDING = 'pending',
+  DELIVERING = 'delivering',
   COMPLETED = 'completed',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
@@ -36,7 +37,8 @@ export interface DeliveryLog {
   receiver_name?: string; // Tên người nhận
   receiver_phone?: string; // SĐT người nhận
   delivery_notes?: string; // Ghi chú giao hàng
-  driver_name?: string;
+  driver_id?: number; // ID tài xế (nếu chọn từ hệ thống)
+  driver_name?: string; // Tên tài xế (hiển thị hoặc nhập tay)
   vehicle_number?: string; // Số xe (biển số)
   vehicle_plate?: string; // Alias (backward compatibility)
   fuel_cost?: number; // Chi phí nhiên liệu
@@ -65,7 +67,8 @@ export interface CreateDeliveryLogDto {
   receiver_name?: string;
   receiver_phone?: string;
   delivery_notes?: string;
-  driver_name?: string;
+  driver_id?: number; // ID tài xế (nếu chọn từ hệ thống)
+  driver_name?: string; // Tên tài xế (hiển thị hoặc nhập tay)
   vehicle_number?: string;
   distance_km?: number;
   fuel_cost?: number;
