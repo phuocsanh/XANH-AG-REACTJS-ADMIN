@@ -8,7 +8,6 @@ import {
   Button,
   Space,
   Radio,
-  Table,
   Divider,
   Row,
   Col,
@@ -19,17 +18,15 @@ import DatePicker from '../../components/common/DatePicker';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useCreateDeliveryLog, useUpdateDeliveryLog, useDeliveryLog } from '../../queries/delivery-logs';
-import { useInvoicesQuery, useInvoiceItemsQuery, useInvoiceSearch } from '../../queries/sales';
+import { useInvoiceItemsQuery, useInvoiceSearch } from '../../queries/sales';
 import { useSeasonsQuery } from '../../queries/season';
 import { CreateDeliveryLogDto, DeliveryStatus } from '../../models/delivery-log.model';
-import { SalesInvoice, SalesInvoiceItem } from '../../models/sales.model';
 import { useProductSearch } from '../../queries/product';
 import { useCustomerSearch } from '../../queries/customer';
 import { useAllUsersQuery } from '../../queries/user';
 import ComboBox from '../../components/common/combo-box';
 
 import { toast } from 'react-toastify';
-import { formatCurrency } from '../../utils/format';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -70,8 +67,7 @@ const CreateDeliveryLog: React.FC = () => {
   // Queries
   const createMutation = useCreateDeliveryLog();
   const updateMutation = useUpdateDeliveryLog();
-  const { data: invoicesData, isLoading: isLoadingInvoices } = useInvoicesQuery({ page: 1, limit: 100 });
-  const { data: invoiceItems, isLoading: isLoadingItems } = useInvoiceItemsQuery(selectedInvoiceId || 0);
+  const { data: invoiceItems } = useInvoiceItemsQuery(selectedInvoiceId || 0);
 
   // Product Search for Standalone mode
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -107,7 +103,7 @@ const CreateDeliveryLog: React.FC = () => {
     name: seasonSearchTerm,
   });
 
-  const seasonOptions = seasonsData?.data?.items?.map((s: any) => ({
+  const seasonOptions = seasonsData?.data?.items?.map((s: { id: number; name: string }) => ({
     value: s.id,
     label: s.name,
   })) || [];
@@ -127,11 +123,13 @@ const CreateDeliveryLog: React.FC = () => {
 
   // User Search for Driver selection
   const { data: usersData, isLoading: isLoadingUsers } = useAllUsersQuery({ page: 1, limit: 100 });
-  const userOptions = usersData?.data?.items?.map((u: any) => ({
-    value: u.id,
-    label: `${u.profile?.nickname || u.account} (${u.profile?.mobile || 'Chưa có SĐT'})`,
-    name: u.profile?.nickname || u.account,
-  })) || [];
+  const userOptions = usersData?.data?.items
+    ?.filter((u) => u.id !== undefined)
+    ?.map((u) => ({
+      value: u.id!,
+      label: `${u.nickname || u.account || u.user_account} (Tài xế)`,
+      name: u.nickname || u.account || u.user_account,
+    })) || [];
 
   // Computed
   const isLoading = createMutation.isPending;
@@ -206,7 +204,16 @@ const CreateDeliveryLog: React.FC = () => {
         total_cost: data.total_cost || 0,
         status: data.status || DeliveryStatus.PENDING,
         delivery_notes: data.delivery_notes,
-        items: items.map((item: any) => ({
+        items: items.map((item: {
+          sales_invoice_item_id?: number;
+          id?: number;
+          product_id: number;
+          quantity_delivered?: number;
+          quantity: number;
+          unit?: string;
+          product?: { unit?: string };
+          notes?: string;
+        }) => ({
           sales_invoice_item_id: item.sales_invoice_item_id || item.id,
           product_id: item.product_id,
           quantity: item.quantity_delivered || item.quantity,
@@ -239,7 +246,7 @@ const CreateDeliveryLog: React.FC = () => {
 
   // Handle customer selection in standalone mode
   const handleCustomerChange = (customerId: number) => {
-    const customer = customerOptions.find((c) => c.status !== undefined ? c.id === customerId : c.value === customerId);
+    const customer = customerOptions.find((c: any) => (c.id || c.value) === customerId);
     if (customer) {
       form.setFieldsValue({
         receiver_name: customer.name,
@@ -250,7 +257,31 @@ const CreateDeliveryLog: React.FC = () => {
   };
 
   // Submit
-  const onFinish = (values: any) => {
+  const onFinish = (values: {
+    season_id?: number;
+    delivery_date: dayjs.Dayjs;
+    delivery_start_time: dayjs.Dayjs;
+    delivery_address: string;
+    receiver_name: string;
+    receiver_phone: string;
+    delivery_notes?: string;
+    driver_id?: number;
+    driver_name?: string;
+    vehicle_number?: string;
+    distance_km?: number;
+    fuel_cost?: number;
+    driver_cost?: number;
+    other_costs?: number;
+    total_cost?: number;
+    status: DeliveryStatus;
+    items: Array<{
+      sales_invoice_item_id?: number;
+      product_id?: number;
+      quantity: number;
+      unit?: string;
+      notes?: string;
+    }>;
+  }) => {
     const payload: CreateDeliveryLogDto = {
       invoice_id: mode === 'from_invoice' ? selectedInvoiceId! : undefined,
       season_id: mode === 'standalone' ? values.season_id : undefined,
@@ -269,7 +300,13 @@ const CreateDeliveryLog: React.FC = () => {
       other_costs: values.other_costs,
       total_cost: values.total_cost,
       status: values.status,
-      items: (values.items || []).map((item: any) => ({
+      items: (values.items || []).map((item: {
+        sales_invoice_item_id?: number;
+        product_id?: number;
+        quantity: number;
+        unit?: string;
+        notes?: string;
+      }) => ({
         sales_invoice_item_id: mode === 'from_invoice' ? item.sales_invoice_item_id : undefined,
         product_id: mode === 'standalone' ? item.product_id : undefined,
         quantity: item.quantity,
@@ -548,10 +585,10 @@ const CreateDeliveryLog: React.FC = () => {
                             placeholder="Chọn sản phẩm"
                             onChange={(value) => {
                               // Tự động điền đơn vị khi chọn sản phẩm
-                              const selectedItem = invoiceItems?.find((item: any) => item.id === value);
+                                const selectedItem = invoiceItems?.find((item: { id: number }) => item.id === value);
                               console.log('🔍 Selected item:', selectedItem);
                               if (selectedItem) {
-                                const unit = selectedItem.product?.unit || selectedItem.unit || '';
+                                const unit = (selectedItem as { product?: { unit?: string }; unit?: string }).product?.unit || (selectedItem as { product?: { unit?: string }; unit?: string }).unit || '';
                                 console.log('📦 Unit found:', unit);
                                 const items = form.getFieldValue('items') || [];
                                 items[name] = {
@@ -562,7 +599,7 @@ const CreateDeliveryLog: React.FC = () => {
                               }
                             }}
                           >
-                            {invoiceItems?.map((item: any) => (
+                            {invoiceItems?.map((item: { id: number; product?: { trade_name?: string; name?: string }; product_name?: string; quantity: number }) => (
                               <Option key={item.id} value={item.id}>
                                 {item.product?.trade_name || item.product?.name || item.product_name} (Max: {item.quantity})
                               </Option>
@@ -589,12 +626,12 @@ const CreateDeliveryLog: React.FC = () => {
                              isFetchingNextPage={isFetchingMoreProducts}
                              onChange={(value) => {
                                // Tự động điền đơn vị khi chọn sản phẩm
-                               const selectedProduct = productOptions.find((p: any) => p.id === value);
+                               const selectedProduct = productOptions.find((p: { id: number; unit?: string | { name?: string } }) => p.id === value);
                                if (selectedProduct) {
                                  const items = form.getFieldValue('items') || [];
                                  items[name] = {
                                    ...items[name],
-                                   unit: selectedProduct.unit,
+                                   unit: typeof selectedProduct.unit === 'object' ? (selectedProduct.unit as { name?: string })?.name : selectedProduct.unit,
                                  };
                                  form.setFieldsValue({ items });
                                }

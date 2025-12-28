@@ -16,7 +16,7 @@ import {
   DatePicker,
   Space,
 } from "antd"
-import { DollarOutlined, SearchOutlined } from "@ant-design/icons"
+import { DollarOutlined, SearchOutlined, GiftOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -26,25 +26,40 @@ import {
   debtStatusColors,
 } from "./form-config"
 import { SettleDebtModal } from "../payments/components/settle-debt-modal"
-import { Button, TablePaginationConfig, TableProps } from "antd"
-import { FilterValue, SorterResult } from "antd/es/table/interface"
+import CloseSeasonModal from "./components/CloseSeasonModal"
+import { Button, TableProps } from "antd"
 
 // Extend DebtNote interface để tương thích với DataTable
 interface ExtendedDebtNote extends DebtNote {
   key: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 const DebtNotesList: React.FC = () => {
   // State quản lý UI
-  const [filters, setFilters] = React.useState<Record<string, any>>({})
+  const [filters, setFilters] = React.useState<Record<string, unknown>>({})
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
 
   // State modal chốt sổ
   const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
   const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
-  const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<any>(null)
+  const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<{
+    id: number;
+    name: string;
+    phone: string;
+    code: string;
+    type: string;
+    is_guest: boolean;
+    total_purchases: number;
+    total_spent: number;
+    created_at: string;
+    updated_at: string;
+  } | null>(null)
+
+  // State modal chốt sổ cuối vụ
+  const [isCloseSeasonModalVisible, setIsCloseSeasonModalVisible] = React.useState(false)
+  const [selectedDebtNoteId, setSelectedDebtNoteId] = React.useState<number | null>(null)
 
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState('')
@@ -66,18 +81,23 @@ const DebtNotesList: React.FC = () => {
       console.log('🌾 Tự động chọn mùa vụ mới nhất:', activeSeason.name)
       setFilters(prev => ({ ...prev, season_id: activeSeason.id }))
     }
-  }, [activeSeason]) // Chỉ chạy khi activeSeason thay đổi
+  }, [activeSeason, filters.season_id]) // Thêm filters.season_id vào dependencies
 
   // Date Filter UI Helper
-  const getDateColumnSearchProps = (dataIndex: string): any => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+  const getDateColumnSearchProps = (_dataIndex: string) => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: {
+      setSelectedKeys: (keys: React.Key[]) => void;
+      selectedKeys: React.Key[];
+      confirm: (param?: { closeDropdown?: boolean }) => void;
+      clearFilters?: () => void;
+    }) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
         <DatePicker.RangePicker 
             style={{ marginBottom: 8, display: 'flex' }}
             format="DD/MM/YYYY"
             value={
                 selectedKeys && selectedKeys[0] 
-                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
+                ? [dayjs(selectedKeys[0] as string), dayjs(selectedKeys[1] as string)] 
                 : undefined
             }
             onChange={(dates) => {
@@ -126,7 +146,7 @@ const DebtNotesList: React.FC = () => {
     pagination,
     tableFilters,
     sorter,
-    extra
+    _extra
   ) => {
     setCurrentPage(pagination.current || 1)
     setPageSize(pagination.pageSize || 10)
@@ -136,7 +156,6 @@ const DebtNotesList: React.FC = () => {
     // Status filter
     if (tableFilters.status && tableFilters.status.length > 0) {
         newFilters.status = tableFilters.status[0]
-    } else {
     }
 
     // Due Date Range
@@ -162,7 +181,7 @@ const DebtNotesList: React.FC = () => {
   }
 
   // Handle Filter Change
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (key: string, value: unknown) => {
       const newFilters = { ...filters, [key]: value }
       if (!value) delete newFilters[key]
       setFilters(newFilters)
@@ -203,6 +222,17 @@ const DebtNotesList: React.FC = () => {
     setSettleInitialCustomer(null)
   }
 
+  // Handlers cho modal chốt sổ cuối vụ
+  const handleOpenCloseSeasonModal = (record: ExtendedDebtNote) => {
+    setSelectedDebtNoteId(record.id)
+    setIsCloseSeasonModalVisible(true)
+  }
+
+  const handleCloseSeasonModal = () => {
+    setIsCloseSeasonModalVisible(false)
+    setSelectedDebtNoteId(null)
+  }
+
   // Sử dụng query hooks
   const { data: debtNotesData, isLoading } = useDebtNotesQuery({
     page: currentPage,
@@ -231,7 +261,7 @@ const DebtNotesList: React.FC = () => {
   const loading = isLoading
 
   // Lấy thống kê từ API (thay vì tự tính)
-  const debtList = getDebtNoteList()
+  // const debtList = getDebtNoteList() // Không sử dụng, đã comment
   const summary = debtNotesData?.data?.summary
   
   // Sử dụng summary từ API nếu có, fallback về 0 nếu không
@@ -290,7 +320,7 @@ const DebtNotesList: React.FC = () => {
       title: "Giá trị đơn hiện tại",
       width: 150,
       sorter: true,
-      sortOrder: filters.sort_by === 'amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
+      sortOrder: filters.sort_by === 'amount' ? (filters.sort_direction === 'ASC' ? 'ascend' as const : 'descend' as const) : undefined,
       render: (value: number) => (
         <div className='text-blue-600 font-medium'>{formatCurrency(value)}</div>
       ),
@@ -301,7 +331,7 @@ const DebtNotesList: React.FC = () => {
       title: "Đã trả",
       width: 130,
       sorter: true,
-      sortOrder: filters.sort_by === 'paid_amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
+      sortOrder: filters.sort_by === 'paid_amount' ? (filters.sort_direction === 'ASC' ? 'ascend' as const : 'descend' as const) : undefined,
       render: (value: number) => (
         <div className='text-green-600 font-medium'>
           {formatCurrency(value)}
@@ -314,7 +344,7 @@ const DebtNotesList: React.FC = () => {
       title: "Còn nợ",
       width: 130,
       sorter: true,
-      sortOrder: filters.sort_by === 'remaining_amount' ? (filters.sort_direction === 'ASC' ? 'ascend' : 'descend') : null,
+      sortOrder: filters.sort_by === 'remaining_amount' ? (filters.sort_direction === 'ASC' ? 'ascend' as const : 'descend' as const) : undefined,
       render: (value: number) => (
         <div className='text-red-600 font-bold'>
           {formatCurrency(value)}
@@ -361,16 +391,28 @@ const DebtNotesList: React.FC = () => {
       title: "Hành động",
       width: 120,
       render: (record: ExtendedDebtNote) => (
-         record.remaining_amount > 0 && record.status !== 'settled' ? (
-           <Button 
-             type="primary" 
-             size="small"
-             icon={<DollarOutlined />}
-             onClick={() => handleOpenSettleModal(record)}
-           >
-             Chốt sổ
-           </Button>
-         ) : null
+        <Space size="small">
+          {record.remaining_amount > 0 && record.status !== 'settled' && (
+            <Button 
+              type="primary" 
+              size="small"
+              icon={<DollarOutlined />}
+              onClick={() => handleOpenSettleModal(record)}
+            >
+              Thanh toán
+            </Button>
+          )}
+          {record.remaining_amount > 0 && record.status !== 'settled' && (
+            <Button 
+              type="default" 
+              size="small"
+              icon={<GiftOutlined />}
+              onClick={() => handleOpenCloseSeasonModal(record)}
+            >
+              Chốt sổ cuối vụ
+            </Button>
+          )}
+        </Space>
       ),
     },
   ]
@@ -388,7 +430,7 @@ const DebtNotesList: React.FC = () => {
           value={filters.season_id}
           onChange={(val) => handleFilterChange('season_id', val)}
           onSearch={(text) => setSeasonSearchText(text)} // Gọi API khi nhập
-          options={(seasonsData?.data?.items || []).map((season: any) => ({
+          options={(seasonsData?.data?.items || []).map((season: { id: number; name: string }) => ({
             value: season.id,
             label: season.name
           }))}
@@ -474,6 +516,12 @@ const DebtNotesList: React.FC = () => {
         onCancel={handleCloseSettleModal}
         initialValues={settleInitialValues}
         initialCustomer={settleInitialCustomer}
+      />
+
+      <CloseSeasonModal
+        open={isCloseSeasonModalVisible}
+        debtNoteId={selectedDebtNoteId}
+        onClose={handleCloseSeasonModal}
       />
     </div>
   )

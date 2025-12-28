@@ -28,7 +28,7 @@ import {
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
 import { ConfirmModal, NumberInput, Field } from "@/components/common"
-import type { AreaOfEachPlotOfLand } from "@/types/rice-farming.types"
+import type { AreaOfEachPlotOfLand } from "@/models/rice-farming"
 
 // Extend AreaOfEachPlotOfLand interface để tương thích với DataTable
 interface ExtendedArea extends AreaOfEachPlotOfLand {

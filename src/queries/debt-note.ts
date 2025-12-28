@@ -1,11 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
-import { queryClient } from "@/provider/app-provider-tanstack"
-import { DebtNote, PayDebtDto, CreateDebtNoteDto } from "@/models/debt-note"
+import { DebtNote, CreateDebtNoteDto } from "@/models/debt-note"
 import { invalidateResourceQueries } from "@/utils/query-helpers"
 import { handleApiError } from "@/utils/error-handler"
-import { usePaginationQuery } from "@/hooks/use-pagination-query"
+// import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
 // ========== QUERY KEYS ==========
 export const debtNoteKeys = {
@@ -32,7 +31,7 @@ export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
     queryKey: debtNoteKeys.list(params),
     queryFn: async () => {
       // Build payload với flat params (không dùng filters array nữa)
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         page,
         limit,
       }
@@ -105,7 +104,7 @@ export const useDebtNoteQuery = (id: number) => {
 export const useCreateDebtNoteMutation = () => {
   return useMutation({
     mutationFn: async (debtNote: CreateDebtNoteDto) => {
-      const response = await api.postRaw<DebtNote>("/debt-notes", debtNote as any)
+      const response = await api.postRaw<DebtNote>("/debt-notes", debtNote as unknown as Record<string, unknown>)
       return response
     },
     onSuccess: () => {
@@ -147,6 +146,87 @@ export const useDeleteDebtNoteMutation = () => {
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi xóa phiếu nợ")
+    },
+  })
+}
+
+/**
+ * Hook xem preview thông tin tích lũy trước khi chốt sổ
+ */
+export const useRewardPreviewQuery = (debtNoteId: number) => {
+  return useQuery({
+    queryKey: [...debtNoteKeys.detail(debtNoteId), 'reward-preview'] as const,
+    queryFn: async () => {
+      const response = await api.get<{
+        customer: {
+          id: number
+          name: string
+          phone: string
+        }
+        current_season: {
+          id: number
+          name: string
+          debt_amount: number
+        }
+        accumulation_history: unknown[]
+        summary: {
+          previous_pending: number
+          current_debt: number
+          total_after_close: number
+          reward_threshold: number
+          reward_count: number
+          remaining_amount: number
+          shortage_to_next: number
+          will_receive_reward: boolean
+        }
+        previous_rewards: unknown[]
+      }>(`/debt-notes/${debtNoteId}/reward-preview`)
+      return response
+    },
+    enabled: !!debtNoteId && debtNoteId > 0,
+  })
+}
+
+/**
+ * Hook chốt sổ công nợ cuối vụ
+ * Xử lý tích lũy và tặng quà nếu đủ điều kiện
+ */
+export const useCloseSeasonDebtNoteMutation = () => {
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      data 
+    }: { 
+      id: number
+      data: {
+        gift_description?: string
+        gift_value?: number
+        notes?: string
+      }
+    }) => {
+      const response = await api.postRaw<{
+        success: boolean
+        debt_note_id: number
+        customer_name: string
+        season_name: string
+        previous_pending: number
+        current_debt: number
+        total_accumulated: number
+        reward_given: boolean
+        reward_count: number
+        reward_threshold: number
+        remaining_amount: number
+        shortage_to_next_reward: number
+        message: string
+      }>(`/debt-notes/${id}/close-season`, data)
+      return response
+    },
+    onSuccess: (response) => {
+      invalidateResourceQueries("/debt-notes")
+      toast.success(response.message || "Chốt sổ công nợ thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi chốt sổ công nợ")
     },
   })
 }

@@ -692,9 +692,6 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       discount_amount: 0,
       notes: '',
       price_type: priceType,
-      unit: typeof product.unit === 'object' && product.unit !== null 
-        ? (product.unit as any).name || '' 
-        : (product.unit || ''), // Thêm đơn vị từ sản phẩm
       average_cost_price: typeof product.average_cost_price === 'string' 
         ? (product.average_cost_price.includes('.') && product.average_cost_price.split('.').pop()?.length === 2
             ? Number(product.average_cost_price)

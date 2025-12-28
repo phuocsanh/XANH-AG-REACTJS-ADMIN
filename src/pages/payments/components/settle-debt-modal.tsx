@@ -8,6 +8,7 @@ import {
   Input,
   Card,
   Alert,
+  Spin,
 } from "antd"
 import NumberInput from '@/components/common/number-input'
 import {
@@ -200,9 +201,6 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
       amount: values.amount,
       payment_method: values.payment_method,
       notes: values.notes,
-      // Quà tặng khi quyết toán nợ
-      gift_description: values.gift_description,
-      gift_value: values.gift_value || 0,
     }
       
       await settleAndRolloverMutation.mutateAsync(submitData, {
@@ -256,7 +254,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   return (
     <>
     <Modal
-      title='Chốt sổ công nợ'
+      title='Thanh toán công nợ'
       open={open}
       onCancel={onCancel}
       footer={[
@@ -269,7 +267,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           loading={settleAndRolloverMutation.isPending}
           onClick={handleSubmit}
         >
-          Xác nhận chốt sổ
+          Xác nhận thanh toán
         </Button>,
       ]}
       width={600}
@@ -316,6 +314,17 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
 
         {/* Luôn hiển thị thông tin nợ nếu có data */}
         {(selectedCustomer || customerId) && selectedSeason && (() => {
+          // Show loading if data is being fetched
+          const isLoadingData = !customerInvoices && shouldFetchDetails;
+          
+          if (isLoadingData) {
+            return (
+              <Card className='mb-4' style={{ background: '#f6ffed', border: '1px solid #b7eb8f', textAlign: 'center', padding: '40px 0' }}>
+                <Spin size="large" tip="Đang tải thông tin công nợ..." />
+              </Card>
+            );
+          }
+
           // Group invoices theo rice_crop_id
           const invoicesByRiceCrop = new Map<number | null, {
             rice_crop_id: number | null;
@@ -467,35 +476,6 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           />
         )}
 
-        {/* Quà tặng khi quyết toán nợ */}
-        <div style={{ background: '#fff9e6', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#666' }}>
-            🎁 Quà tặng cuối vụ (tùy chọn)
-          </div>
-          
-          <Form.Item
-            label='Mô tả quà tặng'
-            name='gift_description'
-          >
-            <Input 
-              placeholder='VD: 1 bao phân DAP 50kg' 
-            />
-          </Form.Item>
-
-          <Form.Item
-            label='Giá trị quà tặng'
-            name='gift_value'
-          >
-            <NumberInput
-              className='w-full'
-              min={0}
-              placeholder='0'
-            />
-          </Form.Item>
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '-8px' }}>
-            Giá trị quà tặng quy đổi ra tiền (VD: 500,000 đ)
-          </div>
-        </div>
 
         <Form.Item label='Ghi chú' name='notes'>
           <Input.TextArea rows={3} placeholder='Nhập ghi chú (tùy chọn)' />

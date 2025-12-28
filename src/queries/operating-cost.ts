@@ -5,7 +5,7 @@ import {
   UpdateOperatingCostDto, 
   OperatingCost, 
   SearchOperatingCostDto 
-} from '../types/operating-cost.types';
+} from '../models/operating-cost';
 
 export const operatingCostKeys = {
   all: ['operating-costs'] as const,
@@ -25,7 +25,7 @@ export const useOperatingCosts = (params: SearchOperatingCostDto) => {
     queryFn: async () => {
       try {
           // Use POST search as requested, with plural endpoint
-          const res = await api.postRaw<{ data: OperatingCost[], total: number }>('/operating-costs/search', params as any);
+          const res = await api.postRaw<{ data: OperatingCost[], total: number }>('/operating-costs/search', params as unknown as Record<string, unknown>);
           return res;
       } catch (e) {
           console.error("Failed to fetch operating costs", e);
@@ -53,7 +53,7 @@ export const useCreateOperatingCost = () => {
   return useMutation({
     mutationFn: async (data: CreateOperatingCostDto) => {
       // Update to plural
-      return await api.postRaw<OperatingCost>('/operating-costs', data as any);
+      return await api.postRaw<OperatingCost>('/operating-costs', data as unknown as Record<string, unknown>);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: operatingCostKeys.lists() });
@@ -66,7 +66,7 @@ export const useUpdateOperatingCost = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: UpdateOperatingCostDto }) => {
       // Update to plural
-      return await api.patchRaw<OperatingCost>(`/operating-costs/${id}`, data as any);
+      return await api.patchRaw<OperatingCost>(`/operating-costs/${id}`, data as unknown as Record<string, unknown>);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: operatingCostKeys.lists() });

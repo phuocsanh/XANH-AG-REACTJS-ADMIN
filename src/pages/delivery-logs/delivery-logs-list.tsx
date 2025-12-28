@@ -50,18 +50,7 @@ const DeliveryLogsList: React.FC = () => {
     navigate(`/delivery-logs/${id}`, { state: { deliveryLog } });
   };
 
-  // Render status tag
-  const renderStatus = (status: DeliveryStatus) => {
-    const statusConfig = {
-      [DeliveryStatus.PENDING]: { color: 'orange', text: 'Chờ giao' },
-      [DeliveryStatus.COMPLETED]: { color: 'green', text: 'Đã giao' },
-      [DeliveryStatus.FAILED]: { color: 'red', text: 'Thất bại' },
-      [DeliveryStatus.CANCELLED]: { color: 'default', text: 'Đã hủy' },
-    };
 
-    const config = statusConfig[status] || { color: 'default', text: status };
-    return <Tag color={config.color}>{config.text}</Tag>;
-  };
 
   // Table columns
   const columns: ColumnsType<DeliveryLog> = [
@@ -83,7 +72,7 @@ const DeliveryLogsList: React.FC = () => {
       width: 150,
       render: (_: string, record: DeliveryLog) => {
         const date = new Date(record.delivery_date).toLocaleDateString('vi-VN');
-        const timeStr = (record as any).delivery_start_time || '';
+        const timeStr = (record as { delivery_start_time?: string }).delivery_start_time || '';
         // Chuyển HH:mm:ss thành HH:mm
         const time = timeStr ? timeStr.substring(0, 5) : '';
         return (
@@ -100,7 +89,7 @@ const DeliveryLogsList: React.FC = () => {
       width: 120,
       align: 'center',
       render: (_: unknown, record: DeliveryLog) => {
-        const hasInvoice = record.invoice_id || (record as any).invoice?.code || (record as any).invoice_code;
+        const hasInvoice = record.invoice_id || (record as { invoice?: { code?: string }; invoice_code?: string }).invoice?.code || (record as { invoice?: { code?: string }; invoice_code?: string }).invoice_code;
         return hasInvoice 
           ? <Tag color="blue">Từ hóa đơn</Tag>
           : <Tag color="green">Tự tạo</Tag>;
@@ -113,7 +102,7 @@ const DeliveryLogsList: React.FC = () => {
       width: 150,
       render: (_: number, record: DeliveryLog) => {
         // Hiển thị mã hóa đơn nếu có, nếu không thì hiển thị '-'
-        return (record as any).invoice?.code || (record as any).invoice_code || '-';
+        return (record as { invoice?: { code?: string }; invoice_code?: string }).invoice?.code || (record as { invoice?: { code?: string }; invoice_code?: string }).invoice_code || '-';
       },
     },
     {
@@ -166,6 +155,7 @@ const DeliveryLogsList: React.FC = () => {
           bordered={false}
         >
           <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
+          <Option value={DeliveryStatus.DELIVERING}>Đang giao</Option>
           <Option value={DeliveryStatus.COMPLETED}>Đã giao</Option>
           <Option value={DeliveryStatus.FAILED}>Thất bại</Option>
           <Option value={DeliveryStatus.CANCELLED}>Đã hủy</Option>
@@ -218,6 +208,7 @@ const DeliveryLogsList: React.FC = () => {
               onChange={setStatusFilter}
             >
               <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
+              <Option value={DeliveryStatus.DELIVERING}>Đang giao</Option>
               <Option value={DeliveryStatus.COMPLETED}>Đã giao</Option>
               <Option value={DeliveryStatus.FAILED}>Thất bại</Option>
               <Option value={DeliveryStatus.CANCELLED}>Đã hủy</Option>

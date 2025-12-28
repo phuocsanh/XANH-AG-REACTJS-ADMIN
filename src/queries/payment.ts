@@ -186,7 +186,9 @@ export const useSettleAndRolloverMutation = () => {
       invalidateResourceQueries("/customers")
       // Invalidate customer search queries (key starts with "customers", not "/customers")
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      toast.success("Chốt sổ công nợ thành công!")
+      // Invalidate debt-notes queries specifically
+      queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
+      toast.success("Thanh toán công nợ thành công!")
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi chốt sổ")

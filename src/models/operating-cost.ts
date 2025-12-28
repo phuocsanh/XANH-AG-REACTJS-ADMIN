@@ -1,4 +1,4 @@
-import { OperatingCostCategory } from './operating-cost-category.types';
+import { OperatingCostCategory } from './operating-cost-category';
 
 export interface CreateOperatingCostDto {
   name: string;
