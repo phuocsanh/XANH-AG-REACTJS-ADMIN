@@ -431,7 +431,7 @@ const PaymentsList: React.FC = () => {
   ], [filters, paymentsData]) // Dependencies for useMemo
 
   return (
-    <div className='p-6'>
+    <div className='p-2 md:p-6'>
       <div className='flex justify-between items-center mb-6'>
         <h1 className='text-2xl font-bold'>Quản lý Thanh toán</h1>
         <Space>
@@ -444,13 +444,7 @@ const PaymentsList: React.FC = () => {
                 Xóa bộ lọc
             </Button>
           )}
-          <Button
-            type='primary'
-            icon={<DollarOutlined />}
-            onClick={handleOpenSettleModal}
-          >
-            Chốt sổ công nợ
-          </Button>
+
         </Space>
       </div>
 
@@ -495,7 +489,7 @@ const PaymentsList: React.FC = () => {
       >
         {viewingPayment && (
           <div className='mt-4'>
-            <Descriptions bordered column={2}>
+            <Descriptions bordered column={{ xs: 1, sm: 2 }}>
               <Descriptions.Item label='Mã PT'>
                 <span className='font-bold'>{viewingPayment.code}</span>
               </Descriptions.Item>
@@ -528,7 +522,7 @@ const PaymentsList: React.FC = () => {
                 dataSource={allocations}
                 renderItem={(allocation: PaymentAllocation) => (
                   <List.Item>
-                    <div className='flex justify-between w-full'>
+                    <div className='flex flex-col sm:flex-row sm:justify-between w-full gap-1'>
                       <span>
                         {allocation.allocation_type === "invoice"
                           ? `Hóa đơn: ${allocation.invoice?.code || 'N/A'}`

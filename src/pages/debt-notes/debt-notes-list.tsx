@@ -418,7 +418,7 @@ const DebtNotesList: React.FC = () => {
   ]
 
   return (
-    <div className='p-6'>
+    <div className='p-2 md:p-6'>
       <div className='flex justify-between items-center mb-4'>
         <h1 className='text-2xl font-bold'>Quản lý Công nợ</h1>
       </div>

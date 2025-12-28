@@ -43,6 +43,8 @@ interface DeliveryInfoSectionProps {
   customerPhone?: string;
   /** Callback khi dữ liệu delivery thay đổi */
   onChange: (deliveryData: CreateDeliveryLogDto | null) => void;
+  /** Callback khi trạng thái enable/disable thay đổi */
+  onEnableChange?: (enabled: boolean) => void;
   /** Giá trị khởi tạo (khi edit) */
   initialValue?: CreateDeliveryLogDto;
 }
@@ -57,6 +59,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
   customerName,
   customerPhone,
   onChange,
+  onEnableChange,
   initialValue,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -119,6 +122,11 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
       setReceiverPhone(customerPhone);
     }
   }, [customerAddress, customerName, customerPhone]);
+
+  // Notify parent khi enableDelivery thay đổi
+  useEffect(() => {
+    onEnableChange?.(enableDelivery);
+  }, [enableDelivery, onEnableChange]);
 
   // Emit data khi có thay đổi
   useEffect(() => {
@@ -229,7 +237,13 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                   value={deliveryDate}
                   onChange={setDeliveryDate}
                   style={{ width: '100%' }}
+                  status={enableDelivery && !deliveryDate ? 'error' : undefined}
                 />
+                {enableDelivery && !deliveryDate && (
+                  <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                    * Vui lòng chọn ngày giao hàng
+                  </Typography>
+                )}
               </Col>
               <Col span={8}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -241,7 +255,13 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                   format="HH:mm"
                   placeholder="Chọn giờ"
                   style={{ width: '100%' }}
+                  status={enableDelivery && !deliveryTime ? 'error' : undefined}
                 />
+                {enableDelivery && !deliveryTime && (
+                  <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                    * Vui lòng chọn giờ giao hàng
+                  </Typography>
+                )}
               </Col>
               <Col span={8}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -269,7 +289,13 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                   value={receiverName}
                   onChange={(e) => setReceiverName(e.target.value)}
                   placeholder="Nhập tên người nhận"
+                  status={enableDelivery && !receiverName ? 'error' : undefined}
                 />
+                {enableDelivery && !receiverName && (
+                  <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                    * Vui lòng nhập tên người nhận
+                  </Typography>
+                )}
               </Col>
               <Col span={12}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -279,7 +305,13 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                   value={receiverPhone}
                   onChange={(e) => setReceiverPhone(e.target.value)}
                   placeholder="Nhập SĐT"
+                  status={enableDelivery && !receiverPhone ? 'error' : undefined}
                 />
+                {enableDelivery && !receiverPhone && (
+                  <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                    * Vui lòng nhập SĐT người nhận
+                  </Typography>
+                )}
               </Col>
             </Row>
 
@@ -292,7 +324,13 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
                 placeholder="Nhập địa chỉ giao hàng"
+                status={enableDelivery && !deliveryAddress ? 'error' : undefined}
               />
+              {enableDelivery && !deliveryAddress && (
+                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                  * Vui lòng nhập địa chỉ giao hàng
+                </Typography>
+              )}
             </Box>
 
             <AntDivider orientation="left">Thông tin tài xế & Chi phí</AntDivider>

@@ -537,51 +537,51 @@ const InventoryReceiptsList: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div className="p-2 md:p-6">
       {/* Header với thống kê */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+      <Row gutter={[8, 16]} style={{ marginBottom: "24px" }}>
         <Col span={24}>
-          <Title level={2}>Quản lý nhập hàng</Title>
+          <Title level={4} className="md:text-2xl">Quản lý nhập hàng</Title>
         </Col>
 
         {/* Thống kê tổng quan */}
         {statsData && (
           <Col span={24}>
-            <Row gutter={[8, 8]}>
+            <Row gutter={[4, 4]}>
               {/* Tổng phiếu nhập */}
-              <Col xs={6} sm={12} md={6}>
-                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a', marginBottom: '2px' }}>
+              <Col xs={6} sm={6} md={6}>
+                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
                     {statsData.totalReceipts}
                   </div>
-                  <Text className="text-[10px] md:text-sm" type="secondary">Tổng</Text>
+                  <Text className="text-[10px] block" type="secondary">Tổng</Text>
                 </Card>
               </Col>
               
               {/* Đã duyệt */}
-              <Col xs={6} sm={12} md={6}>
-                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a', marginBottom: '2px' }}>
+              <Col xs={6} sm={6} md={6}>
+                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
                     {statsData.approvedReceipts}
                   </div>
-                  <Text className="text-[10px] md:text-sm" type="secondary">Duyệt</Text>
+                  <Text className="text-[10px] block" type="secondary">Duyệt</Text>
                 </Card>
               </Col>
               
               {/* Nháp */}
-              <Col xs={8} sm={8} md={6}>
-                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#8c8c8c', marginBottom: '2px' }}>
+              <Col xs={6} sm={6} md={6}>
+                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#8c8c8c' }}>
                     {statsData.draftReceipts}
                   </div>
-                  <Text className="text-[10px] md:text-sm" type="secondary">Nháp</Text>
+                  <Text className="text-[10px] block" type="secondary">Nháp</Text>
                 </Card>
               </Col>
               
               {/* Tổng giá trị */}
-              <Col xs={6} sm={12} md={6}>
-                <Card size="small" bodyStyle={{ padding: '6px 4px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#52c41a', marginBottom: '2px' }}>
+              <Col xs={6} sm={6} md={6}>
+                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
                     {new Intl.NumberFormat("vi-VN", {
                       style: "currency",
                       currency: "VND",
@@ -589,11 +589,9 @@ const InventoryReceiptsList: React.FC = () => {
                       maximumFractionDigits: 0
                     }).format(parseFloat(statsData.totalValue || "0"))}
                   </div>
-                  <Text className="text-[10px] md:text-sm" type="secondary">Giá trị</Text>
+                  <Text className="text-[10px] block" type="secondary">Giá trị</Text>
                 </Card>
               </Col>
-              
-
             </Row>
           </Col>
         )}

@@ -182,9 +182,8 @@ export const useLoginMutation = () => {
       } as UserResponse)
       setIsLogin(true)
 
-      // Lưu token vào localStorage để đảm bảo persist
-      localStorage.setItem("access_token", data.access_token)
-      localStorage.setItem("refresh_token", data.refresh_token)
+      // Token đã được set vào store qua setAccessToken/setRefreshToken, 
+      // Middleware Persist sẽ tự động lưu xuống localStorage dưới key 'app-storage'
 
       // Redirect đến trang dashboard
       window.location.href = "/"
@@ -383,8 +382,7 @@ export const useChangePasswordMutation = () => {
           setUserInfo(null)
           setAccessToken("")
           setRefreshToken("")
-          localStorage.removeItem("access_token")
-          localStorage.removeItem("refresh_token")
+          // Không cần xóa thủ công localStorage vì Store đã được reset và tự động cập nhật storage
           window.location.href = "/sign-in"
         }, 1500)
       } else {

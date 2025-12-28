@@ -33,16 +33,17 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 // Hàm refresh token không sử dụng hook
 const refreshToken = async (): Promise<string> => {
-  // Sửa lại key để phù hợp với auth.ts
-  const refreshToken = localStorage.getItem("refresh_token")
-  if (!refreshToken) {
+  // Chỉ lấy token từ store, Zustand Persist đã lo việc persist xuống localStorage
+  const rToken = useAppStore.getState().refreshToken
+  
+  if (!rToken) {
     throw new Error("Không tìm thấy refresh token")
   }
 
   try {
     // Gọi API refresh token trực tiếp bằng axios
     const response = await axios.post(`${BASE_URL}/auth/refresh`, {
-      refresh_token: refreshToken,
+      refresh_token: rToken,
     })
 
 
@@ -53,16 +54,11 @@ const refreshToken = async (): Promise<string> => {
     const { access_token, refresh_token: newRefreshToken } = responseData
 
     if (access_token && newRefreshToken) {
-      // Cập nhật token mới vào store và localStorage
+      // Cập nhật token mới vào store, middleware Persist sẽ tự động lưu xuống localStorage
       useAppStore.setState({
         accessToken: access_token,
         refreshToken: newRefreshToken,
       })
-
-      // Sửa lại key để phù hợp với auth.ts
-      localStorage.setItem("refresh_token", newRefreshToken)
-      localStorage.setItem("access_token", access_token)
-      
 
       return access_token
     } else {
@@ -72,9 +68,8 @@ const refreshToken = async (): Promise<string> => {
   } catch (error) {
     console.error("❌ Lỗi refresh token:", error)
     
-    // Xóa token và chuyển hướng về trang đăng nhập
-    localStorage.removeItem("refresh_token")
-    localStorage.removeItem("access_token")
+    // Xóa token trong store bằng cách reset state
+    useAppStore.getState().logout()
     useAppStore.setState({
       accessToken: undefined,
       refreshToken: undefined,
@@ -233,9 +228,8 @@ api.instance.interceptors.request.use(
       )
     }
 
-    // Sửa lại key để phù hợp với auth.ts
-    const token =
-      useAppStore.getState().accessToken || localStorage.getItem("access_token")
+    // Luôn lấy token từ store
+    const token = useAppStore.getState().accessToken
 
 
     if (token) {
@@ -362,7 +356,7 @@ api.instance.interceptors.response.use(
           failedQueue.push({ resolve, reject })
         })
           .then((token: unknown) => {
-            originalRequest.headers["Authorization"] = "Bearer " + token
+            originalRequest.headers.set('Authorization', `Bearer ${token}`)
             return api.instance(originalRequest)
           })
           .catch((err: unknown) => {
@@ -378,7 +372,7 @@ api.instance.interceptors.response.use(
         const newAccessToken = await refreshToken()
 
         // Cập nhật header cho request gốc
-        originalRequest.headers["Authorization"] = "Bearer " + newAccessToken
+        originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`)
 
         // Xử lý các request trong queue
         processQueue(null, newAccessToken)

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Tag, Button, Space, Popconfirm, Select } from 'antd';
+import { Card, Table, Tag, Button, Space, Popconfirm, Select, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import {
 } from '../../queries/delivery-logs';
 import { DeliveryLog, DeliveryStatus } from '../../models/delivery-log.model';
 import { formatCurrency } from '../../utils/format';
+import FilterHeader from '@/components/common/filter-header';
 
 const { Option } = Select;
 
@@ -21,9 +22,18 @@ const DeliveryLogsList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [statusFilter, setStatusFilter] = useState<DeliveryStatus | undefined>();
+  const [filters, setFilters] = useState<Record<string, any>>({});
+
+  // Handlers
+  const handleFilterChange = (key: string, value: any) => {
+    const newFilters = { ...filters, [key]: value };
+    if (!value) delete newFilters[key];
+    setFilters(newFilters);
+    setPage(1);
+  };
 
   // Queries
-  const { data, isLoading } = useDeliveryLogs({ page, limit, status: statusFilter });
+  const { data, isLoading } = useDeliveryLogs({ page, limit, status: statusFilter, ...filters });
   const deleteMutation = useDeleteDeliveryLog();
   const updateStatusMutation = useUpdateDeliveryStatus();
 
@@ -109,14 +119,29 @@ const DeliveryLogsList: React.FC = () => {
       title: 'Địa chỉ',
       dataIndex: 'delivery_address',
       key: 'delivery_address',
-      ellipsis: true,
-      render: (address: string) => address || '-',
+      width: 250,
+      ellipsis: {
+        showTitle: false,
+      },
+      render: (address: string) => (
+        <Tooltip title={address} placement="topLeft">
+          {address || '-'}
+        </Tooltip>
+      ),
     },
     {
-      title: 'Người nhận',
+      title: (
+        <FilterHeader 
+          title="Người nhận" 
+          dataIndex="receiver_name" 
+          value={filters.receiver_name} 
+          onChange={(val) => handleFilterChange('receiver_name', val)}
+          inputType="text"
+        />
+      ),
       dataIndex: 'receiver_name',
       key: 'receiver_name',
-      width: 150,
+      width: 180,
       render: (name: string) => name || '-',
     },
     {
@@ -127,10 +152,18 @@ const DeliveryLogsList: React.FC = () => {
       render: (phone: string) => phone || '-',
     },
     {
-      title: 'Tài xế',
+      title: (
+        <FilterHeader 
+          title="Tài xế" 
+          dataIndex="driver_name" 
+          value={filters.driver_name} 
+          onChange={(val) => handleFilterChange('driver_name', val)}
+          inputType="text"
+        />
+      ),
       dataIndex: 'driver_name',
       key: 'driver_name',
-      width: 120,
+      width: 150,
       render: (name: string) => name || '-',
     },
     {
@@ -145,11 +178,11 @@ const DeliveryLogsList: React.FC = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 150,
+      width: 160,
       render: (status: DeliveryStatus, record: DeliveryLog) => (
         <Select
           value={status}
-          style={{ width: '100%' }}
+          style={{ width: '100%', minWidth: '130px' }}
           onChange={(value) => handleStatusChange(record.id!, value)}
           size="small"
           bordered={false}
@@ -165,7 +198,7 @@ const DeliveryLogsList: React.FC = () => {
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 120,
+      width: 140,
       render: (_, record: DeliveryLog) => (
         <Space size="small">
           <Button
@@ -195,30 +228,35 @@ const DeliveryLogsList: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Card
-        title="Danh sách Phiếu Giao Hàng"
-        extra={
-          <Space>
-            <Select
-              placeholder="Lọc theo trạng thái"
-              style={{ width: 200 }}
-              allowClear
-              value={statusFilter}
-              onChange={setStatusFilter}
-            >
-              <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
-              <Option value={DeliveryStatus.DELIVERING}>Đang giao</Option>
-              <Option value={DeliveryStatus.COMPLETED}>Đã giao</Option>
-              <Option value={DeliveryStatus.FAILED}>Thất bại</Option>
-              <Option value={DeliveryStatus.CANCELLED}>Đã hủy</Option>
-            </Select>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              Tạo phiếu giao hàng
-            </Button>
-          </Space>
-        }
-      >
+    <div className='p-2 md:p-6' style={{ maxWidth: '100vw' }}>
+      <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4'>
+        <h1 className='text-xl md:text-2xl font-bold m-0'>Danh sách Phiếu Giao Hàng</h1>
+        <div className='flex flex-col sm:flex-row gap-2 w-full md:w-auto'>
+          <Select
+            placeholder="Lọc theo trạng thái"
+            className='w-full sm:w-[200px]'
+            allowClear
+            value={statusFilter}
+            onChange={setStatusFilter}
+          >
+            <Option value={DeliveryStatus.PENDING}>Chờ giao</Option>
+            <Option value={DeliveryStatus.DELIVERING}>Đang giao</Option>
+            <Option value={DeliveryStatus.COMPLETED}>Đã giao</Option>
+            <Option value={DeliveryStatus.FAILED}>Thất bại</Option>
+            <Option value={DeliveryStatus.CANCELLED}>Đã hủy</Option>
+          </Select>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleCreate}
+            className='w-full sm:w-auto'
+          >
+            Tạo phiếu giao hàng
+          </Button>
+        </div>
+      </div>
+
+      <Card>
         <Table
           columns={columns}
           dataSource={data?.data || []}

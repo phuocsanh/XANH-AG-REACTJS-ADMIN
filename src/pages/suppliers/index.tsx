@@ -279,7 +279,7 @@ export const Suppliers = () => {
   // Hiển thị lỗi
   if (error) {
     return (
-      <Box p={3} className='w-full max-w-full overflow-x-hidden'>
+      <Box p={{ xs: 1, sm: 3 }} className='w-full max-w-full overflow-x-hidden'>
         <Typography color='error'>
           Có lỗi xảy ra khi tải dữ liệu nhà cung cấp
         </Typography>
@@ -444,30 +444,33 @@ export const Suppliers = () => {
   ]
 
   return (
-    <Box p={3} className='w-full max-w-full overflow-x-hidden'>
+    <Box p={{ xs: 1, sm: 3 }} className='w-full max-w-full overflow-x-hidden'>
       {/* Header */}
       <Box
         display='flex'
         justifyContent='space-between'
         alignItems='center'
-        mb={3}
+        mb={{ xs: 2, sm: 3 }}
       >
-        <Typography variant='h4' component='h1'>
+        <Typography variant='h5' component='h1' sx={{ fontSize: { xs: '1.2rem', sm: '2.125rem' }, fontWeight: 600 }}>
           Quản lý nhà cung cấp
         </Typography>
         <Button
           variant='contained'
+          size='small'
           startIcon={<Add />}
           onClick={handleAddSupplier}
           sx={{ 
             borderRadius: 2,
+            px: { xs: 1.5, sm: 2 },
             background: 'linear-gradient(180deg, #059669 0%, #047857 100%)',
             '&:hover': {
               background: 'linear-gradient(180deg, #047857 0%, #059669 100%)',
             }
           }}
         >
-          Thêm nhà cung cấp
+          <span className="hidden sm:inline">Thêm nhà cung cấp</span>
+          <span className="sm:hidden">Thêm mới</span>
         </Button>
       </Box>
 
@@ -478,7 +481,7 @@ export const Suppliers = () => {
           columns={tableColumns}
           data={getSupplierList()}
           loading={isLoading}
-          showSearch={true}
+          showSearch={false}
           searchPlaceholder='Tìm kiếm nhà cung cấp...'
           searchableColumns={["name", "code", "phone", "email"]}
           onEdit={handleEditSupplier}

@@ -428,7 +428,7 @@ const CustomersList: React.FC = () => {
       label: "Thông tin chung",
       children: viewingCustomer && (
         <div className='mt-4'>
-          <Descriptions bordered column={2}>
+          <Descriptions bordered column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label='Mã khách hàng' span={1}>
               {viewingCustomer.code}
             </Descriptions.Item>
@@ -493,7 +493,7 @@ const CustomersList: React.FC = () => {
             <Space direction='vertical' className='w-full' size='middle'>
               {customerInvoices.map((invoice: any) => (
                 <Card key={invoice.id} size='small'>
-                  <div className='grid grid-cols-4 gap-4'>
+                  <div className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
                     <div>
                       <div className='text-gray-500 text-sm'>Mã HĐ</div>
                       <div className='font-medium'>{invoice.code}</div>
@@ -539,7 +539,7 @@ const CustomersList: React.FC = () => {
             <Space direction='vertical' className='w-full' size='middle'>
               {customerDebts.map((debt: any) => (
                 <Card key={debt.id} size='small'>
-                  <div className='grid grid-cols-4 gap-4'>
+                  <div className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
                     <div>
                       <div className='text-gray-500 text-sm'>Mã phiếu nợ</div>
                       <div className='font-medium'>{debt.code}</div>
@@ -587,7 +587,7 @@ const CustomersList: React.FC = () => {
   ]
 
   return (
-    <div className='p-6'>
+    <div className='p-2 md:p-6'>
       <div className='flex justify-between items-center mb-6'>
         <h1 className='text-2xl font-bold'>Quản lý Khách hàng</h1>
         <Button
@@ -641,7 +641,7 @@ const CustomersList: React.FC = () => {
         width={700}
       >
         <Form form={form} layout='vertical' className='mt-4'>
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0'>
 
 
             <Form.Item

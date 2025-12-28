@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, DatePicker, Button, message } from 'antd';
+import { Modal, Form, Input, Select, DatePicker, Button, message } from 'antd';
 import { CreateOperatingCostDto, OperatingCost } from '@/models/operating-cost';
 import { useCreateOperatingCost, useUpdateOperatingCost } from '@/queries/operating-cost';
 import { useSeasonsQuery } from '@/queries/season';
 import { useRiceCrops } from '@/queries/rice-crop';
 import { useOperatingCostCategories } from '@/queries/operating-cost-category';
+import { useCustomersQuery } from '@/queries/customer';
+import NumberInput from '@/components/common/number-input';
 import dayjs from 'dayjs';
 
 interface CreateOperatingCostModalProps {
@@ -24,19 +26,25 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
   const createMutation = useCreateOperatingCost();
   const updateMutation = useUpdateOperatingCost();
 
-  // Load Seasons, Rice Crops, and Categories for selection
+  // Load Seasons, Customers, and Categories for selection
   const { data: seasons } = useSeasonsQuery({ limit: 100 });
   const { data: categories } = useOperatingCostCategories({ limit: 100 });
+  const { data: customers } = useCustomersQuery({ limit: 1000 });
   
   // Debug: Log categories structure
   console.log('Categories data:', categories);
   
-  // Watch season_id to filter rice crops
+  // Watch season_id and customer_id to filter rice crops
   const selectedSeasonId = Form.useWatch('season_id', form);
+  const selectedCustomerId = Form.useWatch('customer_id', form);
   
   const { data: riceCrops, isFetching: isFetchingRiceCrops } = useRiceCrops(
-      { limit: 100, season_id: selectedSeasonId }, 
-      { enabled: !!selectedSeasonId }
+      { 
+        limit: 100, 
+        season_id: selectedSeasonId,
+        customer_id: selectedCustomerId,
+      }, 
+      { enabled: !!selectedSeasonId && !!selectedCustomerId }
   );
 
   useEffect(() => {
@@ -105,17 +113,16 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
           <Input placeholder="VD: Mua phân bón đợt 1" />
         </Form.Item>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Form.Item
             name="value"
             label="Số tiền"
             rules={[{ required: true, message: 'Vui lòng nhập số tiền' }]}
           >
-            <InputNumber
-              style={{ width: '100%' }}
-              formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+            <NumberInput
               placeholder="0"
+              decimalScale={0}
+              min={0}
             />
           </Form.Item>
 
@@ -132,13 +139,13 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
           </Form.Item>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Form.Item
                 name="season_id"
-                label="Thuộc Mùa vụ (Tùy chọn)"
-                tooltip="Chọn nếu chi phí này tính cho cả mùa"
+                label="Mùa vụ"
+                rules={[{ required: true, message: 'Vui lòng chọn mùa vụ' }]}
             >
-                <Select allowClear placeholder="Chọn mùa vụ" showSearch filterOption={(input, option: any) =>
+                <Select placeholder="Chọn mùa vụ" showSearch filterOption={(input, option: any) =>
                   option?.children?.toLowerCase().includes(input.toLowerCase())
                 }>
                     {seasons?.data?.items?.map((s: any) => (
@@ -148,26 +155,49 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
             </Form.Item>
 
             <Form.Item
-                name="rice_crop_id"
-                label="Thuộc ruộng lúa (Tùy chọn)"
-                tooltip="Chọn nếu chi phí này chỉ dành riêng cho 1 ruộng cụ thể"
+                name="customer_id"
+                label="Khách hàng (Tùy chọn)"
+                tooltip="Chọn khách hàng để lọc ruộng lúa"
             >
                 <Select 
                     allowClear 
-                    placeholder={selectedSeasonId ? "Chọn Ruộng lúa" : "Vui lòng chọn mùa vụ trước"} 
+                    placeholder="Chọn khách hàng" 
                     showSearch 
                     filterOption={(input, option: any) =>
                         option?.children?.toLowerCase().includes(input.toLowerCase())
                     }
-                    disabled={!selectedSeasonId}
-                    loading={isFetchingRiceCrops}
                 >
-                    {riceCrops?.data?.map((r: any) => (
-                        <Select.Option key={r.id} value={r.id}>{r.field_name} - {r.customer?.name}</Select.Option>
+                    {customers?.data?.items?.map((c: any) => (
+                        <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
                     ))}
                 </Select>
             </Form.Item>
         </div>
+
+        <Form.Item
+            name="rice_crop_id"
+            label="Thuộc ruộng lúa (Tùy chọn)"
+            tooltip="Chọn nếu chi phí này chỉ dành riêng cho 1 ruộng cụ thể"
+        >
+            <Select 
+                allowClear 
+                placeholder={
+                    !selectedSeasonId ? "Vui lòng chọn mùa vụ trước" :
+                    !selectedCustomerId ? "Vui lòng chọn khách hàng trước" :
+                    "Chọn Ruộng lúa"
+                } 
+                showSearch 
+                filterOption={(input, option: any) =>
+                    option?.children?.toLowerCase().includes(input.toLowerCase())
+                }
+                disabled={!selectedSeasonId || !selectedCustomerId}
+                loading={isFetchingRiceCrops}
+            >
+                {riceCrops?.data?.map((r: any) => (
+                    <Select.Option key={r.id} value={r.id}>{r.field_name} - {r.customer?.name}</Select.Option>
+                ))}
+            </Select>
+        </Form.Item>
 
         <Form.Item
           name="expense_date"

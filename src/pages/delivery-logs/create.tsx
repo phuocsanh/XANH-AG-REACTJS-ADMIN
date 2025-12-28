@@ -341,7 +341,7 @@ const CreateDeliveryLog: React.FC = () => {
   const isPageLoading = isLoadingEdit || (isEditMode && !editData);
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div className='p-4 md:p-6'>
       <Card title={isEditMode ? "Chỉnh Sửa Phiếu Giao Hàng" : "Tạo Phiếu Giao Hàng"}>
         {isPageLoading ? (
           <div style={{ textAlign: 'center', padding: '50px 0' }}>

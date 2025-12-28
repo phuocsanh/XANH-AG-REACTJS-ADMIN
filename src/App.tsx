@@ -73,6 +73,7 @@ import ReturnsPage from "./pages/inventory/returns"
 import AdjustmentsPage from "./pages/inventory/adjustments"
 import OperatingCostCategoriesPage from './pages/operating-costs/categories'
 import OperatingCostsPage from "./pages/operating-costs"
+import GiftCostsPage from "./pages/operating-costs/gift-costs"
 import CostItemCategoriesPage from './pages/cost-item-categories'
 import DosageCalculator from "./pages/calculator/dosage-calculator"
 // Thêm import cho trang dự báo thời tiết
@@ -661,6 +662,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="OPERATING_COST_VIEW">
                           <OperatingCostsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                     <Route
+                      path='/operating-costs/gift-costs'
+                      element={
+                        <ProtectedRoute requiredPermission="OPERATING_COST_VIEW">
+                          <GiftCostsPage />
                         </ProtectedRoute>
                       }
                     />

@@ -240,7 +240,7 @@ const SeasonProfitReportPage: React.FC = () => {
   const isProfitable = reportData ? reportData.summary.net_profit > 0 : false;
 
   return (
-    <div className="p-6">
+    <div className="p-2 md:p-6">
       <div className="mb-6">
         <Title level={2}>Báo Cáo Lợi Nhuận Mùa Vụ</Title>
         <Text type="secondary">

@@ -94,9 +94,10 @@ export interface ProfitSummary {
   cost_of_goods_sold: number;
   gross_profit: number;
   gross_margin: number;
-  operating_costs: number;  // Deprecated: dùng farm_service_costs thay thế
-  farm_service_costs: number;  // Chi phí dịch vụ/quà tặng
-  net_profit: number;      // Lợi nhuận ròng (sau khi trừ chi phí vận hành)
+  delivery_costs: number;     // Tổng chi phí giao hàng
+  farm_service_costs: number;  // Chi phí dịch vụ/quà tặng cho nông dân
+  operating_costs: number;     // Chi phí vận hành cửa hàng (điện, nước, mặt bằng...)
+  net_profit: number;          // Lợi nhuận ròng
   net_margin: number;
 }
 
@@ -112,6 +113,7 @@ export interface SeasonStoreProfit {
   };
   summary: ProfitSummary;
   farm_service_costs_breakdown: OperatingCostBreakdown[];  // Chi tiết chi phí dịch vụ
+  operating_costs_breakdown: OperatingCostBreakdown[];      // Chi tiết chi phí vận hành
   delivery_stats?: DeliveryStats;
   top_customers: TopCustomerProfit[];
   top_products: TopProductProfit[];
@@ -122,10 +124,13 @@ export interface SeasonStoreProfit {
 export interface CustomerSummaryStats {
   total_invoices: number;
   total_revenue: number;
-  total_cost?: number;
+  total_cost: number;
   total_profit: number;
   avg_margin: number;
-  delivery_cost?: number;
+  delivery_costs: number;
+  farm_service_costs: number;
+  operating_costs: number;
+  net_profit: number;
   season_name?: string;
 }
 
@@ -194,12 +199,13 @@ export interface RiceCropProfit {
     
     // Chi phí dịch vụ/quà tặng của cửa hàng dành cho ruộng lúa
     farm_service_costs: number;
-    delivery_cost?: number;  // Chi phí giao hàng
+    operating_costs: number; // Chi phí vận hành gán cho ruộng
+    delivery_costs?: number; // Chi phí giao hàng cho ruộng (đã đổi tên)
+    delivery_cost?: number;  // Legacy (bỏ qua nếu không dùng)
     net_profit: number;
     net_margin: number;
     
     gift_value_from_invoices: number;
-    total_profit: number;
     avg_margin: number;
   };
   
@@ -210,6 +216,14 @@ export interface RiceCropProfit {
       date?: string;
       notes?: string;
       source?: string; // 'manual' hoặc 'gift_from_invoice'
+  }[];
+
+  // Chi tiết chi phí vận hành
+  operating_costs_breakdown?: {
+      name: string;
+      amount: number;
+      date?: string;
+      notes?: string;
   }[];
 
   invoices: CustomerInvoice[];

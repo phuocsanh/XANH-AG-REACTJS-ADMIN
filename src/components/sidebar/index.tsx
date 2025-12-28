@@ -175,6 +175,16 @@ const Sidebar: React.FC = () => {
       setActiveTab(26)
       setIsToggleSubmenu(false)
     }
+    // Chi phí vận hành
+    else if (path.startsWith('/operating-costs')) {
+      setActiveTab(30)
+      setIsToggleSubmenu(true)
+    }
+    // Chi phí dịch vụ
+    else if (path.startsWith('/farm-service-costs')) {
+      setActiveTab(25)
+      setIsToggleSubmenu(true)
+    }
   }, [location.pathname])
 
   const isOpenSubmenu = (index: number): void => {

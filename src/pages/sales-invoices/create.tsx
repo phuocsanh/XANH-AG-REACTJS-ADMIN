@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import dayjs from 'dayjs';
 import {
   Box,
   Button,
@@ -42,11 +43,13 @@ import {
 import { Select as AntSelect } from 'antd';
 import {
   PrinterOutlined,
+  MenuOutlined,
   EnvironmentOutlined,
   AimOutlined,
   SyncOutlined,
   ReloadOutlined,
   ThunderboltOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -216,6 +219,7 @@ const CreateSalesInvoice = () => {
   });
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPrintModalVisible, setIsPrintModalVisible] = useState(false);
+  const [isPrintOptionsOpen, setIsPrintOptionsOpen] = useState(false); // Mobile drawer toggle
   const [paperSize, setPaperSize] = useState<'A4' | 'K80'>('A4'); // Khổ giấy: A4 hoặc K80
 
   const [printSections, setPrintSections] = useState({
@@ -238,6 +242,8 @@ const CreateSalesInvoice = () => {
 
   // Delivery Log State
   const [deliveryData, setDeliveryData] = useState<CreateDeliveryLogDto | null>(null);
+  const [isDeliveryEnabled, setIsDeliveryEnabled] = useState(false); // Track xem có bật tạo phiếu giao không
+  const [shouldPrintDelivery, setShouldPrintDelivery] = useState(false); // Track xem có in phiếu giao không
 
   const { mixPesticides, sortPesticides } = useAiService();
 
@@ -246,6 +252,7 @@ const CreateSalesInvoice = () => {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<SalesInvoiceFormData>({
     resolver: zodResolver(salesInvoiceSchema),
@@ -723,6 +730,40 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     
     const remainingAmount = data.final_amount - data.partial_payment_amount;
     
+    // ✅ Validation cho delivery_log nếu NGƯỜI DÙNG ĐÃ BẬT tính năng tạo phiếu giao
+    if (isDeliveryEnabled) {
+      // Nếu bật nhưng không có data hoặc thiếu thông tin → BẮT BUỘC phải điền đủ
+      if (!deliveryData) {
+        message.error('Vui lòng điền đầy đủ thông tin phiếu giao hàng');
+        return;
+      }
+      // Kiểm tra các trường bắt buộc
+      if (!deliveryData.delivery_date) {
+        message.error('Vui lòng chọn ngày giao hàng');
+        return;
+      }
+      if (!deliveryData.delivery_start_time) {
+        message.error('Vui lòng chọn giờ giao hàng');
+        return;
+      }
+      if (!deliveryData.receiver_name) {
+        message.error('Vui lòng nhập tên người nhận');
+        return;
+      }
+      if (!deliveryData.receiver_phone) {
+        message.error('Vui lòng nhập SĐT người nhận');
+        return;
+      }
+      if (!deliveryData.delivery_address) {
+        message.error('Vui lòng nhập địa chỉ giao hàng');
+        return;
+      }
+      if (!deliveryData.items || deliveryData.items.length === 0) {
+        message.error('Vui lòng chọn ít nhất 1 sản phẩm để giao');
+        return;
+      }
+    }
+    
     // Chuẩn bị delivery_log nếu có
     let deliveryLogData = deliveryData;
     if (deliveryData && deliveryData.items) {
@@ -761,8 +802,17 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     } else {
       // Create new invoice
       createMutation.mutate(submitData as any, {
-        onSuccess: () => {
+        onSuccess: (response) => {
           message.success('Tạo hóa đơn thành công!');
+          
+          // Nếu người dùng chọn in phiếu giao hàng
+          const responseData = response as any;
+          if (shouldPrintDelivery && responseData?.delivery_logs && responseData.delivery_logs.length > 0) {
+            const deliveryLogId = responseData.delivery_logs[0].id;
+            // Mở trang in phiếu giao hàng trong tab mới
+            window.open(`/delivery-logs/print/${deliveryLogId}`, '_blank');
+          }
+          
           navigate('/sales-invoices');
         }
       });
@@ -1171,6 +1221,7 @@ ${productInfo}`;
   ].filter(w => w.data);
 
   const generatePrintContent = () => {
+    const items = getValues('items') || [];
     // CSS cho A4 (210mm) - Layout đầy đủ
     const stylesA4 = `
       <style>
@@ -1238,15 +1289,29 @@ ${productInfo}`;
     let content = `
       <html>
         <head>
-          <title>Phiếu Tư Vấn & Hóa Đơn</title>
+          <title>${printSections.invoice ? 'Phiếu Tư Vấn & Hóa Đơn' : 'Phiếu Giao Hàng'}</title>
           ${styles}
         </head>
         <body>
+    `;
+
+    // Header khác nhau tùy theo có in hóa đơn hay không
+    if (printSections.invoice) {
+      content += `
           <div class="header">
             <h2>PHIẾU TƯ VẤN & HÓA ĐƠN BÁN HÀNG</h2>
             <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}</p>
           </div>
-    `;
+      `;
+    } else {
+      // Nếu chỉ in phiếu giao hàng, hiển thị ngày tạo đơn giản
+      content += `
+          <div class="header">
+            <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}</p>
+          </div>
+      `;
+    }
+    
 
     // 1. INVOICE SECTION
     if (printSections.invoice) {
@@ -1335,6 +1400,114 @@ ${productInfo}`;
       }
     }
 
+
+    // 2. DELIVERY LOG SECTION (Hiển thị ngay dưới Hóa đơn)
+    if (isDeliveryEnabled && shouldPrintDelivery && deliveryData) {
+      if (printSections.invoice) {
+        content += `<div style="border-top: 2px dashed #ccc; margin: 20px 0; padding-top: 20px;"></div>`;
+      }
+      
+      // Fix Invalid Date Logic & Format Time string
+      let deliveryTimeStr = '';
+      if (deliveryData.delivery_start_time) {
+          if (dayjs.isDayjs(deliveryData.delivery_start_time)) {
+              deliveryTimeStr = deliveryData.delivery_start_time.format('HH:mm');
+          } else if (typeof deliveryData.delivery_start_time === 'string') {
+              deliveryTimeStr = deliveryData.delivery_start_time.substring(0, 5);
+          }
+      }
+
+      content += `
+        <div style="text-align: center; margin-bottom: 20px; ${!printSections.invoice ? 'margin-top: 30px;' : ''}">
+          <h3 style="margin: 0; text-transform: uppercase;">Phiếu Giao Hàng</h3>
+          <p style="margin: 5px 0; font-size: 13px;">Ngày giao: ${deliveryData.delivery_date ? dayjs(deliveryData.delivery_date).format('DD/MM/YYYY') : ''} ${deliveryTimeStr}</p>
+        </div>
+      `;
+
+      if (!printSections.invoice) {
+        // Hiển thị đầy đủ nếu KHÔNG in kèm hóa đơn
+        content += `
+          <div class="section">
+             <div class="row"><span class="label">Người nhận:</span><span class="value">${deliveryData.receiver_name || ''}</span></div>
+             <div class="row"><span class="label">Số điện thoại:</span><span class="value">${deliveryData.receiver_phone || ''}</span></div>
+             <div class="row"><span class="label">Địa chỉ giao:</span><span class="value">${deliveryData.delivery_address || ''}</span></div>
+             <div class="row"><span class="label">Ghi chú:</span><span class="value">${deliveryData.delivery_notes || 'Không có'}</span></div>
+          </div>
+        `;
+      } else {
+        // Nếu ĐÃ in hóa đơn, chỉ hiện Ghi chú (nếu có), bỏ hết địa chỉ
+        if (deliveryData.delivery_notes) {
+            content += `
+              <div class="section">
+                 <div class="row"><span class="label">Ghi chú:</span><span class="value">${deliveryData.delivery_notes}</span></div>
+              </div>
+            `;
+        }
+      }
+
+      content += `
+        <div class="section">
+          <div class="section-title">DANH SÁCH HÀNG HÓA CẦN GIAO</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">STT</th>
+                <th>Tên hàng hóa</th>
+                <th style="width: 80px; text-align: center;">ĐVT</th>
+                <th style="width: 80px; text-align: right;">SL</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      if (deliveryData.items && deliveryData.items.length > 0) {
+        deliveryData.items.forEach((item, index) => {
+          const originalItem = (item.sales_invoice_item_id !== undefined) ? items[item.sales_invoice_item_id] : null;
+          const productName = originalItem ? (originalItem.product_name || `Sản phẩm #${(item.sales_invoice_item_id || 0) + 1}`) : 'Unknown';
+          const unit = (originalItem as any)?.unit || '';
+
+          content += `
+            <tr>
+              <td style="text-align: center;">${index + 1}</td>
+              <td>${productName}</td>
+              <td style="text-align: center;">${unit}</td>
+              <td style="text-align: right;">${item.quantity}</td>
+            </tr>
+          `;
+        });
+      } else {
+        content += `<tr><td colspan="4" class="text-center">Chưa chọn sản phẩm</td></tr>`;
+      }
+
+      content += `
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section">
+           <div class="row"><span class="label">Tài xế:</span><span class="value">${deliveryData.driver_name || '...'}</span></div>
+           <div class="row"><span class="label">Biển số xe:</span><span class="value">${deliveryData.vehicle_number || '...'}</span></div>
+        </div>
+      `;
+
+      // Chỉ hiện phần ký tên nếu KHÔNG in hóa đơn
+      if (!printSections.invoice) {
+        content += `
+        <div style="margin-top: 30px; display: flex; justify-content: space-between; text-align: center;">
+             <div style="width: 30%">
+                <strong>Người giao hàng</strong><br>
+                <span style="font-size: 11px; font-style: italic;">(Ký, họ tên)</span>
+             </div>
+             <div style="width: 30%">
+                <strong>Người nhận hàng</strong><br>
+                <span style="font-size: 11px; font-style: italic;">(Ký, họ tên)</span>
+             </div>
+        </div>
+        `;
+      }
+      
+      content += `<br/>`;
+    }
 
     // 2. TECHNICAL ADVISORY SECTION
     const showMix = printSections.advisory && selectedAdvisorySections.mix && mixResult;
@@ -1432,6 +1605,8 @@ ${productInfo}`;
       }
     }
 
+
+
     content += `
           <div class="footer">
             <p>Cảm ơn quý khách đã tin tưởng sử dụng sản phẩm & dịch vụ!</p>
@@ -1447,6 +1622,12 @@ ${productInfo}`;
     // Initialize selected diseases with all available ones (or filter by high risk if desired)
     const allWarningIds = availableWarnings.map(w => w.id);
     setSelectedPrintDiseases(allWarningIds);
+    
+    // Tự động tick "In phiếu giao hàng" nếu đã enable delivery
+    if (isDeliveryEnabled) {
+      setShouldPrintDelivery(true);
+    }
+    
     setIsPrintModalVisible(true);
   };
 
@@ -1494,6 +1675,7 @@ ${productInfo}`;
             px: { xs: 1, md: 2 },
             minWidth: { xs: 'auto', md: 'inherit' },
             '& .MuiButton-startIcon': {
+              display: { xs: 'none', sm: 'flex' },
               mr: { xs: 0, sm: 1 },
               m: { xs: 0, sm: '0 8px 0 -4px' }
             }
@@ -1864,6 +2046,7 @@ ${productInfo}`;
                 customerName={watch('customer_name')}
                 customerPhone={watch('customer_phone')}
                 onChange={setDeliveryData}
+                onEnableChange={setIsDeliveryEnabled}
                 initialValue={deliveryData || undefined}
               />
             </Grid>
@@ -2870,7 +3053,31 @@ ${productInfo}`;
 
       {/* Print Options Modal */}
       <AntModal
-        title="Tùy chọn in phiếu tư vấn"
+        title={
+          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', pr: 4 }}>
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>Tùy chọn in phiếu tư vấn</Box>
+            {/* Nút toggle nằm trực tiếp trong Header Modal trên mobile */}
+            <Box 
+              onClick={() => setIsPrintOptionsOpen(!isPrintOptionsOpen)}
+              sx={{ 
+                display: { xs: 'flex', md: 'none' }, 
+                alignItems: 'center', 
+                gap: 1,
+                border: '1.5px solid #2e7d32',
+                color: '#2e7d32',
+                borderRadius: '20px',
+                padding: '2px 12px',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+                bgcolor: 'white'
+              }}
+            >
+              <MenuOutlined />
+              <span>Tùy chọn in</span>
+            </Box>
+          </Box>
+        }
         open={isPrintModalVisible}
         onCancel={() => setIsPrintModalVisible(false)}
         onOk={handlePrintConfirm}
@@ -2878,12 +3085,49 @@ ${productInfo}`;
         cancelText="Hủy"
         width={1000}
         style={{ top: 20 }}
+        styles={{
+          body: {
+            maxHeight: 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }
+        }}
+        // Mobile: Full screen drawer from left
+        className="print-options-modal"
       >
-        <Grid container spacing={3}>
-          {/* Left Column: Settings */}
-          <Grid item xs={12} md={4}>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Typography variant="h6" fontSize="1rem">Khổ giấy</Typography>
+        <Grid container spacing={{ xs: 1, md: 3 }}>
+          {/* Overlay backdrop - Click to close */}
+          <Box
+            className={`drawer-overlay ${isPrintOptionsOpen ? 'visible' : ''}`}
+            sx={{ display: { xs: 'block', md: 'none' } }}
+            onClick={() => setIsPrintOptionsOpen(false)}
+          />
+
+          {/* Left Column: Settings (Side Drawer on Mobile) */}
+          <Grid item xs={12} md={4} className={isPrintOptionsOpen ? 'open' : ''}>
+            {/* Drawer Header for mobile */}
+            <Box 
+              sx={{ 
+                display: { xs: 'flex', md: 'none' }, 
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 2,
+                pb: 1,
+                borderBottom: '1px solid #eee'
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight="bold">Cấu hình in</Typography>
+              <Button 
+                variant="text" 
+                size="small" 
+                onClick={() => setIsPrintOptionsOpen(false)}
+                sx={{ minWidth: 'auto', p: 0.5 }}
+              >
+                <CloseOutlined />
+              </Button>
+            </Box>
+            
+            <Box display="flex" flexDirection="column" gap={{ xs: 1.5, md: 2 }}>
+              <Typography variant="h6" fontSize="1rem" fontWeight="bold">Khổ giấy</Typography>
               
               <RadioGroup value={paperSize} onChange={(e) => setPaperSize(e.target.value as 'A4' | 'K80')}>
                 <FormControlLabel 
@@ -2922,6 +3166,29 @@ ${productInfo}`;
                 }
                 label="Thông tin hóa đơn & Khách hàng"
               />
+
+              {/* Delivery Log Section - Chỉ hiện khi đã bật tạo phiếu giao hàng */}
+              {isDeliveryEnabled && (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={shouldPrintDelivery}
+                      onChange={(e) => setShouldPrintDelivery(e.target.checked)}
+                      disabled={!deliveryData} // Disable nếu chưa điền đủ thông tin
+                    />
+                  }
+                  label={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <span>In phiếu giao hàng</span>
+                      {!deliveryData && (
+                        <Typography variant="caption" color="error">
+                          (Vui lòng điền đủ thông tin phiếu giao)
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                />
+              )}
 
               {/* Advisory Section */}
               <FormControlLabel
@@ -3017,12 +3284,15 @@ ${productInfo}`;
                   ))}
                 </Box>
               )}
+
+
+
             </Box>
           </Grid>
 
           {/* Right Column: Preview */}
           <Grid item xs={12} md={8}>
-            <Typography variant="h6" fontSize="1rem" mb={2}>Xem trước bản in</Typography>
+            <Typography variant="h6" fontSize="1rem" mb={2} sx={{ display: { xs: 'none', md: 'block' } }}>Xem trước bản in</Typography>
             <Paper 
               variant="outlined" 
               sx={{ 
@@ -3052,6 +3322,114 @@ ${productInfo}`;
 
       {/* Print Styles */}
       <style>{`
+        /* Mobile: Options trong drawer slide từ trái */
+        @media (max-width: 768px) {
+          .print-options-modal .ant-modal {
+            max-width: 100vw !important;
+            margin: 0 !important;
+            top: 0 !important;
+            padding: 0 !important;
+          }
+          
+          .print-options-modal .ant-modal-content {
+            height: 100vh;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+          }
+          
+          .print-options-modal .ant-modal-body {
+            flex: 1;
+            overflow: hidden;
+            padding: 0 !important;
+            position: relative;
+            background: #f0f2f5;
+          }
+          
+          /* Options column - Drawer style - SỬA LẠI THỨ TỰ THẺ (NƠI CHỨA CÁC CHECKBOX) */
+          .print-options-modal .MuiGrid-root > .MuiGrid-item:nth-child(2) {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 85%;
+            max-width: 320px;
+            background: white;
+            z-index: 101; /* Luôn cao hơn lớp phủ (100) */
+            box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+            overflow-y: auto;
+            padding: 16px !important;
+            transform: translateX(-105%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-right: 1px solid #e8e8e8;
+            visibility: hidden;
+          }
+          
+          .print-options-modal .MuiGrid-root > .MuiGrid-item:nth-child(2).open {
+            transform: translateX(0);
+            visibility: visible;
+          }
+          
+          /* Preview column - Full screen */
+          .print-options-modal .MuiGrid-root > .MuiGrid-item:nth-child(3) {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex-basis: 100% !important;
+            padding: 0 !important;
+            height: 100%;
+            z-index: 1;
+          }
+          
+          /* Giảm padding các checkbox items */
+          .print-options-modal .MuiFormControlLabel-root {
+            margin-top: 2px !important;
+            margin-bottom: 2px !important;
+            padding: 4px 8px;
+            border-radius: 8px;
+            width: 100%;
+          }
+          
+          .print-options-modal .MuiFormControlLabel-label {
+            font-size: 0.9rem !important;
+          }
+          
+          /* Toggle button - BỎ CSS NEGATIVE TOP VÌ ĐÃ ĐƯA VÀO TITLE */
+          .print-options-toggle {
+             display: none;
+          }
+
+          /* Tùy chỉnh Header Modal trên mobile */
+          .print-options-modal .ant-modal-title {
+            display: block !important;
+            width: 100%;
+          }
+          .print-options-modal .ant-modal-header {
+             padding: 10px 16px !important;
+             margin-bottom: 0 !important;
+             background: #f8f9fa;
+             border-bottom: 1px solid #e8e8e8;
+          }
+
+          /* Overlay Fade effect */
+          .drawer-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5); /* Đậm hơn chút cho rõ */
+            z-index: 100; /* Nằm dưới Drawer (101) */
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+          }
+          .drawer-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+          }
+        }
+        
         @media print {
           body * {
             visibility: hidden;

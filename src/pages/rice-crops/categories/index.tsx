@@ -111,7 +111,7 @@ const CostItemCategoriesPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-2 md:p-6">
        <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-sm">
         <h1 className="text-xl font-bold m-0">Danh sách Loại chi phí canh tác</h1>
         <Button

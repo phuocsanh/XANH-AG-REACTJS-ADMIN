@@ -7,6 +7,7 @@ export interface CreateOperatingCostDto {
   description?: string;
   season_id?: number;
   rice_crop_id?: number;
+  customer_id?: number; // ← MỚI
   expense_date?: string; // ISO String
 }
 
@@ -21,6 +22,7 @@ export interface OperatingCost {
   description?: string;
   season_id?: number;
   rice_crop_id?: number;
+  customer_id?: number; // ← MỚI
   expense_date?: string;
   created_at: string;
   updated_at: string;
@@ -34,6 +36,10 @@ export interface OperatingCost {
   rice_crop?: {
     id: number;
     field_name: string;
+  };
+  customer?: {
+    id: number;
+    name: string;
   };
 }
 

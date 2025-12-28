@@ -128,7 +128,7 @@ const CostItemCategoriesPage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-2 md:p-6">
       <Card
         title={
           <div className="flex items-center gap-2">

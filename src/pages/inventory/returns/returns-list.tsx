@@ -359,15 +359,13 @@ const ReturnsList: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div className="p-2 md:p-6">
       {/* Header */}
-      <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
         <Col span={24}>
-          <Title level={2}>Quản lý phiếu trả hàng</Title>
+          <Title level={4} className="md:text-2xl m-0">Quản lý phiếu trả hàng</Title>
         </Col>
       </Row>
-
-
 
       {/* Bảng dữ liệu */}
       <Card>
@@ -376,23 +374,30 @@ const ReturnsList: React.FC = () => {
             marginBottom: "16px",
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
           }}
         >
-          <Title level={4}>Danh sách phiếu trả hàng</Title>
+          <Title level={5} style={{ margin: 0 }}>
+            <span className="hidden md:inline">Danh sách phiếu trả hàng</span>
+            <span className="md:hidden">Phiếu trả hàng</span>
+          </Title>
           <Space>
             <Button
               icon={<ReloadOutlined />}
               onClick={() => refetch()}
               loading={isLoading}
             >
-              Làm mới
+              <span className="hidden sm:inline">Làm mới</span>
             </Button>
             <Button
               type='primary'
               icon={<PlusOutlined />}
               onClick={handleCreateReturn}
             >
-              Tạo phiếu trả hàng
+              <span className="hidden sm:inline">Tạo phiếu trả hàng</span>
+              <span className="sm:hidden">Tạo mới</span>
             </Button>
           </Space>
         </div>

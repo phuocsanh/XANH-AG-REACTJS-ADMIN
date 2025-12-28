@@ -243,24 +243,35 @@ const AdjustmentsList: React.FC = () => {
   ]
 
   return (
-    <div style={{ padding: "24px" }}>
-      <Title level={2}>Quản lý phiếu điều chỉnh kho</Title>
-
-
+    <div className="p-2 md:p-6">
+      <Title level={4} className="md:text-2xl mb-4">Quản lý phiếu điều chỉnh kho</Title>
 
       <Card>
-        <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between" }}>
-          <Title level={4}>Danh sách phiếu điều chỉnh</Title>
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <Title level={5} style={{ margin: 0 }}>
+            <span className="hidden md:inline">Danh sách phiếu điều chỉnh</span>
+            <span className="md:hidden">Phiếu điều chỉnh</span>
+          </Title>
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isLoading}>
-              Làm mới
+              <span className="hidden sm:inline">Làm mới</span>
             </Button>
             <Button
               type='primary'
               icon={<PlusOutlined />}
               onClick={() => navigate("/inventory/adjustments/create")}
             >
-              Tạo phiếu điều chỉnh
+              <span className="hidden sm:inline">Tạo phiếu điều chỉnh</span>
+              <span className="sm:hidden">Tạo mới</span>
             </Button>
           </Space>
         </div>

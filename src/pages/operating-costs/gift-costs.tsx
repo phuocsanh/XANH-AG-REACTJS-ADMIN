@@ -1,62 +1,75 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Tag, Popconfirm, message, Modal, DatePicker } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
-import { useOperatingCosts, useDeleteOperatingCost } from '@/queries/operating-cost';
-import { OperatingCost } from '@/models/operating-cost';
-import CreateOperatingCostModal from './create-modal';
+import { Card, Button, Space, Tag, Popconfirm, message, DatePicker } from 'antd';
+import { EditOutlined, DeleteOutlined, SearchOutlined, GiftOutlined } from '@ant-design/icons';
+import { useFarmServiceCostsQuery, useDeleteFarmServiceCostMutation } from '@/queries/farm-service-cost';
+import { FarmServiceCost } from '@/models/farm-service-cost';
 import dayjs from 'dayjs';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
-import { useOperatingCostCategories } from '@/queries/operating-cost-category';
 import DataTable from "@/components/common/data-table";
 import FilterHeader from "@/components/common/filter-header";
-import type { TableProps } from "antd";
+import { FarmServiceCostModal } from '../farm-service-costs/FarmServiceCostModal';
 
-const OperatingCostsPage: React.FC = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState<OperatingCost | null>(null);
-  
-  // Filters State
+/**
+ * Trang quản lý chi phí quà tặng khách hàng
+ * Tự động filter chỉ hiển thị các chi phí có category "Quà tặng khách hàng"
+ */
+const GiftCostsPage: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState<FarmServiceCost | null>(null);
 
   const { data: seasons } = useSeasonsQuery({ limit: 100 });
   const { data: activeSeason } = useActiveSeasonQuery();
-  const { data: categories } = useOperatingCostCategories({ limit: 100 });
 
   // Tự động set mùa vụ gần nhất làm filter mặc định
   useEffect(() => {
+    const defaultFilters: Record<string, any> = {};
+    
     if (activeSeason && !filters.season_id) {
-      setFilters({ season_id: activeSeason.id });
+      defaultFilters.season_id = activeSeason.id;
+    }
+    
+    // Luôn lọc theo nguồn quà tặng
+    if (!filters.source) {
+       // Ở trang này ta mặc định xem quà tặng từ hóa đơn và từ chốt sổ
+       // Backend Search hỗ trợ một source duy nhất hoặc filter thêm ở FE nếu cần
+       // Tuy nhiên ta nên để user chọn, mặc định là gift_from_invoice
+       defaultFilters.source = 'gift_from_invoice';
+    }
+    
+    if (Object.keys(defaultFilters).length > 0) {
+      setFilters(prev => ({ ...prev, ...defaultFilters }));
     }
   }, [activeSeason]);
 
   // Query - Flatten filters to match backend expectation
-  const { data: costsData, isLoading } = useOperatingCosts({
+  const { data: costsData, isLoading } = useFarmServiceCostsQuery({
     page: currentPage,
     limit: pageSize,
-    ...filters, // Spread filters to top level
+    ...filters,
   });
 
-  const deleteMutation = useDeleteOperatingCost();
-
-  const handleEdit = (record: OperatingCost) => {
-    setEditingItem(record);
-    setIsModalVisible(true);
-  };
+  const deleteMutation = useDeleteFarmServiceCostMutation();
 
   const handleDelete = async (id: number) => {
     try {
       await deleteMutation.mutateAsync(id);
-      message.success('Đã xóa chi phí');
+      message.success('Đã xóa chi phí quà tặng');
     } catch (error) {
       message.error('Lỗi khi xóa');
     }
   };
 
-  const handleCreate = () => {
-    setEditingItem(null);
+  const handleEdit = (record: FarmServiceCost) => {
+    setEditingItem(record);
     setIsModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+    setEditingItem(null);
   };
 
   const handleFilterChange = (key: string, value: any) => {
@@ -67,11 +80,29 @@ const OperatingCostsPage: React.FC = () => {
   };
 
   const handleClearAllFilters = () => {
-    setFilters({});
+    setFilters({ source: 'gift_from_invoice' });
     setCurrentPage(1);
   };
 
-  // Date Filter UI Helper (Similar to PaymentsList)
+  const handleTableChange = (pagination: any, tableFilters: any, sorter: any) => {
+    setCurrentPage(pagination.current);
+    setPageSize(pagination.pageSize);
+
+    const newFilters = { ...filters };
+
+    // Date range filter
+    if (tableFilters.expense_date && tableFilters.expense_date.length === 2) {
+        newFilters.start_date = tableFilters.expense_date[0];
+        newFilters.end_date = tableFilters.expense_date[1];
+    } else {
+        delete newFilters.start_date;
+        delete newFilters.end_date;
+    }
+
+    setFilters(newFilters);
+  };
+
+  // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
@@ -107,8 +138,8 @@ const OperatingCostsPage: React.FC = () => {
           <Button
             onClick={() => {
                 if (clearFilters) {
-                    clearFilters()
-                    confirm()
+                    clearFilters();
+                    confirm();
                 }
             }}
             size="small"
@@ -122,31 +153,7 @@ const OperatingCostsPage: React.FC = () => {
     filterIcon: (filtered: boolean) => (
       <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
     ),
-  })
-
-  // Handle Table Change (Pagination, Filters, Sorter)
-  const handleTableChange = (
-    pagination: any,
-    tableFilters: any,
-    sorter: any
-  ) => {
-    setCurrentPage(pagination.current || 1);
-    setPageSize(pagination.pageSize || 20);
-    
-    // Handle Date Range Filter
-    const newFilters = { ...filters };
-    
-    // Check expense_date filter
-    if (tableFilters.expense_date && tableFilters.expense_date.length === 2) {
-        newFilters.start_date = tableFilters.expense_date[0];
-        newFilters.end_date = tableFilters.expense_date[1];
-    } else {
-        delete newFilters.start_date;
-        delete newFilters.end_date;
-    }
-
-    setFilters(newFilters);
-  };
+  });
 
   const columns: any[] = [
     {
@@ -160,7 +167,7 @@ const OperatingCostsPage: React.FC = () => {
       ),
       dataIndex: 'name',
       key: 'name',
-      width: 200,
+      width: 250,
       ellipsis: {
         showTitle: true,
       },
@@ -168,11 +175,11 @@ const OperatingCostsPage: React.FC = () => {
     },
     {
       title: 'Số tiền',
-      dataIndex: 'value',
-      key: 'value',
+      dataIndex: 'amount',
+      key: 'amount',
       width: 150,
       render: (val: any) => <span className="text-red-600 font-bold">{Number(val).toLocaleString('vi-VN')} đ</span>,
-      sorter: (a: OperatingCost, b: OperatingCost) => Number(a.value) - Number(b.value),
+      sorter: (a: FarmServiceCost, b: FarmServiceCost) => Number(a.amount) - Number(b.amount),
     },
     {
       title: (
@@ -190,7 +197,7 @@ const OperatingCostsPage: React.FC = () => {
       ),
       key: 'season',
       width: 180,
-      render: (_: any, record: OperatingCost) => (
+      render: (_: any, record: FarmServiceCost) => (
           record.season ? <Tag color="blue">{record.season.name}</Tag> : '-'
       )
     },
@@ -206,7 +213,7 @@ const OperatingCostsPage: React.FC = () => {
       ),
       key: 'customer',
       width: 180,
-      render: (_: any, record: OperatingCost) => (
+      render: (_: any, record: FarmServiceCost) => (
           record.customer ? <Tag color="green">{record.customer.name}</Tag> : '-'
       )
     },
@@ -222,50 +229,36 @@ const OperatingCostsPage: React.FC = () => {
       ),
       key: 'rice_crop',
       width: 150,
-      render: (_: any, record: OperatingCost) => (
+      render: (_: any, record: FarmServiceCost) => (
           record.rice_crop ? <Tag color="cyan">{record.rice_crop.field_name}</Tag> : '-'
       )
     },
     {
       title: (
           <FilterHeader
-            title="Loại"
-            dataIndex="category_id"
-            value={filters.category_id}
+            title="Nguồn"
+            dataIndex="source"
+            value={filters.source}
             inputType="select"
-            options={categories?.data?.map((c: any) => ({
-                label: c.name,
-                value: c.id
-            }))}
-            onChange={(val) => handleFilterChange('category_id', val)}
+            options={[
+                { label: 'Từ Hóa đơn', value: 'gift_from_invoice' },
+                { label: 'Từ Chốt sổ', value: 'reward_from_debt_note' },
+                { label: 'Tặng thủ công', value: 'manual_gift' },
+                { label: 'Nhập tay', value: 'manual' },
+            ]}
+            onChange={(val) => handleFilterChange('source', val)}
           />
       ),
-      key: 'type',
-      width: 200,
-      render: (_: any, record: OperatingCost) => {
-          // Hiển thị từ relation category (mới) hoặc fallback sang type (cũ)
-          const displayName = record.category?.name || record.type;
-          const type = record.type || 'other';
-          
-          const colors: Record<string, string> = {
-              fertilizer: 'green',
-              pesticide: 'red',
-              labor: 'blue',
-              machinery: 'orange',
-              fuel: 'purple',
-              other: 'default'
-          };
-          
-          const labels: Record<string, string> = {
-              fertilizer: 'Phân bón',
-              pesticide: 'Thuốc BVTV',
-              labor: 'Nhân công',
-              machinery: 'Máy móc',
-              fuel: 'Nhiên liệu',
-              other: 'Khác'
-          };
-          
-          return <Tag color={colors[type] || 'default'}>{displayName || labels[type] || type}</Tag>;
+      dataIndex: 'source',
+      key: 'source',
+      width: 150,
+      render: (source: string) => {
+          let color = 'blue';
+          let label = source;
+          if (source === 'gift_from_invoice') { color = 'green'; label = 'Từ Hóa đơn'; }
+          if (source === 'reward_from_debt_note') { color = 'gold'; label = 'Từ Chốt sổ'; }
+          if (source === 'manual_gift') { color = 'purple'; label = 'Tặng thủ công'; }
+          return <Tag color={color}>{label}</Tag>
       }
     },
     {
@@ -279,9 +272,9 @@ const OperatingCostsPage: React.FC = () => {
     },
     {
         title: 'Ghi chú',
-        dataIndex: 'description',
-        key: 'description',
-        width: 120,
+        dataIndex: 'notes',
+        key: 'notes',
+        width: 150,
         ellipsis: {
           showTitle: true,
         },
@@ -290,11 +283,17 @@ const OperatingCostsPage: React.FC = () => {
       title: 'Hành động',
       key: 'action',
       width: 120,
-      render: (_: any, record: OperatingCost) => (
+      render: (_: any, record: FarmServiceCost) => (
         <Space>
-          <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} size="small"/>
+           {record.source === 'manual_gift' && (
+             <Button 
+               icon={<EditOutlined />} 
+               onClick={() => handleEdit(record)} 
+               size="small"
+             />
+           )}
           <Popconfirm title="Bạn có chắc muốn xóa?" onConfirm={() => handleDelete(record.id)}>
-            <Button icon={<DeleteOutlined />} danger size="small"/>
+            <Button icon={<DeleteOutlined />} danger size="small" loading={deleteMutation.isPending}/>
           </Popconfirm>
         </Space>
       ),
@@ -304,47 +303,35 @@ const OperatingCostsPage: React.FC = () => {
   return (
     <div className="p-2 md:p-6">
       <div className='flex justify-between items-center mb-6'>
-         <h1 className="text-2xl font-bold">Quản Lý Chi Phí Vận Hành</h1>
-         <Space>
-          {Object.keys(filters).length > 0 && (
-            <Button
-                onClick={handleClearAllFilters}
-                icon={<FilterOutlined />}
-                danger
-            >
-                Xóa bộ lọc
-            </Button>
-          )}
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>Thêm Chi Phí</Button>
-         </Space>
+         <h1 className="text-2xl font-bold">Quản Lý Chi Phí Quà Tặng Khách Hàng</h1>
       </div>
 
-      <div className='bg-white rounded shadow'>
+      <Card>
         <DataTable
           columns={columns}
-          data={(costsData?.data || []) as any[]}
-          rowKey="id" // Ensure your data has a unique 'id' field
+          data={(Array.isArray(costsData?.data) ? costsData.data : []) as any}
           loading={isLoading}
-          onChange={handleTableChange}
-          scroll={{ x: 1200 }}
           pagination={{
-              current: currentPage,
-              pageSize: pageSize,
-              total: costsData?.total,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
-              showTotal: (total: number) => `Tổng ${total} mục`
+            current: currentPage,
+            pageSize: pageSize,
+            total: costsData?.total || 0,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} mục`,
           }}
+          onChange={handleTableChange}
+          rowKey="id"
+          scroll={{ x: 1200 }}
         />
-      </div>
+      </Card>
 
-      <CreateOperatingCostModal
-        visible={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        initialData={editingItem}
+      <FarmServiceCostModal
+        open={isModalVisible}
+        onCancel={handleCloseModal}
+        editingCost={editingItem}
+        // Ta có thể thêm prop để ép source là manual_gift nếu muốn
       />
     </div>
   );
 };
 
-export default OperatingCostsPage;
+export default GiftCostsPage;

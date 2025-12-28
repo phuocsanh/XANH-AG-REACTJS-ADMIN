@@ -11,7 +11,7 @@ export interface FarmServiceCost {
   rice_crop_id?: number;
   notes?: string;
   expense_date: string;
-  source: 'manual' | 'gift_from_invoice';
+  source: 'manual' | 'gift_from_invoice' | 'reward_from_debt_note' | 'manual_gift';
   invoice_id?: number;
   created_at: string;
   updated_at: string;
