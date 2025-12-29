@@ -265,7 +265,11 @@ const ListSymbols = () => {
           <Form.Item className='text-right'>
             <Space>
               <Button onClick={() => setModalVisible(false)}>Hủy</Button>
-              <Button type='primary' htmlType='submit'>
+              <Button 
+                type='primary' 
+                htmlType='submit'
+                loading={createSymbolMutation.isPending || updateSymbolMutation.isPending}
+              >
                 {editingSymbol ? "Cập nhật" : "Thêm mới"}
               </Button>
             </Space>
@@ -285,6 +289,7 @@ const ListSymbols = () => {
         okText='Xóa'
         okType='primary'
         cancelText='Hủy'
+        confirmLoading={deleteSymbolMutation.isPending}
         onOk={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />

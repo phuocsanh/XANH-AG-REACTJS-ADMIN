@@ -159,30 +159,35 @@ const ListUnits = () => {
                 title: "Tên đơn vị tính",
                 dataIndex: "name",
                 key: "name",
+                width: 200,
                 sorter: true,
               },
               {
                 title: "Mã đơn vị tính",
                 dataIndex: "code",
                 key: "code",
+                width: 180,
                 sorter: true,
               },
               {
                 title: "Mô tả",
                 dataIndex: "description",
                 key: "description",
+                width: 250,
                 render: (description: string) => description || "N/A",
               },
               {
                 title: "Trạng thái",
                 dataIndex: "status",
                 key: "status",
+                width: 120,
                 render: (status: string) => renderStatus(status),
               },
               {
                 title: "Ngày tạo",
                 dataIndex: "created_at",
                 key: "created_at",
+                width: 130,
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
               },
@@ -190,7 +195,7 @@ const ListUnits = () => {
             data={unitRows}
             loading={isLoading}
             showSearch={true}
-            scroll={{ x: "100%" }}
+            scroll={{ x: 1000 }}
             searchPlaceholder='Tìm kiếm đơn vị tính...'
             searchableColumns={["name", "code", "description"]}
             onEdit={handleEdit}
@@ -253,7 +258,11 @@ const ListUnits = () => {
           <Form.Item className='text-right'>
             <Space>
               <Button onClick={() => setModalVisible(false)}>Hủy</Button>
-              <Button type='primary' htmlType='submit'>
+              <Button 
+                type='primary' 
+                htmlType='submit'
+                loading={createUnitMutation.isPending || updateUnitMutation.isPending}
+              >
                 {editingUnit ? "Cập nhật" : "Thêm mới"}
               </Button>
             </Space>
@@ -273,6 +282,7 @@ const ListUnits = () => {
         okText='Xóa'
         okType='primary'
         cancelText='Hủy'
+        confirmLoading={deleteUnitMutation.isPending}
         onOk={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />

@@ -239,8 +239,72 @@ const DataTable = <T extends Record<string, unknown>>({
     },
   };
 
-  // Kết hợp columns: STT + columns + action column
-  let finalColumns = [...columns];
+  /**
+   * Helper function để wrap column render với ellipsis và tooltip
+   * - Tự động hiển thị ... khi text quá dài
+   * - Hiển thị tooltip khi hover để xem full content
+   * - Tự động thêm width mặc định 150px nếu column chưa có width
+   */
+  const wrapColumnWithEllipsis = (column: ColumnType<T>): ColumnType<T> => {
+    // Không wrap cho cột actions và STT
+    if (column.key === 'actions' || column.key === 'stt') {
+      return column;
+    }
+
+    const originalRender = column.render;
+
+    // Tự động thêm width mặc định nếu chưa có
+    const defaultWidth = column.width || 150;
+
+    return {
+      ...column,
+      width: defaultWidth, // Thêm width mặc định cho tất cả cột
+      ellipsis: {
+        showTitle: false, // Tắt title mặc định của antd
+      },
+      render: (value: unknown, record: T, index: number) => {
+        // Lấy giá trị hiển thị
+        let displayValue: React.ReactNode;
+        
+        if (originalRender) {
+          // Nếu có custom render, sử dụng nó
+          displayValue = originalRender(value, record, index) as React.ReactNode;
+        } else {
+          // Nếu không có custom render, hiển thị giá trị trực tiếp
+          displayValue = value as React.ReactNode;
+        }
+
+        // Chuyển đổi displayValue thành string để hiển thị trong tooltip
+        const tooltipContent = typeof displayValue === 'string' || typeof displayValue === 'number'
+          ? String(displayValue)
+          : typeof value === 'string' || typeof value === 'number'
+          ? String(value)
+          : '';
+
+        // Nếu không có nội dung, không cần tooltip
+        if (!tooltipContent || tooltipContent === 'N/A' || tooltipContent === '') {
+          return displayValue;
+        }
+
+        // Wrap với Tooltip
+        return (
+          <Tooltip title={tooltipContent} placement="topLeft">
+            <div style={{ 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap',
+              cursor: 'pointer'
+            }}>
+              {displayValue}
+            </div>
+          </Tooltip>
+        );
+      },
+    };
+  };
+
+  // Kết hợp columns: STT + columns (wrapped with ellipsis) + action column
+  let finalColumns = columns.map(wrapColumnWithEllipsis);
   
   // Thêm STT column ở đầu nếu showSTT = true
   if (showSTT) {

@@ -243,6 +243,7 @@ const ListCategory = () => {
         okText='Xóa'
         okType='primary'
         cancelText='Hủy'
+        confirmLoading={deleteProductTypeMutation.isPending}
       />
     </>
   )

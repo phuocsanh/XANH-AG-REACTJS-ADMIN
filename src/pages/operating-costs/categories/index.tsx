@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Button, Space, Popconfirm, message } from 'antd';
+import { Button, Space, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import DataTable from '@/components/common/data-table';
 import FilterHeader from '@/components/common/filter-header';
+import { ConfirmModal } from '@/components/common';
 import { useOperatingCostCategories, useDeleteOperatingCostCategory } from '@/queries/operating-cost-category';
 import { OperatingCostCategory } from '@/models/operating-cost-category';
 import CategoryModal from './modal';
@@ -14,6 +15,8 @@ const OperatingCostCategoriesPage: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<OperatingCostCategory | null>(null);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<OperatingCostCategory | null>(null);
 
   const { data: categoriesData, isLoading } = useOperatingCostCategories({
     page: currentPage,
@@ -45,13 +48,29 @@ const OperatingCostCategoriesPage: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (record: OperatingCostCategory) => {
+    setDeletingItem(record);
+    setDeleteConfirmVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync(deletingItem.id);
       message.success('Đã xóa loại chi phí');
+      setDeleteConfirmVisible(false);
+      setDeletingItem(null);
     } catch (error) {
       message.error('Có lỗi xảy ra khi xóa');
+      setDeleteConfirmVisible(false);
+      setDeletingItem(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false);
+    setDeletingItem(null);
   };
 
   const columns: any[] = [
@@ -102,9 +121,12 @@ const OperatingCostCategoriesPage: React.FC = () => {
       render: (_: any, record: OperatingCostCategory) => (
         <Space>
           <Button icon={<EditOutlined />} onClick={() => handleEdit(record)} size="small" />
-          <Popconfirm title="Bạn có chắc muốn xóa?" onConfirm={() => handleDelete(record.id)}>
-            <Button icon={<DeleteOutlined />} danger size="small" />
-          </Popconfirm>
+          <Button 
+            icon={<DeleteOutlined />} 
+            danger 
+            size="small" 
+            onClick={() => handleDelete(record)}
+          />
         </Space>
       ),
     },
@@ -147,6 +169,22 @@ const OperatingCostCategoriesPage: React.FC = () => {
         visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         initialData={editingItem}
+      />
+
+      <ConfirmModal
+        open={deleteConfirmVisible}
+        title='Xác nhận xóa'
+        content={
+          deletingItem
+            ? `Bạn có chắc chắn muốn xóa loại chi phí "${deletingItem.name}"?`
+            : ""
+        }
+        okText='Xóa'
+        okType='primary'
+        cancelText='Hủy'
+        confirmLoading={deleteMutation.isPending}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
     </div>
   );

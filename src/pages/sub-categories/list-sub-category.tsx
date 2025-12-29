@@ -213,6 +213,7 @@ const ListSubCategory = () => {
         okText='Xóa'
         okType='primary'
         cancelText='Hủy'
+        confirmLoading={deleteProductSubtypeMutation.isPending}
       />
     </>
   )

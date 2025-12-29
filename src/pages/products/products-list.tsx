@@ -601,6 +601,7 @@ const ProductsList: React.FC = () => {
         okText='Xóa'
         okType='primary'
         cancelText='Hủy'
+        confirmLoading={deleteProductMutation.isPending}
       />
     </div>
   )
