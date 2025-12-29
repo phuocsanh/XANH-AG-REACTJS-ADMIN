@@ -166,6 +166,7 @@ const ListCategory = () => {
                 ),
                 dataIndex: "name",
                 key: "name",
+                width: 300, // Tăng độ rộng cột để text không bị xuống nhiều dòng
               },
               {
                 title: (
@@ -179,6 +180,7 @@ const ListCategory = () => {
                 ),
                 dataIndex: "code",
                 key: "code",
+                width: 150, // Độ rộng vừa phải cho mã code
               },
               {
                 title: "Mô tả",
@@ -190,12 +192,14 @@ const ListCategory = () => {
                 title: "Trạng thái",
                 dataIndex: "status",
                 key: "status",
+                width: 120, // Độ rộng cố định cho tag trạng thái
                 render: (status: Status) => renderStatus(status),
               },
               {
                 title: "Ngày tạo",
                 dataIndex: "created_at",
                 key: "created_at",
+                width: 130, // Độ rộng vừa đủ cho định dạng ngày VN
                 render: (date: string) =>
                   date ? new Date(date).toLocaleDateString("vi-VN") : "N/A",
               },
@@ -213,7 +217,7 @@ const ListCategory = () => {
                 `${range[0]}-${range[1]} của ${total} loại sản phẩm`,
             }}
             showSearch={false}
-            scroll={{ x: "100%" }}
+            scroll={{ x: 900 }}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
