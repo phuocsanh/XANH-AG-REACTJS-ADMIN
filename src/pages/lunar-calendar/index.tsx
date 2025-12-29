@@ -218,10 +218,18 @@ const LunarCalendar: React.FC = () => {
                 }
 
                 return (
-                  <div style={{ padding: '10px 5px' }}>
-                    <Row gutter={[8, 4]} justify="end" align="middle" wrap={false}>
+                  <div style={{ 
+                    padding: '10px 5px', 
+                    position: 'sticky', 
+                    left: 0, 
+                    zIndex: 10,
+                    background: '#fff',
+                    width: '100%',
+                    borderBottom: '1px solid #f0f0f0'
+                  }}>
+                    <Row gutter={[10, 2]} justify="start" align="middle" wrap={false}>
                       <Col className="flex items-center">
-                        <Text strong style={{ marginRight: 6, fontSize: '16px', whiteSpace: 'nowrap' }}>Năm:</Text>
+                        <Text strong style={{ marginRight: 5, fontSize: '16px', whiteSpace: 'nowrap' }}>Năm:</Text>
                         <Select
                           size="middle"
                           dropdownMatchSelectWidth={false}
@@ -238,7 +246,7 @@ const LunarCalendar: React.FC = () => {
                         </Select>
                       </Col>
                       <Col className="flex items-center">
-                        <Text strong style={{ marginLeft: 12, marginRight: 6, fontSize: '16px', whiteSpace: 'nowrap' }}>Tháng:</Text>
+                        <Text strong style={{ marginLeft: 5, marginRight: 5, fontSize: '16px', whiteSpace: 'nowrap' }}>Tháng:</Text>
                         <Select
                           size="middle"
                           dropdownMatchSelectWidth={false}
@@ -376,6 +384,17 @@ const LunarCalendar: React.FC = () => {
           -webkit-overflow-scrolling: touch;
         }
 
+        /* Cố định header chọn Năm/Tháng bên trái */
+        .ant-picker-calendar-header {
+          position: sticky !important;
+          left: 0 !important;
+          z-index: 100 !important;
+          background: #fff !important;
+          width: 100% !important;
+          padding: 0 !important;
+          border-bottom: 1px solid #d9d9d9 !important;
+        }
+
         .ant-picker-content table {
           min-width: 840px !important;
           table-layout: fixed !important; /* Dùng fixed để đảm bảo width không bị co */
@@ -393,7 +412,7 @@ const LunarCalendar: React.FC = () => {
           min-width: 120px !important;
           height: 110px !important; /* Tăng chiều cao để đủ chỗ cho chữ to hơn */
           text-align: center !important;
-          border: 0.5px solid #f0f0f0 !important;
+          border: 1px solid #d9d9d9 !important;
           transition: all 0.3s ease;
         }
 
