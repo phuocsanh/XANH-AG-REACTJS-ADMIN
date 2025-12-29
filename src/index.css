@@ -29,6 +29,37 @@
 body {
   background: #f1f1f1;
   font-family: "Open Sans", sans-serif;
+  /* Ngăn chặn zoom bằng double-tap trên iOS */
+  touch-action: manipulation;
+  /* Ngăn chặn text selection khi double-tap */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Làm mượt scroll trên iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Cho phép select text trong input và textarea */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Ngăn chặn pinch-zoom trên toàn bộ app */
+* {
+  touch-action: pan-x pan-y;
+}
+
+/* Ngăn chặn zoom khi focus vào input trên iOS */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+textarea,
+select {
+  font-size: 16px !important; /* iOS không zoom nếu font-size >= 16px */
 }
 
 ::-webkit-scrollbar {
