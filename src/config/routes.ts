@@ -4,6 +4,7 @@ export const PUBLIC_ROUTES = [
   "/forgot-password",
   "/otp",
   "/weather-forecast",
+  "/lunar-calendar", // Lịch vạn niên - Public cho tất cả mọi người
 ]
 
 // Routes mà CUSTOMER được phép truy cập

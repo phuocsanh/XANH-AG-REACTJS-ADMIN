@@ -60,6 +60,11 @@ const Sidebar: React.FC = () => {
       setActiveTab(31)
       setIsToggleSubmenu(false)
     }
+    // Lịch Vạn Niên
+    else if (path.startsWith('/lunar-calendar')) {
+      setActiveTab(33)
+      setIsToggleSubmenu(false)
+    }
     // Sản phẩm - tab 1
     else if (path.startsWith('/products') || path.startsWith('/product-comparison')) {
       setActiveTab(1)
@@ -211,6 +216,20 @@ const Sidebar: React.FC = () => {
                 </Button>
               </Link>
             </li>
+            
+            <li>
+              <Link to='/lunar-calendar'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 33 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(33)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    📅
+                  </span>
+                  Lịch Vạn Niên
+                </Button>
+              </Link>
+            </li>
           </ul>
         </div>
       </div>
@@ -247,6 +266,20 @@ const Sidebar: React.FC = () => {
                     <TiWeatherPartlySunny className='text-blue-300' />
                   </span>
                   Dự báo Thời tiết
+                </Button>
+              </Link>
+            </li>
+
+            <li>
+              <Link to='/lunar-calendar'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 33 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(33)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    📅
+                  </span>
+                  Lịch Vạn Niên
                 </Button>
               </Link>
             </li>
@@ -363,6 +396,20 @@ const Sidebar: React.FC = () => {
                   <TiWeatherPartlySunny className='text-blue-300' />
                 </span>
                 Dự báo Thời tiết
+              </Button>
+            </Link>
+          </li>
+
+          <li>
+            <Link to='/lunar-calendar'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 33 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(33)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  📅
+                </span>
+                Lịch Vạn Niên
               </Button>
             </Link>
           </li>

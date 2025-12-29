@@ -78,6 +78,8 @@ import CostItemCategoriesPage from './pages/cost-item-categories'
 import DosageCalculator from "./pages/calculator/dosage-calculator"
 // Thêm import cho trang dự báo thời tiết
 import WeatherForecastPage from "./pages/weather-forecast"
+// Thêm import cho trang Lịch Vạn Niên
+import LunarCalendar from "./pages/lunar-calendar"
 import { requestForToken, onMessageListener } from "./lib/firebase"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
 import { remoteConfig } from "./lib/firebase"
@@ -246,9 +248,10 @@ function AppContent({
 }) {
   const location = useLocation()
   const isWeatherForecastPage = location.pathname === '/weather-forecast'
+  const isLunarCalendarPage = location.pathname === '/lunar-calendar'
   
-  // Hiển thị Header/Sidebar nếu: đã login HOẶC đang ở trang weather-forecast
-  const shouldShowLayout = (isHeaderFooterShow === false && isLogin) || isWeatherForecastPage
+  // Hiển thị Header/Sidebar nếu: đã login HOẶC đang ở trang weather-forecast HOẶC lunar-calendar
+  const shouldShowLayout = (isHeaderFooterShow === false && isLogin) || isWeatherForecastPage || isLunarCalendarPage
 
   return (
     <MyContext.Provider value={values}>
@@ -299,6 +302,11 @@ function AppContent({
                     <Route
                       path='/weather-forecast'
                       element={<WeatherForecastPage />}
+                    />
+
+                    <Route
+                      path='/lunar-calendar'
+                      element={<LunarCalendar />}
                     />
 
                     <Route
