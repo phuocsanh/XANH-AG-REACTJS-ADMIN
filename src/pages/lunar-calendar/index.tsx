@@ -159,7 +159,7 @@ const LunarCalendar: React.FC = () => {
                 <div>
                   <Text strong className="block mb-3 text-lg uppercase" style={{ color: '#d4380d', opacity: 0.8, letterSpacing: '2px' }}>🌙 Âm lịch</Text>
                   <Title level={3} className="m-0 !text-xl md:!text-3xl" style={{ color: '#cf1322', lineHeight: '1.4' }}>
-                    {capitalizeWords(`Ngày ${selectedLunar.day} tháng ${selectedLunar.month}`)}
+                    {capitalizeWords(selectedDate.format('dddd'))}, {capitalizeWords(`Ngày ${selectedLunar.day} tháng ${selectedLunar.month}`)}
                     {selectedLunar.leap ? ' (Nhuận)' : ''}, {capitalizeWords(`năm ${selectedLunar.year}`)}
                   </Title>
                 </div>
