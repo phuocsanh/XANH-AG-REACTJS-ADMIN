@@ -275,12 +275,16 @@ export const LocationForm: React.FC<LocationFormProps> = ({
             <Col xs={8} sm={4} md={4} lg={4}>
               <Button
                 type="primary"
-                htmlType="submit"
                 icon={<SaveOutlined />}
                 loading={loading}
                 size="large"
                 block
                 title="Lưu vị trí"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  form.submit();
+                }}
               >
                 {loading ? 'Đang lưu...' : 'Lưu'}
               </Button>
