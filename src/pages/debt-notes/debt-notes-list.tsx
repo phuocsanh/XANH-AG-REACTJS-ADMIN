@@ -5,6 +5,7 @@
  */
 import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
+import { CustomerDebtor } from "@/models/customer"
 import { useDebtNotesQuery } from "@/queries/debt-note"
 import { useSeasonsQuery, useActiveSeasonQuery } from "@/queries/season"
 import {
@@ -28,6 +29,7 @@ import {
 import { SettleDebtModal } from "../payments/components/settle-debt-modal"
 import CloseSeasonModal from "./components/CloseSeasonModal"
 import { Button, TableProps } from "antd"
+import type { FilterDropdownProps } from "antd/es/table/interface"
 
 // Extend DebtNote interface để tương thích với DataTable
 interface ExtendedDebtNote extends DebtNote {
@@ -44,18 +46,7 @@ const DebtNotesList: React.FC = () => {
   // State modal chốt sổ
   const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
   const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
-  const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<{
-    id: number;
-    name: string;
-    phone: string;
-    code: string;
-    type: string;
-    is_guest: boolean;
-    total_purchases: number;
-    total_spent: number;
-    created_at: string;
-    updated_at: string;
-  } | null>(null)
+  const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<CustomerDebtor | undefined>(undefined)
 
   // State modal chốt sổ cuối vụ
   const [isCloseSeasonModalVisible, setIsCloseSeasonModalVisible] = React.useState(false)
@@ -85,12 +76,7 @@ const DebtNotesList: React.FC = () => {
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (_dataIndex: string) => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: {
-      setSelectedKeys: (keys: React.Key[]) => void;
-      selectedKeys: React.Key[];
-      confirm: (param?: { closeDropdown?: boolean }) => void;
-      clearFilters?: () => void;
-    }) => (
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: FilterDropdownProps) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
         <DatePicker.RangePicker 
             style={{ marginBottom: 8, display: 'flex' }}
@@ -209,7 +195,9 @@ const DebtNotesList: React.FC = () => {
             total_purchases: 0,
             total_spent: 0,
             created_at: '',
-            updated_at: ''
+            updated_at: '',
+            total_debt: 0,
+            debt_count: 0
         })
     }
 
@@ -219,7 +207,7 @@ const DebtNotesList: React.FC = () => {
   const handleCloseSettleModal = () => {
     setIsSettleModalVisible(false)
     setSettleInitialValues(undefined)
-    setSettleInitialCustomer(null)
+    setSettleInitialCustomer(undefined)
   }
 
   // Handlers cho modal chốt sổ cuối vụ
@@ -271,7 +259,7 @@ const DebtNotesList: React.FC = () => {
   const paidCount = summary?.paid_count || 0
 
   // Cấu hình columns cho DataTable
-  const columns = [
+  const columns: import("antd/es/table").ColumnType<ExtendedDebtNote>[] = [
     {
       key: "code",
       title: (
@@ -357,7 +345,7 @@ const DebtNotesList: React.FC = () => {
       dataIndex: "due_date",
       width: 120,
       ...getDateColumnSearchProps('due_date'),
-      filteredValue: (filters.due_date_start && filters.due_date_end) ? [filters.due_date_start, filters.due_date_end] : null,
+      filteredValue: (filters.due_date_start && filters.due_date_end) ? [filters.due_date_start as string, filters.due_date_end as string] : undefined,
       render: (value : string) => (
         <div>
           {value
@@ -375,7 +363,7 @@ const DebtNotesList: React.FC = () => {
           { text: "Quá hạn", value: "overdue" },
           { text: "Đã trả", value: "paid" },
       ],
-      filteredValue: filters.status ? [filters.status] : null,
+      filteredValue: filters.status ? [filters.status as string] : undefined,
       filterMultiple: false,
       render: (record: ExtendedDebtNote) => {
         const status = record.status as keyof typeof debtStatusLabels

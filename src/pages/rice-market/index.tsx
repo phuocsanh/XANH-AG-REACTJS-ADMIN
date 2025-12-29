@@ -17,7 +17,7 @@ const RiceMarketPage: React.FC = () => {
     setLoading(true);
     try {
       // Thử lấy dữ liệu mới nhất từ database
-      let result = await riceMarketService.getLatestRiceMarketData();
+      const result = await riceMarketService.getLatestRiceMarketData();
       setData(result);
     } catch (error: any) {
       // Nếu lỗi 404 (Không tìm thấy dữ liệu), chỉ thông báo

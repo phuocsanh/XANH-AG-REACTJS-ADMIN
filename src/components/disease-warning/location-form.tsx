@@ -164,7 +164,7 @@ export const LocationForm: React.FC<LocationFormProps> = ({
       
       // Ưu tiên lấy tên chi tiết lại để đảm bảo độ chính xác cho ruộng lúa
       // Trừ khi mapLocation.name đã là chi tiết (logic của LocationMap khi click)
-      let detailedName = mapLocation.name;
+      const detailedName = mapLocation.name;
       
       if (mapLocation.id.startsWith('custom-location')) {
          // Đã là custom location từ click bản đồ, tên đã được resolve

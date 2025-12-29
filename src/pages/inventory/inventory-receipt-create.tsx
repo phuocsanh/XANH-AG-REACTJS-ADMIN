@@ -318,7 +318,7 @@ const InventoryReceiptCreate: React.FC = () => {
       const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
 
       // 1. Xử lý upload ảnh
-      let imageUrls: string[] = [];
+      const imageUrls: string[] = [];
       if (fileList.length > 0) {
         try {
           const needsUpload = fileList.some(f => f.originFileObj);

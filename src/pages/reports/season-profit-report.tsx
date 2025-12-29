@@ -26,13 +26,11 @@ import {
   ShoppingOutlined,
   CarOutlined,
 } from '@ant-design/icons';
-import { Pie, Column } from '@ant-design/charts';
 import { useSeasonStoreProfit } from '@/queries/store-profit-report';
 import { useSeasonsQuery } from '@/queries/season';
 import type {
   TopCustomerProfit,
   TopProductProfit,
-  OperatingCostBreakdown,
 } from '@/models/store-profit';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -173,69 +171,7 @@ const SeasonProfitReportPage: React.FC = () => {
     },
   ];
 
-  // Dữ liệu cho biểu đồ tròn chi phí
-  const getCostPieData = () => {
-    if (!reportData) return [];
 
-    const data = [
-      {
-        type: 'Giá vốn hàng bán',
-        value: reportData.summary.cost_of_goods_sold,
-      },
-      {
-        type: 'Chi phí vận hành',
-        value: reportData.summary.operating_costs,
-      },
-    ];
-
-    return data.filter((item) => item.value > 0);
-  };
-
-  // Dữ liệu cho biểu đồ cột chi phí vận hành
-  const getOperatingCostChartData = () => {
-    if (!reportData?.operating_costs_breakdown) return [];
-    return reportData.operating_costs_breakdown.map((item) => ({
-      name: item.name,
-      value: item.amount,
-    }));
-  };
-
-  // Config cho biểu đồ tròn
-  const pieConfig = {
-    data: getCostPieData(),
-    angleField: 'value',
-    colorField: 'type',
-    radius: 0.8,
-    label: {
-      type: 'outer',
-      content: '{name}\n{percentage}',
-    },
-    interactions: [{ type: 'element-active' }],
-    legend: {
-      position: 'bottom' as const,
-    },
-  };
-
-  // Config cho biểu đồ cột
-  const columnConfig = {
-    data: getOperatingCostChartData(),
-    xField: 'name',
-    yField: 'value',
-    label: {
-      position: 'top' as const,
-      formatter: (datum: any) => formatCurrency(datum.value),
-    },
-    xAxis: {
-      label: {
-        autoRotate: true,
-      },
-    },
-    yAxis: {
-      label: {
-        formatter: (v: string) => formatCurrency(Number(v)),
-      },
-    },
-  };
 
   const isProfitable = reportData ? reportData.summary.net_profit > 0 : false;
 
@@ -363,27 +299,7 @@ const SeasonProfitReportPage: React.FC = () => {
             />
           )}
 
-          {/* Biểu đồ */}
-          <Row gutter={[16, 16]} className="mb-6">
-            <Col span={12}>
-              <Card title="Cơ Cấu Chi Phí">
-                {getCostPieData().length > 0 ? (
-                  <Pie {...pieConfig} />
-                ) : (
-                  <div className="text-center text-gray-500 py-8">Không có dữ liệu</div>
-                )}
-              </Card>
-            </Col>
-            <Col span={12}>
-              <Card title="Chi Phí Vận Hành Chi Tiết">
-                {getOperatingCostChartData().length > 0 ? (
-                  <Column {...columnConfig} />
-                ) : (
-                  <div className="text-center text-gray-500 py-8">Không có dữ liệu</div>
-                )}
-              </Card>
-            </Col>
-          </Row>
+
 
           {/* Thống kê giao hàng */}
           {reportData.delivery_stats && (

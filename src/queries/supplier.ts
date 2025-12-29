@@ -179,7 +179,7 @@ const searchSuppliersApi = async ({
 
   let suppliers: Supplier[] = []
   let total = 0
-  let currentPage = page
+  const currentPage = page
   
   // Logic parse robust
   if (Array.isArray(response)) {
