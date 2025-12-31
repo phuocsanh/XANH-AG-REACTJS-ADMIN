@@ -14,6 +14,7 @@ import {
   InventoryReceiptApiResponse,
   InventoryReceiptItemApiResponse,
   InventoryHistoryApiResponse,
+  InventoryReceiptPayment,
   // Thêm các interface mới từ backend NestJS
   InventoryBatch,
   InventoryTransaction,
@@ -30,6 +31,7 @@ import {
   mapApiResponseToInventoryReceiptItem,
   mapApiResponseToInventoryHistory,
 } from "@/models/inventory.model"
+import { InventoryReturnRefund } from "@/models/inventory-return.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
@@ -932,6 +934,108 @@ export const useDeleteReceiptImageMutation = () => {
     },
     onError: (error: Error) => {
       handleApiError(error, "Lỗi khi xóa ảnh")
+    },
+  })
+}
+
+// ========== PAYMENT HOOKS ==========
+
+/**
+ * Hook lấy danh sách thanh toán của phiếu nhập kho
+ */
+export const useReceiptPaymentsQuery = (receiptId: number) => {
+  return useQuery({
+    queryKey: ['receipt-payments', receiptId],
+    queryFn: async () => {
+      const response = await api.get<any>(`/inventory/receipts/${receiptId}/payments`)
+      // Unwrap data if wrapped
+      return Array.isArray(response) ? response : (response.data || [])
+    },
+    enabled: !!receiptId,
+  })
+}
+
+/**
+ * Hook lấy danh sách phiếu trả hàng liên quan đến phiếu nhập kho
+ */
+export const useReceiptReturnsQuery = (receiptId: number) => {
+  return useQuery({
+    queryKey: ['receipt-returns', receiptId],
+    queryFn: async () => {
+      const response = await api.get<any>(`/inventory/receipts/${receiptId}/returns`)
+      return Array.isArray(response) ? response : (response.data || [])
+    },
+    enabled: !!receiptId,
+  })
+}
+
+/**
+ * Hook thêm thanh toán cho phiếu nhập kho
+ */
+export const useAddPaymentMutation = () => {
+  return useMutation({
+    mutationFn: async ({ receiptId, data }: { receiptId: number; data: any }) =>
+      api.postRaw(`/inventory/receipts/${receiptId}/payments`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receipt-payments'] })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      toast.success('Thêm thanh toán thành công')
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, 'Lỗi khi thêm thanh toán')
+    },
+  })
+}
+
+/**
+ * Hook xóa thanh toán
+ */
+export const useDeletePaymentMutation = () => {
+  return useMutation({
+    mutationFn: async ({ receiptId, paymentId }: { receiptId: number; paymentId: number }) =>
+      api.delete(`/inventory/receipts/${receiptId}/payments/${paymentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receipt-payments'] })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      toast.success('Xóa thanh toán thành công')
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, 'Lỗi khi xóa thanh toán')
+    },
+  })
+}
+
+// ========== REFUND HOOKS ==========
+
+/**
+ * Hook lấy danh sách hoàn tiền của phiếu trả hàng
+ */
+export const useReturnRefundsQuery = (returnId: number) => {
+  return useQuery({
+    queryKey: ['return-refunds', returnId],
+    queryFn: async () => {
+      const response = await api.get<any>(`/inventory/returns/${returnId}/refunds`)
+      // Unwrap data if wrapped
+      return Array.isArray(response) ? response : (response.data || [])
+    },
+    enabled: !!returnId,
+  })
+}
+
+/**
+ * Hook thêm hoàn tiền cho phiếu trả hàng
+ */
+export const useAddRefundMutation = () => {
+  return useMutation({
+    mutationFn: async ({ returnId, data }: { returnId: number; data: any }) =>
+      api.postRaw(`/inventory/returns/${returnId}/refunds`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['return-refunds'] })
+      queryClient.invalidateQueries({ queryKey: ['inventory-returns'] })
+      toast.success('Thêm hoàn tiền thành công')
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, 'Lỗi khi thêm hoàn tiền')
     },
   })
 }

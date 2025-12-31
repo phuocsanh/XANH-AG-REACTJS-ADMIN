@@ -50,6 +50,44 @@ export interface InventoryReceipt {
   updated_at: string
   approved_at?: string
   items?: InventoryReceiptItem[]
+  
+  // Payment fields
+  paid_amount?: number
+  payment_status?: 'unpaid' | 'partial' | 'paid'
+  payment_method?: string
+  payment_due_date?: string
+  
+  // Adjustment fields
+  adjusted_amount?: number
+  returned_amount?: number
+  final_amount?: number
+  debt_amount?: number
+  
+  // Flags
+  has_returns?: boolean
+  has_adjustments?: boolean
+  is_payment_locked?: boolean
+  
+  // Relations
+  payments?: InventoryReceiptPayment[]
+}
+
+// Interface cho payment record
+export interface InventoryReceiptPayment {
+  id: number
+  receipt_id: number
+  payment_date: string
+  amount: number
+  payment_method: string
+  notes?: string
+  created_by: number
+  created_at: string
+  updated_at: string
+  deleted_at?: string
+  creator?: {
+    id: number
+    username: string
+  }
 }
 
 // Interface cho chi tiết phiếu nhập hàng (items)
@@ -144,12 +182,12 @@ export interface InventoryHistoryListResponse {
 
 // Mapper functions
 export function mapApiResponseToInventoryReceipt(
-  apiReceipt: InventoryReceiptApiResponse
+  apiReceipt: any // Đổi sang any để nhận thêm payment fields
 ): InventoryReceipt {
   return {
     id: apiReceipt.id,
     code: apiReceipt.code,
-    notes: apiReceipt.description, // Thay description thành notes
+    notes: apiReceipt.description || apiReceipt.notes, // Hỗ trợ cả 2 fields
     status: getInventoryReceiptStatusText(apiReceipt.status), // Chuyển status number thành text
     status_code: apiReceipt.status, // Giữ nguyên status code raw
     total_amount: parseFloat(apiReceipt.total_amount), // Chuyển string thành number
@@ -162,6 +200,26 @@ export function mapApiResponseToInventoryReceipt(
     updated_at: apiReceipt.updated_at,
     approved_at: apiReceipt.approved_at,
     items: apiReceipt.items?.map(mapApiResponseToInventoryReceiptItem),
+    
+    // Payment fields
+    paid_amount: apiReceipt.paid_amount ? parseFloat(apiReceipt.paid_amount) : 0,
+    payment_status: apiReceipt.payment_status,
+    payment_method: apiReceipt.payment_method,
+    payment_due_date: apiReceipt.payment_due_date,
+    
+    // Adjustment fields
+    adjusted_amount: apiReceipt.adjusted_amount ? parseFloat(apiReceipt.adjusted_amount) : 0,
+    returned_amount: apiReceipt.returned_amount ? parseFloat(apiReceipt.returned_amount) : 0,
+    final_amount: apiReceipt.final_amount ? parseFloat(apiReceipt.final_amount) : undefined,
+    debt_amount: apiReceipt.debt_amount ? parseFloat(apiReceipt.debt_amount) : 0,
+    
+    // Flags
+    has_returns: apiReceipt.has_returns,
+    has_adjustments: apiReceipt.has_adjustments,
+    is_payment_locked: apiReceipt.is_payment_locked,
+    
+    // Relations
+    payments: apiReceipt.payments,
   }
 }
 

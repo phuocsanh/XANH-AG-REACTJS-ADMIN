@@ -25,22 +25,48 @@ export interface InventoryReturn {
   id: number
   code: string
   receipt_id?: number
-  supplier_id: number
+  supplier_id?: number
   supplier_name?: string
-  total_amount: string
-  reason: string
+  total_amount: number
+  reason?: string
   status: string
+  notes?: string
+  images?: string[]
+  created_by: number
+  created_at: string
+  updated_at: string
+  deleted_at?: string
+  
+  // Refund fields
+  refund_amount?: number
+  refund_status?: 'pending' | 'partial' | 'refunded'
+  refund_method?: string
+  
+  // Relations
+  receipt?: any
+  supplier?: any
+  items?: InventoryReturnItem[]
+  refunds?: InventoryReturnRefund[]
+}
+
+// Type alias cho return item
+export type InventoryReturnItem = ReturnItem
+
+// Interface cho refund record
+export interface InventoryReturnRefund {
+  id: number
+  return_id: number
+  refund_date: string
+  amount: number
+  refund_method: string
   notes?: string
   created_by: number
   created_at: string
   updated_at: string
-  approved_at?: string
-  cancelled_at?: string
-  items?: ReturnItem[]
-  supplier?: {
+  deleted_at?: string
+  creator?: {
     id: number
-    name: string
-    code: string
+    username: string
   }
 }
 
@@ -125,15 +151,13 @@ export const mapApiResponseToReturn = (
     receipt_id: apiReturn.receipt_id,
     supplier_id: apiReturn.supplier_id,
     supplier_name: apiReturn.supplier_name,
-    total_amount: apiReturn.total_amount,
+    total_amount: parseFloat(apiReturn.total_amount || '0'),
     reason: apiReturn.reason,
     status: normalizedStatus,  // Giữ nguyên status code ('draft', 'approved', ...)
     notes: apiReturn.notes,
     created_by: apiReturn.created_by,
     created_at: apiReturn.created_at,
     updated_at: apiReturn.updated_at,
-    approved_at: apiReturn.approved_at,
-    cancelled_at: apiReturn.cancelled_at,
     items: apiReturn.items,
     supplier: apiReturn.supplier,
   }

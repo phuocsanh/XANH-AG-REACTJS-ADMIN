@@ -12,18 +12,18 @@ import {
   Divider,
   Select,
   Checkbox,
-  InputNumber,
   Radio,
   Space,
   Upload,
+  DatePicker,
 } from "antd"
 import type { UploadFile } from "antd"
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   SaveOutlined,
-  UploadOutlined,
 } from "@ant-design/icons"
+import dayjs from "dayjs"
 
 // Import MobileItemCard từ components
 import MobileItemCard from "./components/receipt-create/mobile-item-card"
@@ -74,6 +74,11 @@ const InventoryReceiptCreate: React.FC = () => {
   const [hasSharedShipping, setHasSharedShipping] = useState(false)
   const [sharedShippingCost, setSharedShippingCost] = useState(0)
   const [allocationMethod, setAllocationMethod] = useState<'by_value' | 'by_quantity'>('by_value')
+  
+  // State quản lý thanh toán
+  const [paidAmount, setPaidAmount] = useState(0)
+  const [paymentMethod, setPaymentMethod] = useState<string | undefined>(undefined)
+  const [paymentDueDate, setPaymentDueDate] = useState<dayjs.Dayjs | null>(null)
   
   // State tìm kiếm sản phẩm
   const [searchTerm, setSearchTerm] = useState("")
@@ -139,7 +144,6 @@ const InventoryReceiptCreate: React.FC = () => {
   const createReceiptMutation = useCreateInventoryReceiptMutation()
   const updateReceiptMutation = useUpdateInventoryReceiptMutation()
   const uploadFileMutation = useUploadFileMutation()
-  const attachImageMutation = useAttachImageToReceiptMutation()
   const { data: suppliersData, isLoading: suppliersLoading } = useSuppliersQuery({ limit: 100 })
   
   // Load dữ liệu khi edit mode (hooks đã có enabled built-in)
@@ -360,6 +364,15 @@ const InventoryReceiptCreate: React.FC = () => {
         
         // Images (chỉ gửi nếu có)
         ...(imageUrls.length > 0 && { images: imageUrls }),
+        
+        // Thanh toán (chỉ gửi nếu có)
+        ...(paidAmount > 0 && {
+          paid_amount: paidAmount,
+          payment_method: paymentMethod || 'cash',
+        }),
+        ...(paymentDueDate && {
+          payment_due_date: paymentDueDate.toISOString(),
+        }),
         
         // Items
         items: validItems.map((item) => ({
@@ -602,6 +615,55 @@ const InventoryReceiptCreate: React.FC = () => {
                 <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
               </div>
             </Upload>
+          </Card>
+
+          {/* Phần thanh toán */}
+          <Card title="Thanh toán (Tùy chọn)" className='mt-4'>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+              <Form.Item label='Số tiền thanh toán ngay'>
+                <NumberInput
+                  value={paidAmount}
+                  onChange={(value) => setPaidAmount(value || 0)}
+                  style={{ width: '100%' }}
+                  addonAfter="VND"
+                  min={0}
+                  max={calculateTotals().grandTotal}
+                  placeholder='Nhập số tiền thanh toán'
+                />
+              </Form.Item>
+
+              <Form.Item label='Phương thức thanh toán'>
+                <Select
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                  placeholder='Chọn phương thức'
+                  allowClear
+                >
+                  <Select.Option value='cash'>Tiền mặt</Select.Option>
+                  <Select.Option value='transfer'>Chuyển khoản</Select.Option>
+                  <Select.Option value='debt'>Công nợ</Select.Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item label='Hạn thanh toán'>
+                <DatePicker
+                  value={paymentDueDate}
+                  onChange={setPaymentDueDate}
+                  style={{ width: '100%' }}
+                  placeholder='Chọn hạn thanh toán'
+                  format='DD/MM/YYYY'
+                />
+              </Form.Item>
+            </div>
+            
+            {paidAmount > 0 && (
+              <Alert
+                message={`Thanh toán ngay: ${paidAmount.toLocaleString('vi-VN')} VND / ${calculateTotals().grandTotal.toLocaleString('vi-VN')} VND`}
+                description={`Còn nợ: ${(calculateTotals().grandTotal - paidAmount).toLocaleString('vi-VN')} VND`}
+                type='info'
+                showIcon
+              />
+            )}
           </Card>
 
           {/* Hiển thị tổng tiền chi tiết */}

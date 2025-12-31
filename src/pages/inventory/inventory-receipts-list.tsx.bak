@@ -492,22 +492,6 @@ const InventoryReceiptsList: React.FC = () => {
         }).format(amount),
     },
     {
-      title: "Tiền trả hàng",
-      dataIndex: "returned_amount",
-      key: "returned_amount",
-      width: 150,
-      align: "right",
-      render: (amount: number) => (
-        <Text style={{ color: amount > 0 ? '#ff4d4f' : '#8c8c8c' }}>
-          {amount > 0 ? '-' : ''}
-          {new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(amount || 0)}
-        </Text>
-      ),
-    },
-    {
       title: "Đã thanh toán",
       dataIndex: "paid_amount",
       key: "paid_amount",
@@ -669,31 +653,6 @@ const InventoryReceiptsList: React.FC = () => {
                   <Text className="text-[10px] block" type="secondary">Giá trị</Text>
                 </Card>
               </Col>
-
-              {/* Số phiếu nợ NCC */}
-              <Col xs={6} sm={6} md={6}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
-                    {receipts?.filter(r => (Number(r.debt_amount) || 0) > 0).length || 0}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Phiếu nợ</Text>
-                </Card>
-              </Col>
-
-              {/* Tổng nợ NCC */}
-              <Col xs={6} sm={6} md={6}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                      notation: "compact",
-                      maximumFractionDigits: 0
-                    }).format(receipts?.reduce((sum, r) => sum + (Number(r.debt_amount) || 0), 0) || 0)}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Tổng nợ</Text>
-                </Card>
-              </Col>
             </Row>
           </Col>
         )}
@@ -768,7 +727,6 @@ const InventoryReceiptsList: React.FC = () => {
           paidAmount={selectedReceiptForPayment.paid_amount || 0}
           supplierId={selectedReceiptForPayment.supplier_id}
           supplierName={selectedReceiptForPayment.supplier?.name}
-          receiptStatus={selectedReceiptForPayment.status}
           open={!!selectedReceiptForPayment}
           onClose={() => setSelectedReceiptForPayment(null)}
         />

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
   Card,
@@ -23,6 +23,7 @@ import {
   PrinterOutlined,
   HistoryOutlined,
   DeleteOutlined,
+  DollarOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
@@ -39,6 +40,7 @@ import {
   useDeleteInventoryReceiptMutation,
 } from "@/queries/inventory"
 import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
+import PaymentHistoryModal from "@/components/inventory/PaymentHistoryModal"
 
 const { Title, Text } = Typography
 
@@ -46,6 +48,7 @@ const InventoryReceiptDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const receiptId = Number(id)
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false)
 
   // Queries
   const {
@@ -516,6 +519,69 @@ const InventoryReceiptDetail: React.FC = () => {
             <ReceiptImageUpload receiptId={receiptId} />
           </div>
         </Col>
+
+        {/* Thông tin thanh toán - Hiển thị cho tất cả phiếu */}
+        <Col xs={24} lg={12} style={{ marginTop: '16px' }}>
+          <Card title="Thông tin thanh toán" size="small">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Tổng tiền">
+                  <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(receipt.final_amount || receipt.total_amount)}
+                  </Text>
+                </Descriptions.Item>
+                
+                <Descriptions.Item label="Đã thanh toán">
+                  <Text style={{ color: '#1890ff', fontWeight: 500 }}>
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(receipt.paid_amount || 0)}
+                  </Text>
+                </Descriptions.Item>
+                
+                <Descriptions.Item label="Còn nợ">
+                  <Text style={{ color: '#ff4d4f', fontWeight: 500 }}>
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(receipt.debt_amount || 0)}
+                  </Text>
+                </Descriptions.Item>
+                
+                <Descriptions.Item label="Trạng thái thanh toán">
+                  {receipt.payment_status === 'paid' && <Tag color="success">Đã thanh toán</Tag>}
+                  {receipt.payment_status === 'partial' && <Tag color="warning">Thanh toán một phần</Tag>}
+                  {receipt.payment_status === 'unpaid' && <Tag color="error">Chưa thanh toán</Tag>}
+                </Descriptions.Item>
+              </Descriptions>
+              
+              <Divider style={{ margin: '12px 0' }} />
+              
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Button
+                  block
+                  icon={<DollarOutlined />}
+                  onClick={() => setShowPaymentHistory(true)}
+                >
+                  Lịch sử thanh toán
+                </Button>
+                
+                {receipt.debt_amount && receipt.debt_amount > 0 && (
+                  <Button
+                    block
+                    type="primary"
+                    icon={<DollarOutlined />}
+                    onClick={() => setShowPaymentHistory(true)}
+                  >
+                    Thêm thanh toán
+                  </Button>
+                )}
+              </Space>
+            </Card>
+          </Col>
       </Row>
 
       <Divider />
@@ -580,6 +646,22 @@ const InventoryReceiptDetail: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* Payment History Modal */}
+      <PaymentHistoryModal
+        receiptId={receipt.id}
+        receiptCode={receipt.code}
+        debtAmount={receipt.debt_amount || 0}
+        totalAmount={receipt.total_amount || 0}
+        returnedAmount={receipt.returned_amount || 0}
+        finalAmount={receipt.final_amount || receipt.total_amount || 0}
+        paidAmount={receipt.paid_amount || 0}
+        supplierId={receipt.supplier_id}
+        supplierName={receipt.supplier?.name}
+        receiptStatus={receipt.status}
+        open={showPaymentHistory}
+        onClose={() => setShowPaymentHistory(false)}
+      />
     </div>
   )
 }
