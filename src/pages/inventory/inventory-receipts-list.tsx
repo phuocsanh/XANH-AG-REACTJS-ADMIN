@@ -626,7 +626,7 @@ const InventoryReceiptsList: React.FC = () => {
           <Col span={24}>
             <Row gutter={[4, 4]}>
               {/* Tổng phiếu nhập */}
-              <Col xs={6} sm={6} md={6}>
+              <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
                     {statsData.totalReceipts}
@@ -636,7 +636,7 @@ const InventoryReceiptsList: React.FC = () => {
               </Col>
               
               {/* Đã duyệt */}
-              <Col xs={6} sm={6} md={6}>
+              <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
                     {statsData.approvedReceipts}
@@ -646,7 +646,7 @@ const InventoryReceiptsList: React.FC = () => {
               </Col>
               
               {/* Nháp */}
-              <Col xs={6} sm={6} md={6}>
+              <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#8c8c8c' }}>
                     {statsData.draftReceipts}
@@ -656,7 +656,7 @@ const InventoryReceiptsList: React.FC = () => {
               </Col>
               
               {/* Tổng giá trị */}
-              <Col xs={6} sm={6} md={6}>
+              <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
                     {new Intl.NumberFormat("vi-VN", {
@@ -671,7 +671,7 @@ const InventoryReceiptsList: React.FC = () => {
               </Col>
 
               {/* Số phiếu nợ NCC */}
-              <Col xs={6} sm={6} md={6}>
+              <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
                     {receipts?.filter(r => (Number(r.debt_amount) || 0) > 0).length || 0}
@@ -681,7 +681,7 @@ const InventoryReceiptsList: React.FC = () => {
               </Col>
 
               {/* Tổng nợ NCC */}
-              <Col xs={6} sm={6} md={6}>
+              <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
                     {new Intl.NumberFormat("vi-VN", {
