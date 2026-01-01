@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { Modal, message } from 'antd';
 import { useForm } from 'react-hook-form';
 import { useCreateCostItem, useUpdateCostItem } from '@/queries/cost-item';
+import { useCostItemCategories } from '@/queries/cost-item-category';
 import type { CostItem } from '@/models/cost-item';
 import FormField from '@/components/form/form-field';
 import FormFieldNumber from '@/components/form/form-field-number';
 import FormDatePicker from '@/components/form/form-date-picker';
+import FormComboBox from '@/components/form/form-combo-box';
 import dayjs from 'dayjs';
 
 interface CreateCostItemModalProps {
@@ -17,6 +19,7 @@ interface CreateCostItemModalProps {
 
 interface CostItemFormValues {
   item_name: string;
+  category_id?: number;
   expense_date: string;
   total_cost: number;
   notes?: string;
@@ -30,11 +33,18 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
 }) => {
   const createMutation = useCreateCostItem();
   const updateMutation = useUpdateCostItem();
+  const { data: categoriesData } = useCostItemCategories({ limit: 100 });
   const isEdit = !!initialData;
+
+  const categoryOptions = categoriesData?.data.map((cat) => ({
+    label: cat.name,
+    value: cat.id,
+  })) || [];
 
   const { control, handleSubmit, reset } = useForm<CostItemFormValues>({
     defaultValues: {
       item_name: '',
+      category_id: undefined,
       expense_date: dayjs().toISOString(),
       total_cost: 0,
       notes: '',
@@ -46,6 +56,7 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
       if (initialData) {
         reset({
           item_name: initialData.item_name,
+          category_id: initialData.category_id,
           expense_date: initialData.expense_date,
           total_cost: Number(initialData.total_cost),
           notes: initialData.notes || '',
@@ -53,6 +64,7 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
       } else {
         reset({
           item_name: '',
+          category_id: undefined,
           expense_date: dayjs().toISOString(),
           total_cost: 0,
           notes: '',
@@ -105,6 +117,15 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
           label="Tên chi phí"
           required
           placeholder="VD: Mua phân DAP"
+        />
+
+        <FormComboBox
+          name="category_id"
+          control={control}
+          label="Loại chi phí"
+          placeholder="Chọn loại chi phí"
+          options={categoryOptions}
+          className="w-full"
         />
 
         <FormDatePicker

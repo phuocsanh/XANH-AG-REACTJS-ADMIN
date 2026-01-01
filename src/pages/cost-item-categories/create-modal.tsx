@@ -81,35 +81,9 @@ const CreateCostItemCategoryModal: React.FC<CreateCostItemCategoryModalProps> = 
           <Input placeholder="VD: Giống lúa" />
         </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="code"
-              label="Mã (tùy chọn)"
-            >
-              <Input placeholder="VD: SEED" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="icon"
-              label="Icon (emoji)"
-            >
-              <Input placeholder="🌱" maxLength={2} />
-            </Form.Item>
-          </Col>
-        </Row>
 
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="color"
-              label="Màu sắc (hex)"
-            >
-              <Input placeholder="#52c41a" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
+          <Col span={24}>
             <Form.Item
               name="is_active"
               label="Trạng thái"

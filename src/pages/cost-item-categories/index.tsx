@@ -37,15 +37,6 @@ const CostItemCategoriesPage: React.FC = () => {
 
   const columns: ColumnsType<CostItemCategory> = [
     {
-      title: 'Icon',
-      dataIndex: 'icon',
-      key: 'icon',
-      width: 80,
-      render: (icon: string) => (
-        <span style={{ fontSize: 24 }}>{icon || '📦'}</span>
-      ),
-    },
-    {
       title: 'Tên loại',
       dataIndex: 'name',
       key: 'name',
@@ -56,28 +47,6 @@ const CostItemCategoriesPage: React.FC = () => {
       dataIndex: 'code',
       key: 'code',
       width: 120,
-    },
-    {
-      title: 'Màu sắc',
-      dataIndex: 'color',
-      key: 'color',
-      width: 100,
-      render: (color: string) => (
-        color ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 4,
-                backgroundColor: color,
-                border: '1px solid #d9d9d9',
-              }}
-            />
-            <span>{color}</span>
-          </div>
-        ) : '-'
-      ),
     },
     {
       title: 'Trạng thái',
