@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button, message, Space, Form, Spin, Modal, Row, Col, Alert } from "antd"
 import { SaveOutlined, PlusOutlined, DeleteOutlined, WarningOutlined } from "@ant-design/icons"
+import { Sparkles } from "lucide-react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -42,6 +43,9 @@ import { useProductsQuery } from "@/queries/product"
 import { UPLOAD_TYPES } from "@/services/upload.service"
 // Thêm import cho ImageAnalyzer
 import { ImageAnalyzer, ExtractedProductData } from "@/components/image-analyzer"
+import ImageStudio from "@/components/image-studio/image-studio"
+import { useUploadImageMutation } from "@/queries/upload"
+import { UploadType } from "@/services/upload.service"
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -154,7 +158,7 @@ const TiptapEditor: React.FC<{
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const { control, handleSubmit, watch, reset, setValue } = useForm<ProductFormValues>({
+  const { control, handleSubmit, watch, reset, setValue, getValues } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: defaultProductFormValues,
   })
@@ -175,6 +179,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const [duplicateProducts, setDuplicateProducts] = useState<Product[]>([])
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false)
   const [productNameInput, setProductNameInput] = useState("")
+
+  // State cho AI Image Studio
+  const [studioVisible, setStudioVisible] = useState(false)
+  const uploadMutation = useUploadImageMutation()
 
   // Watch form values
   const watchedType = watch("type")
@@ -644,6 +652,65 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 <ImageAnalyzer 
                   onDataExtracted={handleDataExtracted}
                   loading={loading || initialLoading}
+                />
+              </div>
+
+              {/* AI Image Studio Trigger */}
+              <div className="px-3 md:px-6 mb-4">
+                <Button 
+                  icon={<Sparkles className="w-4 h-4" />} 
+                  onClick={() => setStudioVisible(true)}
+                  style={{ 
+                    background: 'linear-gradient(to right, #3b82f6, #4f46e5)',
+                    color: 'white',
+                    border: 'none',
+                    height: 'auto',
+                    padding: '10px 24px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                  }}
+                  className="hover:opacity-90 transition-opacity"
+                >
+                  Studio AI - Tạo ảnh sản phẩm chuyên nghiệp
+                </Button>
+                
+                <ImageStudio 
+                  visible={studioVisible}
+                  onCancel={() => setStudioVisible(false)}
+                  onSave={async (file) => {
+                    try {
+                      message.loading({ content: 'Đang tải ảnh lên hệ thống...', key: 'upload-ai' });
+                      const result = await uploadMutation.mutateAsync({
+                        file,
+                        type: UPLOAD_TYPES.COMMON as UploadType
+                      });
+                      
+                      // 1. Cập nhật trường thumb (Ảnh đại diện)
+                      setValue('thumb', [{
+                        uid: result.id,
+                        name: result.name || 'product-ai.png',
+                        status: 'done',
+                        url: result.url
+                      }]);
+
+                      // 2. Thêm vào trường pictures (Hình ảnh chi tiết)
+                      const currentPictures = getValues('pictures') || [];
+                      setValue('pictures', [...currentPictures, {
+                        uid: result.id,
+                        name: result.name || 'product-ai.png',
+                        status: 'done',
+                        url: result.url
+                      }]);
+                      
+                      message.success({ content: 'Đã cập nhật ảnh đại diện và thêm vào bộ sưu tập!', key: 'upload-ai' });
+                    } catch (error) {
+                      console.error('Upload Error:', error);
+                      message.error({ content: 'Lỗi khi tải ảnh lên hệ thống', key: 'upload-ai' });
+                    }
+                  }}
                 />
               </div>
               
