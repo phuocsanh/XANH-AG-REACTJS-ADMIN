@@ -1,67 +1,64 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Hook để thêm pull-to-refresh cho PWA
  * Kéo xuống từ đầu trang sẽ reload trang
  */
 export function usePullToRefresh() {
-  const [startY, setStartY] = useState(0);
-  const [isPulling, setIsPulling] = useState(false);
+  const touchStartYRef = useRef(0);
+  const isPullingRef = useRef(false);
 
   useEffect(() => {
-    let touchStartY = 0;
-    let touchEndY = 0;
-
     const handleTouchStart = (e: TouchEvent) => {
       // Chỉ kích hoạt khi scroll ở đầu trang
       if (window.scrollY === 0) {
-        touchStartY = e.touches[0].clientY;
-        setStartY(touchStartY);
+        touchStartYRef.current = e.touches[0].clientY;
+        console.log('🔵 Touch start at:', touchStartYRef.current);
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (window.scrollY === 0 && touchStartY > 0) {
-        touchEndY = e.touches[0].clientY;
-        const pullDistance = touchEndY - touchStartY;
+      if (window.scrollY === 0 && touchStartYRef.current > 0) {
+        const touchEndY = e.touches[0].clientY;
+        const pullDistance = touchEndY - touchStartYRef.current;
 
-        // Nếu kéo xuống > 80px
-        if (pullDistance > 80) {
-          setIsPulling(true);
+        // Nếu kéo xuống > 100px
+        if (pullDistance > 100) {
+          isPullingRef.current = true;
+          console.log('🟢 Pull detected! Distance:', pullDistance);
         }
       }
     };
 
     const handleTouchEnd = () => {
-      if (isPulling) {
+      if (isPullingRef.current) {
+        console.log('🔄 Reloading page...');
         // Reload trang
         window.location.reload();
       }
       
       // Reset
-      setIsPulling(false);
-      setStartY(0);
-      touchStartY = 0;
-      touchEndY = 0;
+      isPullingRef.current = false;
+      touchStartYRef.current = 0;
     };
 
-    // Chỉ thêm listener khi đang chạy PWA (standalone mode)
+    // Kiểm tra xem có đang chạy PWA không
     const isPWA = window.matchMedia('(display-mode: standalone)').matches;
     
-    if (isPWA) {
-      document.addEventListener('touchstart', handleTouchStart, { passive: true });
-      document.addEventListener('touchmove', handleTouchMove, { passive: true });
-      document.addEventListener('touchend', handleTouchEnd);
-    }
+    console.log('📱 PWA mode:', isPWA);
+    
+    // Luôn thêm listener (để test được trong browser thường)
+    // Nhưng chỉ log khi là PWA
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd);
 
     return () => {
-      if (isPWA) {
-        document.removeEventListener('touchstart', handleTouchStart);
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      }
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isPulling, startY]);
+  }, []); // Empty dependency array - chỉ chạy 1 lần
 
-  return { isPulling };
+  return {};
 }
