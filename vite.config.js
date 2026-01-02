@@ -65,13 +65,13 @@ export default defineConfig({
         version: "2.0.0", // Tăng version để force update
         icons: [
           {
-            src: '/icons/icon-192.png?v=2', // Thêm query string để cache busting
+            src: '/icons/app-icon-192.png', // Đổi tên file để tránh cache
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/icons/icon-512.png?v=2', // Thêm query string để cache busting
+            src: '/icons/app-icon-512.png', // Đổi tên file để tránh cache
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
