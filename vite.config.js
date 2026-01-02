@@ -62,15 +62,16 @@ export default defineConfig({
         orientation: "portrait",
         scope: "/",
         start_url: "/",
+        version: "2.0.0", // Tăng version để force update
         icons: [
           {
-            src: '/icons/icon-192.png',
+            src: '/icons/icon-192.png?v=2', // Thêm query string để cache busting
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/icons/icon-512.png',
+            src: '/icons/icon-512.png?v=2', // Thêm query string để cache busting
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
