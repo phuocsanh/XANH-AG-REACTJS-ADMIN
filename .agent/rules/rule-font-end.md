@@ -12,3 +12,4 @@ trigger: always_on
 - Code có thể có component ở mobile nữa nên để ý code cả dạng desktop mobile luôn chỉ làm nếu code của font-end
 
 - Ưu tiên dùng các component viết sẵn trong /Users/phuocsanh/My-Document/My-Tech/Xanh-AG-Source/XANH-AG-REACTJS-ADMIN/src/components
+- Tôi đang dùng nvm 

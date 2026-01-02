@@ -80,11 +80,11 @@ import DosageCalculator from "./pages/calculator/dosage-calculator"
 import WeatherForecastPage from "./pages/weather-forecast"
 // Thêm import cho trang Lịch Vạn Niên
 import LunarCalendar from "./pages/lunar-calendar"
-import { requestForToken, onMessageListener } from "./lib/firebase"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
 import { remoteConfig } from "./lib/firebase"
-import { toast } from "react-toastify"
 import { useConfigStore } from "./stores/config.store"
+import { useFirebaseNotifications } from "./hooks/use-firebase-notifications"
+
 
 type TypeMyContext = {
   isHeaderFooterShow: boolean
@@ -182,30 +182,8 @@ function App() {
     }
   }, [])
 
-  // Firebase Notification Setup
-  useEffect(() => {
-    requestForToken();
-
-    onMessageListener()
-      .then((payload: any) => {
-        toast.info(
-          <div>
-            <h4 className="font-bold">{payload.notification.title}</h4>
-            <p className="text-sm">{payload.notification.body}</p>
-          </div>,
-          {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          }
-        );
-        console.log('Received foreground message: ', payload);
-      })
-      .catch((err: any) => console.log('failed: ', err));
-  }, []);
+  // Firebase Notification Setup - sử dụng hook
+  useFirebaseNotifications(isLogin);
 
   const values = {
     isHeaderFooterShow,
