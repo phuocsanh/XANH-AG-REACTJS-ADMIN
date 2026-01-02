@@ -10,7 +10,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icons/apple-touch-icon.png", "offline.html"],
       workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB - Tăng lên để cache file lớn
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
@@ -92,4 +92,17 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
+  build: {
+    chunkSizeWarningLimit: 10000, // 10MB - Tăng giới hạn warning cho chunk size
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Tách vendor chunks để giảm kích thước file chính
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'antd-vendor': ['antd'],
+          'chart-vendor': ['recharts'],
+        }
+      }
+    }
+  }
 })
