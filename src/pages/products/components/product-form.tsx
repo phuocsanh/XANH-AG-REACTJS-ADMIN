@@ -670,11 +670,15 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     display: 'flex',
                     alignItems: 'center',
                     fontWeight: 600,
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                    width: '100%', // Chiếm full width
+                    whiteSpace: 'normal', // Cho phép xuống dòng
+                    textAlign: 'center', // Căn giữa text
+                    justifyContent: 'center', // Căn giữa nội dung
                   }}
                   className="hover:opacity-90 transition-opacity"
                 >
-                  Studio AI - Tạo ảnh sản phẩm chuyên nghiệp
+                 Tạo ảnh sản phẩm chuyên nghiệp
                 </Button>
                 
                 <ImageStudio 
