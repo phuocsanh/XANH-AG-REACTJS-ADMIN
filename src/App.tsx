@@ -84,6 +84,7 @@ import { fetchAndActivate, getValue } from "firebase/remote-config"
 import { remoteConfig } from "./lib/firebase"
 import { useConfigStore } from "./stores/config.store"
 import { useFirebaseNotifications } from "./hooks/use-firebase-notifications"
+import { usePullToRefresh } from "./hooks/use-pull-to-refresh"
 
 
 type TypeMyContext = {
@@ -184,6 +185,9 @@ function App() {
 
   // Firebase Notification Setup - sử dụng hook
   useFirebaseNotifications(isLogin);
+
+  // Pull to Refresh cho PWA
+  usePullToRefresh();
 
   const values = {
     isHeaderFooterShow,
