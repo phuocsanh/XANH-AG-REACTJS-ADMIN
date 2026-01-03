@@ -39,8 +39,36 @@ export function usePullToRefresh() {
       
       if (isPullingRef.current) {
         console.log('🔄 Reloading page...');
-        // Reload trang
-        window.location.reload();
+        
+        // Hiển thị loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          color: white;
+          font-size: 18px;
+          font-weight: bold;
+        `;
+        loadingDiv.innerHTML = `
+          <div style="text-align: center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🔄</div>
+            <div>Đang tải lại...</div>
+          </div>
+        `;
+        document.body.appendChild(loadingDiv);
+        
+        // Reload trang sau 300ms để user thấy loading
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
       }
       
       // Reset
