@@ -62,16 +62,16 @@ export default defineConfig({
         orientation: "portrait",
         scope: "/",
         start_url: "/",
-        version: "2.0.0", // Tăng version để force update
+        version: "3.0.0", // Tăng version để force update icon
         icons: [
           {
-            src: '/icons/app-icon-192.png', // Đổi tên file để tránh cache
+            src: '/icons/pwa-icon-192-v3.png', // Đổi tên file để force reload
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/icons/app-icon-512.png', // Đổi tên file để tránh cache
+            src: '/icons/pwa-icon-512-v3.png', // Đổi tên file để force reload
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
