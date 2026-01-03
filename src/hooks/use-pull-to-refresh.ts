@@ -26,8 +26,8 @@ export function usePullToRefresh() {
 
         console.log('📏 Pull distance:', pullDistance);
 
-        // Nếu kéo xuống > 50px (giảm threshold để dễ kích hoạt hơn)
-        if (pullDistance > 50) {
+        // Nếu kéo xuống > 40px
+        if (pullDistance > 40) {
           isPullingRef.current = true;
           console.log('🟢 Pull detected! Distance:', pullDistance);
         }
