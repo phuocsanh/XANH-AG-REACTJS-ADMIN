@@ -62,36 +62,41 @@ export default defineConfig({
         orientation: "portrait",
         scope: "/",
         start_url: "/",
-        version: "4.0.0", // Tăng version để force update icon
+        version: "5.0.0", // Tăng version để force update icon
         icons: [
-          // Icon 'any' - hiển thị bình thường (dùng icon cũ)
+          // Icon 'any' - hiển thị bình thường
           {
-            src: '/icons/pwa-icon-192-v3.png',
+            src: '/icons/pwa-icon-192-v5.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icons/pwa-icon-512-v3.png',
+            src: '/icons/pwa-icon-512-v5.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
-          // Icon 'maskable' - cho phép OS crop (dùng icon mới với safe zone)
+          // Icon 'maskable' - cho phép OS crop (có safe zone)
           {
-            src: '/icons/pwa-maskable-192.png',
+            src: '/icons/pwa-maskable-192-v5.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/icons/pwa-maskable-512.png',
+            src: '/icons/pwa-maskable-512-v5.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
           }
         ],
         gcm_sender_id: "103953800507"
+      },
+      workbox: {
+        cleanupOutdatedCaches: true, // Tự động xóa cache cũ
+        skipWaiting: true, // Kích hoạt service worker mới ngay lập tức
+        clientsClaim: true, // Kiểm soát tất cả clients ngay lập tức
       },
       devOptions: {
         enabled: true, // Enable PWA in dev mode for testing
