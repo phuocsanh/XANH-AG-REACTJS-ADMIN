@@ -60,8 +60,8 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
-        scope: "/",
-        start_url: "/",
+        scope: "/?pwa=v5",
+        start_url: "/?pwa=v5",
         version: "5.0.0", // Tăng version để force update icon
         icons: [
           // Icon 'any' - hiển thị bình thường
