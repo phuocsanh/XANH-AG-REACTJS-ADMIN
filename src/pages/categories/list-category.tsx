@@ -140,12 +140,17 @@ const ListCategory = () => {
   return (
     <>
       <div className='right-content w-100'>
-        <div className='card shadow border-0 w-100 flex-row p-4'>
-          <h5 className='mb-0'>Danh sách loại sản phẩm</h5>
-          <div className='ml-auto d-flex align-items-center'>
-            <div className='ml-auto d-flex align-items-center'>
-              <Button className='btn-blue ml-3 pl-3 pr-3' onClick={handleAdd}>
-                <IoMdAdd /> &nbsp; Thêm loại sản phẩm
+        <div className='card shadow border-0 w-100 p-4'>
+          <div className='d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3'>
+            <h5 className='mb-0'>Danh sách loại sản phẩm</h5>
+            <div className='ms-auto w-100 w-sm-auto'>
+              <Button 
+                className='btn-blue w-100 w-sm-auto' 
+                onClick={handleAdd}
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                <IoMdAdd /> <span className='d-none d-sm-inline'>&nbsp; Thêm Loại Sản Phẩm</span>
+                <span className='d-inline d-sm-none'>&nbsp; Thêm</span>
               </Button>
             </div>
           </div>
