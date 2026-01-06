@@ -10,7 +10,10 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icons/apple-touch-icon.png", "offline.html"],
       workbox: {
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB - Tăng lên để cache file lớn
+        maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // 30MB - Cho phép cache file WASM lớn
+        cleanupOutdatedCaches: true, // Tự động xóa cache cũ
+        skipWaiting: true, // Kích hoạt service worker mới ngay lập tức
+        clientsClaim: true, // Kiểm soát tất cả clients ngay lập tức
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
@@ -66,26 +69,26 @@ export default defineConfig({
         icons: [
           // Icon 'any' - hiển thị bình thường
           {
-            src: '/icons/pwa-icon-192-v5.png',
+            src: '/icons/pwa-icon-192-v5.png?v=20260106',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/icons/pwa-icon-512-v5.png',
+            src: '/icons/pwa-icon-512-v5.png?v=20260106',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           // Icon 'maskable' - cho phép OS crop (có safe zone)
           {
-            src: '/icons/pwa-maskable-192-v5.png',
+            src: '/icons/pwa-maskable-192-v5.png?v=20260106',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/icons/pwa-maskable-512-v5.png',
+            src: '/icons/pwa-maskable-512-v5.png?v=20260106',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
@@ -93,12 +96,7 @@ export default defineConfig({
         ],
         gcm_sender_id: "103953800507"
       },
-      workbox: {
-        cleanupOutdatedCaches: true, // Tự động xóa cache cũ
-        skipWaiting: true, // Kích hoạt service worker mới ngay lập tức
-        clientsClaim: true, // Kiểm soát tất cả clients ngay lập tức
-        maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // 30MB (cho phép cache file WASM lớn)
-      },
+
       devOptions: {
         enabled: true, // Enable PWA in dev mode for testing
       },
