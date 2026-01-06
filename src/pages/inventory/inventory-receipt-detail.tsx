@@ -34,11 +34,12 @@ import {
 } from "@/models/inventory.model"
 import {
   useInventoryReceiptQuery,
-  useInventoryReceiptItemsQuery,
   useApproveInventoryReceiptMutation,
   useCancelInventoryReceiptMutation,
   useDeleteInventoryReceiptMutation,
+  inventoryKeys,
 } from "@/queries/inventory"
+import { queryClient } from "@/provider/app-provider-tanstack"
 import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
 import PaymentHistoryModal from "@/components/inventory/PaymentHistoryModal"
 
@@ -57,11 +58,10 @@ const InventoryReceiptDetail: React.FC = () => {
     error: receiptError,
   } = useInventoryReceiptQuery(receiptId)
 
-  const {
-    data: items,
-    isLoading: isLoadingItems,
-    error: itemsError,
-  } = useInventoryReceiptItemsQuery(receiptId)
+  // Lấy items từ receipt.items thay vì gọi API riêng
+  const items = receipt?.items || []
+  const isLoadingItems = false
+  const itemsError: Error | null = null
 
   // Mutations
   const approveReceiptMutation = useApproveInventoryReceiptMutation()
@@ -148,7 +148,7 @@ const InventoryReceiptDetail: React.FC = () => {
     // Nút in (luôn có)
     buttons.push(
       <Button key='print' icon={<PrinterOutlined />} onClick={handlePrint}>
-        In phiếu
+        <span className="hidden sm:inline">In phiếu</span>
       </Button>
     )
 
@@ -159,7 +159,7 @@ const InventoryReceiptDetail: React.FC = () => {
         icon={<HistoryOutlined />}
         onClick={handleViewHistory}
       >
-        Lịch sử
+        <span className="hidden sm:inline">Lịch sử</span>
       </Button>
     )
 
@@ -168,7 +168,7 @@ const InventoryReceiptDetail: React.FC = () => {
       // Chỉnh sửa
       buttons.push(
         <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
-          Chỉnh sửa
+          <span className="hidden sm:inline">Chỉnh sửa</span>
         </Button>
       )
       
@@ -187,7 +187,7 @@ const InventoryReceiptDetail: React.FC = () => {
             danger
             loading={deleteReceiptMutation.isPending}
           >
-            Xóa phiếu
+            <span className="hidden sm:inline">Xóa phiếu</span>
           </Button>
         </Popconfirm>
       )
@@ -206,7 +206,7 @@ const InventoryReceiptDetail: React.FC = () => {
             icon={<CloseOutlined />}
             loading={cancelReceiptMutation.isPending}
           >
-            Hủy phiếu
+            <span className="hidden sm:inline">Hủy phiếu</span>
           </Button>
         </Popconfirm>
       )
@@ -217,7 +217,7 @@ const InventoryReceiptDetail: React.FC = () => {
       // Chỉnh sửa (vẫn được sửa trước khi duyệt)
       buttons.push(
         <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
-          Chỉnh sửa
+          <span className="hidden sm:inline">Chỉnh sửa</span>
         </Button>
       )
       
@@ -236,7 +236,7 @@ const InventoryReceiptDetail: React.FC = () => {
             icon={<CheckOutlined />}
             loading={approveReceiptMutation.isPending}
           >
-            Duyệt phiếu
+            <span className="hidden sm:inline">Duyệt phiếu</span>
           </Button>
         </Popconfirm>
       )
@@ -255,7 +255,7 @@ const InventoryReceiptDetail: React.FC = () => {
             icon={<CloseOutlined />}
             loading={cancelReceiptMutation.isPending}
           >
-            Hủy phiếu
+            <span className="hidden sm:inline">Hủy phiếu</span>
           </Button>
         </Popconfirm>
       )
@@ -278,7 +278,7 @@ const InventoryReceiptDetail: React.FC = () => {
             loading={cancelReceiptMutation.isPending}
             danger
           >
-            Hủy phiếu (Hoàn kho)
+            <span className="hidden sm:inline">Hủy phiếu (Hoàn kho)</span>
           </Button>
         </Popconfirm>
       )
@@ -321,8 +321,8 @@ const InventoryReceiptDetail: React.FC = () => {
     },
     {
       title: "Tên sản phẩm",
-      dataIndex: "productName",
-      key: "productName",
+      dataIndex: "product_name",
+      key: "product_name",
       width: 250,
     },
     {
@@ -336,15 +336,15 @@ const InventoryReceiptDetail: React.FC = () => {
     },
     {
       title: "Đơn giá",
-      dataIndex: "unitPrice",
-      key: "unitPrice",
+      dataIndex: "unit_cost",
+      key: "unit_cost",
       width: 120,
       align: "right",
-      render: (price: string) =>
+      render: (price: number) =>
         new Intl.NumberFormat("vi-VN", {
           style: "currency",
           currency: "VND",
-        }).format(parseFloat(price || "0")),
+        }).format(price || 0),
     },
     {
       title: "Thành tiền",
@@ -363,18 +363,18 @@ const InventoryReceiptDetail: React.FC = () => {
     },
     {
       title: "Hạn sử dụng",
-      dataIndex: "expiryDate",
-      key: "expiryDate",
+      dataIndex: "expiry_date",
+      key: "expiry_date",
       width: 120,
       align: "center",
       render: (date: string) => (date ? dayjs(date).format("DD/MM/YYYY") : "-"),
     },
     {
       title: "Số lô",
-      dataIndex: "batchNumber",
-      key: "batchNumber",
-      width: 100,
-      render: (batch: string) => batch || "-",
+      dataIndex: "batch_number",
+      key: "batch_number",
+      width: 200,
+      render: (batch: string) => batch ? <Tag color="processing" style={{ margin: 0 }}>{batch}</Tag> : "-",
     },
     {
       title: "Ghi chú",
@@ -404,8 +404,8 @@ const InventoryReceiptDetail: React.FC = () => {
         <Alert
           message='Lỗi'
           description={
-            receiptError?.message ||
-            itemsError?.message ||
+            (receiptError as any)?.message ||
+            (itemsError as any)?.message ||
             "Không thể tải thông tin phiếu nhập hàng"
           }
           type='error'
@@ -442,12 +442,12 @@ const InventoryReceiptDetail: React.FC = () => {
                 Quay lại
               </Button>
               <Title level={3} style={{ margin: 0 }}>
-                Chi tiết phiếu nhập hàng
+                <span className="hidden sm:inline">Chi tiết phiếu nhập hàng</span>
+                <span className="sm:hidden">Chi tiết phiếu</span>
               </Title>
-              {renderStatus(receipt.status)}
             </Space>
           </Col>
-          <Col>
+          <Col className="mt-2 md:mt-0">
             <Space>{renderActionButtons()}</Space>
           </Col>
         </Row>
@@ -516,7 +516,14 @@ const InventoryReceiptDetail: React.FC = () => {
 
           {/* Upload hình ảnh */}
           <div style={{ marginTop: "16px" }}>
-            <ReceiptImageUpload receiptId={receiptId} />
+            <ReceiptImageUpload 
+              receiptId={receiptId} 
+              images={receipt.images || []}
+              onImagesChange={() => {
+                // Refresh dữ liệu phiếu nhập
+                queryClient.invalidateQueries({ queryKey: inventoryKeys.receipt(receiptId) })
+              }}
+            />
           </div>
         </Col>
 
@@ -615,19 +622,19 @@ const InventoryReceiptDetail: React.FC = () => {
                   <Table.Summary.Cell index={0} colSpan={2}>
                     <Text strong>Tổng cộng</Text>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2}>
+                  <Table.Summary.Cell index={2} align="right">
                     <Text strong>
                       {new Intl.NumberFormat("vi-VN").format(totalQuantity)}
                     </Text>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={3} />
-                  <Table.Summary.Cell index={4}>
+                  <Table.Summary.Cell index={4} align="right">
                     <Text strong style={{ color: "#52c41a" }}>
                       {new Intl.NumberFormat("vi-VN", {
                         style: "currency",
                         currency: "VND",
                       }).format(totalAmount)}
-                    </Text>
+                     </Text>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={5} />
                   <Table.Summary.Cell index={6} />
@@ -636,6 +643,7 @@ const InventoryReceiptDetail: React.FC = () => {
               </Table.Summary>
             )
           }}
+
         />
 
         {(!items || items.length === 0) && (

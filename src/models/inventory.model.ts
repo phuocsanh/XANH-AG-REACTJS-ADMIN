@@ -68,6 +68,9 @@ export interface InventoryReceipt {
   has_adjustments?: boolean
   is_payment_locked?: boolean
   
+  // Images
+  images?: string[] // Mảng URL ảnh hóa đơn
+  
   // Relations
   payments?: InventoryReceiptPayment[]
 }
@@ -87,6 +90,7 @@ export interface InventoryReceiptPayment {
   creator?: {
     id: number
     username: string
+    account?: string
   }
 }
 
@@ -103,6 +107,8 @@ export interface InventoryReceiptItem {
   updated_at: string
   product_name?: string
   product?: any // Thay bằng Product interface nếu có thể import
+  batch_number?: string
+  expiry_date?: string
 }
 
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
@@ -233,12 +239,14 @@ export function mapApiResponseToInventoryReceiptItem(
     quantity: apiItem.quantity,
     unit_cost: parseFloat(apiItem.unit_cost || apiItem.unit_price || '0'), // Hỗ trợ cả 2 field
     total_price: parseFloat(apiItem.total_price || '0'),
+    expiry_date: apiItem.expiry_date, // Thêm expiry_date
+    batch_number: apiItem.batch_number, // Thêm batch_number
     notes: apiItem.notes,
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
     product_name: apiItem.product?.trade_name || apiItem.product?.name || apiItem.product_name || '',
     ...(apiItem.product && { product: apiItem.product }),  // Giữ lại product relation nếu có
-  } as any
+  }
 }
 
 export function mapApiResponseToInventoryHistory(
@@ -343,6 +351,7 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
   quantity: number // Số lượng (bắt buộc)
   unit_cost: number // Giá vốn đơn vị (bắt buộc)
   total_price: number // Tổng tiền (bắt buộc)
+  expiry_date?: string // Ngày hết hạn (tùy chọn)
   notes?: string // Ghi chú (tùy chọn)
   
   // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
@@ -428,6 +437,8 @@ export interface InventoryBatch {
   product_id: number
   batch_number: string
   quantity: number
+  remaining_quantity: number
+
   unit_cost_price: string
   total_cost_price: string
   expiry_date?: string

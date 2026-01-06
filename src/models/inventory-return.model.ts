@@ -67,6 +67,7 @@ export interface InventoryReturnRefund {
   creator?: {
     id: number
     username: string
+    account?: string
   }
 }
 

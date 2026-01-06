@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import {
   Card,
   Button,
   Form,
-  Input,
   Table,
   Typography,
   Alert,
-  message,
   Divider,
-  Select,
   Checkbox,
   Radio,
   Space,
   Upload,
-  DatePicker,
 } from "antd"
+import { toast } from "react-toastify"
 import type { UploadFile } from "antd"
 import {
   ArrowLeftOutlined,
@@ -25,11 +22,32 @@ import {
 } from "@ant-design/icons"
 import dayjs from "dayjs"
 
+
 // Import MobileItemCard từ components
 import MobileItemCard from "./components/receipt-create/mobile-item-card"
 // Import itemColumns từ components
 import useItemColumns from "./components/receipt-create/item-columns"
 import NumberInput from "@/components/common/number-input"
+import ComboBox from "@/components/common/combo-box"
+import DatePicker from "@/components/common/DatePicker"
+import Field from "@/components/common/field"
+import { useForm, useFieldArray, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { 
+  FormField, 
+  FormComboBox, 
+  FormFieldNumber, 
+  FormDatePicker, 
+  FormImageUpload 
+} from "@/components/form"
+import { 
+  receiptFormSchema, 
+  ReceiptFormData, 
+  defaultReceiptValues 
+} from "./receipt-form-config"
+
+
+
 
 import {
   CreateInventoryReceiptRequest,
@@ -43,15 +61,15 @@ import {
   useInventoryReceiptQuery,
   useInventoryReceiptItemsQuery,
   useUploadFileMutation,
-  useAttachImageToReceiptMutation,
 } from "@/queries/inventory"
 import { useMobile, useTablet } from "@/hooks/use-media-query"
 import { useProductSearch } from "@/queries/product"
-import { useMemo } from "react"
-import { useSuppliersQuery } from "@/queries/supplier"
+import { useSupplierSearch } from "@/queries/supplier"
+
+
 
 const { Title, Text } = Typography
-const { TextArea } = Input
+
 
 const InventoryReceiptCreate: React.FC = () => {
   const navigate = useNavigate()
@@ -59,31 +77,30 @@ const InventoryReceiptCreate: React.FC = () => {
   const receiptId = id ? Number(id) : undefined
   const isEditMode = !!receiptId
   
-  const [form] = Form.useForm()
   const isMobile = useMobile()
   const isTablet = useTablet()
 
-  // State quản lý danh sách sản phẩm trong phiếu
-  const [items, setItems] = useState<InventoryReceiptItemForm[]>([])
-  const [editingKey, setEditingKey] = useState<string>("")
-  
+
   // State quản lý danh sách file ảnh
   const [fileList, setFileList] = useState<UploadFile[]>([])
 
-  // State quản lý phí vận chuyển chung
-  const [hasSharedShipping, setHasSharedShipping] = useState(false)
-  const [sharedShippingCost, setSharedShippingCost] = useState(0)
-  const [allocationMethod, setAllocationMethod] = useState<'by_value' | 'by_quantity'>('by_value')
-  
-  
-  // State quản lý thanh toán
-  const [paymentType, setPaymentType] = useState<'full' | 'partial' | 'debt'>('partial')
-  const [paidAmount, setPaidAmount] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | undefined>(undefined)
-  const [paymentDueDate, setPaymentDueDate] = useState<dayjs.Dayjs | null>(null)
-  
-  // State tìm kiếm sản phẩm
+  // State tìm kiếm sản phẩm và nhà cung cấp
   const [searchTerm, setSearchTerm] = useState("")
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState("")
+
+  const {
+    control,
+    handleSubmit: handleFormSubmit,
+    setValue,
+    getValues,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm<ReceiptFormData>({
+    resolver: zodResolver(receiptFormSchema),
+    defaultValues: defaultReceiptValues,
+  })
+
 
   // Sử dụng hook product search ở cấp cao hơn
   const {
@@ -97,56 +114,74 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Flatten data từ tất cả pages
   const productOptions = useMemo(() => {
-    if (!data?.pages) {
-      return []
-    }
-
-    // Map product data để hiển thị trade_name
+    if (!data?.pages) return []
     return data.pages.flatMap((page) => {
-      if (!page || !page.data) {
-        return []
-      }
-
+      if (!page || !page.data) return []
       return page.data.map((product: any) => ({
         ...product,
-        // Ưu tiên hiển thị trade_name (hiệu thuốc), fallback về name
         label: product.trade_name || product.name,
-        // Giữ các trường khác để sử dụng cho logic chọn
         value: product.id,
       }))
     })
   }, [data?.pages])
 
-  // Tạo object chứa tất cả props cho ComboBox
-  const comboBoxProps = useMemo(
-    () => {
-      const props = {
-        data: productOptions,
-        isLoading,
-        isFetching,
-        hasNextPage,
-        isFetchingNextPage,
-        fetchNextPage,
-        onSearch: setSearchTerm, // Thêm hàm search
-      }
+  // Phụ thuộc của combo box
+  const comboBoxProps = useMemo(() => ({
+    data: productOptions,
+    isLoading,
+    isFetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    onSearch: setSearchTerm,
+  }), [
+    productOptions,
+    isLoading,
+    isFetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ])
 
-      return props
-    },
-    [
-      productOptions,
-      isLoading,
-      isFetching,
-      hasNextPage,
-      isFetchingNextPage,
-      fetchNextPage,
-    ]
-  )
+  const { fields: itemFields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  })
+
+  // Watch các giá trị để tính toán động
+  const watchedItems = watch("items") || []
+  const watchedHasSharedShipping = watch("hasSharedShipping")
+  const watchedSharedShippingCost = watch("sharedShippingCost") || 0
+  const watchedPaymentType = watch("paymentType")
+  const watchedPaidAmount = watch("paidAmount") || 0
+  const watchedStatus = watch("status") // Theo dõi trạng thái phiếu nhập
+  
+  // State và hooks tìm kiếm nhà cung cấp
+  const {
+    data: supplierData,
+    isLoading: supplierLoading,
+    isFetching: supplierFetching,
+    hasNextPage: supplierHasNextPage,
+    isFetchingNextPage: supplierFetchingNextPage,
+    fetchNextPage: supplierFetchNextPage,
+  } = useSupplierSearch(supplierSearchTerm, 50, true)
+
+  const supplierOptions = useMemo(() => {
+    if (!supplierData?.pages) return []
+    return supplierData.pages.flatMap((page) => 
+      (page?.data || []).map((s: any) => ({
+        value: s.id,
+        label: s.name,
+        ...s
+      }))
+    )
+  }, [supplierData?.pages])
+
 
   // Queries
   const createReceiptMutation = useCreateInventoryReceiptMutation()
   const updateReceiptMutation = useUpdateInventoryReceiptMutation()
   const uploadFileMutation = useUploadFileMutation()
-  const { data: suppliersData, isLoading: suppliersLoading } = useSuppliersQuery({ limit: 100 })
   
   // Load dữ liệu khi edit mode (hooks đã có enabled built-in)
   const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(receiptId || 0)
@@ -155,37 +190,36 @@ const InventoryReceiptCreate: React.FC = () => {
   // Pre-fill form khi load dữ liệu trong edit mode
   useEffect(() => {
     if (isEditMode && existingReceipt && existingItems && !isLoadingReceipt && !isLoadingItems) {
-      // Set form values
-      form.setFieldsValue({
-        supplierId: existingReceipt.supplier_id,
-        status: existingReceipt.status_code || existingReceipt.status,
-        description: existingReceipt.notes,
-      })
-
-      // Set items (dùng type assertion để truy cập các property)
-      const mappedItems: InventoryReceiptItemForm[] = existingItems.map((item: any, index) => ({
-        key: `${item.id || index}`,
+      const receipt = existingReceipt as any
+      
+      // Mapped items
+      const mappedItems = existingItems.map((item: any) => ({
         product_id: item.product_id,
         product_name: item.product_name || item.product?.trade_name || item.product?.name || '',
         quantity: item.quantity,
         unit_cost: Number(item.unit_cost || item.unitPrice || 0),
         total_price: Number(item.total_price || 0),
         individual_shipping_cost: Number(item.individual_shipping_cost || 0),
+        expiry_date: item.expiry_date,
         notes: item.notes,
       }))
-      setItems(mappedItems)
 
-      // Set shipping costs nếu có (dùng type assertion)
-      const receipt = existingReceipt as any
-      if (receipt.shared_shipping_cost) {
-        setHasSharedShipping(true)
-        setSharedShippingCost(Number(receipt.shared_shipping_cost))
-      }
-      if (receipt.shipping_allocation_method) {
-        setAllocationMethod(receipt.shipping_allocation_method as 'by_value' | 'by_quantity')
-      }
+      // Reset toàn bộ form với dữ liệu mới
+      reset({
+        supplierId: existingReceipt.supplier_id,
+        status: existingReceipt.status_code || existingReceipt.status || 'draft',
+        description: existingReceipt.notes || '',
+        items: mappedItems,
+        hasSharedShipping: !!receipt.shared_shipping_cost,
+        sharedShippingCost: Number(receipt.shared_shipping_cost || 0),
+        allocationMethod: (receipt.shipping_allocation_method as any) || 'by_value',
+        paymentType: (receipt.payment_status === 'paid' ? 'full' : (receipt.payment_status === 'partial' ? 'partial' : 'debt')) as any,
+        paidAmount: Number(receipt.paid_amount || 0),
+        paymentMethod: receipt.payment_method,
+        paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
+      })
 
-      // Set images
+      // Set images (vẫn giữ fileList state cho component Upload)
       if (receipt.images && Array.isArray(receipt.images)) {
         const images = receipt.images.map((url: string, index: number) => ({
           uid: `-${index}`,
@@ -196,19 +230,20 @@ const InventoryReceiptCreate: React.FC = () => {
         setFileList(images as any);
       }
     }
-  }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, form])
+  }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, reset])
 
-  // Hàm tính tổng tiền
+  // Hàm tính tổng tiền (dùng watched values)
   const calculateTotals = () => {
-    const totalProductValue = items.reduce((sum, item) => sum + item.total_price, 0)
-    const totalIndividualShipping = items.reduce((sum, item) => sum + (item.individual_shipping_cost || 0), 0)
-    const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
+    const totalProductValue = watchedItems.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0)
+    const totalIndividualShipping = watchedItems.reduce((sum, item) => sum + (Number(item.individual_shipping_cost) || 0), 0)
+    const totalSharedShipping = watchedHasSharedShipping ? Number(watchedSharedShippingCost) : 0
     
+    const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
     return {
       totalProductValue,
       totalIndividualShipping,
       totalSharedShipping,
-      grandTotal: totalProductValue + totalIndividualShipping + totalSharedShipping,
+      grandTotal,
     }
   }
 
@@ -217,222 +252,97 @@ const InventoryReceiptCreate: React.FC = () => {
     navigate("/inventory/receipts")
   }
 
-  const handleAddItem = () => {
-    const newItem: InventoryReceiptItemForm = {
-      key: Date.now().toString(),
+  const handleAddItem = useCallback(() => {
+    append({
       product_id: 0,
       product_name: "",
       quantity: 1,
       unit_cost: 0,
       total_price: 0,
-      individual_shipping_cost: 0, // Khởi tạo phí vận chuyển riêng
-    }
-    // Thêm sản phẩm mới vào đầu mảng thay vì cuối mảng
-    setItems([newItem, ...items])
-    setEditingKey(newItem.key)
-  }
+      individual_shipping_cost: 0,
+    })
+  }, [append])
 
-  const handleDeleteItem = (key: string) => {
-    setItems(items.filter((item) => item.key !== key))
-  }
+  const handleDeleteItem = useCallback((index: number) => {
+    remove(index)
+  }, [remove])
 
-  const handleItemChange = (
-    key: string,
-    field: keyof InventoryReceiptItemForm,
-    value: unknown
-  ) => {
-    setItems((prevItems) => 
-      prevItems.map((item) => {
-        if (item.key === key) {
-          const updatedItem = { ...item, [field]: value }
-
-          // Tự động cập nhật tên sản phẩm và đơn giá khi chọn sản phẩm
-          // (Logic này vẫn giữ lại như fallback, dù con đã xử lý)
-          if (field === "product_id") {
-            const selectedProduct = productOptions.find((p: any) => p.id === (value as number)) as any
-            if (selectedProduct) {
-               // Fallback: dùng label nếu không có name
-               updatedItem.product_name = selectedProduct.trade_name || selectedProduct.name || selectedProduct.label || ""
-               
-               if (selectedProduct.cost_price !== undefined) {
-                   updatedItem.unit_cost = selectedProduct.cost_price;
-               }
-            }
-          }
-
-          // Tự động tính toán total_price
-          if (field === "quantity" || field === "unit_cost" || field === "product_id") {
-             const quantity = field === "quantity" ? (value as number) : updatedItem.quantity
-             const unit_cost = field === "unit_cost" ? (value as number) : updatedItem.unit_cost
-             
-             updatedItem.total_price = quantity * unit_cost
-          }
-
-          return updatedItem
-        }
-        return item
-      })
-    )
-  }
-
-  const handleEditItem = (key: string) => {
-    setEditingKey(key)
-  }
-
-  // Sử dụng hook để lấy cấu hình cột (phải đặt sau khi các hàm được định nghĩa)
+  // Sử dụng hook để lấy cấu hình cột
   const itemColumns = useItemColumns({
-    handleItemChange,
     handleDeleteItem,
-    // Truyền props cho ComboBox theo cách mới
     comboBoxProps,
+    control,
+    setValue,
+    getValues,
   })
 
-  const handleSubmit = async (values: Record<string, unknown>) => {
+  const onSubmit = async (data: ReceiptFormData) => {
+    console.log("Submitting form with data:", data);
 
     try {
-      // 1. Lọc ra các sản phẩm hợp lệ (đã chọn sản phẩm)
-      const validItems = items.filter(
-        (item) => item.product_id && item.product_id !== 0
-      )
-      
-
-
-      // 2. Kiểm tra nếu không có sản phẩm nào hợp lệ
-      if (validItems.length === 0) {
-
-        message.error("Vui lòng thêm ít nhất một sản phẩm")
-        return
-      }
-
-      // 3. Validate chi tiết các sản phẩm hợp lệ (số lượng, đơn giá)
-      const hasInvalidDetails = validItems.some(
-        (item) => !item.quantity || item.quantity < 1 || item.unit_cost < 0
-      )
-
-
-      if (hasInvalidDetails) {
-
-        message.error("Vui lòng kiểm tra số lượng và đơn giá của các sản phẩm")
-        return
-       
-      }
-      
-      // Tính lại tổng tiền dựa trên validItems để đảm bảo chính xác
-      const totalProductValue = validItems.reduce((sum, item) => sum + item.total_price, 0)
-      const totalIndividualShipping = validItems.reduce((sum, item) => sum + (item.individual_shipping_cost || 0), 0)
-      const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
-      const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
-
-      // ===== VALIDATION THANH TOÁN =====
-      let finalPaidAmount = 0
-      let finalPaymentMethod = paymentMethod
-      
-      if (paymentType === 'full') {
-        // Thanh toán đủ ngay
-        if (!paymentMethod) {
-          message.error("Vui lòng chọn phương thức thanh toán")
-          return
-        }
-        finalPaidAmount = grandTotal
-      } else if (paymentType === 'partial') {
-        // Thanh toán một phần + Công nợ
-        if (paidAmount <= 0 || paidAmount >= grandTotal) {
-          message.error("Số tiền trả trước phải lớn hơn 0 và nhỏ hơn tổng tiền")
-          return
-        }
-        if (!paymentMethod) {
-          message.error("Vui lòng chọn phương thức thanh toán cho phần trả trước")
-          return
-        }
-        if (!paymentDueDate) {
-          message.error("Vui lòng chọn hạn thanh toán cho phần còn nợ")
-          return
-        }
-        finalPaidAmount = paidAmount
-      } else if (paymentType === 'debt') {
-        // Công nợ toàn bộ
-        if (!paymentDueDate) {
-          message.error("Vui lòng chọn hạn thanh toán")
-          return
-        }
-        finalPaidAmount = 0
-        finalPaymentMethod = undefined
-      }
-
-      // Tính payment_status và debt_amount
-      const paymentStatus = finalPaidAmount === 0 ? 'unpaid' : 
-                           finalPaidAmount === grandTotal ? 'paid' : 'partial'
-      const debtAmount = grandTotal - finalPaidAmount
+      const { grandTotal } = calculateTotals();
 
       // 1. Xử lý upload ảnh
       const imageUrls: string[] = [];
       if (fileList.length > 0) {
         try {
           const needsUpload = fileList.some(f => f.originFileObj);
-          if (needsUpload) message.loading("Đang xử lý hình ảnh...");
+          if (needsUpload) toast.info("Đang xử lý hình ảnh...");
 
           for (const file of fileList) {
             if (file.url) {
-              // Ảnh đã có sẵn (từ server)
               imageUrls.push(file.url);
             } else if (file.originFileObj) {
-              // Ảnh mới cần upload
               const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj);
               imageUrls.push((uploadResult as any).data.url);
-            } else if (file.response?.data?.url) {
-              // Ảnh vừa upload xong (nếu component upload tự xử lý)
-              imageUrls.push(file.response.data.url);
             }
           }
         } catch (uploadError) {
           console.error("Lỗi khi upload ảnh:", uploadError);
-          message.error("Có lỗi khi upload ảnh");
+          toast.error("Có lỗi khi upload ảnh");
           return;
         }
       }
 
-      // 2. Chuẩn bị dữ liệu chung
-      const commonData = {
-        supplier_id: values.supplierId as number,
+      // 2. Chuẩn bị dữ liệu gửi lên server
+      const submissionData = {
+        supplier_id: data.supplierId,
         total_amount: grandTotal,
-        notes: values.description as string | undefined,
-        status: (values.status as string) || "draft",
-        created_by: 1, // Dùng cho Create, ignore ở Update
+        notes: data.description,
+        status: data.status || "draft",
+        created_by: 1, // Fallback if needed
         
         // Phí vận chuyển chung
-        ...(hasSharedShipping && {
-          shared_shipping_cost: sharedShippingCost,
-          shipping_allocation_method: allocationMethod,
+        ...(data.hasSharedShipping && {
+          shared_shipping_cost: data.sharedShippingCost,
+          shipping_allocation_method: data.allocationMethod,
         }),
         
-        // Images (chỉ gửi nếu có)
+        // Images
         ...(imageUrls.length > 0 && { images: imageUrls }),
         
-        // Thanh toán - UPDATED LOGIC
-        paid_amount: finalPaidAmount,
-        payment_status: paymentStatus,
-        debt_amount: debtAmount,
+        // Thanh toán
+        paid_amount: data.paymentType === 'full' ? grandTotal : (data.paymentType === 'partial' ? data.paidAmount : 0),
+        payment_status: data.paymentType === 'full' ? 'paid' : (data.paymentType === 'partial' ? 'partial' : 'unpaid'),
+        debt_amount: grandTotal - (data.paymentType === 'full' ? grandTotal : (data.paymentType === 'partial' ? data.paidAmount : 0)),
         
-        // Chỉ gửi payment_method khi có thanh toán
-        ...(finalPaidAmount > 0 && finalPaymentMethod && {
-          payment_method: finalPaymentMethod,
+        ...(data.paymentMethod && {
+          payment_method: data.paymentMethod,
         }),
         
-        // Chỉ gửi payment_due_date khi có nợ
-        ...(debtAmount > 0 && paymentDueDate && {
-          payment_due_date: paymentDueDate.toISOString(),
+        ...(data.paymentDueDate && {
+          payment_due_date: dayjs(data.paymentDueDate).toISOString(),
         }),
         
         // Items
-        items: validItems.map((item) => ({
+        items: data.items.map((item) => ({
           product_id: item.product_id,
           quantity: item.quantity,
           unit_cost: item.unit_cost,
           total_price: item.total_price,
-          notes: item.notes || undefined,
-          
-          // Phí vận chuyển riêng
-          ...((item.individual_shipping_cost || 0) > 0 && {
+          expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
+          notes: item.notes,
+          ...(item.individual_shipping_cost && {
             individual_shipping_cost: item.individual_shipping_cost,
           }),
         })),
@@ -440,19 +350,15 @@ const InventoryReceiptCreate: React.FC = () => {
 
       // 3. Gọi API Create hoặc Update
       if (isEditMode && receiptId) {
-        // === UPDATE MODE ===
-        await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: commonData as any })
-        message.success("Cập nhật phiếu nhập hàng thành công!")
+        await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: submissionData as any })
       } else {
-        // === CREATE MODE ===
-        await createReceiptMutation.mutateAsync(commonData as CreateInventoryReceiptRequest)
-        message.success("Tạo phiếu nhập hàng thành công!")
+        await createReceiptMutation.mutateAsync(submissionData as CreateInventoryReceiptRequest)
       }
       
       navigate("/inventory/receipts")
     } catch (error) {
       console.error("Error saving receipt:", error)
-      message.error(isEditMode ? "Có lỗi xảy ra khi cập nhật phiếu nhập hàng" : "Có lỗi xảy ra khi tạo phiếu nhập hàng")
+      // Toast lỗi đã được xử lý trong mutation hook (handleApiError)
     }
   }
 
@@ -485,77 +391,47 @@ const InventoryReceiptCreate: React.FC = () => {
         </Title>
       </div>
 
-      <Card className='mb-4'>
-        <Form 
-          form={form} 
-          layout='vertical' 
-          onFinish={handleSubmit}
-          onFinishFailed={(errorInfo) => {
-
-            message.error("Vui lòng kiểm tra các trường bắt buộc (Nhà cung cấp, Trạng thái...)");
-          }}
-        >
+      <form onSubmit={handleFormSubmit(onSubmit)}>
+        <Card className='mb-4'>
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-            <Form.Item
+            <FormComboBox
               label='Nhà cung cấp'
               name='supplierId'
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng chọn nhà cung cấp",
-                },
-              ]}
-            >
-              <Select
-                placeholder='Chọn nhà cung cấp'
-                loading={suppliersLoading}
-                showSearch
-                optionFilterProp='children'
-                filterOption={(input, option) =>
-                  String(option?.label ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-              >
-                {suppliersData?.data?.items?.map((supplier) => (
-                  <Select.Option
-                    key={supplier.id}
-                    value={supplier.id}
-                    label={supplier.name}
-                  >
-                    {supplier.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+              control={control}
+              required
+              placeholder='Tìm kiếm nhà cung cấp'
+              data={supplierOptions}
+              isLoading={supplierLoading}
+              isFetching={supplierFetching}
+              hasNextPage={supplierHasNextPage}
+              isFetchingNextPage={supplierFetchingNextPage}
+              fetchNextPage={supplierFetchNextPage}
+              onSearch={setSupplierSearchTerm}
+              showSearch={true}
+            />
 
-            <Form.Item
+            <FormComboBox
               label='Trạng thái'
               name='status'
-              initialValue='draft'
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng chọn trạng thái",
-                },
-              ]}
-            >
-              <Select placeholder='Chọn trạng thái'>
-                {Object.values(InventoryReceiptStatus).map(status => (
-                  <Select.Option key={status} value={status}>
-                    {getInventoryReceiptStatusText(status)}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+              control={control}
+              required
+              placeholder='Chọn trạng thái'
+              options={Object.values(InventoryReceiptStatus).map(status => ({
+                value: status,
+                label: getInventoryReceiptStatusText(status)
+              }))}
+            />
           </div>
 
-          <Form.Item label='Mô tả' name='description'>
-            <TextArea
-              placeholder='Nhập mô tả (nếu có)'
-              autoSize={{ minRows: 2, maxRows: 6 }}
-            />
-          </Form.Item>
+          <FormField
+            label='Mô tả'
+            name='description'
+            control={control}
+            type="textarea"
+            placeholder='Nhập mô tả (nếu có)'
+            rows={3}
+          />
+        </Card>
 
           <Divider className='my-4' />
 
@@ -572,7 +448,7 @@ const InventoryReceiptCreate: React.FC = () => {
             </Button>
           </div>
 
-          {items.length === 0 ? (
+          {watchedItems.length === 0 ? (
             <Alert
               message='Chưa có sản phẩm nào'
               description='Vui lòng thêm sản phẩm vào phiếu nhập hàng'
@@ -582,27 +458,26 @@ const InventoryReceiptCreate: React.FC = () => {
             />
           ) : useCardLayout ? (
             <div className='w-full'>
-              {items.map((item, index) => (
+              {itemFields.map((item, index) => (
                 <MobileItemCard
-                  key={item.key}
+                  key={item.id}
                   item={item}
                   index={index}
-                  editingKey={editingKey}
-                  handleItemChange={handleItemChange}
-                  handleEditItem={handleEditItem}
                   handleDeleteItem={handleDeleteItem}
-                  // Truyền props cho ComboBox theo cách mới
                   comboBoxProps={comboBoxProps}
+                  control={control}
+                  setValue={setValue}
+                  getValues={getValues}
                 />
               ))}
             </div>
           ) : (
             <div className='overflow-x-auto w-full'>
               <Table
-                dataSource={items}
+                dataSource={itemFields}
                 columns={itemColumns}
                 pagination={false}
-                rowKey='key'
+                rowKey='id'
                 scroll={{ x: "max-content" }}
                 className='min-w-full'
               />
@@ -611,40 +486,52 @@ const InventoryReceiptCreate: React.FC = () => {
 
           {/* Phần phí vận chuyển chung */}
           <Card title="Phí Vận Chuyển Chung (Tùy chọn)" className='mt-4'>
-            <Checkbox 
-              checked={hasSharedShipping}
-              onChange={(e) => setHasSharedShipping(e.target.checked)}
-            >
-              Có phí vận chuyển chung
-            </Checkbox>
+            <Controller
+              name="hasSharedShipping"
+              control={control}
+              render={({ field }) => (
+                <Checkbox 
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                >
+                  Có phí vận chuyển chung
+                </Checkbox>
+              )}
+            />
             
-            {hasSharedShipping && (
+            {watchedHasSharedShipping && (
               <>
-                <Form.Item label="Số tiền" className='mt-4'>
-                  <NumberInput
-                    value={sharedShippingCost}
-                    onChange={(value) => setSharedShippingCost(value || 0)}
-                    style={{ width: '100%' }}
-                    addonAfter="VND"
-                    min={0}
-                  />
-                </Form.Item>
+                <FormFieldNumber
+                  label="Số tiền"
+                  name="sharedShippingCost"
+                  control={control}
+                  addonAfter="VND"
+                  placeholder="Nhập số tiền"
+                  className="mt-4"
+                />
                 
-                <Form.Item label="Phương thức phân bổ">
-                  <Radio.Group 
-                    value={allocationMethod}
-                    onChange={(e) => setAllocationMethod(e.target.value)}
-                  >
-                    <Space direction="vertical">
-                      <Radio value="by_value">
-                        Theo giá trị (sản phẩm đắt chịu phí nhiều hơn)
-                      </Radio>
-                      <Radio value="by_quantity">
-                        Theo số lượng (chia đều)
-                      </Radio>
-                    </Space>
-                  </Radio.Group>
-                </Form.Item>
+                <div className="mt-4">
+                  <Text className="block mb-2">Phương thức phân bổ</Text>
+                  <Controller
+                    name="allocationMethod"
+                    control={control}
+                    render={({ field }) => (
+                      <Radio.Group 
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <Space direction="vertical">
+                          <Radio value="by_value">
+                            Theo giá trị (sản phẩm đắt chịu phí nhiều hơn)
+                          </Radio>
+                          <Radio value="by_quantity">
+                            Theo số lượng (chia đều)
+                          </Radio>
+                        </Space>
+                      </Radio.Group>
+                    )}
+                  />
+                </div>
               </>
             )}
           </Card>
@@ -666,137 +553,148 @@ const InventoryReceiptCreate: React.FC = () => {
             </Upload>
           </Card>
 
-          {/* Phần thanh toán - REDESIGNED */}
-          <Card title="Thanh toán" className='mt-4'>
-            <Radio.Group 
-              value={paymentType} 
-              onChange={(e) => {
-                setPaymentType(e.target.value)
-                // Reset các giá trị khi đổi loại thanh toán
-                if (e.target.value === 'full') {
-                  setPaidAmount(calculateTotals().grandTotal)
-                } else if (e.target.value === 'debt') {
-                  setPaidAmount(0)
-                  setPaymentMethod(undefined)
-                }
-              }}
-              className='w-full'
-            >
-              <Space direction="vertical" className='w-full' size="large">
-                {/* Option 1: Thanh toán đủ ngay */}
-                <div>
-                  <Radio value='full'>
-                    <span className='font-medium'>Thanh toán đủ ngay (100%)</span>
-                  </Radio>
-                  {paymentType === 'full' && (
-                    <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
-                      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                        <Form.Item label='Số tiền' className='mb-0'>
-                          <NumberInput
-                            value={calculateTotals().grandTotal}
-                            disabled
-                            addonAfter="VND"
-                            style={{ width: '100%' }}
-                          />
-                        </Form.Item>
-                        <Form.Item label='Phương thức' className='mb-0'>
-                          <Select
-                            value={paymentMethod}
-                            onChange={setPaymentMethod}
-                            placeholder='Chọn phương thức'
-                            style={{ width: '100%' }}
-                          >
-                            <Select.Option value='cash'>Tiền mặt</Select.Option>
-                            <Select.Option value='transfer'>Chuyển khoản</Select.Option>
-                          </Select>
-                        </Form.Item>
-                      </div>
-                    </div>
-                  )}
-                </div>
+          {/* Phần thanh toán - Chỉ hiển thị khi phiếu đã duyệt */}
+          {watchedStatus === 'approved' ? (
+            <Card title="Thanh Toán" className='mt-4'>
+              <div className="mb-4">
+                <Text className="block mb-2">Hình thức thanh toán</Text>
+                <Controller
+                  name="paymentType"
+                  control={control}
+                  render={({ field }) => (
+                    <Radio.Group 
+                      value={field.value}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        field.onChange(newType);
+                        // Reset values logic
+                        if (newType === 'full') {
+                          setValue('paidAmount', calculateTotals().grandTotal);
+                        } else {
+                          setValue('paidAmount', 0);
+                          setValue('paymentMethod', undefined);
+                          setValue('paymentDueDate', undefined);
+                        }
+                      }}
+                    >
+                      <Space direction='vertical' className='w-full'>
+                        {/* Option 1: Thanh toán toàn bộ */}
+                        <div>
+                          <Radio value='full'>
+                            <span className='font-medium'>Thanh toán toàn bộ</span>
+                          </Radio>
+                          {watchedPaymentType === 'full' && (
+                            <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
+                              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <div>
+                                  <Text strong>Số tiền: </Text>
+                                  <Text className='text-green-600'>
+                                    {calculateTotals().grandTotal.toLocaleString('vi-VN')} VND
+                                  </Text>
+                                </div>
+                                <FormComboBox
+                                  label="Phương thức"
+                                  name="paymentMethod"
+                                  control={control}
+                                  required
+                                  placeholder="Chọn phương thức"
+                                  options={[
+                                    { label: 'Tiền mặt', value: 'cash' },
+                                    { label: 'Chuyển khoản', value: 'transfer' },
+                                  ]}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
-                {/* Option 2: Thanh toán một phần + Công nợ */}
-                <div>
-                  <Radio value='partial'>
-                    <span className='font-medium'>Thanh toán một phần + Công nợ</span>
-                  </Radio>
-                  {paymentType === 'partial' && (
-                    <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
-                      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-                        <Form.Item label='Trả trước' className='mb-0'>
-                          <NumberInput
-                            value={paidAmount}
-                            onChange={(value) => setPaidAmount(value || 0)}
-                            addonAfter="VND"
-                            min={1}
-                            max={calculateTotals().grandTotal - 1}
-                            placeholder='Nhập số tiền trả trước'
-                            style={{ width: '100%' }}
-                          />
-                        </Form.Item>
-                        <Form.Item label='Phương thức' className='mb-0'>
-                          <Select
-                            value={paymentMethod}
-                            onChange={setPaymentMethod}
-                            placeholder='Chọn phương thức'
-                            style={{ width: '100%' }}
-                          >
-                            <Select.Option value='cash'>Tiền mặt</Select.Option>
-                            <Select.Option value='transfer'>Chuyển khoản</Select.Option>
-                          </Select>
-                        </Form.Item>
-                      </div>
-                      {paidAmount > 0 && paidAmount < calculateTotals().grandTotal && (
-                        <Alert
-                          message={`Còn nợ: ${(calculateTotals().grandTotal - paidAmount).toLocaleString('vi-VN')} VND`}
-                          type='warning'
-                          showIcon
-                          className='mt-4 mb-0'
-                        />
-                      )}
-                      <Form.Item label='Hạn thanh toán' className='mt-4 mb-0'>
-                        <DatePicker
-                          value={paymentDueDate}
-                          onChange={setPaymentDueDate}
-                          style={{ width: '100%' }}
-                          placeholder='Chọn hạn thanh toán'
-                          format='DD/MM/YYYY'
-                          disabledDate={(current) => current && current < dayjs().startOf('day')}
-                        />
-                      </Form.Item>
-                    </div>
-                  )}
-                </div>
+                        {/* Option 2: Thanh toán một phần */}
+                        <div>
+                          <Radio value='partial'>
+                            <span className='font-medium'>Thanh toán một phần</span>
+                          </Radio>
+                          {watchedPaymentType === 'partial' && (
+                            <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
+                              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                <FormFieldNumber
+                                  label="Số tiền trả trước"
+                                  name="paidAmount"
+                                  control={control}
+                                  required
+                                  addonAfter="VND"
+                                  placeholder="Nhập số tiền"
+                                />
+                                <FormComboBox
+                                  label="Phương thức"
+                                  name="paymentMethod"
+                                  control={control}
+                                  required
+                                  placeholder="Chọn phương thức"
+                                  options={[
+                                    { label: 'Tiền mặt', value: 'cash' },
+                                    { label: 'Chuyển khoản', value: 'transfer' },
+                                  ]}
+                                />
+                              </div>
+                              {watchedPaidAmount > 0 && watchedPaidAmount < calculateTotals().grandTotal && (
+                                <Alert
+                                  message={`Còn nợ: ${(calculateTotals().grandTotal - watchedPaidAmount).toLocaleString('vi-VN')} VND`}
+                                  type='warning'
+                                  showIcon
+                                  className='mt-4'
+                                />
+                              )}
+                              <FormDatePicker
+                                label="Hạn thanh toán"
+                                name="paymentDueDate"
+                                control={control}
+                                required
+                                placeholder="Chọn hạn thanh toán"
+                                disabledDate={(current) => current && current < dayjs().startOf('day')}
+                              />
+                            </div>
+                          )}
+                        </div>
 
-                {/* Option 3: Công nợ toàn bộ */}
-                <div>
-                  <Radio value='debt'>
-                    <span className='font-medium'>Công nợ toàn bộ (0%)</span>
-                  </Radio>
-                  {paymentType === 'debt' && (
-                    <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
-                      <Alert
-                        message={`Số tiền nợ: ${calculateTotals().grandTotal.toLocaleString('vi-VN')} VND`}
-                        type='error'
-                        showIcon
-                        className='mb-4'
-                      />
-                      <Form.Item label='Hạn thanh toán' className='mb-0'>
-                        <DatePicker
-                          value={paymentDueDate}
-                          onChange={setPaymentDueDate}
-                          style={{ width: '100%' }}
-                          placeholder='Chọn hạn thanh toán'
-                          format='DD/MM/YYYY'
-                          disabledDate={(current) => current && current < dayjs().startOf('day')}
-                        />
-                      </Form.Item>
-                    </div>
+                        {/* Option 3: Công nợ */}
+                        <div>
+                          <Radio value='debt'>
+                            <span className='font-medium'>Công nợ (Trả sau)</span>
+                          </Radio>
+                          {watchedPaymentType === 'debt' && (
+                            <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
+                              <Alert
+                                message={`Tổng nợ: ${calculateTotals().grandTotal.toLocaleString('vi-VN')} VND`}
+                                type='info'
+                                showIcon
+                                className='mb-4'
+                              />
+                              <FormDatePicker
+                                label="Hạn thanh toán"
+                                name="paymentDueDate"
+                                control={control}
+                                required
+                                placeholder="Chọn hạn trả nợ"
+                                disabledDate={(current) => current && current < dayjs().startOf('day')}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </Space>
+                    </Radio.Group>
                   )}
-                </div>
-              </Space>
-            </Radio.Group>
-          </Card>
+                />
+              </div>
+            </Card>
+          ) : (
+            <Alert
+              message="Phiếu nhập ở trạng thái nháp"
+              description="Bạn cần duyệt phiếu nhập trước khi có thể thực hiện thanh toán. Vui lòng chọn trạng thái 'Đã duyệt' để hiển thị phần thanh toán."
+              type="info"
+              showIcon
+              className='mt-4'
+            />
+          )}
 
           {/* Hiển thị tổng tiền chi tiết */}
           <div className='mt-4 p-4 bg-gray-50 rounded-lg'>
@@ -847,8 +745,7 @@ const InventoryReceiptCreate: React.FC = () => {
               {isEditMode ? "Cập nhật phiếu nhập hàng" : "Tạo phiếu nhập hàng"}
             </Button>
           </div>
-        </Form>
-      </Card>
+      </form>
     </div>
   )
 }

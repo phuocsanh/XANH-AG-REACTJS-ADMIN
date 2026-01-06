@@ -7,25 +7,41 @@ import type { UploadFile } from "antd"
 import heic2any from "heic2any"
 
 import {
-  useReceiptImagesQuery,
   useUploadFileMutation,
   useAttachImageToReceiptMutation,
-  useDeleteReceiptImageMutation,
+  useUpdateInventoryReceiptMutation,
 } from "@/queries/inventory"
+
+interface ImageData {
+  id: number
+  url: string
+  name: string
+  type?: string
+  size?: number
+  created_at?: string
+}
 
 interface Props {
   receiptId: number
+  images?: string[] // Mảng URL ảnh từ API chi tiết phiếu nhập
+  onImagesChange?: () => void // Callback để refresh dữ liệu phiếu nhập
 }
 
-const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
+const ReceiptImageUpload: React.FC<Props> = ({ receiptId, images = [], onImagesChange }) => {
   const [uploading, setUploading] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { data: images, isLoading } = useReceiptImagesQuery(receiptId)
   const uploadFileMutation = useUploadFileMutation()
   const attachImageMutation = useAttachImageToReceiptMutation()
-  const deleteImageMutation = useDeleteReceiptImageMutation()
+  const updateReceiptMutation = useUpdateInventoryReceiptMutation()
+
+  // Chuyển đổi mảng URL string thành ImageData để hiển thị
+  const imageData: ImageData[] = images.map((url, index) => ({
+    id: index,
+    url,
+    name: `Image ${index + 1}`,
+  }))
 
   const handleFileSelect = async (file: File) => {
     try {
@@ -70,6 +86,11 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
       })
 
       antdMessage.success("Upload ảnh thành công!")
+      
+      // 3. Refresh dữ liệu phiếu nhập
+      if (onImagesChange) {
+        onImagesChange()
+      }
     } catch (error) {
       console.error("Error uploading image:", error)
       antdMessage.error("Upload ảnh thất bại!")
@@ -78,11 +99,29 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
     }
   }
 
-  const handleDelete = async (imageId: number) => {
+  const handleDelete = async (imageUrl: string) => {
     try {
-      await deleteImageMutation.mutateAsync({ receiptId, fileId: imageId })
+      // Xóa ảnh khỏi mảng images
+      const updatedImages = images.filter(url => url !== imageUrl)
+      
+      // Cập nhật phiếu nhập với mảng images mới
+      await updateReceiptMutation.mutateAsync({
+        id: receiptId,
+        receipt: { 
+          id: receiptId,
+          images: updatedImages 
+        }
+      })
+      
+      antdMessage.success("Xóa ảnh thành công!")
+      
+      // Refresh dữ liệu phiếu nhập
+      if (onImagesChange) {
+        onImagesChange()
+      }
     } catch (error) {
       console.error("Error deleting image:", error)
+      antdMessage.error("Xóa ảnh thất bại!")
     }
   }
 
@@ -117,7 +156,6 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
   return (
     <Card 
       title="Hình ảnh hóa đơn" 
-      loading={isLoading}
       tabIndex={0}
       onPaste={handlePaste}
       onFocus={() => setIsFocused(true)}
@@ -137,9 +175,9 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
           </Button>
         </Upload>
 
-        {images && images.length > 0 && (
+        {imageData && imageData.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "16px" }}>
-            {images.map((image) => (
+            {imageData.map((image) => (
               <div key={image.id} style={{ position: "relative" }}>
                 <Image
                   src={image.url}
@@ -149,7 +187,7 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
                 <Popconfirm
                   title="Xóa ảnh"
                   description="Bạn có chắc chắn muốn xóa ảnh này?"
-                  onConfirm={() => handleDelete(image.id)}
+                  onConfirm={() => handleDelete(image.url)}
                   okText="Xóa"
                   cancelText="Hủy"
                 >
@@ -162,7 +200,7 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
                       top: "8px",
                       right: "8px",
                     }}
-                    loading={deleteImageMutation.isPending}
+                    loading={updateReceiptMutation.isPending}
                   />
                 </Popconfirm>
               </div>
@@ -170,7 +208,7 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId }) => {
           </div>
         )}
 
-        {images && images.length === 0 && (
+        {imageData && imageData.length === 0 && (
           <div style={{ textAlign: "center", padding: "24px", color: "#999" }}>
             Chưa có ảnh nào được upload. Click vào upload hoặc paste ảnh (Ctrl+V).
           </div>

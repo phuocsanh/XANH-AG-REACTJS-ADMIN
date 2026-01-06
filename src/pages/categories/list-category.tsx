@@ -141,11 +141,11 @@ const ListCategory = () => {
     <>
       <div className='right-content w-100'>
         <div className='card shadow border-0 w-100 p-4'>
-          <div className='d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3'>
+          <div className='d-flex align-items-center gap-3'>
             <h5 className='mb-0'>Danh sách loại sản phẩm</h5>
-            <div className='ms-auto w-100 w-sm-auto'>
+            <div className='ms-auto w-auto'>
               <Button 
-                className='btn-blue w-100 w-sm-auto' 
+                className='btn-blue w-auto' 
                 onClick={handleAdd}
                 style={{ whiteSpace: 'nowrap' }}
               >

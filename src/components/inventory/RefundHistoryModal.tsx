@@ -81,7 +81,7 @@ export default function RefundHistoryModal({
       title: 'Người tạo',
       dataIndex: 'creator',
       key: 'creator',
-      render: (creator: any) => creator?.username || '-',
+      render: (creator: any) => creator?.account || creator?.username || '-',
       width: 120,
     },
   ]

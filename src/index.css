@@ -31,9 +31,6 @@ body {
   font-family: "Open Sans", sans-serif;
   /* Ngăn chặn zoom bằng double-tap trên iOS */
   touch-action: manipulation;
-  /* Ngăn chặn text selection khi double-tap */
-  -webkit-user-select: none;
-  user-select: none;
   /* Làm mượt scroll trên iOS */
   -webkit-overflow-scrolling: touch;
 }

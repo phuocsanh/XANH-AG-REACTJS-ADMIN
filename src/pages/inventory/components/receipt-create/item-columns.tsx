@@ -1,22 +1,25 @@
-import React from "react"
 import { ColumnsType } from "antd/es/table"
-import { Button, Popconfirm, Typography, Input } from "antd"
+
+import { Button, Popconfirm, Typography } from "antd"
+
+
 import { DeleteOutlined } from "@ant-design/icons"
+
 import NumberInput from "@/components/common/number-input"
+import DatePicker from "@/components/common/DatePicker"
+
 import ComboBox from "@/components/common/combo-box"
+import Field from "@/components/common/field"
+
 import { InventoryReceiptItemForm } from "@/models/inventory.model"
+import { Controller } from "react-hook-form"
+import dayjs from "dayjs"
+
 
 const { Text } = Typography
-const { TextArea } = Input
 
 interface ItemColumnsProps {
-  handleItemChange: (
-    key: string,
-    field: keyof InventoryReceiptItemForm,
-    value: unknown
-  ) => void
-  handleDeleteItem: (key: string) => void
-  // Props cho ComboBox - gộp thành một object
+  handleDeleteItem: (index: number) => void
   comboBoxProps: {
     data: { value: number; label: string }[]
     isLoading: boolean
@@ -25,13 +28,18 @@ interface ItemColumnsProps {
     isFetchingNextPage: boolean
     fetchNextPage: () => void
   }
+  control: any
+  setValue: any
+  getValues: any
 }
 
 const useItemColumns = ({
-  handleItemChange,
   handleDeleteItem,
   comboBoxProps,
-}: ItemColumnsProps): ColumnsType<InventoryReceiptItemForm> => {
+  control,
+  setValue,
+  getValues,
+}: ItemColumnsProps): ColumnsType<any> => {
   return [
     {
       title: "STT",
@@ -44,36 +52,44 @@ const useItemColumns = ({
       title: "Sản phẩm",
       dataIndex: "product_id",
       key: "product_id",
-      width: 120,
-      render: (product_id: number, record: InventoryReceiptItemForm) => {
+      width: 250,
+      render: (product_id: number, record: any, index: number) => {
         return (
           <div className='w-full'>
-            <ComboBox
-              value={product_id}
-              placeholder='Chọn sản phẩm'
-              {...comboBoxProps}
-              showSearch={true}
-              onChange={(value, option) => {
-                handleItemChange(record.key, "product_id", value)
-
-                // Logic đồng bộ với MobileItemCard: Lấy tên và giá từ option ngay khi chọn
-                if (option) {
-                  const optArray = Array.isArray(option) ? option : [option]
-                  const selectedOpt = optArray[0] as any
-
-                  if (selectedOpt) {
-                    const name = selectedOpt.trade_name || selectedOpt.name || selectedOpt.label || ""
-                    if (name) {
-                      handleItemChange(record.key, "product_name", name)
+            <Controller
+              name={`items.${index}.product_id`}
+              control={control}
+              render={({ field }) => (
+                <ComboBox
+                  {...field}
+                  placeholder='Chọn sản phẩm'
+                  {...comboBoxProps}
+                  showSearch={true}
+                  onChange={(value, option) => {
+                    field.onChange(value)
+                    
+                    if (option) {
+                      const optArray = Array.isArray(option) ? option : [option]
+                      const selectedOpt = optArray[0] as any
+                      if (selectedOpt) {
+                        const name = selectedOpt.trade_name || selectedOpt.name || selectedOpt.label || ""
+                        if (name) {
+                          setValue(`items.${index}.product_name`, name)
+                        }
+                        if (selectedOpt.cost_price !== undefined) {
+                          const cost = selectedOpt.cost_price
+                          setValue(`items.${index}.unit_cost`, cost)
+                          
+                          // Cập nhật thành tiền
+                          const qty = getValues(`items.${index}.quantity`) || 0
+                          setValue(`items.${index}.total_price`, qty * cost)
+                        }
+                      }
                     }
-
-                    if (selectedOpt.cost_price !== undefined) {
-                      handleItemChange(record.key, "unit_cost", selectedOpt.cost_price)
-                    }
-                  }
-                }
-              }}
-              style={{ width: "100%" }}
+                  }}
+                  style={{ width: "100%" }}
+                />
+              )}
             />
           </div>
         )
@@ -83,17 +99,28 @@ const useItemColumns = ({
       title: "SL",
       dataIndex: "quantity",
       key: "quantity",
-      width: 60,
+      width: 100,
       align: "right",
-      render: (quantity: number, record: InventoryReceiptItemForm) => {
+      render: (quantity: number, record: any, index: number) => {
         return (
-          <NumberInput
-            value={quantity}
-            min={1}
-            placeholder='Số lượng'
-            onChange={(value) =>
-              handleItemChange(record.key, "quantity", value || 1)
-            }
+          <Controller
+            name={`items.${index}.quantity`}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                {...field}
+                min={1}
+                placeholder='Số lượng'
+                onChange={(value) => {
+                  const qty = value || 1
+                  field.onChange(qty)
+                  
+                  // Cập nhật thành tiền
+                  const cost = getValues(`items.${index}.unit_cost`) || 0
+                  setValue(`items.${index}.total_price`, qty * cost)
+                }}
+              />
+            )}
           />
         )
       },
@@ -102,17 +129,28 @@ const useItemColumns = ({
       title: "Đơn giá",
       dataIndex: "unit_cost",
       key: "unit_cost",
-      width: 90,
+      width: 140,
       align: "right",
-      render: (price: number, record: InventoryReceiptItemForm) => {
+      render: (price: number, record: any, index: number) => {
         return (
-          <NumberInput
-            value={price || 0}
-            min={0}
-            placeholder='Đơn giá'
-            onChange={(value) =>
-              handleItemChange(record.key, "unit_cost", value || 0)
-            }
+          <Controller
+            name={`items.${index}.unit_cost`}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                {...field}
+                min={0}
+                placeholder='Đơn giá'
+                onChange={(value) => {
+                  const cost = value || 0
+                  field.onChange(cost)
+                  
+                  // Cập nhật thành tiền
+                  const qty = getValues(`items.${index}.quantity`) || 0
+                  setValue(`items.${index}.total_price`, qty * cost)
+                }}
+              />
+            )}
           />
         )
       },
@@ -121,17 +159,20 @@ const useItemColumns = ({
       title: "Phí VC riêng",
       dataIndex: "individual_shipping_cost",
       key: "individual_shipping_cost",
-      width: 90,
+      width: 140,
       align: "right",
-      render: (cost: number, record: InventoryReceiptItemForm) => {
+      render: (cost: number, record: any, index: number) => {
         return (
-          <NumberInput
-            value={cost || 0}
-            min={0}
-            placeholder='0'
-            onChange={(value) =>
-              handleItemChange(record.key, "individual_shipping_cost", value || 0)
-            }
+          <Controller
+            name={`items.${index}.individual_shipping_cost`}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                {...field}
+                min={0}
+                placeholder='0'
+              />
+            )}
           />
         )
       },
@@ -140,20 +181,52 @@ const useItemColumns = ({
       title: "Thành tiền",
       dataIndex: "total_price",
       key: "total_price",
-      width: 90,
+      width: 150,
       align: "right",
-      render: (_, record: InventoryReceiptItemForm) => {
+      render: (_, record: any, index: number) => {
         return (
-          <Text
-            strong
-            style={{ color: "#52c41a" }}
-            className='truncate text-sm'
-          >
-            {new Intl.NumberFormat("vi-VN", {
-              style: "currency",
-              currency: "VND",
-            }).format(record.total_price || 0)}
-          </Text>
+          <Controller
+            name={`items.${index}.total_price`}
+            control={control}
+            render={({ field }) => (
+              <Text
+                strong
+                style={{ color: "#52c41a" }}
+                className='truncate text-sm'
+              >
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(field.value || 0)}
+              </Text>
+            )}
+          />
+        )
+      },
+    },
+    {
+      title: "Hạn dùng",
+      dataIndex: "expiry_date",
+      key: "expiry_date",
+      width: 150,
+      render: (date: any, record: any, index: number) => {
+        return (
+          <Controller
+            name={`items.${index}.expiry_date`}
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                value={field.value ? dayjs(field.value) : null}
+                placeholder='Hạn dùng'
+                format='DD/MM/YYYY'
+                onChange={(d) =>
+                  field.onChange(d ? d.toISOString() : undefined)
+                }
+                style={{ width: "100%" }}
+                disabledDate={(current) => current && current < dayjs().startOf('day')}
+              />
+            )}
+          />
         )
       },
     },
@@ -161,16 +234,20 @@ const useItemColumns = ({
       title: "Ghi chú",
       dataIndex: "notes",
       key: "notes",
-      width: 80,
-      render: (notes: string, record: InventoryReceiptItemForm) => {
+      width: 200,
+      render: (notes: string, record: any, index: number) => {
         return (
-          <TextArea
-            value={notes}
-            placeholder='Ghi chú'
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              handleItemChange(record.key, "notes", e.target.value)
-            }
-            autoSize={{ minRows: 1, maxRows: 3 }}
+          <Controller
+            name={`items.${index}.notes`}
+            control={control}
+            render={({ field }) => (
+              <Field
+                type="textarea"
+                {...field}
+                placeholder='Ghi chú'
+                rows={1}
+              />
+            )}
           />
         )
       },
@@ -178,15 +255,15 @@ const useItemColumns = ({
     {
       title: "Thao tác",
       key: "actions",
-      width: 70,
+      width: 60,
       align: "center",
-      render: (_, record: InventoryReceiptItemForm) => {
+      render: (_, __, index) => {
         return (
           <div className='flex justify-center'>
             <Popconfirm
               title='Xóa'
               description='Xóa?'
-              onConfirm={() => handleDeleteItem(record.key)}
+              onConfirm={() => handleDeleteItem(index)}
               okText='Xóa'
               cancelText='Hủy'
               placement='topRight'

@@ -8,24 +8,26 @@ import { ProductType } from "../../models/product-type.model"
 import {
   Button,
   Modal,
-  Select,
   Tag,
   Image,
   Space,
   Descriptions,
 } from "antd"
-import { TablePaginationConfig, TableProps } from "antd"
+import { TableProps } from "antd"
 import {
   PlusOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   FilterOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
 import { ConfirmModal } from "../../components/common"
 import { useDeleteProductMutation } from "@/queries/product"
 import FilterHeader from "@/components/common/filter-header"
+import BatchExpiryModal from "./components/batch-expiry-modal"
+
 
 const ProductsList: React.FC = () => {
   // State quản lý UI & Data Params
@@ -36,6 +38,7 @@ const ProductsList: React.FC = () => {
   // State modals
   const [isViewModalVisible, setIsViewModalVisible] = React.useState<boolean>(false)
   const [deleteConfirmVisible, setDeleteConfirmVisible] = React.useState<boolean>(false)
+  const [isExpiryModalVisible, setIsExpiryModalVisible] = React.useState<boolean>(false)
   const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(null)
   const [currentProduct, setCurrentProduct] = React.useState<Product | null>(null)
 
@@ -312,6 +315,15 @@ const ProductsList: React.FC = () => {
             title='Xem'
           />
           <Button
+            icon={<HistoryOutlined />}
+            size="small"
+            onClick={() => {
+              setCurrentProduct(record)
+              setIsExpiryModalVisible(true)
+            }}
+            title='Lô hàng & Hạn dùng'
+          />
+          <Button
             icon={<EditOutlined />}
             size="small"
             onClick={() => handleEditProduct(record)}
@@ -327,7 +339,7 @@ const ProductsList: React.FC = () => {
         </Space>
       ),
     },
-  ], [filters, productTypes])
+  ], [filters, productTypes, handleEditProduct, handleFilterChange, handleDelete])
 
   return (
     <div className='p-2 md:p-6'>
@@ -602,6 +614,16 @@ const ProductsList: React.FC = () => {
         okType='primary'
         cancelText='Hủy'
         confirmLoading={deleteProductMutation.isPending}
+      />
+
+      {/* Modal xem thông tin lô hàng & hạn dùng */}
+      <BatchExpiryModal 
+        product={currentProduct}
+        visible={isExpiryModalVisible}
+        onCancel={() => {
+            setIsExpiryModalVisible(false)
+            setCurrentProduct(null)
+        }}
       />
     </div>
   )

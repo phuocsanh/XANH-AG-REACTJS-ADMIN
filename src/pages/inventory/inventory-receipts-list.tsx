@@ -126,7 +126,7 @@ const InventoryReceiptsList: React.FC = () => {
     return receiptsData.data.items.map(mapApiResponseToInventoryReceipt)
   }, [receiptsData])
 
-  const { data: statsData, isLoading: isLoadingStats } =
+  const { data: statsData, isLoading: isLoadingStats, refetch: refetchStats } =
     useInventoryStatsQuery()
 
   // Mutations
@@ -297,7 +297,19 @@ const InventoryReceiptsList: React.FC = () => {
   const renderActions = (record: InventoryReceipt) => {
     const actions = []
     
+    // Xem chi tiết
+    actions.push(
+      <Tooltip key='view' title='Xem chi tiết'>
+        <Button
+          type='text'
+          icon={<EyeOutlined />}
+          onClick={() => handleViewReceipt(record)}
+        />
+      </Tooltip>
+    )
+
     // Lịch sử thanh toán (luôn có)
+
     actions.push(
       <Tooltip key='payment' title='Lịch sử thanh toán'>
         <Button
@@ -663,7 +675,7 @@ const InventoryReceiptsList: React.FC = () => {
                       style: "currency",
                       currency: "VND",
                       notation: "compact",
-                      maximumFractionDigits: 0
+                      maximumFractionDigits: 1
                     }).format(parseFloat(statsData.totalValue || "0"))}
                   </div>
                   <Text className="text-[10px] block" type="secondary">Giá trị</Text>
@@ -674,7 +686,9 @@ const InventoryReceiptsList: React.FC = () => {
               <Col xs={8} sm={8} md={8}>
                 <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
-                    {receipts?.filter(r => (Number(r.debt_amount) || 0) > 0).length || 0}
+                    {receipts?.filter(r => 
+                      r.status === 'Đã duyệt' && (Number(r.debt_amount) || 0) > 0
+                    ).length || 0}
                   </div>
                   <Text className="text-[10px] block" type="secondary">Phiếu nợ</Text>
                 </Card>
@@ -688,8 +702,9 @@ const InventoryReceiptsList: React.FC = () => {
                       style: "currency",
                       currency: "VND",
                       notation: "compact",
-                      maximumFractionDigits: 0
-                    }).format(receipts?.reduce((sum, r) => sum + (Number(r.debt_amount) || 0), 0) || 0)}
+                      maximumFractionDigits: 1
+                    }).format(receipts?.filter(r => r.status === 'Đã duyệt')
+                      .reduce((sum, r) => sum + (Number(r.debt_amount) || 0), 0) || 0)}
                   </div>
                   <Text className="text-[10px] block" type="secondary">Tổng nợ</Text>
                 </Card>
@@ -718,7 +733,10 @@ const InventoryReceiptsList: React.FC = () => {
           <Space>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => refetchReceipts()}
+              onClick={() => {
+                refetchReceipts()
+                refetchStats()
+              }}
               loading={isLoadingReceipts}
             >
               <span className="hidden sm:inline">Làm mới</span>

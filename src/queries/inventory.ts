@@ -78,6 +78,8 @@ export const inventoryKeys = {
     [...inventoryKeys.reports(), "fifo-value", productId] as const,
   weightedAverageCost: (productId: number) =>
     [...inventoryKeys.reports(), "weighted-average-cost", productId] as const,
+  expiryBatches: (productId: number) =>
+    ["expiry-alert", "product", productId, "batches"] as const,
 } as const
 
 // ========== INVENTORY RECEIPT HOOKS ==========
@@ -187,6 +189,7 @@ export const useCreateInventoryReceiptMutation = () => {
     onSuccess: (data) => {
       // Invalidate và refetch danh sách phiếu nhập
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success("Tạo phiếu nhập hàng thành công!")
       return data
     },
@@ -222,6 +225,7 @@ export const useUpdateInventoryReceiptMutation = () => {
       queryClient.setQueryData(inventoryKeys.receipt(variables.id), data)
       // Invalidate danh sách
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success("Cập nhật phiếu nhập hàng thành công!")
       return data
     },
@@ -247,6 +251,7 @@ export const useDeleteInventoryReceiptMutation = () => {
       })
       // Invalidate danh sách
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success("Xóa phiếu nhập hàng thành công!")
     },
     onError: (error: unknown) => {
@@ -274,6 +279,7 @@ export const useApproveInventoryReceiptMutation = () => {
     onSuccess: (data, variables) => {
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success("Duyệt phiếu nhập hàng thành công!")
       return data
     },
@@ -303,6 +309,7 @@ export const useCancelInventoryReceiptMutation = () => {
       // Cập nhật cache
       queryClient.setQueryData(inventoryKeys.receipt(variables), data)
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success("Hủy phiếu nhập hàng thành công!")
       return data
     },
@@ -804,6 +811,24 @@ export const useBatchTrackingByProductQuery = (productId: number) => {
 }
 
 /**
+ * Hook lấy danh sách lô hàng theo sản phẩm (phục vụ theo dõi hạn dùng)
+ * Gọi endpoint mới từ ExpiryAlertController
+ */
+export const useExpiryBatchesQuery = (productId: number) => {
+  return useQuery({
+    queryKey: inventoryKeys.expiryBatches(productId),
+    queryFn: async () => {
+      const response = await api.get<any[]>(
+        `/expiry-alert/product/${productId}/batches`
+      )
+      return response
+    },
+    enabled: !!productId,
+  })
+}
+
+
+/**
  * Hook lấy giá trị FIFO của sản phẩm
  */
 export const useFifoValueQuery = (productId: number) => {
@@ -888,55 +913,7 @@ export const useAttachImageToReceiptMutation = () => {
   })
 }
 
-/**
- * Hook lấy danh sách ảnh của phiếu nhập kho
- */
-export const useReceiptImagesQuery = (receiptId: number) => {
-  return useQuery({
-    queryKey: ['receipt-images', receiptId],
-    queryFn: async () => {
-      const response = await api.get<{
-        id: number
-        url: string
-        name: string
-        type: string
-        size: number
-        created_at: string
-      }[]>(`/inventory/receipt/${receiptId}/images`)
-      return response
-    },
-    enabled: !!receiptId,
-  })
-}
 
-/**
- * Hook xóa ảnh khỏi phiếu nhập kho
- */
-export const useDeleteReceiptImageMutation = () => {
-  return useMutation({
-    mutationFn: async ({
-      receiptId,
-      fileId,
-    }: {
-      receiptId: number
-      fileId: number
-    }) => {
-      const response = await api.delete(
-        `/inventory/receipt/${receiptId}/image/${fileId}`
-      )
-      return response
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['receipt-images', variables.receiptId],
-      })
-      toast.success('Xóa ảnh thành công!')
-    },
-    onError: (error: Error) => {
-      handleApiError(error, "Lỗi khi xóa ảnh")
-    },
-  })
-}
 
 // ========== PAYMENT HOOKS ==========
 

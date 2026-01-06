@@ -123,14 +123,12 @@ const ListSubCategory = () => {
   return (
     <>
       <div className='right-content w-100'>
-        <div className='card shadow border-0 w-100 flex-row p-4'>
-          <h5 className='mb-0'>Danh sách loại phụ sản phẩm</h5>
-          <div className='ml-auto d-flex align-items-center'>
-            <div className='ml-auto d-flex align-items-center'>
-              <Button className='btn-blue ml-3 pl-3 pr-3' onClick={handleAdd}>
-                <IoMdAdd /> &nbsp; Thêm loại phụ sản phẩm
-              </Button>
-            </div>
+        <div className='card shadow border-0 w-100 p-4'>
+          <div className='d-flex align-items-center gap-3'>
+            <h5 className='mb-0'>Danh sách loại phụ sản phẩm</h5>
+            <Button className='btn-blue ms-auto px-3' onClick={handleAdd}>
+              <IoMdAdd /> &nbsp; Thêm loại phụ sản phẩm
+            </Button>
           </div>
         </div>
 

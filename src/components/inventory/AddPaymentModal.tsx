@@ -1,13 +1,12 @@
 import { useForm } from 'react-hook-form'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Modal, Form } from 'antd'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAddPaymentMutation } from '@/queries/inventory'
 import { formatCurrency } from '@/utils/format'
-import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
+import FormFieldNumber from '@/components/form/form-field-number'
+import FormComboBox from '@/components/form/form-combo-box'
+import FormDatePicker from '@/components/form/form-date-picker'
 
 interface AddPaymentModalProps {
   receiptId: number
@@ -33,16 +32,14 @@ export default function AddPaymentModal({
   onClose,
 }: AddPaymentModalProps) {
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
     reset,
-    setValue,
-    watch,
   } = useForm<PaymentFormData>({
     defaultValues: {
       payment_method: 'cash',
-      payment_date: dayjs().format('YYYY-MM-DD'),
+      payment_date: dayjs().toISOString(),
     },
   })
 
@@ -72,103 +69,86 @@ export default function AddPaymentModal({
     onClose()
   }
 
+  // Options cho phương thức thanh toán
+  const paymentMethodOptions = [
+    { value: 'cash', label: 'Tiền mặt' },
+    { value: 'transfer', label: 'Chuyển khoản' },
+  ]
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-white">
-        <DialogHeader>
-          <DialogTitle>Thêm thanh toán</DialogTitle>
-        </DialogHeader>
+    <Modal
+      title="Thêm thanh toán"
+      open={open}
+      onCancel={handleClose}
+      footer={null}
+      width={600}
+      maskClosable={false}
+      destroyOnClose
+      getContainer={false}
+      zIndex={1050}
+    >
+      <Form layout="vertical" onFinish={handleSubmit(onSubmit)}>
+        {/* Số tiền */}
+        <FormFieldNumber
+          name="amount"
+          control={control}
+          label="Số tiền"
+          placeholder="Nhập số tiền"
+          required
+          rules={{
+            required: true,
+            min: 1000,
+            max: maxAmount,
+          }}
+          suffix=""
+        />
+        <div style={{ marginTop: '-4px', marginBottom: '16px', fontSize: '14px', color: '#666' }}>
+          Số tiền còn nợ: <span style={{ fontWeight: 600 }}>{formatCurrency(maxAmount)}</span>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Số tiền */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">
-              Số tiền <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              step="1000"
-              placeholder="Nhập số tiền"
-              {...register('amount', {
-                required: 'Vui lòng nhập số tiền',
-                min: {
-                  value: 1000,
-                  message: 'Số tiền tối thiểu 1,000đ',
-                },
-                max: {
-                  value: maxAmount,
-                  message: `Số tiền không được vượt quá ${formatCurrency(maxAmount)}`,
-                },
-              })}
-            />
-            {errors.amount && (
-              <p className="text-sm text-red-500">{errors.amount.message}</p>
-            )}
-            <p className="text-sm text-gray-500">
-              Số tiền còn nợ: <span className="font-semibold">{formatCurrency(maxAmount)}</span>
-            </p>
-          </div>
+        {/* Phương thức thanh toán */}
+        <FormComboBox
+          name="payment_method"
+          control={control}
+          label="Phương thức thanh toán"
+          placeholder="Chọn phương thức"
+          options={paymentMethodOptions}
+          required
+        />
 
-          {/* Phương thức thanh toán */}
-          <div className="space-y-2">
-            <Label htmlFor="payment_method">
-              Phương thức thanh toán <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={watch('payment_method')}
-              onValueChange={(value) => setValue('payment_method', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn phương thức" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">Tiền mặt</SelectItem>
-                <SelectItem value="transfer">Chuyển khoản</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Ngày thanh toán */}
+        <FormDatePicker
+          name="payment_date"
+          control={control}
+          label="Ngày thanh toán"
+          placeholder="Chọn ngày thanh toán"
+          format="DD/MM/YYYY"
+        />
 
-          {/* Ngày thanh toán */}
-          <div className="space-y-2">
-            <Label htmlFor="payment_date">Ngày thanh toán</Label>
-            <DatePicker
-              className="w-full"
-              format="DD/MM/YYYY"
-              value={watch('payment_date') ? dayjs(watch('payment_date')) : dayjs()}
-              onChange={(date) => {
-                setValue('payment_date', date ? date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'))
-              }}
-            />
-          </div>
+        {/* Ghi chú */}
+        <Form.Item label="Ghi chú">
+          <textarea
+            className="w-full min-h-[80px] px-3 py-2 border rounded-md"
+            placeholder="Nhập ghi chú (không bắt buộc)"
+            {...control.register('notes')}
+          />
+        </Form.Item>
 
-          {/* Ghi chú */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Ghi chú</Label>
-            <textarea
-              id="notes"
-              className="w-full min-h-[80px] px-3 py-2 border rounded-md"
-              placeholder="Nhập ghi chú (không bắt buộc)"
-              {...register('notes')}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2 justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={addPaymentMutation.isPending}
-            >
-              Hủy
-            </Button>
-            <Button type="submit" disabled={addPaymentMutation.isPending}>
-              {addPaymentMutation.isPending ? 'Đang xử lý...' : 'Thêm thanh toán'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        {/* Actions */}
+        <div className="flex gap-2 justify-end mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={addPaymentMutation.isPending}
+          >
+            Hủy
+          </Button>
+          <Button type="submit" disabled={addPaymentMutation.isPending}>
+            {addPaymentMutation.isPending ? 'Đang xử lý...' : 'Thêm thanh toán'}
+          </Button>
+        </div>
+      </Form>
+    </Modal>
   )
 }

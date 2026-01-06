@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Modal } from 'antd'
 import { Button } from '@/components/ui/button'
 import { Table, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -114,7 +114,7 @@ export default function PaymentHistoryModal({
       title: 'Người tạo',
       dataIndex: 'creator',
       key: 'creator',
-      render: (creator: any) => creator?.username || '-',
+      render: (creator: any) => creator?.account || creator?.username || '-',
       width: 120,
     },
     {
@@ -136,13 +136,19 @@ export default function PaymentHistoryModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white">
-          <DialogHeader>
-            <DialogTitle>
-              Lịch sử thanh toán - {receiptCode}
-            </DialogTitle>
-          </DialogHeader>
+      <Modal
+        title={
+          <div style={{ paddingRight: '24px' }}>
+            Lịch sử thanh toán - {receiptCode}
+          </div>
+        }
+        open={open}
+        onCancel={onClose}
+        footer={null}
+        width={1200}
+        style={{ top: 20 }}
+        bodyStyle={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}
+      >
 
           <div className="space-y-4">
             {/* Chi tiết phiếu nhập */}
@@ -210,7 +216,7 @@ export default function PaymentHistoryModal({
             )}
 
             {/* Add Payment Button */}
-            {debtAmount > 0 && receiptStatus === 'approved' && (
+            {debtAmount > 0 && (receiptStatus === 'approved' || receiptStatus === 'Đã duyệt') && (
               <Button
                 onClick={() => setShowAddPayment(true)}
                 className="w-full"
@@ -221,7 +227,7 @@ export default function PaymentHistoryModal({
             )}
 
             {/* Thông báo cho phiếu chưa duyệt */}
-            {receiptStatus !== 'approved' && (
+            {receiptStatus !== 'approved' && receiptStatus !== 'Đã duyệt' && (
               <div className="text-sm text-orange-600 bg-orange-50 p-3 rounded border border-orange-200">
                 ⚠️ Phiếu cần được duyệt trước khi thanh toán
               </div>
@@ -281,8 +287,7 @@ export default function PaymentHistoryModal({
               }}
             />
           </div>
-        </DialogContent>
-      </Dialog>
+      </Modal>
 
       {/* Add Payment Modal */}
       <AddPaymentModal
