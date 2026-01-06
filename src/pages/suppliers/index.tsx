@@ -296,13 +296,6 @@ export const Suppliers = () => {
   // Cấu hình cột cho DataTable
   const tableColumns = [
     {
-      title: "ID",
-      dataIndex: "id" as const,
-      key: "id",
-      sorter: true,
-      width: 80,
-    },
-    {
       title: (
         <FilterHeader 
             title="Tên nhà cung cấp" 
