@@ -62,19 +62,33 @@ export default defineConfig({
         orientation: "portrait",
         scope: "/",
         start_url: "/",
-        version: "3.0.0", // Tăng version để force update icon
+        version: "4.0.0", // Tăng version để force update icon
         icons: [
+          // Icon 'any' - hiển thị bình thường (dùng icon cũ)
           {
-            src: '/icons/pwa-icon-192-v3.png', // Đổi tên file để force reload
+            src: '/icons/pwa-icon-192-v3.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
           },
           {
-            src: '/icons/pwa-icon-512-v3.png', // Đổi tên file để force reload
+            src: '/icons/pwa-icon-512-v3.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          // Icon 'maskable' - cho phép OS crop (dùng icon mới với safe zone)
+          {
+            src: '/icons/pwa-maskable-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: '/icons/pwa-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         gcm_sender_id: "103953800507"
