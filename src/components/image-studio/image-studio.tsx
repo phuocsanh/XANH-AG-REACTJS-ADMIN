@@ -337,14 +337,22 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       </Button>
                     </Upload>
                     
-                    <Button 
-                      icon={<CameraOutlined />} 
-                      onClick={startCamera} 
-                      block 
-                      className="text-[10px] h-10 font-bold uppercase"
+                    
+                    <Upload 
+                      beforeUpload={(file) => { processNewFile(file); return false; }}
+                      showUploadList={false}
+                      accept="image/*"
+                      capture="environment"
+                      style={{ display: 'block', width: '100%' }}
                     >
-                      CHỤP ẢNH
-                    </Button>
+                      <Button 
+                        icon={<CameraOutlined />} 
+                        block 
+                        className="text-[10px] h-10 font-bold uppercase"
+                      >
+                        CHỤP ẢNH
+                      </Button>
+                    </Upload>
                   </div>
                     
                     {!originalImage && (
