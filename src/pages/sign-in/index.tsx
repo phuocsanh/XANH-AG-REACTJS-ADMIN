@@ -1,4 +1,4 @@
-import Logo from "../../assets/images/logo-xanh.png"
+import Logo from "../../assets/images/logo-xanh.jpg"
 import Button from "@mui/material/Button"
 import { Link } from "react-router-dom"
 import { CircularProgress, InputAdornment, TextField } from "@mui/material"
