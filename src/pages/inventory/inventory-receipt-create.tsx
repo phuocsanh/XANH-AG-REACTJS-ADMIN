@@ -75,9 +75,11 @@ const InventoryReceiptCreate: React.FC = () => {
   const [sharedShippingCost, setSharedShippingCost] = useState(0)
   const [allocationMethod, setAllocationMethod] = useState<'by_value' | 'by_quantity'>('by_value')
   
+  
   // State quản lý thanh toán
+  const [paymentType, setPaymentType] = useState<'full' | 'partial' | 'debt'>('partial')
   const [paidAmount, setPaidAmount] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<string | undefined>(undefined)
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | undefined>(undefined)
   const [paymentDueDate, setPaymentDueDate] = useState<dayjs.Dayjs | null>(null)
   
   // State tìm kiếm sản phẩm
@@ -321,6 +323,47 @@ const InventoryReceiptCreate: React.FC = () => {
       const totalSharedShipping = hasSharedShipping ? sharedShippingCost : 0
       const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
 
+      // ===== VALIDATION THANH TOÁN =====
+      let finalPaidAmount = 0
+      let finalPaymentMethod = paymentMethod
+      
+      if (paymentType === 'full') {
+        // Thanh toán đủ ngay
+        if (!paymentMethod) {
+          message.error("Vui lòng chọn phương thức thanh toán")
+          return
+        }
+        finalPaidAmount = grandTotal
+      } else if (paymentType === 'partial') {
+        // Thanh toán một phần + Công nợ
+        if (paidAmount <= 0 || paidAmount >= grandTotal) {
+          message.error("Số tiền trả trước phải lớn hơn 0 và nhỏ hơn tổng tiền")
+          return
+        }
+        if (!paymentMethod) {
+          message.error("Vui lòng chọn phương thức thanh toán cho phần trả trước")
+          return
+        }
+        if (!paymentDueDate) {
+          message.error("Vui lòng chọn hạn thanh toán cho phần còn nợ")
+          return
+        }
+        finalPaidAmount = paidAmount
+      } else if (paymentType === 'debt') {
+        // Công nợ toàn bộ
+        if (!paymentDueDate) {
+          message.error("Vui lòng chọn hạn thanh toán")
+          return
+        }
+        finalPaidAmount = 0
+        finalPaymentMethod = undefined
+      }
+
+      // Tính payment_status và debt_amount
+      const paymentStatus = finalPaidAmount === 0 ? 'unpaid' : 
+                           finalPaidAmount === grandTotal ? 'paid' : 'partial'
+      const debtAmount = grandTotal - finalPaidAmount
+
       // 1. Xử lý upload ảnh
       const imageUrls: string[] = [];
       if (fileList.length > 0) {
@@ -365,12 +408,18 @@ const InventoryReceiptCreate: React.FC = () => {
         // Images (chỉ gửi nếu có)
         ...(imageUrls.length > 0 && { images: imageUrls }),
         
-        // Thanh toán (chỉ gửi nếu có)
-        ...(paidAmount > 0 && {
-          paid_amount: paidAmount,
-          payment_method: paymentMethod || 'cash',
+        // Thanh toán - UPDATED LOGIC
+        paid_amount: finalPaidAmount,
+        payment_status: paymentStatus,
+        debt_amount: debtAmount,
+        
+        // Chỉ gửi payment_method khi có thanh toán
+        ...(finalPaidAmount > 0 && finalPaymentMethod && {
+          payment_method: finalPaymentMethod,
         }),
-        ...(paymentDueDate && {
+        
+        // Chỉ gửi payment_due_date khi có nợ
+        ...(debtAmount > 0 && paymentDueDate && {
           payment_due_date: paymentDueDate.toISOString(),
         }),
         
@@ -617,53 +666,136 @@ const InventoryReceiptCreate: React.FC = () => {
             </Upload>
           </Card>
 
-          {/* Phần thanh toán */}
-          <Card title="Thanh toán (Tùy chọn)" className='mt-4'>
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-              <Form.Item label='Số tiền thanh toán ngay'>
-                <NumberInput
-                  value={paidAmount}
-                  onChange={(value) => setPaidAmount(value || 0)}
-                  style={{ width: '100%' }}
-                  addonAfter="VND"
-                  min={0}
-                  max={calculateTotals().grandTotal}
-                  placeholder='Nhập số tiền thanh toán'
-                />
-              </Form.Item>
+          {/* Phần thanh toán - REDESIGNED */}
+          <Card title="Thanh toán" className='mt-4'>
+            <Radio.Group 
+              value={paymentType} 
+              onChange={(e) => {
+                setPaymentType(e.target.value)
+                // Reset các giá trị khi đổi loại thanh toán
+                if (e.target.value === 'full') {
+                  setPaidAmount(calculateTotals().grandTotal)
+                } else if (e.target.value === 'debt') {
+                  setPaidAmount(0)
+                  setPaymentMethod(undefined)
+                }
+              }}
+              className='w-full'
+            >
+              <Space direction="vertical" className='w-full' size="large">
+                {/* Option 1: Thanh toán đủ ngay */}
+                <div>
+                  <Radio value='full'>
+                    <span className='font-medium'>Thanh toán đủ ngay (100%)</span>
+                  </Radio>
+                  {paymentType === 'full' && (
+                    <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
+                      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <Form.Item label='Số tiền' className='mb-0'>
+                          <NumberInput
+                            value={calculateTotals().grandTotal}
+                            disabled
+                            addonAfter="VND"
+                            style={{ width: '100%' }}
+                          />
+                        </Form.Item>
+                        <Form.Item label='Phương thức' className='mb-0'>
+                          <Select
+                            value={paymentMethod}
+                            onChange={setPaymentMethod}
+                            placeholder='Chọn phương thức'
+                            style={{ width: '100%' }}
+                          >
+                            <Select.Option value='cash'>Tiền mặt</Select.Option>
+                            <Select.Option value='transfer'>Chuyển khoản</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              <Form.Item label='Phương thức thanh toán'>
-                <Select
-                  value={paymentMethod}
-                  onChange={setPaymentMethod}
-                  placeholder='Chọn phương thức'
-                  allowClear
-                >
-                  <Select.Option value='cash'>Tiền mặt</Select.Option>
-                  <Select.Option value='transfer'>Chuyển khoản</Select.Option>
-                  <Select.Option value='debt'>Công nợ</Select.Option>
-                </Select>
-              </Form.Item>
+                {/* Option 2: Thanh toán một phần + Công nợ */}
+                <div>
+                  <Radio value='partial'>
+                    <span className='font-medium'>Thanh toán một phần + Công nợ</span>
+                  </Radio>
+                  {paymentType === 'partial' && (
+                    <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
+                      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                        <Form.Item label='Trả trước' className='mb-0'>
+                          <NumberInput
+                            value={paidAmount}
+                            onChange={(value) => setPaidAmount(value || 0)}
+                            addonAfter="VND"
+                            min={1}
+                            max={calculateTotals().grandTotal - 1}
+                            placeholder='Nhập số tiền trả trước'
+                            style={{ width: '100%' }}
+                          />
+                        </Form.Item>
+                        <Form.Item label='Phương thức' className='mb-0'>
+                          <Select
+                            value={paymentMethod}
+                            onChange={setPaymentMethod}
+                            placeholder='Chọn phương thức'
+                            style={{ width: '100%' }}
+                          >
+                            <Select.Option value='cash'>Tiền mặt</Select.Option>
+                            <Select.Option value='transfer'>Chuyển khoản</Select.Option>
+                          </Select>
+                        </Form.Item>
+                      </div>
+                      {paidAmount > 0 && paidAmount < calculateTotals().grandTotal && (
+                        <Alert
+                          message={`Còn nợ: ${(calculateTotals().grandTotal - paidAmount).toLocaleString('vi-VN')} VND`}
+                          type='warning'
+                          showIcon
+                          className='mt-4 mb-0'
+                        />
+                      )}
+                      <Form.Item label='Hạn thanh toán' className='mt-4 mb-0'>
+                        <DatePicker
+                          value={paymentDueDate}
+                          onChange={setPaymentDueDate}
+                          style={{ width: '100%' }}
+                          placeholder='Chọn hạn thanh toán'
+                          format='DD/MM/YYYY'
+                          disabledDate={(current) => current && current < dayjs().startOf('day')}
+                        />
+                      </Form.Item>
+                    </div>
+                  )}
+                </div>
 
-              <Form.Item label='Hạn thanh toán'>
-                <DatePicker
-                  value={paymentDueDate}
-                  onChange={setPaymentDueDate}
-                  style={{ width: '100%' }}
-                  placeholder='Chọn hạn thanh toán'
-                  format='DD/MM/YYYY'
-                />
-              </Form.Item>
-            </div>
-            
-            {paidAmount > 0 && (
-              <Alert
-                message={`Thanh toán ngay: ${paidAmount.toLocaleString('vi-VN')} VND / ${calculateTotals().grandTotal.toLocaleString('vi-VN')} VND`}
-                description={`Còn nợ: ${(calculateTotals().grandTotal - paidAmount).toLocaleString('vi-VN')} VND`}
-                type='info'
-                showIcon
-              />
-            )}
+                {/* Option 3: Công nợ toàn bộ */}
+                <div>
+                  <Radio value='debt'>
+                    <span className='font-medium'>Công nợ toàn bộ (0%)</span>
+                  </Radio>
+                  {paymentType === 'debt' && (
+                    <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
+                      <Alert
+                        message={`Số tiền nợ: ${calculateTotals().grandTotal.toLocaleString('vi-VN')} VND`}
+                        type='error'
+                        showIcon
+                        className='mb-4'
+                      />
+                      <Form.Item label='Hạn thanh toán' className='mb-0'>
+                        <DatePicker
+                          value={paymentDueDate}
+                          onChange={setPaymentDueDate}
+                          style={{ width: '100%' }}
+                          placeholder='Chọn hạn thanh toán'
+                          format='DD/MM/YYYY'
+                          disabledDate={(current) => current && current < dayjs().startOf('day')}
+                        />
+                      </Form.Item>
+                    </div>
+                  )}
+                </div>
+              </Space>
+            </Radio.Group>
           </Card>
 
           {/* Hiển thị tổng tiền chi tiết */}
