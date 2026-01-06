@@ -20,8 +20,8 @@ export const WeatherForecastTabs: React.FC<WeatherForecastTabsProps> = ({
   // Nhóm dữ liệu theo ngày
   const groupedByDay: Record<string, WeatherData[]> = {};
   weatherData.forEach(item => {
-    const date = new Date(item.dt * 1000);
-    const dateKey = date.toLocaleDateString('vi-VN');
+    const d = new Date(item.dt * 1000);
+    const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     if (!groupedByDay[dateKey]) {
       groupedByDay[dateKey] = [];
     }
