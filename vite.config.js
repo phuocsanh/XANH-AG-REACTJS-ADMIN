@@ -97,6 +97,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true, // Tự động xóa cache cũ
         skipWaiting: true, // Kích hoạt service worker mới ngay lập tức
         clientsClaim: true, // Kiểm soát tất cả clients ngay lập tức
+        maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // 30MB (cho phép cache file WASM lớn)
       },
       devOptions: {
         enabled: true, // Enable PWA in dev mode for testing
