@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { getRemoteConfig, fetchAndActivate, getValue } from "firebase/remote-config";
+import { getRemoteConfig, fetchAndActivate, getValue, getAll } from "firebase/remote-config";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,6 +19,9 @@ export const remoteConfig = getRemoteConfig(app);
 // Set fetch interval to 0 for development, default (12 hours) for production
 remoteConfig.settings.minimumFetchIntervalMillis = import.meta.env.DEV ? 0 : 43200000;
 
+/**
+ * Lấy giá trị cấu hình theo key
+ */
 export const getRemoteConfigValue = async (key: string) => {
   try {
     const activated = await fetchAndActivate(remoteConfig);
@@ -26,18 +29,28 @@ export const getRemoteConfigValue = async (key: string) => {
     
     const val = getValue(remoteConfig, key);
     const stringValue = val.asString();
-    const source = val.getSource(); // 'remote', 'default', or 'static'
-    
-    console.log(`📦 Remote Config value for "${key}":`, {
-      value: stringValue || '(empty)',
-      source: source,
-      hasValue: !!stringValue
-    });
     
     return stringValue;
   } catch (error) {
     console.error(`Error fetching remote config for key ${key}:`, error);
     return "";
+  }
+};
+
+/**
+ * Lấy tất cả giá trị cấu hình có prefix cụ thể
+ */
+export const getAllRemoteValues = async (prefix: string): Promise<string[]> => {
+  try {
+    await fetchAndActivate(remoteConfig);
+    const allValues = getAll(remoteConfig);
+    return Object.keys(allValues)
+      .filter(key => key.startsWith(prefix))
+      .map(key => allValues[key]?.asString())
+      .filter((val): val is string => !!val);
+  } catch (error) {
+    console.error(`Error fetching all remote config for prefix ${prefix}:`, error);
+    return [];
   }
 };
 

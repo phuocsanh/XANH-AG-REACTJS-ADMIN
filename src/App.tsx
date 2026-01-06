@@ -81,7 +81,7 @@ import WeatherForecastPage from "./pages/weather-forecast"
 // Thêm import cho trang Lịch Vạn Niên
 import LunarCalendar from "./pages/lunar-calendar"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
-import { remoteConfig } from "./lib/firebase"
+import { remoteConfig, getAllRemoteValues } from "./lib/firebase"
 import { useConfigStore } from "./stores/config.store"
 import { useFirebaseNotifications } from "./hooks/use-firebase-notifications"
 import { usePullToRefresh } from "./hooks/use-pull-to-refresh"
@@ -126,6 +126,9 @@ function App() {
         const activated = await fetchAndActivate(remoteConfig)
         console.log('✅ Remote Config fetched:', activated ? 'New config activated' : 'Using cached config')
         
+        // Pre-fetch Tomorrow.io keys để cache
+        await getAllRemoteValues('TOMORROW_API_KEY_');
+
         // Lấy 7 API keys và lưu vào store
         const keys = [
           { name: 'GEMINI_API_KEY_1', setter: 'setGeminiApiKey1' },

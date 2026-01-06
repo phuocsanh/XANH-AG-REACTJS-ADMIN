@@ -293,8 +293,12 @@ const WeatherForecastPage: React.FC = () => {
   /**
    * Format ngày để làm key cho tab
    */
+  /**
+   * Format ngày để làm key cho tab
+   */
   const formatDate = (timestamp: number): string => {
-    return new Date(timestamp * 1000).toLocaleDateString('vi-VN');
+    const d = new Date(timestamp * 1000);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };
 
   /**
@@ -349,85 +353,81 @@ const WeatherForecastPage: React.FC = () => {
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   };
 
-  /**
-   * Lấy tóm tắt thời tiết từ Daily API
-   * Dữ liệu này đã được API tính toán sẵn, chính xác hơn việc tự tính
-   */
-  const getDailySummaryFromAPI = (dateString: string) => {
-    const apiDate = convertDateToAPIFormat(dateString);
-    const dailyData = dailyForecast.find(d => d.date === apiDate);
-    
-    if (!dailyData) return null;
-    
-    // Tìm giờ có khả năng mưa cao nhất từ hourly data
-    const groupedData = groupByDay(weatherForecast);
-    const hourlyDataForDate = groupedData[dateString] || [];
-    
-    let maxPrecipTime = '';
-    if (hourlyDataForDate.length > 0) {
-      // Tìm item có pop cao nhất
-      const maxPrecipItem = hourlyDataForDate.reduce((max, item) => 
-        item.pop > max.pop ? item : max
-      , hourlyDataForDate[0]);
-      
-      // Format giờ
-      maxPrecipTime = new Date(maxPrecipItem.dt * 1000).toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-    
-    // Tính độ ẩm trung bình từ hourly data
-    const avgHumidity = hourlyDataForDate.length > 0
-      ? Math.round(hourlyDataForDate.reduce((sum, item) => sum + item.main.humidity, 0) / hourlyDataForDate.length)
-      : 0;
-    
-    return {
-      tempMin: dailyData.tempMin,
-      tempMax: dailyData.tempMax,
-      maxPrecipitationProbability: dailyData.precipitationProbabilityMax,
-      maxPrecipitationTime: maxPrecipTime, // Thêm giờ có mưa cao nhất
-      totalRain: dailyData.precipitationSum.toString(),
-      avgHumidity: avgHumidity // Thêm độ ẩm trung bình
-    };
+  // Hàm helper để lấy style màu sắc dựa trên khả năng mưa (Cảnh báo: Xanh -> Vàng -> Cam -> Đỏ)
+  const getPopStyle = (pop: number) => {
+    if (pop === 0) return { color: "#e6f7ff", textColor: "#1890ff", border: "#91d5ff" }; // Xanh - An toàn
+    if (pop <= 24) return { color: "#feffe6", textColor: "#d4b106", border: "#fffb8f" }; // Vàng nhạt
+    if (pop <= 49) return { color: "#fffb8f", textColor: "#876800", border: "#ffe58f" }; // Vàng đậm
+    if (pop <= 74) return { color: "#fff7e6", textColor: "#d46b08", border: "#ffd591" }; // Cam
+    return { color: "#fff1f0", textColor: "#cf1322", border: "#ffa39e" }; // Đỏ - Nguy hiểm
   };
 
   /**
-   * Tính toán tóm tắt thời tiết cho một ngày (DEPRECATED - dùng getDailySummaryFromAPI thay thế)
-   * Chỉ tính từ giờ hiện tại trở đi cho "Hôm nay"
+   * Tính toán tóm tắt thời tiết cho một ngày dựa trên dữ liệu hourly
+   * Điều này đảm bảo tóm tắt luôn khớp với danh sách giờ hiển thị bên dưới
    */
-  const getDailySummary = (data: WeatherData[], dateString: string) => {
-    if (data.length === 0) return null;
-
-    // Lọc dữ liệu: Nếu là hôm nay, chỉ lấy từ giờ hiện tại trở đi
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('vi-VN');
+  const getDailySummaryFromAPI = (dateString: string) => {
+    const groupedData = groupByDay(weatherForecast);
+    const hourlyDataForDate = groupedData[dateString] || [];
     
-    let filteredData = data;
-    if (dateString === todayStr) {
-      const currentTime = Math.floor(Date.now() / 1000); // Timestamp hiện tại (giây)
-      filteredData = data.filter(item => item.dt >= currentTime);
+    if (hourlyDataForDate.length === 0) {
+      // Fallback nếu không có hourly (hiếm khi xảy ra)
+      const apiDate = convertDateToAPIFormat(dateString);
+      const dailyData = dailyForecast.find(d => d.date === apiDate);
+      if (!dailyData) return null;
+      return {
+        tempMin: dailyData.tempMin,
+        tempMax: dailyData.tempMax,
+        maxPrecipitationProbability: dailyData.precipitationProbabilityMax,
+        maxPrecipitationTime: '',
+        totalRain: dailyData.precipitationSum.toFixed(1),
+        avgHumidity: 0
+      };
     }
 
-    // Nếu không còn dữ liệu sau khi lọc, return null
-    if (filteredData.length === 0) return null;
+    // Tính toán từ hourly data
+    const temps = hourlyDataForDate.map(item => item.main.temp);
+    const humidities = hourlyDataForDate.map(item => item.main.humidity);
+    const pops = hourlyDataForDate.map(item => item.pop * 100);
+    const rains = hourlyDataForDate.map(item => item.rain?.['1h'] || 0);
 
-    const temps = filteredData.map(item => item.main.temp);
-    const pops = filteredData.map(item => item.pop * 100); // Chuyển sang %
-    const rains = filteredData.map(item => item.rain?.['1h'] || 0);
+    // Tìm giờ có khả năng mưa cao nhất
+    const maxPrecipItem = hourlyDataForDate.reduce((max, item) => 
+      item.pop >= max.pop ? item : max
+    , hourlyDataForDate[0]);
+
+    const maxPrecipTime = new Date(maxPrecipItem.dt * 1000).toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
     return {
       tempMin: Math.round(Math.min(...temps)),
       tempMax: Math.round(Math.max(...temps)),
       maxPrecipitationProbability: Math.round(Math.max(...pops)),
-      totalRain: rains.reduce((sum, r) => sum + r, 0).toFixed(1)
+      maxPrecipitationTime: maxPrecipTime,
+      totalRain: rains.reduce((sum, r) => sum + r, 0).toFixed(1),
+      avgHumidity: Math.round(humidities.reduce((sum, h) => sum + h, 0) / humidities.length)
     };
   };
 
+  /**
+   * Tính toán tóm tắt thời tiết cho một ngày (DEPRECATED)
+   */
+  const getDailySummary = (data: WeatherData[], dateString: string) => {
+    return getDailySummaryFromAPI(dateString);
+  };
+
+  // Nhóm data và lấy danh sách key (ngày)
   const groupedData = groupByDay(weatherForecast);
   const sortedDates = Object.keys(groupedData).sort((a, b) => {
-    const dateA = new Date(a.split('/').reverse().join('-'));
-    const dateB = new Date(b.split('/').reverse().join('-'));
+    // a, b có dạng "DD/MM/YYYY" hoặc được format từ formatDate (vi-VN)
+    const [dayA, monthA, yearA] = a.split('/').map(Number);
+    const [dayB, monthB, yearB] = b.split('/').map(Number);
+    
+    const dateA = new Date(yearA, monthA - 1, dayA);
+    const dateB = new Date(yearB, monthB - 1, dayB);
+    
     return dateA.getTime() - dateB.getTime();
   });
 
@@ -435,17 +435,14 @@ const WeatherForecastPage: React.FC = () => {
   useEffect(() => {
     if (!lastLocation) {
       // Chưa có vị trí → Gọi GPS
-
       detectUserLocation();
-    } else {
-
     }
   }, []);
 
   return (
     <div className="w-full overflow-x-hidden lg:p-4">
       <Title level={2} className="!text-xl md:!text-3xl !mb-4 break-words">
-        Dự báo Thời tiết 7 Ngày
+        Dự báo Thời tiết 6 Ngày
       </Title>
       
       {/* Location Selection Card */}
@@ -559,12 +556,18 @@ const WeatherForecastPage: React.FC = () => {
                           <Col xs={12} sm={6}>
                             <div className="flex flex-col">
                               <Text type="secondary" className="text-sm mb-1">☔ Khả năng mưa</Text>
-                              <Tag 
-                                color={summary.maxPrecipitationProbability > 50 ? 'red' : summary.maxPrecipitationProbability > 20 ? 'orange' : 'green'}
-                                className="text-lg md:text-xl font-semibold w-fit"
-                              >
-                                {summary.maxPrecipitationProbability}% (cao nhất)
-                              </Tag>
+                              {(() => {
+                                const style = getPopStyle(summary.maxPrecipitationProbability);
+                                return (
+                                  <Tag 
+                                    color={style.color}
+                                    style={{ color: style.textColor, borderColor: style.border }}
+                                    className="text-lg md:text-xl font-semibold w-fit"
+                                  >
+                                    {summary.maxPrecipitationProbability}% (cao nhất)
+                                  </Tag>
+                                );
+                              })()}
                               {summary.maxPrecipitationTime && (
                                 <Text type="secondary" className="text-sm mt-1" style={{ color: 'red', fontWeight: 'bold' }}>
                                   Lúc {summary.maxPrecipitationTime}
@@ -721,13 +724,19 @@ const WeatherForecastPage: React.FC = () => {
                             <Col xs={12} sm={6} md={4}>
                               <div className="flex flex-col">
                                 <Text type="secondary" className="text-xs mb-1">☔ Khả năng mưa</Text>
-                                <Tag 
-                                  color={item.pop > 0.5 ? 'red' : item.pop > 0.2 ? 'orange' : 'green'} 
-                                  className="text-center text-base font-semibold"
-                                  style={{ marginTop: '4px' }}
-                                >
-                                  {Math.round(item.pop * 100)}%
-                                </Tag>
+                                {(() => {
+                                  const popVal = Math.round(item.pop * 100);
+                                  const style = getPopStyle(popVal);
+                                  return (
+                                    <Tag 
+                                      color={style.color}
+                                      style={{ color: style.textColor, borderColor: style.border, marginTop: '4px' }}
+                                      className="text-center text-base font-semibold"
+                                    >
+                                      {popVal}%
+                                    </Tag>
+                                  );
+                                })()}
                               </div>
                             </Col>
                             
