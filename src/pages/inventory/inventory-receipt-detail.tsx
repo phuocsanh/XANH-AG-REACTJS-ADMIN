@@ -49,6 +49,7 @@ import {
 } from "@/queries/inventory"
 import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
 import PaymentTab from "@/components/inventory/PaymentTab"
+import InventoryReceiptDetailSkeleton from "@/components/inventory/InventoryReceiptDetailSkeleton"
 
 const { Title, Text } = Typography
 const { TabPane } = Tabs
@@ -367,7 +368,7 @@ const InventoryReceiptDetail: React.FC = () => {
 
   // Loading & Error States
   if (isLoadingReceipt) {
-    return <div className="p-12 text-center"><Spin size="large" /><br/><Text className="mt-4 block">Đang tải dữ liệu...</Text></div>
+    return <InventoryReceiptDetailSkeleton />
   }
 
   if (receiptError || !receipt) {
@@ -450,7 +451,7 @@ const InventoryReceiptDetail: React.FC = () => {
         >
           {/* TAB 1: THÔNG TIN CHI TIẾT */}
           <TabPane 
-            tab={<Space><InfoCircleOutlined /><span>Thông tin chính</span></Space>} 
+            tab={<Space><span>ℹ️ Thông tin chính</span></Space>} 
             key="info"
           >
             <div className="p-3 md:p-6">
@@ -501,7 +502,7 @@ const InventoryReceiptDetail: React.FC = () => {
 
           {/* TAB 2: DANH SÁCH HÀNG HÓA */}
           <TabPane 
-            tab={<Space><ShoppingOutlined /><span>Hàng hóa</span><Tag className="ml-1 m-0">{items.length}</Tag></Space>} 
+            tab={<Space><span>🛍️ Hàng hóa</span><Tag className="ml-1 m-0">{items.length}</Tag></Space>} 
             key="items"
           >
             <div className="p-0 md:p-6 data-table-mobile-scroll">
@@ -553,8 +554,7 @@ const InventoryReceiptDetail: React.FC = () => {
           <TabPane 
             tab={
               <Space>
-                <DollarOutlined />
-                <span>Thanh toán</span>
+                <span>💰 Thanh toán</span>
                 {debtAmount > 0 && <Badge status="error" className="ml-1" />}
               </Space>
             } 
@@ -567,7 +567,7 @@ const InventoryReceiptDetail: React.FC = () => {
 
           {/* TAB 4: LỊCH SỬ GIAO DỊCH */}
           <TabPane 
-            tab={<Space><HistoryOutlined /><span>Lịch sử</span></Space>} 
+            tab={<Space><span>🕰️ Lịch sử</span></Space>} 
             key="history"
           >
             <div className="p-0 md:p-6 data-table-mobile-scroll">
