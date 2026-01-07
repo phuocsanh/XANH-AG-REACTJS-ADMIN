@@ -321,18 +321,13 @@ const InventoryReceiptCreate: React.FC = () => {
         // Images
         ...(imageUrls.length > 0 && { images: imageUrls }),
         
-        // Thanh toán
-        paid_amount: data.paymentType === 'full' ? grandTotal : (data.paymentType === 'partial' ? data.paidAmount : 0),
-        payment_status: data.paymentType === 'full' ? 'paid' : (data.paymentType === 'partial' ? 'partial' : 'unpaid'),
-        debt_amount: grandTotal - (data.paymentType === 'full' ? grandTotal : (data.paymentType === 'partial' ? data.paidAmount : 0)),
-        
-        ...(data.paymentMethod && {
-          payment_method: data.paymentMethod,
-        }),
-        
-        ...(data.paymentDueDate && {
-          payment_due_date: dayjs(data.paymentDueDate).toISOString(),
-        }),
+        // Thanh toán: Luôn khởi tạo là chưa thanh toán khi tạo/sửa phiếu
+        // Mọi nghiệp vụ thanh toán sẽ thực hiện tại trang chi tiết sau khi duyệt
+        paid_amount: 0,
+        payment_status: 'unpaid',
+        debt_amount: grandTotal,
+        payment_method: null,
+        payment_due_date: null,
         
         // Items
         items: data.items.map((item) => ({
@@ -355,7 +350,14 @@ const InventoryReceiptCreate: React.FC = () => {
         await createReceiptMutation.mutateAsync(submissionData as CreateInventoryReceiptRequest)
       }
       
-      navigate("/inventory/receipts")
+      // Chuyển hướng sang trang chi tiết để theo dõi tiếp (Duyệt/Thanh toán)
+      const finalReceiptId = isEditMode ? receiptId : (createReceiptMutation.data as any)?.id || (createReceiptMutation.data as any)?.data?.id;
+      
+      if (finalReceiptId) {
+        navigate(`/inventory/receipts/${finalReceiptId}`);
+      } else {
+        navigate("/inventory/receipts");
+      }
     } catch (error) {
       console.error("Error saving receipt:", error)
       // Toast lỗi đã được xử lý trong mutation hook (handleApiError)
@@ -553,148 +555,6 @@ const InventoryReceiptCreate: React.FC = () => {
             </Upload>
           </Card>
 
-          {/* Phần thanh toán - Chỉ hiển thị khi phiếu đã duyệt */}
-          {watchedStatus === 'approved' ? (
-            <Card title="Thanh Toán" className='mt-4'>
-              <div className="mb-4">
-                <Text className="block mb-2">Hình thức thanh toán</Text>
-                <Controller
-                  name="paymentType"
-                  control={control}
-                  render={({ field }) => (
-                    <Radio.Group 
-                      value={field.value}
-                      onChange={(e) => {
-                        const newType = e.target.value;
-                        field.onChange(newType);
-                        // Reset values logic
-                        if (newType === 'full') {
-                          setValue('paidAmount', calculateTotals().grandTotal);
-                        } else {
-                          setValue('paidAmount', 0);
-                          setValue('paymentMethod', undefined);
-                          setValue('paymentDueDate', undefined);
-                        }
-                      }}
-                    >
-                      <Space direction='vertical' className='w-full'>
-                        {/* Option 1: Thanh toán toàn bộ */}
-                        <div>
-                          <Radio value='full'>
-                            <span className='font-medium'>Thanh toán toàn bộ</span>
-                          </Radio>
-                          {watchedPaymentType === 'full' && (
-                            <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
-                              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <div>
-                                  <Text strong>Số tiền: </Text>
-                                  <Text className='text-green-600'>
-                                    {calculateTotals().grandTotal.toLocaleString('vi-VN')} VND
-                                  </Text>
-                                </div>
-                                <FormComboBox
-                                  label="Phương thức"
-                                  name="paymentMethod"
-                                  control={control}
-                                  required
-                                  placeholder="Chọn phương thức"
-                                  options={[
-                                    { label: 'Tiền mặt', value: 'cash' },
-                                    { label: 'Chuyển khoản', value: 'transfer' },
-                                  ]}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Option 2: Thanh toán một phần */}
-                        <div>
-                          <Radio value='partial'>
-                            <span className='font-medium'>Thanh toán một phần</span>
-                          </Radio>
-                          {watchedPaymentType === 'partial' && (
-                            <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
-                              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                <FormFieldNumber
-                                  label="Số tiền trả trước"
-                                  name="paidAmount"
-                                  control={control}
-                                  required
-                                  addonAfter="VND"
-                                  placeholder="Nhập số tiền"
-                                />
-                                <FormComboBox
-                                  label="Phương thức"
-                                  name="paymentMethod"
-                                  control={control}
-                                  required
-                                  placeholder="Chọn phương thức"
-                                  options={[
-                                    { label: 'Tiền mặt', value: 'cash' },
-                                    { label: 'Chuyển khoản', value: 'transfer' },
-                                  ]}
-                                />
-                              </div>
-                              {watchedPaidAmount > 0 && watchedPaidAmount < calculateTotals().grandTotal && (
-                                <Alert
-                                  message={`Còn nợ: ${(calculateTotals().grandTotal - watchedPaidAmount).toLocaleString('vi-VN')} VND`}
-                                  type='warning'
-                                  showIcon
-                                  className='mt-4'
-                                />
-                              )}
-                              <FormDatePicker
-                                label="Hạn thanh toán"
-                                name="paymentDueDate"
-                                control={control}
-                                required
-                                placeholder="Chọn hạn thanh toán"
-                                disabledDate={(current) => current && current < dayjs().startOf('day')}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Option 3: Công nợ */}
-                        <div>
-                          <Radio value='debt'>
-                            <span className='font-medium'>Công nợ (Trả sau)</span>
-                          </Radio>
-                          {watchedPaymentType === 'debt' && (
-                            <div className='ml-6 mt-3 p-4 bg-gray-50 rounded'>
-                              <Alert
-                                message={`Tổng nợ: ${calculateTotals().grandTotal.toLocaleString('vi-VN')} VND`}
-                                type='info'
-                                showIcon
-                                className='mb-4'
-                              />
-                              <FormDatePicker
-                                label="Hạn thanh toán"
-                                name="paymentDueDate"
-                                control={control}
-                                required
-                                placeholder="Chọn hạn trả nợ"
-                                disabledDate={(current) => current && current < dayjs().startOf('day')}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </Space>
-                    </Radio.Group>
-                  )}
-                />
-              </div>
-            </Card>
-          ) : (
-            <Alert
-              message="Phiếu nhập ở trạng thái nháp"
-              description="Bạn cần duyệt phiếu nhập trước khi có thể thực hiện thanh toán. Vui lòng chọn trạng thái 'Đã duyệt' để hiển thị phần thanh toán."
-              type="info"
-              showIcon
-              className='mt-4'
-            />
-          )}
 
           {/* Hiển thị tổng tiền chi tiết */}
           <div className='mt-4 p-4 bg-gray-50 rounded-lg'>

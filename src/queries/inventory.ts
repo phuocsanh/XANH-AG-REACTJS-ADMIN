@@ -27,6 +27,7 @@ import {
   ExpiringBatchAlert,
   FifoCalculation,
   BatchTrackingInfo,
+  InventoryReceiptStats,
   mapApiResponseToInventoryReceipt,
   mapApiResponseToInventoryReceiptItem,
   mapApiResponseToInventoryHistory,
@@ -47,6 +48,8 @@ export const inventoryKeys = {
     [...inventoryKeys.receipts(), "code", code] as const,
   receiptItems: (receiptId: number) =>
     [...inventoryKeys.receipts(), receiptId, "items"] as const,
+  receiptHistory: (receiptId: number) =>
+    [...inventoryKeys.receipts(), receiptId, "history"] as const,
   history: () => [...inventoryKeys.all, "history"] as const,
   historyList: (params?: InventoryHistoryListParams) =>
     [...inventoryKeys.history(), "list", params] as const,
@@ -151,6 +154,22 @@ export const useInventoryReceiptQuery = (id: number) => {
       return mapApiResponseToInventoryReceipt(receiptData)
     },
     enabled: !!id,
+  })
+}
+
+/**
+ * Hook lấy lịch sử giao dịch kho theo Receipt ID
+ */
+export const useInventoryReceiptHistoryQuery = (receiptId: number) => {
+  return useQuery({
+    queryKey: inventoryKeys.receiptHistory(receiptId),
+    queryFn: async () => {
+      const response = await api.get<any>(
+        `/inventory/receipt/${receiptId}/transactions`
+      )
+      return response.data || response
+    },
+    enabled: !!receiptId,
   })
 }
 
@@ -640,47 +659,15 @@ export const useInventoryHistoryByProductQuery = (
 /**
  * Hook lấy thống kê tồn kho
  */
+/**
+ * Hook lấy thống kê tồn kho (Sử dụng endpoint stats mới từ server)
+ */
 export const useInventoryStatsQuery = () => {
   return useQuery({
     queryKey: inventoryKeys.stats(),
     queryFn: async () => {
-      // Gọi API POST search để lấy tất cả phiếu nhập (không phân trang)
-      const response = await api.postRaw<{
-        data: InventoryReceiptApiResponse[]
-        total: number
-      }>("/inventory/receipts/search", {
-        page: 1,
-        limit: 9999, // Lấy tất cả để tính stats
-      })
-
-      const receipts = response.data
-      const totalReceipts = receipts.length
-      
-      // Đếm theo status string
-      const draftReceipts = receipts.filter(
-        (r: InventoryReceiptApiResponse) => r.status === 'draft'
-      ).length
-      
-      const approvedReceipts = receipts.filter(
-        (r: InventoryReceiptApiResponse) => r.status === 'approved'
-      ).length
-
-      // Tính tổng giá trị (chỉ các phiếu đã duyệt)
-      const totalValue = receipts
-        .filter((r: InventoryReceiptApiResponse) => r.status === 'approved')
-        .reduce(
-          (sum: number, r: InventoryReceiptApiResponse) =>
-            sum + parseFloat(r.total_amount || "0"),
-          0
-        )
-        .toString()
-
-      return {
-        totalReceipts,
-        draftReceipts,
-        approvedReceipts,
-        totalValue,
-      }
+      const response = await api.get<InventoryReceiptStats>("/inventory/receipts/stats")
+      return response
     },
   })
 }

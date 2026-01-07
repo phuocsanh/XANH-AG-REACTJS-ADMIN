@@ -51,6 +51,10 @@ export interface InventoryReceipt {
   approved_at?: string
   items?: InventoryReceiptItem[]
   
+  // Relations
+  creator?: { id: number; username: string; full_name?: string }
+  approver?: { id: number; username: string; full_name?: string }
+  
   // Payment fields
   paid_amount?: number
   payment_status?: 'unpaid' | 'partial' | 'paid'
@@ -92,6 +96,18 @@ export interface InventoryReceiptPayment {
     username: string
     account?: string
   }
+}
+
+// Interface cho thống kê phiếu nhập hàng (8 chỉ số)
+export interface InventoryReceiptStats {
+  totalReceipts: number
+  draftReceipts: number
+  approvedReceipts: number
+  cancelledReceipts: number
+  debtReceiptsCount: number
+  totalValue: string | number
+  totalPaid: string | number
+  totalDebt: string | number
 }
 
 // Interface cho chi tiết phiếu nhập hàng (items)
@@ -226,6 +242,8 @@ export function mapApiResponseToInventoryReceipt(
     
     // Relations
     payments: apiReceipt.payments,
+    creator: apiReceipt.creator,
+    approver: apiReceipt.approver,
   }
 }
 
@@ -293,10 +311,17 @@ export const getInventoryReceiptStatusText = (status: any): string => {
  * Hàm chuẩn hóa trạng thái về dạng Enum chuỗi tiếng Anh
  */
 export const normalizeReceiptStatus = (status: any): InventoryReceiptStatus => {
-  const s = String(status).toLowerCase();
+  const s = String(status || '').toLowerCase().trim();
+  // English codes or raw numbers
   if (s === 'draft' || s === '1') return InventoryReceiptStatus.DRAFT;
   if (s === 'approved' || s === '2' || s === '3' || s === 'completed' || s === '4') return InventoryReceiptStatus.APPROVED;
   if (s === 'cancelled' || s === '5') return InventoryReceiptStatus.CANCELLED;
+  
+  // Vietnamese labels (as fallback)
+  if (s === 'nháp') return InventoryReceiptStatus.DRAFT;
+  if (s === 'đã duyệt') return InventoryReceiptStatus.APPROVED;
+  if (s === 'đã hủy') return InventoryReceiptStatus.CANCELLED;
+  
   return InventoryReceiptStatus.DRAFT;
 }
 
@@ -462,6 +487,7 @@ export interface InventoryTransaction {
   created_by_user_id: number
   created_at: string
   updated_at: string
+  creator?: { id: number; username: string; full_name?: string }
 }
 
 // Request DTOs

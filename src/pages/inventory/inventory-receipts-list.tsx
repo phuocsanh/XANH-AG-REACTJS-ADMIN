@@ -7,47 +7,37 @@ import {
   Button,
   Space,
   Typography,
-  Input,
-  Select,
   DatePicker,
   Table,
   Tag,
   Tooltip,
   Popconfirm,
-  Badge,
 } from "antd"
 import {
   EyeOutlined,
-  EditOutlined,
   DeleteOutlined,
   PlusOutlined,
-  SyncOutlined,
-  CheckOutlined,
-  CloseOutlined,
   ReloadOutlined,
   SearchOutlined,
-  DollarOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
 
-import {
-  InventoryReceipt,
-  InventoryReceiptStatus,
+import { 
+  InventoryReceipt, 
+  InventoryReceiptStatus, 
   InventoryReceiptListParams,
   mapApiResponseToInventoryReceipt,
+  normalizeReceiptStatus,
+  getInventoryReceiptStatusText
 } from "@/models/inventory.model"
 import {
   useInventoryReceiptsQuery,
   useDeleteInventoryReceiptMutation,
-  useApproveInventoryReceiptMutation,
-  useCancelInventoryReceiptMutation,
   useInventoryStatsQuery,
 } from "@/queries/inventory"
 import { useSupplierSearch } from "@/queries/supplier"
 import { LoadingSpinner } from "@/components/common"
-import PaymentHistoryModal from "@/components/inventory/PaymentHistoryModal"
-
 import FilterHeader from '@/components/common/filter-header'
 
 const { Title, Text } = Typography
@@ -62,7 +52,6 @@ const InventoryReceiptsList: React.FC = () => {
     page: 1,
     limit: 10,
   })
-  const [selectedReceiptForPayment, setSelectedReceiptForPayment] = useState<any>(null)
 
   // State tìm kiếm nhà cung cấp cho Filter ComboBox
   const [searchTermSupplier, setSearchTermSupplier] = useState("")
@@ -131,14 +120,11 @@ const InventoryReceiptsList: React.FC = () => {
 
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
-  const approveReceiptMutation = useApproveInventoryReceiptMutation()
-  const cancelReceiptMutation = useCancelInventoryReceiptMutation()
 
   // Handlers
   const handleTableChange = (
     newPagination: any,
     tableFilters: any,
-    sorter: any
   ) => {
     setPagination((prev) => ({
       ...prev,
@@ -151,17 +137,6 @@ const InventoryReceiptsList: React.FC = () => {
     // Status Filter
     if (tableFilters.status && tableFilters.status.length > 0) {
       newFilters.status = tableFilters.status[0]
-    } else {
-      delete newFilters.status
-    }
-
-    // Created At Filter
-    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
-      newFilters.start_date = tableFilters.created_at[0]
-      newFilters.end_date = tableFilters.created_at[1]
-    } else {
-      delete newFilters.start_date
-      delete newFilters.end_date
     }
 
     setFilters(newFilters)
@@ -169,7 +144,7 @@ const InventoryReceiptsList: React.FC = () => {
 
   const handleFilterChange = (key: string, value: any) => {
     const newFilters = { ...filters, [key]: value }
-    if (!value && value !== 0) delete newFilters[key] // Fix: cho phép value = 0 (nếu ID start from 0)
+    if (!value && value !== 0) delete newFilters[key]
     setFilters(newFilters)
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
@@ -231,13 +206,9 @@ const InventoryReceiptsList: React.FC = () => {
     ),
   })
 
-  // Action handlers...
+  // Action handlers
   const handleViewReceipt = (receipt: InventoryReceipt) => {
     navigate(`/inventory/receipt/${receipt.id}`)
-  }
-
-  const handleEditReceipt = (receipt: InventoryReceipt) => {
-    navigate(`/inventory/receipts/edit/${receipt.id}`)
   }
 
   const handleDeleteReceipt = async (id: number) => {
@@ -248,38 +219,19 @@ const InventoryReceiptsList: React.FC = () => {
     }
   }
 
-  const handleApproveReceipt = async (id: number) => {
-    try {
-      await approveReceiptMutation.mutateAsync(id)
-    } catch (error) {
-      console.error("Error approving receipt:", error)
-    }
-  }
-
-  const handleCancelReceipt = async (id: number) => {
-    try {
-      await cancelReceiptMutation.mutateAsync(id)
-    } catch (error) {
-      console.error("Error canceling receipt:", error)
-    }
-  }
-
   // Render trạng thái
-  const renderStatus = (statusText: string) => {
-    const statusStr = statusText
+  const renderStatus = (record: InventoryReceipt) => {
+    const normalizedStatus = normalizeReceiptStatus(record.status_code || record.status);
     let color = "default"
     
-    switch (statusStr) {
-      case "Nháp":
+    switch (normalizedStatus) {
+      case InventoryReceiptStatus.DRAFT:
         color = "default"
         break
-      case "Chờ duyệt":
-        color = "processing"
-        break
-      case "Đã duyệt":
+      case InventoryReceiptStatus.APPROVED:
         color = "success"
         break
-      case "Đã hủy":
+      case InventoryReceiptStatus.CANCELLED:
         color = "error"
         break
       default:
@@ -288,85 +240,39 @@ const InventoryReceiptsList: React.FC = () => {
 
     return (
       <Tag color={color}>
-        {statusText}
+        {getInventoryReceiptStatusText(record.status_code || record.status)}
       </Tag>
     )
   }
 
-  // Render hành động cho mỗi phiếu theo đúng nghiệp vụ (3 status: draft, approved, cancelled)
+  // Render hành động cho mỗi phiếu: Tối giản hóa theo đề xuất Unified Detail Page
   const renderActions = (record: InventoryReceipt) => {
     const actions = []
     
-    // Xem chi tiết
+    // 1. Xem chi tiết - Luôn hiển thị và là hành động chính
     actions.push(
       <Tooltip key='view' title='Xem chi tiết'>
         <Button
           type='text'
           icon={<EyeOutlined />}
           onClick={() => handleViewReceipt(record)}
+          className="text-blue-500 hover:text-blue-700"
         />
       </Tooltip>
     )
 
-    // Lịch sử thanh toán (luôn có)
-
-    actions.push(
-      <Tooltip key='payment' title='Lịch sử thanh toán'>
-        <Button
-          type='text'
-          icon={<DollarOutlined />}
-          onClick={() => setSelectedReceiptForPayment(record)}
-        />
-      </Tooltip>
-    )
-    
-    // Ưu tiên dùng status_code nếu có, nếu không thì dùng status text
-    // Normalize về lowercase để so sánh
-    const statusCode = record.status_code?.toLowerCase() || ''
-    const statusText = record.status // Text hiển thị: "Nháp", "Đã duyệt", ...
-
-    // === DRAFT (Nháp) ===
-    if (statusCode === InventoryReceiptStatus.DRAFT || statusText === "Nháp") {
-      // Sửa
+    // 2. Xóa phiếu - Chỉ hiển thị cho trạng thái "Nháp"
+    const normalizedStatus = normalizeReceiptStatus(record.status_code || record.status)
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
       actions.push(
-        <Tooltip key='edit' title='Chỉnh sửa'>
-          <Button
-            type='text'
-            icon={<EditOutlined />}
-            onClick={() => handleEditReceipt(record)}
-          />
-        </Tooltip>
-      )
-      
-      // Duyệt (draft có thể duyệt trực tiếp)
-      actions.push(
-        <Tooltip key='approve' title='Duyệt phiếu'>
-          <Popconfirm
-            title='Duyệt phiếu nhập hàng'
-            description='Bạn có chắc chắn muốn duyệt phiếu nhập hàng này?'
-            onConfirm={() => handleApproveReceipt(record.id)}
-            okText='Duyệt'
-            cancelText='Hủy'
-          >
-            <Button
-              type='text'
-              icon={<CheckOutlined />}
-              style={{ color: "#52c41a" }}
-              loading={approveReceiptMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
-      
-      // Xóa
-      actions.push(
-        <Tooltip key='delete' title='Xóa phiếu'>
+        <Tooltip key='delete' title='Xóa phiếu nháp'>
           <Popconfirm
             title='Xóa phiếu nhập hàng'
-            description='Bạn có chắc chắn muốn xóa phiếu nhập hàng này? Hành động này không thể hoàn tác.'
+            description='Bạn có chắc chắn muốn xóa phiếu nhập hàng nháp này?'
             onConfirm={() => handleDeleteReceipt(record.id)}
             okText='Xóa'
             cancelText='Hủy'
+            okButtonProps={{ danger: true }}
           >
             <Button
               type='text'
@@ -377,54 +283,6 @@ const InventoryReceiptsList: React.FC = () => {
           </Popconfirm>
         </Tooltip>
       )
-    }
-
-    // === APPROVED (Đã duyệt) ===
-    else if (statusCode === InventoryReceiptStatus.APPROVED || statusText === "Đã duyệt") {
-      // Hủy (nếu có vấn đề)
-      actions.push(
-        <Tooltip key='cancel' title='Hủy phiếu'>
-          <Popconfirm
-            title='Hủy phiếu nhập hàng'
-            description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
-            onConfirm={() => handleCancelReceipt(record.id)}
-            okText='Hủy phiếu'
-            cancelText='Không'
-          >
-            <Button
-              type='text'
-              icon={<CloseOutlined />}
-              style={{ color: "#ff4d4f" }}
-              loading={cancelReceiptMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
-    }
-
-    // === CANCELLED (Đã hủy) ===
-    else if (statusCode === InventoryReceiptStatus.CANCELLED || statusText === "Đã hủy") {
-      // Chỉ cho phép xóa nếu chưa từng approved (chưa tác động kho)
-      if (!(record as any).approved_at) {
-        actions.push(
-        <Tooltip key='delete' title='Xóa phiếu'>
-          <Popconfirm
-            title='Xóa phiếu nhập hàng'
-            description='Bạn có chắc chắn muốn xóa phiếu nhập hàng này? Hành động này không thể hoàn tác.'
-            onConfirm={() => handleDeleteReceipt(record.id)}
-            okText='Xóa'
-            cancelText='Hủy'
-          >
-            <Button
-              type='text'
-              icon={<DeleteOutlined />}
-              danger
-              loading={deleteReceiptMutation.isPending}
-            />
-          </Popconfirm>
-        </Tooltip>
-      )
-      }
     }
 
     return <Space size='small'>{actions}</Space>
@@ -438,7 +296,6 @@ const InventoryReceiptsList: React.FC = () => {
       width: 60,
       align: 'center',
       render: (_: unknown, __: InventoryReceipt, index: number) => {
-        // Tính STT dựa trên trang hiện tại và pageSize
         const stt = (pagination.page - 1) * pagination.limit + index + 1;
         return <div className='font-medium text-gray-600'>{stt}</div>;
       },
@@ -554,15 +411,10 @@ const InventoryReceiptsList: React.FC = () => {
       dataIndex: "payment_status",
       key: "payment_status",
       width: 150,
-      filters: [
-        { text: 'Chưa thanh toán', value: 'unpaid' },
-        { text: 'Thanh toán một phần', value: 'partial' },
-        { text: 'Đã thanh toán', value: 'paid' },
-      ],
       render: (status: string) => {
         if (status === 'paid') return <Tag color="success">Đã thanh toán</Tag>
         if (status === 'partial') return <Tag color="warning">Một phần</Tag>
-        if (status === 'unpaid') return <Tag color="error">Chưa TT</Tag>
+        if (status === 'unpaid' || !status) return <Tag color="error">Chưa TT</Tag>
         return <Tag>-</Tag>
       },
     },
@@ -584,7 +436,7 @@ const InventoryReceiptsList: React.FC = () => {
       key: "status",
       width: 150,
       align: "center",
-      render: (status: string) => renderStatus(status),
+      render: (_: string, record: InventoryReceipt) => renderStatus(record),
     },
     {
       title: "Ngày tạo",
@@ -605,14 +457,13 @@ const InventoryReceiptsList: React.FC = () => {
     {
       title: "Thao tác",
       key: "actions",
-      width: 180,
+      width: 100,
       align: "center",
       render: (_, record: InventoryReceipt) => renderActions(record),
     },
   ]
 
   // Lấy danh sách phiếu từ API response
-  const receipts = mappedReceipts
   const total = receiptsData?.data?.total || 0
 
   if (receiptsError) {
@@ -636,80 +487,66 @@ const InventoryReceiptsList: React.FC = () => {
         {/* Thống kê tổng quan */}
         {statsData && (
           <Col span={24}>
-            <Row gutter={[4, 4]}>
-              {/* Tổng phiếu nhập */}
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
-                    {statsData.totalReceipts}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Tổng</Text>
-                </Card>
-              </Col>
-              
-              {/* Đã duyệt */}
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
-                    {statsData.approvedReceipts}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Duyệt</Text>
-                </Card>
-              </Col>
-              
-              {/* Nháp */}
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#8c8c8c' }}>
-                    {statsData.draftReceipts}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Nháp</Text>
-                </Card>
-              </Col>
-              
-              {/* Tổng giá trị */}
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#52c41a' }}>
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                      notation: "compact",
-                      maximumFractionDigits: 1
-                    }).format(parseFloat(statsData.totalValue || "0"))}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Giá trị</Text>
-                </Card>
-              </Col>
+                {/* Thống kê 8 tấm (Tối ưu sắp xếp và hiển thị) */}
+                <Row gutter={[4, 4]}>
+                  {/* Nhóm 1: Trạng thái phiếu (2 cột trên mobile) */}
+                  <Col xs={12} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#1890ff' }}>{statsData.totalReceipts ?? 0}</div>
+                      <Text className="text-[10px] block" type="secondary">Tổng phiếu</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#fa8c16' }}>{statsData.draftReceipts ?? 0}</div>
+                      <Text className="text-[10px] block" type="secondary">Bản nháp</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#52c41a' }}>{statsData.approvedReceipts ?? 0}</div>
+                      <Text className="text-[10px] block" type="secondary">Đã duyệt</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ff4d4f' }}>{statsData.cancelledReceipts ?? 0}</div>
+                      <Text className="text-[10px] block" type="secondary">Đã hủy</Text>
+                    </Card>
+                  </Col>
 
-              {/* Số phiếu nợ NCC */}
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
-                    {receipts?.filter(r => 
-                      r.status === 'Đã duyệt' && (Number(r.debt_amount) || 0) > 0
-                    ).length || 0}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Phiếu nợ</Text>
-                </Card>
-              </Col>
-
-              {/* Tổng nợ NCC */}
-              <Col xs={8} sm={8} md={8}>
-                <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff4d4f' }}>
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                      notation: "compact",
-                      maximumFractionDigits: 1
-                    }).format(receipts?.filter(r => r.status === 'Đã duyệt')
-                      .reduce((sum, r) => sum + (Number(r.debt_amount) || 0), 0) || 0)}
-                  </div>
-                  <Text className="text-[10px] block" type="secondary">Tổng nợ</Text>
-                </Card>
-              </Col>
-            </Row>
+                  {/* Nhóm 2: Tài chính & Công nợ (Full width trên mobile vì số tiền dài) */}
+                  <Col xs={24} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#13c2c2' }}>
+                        {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalValue ?? "0")))} đ
+                      </div>
+                      <Text className="text-[10px] block" type="secondary">Tổng giá trị</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#52c41a' }}>
+                        {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalPaid ?? "0")))} đ
+                      </div>
+                      <Text className="text-[10px] block" type="secondary">Đã thanh toán</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ff4d4f' }}>
+                        {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalDebt ?? "0")))} đ
+                      </div>
+                      <Text className="text-[10px] block" type="secondary">Còn nợ</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#722ed1' }}>{statsData.debtReceiptsCount ?? 0}</div>
+                      <Text className="text-[10px] block" type="secondary">Phiếu còn nợ</Text>
+                    </Card>
+                  </Col>
+                </Row>
           </Col>
         )}
       </Row>
@@ -757,7 +594,7 @@ const InventoryReceiptsList: React.FC = () => {
         ) : (
           <Table
             columns={columns}
-            dataSource={receipts}
+            dataSource={mappedReceipts}
             rowKey='id'
             pagination={{
               current: pagination.page,
@@ -773,27 +610,8 @@ const InventoryReceiptsList: React.FC = () => {
           />
         )}
       </Card>
-
-      {/* Payment History Modal */}
-      {selectedReceiptForPayment && (
-        <PaymentHistoryModal
-          receiptId={selectedReceiptForPayment.id}
-          receiptCode={selectedReceiptForPayment.code}
-          debtAmount={selectedReceiptForPayment.debt_amount || 0}
-          totalAmount={selectedReceiptForPayment.total_amount || 0}
-          returnedAmount={selectedReceiptForPayment.returned_amount || 0}
-          finalAmount={selectedReceiptForPayment.final_amount || selectedReceiptForPayment.total_amount || 0}
-          paidAmount={selectedReceiptForPayment.paid_amount || 0}
-          supplierId={selectedReceiptForPayment.supplier_id}
-          supplierName={selectedReceiptForPayment.supplier?.name}
-          receiptStatus={selectedReceiptForPayment.status}
-          open={!!selectedReceiptForPayment}
-          onClose={() => setSelectedReceiptForPayment(null)}
-        />
-      )}
     </div>
   )
 }
 
 export default InventoryReceiptsList
-

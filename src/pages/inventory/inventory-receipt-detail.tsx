@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {
   Card,
   Row,
@@ -11,10 +11,12 @@ import {
   Table,
   Popconfirm,
   Alert,
-  Divider,
   Spin,
   Descriptions,
+  Tabs,
+  Badge,
 } from "antd"
+import DataTable from "@/components/common/data-table"
 import {
   ArrowLeftOutlined,
   EditOutlined,
@@ -24,6 +26,10 @@ import {
   HistoryOutlined,
   DeleteOutlined,
   DollarOutlined,
+  InfoCircleOutlined,
+  ShoppingOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
@@ -31,37 +37,49 @@ import dayjs from "dayjs"
 import {
   InventoryReceiptItem,
   InventoryReceiptStatus,
+  normalizeReceiptStatus,
+  getInventoryReceiptStatusText,
 } from "@/models/inventory.model"
 import {
   useInventoryReceiptQuery,
   useApproveInventoryReceiptMutation,
   useCancelInventoryReceiptMutation,
   useDeleteInventoryReceiptMutation,
-  inventoryKeys,
+  useInventoryReceiptHistoryQuery,
 } from "@/queries/inventory"
-import { queryClient } from "@/provider/app-provider-tanstack"
 import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
-import PaymentHistoryModal from "@/components/inventory/PaymentHistoryModal"
+import PaymentTab from "@/components/inventory/PaymentTab"
 
 const { Title, Text } = Typography
+const { TabPane } = Tabs
 
 const InventoryReceiptDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const receiptId = Number(id)
-  const [showPaymentHistory, setShowPaymentHistory] = useState(false)
+  
+  // Xác định tab mặc định từ state
+  const defaultTab = (location.state as any)?.activeTab || "info"
+  const [activeTab, setActiveTab] = useState(defaultTab)
 
   // Queries
   const {
     data: receipt,
     isLoading: isLoadingReceipt,
     error: receiptError,
+    refetch: refetchReceipt,
   } = useInventoryReceiptQuery(receiptId)
 
-  // Lấy items từ receipt.items thay vì gọi API riêng
+  const { data: historyData, isLoading: isLoadingHistory } = useInventoryReceiptHistoryQuery(receiptId)
+
+  // Chuẩn hóa trạng thái
+  const normalizedStatus = receipt 
+    ? normalizeReceiptStatus(receipt.status_code || receipt.status)
+    : InventoryReceiptStatus.DRAFT
+
+  // Items từ receipt
   const items = receipt?.items || []
-  const isLoadingItems = false
-  const itemsError: Error | null = null
 
   // Mutations
   const approveReceiptMutation = useApproveInventoryReceiptMutation()
@@ -80,6 +98,7 @@ const InventoryReceiptDetail: React.FC = () => {
   const handleApprove = async () => {
     try {
       await approveReceiptMutation.mutateAsync(receiptId)
+      refetchReceipt()
     } catch (error) {
       console.error("Error approving receipt:", error)
     }
@@ -88,6 +107,7 @@ const InventoryReceiptDetail: React.FC = () => {
   const handleCancel = async () => {
     try {
       await cancelReceiptMutation.mutateAsync(receiptId)
+      refetchReceipt()
     } catch (error) {
       console.error("Error canceling receipt:", error)
     }
@@ -103,31 +123,13 @@ const InventoryReceiptDetail: React.FC = () => {
   }
 
   const handlePrint = () => {
-    // Tạm thời chỉ log, có thể implement sau
-    console.log("Print receipt:", receiptId)
-  }
-
-  const handleViewHistory = () => {
-    navigate(`/inventory/history?receiptId=${receiptId}`)
+    window.print()
   }
 
   // Render trạng thái
-  const renderStatus = (statusText: string) => {
-    // Xác định status enum từ statusText
-    switch (statusText) {
-      case "Nháp":
-      case "Chờ duyệt": // Map Chờ duyệt sang Nháp nếu còn tồn tại trong DB cũ
-        status = InventoryReceiptStatus.DRAFT
-        break
-      case "Đã duyệt":
-        status = InventoryReceiptStatus.APPROVED
-        break
-      case "Đã hủy":
-        status = InventoryReceiptStatus.CANCELLED
-        break
-      default:
-        status = InventoryReceiptStatus.DRAFT
-    }
+  const renderStatus = (record: any) => {
+    if (!record) return null
+    const normalizedStatus = normalizeReceiptStatus(record.status_code || record.status)
 
     const statusConfig: Record<string, { color: string }> = {
       [InventoryReceiptStatus.DRAFT]: { color: "default" },
@@ -135,195 +137,108 @@ const InventoryReceiptDetail: React.FC = () => {
       [InventoryReceiptStatus.CANCELLED]: { color: "error" },
     }
 
-    const config = statusConfig[status] || { color: "default" }
-    return <Tag color={config.color}>{statusText}</Tag>
+    const config = statusConfig[normalizedStatus] || { color: "default" }
+    const label = getInventoryReceiptStatusText(record.status_code || record.status)
+    return <Tag color={config.color} className="px-3 py-1 font-medium">{label}</Tag>
   }
 
-  // Render các nút hành động theo đúng nghiệp vụ
-  const renderActionButtons = () => {
+  // Render Header Actions
+  const renderHeaderActions = () => {
     if (!receipt) return null
 
     const buttons = []
 
-    // Nút in (luôn có)
-    buttons.push(
-      <Button key='print' icon={<PrinterOutlined />} onClick={handlePrint}>
-        <span className="hidden sm:inline">In phiếu</span>
-      </Button>
-    )
-
-    // Nút xem lịch sử (luôn có)
-    buttons.push(
-      <Button
-        key='history'
-        icon={<HistoryOutlined />}
-        onClick={handleViewHistory}
-      >
-        <span className="hidden sm:inline">Lịch sử</span>
-      </Button>
-    )
-
-    // === DRAFT (Nháp) ===
-    if (receipt.status === "Nháp") {
-      // Chỉnh sửa
+    // 1. Nút Sửa - Chỉ cho Nháp
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
       buttons.push(
         <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
-          <span className="hidden sm:inline">Chỉnh sửa</span>
+          Sửa
         </Button>
-      )
-      
-      // Xóa
-      buttons.push(
-        <Popconfirm
-          key='delete'
-          title='Xóa phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn xóa phiếu nhập hàng này? Hành động này không thể hoàn tác.'
-          onConfirm={handleDelete}
-          okText='Xóa'
-          cancelText='Hủy'
-        >
-          <Button
-            icon={<DeleteOutlined />}
-            danger
-            loading={deleteReceiptMutation.isPending}
-          >
-            <span className="hidden sm:inline">Xóa phiếu</span>
-          </Button>
-        </Popconfirm>
-      )
-      
-      // Hủy
-      buttons.push(
-        <Popconfirm
-          key='cancel'
-          title='Hủy phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
-          onConfirm={handleCancel}
-          okText='Hủy phiếu'
-          cancelText='Không'
-        >
-          <Button
-            icon={<CloseOutlined />}
-            loading={cancelReceiptMutation.isPending}
-          >
-            <span className="hidden sm:inline">Hủy phiếu</span>
-          </Button>
-        </Popconfirm>
       )
     }
 
-    // === PENDING (Chờ duyệt) ===
-    if (receipt.status === "Chờ duyệt") {
-      // Chỉnh sửa (vẫn được sửa trước khi duyệt)
-      buttons.push(
-        <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
-          <span className="hidden sm:inline">Chỉnh sửa</span>
-        </Button>
-      )
-      
-      // Duyệt phiếu
+    // 2. Nút Duyệt - Chỉ cho Nháp
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
       buttons.push(
         <Popconfirm
           key='approve'
           title='Duyệt phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn duyệt phiếu nhập hàng này?'
+          description='Sau khi duyệt, hàng sẽ được nhập vào kho và không thể sửa mặt hàng. Bạn có chắc chắn?'
           onConfirm={handleApprove}
-          okText='Duyệt'
+          okText='Duyệt ngay'
           cancelText='Hủy'
         >
           <Button
             type='primary'
             icon={<CheckOutlined />}
             loading={approveReceiptMutation.isPending}
+            className="bg-green-600 border-green-600 hover:bg-green-700 hover:border-green-700"
           >
-            <span className="hidden sm:inline">Duyệt phiếu</span>
-          </Button>
-        </Popconfirm>
-      )
-      
-      // Hủy (từ chối)
-      buttons.push(
-        <Popconfirm
-          key='cancel'
-          title='Hủy phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn hủy phiếu nhập hàng này?'
-          onConfirm={handleCancel}
-          okText='Hủy phiếu'
-          cancelText='Không'
-        >
-          <Button
-            icon={<CloseOutlined />}
-            loading={cancelReceiptMutation.isPending}
-          >
-            <span className="hidden sm:inline">Hủy phiếu</span>
+            Duyệt
           </Button>
         </Popconfirm>
       )
     }
 
-    // === APPROVED (Đã duyệt) ===
-    if (receipt.status === "Đã duyệt") {
-      // Hủy (nếu có vấn đề)
+    // 3. Nút Hủy - Cho phiếu Đã duyệt
+    if (normalizedStatus === InventoryReceiptStatus.APPROVED) {
       buttons.push(
         <Popconfirm
           key='cancel'
           title='Hủy phiếu nhập kho'
-          description='Khi hủy phiếu, hệ thống sẽ thực hiện hoàn kho. Bạn có chắc chắn muốn hủy?'
+          description='Khi hủy phiếu, hàng sẽ được hoàn kho. Bạn có chắc chắn?'
           onConfirm={handleCancel}
-          okText='Hủy phiếu'
+          okText='Xác nhận hủy'
           cancelText='Không'
+          okButtonProps={{ danger: true }}
         >
           <Button
             icon={<CloseOutlined />}
             loading={cancelReceiptMutation.isPending}
             danger
           >
-            <span className="hidden sm:inline">Hủy phiếu (Hoàn kho)</span>
+            Hủy
           </Button>
         </Popconfirm>
       )
     }
 
-    // === CANCELLED (Đã hủy) ===
-    if (receipt.status === "Đã hủy") {
-      // Xóa phiếu (để dọn dẹp)
+    // 4. Nút Xóa - Cho Nháp hoặc Đã hủy
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT || normalizedStatus === InventoryReceiptStatus.CANCELLED) {
       buttons.push(
         <Popconfirm
           key='delete'
-          title='Xóa phiếu nhập hàng'
-          description='Bạn có chắc chắn muốn xóa phiếu nhập hàng này? Hành động này không thể hoàn tác.'
+          title='Xóa phiếu'
+          description='Hành động này không thể hoàn tác. Bạn có chắc chắn?'
           onConfirm={handleDelete}
           okText='Xóa'
           cancelText='Hủy'
+          okButtonProps={{ danger: true }}
         >
           <Button
             icon={<DeleteOutlined />}
             danger
             loading={deleteReceiptMutation.isPending}
-          >
-            Xóa phiếu
-          </Button>
+          />
         </Popconfirm>
       )
     }
 
-    return buttons
+    // 5. Nút In
+    buttons.push(
+      <Button key='print' icon={<PrinterOutlined />} onClick={handlePrint} />
+    )
+
+    return <Space wrap>{buttons}</Space>
   }
 
-  // Cấu hình cột cho bảng chi tiết sản phẩm
+  // Cấu hình cột sản phẩm
   const itemColumns: ColumnsType<InventoryReceiptItem> = [
-    {
-      title: "STT",
-      key: "index",
-      width: 60,
-      align: "center",
-      render: (_, __, index) => index + 1,
-    },
     {
       title: "Tên sản phẩm",
       dataIndex: "product_name",
       key: "product_name",
-      width: 250,
+      render: (name) => <Text strong>{name}</Text>,
     },
     {
       title: "Số lượng",
@@ -331,84 +246,137 @@ const InventoryReceiptDetail: React.FC = () => {
       key: "quantity",
       width: 100,
       align: "right",
-      render: (quantity: number) =>
-        new Intl.NumberFormat("vi-VN").format(quantity),
+      render: (q) => (q || 0).toLocaleString("vi-VN"),
     },
     {
       title: "Đơn giá",
       dataIndex: "unit_cost",
       key: "unit_cost",
-      width: 120,
+      width: 130,
       align: "right",
-      render: (price: number) =>
-        new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }).format(price || 0),
+      render: (p) => (p || 0).toLocaleString("vi-VN") + " ₫",
     },
     {
       title: "Thành tiền",
       dataIndex: "total_price",
       key: "total_price",
-      width: 120,
+      width: 140,
       align: "right",
-      render: (price: number) => (
-        <Text strong style={{ color: "#52c41a" }}>
-          {new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(price)}
+      render: (p) => (
+        <Text strong className="text-green-600">
+          {(p || 0).toLocaleString("vi-VN")} ₫
         </Text>
       ),
-    },
-    {
-      title: "Hạn sử dụng",
-      dataIndex: "expiry_date",
-      key: "expiry_date",
-      width: 120,
-      align: "center",
-      render: (date: string) => (date ? dayjs(date).format("DD/MM/YYYY") : "-"),
     },
     {
       title: "Số lô",
       dataIndex: "batch_number",
       key: "batch_number",
-      width: 200,
-      render: (batch: string) => batch ? <Tag color="processing" style={{ margin: 0 }}>{batch}</Tag> : "-",
+      width: 150,
+      render: (batch) => batch ? <Tag color="blue">{batch}</Tag> : <Text type="secondary">Chưa cấp</Text>,
+    },
+    {
+      title: "Hạn dùng",
+      dataIndex: "expiry_date",
+      key: "expiry_date",
+      width: 110,
+      align: "center",
+      render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "-"),
+    },
+  ]
+
+  const historyColumns: ColumnsType<any> = [
+    {
+      title: "Thời gian",
+      dataIndex: "created_at",
+      key: "created_at",
+      width: 170,
+      render: (date: string) => dayjs(date).format("DD/MM/YYYY HH:mm:ss"),
+    },
+    {
+      title: "Sản phẩm",
+      dataIndex: "product",
+      key: "product",
+      render: (product: any) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{product?.name}</Text>
+          <Text type="secondary" className="text-xs">{product?.code}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Loại",
+      dataIndex: "type",
+      key: "type",
+      width: 120,
+      render: (type: string) => {
+        const isUp = type === "IN"
+        return (
+          <Tag 
+            color={isUp ? "green" : "orange"} 
+            icon={isUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+            className="rounded-full px-3"
+          >
+            {isUp ? "Nhập kho" : "Xuất kho"}
+          </Tag>
+        )
+      },
+    },
+    {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: 120,
+      align: "right",
+      render: (q: number) => (
+        <Text strong className={q > 0 ? "text-green-600" : "text-orange-600"}>
+          {q > 0 ? "+" : ""}{q.toLocaleString("vi-VN")}
+        </Text>
+      ),
+    },
+    {
+      title: "Tồn cuối",
+      dataIndex: "remaining_quantity",
+      key: "remaining_quantity",
+      width: 120,
+      align: "right",
+      render: (q: number) => (
+        <Text strong>{q.toLocaleString("vi-VN")}</Text>
+      ),
+    },
+    {
+      title: "Người thực hiện",
+      dataIndex: "creator",
+      key: "creator",
+      width: 160,
+      render: (creator: any) => (
+        <Space size="small">
+          <Badge status="processing" size="small" />
+          <Text>{creator?.full_name || `ID: ${creator?.id || "N/A"}`}</Text>
+        </Space>
+      ),
     },
     {
       title: "Ghi chú",
       dataIndex: "notes",
       key: "notes",
       ellipsis: true,
-      render: (notes: string) => notes || "-",
+      render: (notes: string) => notes || <Text type="secondary" italic>-</Text>
     },
   ]
 
-  // Loading state
-  if (isLoadingReceipt || isLoadingItems) {
-    return (
-      <div style={{ padding: "24px", textAlign: "center" }}>
-        <Spin size='large' />
-        <div style={{ marginTop: "16px" }}>
-          <Text>Đang tải thông tin phiếu nhập hàng...</Text>
-        </div>
-      </div>
-    )
+  // Loading & Error States
+  if (isLoadingReceipt) {
+    return <div className="p-12 text-center"><Spin size="large" /><br/><Text className="mt-4 block">Đang tải dữ liệu...</Text></div>
   }
 
-  // Error state
-  if (receiptError || itemsError) {
+  if (receiptError || !receipt) {
     return (
-      <div style={{ padding: "24px" }}>
+      <div className="p-6">
         <Alert
-          message='Lỗi'
-          description={
-            (receiptError as any)?.message ||
-            (itemsError as any)?.message ||
-            "Không thể tải thông tin phiếu nhập hàng"
-          }
-          type='error'
+          message="Lỗi"
+          description={receiptError ? (receiptError as any).message : "Không tìm thấy phiếu nhập hàng"}
+          type="error"
           showIcon
           action={<Button onClick={handleBack}>Quay lại</Button>}
         />
@@ -416,260 +384,216 @@ const InventoryReceiptDetail: React.FC = () => {
     )
   }
 
-  // No data state
-  if (!receipt) {
-    return (
-      <div style={{ padding: "24px" }}>
-        <Alert
-          message='Không tìm thấy'
-          description='Không tìm thấy phiếu nhập hàng với ID này'
-          type='warning'
-          showIcon
-          action={<Button onClick={handleBack}>Quay lại</Button>}
-        />
-      </div>
-    )
-  }
+  const debtAmount = receipt.debt_amount ?? 0;
 
   return (
-    <div style={{ padding: "24px" }}>
-      {/* Header */}
-      <Card style={{ marginBottom: "16px" }}>
-        <Row align='middle' justify='space-between'>
-          <Col>
-            <Space>
-              <Button icon={<ArrowLeftOutlined />} onClick={handleBack}>
-                Quay lại
-              </Button>
-              <Title level={3} style={{ margin: 0 }}>
-                <span className="hidden sm:inline">Chi tiết phiếu nhập hàng</span>
-                <span className="sm:hidden">Chi tiết phiếu</span>
-              </Title>
+    <div className="p-0 md:p-6 bg-gray-50 min-h-screen">
+      {/* Header Page */}
+      <div className="m-2 md:m-0 mb-4 md:mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <Row justify="space-between" align="middle" gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            <Space size="middle">
+              <Button 
+                type="text"
+                icon={<ArrowLeftOutlined />} 
+                onClick={handleBack}
+                className="hover:bg-gray-100"
+              />
+              <div>
+                <Title level={4} className="mb-0 !m-0">
+                  Phiếu nhập: <Text copyable className="text-blue-600 font-mono">{receipt.code}</Text>
+                </Title>
+                <Space classNames={{ item: "flex items-center" }} className="mt-1">
+                  {renderStatus(receipt)}
+                  <Text type="secondary" className="text-xs">
+                    Tạo bởi: {receipt.creator?.full_name || `ID: ${receipt.created_by}`} • {dayjs(receipt.created_at).format("DD/MM/YYYY HH:mm")}
+                  </Text>
+                </Space>
+              </div>
             </Space>
           </Col>
-          <Col className="mt-2 md:mt-0">
-            <Space>{renderActionButtons()}</Space>
+          <Col xs={24} md={12} className="text-left md:text-right mt-2 md:mt-0">
+            {renderHeaderActions()}
           </Col>
         </Row>
-      </Card>
+      </div>
 
-      <Row gutter={[16, 16]}>
-        {/* Thông tin chung */}
-        <Col xs={24} lg={12}>
-          <Card title='Thông tin phiếu nhập' size='small'>
-            <Descriptions column={1} size='small'>
-              <Descriptions.Item label='Mã phiếu'>
-                <Text strong>{receipt.code}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label='Trạng thái'>
-                {renderStatus(receipt.status)}
-              </Descriptions.Item>
-              <Descriptions.Item label='Nhà cung cấp'>
-                {receipt.supplier_id
-                  ? `Nhà cung cấp #${receipt.supplier_id}`
-                  : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label='Liên hệ NCC'>{"-"}</Descriptions.Item>
-              <Descriptions.Item label='Tổng tiền'>
-                <Text strong style={{ color: "#52c41a", fontSize: "16px" }}>
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(receipt.total_amount)}
-                </Text>
-              </Descriptions.Item>
-              <Descriptions.Item label='Mô tả'>
-                {receipt.notes || "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label='Ghi chú'>
-                {receipt.notes || "-"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
+      {/* Main Content with Tabs */}
+      <Card className="w-full shadow-sm border-none overflow-hidden" bodyStyle={{ padding: 0 }}>
+        <style>{`
+          .ant-tabs-nav-operations { display: none !important; }
+          .ant-tabs-nav-wrap::after, .ant-tabs-nav-wrap::before { display: none !important; }
+          .data-table-mobile-scroll .ant-table-content {
+            overflow-x: auto !important;
+          }
+          /* Đảm bảo tab không bị cắt chữ và không dư khoảng trắng */
+          .ant-tabs-nav-wrap {
+            display: flex !important;
+          }
+          .ant-tabs-tab {
+            padding: 12px 16px !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+          }
+          .ant-tabs-nav-list {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+          }
+        `}</style>
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab}
+          size="large"
+          className="bg-white"
+          tabBarStyle={{ marginBottom: 0, paddingLeft: 8, paddingRight: 0 }}
+          moreIcon={null}
+        >
+          {/* TAB 1: THÔNG TIN CHI TIẾT */}
+          <TabPane 
+            tab={<Space><InfoCircleOutlined /><span>Thông tin chính</span></Space>} 
+            key="info"
+          >
+            <div className="p-3 md:p-6">
+              <Row gutter={[24, 24]}>
+                <Col xs={24} lg={16}>
+                  <Card title="Chi tiết nghiệp vụ" size="small" bordered={false} className="bg-gray-50 h-full">
+                    <Descriptions column={{ xs: 1, sm: 2 }} bordered={false} size="small">
+                      <Descriptions.Item label="Nhà cung cấp">
+                        <Text strong>{receipt.supplier?.name || `ID #${receipt.supplier_id}`}</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Tổng giá trị">
+                        <Text strong className="text-lg text-green-600">
+                          {(receipt.total_amount || 0).toLocaleString("vi-VN")} ₫
+                        </Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Mô tả / Ghi chú" span={2}>
+                        {receipt.notes || <Text type="secondary" italic>Không có ghi chú</Text>}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Ngày thực hiện">
+                        {dayjs(receipt.created_at).format("DD/MM/YYYY HH:mm")}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Cập nhật cuối">
+                        {dayjs(receipt.updated_at).format("DD/MM/YYYY HH:mm")}
+                      </Descriptions.Item>
+                      {receipt.approved_at && (
+                        <Descriptions.Item label="Ngày duyệt" span={2}>
+                          <Text className="text-green-600">
+                            {dayjs(receipt.approved_at).format("DD/MM/YYYY HH:mm")} (Bởi: {receipt.approver?.full_name || `ID: ${receipt.approved_by}`})
+                          </Text>
+                        </Descriptions.Item>
+                      )}
+                    </Descriptions>
+                  </Card>
+                </Col>
+                
+                <Col xs={24} lg={8}>
+                  <Card title="Hình ảnh chứng từ" size="small" bordered={false} className="bg-gray-50 h-full">
+                    <ReceiptImageUpload 
+                      receiptId={receiptId} 
+                      images={receipt.images || []}
+                      onImagesChange={refetchReceipt}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+          </TabPane>
 
-        {/* Thông tin thời gian */}
-        <Col xs={24} lg={12}>
-          <Card title='Thông tin thời gian' size='small'>
-            <Descriptions column={1} size='small'>
-              <Descriptions.Item label='Ngày tạo'>
-                {dayjs(receipt.created_at).format("DD/MM/YYYY HH:mm:ss")}
-              </Descriptions.Item>
-              <Descriptions.Item label='Cập nhật lần cuối'>
-                {dayjs(receipt.updated_at).format("DD/MM/YYYY HH:mm:ss")}
-              </Descriptions.Item>
-              {receipt.approved_at && (
-                <Descriptions.Item label='Ngày duyệt'>
-                  {dayjs(receipt.approved_at).format("DD/MM/YYYY HH:mm:ss")}
-                </Descriptions.Item>
-              )}
-              <Descriptions.Item label='Người tạo'>
-                ID: {receipt.created_by}
-              </Descriptions.Item>
-              {receipt.approved_by && (
-                <Descriptions.Item label='Người duyệt'>
-                  ID: {receipt.approved_by}
-                </Descriptions.Item>
-              )}
-            </Descriptions>
-          </Card>
+          {/* TAB 2: DANH SÁCH HÀNG HÓA */}
+          <TabPane 
+            tab={<Space><ShoppingOutlined /><span>Hàng hóa</span><Tag className="ml-1 m-0">{items.length}</Tag></Space>} 
+            key="items"
+          >
+            <div className="p-0 md:p-6 data-table-mobile-scroll">
+              <DataTable
+                columns={itemColumns as any}
+                data={items as any}
+                rowKey="id"
+                pagination={false}
+                size="middle"
+                showActions={false}
+                showSTT={true}
+                className="border border-gray-100 rounded"
+                summary={(pageData: readonly any[]) => {
+                  const totalQ = pageData.reduce((s, i) => s + (Number(i.quantity) || 0), 0)
+                  const totalA = pageData.reduce((s, i) => s + (Number(i.total_price) || 0), 0)
+                  return (
+                    <Table.Summary fixed>
+                      <Table.Summary.Row className="bg-gray-50">
+                        <Table.Summary.Cell index={0} colSpan={2}><Text strong>Tổng cộng hàng hóa</Text></Table.Summary.Cell>
+                        <Table.Summary.Cell index={2} align="right"><Text strong>{totalQ.toLocaleString("vi-VN")}</Text></Table.Summary.Cell>
+                        <Table.Summary.Cell index={3} />
+                        <Table.Summary.Cell index={4} align="right">
+                          <Text strong className="text-green-600">{totalA.toLocaleString("vi-VN")} ₫</Text>
+                        </Table.Summary.Cell>
+                        <Table.Summary.Cell index={5} colSpan={2} />
+                      </Table.Summary.Row>
+                    </Table.Summary>
+                  )
+                }}
+              />
 
-          {/* Upload hình ảnh */}
-          <div style={{ marginTop: "16px" }}>
-            <ReceiptImageUpload 
-              receiptId={receiptId} 
-              images={receipt.images || []}
-              onImagesChange={() => {
-                // Refresh dữ liệu phiếu nhập
-                queryClient.invalidateQueries({ queryKey: inventoryKeys.receipt(receiptId) })
-              }}
-            />
-          </div>
-        </Col>
-
-        {/* Thông tin thanh toán - Hiển thị cho tất cả phiếu */}
-        <Col xs={24} lg={12} style={{ marginTop: '16px' }}>
-          <Card title="Thông tin thanh toán" size="small">
-              <Descriptions column={1} size="small">
-                <Descriptions.Item label="Tổng tiền">
-                  <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
-                    {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    }).format(receipt.final_amount || receipt.total_amount)}
-                  </Text>
-                </Descriptions.Item>
-                
-                <Descriptions.Item label="Đã thanh toán">
-                  <Text style={{ color: '#1890ff', fontWeight: 500 }}>
-                    {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    }).format(receipt.paid_amount || 0)}
-                  </Text>
-                </Descriptions.Item>
-                
-                <Descriptions.Item label="Còn nợ">
-                  <Text style={{ color: '#ff4d4f', fontWeight: 500 }}>
-                    {new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    }).format(receipt.debt_amount || 0)}
-                  </Text>
-                </Descriptions.Item>
-                
-                <Descriptions.Item label="Trạng thái thanh toán">
-                  {receipt.payment_status === 'paid' && <Tag color="success">Đã thanh toán</Tag>}
-                  {receipt.payment_status === 'partial' && <Tag color="warning">Thanh toán một phần</Tag>}
-                  {receipt.payment_status === 'unpaid' && <Tag color="error">Chưa thanh toán</Tag>}
-                </Descriptions.Item>
-              </Descriptions>
-              
-              <Divider style={{ margin: '12px 0' }} />
-              
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Button
-                  block
-                  icon={<DollarOutlined />}
-                  onClick={() => setShowPaymentHistory(true)}
-                >
-                  Lịch sử thanh toán
-                </Button>
-                
-                {receipt.debt_amount && receipt.debt_amount > 0 && (
-                  <Button
-                    block
-                    type="primary"
-                    icon={<DollarOutlined />}
-                    onClick={() => setShowPaymentHistory(true)}
+              {normalizedStatus === InventoryReceiptStatus.DRAFT && (
+                <div className="mt-6 text-center">
+                  <Button 
+                    type="dashed" 
+                    icon={<EditOutlined />} 
+                    size="large"
+                    onClick={handleEdit}
+                    className="w-full md:w-auto px-12"
                   >
-                    Thêm thanh toán
+                    Chỉnh sửa danh mục hàng hóa
                   </Button>
-                )}
+                </div>
+              )}
+            </div>
+          </TabPane>
+
+          {/* TAB 3: THANH TOÁN */}
+          <TabPane 
+            tab={
+              <Space>
+                <DollarOutlined />
+                <span>Thanh toán</span>
+                {debtAmount > 0 && <Badge status="error" className="ml-1" />}
               </Space>
-            </Card>
-          </Col>
-      </Row>
+            } 
+            key="payment"
+          >
+            <div className="p-0 md:p-6 data-table-mobile-scroll">
+              <PaymentTab receipt={receipt} onRefresh={refetchReceipt} />
+            </div>
+          </TabPane>
 
-      <Divider />
-
-      {/* Danh sách sản phẩm */}
-      <Card>
-        <div style={{ marginBottom: "16px" }}>
-          <Title level={4}>Danh sách sản phẩm</Title>
-        </div>
-
-        <Table
-          columns={itemColumns}
-          dataSource={items || []}
-          rowKey='id'
-          pagination={false}
-          size='small'
-          scroll={{ x: 1000 }}
-          summary={(pageData) => {
-            const totalQuantity = pageData.reduce(
-              (sum, item) => sum + item.quantity,
-              0
-            )
-            const totalAmount = pageData.reduce(
-              (sum, item) => sum + item.total_price,
-              0
-            )
-
-            return (
-              <Table.Summary fixed>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={2}>
-                    <Text strong>Tổng cộng</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} align="right">
-                    <Text strong>
-                      {new Intl.NumberFormat("vi-VN").format(totalQuantity)}
-                    </Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={3} />
-                  <Table.Summary.Cell index={4} align="right">
-                    <Text strong style={{ color: "#52c41a" }}>
-                      {new Intl.NumberFormat("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      }).format(totalAmount)}
-                     </Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={5} />
-                  <Table.Summary.Cell index={6} />
-                  <Table.Summary.Cell index={7} />
-                </Table.Summary.Row>
-              </Table.Summary>
-            )
-          }}
-
-        />
-
-        {(!items || items.length === 0) && (
-          <div style={{ textAlign: "center", padding: "40px" }}>
-            <Text type='secondary'>
-              Chưa có sản phẩm nào trong phiếu nhập này
-            </Text>
-          </div>
-        )}
+          {/* TAB 4: LỊCH SỬ GIAO DỊCH */}
+          <TabPane 
+            tab={<Space><HistoryOutlined /><span>Lịch sử</span></Space>} 
+            key="history"
+          >
+            <div className="p-0 md:p-6 data-table-mobile-scroll">
+              <DataTable
+                columns={historyColumns}
+                data={historyData || []}
+                rowKey="id"
+                pagination={{ pageSize: 15 }}
+                size="middle"
+                loading={isLoadingHistory}
+                showActions={false}
+                showSTT={true}
+                className="border border-gray-100 rounded"
+              />
+              <div className="mt-4">
+                <Alert 
+                  type="info" 
+                  showIcon 
+                  message="Ghi chú về lịch sử" 
+                  description="Các giao dịch kho thể hiện quá trình nhập hàng và các biến động tồn kho liên quan trực tiếp đến các mặt hàng trong phiếu này."
+                />
+              </div>
+            </div>
+          </TabPane>
+        </Tabs>
       </Card>
-
-      {/* Payment History Modal */}
-      <PaymentHistoryModal
-        receiptId={receipt.id}
-        receiptCode={receipt.code}
-        debtAmount={receipt.debt_amount || 0}
-        totalAmount={receipt.total_amount || 0}
-        returnedAmount={receipt.returned_amount || 0}
-        finalAmount={receipt.final_amount || receipt.total_amount || 0}
-        paidAmount={receipt.paid_amount || 0}
-        supplierId={receipt.supplier_id}
-        supplierName={receipt.supplier?.name}
-        receiptStatus={receipt.status}
-        open={showPaymentHistory}
-        onClose={() => setShowPaymentHistory(false)}
-      />
     </div>
   )
 }
