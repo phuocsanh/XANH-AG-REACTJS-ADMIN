@@ -341,7 +341,18 @@ const WeatherForecastPage: React.FC = () => {
    * Lọc dữ liệu thời tiết - Hiển thị tất cả giờ (bao gồm cả giờ đã qua)
    */
   const filterWeatherData = (data: WeatherData[], dateString: string): WeatherData[] => {
-    // Hiển thị đầy đủ tất cả các giờ, kể cả giờ đã qua
+    const today = new Date();
+    const todayStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+    
+    if (dateString === todayStr) {
+      // Lọc bỏ các giờ đã qua trong ngày hiện tại
+      // Lấy thời gian hiện tại, làm tròn xuống đầu giờ
+      const currentHour = new Date();
+      currentHour.setMinutes(0, 0, 0);
+      
+      return data.filter(item => item.dt * 1000 >= currentHour.getTime());
+    }
+    
     return data;
   };
 

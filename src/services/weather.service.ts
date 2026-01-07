@@ -258,8 +258,8 @@ class WeatherService {
   private async getTomorrowTimelinesHourly(lat: number, lon: number): Promise<WeatherData[]> {
     try {
       const now = new Date();
-      // Lấy từ 00:00 sáng nay
-      const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      // Start time lấy từ thời điểm hiện tại để tiết kiệm quota 120h cho các ngày sau (giống NextJS)
+      const startTime = now.toISOString();
       
       const queryParams = {
         location: `${lat},${lon}`,
