@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Button, message, Spin, Image } from 'antd';
 import { CameraOutlined, FileImageOutlined, LoadingOutlined } from '@ant-design/icons';
-import { productComparisonService, fileToBase64, validateImageFile } from '@/services/product-comparison.service';
+import { imageAnalyzerService, fileToBase64, validateImageFile } from '@/services/image-analyzer.service';
 import heic2any from 'heic2any';
 
 /**
@@ -57,8 +57,8 @@ const ImageAnalyzer: React.FC<ImageAnalyzerProps> = ({ onDataExtracted, loading:
       setAnalyzing(true);
       message.loading({ content: 'Đang phân tích hình ảnh...', key: 'analyzing', duration: 0 });
 
-      // Gọi service với danh sách ảnh hiện tại (API đã update hỗ trợ string[])
-      const result = await productComparisonService.analyzeImage(images);
+      // Gọi service mới với danh sách ảnh hiện tại
+      const result = await imageAnalyzerService.analyzeImage(images);
       
       message.success({ content: 'Phân tích thành công!', key: 'analyzing', duration: 2 });
       

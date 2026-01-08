@@ -2,57 +2,26 @@ import { useConfigStore } from '../stores/config.store';
 import { getGeminiApiUrl } from '../config/gemini.config';
 
 /**
- * Interface cho thông tin sản phẩm
+ * Interface cho thông tin sản phẩm trích xuất từ ảnh
  */
-export interface ProductInfo {
-  id?: number;
+export interface ExtractedProductInfo {
   name: string;
-  trade_name?: string; // Hiệu thuốc / Tên thương mại
-  volume?: string; // Dung tích/Khối lượng
-  notes?: string; // Ghi chú tự động
-  product_type?: string;
-  product_subtype?: string;
+  trade_name?: string;
+  volume?: string;
+  notes?: string;
   active_ingredient?: string;
   concentration?: string;
-  unit?: string;
-  price?: number;
   manufacturer?: string;
   description?: string;
   usage?: string;
-  [key: string]: any;
+  details?: {
+    usage?: string;
+    dosage?: string;
+    application_time?: string;
+    preharvest_interval?: string;
+    notes?: string;
+  };
 }
-
-/**
- * Interface cho kết quả so sánh
- */
-export interface ComparisonResult {
-  summary: string;
-  comparison: {
-    criteria: string;
-    products: {
-      name: string;
-      value: string;
-      score: number;
-      note: string;
-    }[];
-  }[];
-  recommendations: string[];
-  timestamp: string;
-}
-
-/**
- * Lấy Gemini API key từ store (đã được load sẵn khi app khởi động)
- */
-const getGeminiApiKey = (): string => {
-  const { geminiApiKey4 } = useConfigStore.getState();
-  
-  if (!geminiApiKey4 || !geminiApiKey4.trim()) {
-    throw new Error('Gemini API key not found. Please configure "GEMINI_API_KEY_4" in Firebase Remote Config and reload the app.');
-  }
-  
-  console.log('🔑 Using GEMINI_API_KEY_4:', geminiApiKey4.substring(0, 20) + '...');
-  return geminiApiKey4;
-};
 
 /**
  * Tự động thử tất cả Gemini API keys khi gặp lỗi
@@ -86,10 +55,10 @@ const tryAllGeminiKeys = async <T>(
   });
 
   if (allKeys.length === 0) {
-    throw new Error('No Gemini API keys found in Remote Config. Please configure at least one key.');
+    throw new Error('Không tìm thấy Gemini API key nào trong Remote Config. Vui lòng cấu hình ít nhất 1 key.');
   }
 
-  console.log(`🔑 [${operationName}] Found ${allKeys.length} API keys in config`);
+  console.log(`🔑 [${operationName}] Tìm thấy ${allKeys.length} API keys trong config`);
 
   let lastError: Error | null = null;
 
@@ -102,18 +71,18 @@ const tryAllGeminiKeys = async <T>(
     if (!key) continue;
     
     try {
-      console.log(`🔑 [${operationName}] Trying key ${i + 1}/${allKeys.length}: ${name}`);
+      console.log(`🔑 [${operationName}] Đang thử key ${i + 1}/${allKeys.length}: ${name}`);
       
       const result = await operation(key, name);
       
-      console.log(`✅ [${operationName}] Success with key: ${name}`);
+      console.log(`✅ [${operationName}] Thành công với key: ${name}`);
       return result;
       
     } catch (error: any) {
       lastError = error;
       
       // Log chi tiết lỗi
-      console.warn(`⚠️ [${operationName}] Key ${name} failed:`, error.message);
+      console.warn(`⚠️ [${operationName}] Key ${name} thất bại:`, error.message);
       
       // Kiểm tra loại lỗi
       const errorMsg = error.message?.toLowerCase() || '';
@@ -121,16 +90,16 @@ const tryAllGeminiKeys = async <T>(
       const isOverloadedError = errorMsg.includes('503') || errorMsg.includes('overloaded') || errorMsg.includes('unavailable');
       
       if (isQuotaError) {
-        console.warn(`📊 [${operationName}] Quota exceeded for ${name}, trying next key...`);
+        console.warn(`📊 [${operationName}] Hết quota cho ${name}, đang thử key tiếp theo...`);
       } else if (isOverloadedError) {
-        console.warn(`⏳ [${operationName}] Service overloaded for ${name}, trying next key...`);
+        console.warn(`⏳ [${operationName}] Service quá tải cho ${name}, đang thử key tiếp theo...`);
       } else {
-        console.warn(`🔍 [${operationName}] Other error for ${name}, trying next key...`);
+        console.warn(`🔍 [${operationName}] Lỗi khác cho ${name}, đang thử key tiếp theo...`);
       }
       
       // Nếu đây là key cuối cùng, throw error
       if (i === allKeys.length - 1) {
-        console.error(`❌ [${operationName}] All ${allKeys.length} keys failed. Last error:`, error.message);
+        console.error(`❌ [${operationName}] Tất cả ${allKeys.length} keys đều thất bại. Lỗi cuối:`, error.message);
         throw new Error(`Tất cả ${allKeys.length} API keys đều thất bại. Lỗi cuối: ${error.message}`);
       }
       
@@ -143,142 +112,15 @@ const tryAllGeminiKeys = async <T>(
   throw new Error(`Tất cả API keys đều thất bại. Lỗi cuối: ${lastError?.message || 'Unknown error'}`);
 };
 
-
 /**
- * Service xử lý so sánh sản phẩm
+ * Service xử lý trích xuất thông tin từ ảnh sản phẩm
  */
-export const productComparisonService = {
-  /**
-   * So sánh sản phẩm sử dụng Gemini API
-   */
-  compareProducts: async (
-    currentProduct: ProductInfo,
-    compareWith: ProductInfo[],
-    images?: string[],
-  ): Promise<ComparisonResult> => {
-    // Hàm lọc chỉ lấy các trường cần thiết
-    const filterProductFields = (product: ProductInfo) => ({
-      name: product.name,
-      ingredient: product.ingredient || product.active_ingredient, // Support both keys
-      description: product.description,
-      attributes: product.attributes,
-      symbol: product.symbol,
-    });
-
-    // Lọc dữ liệu
-    const filteredCurrentProduct = filterProductFields(currentProduct);
-    const filteredCompareWith = compareWith.map(filterProductFields);
-
-    const prompt = `
-Bạn là chuyên gia phân tích và so sánh sản phẩm nông nghiệp, đặc biệt là thuốc bảo vệ thực vật (BVTV).
-
-**Sản phẩm hiện tại:**
-${JSON.stringify(filteredCurrentProduct, null, 2)}
-
-**Các sản phẩm để so sánh:**
-${JSON.stringify(filteredCompareWith, null, 2)}
-
-Hãy phân tích và so sánh các sản phẩm theo các tiêu chí sau:
-1. Hoạt chất và hiệu quả
-2. Giá cả và hiệu quả chi phí
-3. An toàn cho người và môi trường
-4. Phổ diệt rộng/hẹp
-5. Thời gian tác dụng
-6. Nguy cơ kháng thuốc
-7. Tính tương thích
-
-Cho mỗi tiêu chí, hãy:
-- Đánh giá từng sản phẩm (value)
-- Cho điểm từ 1-10 (score)
-- Ghi chú ngắn gọn (note)
-
-Trả về kết quả dưới dạng JSON với cấu trúc:
-{
-  "summary": "Tóm tắt tổng quan về các sản phẩm",
-  "comparison": [
-    {
-      "criteria": "Tên tiêu chí",
-      "products": [
-        {
-          "name": "Tên sản phẩm",
-          "value": "Giá trị cụ thể",
-          "score": 8,
-          "note": "Ghi chú ngắn"
-        }
-      ]
-    }
-  ],
-  "recommendations": ["Khuyến nghị 1", "Khuyến nghị 2"]
-}
-
-Chỉ trả về JSON, không thêm text nào khác.
-`;
-
-    try {
-      const apiKey = getGeminiApiKey();
-      console.log('🔑 Gemini API Key:', apiKey ? 'Found' : 'Not found');
-      console.log('📤 Sending comparison request:', { currentProduct, compareWith, images: images?.length || 0 });
-      
-      const response = await fetch(
-        getGeminiApiUrl(apiKey),
-        {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              ...(images || []).map(img => ({
-                inline_data: {
-                  mime_type: 'image/jpeg',
-                  data: img.split(',')[1] // Remove data:image/jpeg;base64, prefix
-                }
-              }))
-            ]
-          }]
-        }),
-      });
-
-      console.log('📥 Response status:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Gemini API error:', errorText);
-        throw new Error(`Gemini API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('📊 Gemini response:', data);
-      
-      const text = data.candidates[0].content.parts[0].text;
-      console.log('📝 AI text response:', text);
-      
-      // Parse JSON từ response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error('❌ No JSON found in response');
-        throw new Error('Không thể parse JSON từ AI response');
-      }
-
-      const result = JSON.parse(jsonMatch[0]);
-      console.log('✅ Parsed result:', result);
-      
-      return {
-        ...result,
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error('💥 Error calling Gemini API:', error);
-      throw error;
-    }
-  },
-
+export const imageAnalyzerService = {
   /**
    * Phân tích ảnh sản phẩm sử dụng Gemini Vision
+   * Tự động thử tất cả API keys nếu gặp lỗi quota
    */
-  analyzeImage: async (images: string[]): Promise<ProductInfo> => {
+  analyzeImage: async (images: string[]): Promise<ExtractedProductInfo> => {
     const prompt = `
 Hãy đóng vai một chuyên gia xử lý dữ liệu OCR. Nhiệm vụ của bạn là trích xuất thông tin từ nhãn thuốc BVTV và CHUẨN HÓA nội dung.
 
@@ -325,7 +167,7 @@ TÍNH TOÁN LIỀU LƯỢNG (GHI VÀO NOTES):
 • Liều lượng: [X]ml/bình 25L
 • Phun được: ~[Y] công (1 chai [Z]ml)
 
-VD: "• Liều lượng: 30ml/bình 25L\n• Phun được: ~2.31 công (1 chai 450ml)"
+VD: "• Liều lượng: 30ml/bình 25L\\n• Phun được: ~2.31 công (1 chai 450ml)"
 Cấu trúc JSON trả về:
 {
   "name": "Tên sản phẩm (viết hoa) + (dung tích) - VD: BEAMMY KASU 300SC (450ml)",
@@ -348,77 +190,80 @@ Cấu trúc JSON trả về:
 Chỉ trả về JSON.
 `;
 
-    try {
-      const apiKey = getGeminiApiKey();
-      
-      // Tạo parts từ danh sách ảnh
-      const imageParts = images.map(imgBase64 => ({
-        inline_data: {
-          mime_type: 'image/jpeg',
-          data: imgBase64.split(',')[1] || imgBase64
+    // Tạo parts từ danh sách ảnh
+    const imageParts = images.map(imgBase64 => ({
+      inline_data: {
+        mime_type: 'image/jpeg',
+        data: imgBase64.split(',')[1] || imgBase64
+      }
+    }));
+
+    // Sử dụng tryAllGeminiKeys để tự động retry với tất cả keys
+    return tryAllGeminiKeys<ExtractedProductInfo>(
+      async (apiKey, keyName) => {
+        console.log(`🔑 Đang phân tích ảnh với key: ${keyName}`);
+        
+        const response = await fetch(
+          getGeminiApiUrl(apiKey),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: prompt },
+                  ...imageParts
+                ]
+              }]
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error (${response.status}): ${errorText}`);
         }
-      }));
 
-      const response = await fetch(
-        getGeminiApiUrl(apiKey),
-        {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              ...imageParts
-            ]
-          }]
-        }),
-      });
+        const data = await response.json();
+        console.log('📊 Gemini response:', data);
 
-      if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('Product Analysis Response:', data);
-
-      if (!data.candidates || data.candidates.length === 0) {
-        if (data.promptFeedback) {
-           console.error('Prompt Feedback:', data.promptFeedback);
-           throw new Error(`AI từ chối phân tích ảnh: ${data.promptFeedback.blockReason || 'Lý do không xác định'}`);
+        if (!data.candidates || data.candidates.length === 0) {
+          if (data.promptFeedback) {
+            console.error('Prompt Feedback:', data.promptFeedback);
+            throw new Error(`AI từ chối phân tích ảnh: ${data.promptFeedback.blockReason || 'Lý do không xác định'}`);
+          }
+          throw new Error('AI không trả về kết quả nào.');
         }
-        throw new Error('AI không trả về kết quả nào.');
-      }
 
-      const candidate = data.candidates[0];
-      console.log('🔍 Candidate Detail:', JSON.stringify(candidate, null, 2));
+        const candidate = data.candidates[0];
+        console.log('🔍 Candidate Detail:', JSON.stringify(candidate, null, 2));
 
-      // Kiểm tra lý do kết thúc nếu không có nội dung
-      if (!candidate.content) {
-        if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-          throw new Error(`AI không trả về nội dung. Lý do: ${candidate.finishReason}. Vui lòng thử lại với ảnh khác.`);
+        // Kiểm tra lý do kết thúc nếu không có nội dung
+        if (!candidate.content) {
+          if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+            throw new Error(`AI không trả về nội dung. Lý do: ${candidate.finishReason}. Vui lòng thử lại với ảnh khác.`);
+          }
+          throw new Error('AI trả về phản hồi rỗng không xác định.');
         }
-        throw new Error('AI trả về phản hồi rỗng không xác định.');
-      }
-      
-      if (!candidate.content.parts || !candidate.content.parts[0]) {
-         throw new Error('Cấu trúc nội dung từ AI thiếu thành phần text.');
-      }
+        
+        if (!candidate.content.parts || !candidate.content.parts[0]) {
+          throw new Error('Cấu trúc nội dung từ AI thiếu thành phần text.');
+        }
 
-      const text = candidate.content.parts[0].text;
-      
-      // Parse JSON từ response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Không thể parse JSON từ AI response');
-      }
+        const text = candidate.content.parts[0].text;
+        
+        // Parse JSON từ response
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('Không thể parse JSON từ AI response');
+        }
 
-      return JSON.parse(jsonMatch[0]);
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-      throw error;
-    }
+        return JSON.parse(jsonMatch[0]);
+      },
+      'Analyze Image'
+    );
   },
 };
 
@@ -459,3 +304,4 @@ export const validateImageFile = (file: File): boolean => {
 
   return true;
 };
+
