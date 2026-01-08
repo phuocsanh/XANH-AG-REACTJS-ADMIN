@@ -144,11 +144,23 @@ QUY TẮC VỀ TÊN SẢN PHẨM VÀ DUNG TÍCH:
    - Ví dụ: "BEAMMY KASU 300SC (450ml)", "SIÊU BỆNH 300SC (1 lít)", "KARATE 50EC (100ml)"
    - Nếu KHÔNG tìm thấy dung tích: Chỉ lấy tên "BEAMMY KASU 300SC"
 
-3. **trade_name**: Hiệu thuốc + Dung tích (BẮT BUỘC nếu có)
-   - Nếu có hiệu thuốc tiếng Việt: Dùng hiệu + dung tích
-     + Ví dụ: name="BEAMMY KASU 300SC (450ml)", trade_name="Siêu Bệnh (450ml)"
-   - Nếu KHÔNG có hiệu thuốc: Dùng tên chính thức + dung tích (giống name)
-     + Ví dụ: name="BEAMMY KASU 300SC (450ml)", trade_name="BEAMMY KASU 300SC (450ml)"
+3. **trade_name**: Hiệu thuốc + Hàm lượng + Dung tích (BẮT BUỘC)
+   **QUAN TRỌNG**: Phải thêm hàm lượng (VD: 300SC, 50EC, 20WP) vào tên thương mại!
+   
+   - **Bước 1**: Tìm hàm lượng từ tên sản phẩm (name)
+     + Ví dụ: "BEAMMY KASU 300SC" → Hàm lượng là "300SC"
+     + Ví dụ: "KARATE 50EC" → Hàm lượng là "50EC"
+     + Ví dụ: "MANCOZEB 20WP" → Hàm lượng là "20WP"
+   
+   - **Bước 2**: Thêm hàm lượng vào tên thương mại
+     + Nếu có hiệu thuốc tiếng Việt: Hiệu + Hàm lượng + Dung tích
+       * Ví dụ: name="BEAMMY KASU 300SC (450ml)", trade_name="SẠCH BỆNH 300SC (450ml)"
+       * Ví dụ: name="KARATE 50EC (100ml)", trade_name="KARATE 50EC (100ml)" (nếu không có hiệu tiếng Việt)
+     
+     + Nếu KHÔNG có hiệu thuốc: Dùng tên chính thức + hàm lượng + dung tích (giống name)
+       * Ví dụ: name="BEAMMY KASU 300SC (450ml)", trade_name="BEAMMY KASU 300SC (450ml)"
+   
+   **LƯU Ý**: TUYỆT ĐỐI KHÔNG được bỏ qua hàm lượng trong trade_name!
 
 
 TÍNH TOÁN LIỀU LƯỢNG (GHI VÀO NOTES):
@@ -173,7 +185,7 @@ Cấu trúc JSON trả về:
   "name": "Tên sản phẩm (viết hoa) + (dung tích) - VD: BEAMMY KASU 300SC (450ml)",
   "volume": "Dung tích/Khối lượng (VD: 450ml, 1 lít, 500g) - Tìm trên nhãn ở mục Dung tích, Quy cách, Net, hoặc ghi rõ",
   "notes": "Ghi chú tự động (bao gồm tính toán liều lượng nếu có thông tin)",
-  "trade_name": "Hiệu thuốc tiếng Việt + (dung tích) HOẶC tên chính thức + (dung tích) - VD: Siêu Bệnh (450ml) hoặc BEAMMY KASU 300SC (450ml)",
+  "trade_name": "Hiệu thuốc tiếng Việt + HÀM LƯỢNG + (dung tích) - VD: SẠCH BỆNH 300SC (450ml). QUAN TRỌNG: Phải có hàm lượng (300SC, 50EC, 20WP...) từ tên sản phẩm!",
   "active_ingredient": "Hoạt chất VÀ Hàm lượng (BẮT BUỘC: Phải lấy cả tên hoạt chất và nồng độ/hàm lượng đi kèm. Ví dụ: 'Butachlor 150g/l' hoặc 'Mancozeb 20%'. Nếu có nhiều hoạt chất thì liệt kê đầy đủ, ngăn cách bằng dấu phẩy)",
   "concentration": "Hàm lượng (Nếu đã gộp vào active_ingredient thì trường này có thể để trống hoặc lặp lại)",
   "manufacturer": "Nhà sản xuất/đăng ký",
