@@ -24,7 +24,7 @@ export const productFormSchema = z.object({
   pictures: z.array(z.any()).optional(),
   videos: z.array(z.string()).optional(),
   attributes: z.record(z.string(), z.any()).optional(),
-  unit_id: z.number().optional(), // Bắt buộc nhập
+  unit_id: z.number().min(1, "Vui lòng chọn đơn vị tính"), // Bắt buộc nhập
   sub_types: z.array(z.number()).optional(),
   status: z.enum(["active", "inactive", "archived", "pending"]).optional(),
   // Thêm 2 trường mới
@@ -67,7 +67,7 @@ export interface ProductFormValues {
   pictures?: UploadFile[]
   videos?: string[]
   attributes?: Record<string, unknown>
-  unit_id: number | undefined // Bắt buộc nhập
+  unit_id: number | undefined // Bắt buộc nhập (validation sẽ kiểm tra)
   sub_types?: number[]
   status?: "active" | "inactive" | "archived" | "pending"
   // Thêm 2 trường mới
