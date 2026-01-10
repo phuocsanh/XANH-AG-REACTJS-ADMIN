@@ -239,6 +239,9 @@ function AppContent({
   
   // Hiển thị Header/Sidebar nếu: đã login HOẶC đang ở trang weather-forecast HOẶC lunar-calendar
   const shouldShowLayout = (isHeaderFooterShow === false && isLogin) || isWeatherForecastPage || isLunarCalendarPage
+  
+  // Ẩn sidebar cho weather-forecast và lunar-calendar (full-width layout như NextJS)
+  const shouldShowSidebar = shouldShowLayout && !isWeatherForecastPage && !isLunarCalendarPage
 
   return (
     <MyContext.Provider value={values}>
@@ -252,14 +255,14 @@ function AppContent({
 
         <div className='flex flex-1 overflow-x-hidden'>
           {/* Sidebar - hidden on mobile by default, shown as overlay */}
-          {shouldShowLayout && isSidebarOpen && (
+          {shouldShowSidebar && isSidebarOpen && (
                 <div className='hidden md:block md:fixed md:left-0 md:top-0 md:bottom-0 md:w-[17%] md:z-10 md:pt-[70px]' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
                   <Sidebar />
                 </div>
               )}
 
               {/* Main content area */}
-              <div className={`flex-1 overflow-x-hidden min-w-0 ${shouldShowLayout && isSidebarOpen ? 'md:ml-[17%]' : ''}`}>
+              <div className={`flex-1 overflow-x-hidden min-w-0 ${shouldShowSidebar && isSidebarOpen ? 'md:ml-[17%]' : ''}`}>
                 {/* Space for header on all devices */}
                 {shouldShowLayout && (
                   <div className='h-[70px]'></div>
@@ -267,7 +270,7 @@ function AppContent({
 
                 <main
                   className={
-                    shouldShowLayout ? "p-2 md:p-6" : ""
+                    shouldShowLayout && !isWeatherForecastPage && !isLunarCalendarPage ? "p-2 md:p-6" : ""
                   }
                 >
                   <Routes>

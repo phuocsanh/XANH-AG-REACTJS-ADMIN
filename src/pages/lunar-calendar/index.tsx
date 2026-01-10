@@ -1,516 +1,257 @@
-import React, { useState } from 'react';
-import { Calendar, Badge, Card, Row, Col, Tag, Typography, Divider, Select } from 'antd';
-import type { Dayjs } from 'dayjs';
-import dayjs from 'dayjs';
-import 'dayjs/locale/vi';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
-import locale from 'antd/es/calendar/locale/vi_VN'; // Import locale tiếng Việt cho Ant Design Calendar
-// @ts-ignore - amlich không có types
-import amlich from 'amlich';
-
-// Cấu hình dayjs
-dayjs.extend(localizedFormat);
-dayjs.locale('vi');
-
-const { Title, Text } = Typography;
-
-// Hàm hỗ trợ viết hoa chữ cái đầu mỗi từ
-const capitalizeWords = (str: string) => {
-  return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-};
-
-// Màu sắc cho các loại ngày
-const COLORS = {
-  today: '#52c41a',
-  weekend: '#ff4d4f',
-  normal: '#1890ff',
-};
+import { useState } from 'react'
+import { convertSolar2Lunar } from '@/lib/lunar-calendar'
+import { 
+  Calendar as CalendarIcon, Moon, Sun, ChevronLeft, 
+  ChevronRight, Star, Info
+} from 'lucide-react'
 
 /**
- * Component Lịch Vạn Niên
- * Hiển thị lịch dương và âm lịch Việt Nam
- * Public - Ai cũng có thể xem
+ * Lunar Calendar Page - Clone từ NextJS Client
+ * Trang lịch vạn niên chi tiết với UI giống NextJS
  */
-const LunarCalendar: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
+export default function LunarCalendarPage() {
+  const [currentDate] = useState(new Date())
+  const [viewDate, setViewDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState(new Date())
 
-  // Lấy thông tin âm lịch cho một ngày
-  const getLunarInfo = (date: Dayjs) => {
-    const solar = {
-      day: date.date(),
-      month: date.month() + 1, // dayjs month bắt đầu từ 0
-      year: date.year(),
-    };
+  // Hàm lấy thông tin âm lịch
+  const getLunarData = (date: Date) => {
+    const [d, m, y, leap] = convertSolar2Lunar(date.getDate(), date.getMonth() + 1, date.getFullYear())
+    return { day: d, month: m, year: y, leap }
+  }
 
-    try {
-      const lunar = amlich.convertSolar2Lunar(
-        solar.day,
-        solar.month,
-        solar.year,
-        7 // GMT+7 cho Việt Nam
-      );
+  const selectedLunar = getLunarData(selectedDate)
+  
+  // Hàm format ngày tháng tiếng Việt
+  const getVietnameseDateString = (date: Date) => {
+    return date.toLocaleDateString('vi-VN', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+  }
 
-      return {
-        day: lunar[0],
-        month: lunar[1],
-        year: lunar[2],
-        leap: lunar[3], // Tháng nhuận
-        jd: lunar[4], // Julian day
-      };
-    } catch (error) {
-      console.error('Error converting to lunar:', error);
-      return null;
-    }
-  };
+  // Tính số ngày trong tháng
+  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
+  
+  // Điều chỉnh để tuần bắt đầu từ Thứ 2 (0=CN -> 6, 1=T2 -> 0, ...)
+  const firstDayOfMonth = (() => {
+    const day = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay()
+    return day === 0 ? 6 : day - 1
+  })()
 
+  const prevMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+  }
 
-  // Render nội dung của mỗi ô ngày
-  const dateCellRender = (date: Dayjs) => {
-    const lunar = getLunarInfo(date);
-    const isToday = date.isSame(dayjs(), 'day');
-    const isWeekend = date.day() === 0 || date.day() === 6;
-    
-    // Lấy thứ tiếng Việt đầy đủ (viết tắt Chủ nhật cho gọn)
-    const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-    const dayOfWeek = dayNames[date.day()];
+  const nextMonth = () => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+  }
 
-    return (
-      <div className="lunar-cell">
-        {/* 1. Hiển thị thứ */}
-        <div className="lunar-day-of-week">
-          {dayOfWeek}
-        </div>
-        
-        {/* 2. Hiển thị ngày dương (có nhãn) */}
-        <div className="solar-date-container">
-          <span className="solar-label">Ngày dương:</span>
-          <span className="solar-date-value">
-            {date.date()}
-          </span>
-        </div>
-        
-        {/* 3. Hiển thị ngày âm (ghi rõ) */}
-        {lunar && (
-          <div 
-            className="lunar-date-container"
-            style={{ 
-              color: isToday ? COLORS.today : isWeekend ? COLORS.weekend : '#666'
-            }}
-          >
-            <span className="lunar-label">Âm lịch:</span>
-            <span className="lunar-value">
-              {lunar.day}/{lunar.month}
-              {lunar.leap ? ' (nhuận)' : ''}
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Render header của tháng
-  const monthCellRender = (date: Dayjs) => {
-    return null; // Không cần render gì đặc biệt cho tháng
-  };
-
-  // Xử lý khi chọn ngày
-  const onSelect = (date: Dayjs) => {
-    setSelectedDate(date);
-  };
-
-  // Lấy thông tin chi tiết của ngày được chọn
-  const selectedLunar = getLunarInfo(selectedDate);
-  const isToday = selectedDate.isSame(dayjs(), 'day');
-
-  // Format ngày tháng đầy đủ bằng tiếng Việt (viết hoa chữ cái đầu mỗi từ)
-  const getVietnameseDateString = (date: Dayjs) => {
-    const dayOfWeek = date.format('dddd'); // Thứ hai, Thứ ba...
-    const day = date.date();
-    const month = date.month() + 1;
-    const year = date.year();
-    
-    const dateString = `${dayOfWeek}, ngày ${day} tháng ${month} năm ${year}`;
-    return capitalizeWords(dateString);
-  };
+  const goToToday = () => {
+    const today = new Date()
+    setViewDate(today)
+    setSelectedDate(today)
+  }
 
   return (
-    <div className="p-2 md:p-6">
-      <Title level={2} className="mb-6 text-center" style={{ fontSize: '32px' }}>
-        📅 Lịch Vạn Niên
-      </Title>
-
-      <Row gutter={[16, 16]}>
-        {/* Thông tin chi tiết ngày được chọn - ĐƯA LÊN TRÊN */}
-        <Col xs={24}>
-          <Card className="text-center shadow-sm">
-            <div className="space-y-4">
-              {/* Dương lịch */}
-              <div>
-                <Text strong className="block mb-3 text-lg uppercase" style={{ color: '#059669', opacity: 0.8, letterSpacing: '2px' }}>🌞 Dương lịch</Text>
-                <Title level={2} className="m-0 !text-2xl md:!text-4xl" style={{ color: '#047857', lineHeight: '1.4' }}>
-                  {isToday ? 'Hôm nay, ' : ''}{getVietnameseDateString(selectedDate)}
-                </Title>
-              </div>
-
-              <Divider className="my-8" />
-
-              {/* Âm lịch */}
-              {selectedLunar && (
-                <div>
-                  <Text strong className="block mb-3 text-lg uppercase" style={{ color: '#d4380d', opacity: 0.8, letterSpacing: '2px' }}>🌙 Âm lịch</Text>
-                  <Title level={3} className="m-0 !text-xl md:!text-3xl" style={{ color: '#cf1322', lineHeight: '1.4' }}>
-                    {capitalizeWords(selectedDate.format('dddd'))}, {capitalizeWords(`Ngày ${selectedLunar.day} tháng ${selectedLunar.month}`)}
-                    {selectedLunar.leap ? ' (Nhuận)' : ''}, {capitalizeWords(`năm ${selectedLunar.year}`)}
-                  </Title>
-                </div>
-              )}
-
+    <div className="min-h-screen bg-orange-50/30 pb-20">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-br from-orange-600 to-red-700 pt-5 pb-16 sm:pt-5 sm:pb-24 px-4 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-400/20 rounded-full blur-2xl translate-y-20 -translate-x-20" />
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12">
+            <div className="text-center lg:text-left">
+              <h1 className="text-3xl md:text-7xl font-black text-white mb-4 sm:mb-6 tracking-tighter">
+                LỊCH <span className="text-orange-200">VẠN NIÊN</span>
+              </h1>
+              <p className="text-orange-100 text-sm sm:text-lg max-w-xl leading-relaxed">
+                Tra cứu ngày âm, ngày dương, tiết khí và các thông tin phong thủy phục vụ đời sống và sản xuất nông nghiệp của bà con.
+              </p>
+              <button 
+                onClick={goToToday}
+                className="mt-6 sm:mt-8 px-6 sm:px-8 py-2.5 sm:py-3 bg-white text-orange-700 font-black rounded-full shadow-xl hover:bg-orange-50 transition-all transform hover:scale-105 text-sm sm:text-base"
+              >
+                Hôm nay: {currentDate.getDate()}/{currentDate.getMonth() + 1}
+              </button>
             </div>
-          </Card>
-        </Col>
 
-        {/* Calendar chính - ĐƯA XUỐNG DƯỚI */}
-        <Col xs={24}>
-          <Card title={<span style={{ fontSize: '22px', fontWeight: 'bold' }}>📆 Chọn ngày</span>}>
-            <Calendar
-              fullscreen={false}
-              onSelect={onSelect}
-              dateCellRender={dateCellRender}
-              monthCellRender={monthCellRender}
-              locale={locale}
-              headerRender={({ value, onChange }) => {
-                const currentYear = dayjs().year();
-                const currentMonth = dayjs().month();
+            {/* Featured Date Card */}
+            <div className="bg-white rounded-[40px] p-1 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
+               <div className="bg-white rounded-[39px] border-4 border-orange-50 p-10 flex flex-col items-center min-w-[320px]">
+                  <p className="text-orange-600 font-black uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
+                    <Sun className="w-4 h-4" /> Dương lịch
+                  </p>
+                  <p className="text-8xl font-black text-gray-800 tabular-nums">{selectedDate.getDate()}</p>
+                  <p className="text-xl font-bold text-gray-500 mt-2">{getVietnameseDateString(selectedDate)}</p>
+                  
+                  <div className="w-full h-px bg-gray-100 my-8" />
+                  
+                  <p className="text-red-500 font-black uppercase tracking-widest text-sm mb-4 flex items-center gap-2">
+                    <Moon className="w-4 h-4" /> Âm lịch
+                  </p>
+                  <p className="text-3xl font-black text-red-600">
+                    Ngày {selectedLunar.day}
+                  </p>
+                  <p className="text-lg font-bold text-red-500/80">
+                    Tháng {selectedLunar.month} Năm {selectedLunar.year}
+                    {selectedLunar.leap ? ' (Nhuận)' : ''}
+                  </p>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-0  sm:px-4 -mt-12 relative z-20">
+        <div className="grid lg:grid-cols-3 gap-10">
+          {/* Calendar Grid */}
+          <div className="lg:col-span-2 bg-white rounded-[2rem] sm:rounded-[40px] shadow-2xl border border-orange-100 p-1.5 sm:p-8 md:p-12">
+            <div className="flex justify-between items-center mb-6 sm:mb-12">
+              <h2 className="text-xl sm:text-3xl font-black text-gray-800 flex items-center gap-2 sm:gap-4">
+                <CalendarIcon className="w-8 h-8 text-orange-500" />
+                Tháng {viewDate.getMonth() + 1} - {viewDate.getFullYear()}
+              </h2>
+              <div className="flex gap-2">
+                <button onClick={prevMonth} className="p-3 hover:bg-orange-50 rounded-2xl transition-all border border-transparent hover:border-orange-100">
+                  <ChevronLeft className="w-6 h-6 text-gray-400" />
+                </button>
+                <button onClick={nextMonth} className="p-3 hover:bg-orange-50 rounded-2xl transition-all border border-transparent hover:border-orange-100">
+                   <ChevronRight className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 sm:gap-4 text-center mb-6">
+              {['Thứ\nHai', 'Thứ\nBa', 'Thứ\nTư', 'Thứ\nNăm', 'Thứ\nSáu', 'Thứ\nBảy', 'Chủ\nNhật'].map((day, i) => (
+                <span key={day} className={`text-[10px] sm:text-xs font-black uppercase tracking-wider whitespace-pre-line leading-tight ${i === 6 ? 'text-red-500' : 'text-gray-400'}`}>
+                  {day}
+                </span>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2.5 md:gap-4 mb-4">
+              {/* Ngày của tháng trước */}
+              {Array.from({ length: firstDayOfMonth }).map((_, i) => {
+                const prevMonthDays = daysInMonth(
+                  viewDate.getMonth() === 0 ? viewDate.getFullYear() - 1 : viewDate.getFullYear(),
+                  viewDate.getMonth() === 0 ? 11 : viewDate.getMonth() - 1
+                )
+                const prevDateNum = prevMonthDays - firstDayOfMonth + i + 1
+                const prevDate = new Date(
+                  viewDate.getMonth() === 0 ? viewDate.getFullYear() - 1 : viewDate.getFullYear(),
+                  viewDate.getMonth() === 0 ? 11 : viewDate.getMonth() - 1,
+                  prevDateNum
+                )
+                const prevLunar = getLunarData(prevDate)
+                const isSelected = prevDateNum === selectedDate.getDate() &&
+                                  (viewDate.getMonth() === 0 ? 11 : viewDate.getMonth() - 1) === selectedDate.getMonth() &&
+                                  (viewDate.getMonth() === 0 ? viewDate.getFullYear() - 1 : viewDate.getFullYear()) === selectedDate.getFullYear()
                 
-                const start = 0;
-                const end = 12;
-                const monthOptions = [];
-
-                for (let i = start; i < end; i++) {
-                  const isCurrentMonth = i === currentMonth;
-                  monthOptions.push(
-                    <Select.Option key={i} value={i} label={`Tháng ${i + 1}`} className="month-item">
-                      <span style={{ 
-                        color: isCurrentMonth ? '#52c41a' : 'inherit',
-                        fontWeight: isCurrentMonth ? '800' : 'normal'
-                      }}>
-                        Tháng {i + 1} {isCurrentMonth ? '(Hiện tại)' : ''}
-                      </span>
-                    </Select.Option>
-                  );
-                }
-
-                const year = value.year();
-                const month = value.month();
-                const yearOptions = [];
-                for (let i = year - 10; i < year + 15; i += 1) {
-                  const isCurrentYear = i === currentYear;
-                  yearOptions.push(
-                    <Select.Option key={i} value={i} label={i.toString()} className="year-item">
-                      <span style={{ 
-                        color: isCurrentYear ? '#52c41a' : 'inherit',
-                        fontWeight: isCurrentYear ? '800' : 'normal'
-                      }}>
-                        {i} {isCurrentYear ? '(Hiện tại)' : ''}
-                      </span>
-                    </Select.Option>
-                  );
-                }
+                return (
+                  <button
+                    key={`prev-${i}`}
+                    onClick={() => setSelectedDate(prevDate)}
+                    className={`group relative aspect-square flex flex-col items-center justify-center rounded-xl sm:rounded-2xl transition-all duration-300 shadow-sm py-1 ${
+                      isSelected
+                      ? 'bg-orange-600 text-white shadow-xl scale-110 z-10 ring-2 ring-white/20'
+                      : 'bg-gray-50/50 hover:bg-gray-100 border border-gray-50 hover:border-gray-200'
+                    }`}
+                  >
+                    <span className={`text-base sm:text-2xl leading-none ${isSelected ? 'font-black' : 'font-bold text-gray-600'} mb-1`}>
+                      {prevDateNum}
+                    </span>
+                    <span className={`text-xs sm:text-base font-black ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
+                      {prevLunar.day}/{prevLunar.month}
+                    </span>
+                  </button>
+                )
+              })}
+              {Array.from({ length: daysInMonth(viewDate.getFullYear(), viewDate.getMonth()) }).map((_, i) => {
+                const dateNum = i + 1
+                const isToday = dateNum === currentDate.getDate() && 
+                               viewDate.getMonth() === currentDate.getMonth() && 
+                               viewDate.getFullYear() === currentDate.getFullYear()
+                const isSelected = dateNum === selectedDate.getDate() &&
+                                  viewDate.getMonth() === selectedDate.getMonth() &&
+                                  viewDate.getFullYear() === selectedDate.getFullYear()
+                
+                const cellDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), dateNum)
+                const cellLunar = getLunarData(cellDate)
+                // Điều chỉnh weekend: CN = 0, T7 = 6
+                const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6
 
                 return (
-                  <div style={{ 
-                    padding: '10px 5px', 
-                    position: 'sticky', 
-                    left: 0, 
-                    zIndex: 10,
-                    background: '#fff',
-                    width: '100%',
-                    borderBottom: '1px solid #f0f0f0'
-                  }}>
-                    <Row gutter={[10, 2]} justify="start" align="middle" wrap={false}>
-                      <Col className="flex items-center">
-                        <Text strong style={{ marginRight: 5, fontSize: '16px', whiteSpace: 'nowrap' }}>Năm:</Text>
-                        <Select
-                          size="middle"
-                          dropdownMatchSelectWidth={false}
-                          optionLabelProp="label"
-                          className="my-year-select"
-                          style={{ width: 85, fontSize: '16px' }}
-                          value={year}
-                          onChange={(newYear) => {
-                            const now = value.clone().year(newYear);
-                            onChange(now);
-                          }}
-                        >
-                          {yearOptions}
-                        </Select>
-                      </Col>
-                      <Col className="flex items-center">
-                        <Text strong style={{ marginLeft: 5, marginRight: 5, fontSize: '16px', whiteSpace: 'nowrap' }}>Tháng:</Text>
-                        <Select
-                          size="middle"
-                          dropdownMatchSelectWidth={false}
-                          optionLabelProp="label"
-                          style={{ width: 125, fontSize: '16px' }}
-                          value={month}
-                          onChange={(newMonth) => {
-                            const now = value.clone().month(newMonth);
-                            onChange(now);
-                          }}
-                        >
-                          {monthOptions}
-                        </Select>
-                      </Col>
-                    </Row>
-                  </div>
-                );
-              }}
-            />
-          </Card>
-        </Col>
+                  <button
+                    key={dateNum}
+                    onClick={() => setSelectedDate(cellDate)}
+                    className={`group relative aspect-square flex flex-col items-center justify-center rounded-xl sm:rounded-2xl transition-all duration-300 shadow-sm  py-1 ${
+                      isSelected 
+                      ? 'bg-orange-600 text-white shadow-xl scale-110 z-10 ring-2 ring-white/20' 
+                      : 'bg-white/80 hover:bg-orange-50 shadow-md hover:shadow-lg border border-gray-100 hover:border-orange-200'
+                    } ${isToday && !isSelected ? 'ring-2 sm:ring-4 ring-orange-400 bg-white shadow-lg' : ''} ${isWeekend && !isSelected ? 'text-red-500' : ''}`}
+                  >
+                    <span className={`text-base sm:text-2xl leading-none ${isSelected ? 'font-black' : 'font-bold'} mb-1`}>
+                      {dateNum}
+                    </span>
+                    <span className={`text-xs sm:text-base font-black ${isSelected ? 'text-orange-100' : 'text-gray-500'}`}>
+                      {cellLunar.day}/{cellLunar.month}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-        {/* Hướng dẫn */}
-        <Col xs={24}>
-          <Card title={<span style={{ fontSize: '22px', fontWeight: 'bold' }}>ℹ️ Hướng dẫn sử dụng</span>}>
-            <ul className="text-lg space-y-4 pl-6" style={{ color: '#434343' }}>
-              <li>Bấm vào bất kỳ ô ngày nào trong lịch để xem <b>Thông tin chi tiết</b> (Số ngày, Thứ, Âm lịch) ở phía trên.</li>
-              <li>Sử dụng bộ chọn <b>"Chọn Năm"</b> và <b>"Chọn Tháng"</b> ở trên bảng lịch để di chuyển nhanh đến thời gian mong muốn.</li>
-              <li>Ô ngày đang được chọn sẽ có <b>màu nền xanh lá</b> và <b>chữ màu trắng</b> nổi bật.</li>
-              <li>
-                <Badge color={COLORS.today} text={<span className="text-lg">Ngày hiện tại: Được đánh dấu bằng vòng màu xanh lá</span>} />
-              </li>
-              <li>
-                <Badge color={COLORS.weekend} text={<span className="text-lg">Cuối tuần: Ngày Thứ 7 và Chủ Nhật được tô màu cam đỏ dễ nhận biết</span>} />
-              </li>
-            </ul>
-          </Card>
-        </Col>
-      </Row>
+          {/* Sidebar Info */}
+          <div className="space-y-8">
+             <div className="bg-white rounded-[40px] p-8 shadow-xl border border-orange-100">
+                <h3 className="font-black text-xl text-gray-800 mb-6 flex items-center gap-3">
+                  <Star className="w-6 h-6 text-accent-gold" />
+                  Tiết khí & Sản xuất
+                </h3>
+                <div className="space-y-6">
+                   <div className="p-5 rounded-3xl bg-orange-50/50 border border-orange-100">
+                      <p className="font-black text-orange-700 text-sm mb-2">Lời khuyên nông vụ</p>
+                      <p className="text-gray-600 text-sm leading-relaxed italic">
+                        &quot;Tháng chạp là tháng làm ăn, <br/> Lo gieo mạ sớm, dọn ngăn ruộng đồng.&quot;
+                      </p>
+                   </div>
+                   <div className="p-5 rounded-3xl bg-gray-50 border border-gray-100">
+                      <p className="font-black text-gray-700 text-sm mb-1">Gợi ý hôm nay</p>
+                      <ul className="text-xs text-gray-500 space-y-2 list-disc pl-4 font-medium">
+                        <li>Thích hợp cho việc cày bừa, làm đất.</li>
+                        <li>Tránh việc xuống giống quy mô lớn.</li>
+                        <li>Tốt cho việc sửa chữa chuồng trại.</li>
+                      </ul>
+                   </div>
+                </div>
+             </div>
 
-      {/* CSS tùy chỉnh */}
-      <style>{`
-        .lunar-cell {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          text-align: center;
-        }
-        
-        .lunar-day-of-week {
-          font-size: 10px;
-          color: #999;
-          margin-bottom: 4px;
-          line-height: 1.2;
-          white-space: nowrap;
-        }
-        
-        .lunar-date {
-          font-size: 11px;
-          line-height: 1.2;
-          white-space: nowrap;
-        }
-        
-        .ant-picker-calendar-date-today {
-          border: 2px solid ${COLORS.today} !important;
-        }
-        
-        /* Ẩn header thứ (T2, T3...) vì mỗi ô đã có thứ đầy đủ */
-        .ant-picker-content thead {
-          display: none !important;
-        }
-        
-        /* Ẩn số ngày dương lịch mặc định của Ant Design */
-        .ant-picker-calendar-date-value {
-          display: none !important;
-        }
-        
-        /* Style cho ngày dương lịch tự custom */
-        .solar-date-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin: 2px 0;
-          line-height: 1.1;
-        }
-
-        .solar-label {
-          font-size: 11px;
-          text-transform: uppercase;
-          color: #8c8c8c;
-          letter-spacing: 0.5px;
-          transition: color 0.3s;
-        }
-
-        .solar-date-value {
-          font-size: 26px;
-          font-weight: 800;
-          color: #1a1a1a;
-          line-height: 1;
-          transition: color 0.3s;
-        }
-
-        .lunar-date-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          line-height: 1.1;
-          transition: color 0.3s;
-        }
-
-        .lunar-label {
-          font-size: 11px;
-          text-transform: uppercase;
-          opacity: 0.8;
-          letter-spacing: 0.5px;
-          transition: color 0.3s;
-        }
-
-        .lunar-value {
-          font-size: 16px;
-          font-weight: 700;
-          transition: color 0.3s;
-        }
-        
-        /* Thêm border rõ ràng cho mỗi ô */
-        .ant-picker-cell {
-          border: 1px solid #d9d9d9 !important;
-        }
-        
-        /* CSS chung cho tất cả màn hình */
-        .ant-picker-calendar {
-          overflow-x: auto !important;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Cố định header chọn Năm/Tháng bên trái */
-        .ant-picker-calendar-header {
-          position: sticky !important;
-          left: 0 !important;
-          z-index: 100 !important;
-          background: #fff !important;
-          width: 100% !important;
-          padding: 0 !important;
-          border-bottom: 1px solid #d9d9d9 !important;
-        }
-
-        .ant-picker-content table {
-          min-width: 840px !important;
-          table-layout: fixed !important; /* Dùng fixed để đảm bảo width không bị co */
-          width: 100% !important;
-          border-collapse: collapse;
-        }
-        
-        .ant-picker-calendar table {
-          table-layout: fixed !important;
-          width: 100% !important;
-        }
-        
-        .ant-picker-cell {
-          padding: 0 !important;
-          min-width: 120px !important;
-          height: 110px !important; /* Tăng chiều cao để đủ chỗ cho chữ to hơn */
-          text-align: center !important;
-          border: 1px solid #d9d9d9 !important;
-          transition: all 0.3s ease;
-        }
-
-        /* Khi ô được chọn (Selected) */
-        .ant-picker-cell-selected .ant-picker-cell-inner {
-          background: var(--gradient-sidebar) !important;
-          border-radius: 0 !important;
-        }
-
-        .ant-picker-cell-selected .solar-date-value,
-        .ant-picker-cell-selected .lunar-day-of-week,
-        .ant-picker-cell-selected .solar-label,
-        .ant-picker-cell-selected .lunar-label,
-        .ant-picker-cell-selected .lunar-value,
-        .ant-picker-cell-selected .lunar-date-container {
-          color: #fff !important;
-        }
-
-        /* Ẩn background mặc định khi selected */
-        .ant-picker-calendar-full .ant-picker-cell-selected .ant-picker-cell-inner {
-          background: var(--gradient-sidebar) !important;
-        }
-        
-        .ant-picker-cell-inner {
-          height: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-        }
-        
-        .ant-picker-calendar-date-content {
-          height: 100% !important;
-          min-height: 110px !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-          padding: 0 !important;
-        }
-        
-        .lunar-cell {
-          padding: 8px 4px !important;
-          gap: 4px;
-          text-align: center !important;
-          width: 100%;
-          height: 100%;
-          display: flex !important;
-          flex-direction: column !important;
-          justify-content: center !important;
-          align-items: center !important;
-        }
-        
-        /* Tăng font size cho dễ đọc */
-        .lunar-day-of-week {
-          font-size: 15px !important;
-          font-weight: 600;
-          color: #595959;
-          width: 100%;
-          text-align: center;
-          margin-bottom: 4px;
-          transition: color 0.3s;
-        }
-        
-        .lunar-date-container {
-          width: 100%;
-          text-align: center;
-        }
-        
-        /* CSS riêng cho mobile - Đảm bảo thanh cuộn xuất hiện */
-        @media (max-width: 768px) {
-          .ant-picker-calendar {
-            display: block !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch;
-          }
-          .ant-picker-panel {
-            width: 840px !important;
-          }
-        }
-        
-        .ant-picker-calendar {
-          overflow-x: auto !important;
-        }
-        
-        .space-y-2 > * + * {
-          margin-top: 0.5rem;
-        }
-        
-        .space-y-4 > * + * {
-          margin-top: 1rem;
-        }
-        .my-year-select .ant-select-selection-item,
-        .ant-select-single .ant-select-selector .ant-select-selection-item {
-          font-size: 16px !important;
-          font-weight: 600 !important;
-        }
-      `}</style>
+             <div className="bg-gradient-to-br from-gray-800 to-black rounded-[40px] p-8 shadow-2xl text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl -translate-y-10 translate-x-10" />
+                <h3 className="font-black text-xl mb-6 relative z-10">Mẹo xem lịch</h3>
+                <div className="space-y-4 relative z-10">
+                   <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0 text-orange-400">
+                        <Info className="w-4 h-4" />
+                      </div>
+                      <p className="text-sm text-gray-300">Nhấn vào từng ngày trên lịch để xem chi tiết thông tin âm dương ở khung bên trên.</p>
+                   </div>
+                   <div className="flex items-start gap-4">
+                      <div className="w-8 h-8 rounded-2xl bg-white/10 flex items-center justify-center flex-shrink-0 text-red-400">
+                        <Info className="w-4 h-4" />
+                      </div>
+                      <p className="text-sm text-gray-300">Ngày màu đỏ thể hiện các ngày cuối tuần hoặc ngày đặc biệt.</p>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
     </div>
-  );
-};
-
-export default LunarCalendar;
+  )
+}
