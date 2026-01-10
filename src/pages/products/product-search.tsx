@@ -20,10 +20,27 @@ const { Title } = Typography
  */
 const ProductSearch: React.FC = () => {
   // State quản lý tìm kiếm và phân trang
+  const [inputValue, setInputValue] = React.useState("")
   const [searchTerm, setSearchTerm] = React.useState("")
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
   
+  // Debounce logic: Đợi 1.5 giây sau khi ngừng gõ mới tìm kiếm
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(inputValue)
+      setCurrentPage(1)
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [inputValue])
+
+  // Hàm xử lý khi người dùng nhấn Enter (tìm kiếm ngay lập tức)
+  const handleSearchNow = () => {
+    setSearchTerm(inputValue)
+    setCurrentPage(1)
+  }
+
   // State cho Modal chi tiết
   const [isDetailModalVisible, setIsDetailModalVisible] = React.useState(false)
   const [selectedProduct, setSelectedProduct] = React.useState<ExtendedProduct | null>(null)
@@ -37,8 +54,11 @@ const ProductSearch: React.FC = () => {
   }), [currentPage, pageSize, searchTerm])
 
   // Sử dụng Server-side Query
-  const { data: productsData, isLoading } = useProductsQuery(queryParams)
+  const { data: productsData, isLoading: isQueryLoading } = useProductsQuery(queryParams)
   
+  // Hiển thị loading khi đang đợi debounce HOẶC đang gọi API
+  const isLoading = isQueryLoading || (inputValue !== searchTerm)
+
   const products = productsData?.data?.items || [] 
   const totalProducts = productsData?.data?.total || 0
 
@@ -84,7 +104,7 @@ const ProductSearch: React.FC = () => {
       title: "Giá tiền mặt",
       width: 140,
       render: (value: string, record: ExtendedProduct) => (
-        <div className='font-bold text-orange-600'>
+        <div className='font-bold text-emerald-600'>
           {new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
@@ -97,7 +117,7 @@ const ProductSearch: React.FC = () => {
       title: "Giá nợ",
       width: 140,
       render: (value: string, record: ExtendedProduct) => (
-        <div className='font-bold text-red-600'>
+        <div className='font-bold text-blue-600'>
           {record.credit_price ? new Intl.NumberFormat("vi-VN", {
             style: "currency",
             currency: "VND",
@@ -143,10 +163,9 @@ const ProductSearch: React.FC = () => {
               size="large"
               allowClear
               className="rounded-full border-emerald-200"
-              onChange={(e) => {
-                setSearchTerm(e.target.value)
-                setCurrentPage(1)
-              }}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onPressEnter={handleSearchNow}
               autoFocus
             />
           </div>
