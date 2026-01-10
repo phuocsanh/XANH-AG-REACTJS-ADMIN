@@ -86,7 +86,7 @@ const DebtNotesList: React.FC = () => {
                 ? [dayjs(selectedKeys[0] as string), dayjs(selectedKeys[1] as string)] 
                 : undefined
             }
-            onChange={(dates) => {
+            onChange={(dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => {
                 if (dates && dates[0] && dates[1]) {
                     setSelectedKeys([
                         dates[0].startOf('day').toISOString(), 
