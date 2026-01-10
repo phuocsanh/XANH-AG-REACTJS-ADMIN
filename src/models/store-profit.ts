@@ -228,3 +228,26 @@ export interface RiceCropProfit {
 
   invoices: CustomerInvoice[];
 }
+
+// ==================== Báo Cáo Doanh Thu Theo Khoảng Thời Gian ====================
+
+export interface PeriodSummary {
+  total_revenue: number;
+  revenue_with_invoice: number;
+  revenue_no_invoice: number;
+  taxable_revenue: number; // Doanh thu khai báo thuế (chỉ tính sản phẩm có hóa đơn đầu vào)
+  total_cogs: number;
+  cogs_with_invoice: number;
+  cogs_no_invoice: number;
+  gross_profit: number;
+  total_operating_costs: number;
+  total_gift_costs: number;
+  net_profit: number;
+  invoice_count: number;
+}
+
+export interface PeriodReport {
+  summary: PeriodSummary;
+  start_date: Date;
+  end_date: Date;
+}

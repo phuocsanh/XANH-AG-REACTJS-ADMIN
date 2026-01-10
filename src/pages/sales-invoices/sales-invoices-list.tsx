@@ -24,7 +24,7 @@ import {
   DollarOutlined,
   SearchOutlined,
 } from "@ant-design/icons"
-import { DatePicker } from 'antd';
+import { DatePicker, RangePicker } from '@/components/common'
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -62,7 +62,7 @@ const SalesInvoicesList: React.FC = () => {
   const getDateColumnSearchProps = (dataIndex: string): any => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <DatePicker.RangePicker 
+        <RangePicker 
             style={{ marginBottom: 8, display: 'flex' }}
             format="DD/MM/YYYY"
             value={

@@ -9,7 +9,7 @@ import { FiUser } from "react-icons/fi"
 import { HiOutlineShoppingCart } from "react-icons/hi"
 import { TbBrandProducthunt } from "react-icons/tb"
 import { RiLockPasswordLine } from "react-icons/ri"
-import { MdInventory } from "react-icons/md"
+import { MdInventory, MdTrendingUp } from "react-icons/md"
 import { useAppStore } from "../../stores"
 import { BiCategory } from "react-icons/bi"
 import { TbCategoryMinus } from "react-icons/tb"
@@ -158,6 +158,11 @@ const Sidebar: React.FC = () => {
     // Báo cáo Lợi nhuận
     else if (path.startsWith('/profit-reports')) {
       setActiveTab(28)
+      setIsToggleSubmenu(false)
+    }
+    // Báo cáo Doanh thu
+    else if (path.startsWith('/reports/revenue')) {
+      setActiveTab(35)
       setIsToggleSubmenu(false)
     }
     // Cảnh báo Bệnh/Sâu hại
@@ -549,6 +554,23 @@ const Sidebar: React.FC = () => {
                         <RiFileListLine className='text-green-200' />
                       </span>
                       Báo cáo PF
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {/* Báo cáo Doanh thu */}
+              {hasPermission(userInfo, "store_profit_report:read") && (
+                <li>
+                  <Link to='/reports/revenue'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 35 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(35)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <MdTrendingUp className='text-emerald-300' />
+                      </span>
+                      Doanh thu & Lợi nhuận
                     </Button>
                   </Link>
                 </li>

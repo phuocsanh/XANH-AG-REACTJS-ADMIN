@@ -14,9 +14,9 @@ import {
   Statistic,
   Row,
   Col,
-  DatePicker,
   Space,
 } from "antd"
+import { DatePicker, RangePicker } from '@/components/common'
 import { DollarOutlined, SearchOutlined, GiftOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
@@ -78,7 +78,7 @@ const DebtNotesList: React.FC = () => {
   const getDateColumnSearchProps = (_dataIndex: string) => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: FilterDropdownProps) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <DatePicker.RangePicker 
+        <RangePicker 
             style={{ marginBottom: 8, display: 'flex' }}
             format="DD/MM/YYYY"
             value={

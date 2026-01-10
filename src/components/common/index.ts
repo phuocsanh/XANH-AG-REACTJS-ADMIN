@@ -3,7 +3,7 @@ export { default as ComboBox } from "./combo-box"
 export { default as ConfirmDialog } from "./confirm-dialog"
 export { default as ConfirmModal } from "./confirm-modal"
 export { default as CustomDatePicker } from "./custom-date-picker"
-export { default as DatePicker } from "./DatePicker"
+export { DatePicker, RangePicker } from "./DatePicker"
 export { default as DataTable } from "./data-table"
 export { default as Field } from "./field"
 export { default as FormField } from "../form/form-field"
@@ -20,6 +20,7 @@ export type { SearchFilterProps, FilterField } from "./search-filter"
 export type { StatusBadgeProps } from "./status-badge"
 export type { FormComboBoxProps, ComboBoxOption } from "../form/form-combo-box"
 export type { ConfirmModalProps } from "./confirm-modal"
+export type { RangePickerProps } from "./range-picker"
 
 /**
  * Common Components Library

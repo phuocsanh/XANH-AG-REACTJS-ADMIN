@@ -932,3 +932,18 @@ body {
   font-size: 12px !important;
   margin-top: 2px !important;
 }
+
+
+/* Ép hiển thị các nút điều hướng nội bộ cho RangePicker độc lập */
+.custom-range-picker-unlinked .ant-picker-panel:first-child .ant-picker-header-next-btn,
+.custom-range-picker-unlinked .ant-picker-panel:first-child .ant-picker-header-super-next-btn,
+.custom-range-picker-unlinked .ant-picker-panel:last-child .ant-picker-header-prev-btn,
+.custom-range-picker-unlinked .ant-picker-panel:last-child .ant-picker-header-super-prev-btn {
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Tăng khoảng cách các bảng để trông thoáng hơn */
+.custom-range-picker-unlinked .ant-picker-panels {
+  gap: 12px;
+}

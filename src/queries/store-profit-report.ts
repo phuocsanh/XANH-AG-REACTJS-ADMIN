@@ -9,6 +9,7 @@ import type {
   SeasonStoreProfit,
   CustomerProfitReport,
   RiceCropProfit,
+  PeriodReport,
 } from '@/models/store-profit';
 
 // ==================== QUERY KEYS ====================
@@ -22,6 +23,7 @@ export const storeProfitReportKeys = {
     startDate?: string;
     endDate?: string;
   }) => [...storeProfitReportKeys.all, 'customer', customerId, filters] as const,
+  period: (startDate: string, endDate: string) => [...storeProfitReportKeys.all, 'period', startDate, endDate] as const,
 };
 
 // ==================== QUERIES ====================
@@ -118,5 +120,24 @@ export const useRiceCropProfitQuery = (riceCropId: number) => {
       return response as RiceCropProfit;
     },
     enabled: !!riceCropId && riceCropId > 0,
+  });
+};
+
+/**
+ * Lấy báo cáo doanh thu và lợi nhuận theo khoảng thời gian
+ * @param startDate - Từ ngày (YYYY-MM-DD)
+ * @param endDate - Đến ngày (YYYY-MM-DD)
+ */
+export const usePeriodStoreProfitReport = (startDate: string, endDate: string) => {
+  return useQuery({
+    queryKey: storeProfitReportKeys.period(startDate, endDate),
+    queryFn: async () => {
+      const response = await api.get<PeriodReport>(`/store-profit-report/period`, {
+        startDate, 
+        endDate 
+      });
+      return response;
+    },
+    enabled: !!startDate && !!endDate,
   });
 };
