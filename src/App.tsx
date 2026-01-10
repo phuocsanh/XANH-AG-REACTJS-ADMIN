@@ -12,6 +12,7 @@ import Sidebar from "./components/sidebar"
 import { Dashboard } from "./pages/dashboard"
 import Products from "./pages/products"
 import ProductsList from "./pages/products/products-list"
+import ProductSearch from "./pages/products/product-search"
 import Users from "./pages/users"
 import ListCategory from "./pages/categories/list-category"
 import ListSubCategory from "./pages/sub-categories/list-sub-category"
@@ -272,7 +273,7 @@ function AppContent({
                     {/* Các trang yêu cầu đăng nhập */}
                     <Route
                       path='/'
-                      element={<Navigate to="/weather-forecast" replace />}
+                      element={<Navigate to="/products/search" replace />}
                     />
                     
                     <Route
@@ -294,6 +295,14 @@ function AppContent({
                       element={<LunarCalendar />}
                     />
 
+                    <Route
+                      path='/products/search'
+                      element={
+                        <ProtectedRoute requiredPermission="product:read">
+                          <ProductSearch />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path='/products/list'
                       element={

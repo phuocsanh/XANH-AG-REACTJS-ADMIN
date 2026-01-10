@@ -21,7 +21,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney } from "react-icons/md"
+import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch } from "react-icons/md"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
@@ -46,7 +46,7 @@ const Sidebar: React.FC = () => {
     const path = location.pathname
     
     // Dashboard
-    if (path === '/') {
+    if (path === '/' || path === '/products/search') {
       setActiveTab(0)
       setIsToggleSubmenu(false)
     }
@@ -359,10 +359,24 @@ const Sidebar: React.FC = () => {
       <div className='sidebarTabs px-2 overflow-y-auto h-[calc(100vh-80px)]'>
         <ul className='flex gap-3 flex-col m'>
           <li>
+            <Link to='/products/search'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab ===  0 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(0)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdSearch className='text-emerald-300' />
+                </span>
+                Tìm sản phẩm
+              </Button>
+            </Link>
+          </li>
+
+          <li>
             <Link to='/'>
               <Button
-                className={`w-full !justify-start !text-left ${activeTab === 0 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(0)}
+                className={`w-full !justify-start !text-left ${activeTab === 40 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(40)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <MdOutlineDashboard className='text-blue-200' />
