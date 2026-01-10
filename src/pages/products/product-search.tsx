@@ -81,8 +81,8 @@ const ProductSearch: React.FC = () => {
     },
     {
       key: "price",
-      title: "Giá bán",
-      width: 150,
+      title: "Giá tiền mặt",
+      width: 140,
       render: (value: string, record: ExtendedProduct) => (
         <div className='font-bold text-orange-600'>
           {new Intl.NumberFormat("vi-VN", {
@@ -93,9 +93,22 @@ const ProductSearch: React.FC = () => {
       ),
     },
     {
+      key: "credit_price",
+      title: "Giá nợ",
+      width: 140,
+      render: (value: string, record: ExtendedProduct) => (
+        <div className='font-bold text-red-600'>
+          {record.credit_price ? new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(Number(record.credit_price)) : "---"}
+        </div>
+      ),
+    },
+    {
       key: "quantity",
       title: "Tồn kho",
-      width: 100,
+      width: 90,
       align: 'center' as const,
       render: (value: number, record: ExtendedProduct) => (
         <Tag color={(record.quantity || 0) > 0 ? 'green' : 'red'}>
