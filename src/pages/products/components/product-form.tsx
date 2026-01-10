@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, message, Space, Form, Spin, Modal, Row, Col, Alert } from "antd"
-import { SaveOutlined, PlusOutlined, DeleteOutlined, WarningOutlined } from "@ant-design/icons"
+import { Button, message, Form, Spin, Modal, Alert } from "antd"
+import { SaveOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons"
 import { Sparkles } from "lucide-react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -166,7 +166,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   // Field array cho thuộc tính động
   const { fields: attributeFields, append: appendAttribute, remove: removeAttribute } = useFieldArray({
     control,
-    name: "attribute_list" as any,
+    name: "attribute_list" as const,
   })
 
   const navigate = useNavigate()
@@ -178,14 +178,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   // State cho tính năng kiểm tra trùng tên sản phẩm
   const [duplicateProducts, setDuplicateProducts] = useState<Product[]>([])
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false)
-  const [productNameInput, setProductNameInput] = useState("")
 
   // State cho AI Image Studio
   const [studioVisible, setStudioVisible] = useState(false)
   const uploadMutation = useUploadImageMutation()
 
   // Watch form values
-  const watchedType = watch("type")
   const watchedName = watch("name")
   const watchedTradeName = watch("trade_name")
 
@@ -217,8 +215,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
         // Lấy dữ liệu từ response
         // Cần handle trường hợp response bọc trong object { data: ... }
-        let productItem = productData as any;
-        if (productItem && productItem.data) {
+        let productItem = productData as Product | { data: Product };
+        if (productItem && 'data' in productItem) {
             productItem = productItem.data;
         }
 
@@ -274,7 +272,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 .filter(([key]) => key !== 'unit') // Lọc bỏ trường unit vì đã có trường riêng
                 .map(([key, value]) => ({ key, value }))
             : [],
-        } as any)
+        } as ProductFormValues)
 
         // Product type will be watched through watchedType
 
@@ -306,7 +304,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       return
     }
 
-    // Debounce: Chỉ kiểm tra sau khi người dùng ngừng gõ 500ms
+    // Debounce: Chỉ kiểm tra sau khi người dùng ngừng gõ 2 giây
     const timer = setTimeout(async () => {
       const productName = watchedName?.trim()
       const tradeName = watchedTradeName?.trim()
@@ -341,7 +339,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Lọc các sản phẩm có tên hoặc hiệu thuốc giống/tương tự
         const duplicates = response?.data?.filter((product: Product) => {
           const normalizedProductName = product.name?.toLowerCase().trim()
-          const normalizedProductTradeName = (product as any).trade_name?.toLowerCase().trim()
+          const normalizedProductTradeName = (product as Product & { trade_name?: string }).trade_name?.toLowerCase().trim()
           const normalizedInputName = productName?.toLowerCase().trim()
           const normalizedInputTradeName = tradeName?.toLowerCase().trim()
           
@@ -369,7 +367,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       } finally {
         setIsCheckingDuplicate(false)
       }
-    }, 500) // Debounce 500ms
+    }, 2000) // Debounce 2 giây
 
     return () => {
       clearTimeout(timer)
@@ -393,7 +391,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         
         {attributeFields.length === 0 && (
           <div className="text-center text-gray-500 py-4 italic">
-            Chưa có thuộc tính nào. Nhấn "Thêm thuộc tính" để tạo mới.
+            Chưa có thuộc tính nào. Nhấn &quot;Thêm thuộc tính&quot; để tạo mới.
           </div>
         )}
 
@@ -459,7 +457,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Thêm đơn vị tính vào attributes
         // Thêm đơn vị tính vào attributes và xử lý attribute_list
         attributes: {
-          ...((values as any).attribute_list || []).reduce((acc: any, item: any) => {
+          ...((values as ProductFormValues & { attribute_list?: Array<{ key: string; value: string }> }).attribute_list || []).reduce((acc: Record<string, string>, item: { key: string; value: string }) => {
             if (item.key) {
               acc[item.key] = item.value;
             }
@@ -554,9 +552,20 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           okText: "Xác nhận",
         })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving product:", error)
-      message.error("Có lỗi xảy ra khi lưu sản phẩm")
+      
+      // Xử lý lỗi chi tiết từ backend
+      let errorMessage = "Có lỗi xảy ra khi lưu sản phẩm"
+      
+      // Kiểm tra lỗi từ response
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+      
+      message.error(errorMessage)
     } finally {
       setLoading(false)
     }
