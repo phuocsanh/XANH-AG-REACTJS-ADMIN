@@ -265,6 +265,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
           notes: productItem.notes || "", // Ghi chú
+          has_input_invoice: productItem.has_input_invoice !== undefined ? productItem.has_input_invoice : true, // Hóa đơn đầu vào
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
@@ -473,6 +474,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         sub_types: values.sub_types || [],
         profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
         average_cost_price: values.average_cost_price || "", // Thêm trường mới
+        has_input_invoice: values.has_input_invoice,
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -518,6 +520,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               .map((item: string) => item.trim())
           : [],
         notes: convertedValues.notes || "", // Ghi chú
+        has_input_invoice: convertedValues.has_input_invoice,
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -1001,6 +1004,20 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       label: status.label,
                       value: status.value,
                     }))}
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='has_input_invoice'
+                    control={control}
+                    label='Hóa đơn đầu vào'
+                    placeholder='Chọn loại hóa đơn'
+                    options={[
+                      { label: "Có hóa đơn", value: true },
+                      { label: "Không có hóa đơn", value: false },
+                    ]}
                     className='w-full'
                   />
                 </div>

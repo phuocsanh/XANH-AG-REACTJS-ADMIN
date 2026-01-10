@@ -41,6 +41,7 @@ export interface Product {
   suggested_price?: string
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú về sản phẩm
+  has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
 }
 
 // Extend Product interface để tương thích với DataTable
@@ -64,6 +65,7 @@ export interface ProductFormValues
   ingredient?: string
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú
+  has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
 }
 
 export interface CreateProductRequest extends AnyObject {
@@ -85,6 +87,7 @@ export interface CreateProductRequest extends AnyObject {
   ingredient?: string[]
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú
+  has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
 }
 
 export interface UpdateProductRequest
@@ -141,6 +144,7 @@ export interface ConvertedProductValues {
   ingredient?: string[]
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú
+  has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
 }
 
 export interface ProductFormProps {

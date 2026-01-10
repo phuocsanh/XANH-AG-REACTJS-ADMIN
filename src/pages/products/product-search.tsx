@@ -106,6 +106,16 @@ const ProductSearch: React.FC = () => {
       ),
     },
     {
+      key: "has_input_invoice",
+      title: "Hóa đơn",
+      width: 100,
+      render: (value: boolean) => (
+        <Tag color={value ? "blue" : "default"}>
+          {value ? "Có hóa đơn" : "Không hóa đơn"}
+        </Tag>
+      ),
+    },
+    {
       key: "quantity",
       title: "Tồn kho",
       width: 90,

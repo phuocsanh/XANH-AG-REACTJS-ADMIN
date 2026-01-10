@@ -5,7 +5,7 @@ import { SelectProps, DefaultOptionType } from "antd/es/select"
 
 // Interface cho option của ComboBox
 interface ComboBoxOption {
-  value: string | number
+  value: string | number | boolean
   label: string
   disabled?: boolean
   [key: string]: unknown // Cho phép các thuộc tính tùy chỉnh khác
@@ -14,7 +14,7 @@ interface ComboBoxOption {
 // Interface cho props của FormComboBox
 interface FormComboBoxProps<T extends FieldValues>
   extends Omit<
-    SelectProps<string | number, DefaultOptionType>,
+    SelectProps<string | number | boolean, DefaultOptionType>,
     "value" | "onChange" | "onBlur" | "filterOption" | "options"
   > {
   // Props bắt buộc
@@ -56,7 +56,7 @@ interface FormComboBoxProps<T extends FieldValues>
     max?: number
     pattern?: RegExp
     validate?: (
-      value: string | number | (string | number)[]
+      value: string | number | boolean | (string | number | boolean)[]
     ) => boolean | string
   }
 
@@ -67,7 +67,7 @@ interface FormComboBoxProps<T extends FieldValues>
 
   // Callback functions
   onSelectionChange?: (
-    value: string | number | (string | number)[],
+    value: string | number | boolean | (string | number | boolean)[],
     option: ComboBoxOption | ComboBoxOption[]
   ) => void
 }

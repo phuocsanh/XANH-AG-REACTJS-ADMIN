@@ -114,6 +114,11 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {product.status === "active" ? "Đang bán" : "Bản nháp"}
             </Tag>
           </Descriptions.Item>
+          <Descriptions.Item label='Hóa đơn đầu vào'>
+            <Tag color={product.has_input_invoice ? "blue" : "default"}>
+              {product.has_input_invoice ? "Có hóa đơn" : "Không có hóa đơn"}
+            </Tag>
+          </Descriptions.Item>
           {product.discount && product.discount !== "0" && (
             <Descriptions.Item label='Giảm giá'>
               <Tag color='red'>Giảm {product.discount}%</Tag>

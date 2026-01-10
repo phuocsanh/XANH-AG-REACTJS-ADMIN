@@ -301,6 +301,16 @@ const ProductsList: React.FC = () => {
       },
     },
     {
+      key: "has_input_invoice",
+      title: "Hóa đơn",
+      width: 120,
+      render: (record: ExtendedProduct) => (
+        <Tag color={record.has_input_invoice ? "blue" : "default"}>
+          {record.has_input_invoice ? "Có hóa đơn" : "Không hóa đơn"}
+        </Tag>
+      ),
+    },
+    {
       key: "action",
       title: "Hành động",
       width: 120,

@@ -34,6 +34,7 @@ export const productFormSchema = z.object({
   // Thêm 2 trường mới từ server
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
+  has_input_invoice: z.boolean().default(true), // Bắt buộc nhập, mặc định là có hóa đơn
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list: z.array(z.object({
     key: z.string(),
@@ -77,6 +78,7 @@ export interface ProductFormValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
+  has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list?: { key: string; value: any }[]
 }
@@ -107,6 +109,7 @@ export interface ConvertedProductValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
+  has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   suggested_price?: string
 }
 
@@ -127,5 +130,6 @@ export const defaultProductFormValues: ProductFormValues = {
   notes: "", // Ghi chú
   profit_margin_percent: "", // Thêm trường mới
   average_cost_price: "", // Thêm trường mới
+  has_input_invoice: true, // Mặc định là có hóa đơn
   // Các trường optional khác sẽ là undefined theo mặc định
 }
