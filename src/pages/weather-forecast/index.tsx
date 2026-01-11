@@ -358,7 +358,15 @@ export default function WeatherForecastPage() {
                 onMouseMove={handleMouseMove}
                 className={`flex flex-nowrap mt-3 gap-3 sm:gap-4 overflow-x-auto pb-10 pt-4 scrollbar-hide touch-pan-x mx-4 px-3 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab scroll-smooth snap-x snap-mandatory scroll-pl-3'}`}
               >
-                {dailyForecast.map((day, i) => (
+                {dailyForecast.map((day, i) => {
+                  // Kiểm tra xem ngày này có phải là ngày hiện tại không
+                  const today = new Date()
+                  const dayDate = new Date(day.date)
+                  const isToday = today.getDate() === dayDate.getDate() && 
+                                  today.getMonth() === dayDate.getMonth() && 
+                                  today.getFullYear() === dayDate.getFullYear()
+                  
+                  return (
                   <button
                     key={day.date}
                     onClick={() => setActiveTab(i)}
@@ -366,7 +374,7 @@ export default function WeatherForecastPage() {
                       activeTab === i 
                       ? 'bg-agri-600 text-white shadow-xl scale-[1.03] sm:scale-105 ring-2 sm:ring-4 ring-agri-100' 
                       : 'bg-white text-gray-500 hover:bg-agri-50 border border-agri-100 hover:scale-[1.02]'
-                    }`}
+                    } ${isToday ? 'ring-2 ring-orange-500' : ''}`}
                   >
                     <p className={`text-[8px] sm:text-[10px] font-black uppercase mb-1 sm:mb-3 tracking-widest ${activeTab === i ? 'text-agri-200' : 'text-gray-400'}`}>
                       {new Date(day.date).toLocaleDateString('vi', { weekday: 'long' }).toUpperCase()}
@@ -380,7 +388,8 @@ export default function WeatherForecastPage() {
                     </div>
                     <p className={`text-[11px] sm:text-sm font-black ${activeTab === i ? 'text-white' : 'text-gray-800'}`}>{day.tempMax}°<span className="opacity-40 font-bold mx-1">/</span>{day.tempMin}°</p>
                   </button>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
