@@ -71,19 +71,20 @@ const ProductSearch: React.FC = () => {
   // Cấu hình columns cho DataTable
   const columns = [
     {
-      key: "name",
-      title: "Tên sản phẩm",
-      width: 250,
+      key: "trade_name",
+      title: "Tên thương mại",
+      width: 150,
+      fixed: 'left' as const, // Cố định cột bên trái
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-bold text-emerald-700'>{record.name}</div>
+        <div className='font-medium text-gray-900 whitespace-normal break-words'>{record.trade_name || '---'}</div>
       ),
     },
     {
-      key: "trade_name",
-      title: "Tên thương mại",
-      width: 200,
+      key: "name",
+      title: "Tên sản phẩm",
+      width: 180,
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-blue-600'>{record.trade_name || '---'}</div>
+        <div className='font-medium text-gray-700 whitespace-normal break-words'>{record.name}</div>
       ),
     },
     {

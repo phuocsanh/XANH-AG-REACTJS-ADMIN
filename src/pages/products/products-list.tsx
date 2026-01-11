@@ -180,6 +180,23 @@ const ProductsList: React.FC = () => {
   // Cấu hình columns cho DataTable
   const columns = React.useMemo(() => [
     {
+      key: "trade_name",
+      title: (
+        <FilterHeader 
+            title="Tên thương mại" 
+            dataIndex="trade_name" 
+            value={filters.trade_name} 
+            onChange={(val) => handleFilterChange('trade_name', val)}
+            inputType="text"
+        />
+      ),
+      width: 150,
+      fixed: 'left' as const, // Cố định cột bên trái
+      render: (_: unknown, record: ExtendedProduct) => (
+        <div className='font-medium text-gray-900 whitespace-normal break-words'>{record.trade_name || '---'}</div>
+      ),
+    },
+    {
       key: "name",
       title: (
         <FilterHeader 
@@ -190,25 +207,9 @@ const ProductsList: React.FC = () => {
             inputType="text"
         />
       ),
-      width: 250,
+      width: 180,
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-900'>{record.name}</div>
-      ),
-    },
-    {
-      key: "trade_name",
-      title: (
-        <FilterHeader 
-            title="Hiệu thuốc" 
-            dataIndex="trade_name" 
-            value={filters.trade_name} 
-            onChange={(val) => handleFilterChange('trade_name', val)}
-            inputType="text"
-        />
-      ),
-      width: 200,
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-500'>{record.trade_name || '---'}</div>
+        <div className='font-medium text-gray-700 whitespace-normal break-words'>{record.name}</div>
       ),
     },
     {
