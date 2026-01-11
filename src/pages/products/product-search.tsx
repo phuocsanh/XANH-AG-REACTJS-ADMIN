@@ -1,21 +1,25 @@
 import * as React from "react"
-import { Product, ExtendedProduct } from "../../models/product.model"
+import { ExtendedProduct } from "../../models/product.model"
 import { useProductsQuery } from "../../queries/product"
 import {
   Tag,
   Input,
   Card,
   Typography,
+  message,
 } from "antd"
 import { SearchOutlined } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
 import ProductDetailModal from "./components/product-detail-modal"
+import VoiceSearchButton from "@/components/VoiceSearchButton"
+import { useVoiceSearch } from "@/hooks/useVoiceSearch"
 
 const { Title } = Typography
 
 /**
  * Trang tìm kiếm sản phẩm chuyên dụng
  * Cho phép tìm kiếm theo tên, tên thương mại và ghi chú
+ * Hỗ trợ tìm kiếm bằng giọng nói (Web Speech API)
  * Hiển thị cột ghi chú cho từng sản phẩm
  */
 const ProductSearch: React.FC = () => {
@@ -24,6 +28,29 @@ const ProductSearch: React.FC = () => {
   const [searchTerm, setSearchTerm] = React.useState("")
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
+  
+  // Voice Search Hook
+  const {
+    isListening,
+    interimTranscript,
+    error: voiceError,
+    isSupported: isVoiceSupported,
+    startListening,
+    stopListening,
+  } = useVoiceSearch({
+    lang: 'vi-VN',
+    continuous: true, // Cho phép ghi âm liên tục, không tự động dừng
+    interimResults: true,
+    onTranscript: (text) => {
+      // Khi có kết quả từ giọng nói, tự động điền vào ô tìm kiếm
+      setInputValue(text)
+      message.success(`Đã nhận: "${text}"`)
+      // Hook sẽ tự động dừng sau 1.5s không có giọng nói
+    },
+    onError: (errorMsg) => {
+      message.error(errorMsg)
+    },
+  })
   
   // Debounce logic: Đợi 1.5 giây sau khi ngừng gõ mới tìm kiếm
   React.useEffect(() => {
@@ -68,12 +95,33 @@ const ProductSearch: React.FC = () => {
     setIsDetailModalVisible(true)
   }
 
+  // Hook để detect screen size
+  const [windowWidth, setWindowWidth] = React.useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  )
+
+  React.useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Responsive widths
+  const isMobile = windowWidth < 768
+  const isTablet = windowWidth >= 768 && windowWidth < 1024
+  
+  const getColumnWidth = (mobile: number, tablet: number, desktop: number) => {
+    if (isMobile) return mobile
+    if (isTablet) return tablet
+    return desktop
+  }
+
   // Cấu hình columns cho DataTable
   const columns = [
     {
       key: "trade_name",
       title: "Tên thương mại",
-      width: 150,
+      width: getColumnWidth(150, 200, 250), // Mobile: 150, Tablet: 200, Desktop: 250
       fixed: 'left' as const, // Cố định cột bên trái
       render: (_: unknown, record: ExtendedProduct) => (
         <div className='font-medium text-gray-900 whitespace-normal break-words'>{record.trade_name || '---'}</div>
@@ -82,7 +130,7 @@ const ProductSearch: React.FC = () => {
     {
       key: "name",
       title: "Tên sản phẩm",
-      width: 180,
+      width: getColumnWidth(150, 180, 220), // Mobile: 150, Tablet: 180, Desktop: 220
       render: (_: unknown, record: ExtendedProduct) => (
         <div className='font-medium text-gray-700 whitespace-normal break-words'>{record.name}</div>
       ),
@@ -90,11 +138,10 @@ const ProductSearch: React.FC = () => {
     {
       key: "notes",
       title: "Ghi chú",
-      width: 350,
+      width: getColumnWidth(150, 250, 350), // Mobile: 150, Tablet: 250, Desktop: 350
       render: (_: unknown, record: ExtendedProduct) => (
         <div 
-          className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic'
-          style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+          className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'
         >
           {record.notes || <span className="text-gray-300">Không có ghi chú</span>}
         </div>
@@ -160,6 +207,16 @@ const ProductSearch: React.FC = () => {
           <div className="w-full md:w-96">
             <Input
               prefix={<SearchOutlined className="text-emerald-500" />}
+              suffix={
+                <VoiceSearchButton
+                  isListening={isListening}
+                  isSupported={isVoiceSupported}
+                  error={voiceError}
+                  interimTranscript={interimTranscript}
+                  onStart={startListening}
+                  onStop={stopListening}
+                />
+              }
               placeholder="Nhập tên, hiệu thuốc hoặc ghi chú..."
               size="large"
               allowClear
