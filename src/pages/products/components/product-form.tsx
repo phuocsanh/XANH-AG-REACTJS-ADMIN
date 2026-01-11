@@ -174,6 +174,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const [initialLoading, setInitialLoading] = useState(false)
 
   const [description, setDescription] = useState("")
+  const [notes, setNotes] = useState("") // State cho Ghi chú (rich text)
 
   // State cho tính năng kiểm tra trùng tên sản phẩm
   const [duplicateProducts, setDuplicateProducts] = useState<Product[]>([])
@@ -277,8 +278,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
         // Product type will be watched through watchedType
 
-        // Đặt giá trị cho mô tả
+        // Đặt giá trị cho mô tả và ghi chú
         setDescription(productItem.description || "")
+        setNotes(productItem.notes || "")
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
@@ -293,6 +295,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     if (!isEdit && !productLoading) {
       reset(defaultProductFormValues)
       setDescription("")
+      setNotes("")
     }
   }, [isEdit, productLoading, reset])
 
@@ -519,7 +522,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               .split(",")
               .map((item: string) => item.trim())
           : [],
-        notes: convertedValues.notes || "", // Ghi chú
+        notes: notes || "", // Ghi chú (rich text HTML)
         has_input_invoice: convertedValues.has_input_invoice,
       }
 
@@ -599,7 +602,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     
     // Set notes nếu AI trả về (bao gồm tính toán liều lượng)
     if (data.notes) {
-      setValue('notes', data.notes);
+      const formattedNotes = data.notes.replace(/\n/g, '<br/>');
+      setNotes(`<p>${formattedNotes}</p>`);
     }
     }
     
@@ -1025,17 +1029,20 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
               <div className="px-3 md:px-6 pb-3 md:pb-6">
                 {/* Ghi chú - Đặt trước Mô tả */}
-                <div className='w-full mb-4'>
-                  <FormField
-                    name='notes'
-                    control={control}
-                    label='Ghi chú'
-                    placeholder='Nhập ghi chú về sản phẩm (tùy chọn)'
-                    className='w-full'
-                    type="textarea"
-                    autoSize={{ minRows: 7 }}
-                  />
-                </div>
+                <Form.Item
+                  label='Ghi chú'
+                  className='w-full mb-4'
+                  layout='vertical'
+                >
+                  <div className='w-full'>
+                    <TiptapEditor
+                      content={notes}
+                      onChange={(content) => {
+                        setNotes(content)
+                      }}
+                    />
+                  </div>
+                </Form.Item>
 
                 <Form.Item
                   label='Mô tả sản phẩm'

@@ -52,7 +52,7 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
   const [interimTranscript, setInterimTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<any>(null)
-  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Timeout để auto-stop
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   // Dùng ref để lưu callbacks, tránh re-render
   const onTranscriptRef = useRef(onTranscript)
@@ -69,62 +69,42 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
 
   // Khởi tạo SpeechRecognition
   useEffect(() => {
-    console.log('🔧 Initializing SpeechRecognition...')
-    console.log('isSupported:', isSupported)
-    console.log('SpeechRecognition:', SpeechRecognition)
-    
     if (!isSupported) {
       const errorMsg = 'Trình duyệt không hỗ trợ tìm kiếm bằng giọng nói. Vui lòng sử dụng Chrome hoặc Edge.'
-      console.error('❌', errorMsg)
       setError(errorMsg)
       return
     }
 
     const recognition = new SpeechRecognition()
-    console.log('✅ SpeechRecognition instance created:', recognition)
-    
     recognition.lang = lang
     recognition.continuous = continuous
     recognition.interimResults = interimResults
     recognition.maxAlternatives = maxAlternatives
-    
-    console.log('⚙️ Recognition config:', {
-      lang,
-      continuous,
-      interimResults,
-      maxAlternatives
-    })
     
     // Flag để track xem đã nói lần đầu chưa
     let hasSpokenOnce = false
     
     // Helper function để reset timeout (inline)
     const resetSilenceTimeout = () => {
-      // Clear timeout cũ
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current)
       }
       
       // Chỉ set timeout nếu đã nói lần đầu
       if (hasSpokenOnce) {
-        // Set timeout mới: sau 1s không có giọng nói → auto stop
         silenceTimeoutRef.current = setTimeout(() => {
-          console.log('⏱️ 1s silence detected, auto-stopping...')
           if (recognitionRef.current) {
             recognitionRef.current.stop()
           }
-        }, 1000) // Giảm từ 1500ms xuống 1000ms
+        }, 1000)
       }
     }
 
     // Xử lý kết quả
     recognition.onresult = (event: any) => {
-      console.log('🎤 onresult event:', event)
-      
       // Đánh dấu đã nói lần đầu
       if (!hasSpokenOnce) {
         hasSpokenOnce = true
-        console.log('✅ First speech detected, timeout will start after this')
       }
       
       // Reset timeout mỗi khi có giọng nói
@@ -135,11 +115,6 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcriptPart = event.results[i][0].transcript
-        console.log(`Result ${i}:`, {
-          transcript: transcriptPart,
-          isFinal: event.results[i].isFinal,
-          confidence: event.results[i][0].confidence
-        })
         
         if (event.results[i].isFinal) {
           finalTranscript += transcriptPart
@@ -148,13 +123,9 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
         }
       }
 
-      console.log('📝 Final transcript:', finalTranscript)
-      console.log('📝 Interim transcript:', interimText)
-
       if (finalTranscript) {
         setTranscript(finalTranscript)
         setInterimTranscript('')
-        console.log('✅ Calling onTranscript callback with:', finalTranscript)
         if (onTranscriptRef.current) {
           onTranscriptRef.current(finalTranscript)
         }
@@ -165,18 +136,13 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
 
     // Xử lý lỗi
     recognition.onerror = (event: any) => {
-      console.error('❌ Speech recognition error:', event.error, event)
-      
       // Clear timeout khi có lỗi
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current)
       }
       
-      // Nếu lỗi "no-speech", không hiển thị lỗi, chỉ log
+      // Nếu lỗi "no-speech", không hiển thị lỗi
       if (event.error === 'no-speech') {
-        console.warn('⚠️ No speech detected, but keeping recognition active...')
-        // Không set error, không stop listening
-        // Recognition sẽ tự động tiếp tục lắng nghe
         return
       }
       
@@ -193,7 +159,6 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
           errorMessage = 'Lỗi mạng. Vui lòng kiểm tra kết nối internet.'
           break
         case 'aborted':
-          // Người dùng tự dừng, không hiển thị lỗi
           errorMessage = ''
           break
         default:
@@ -211,9 +176,6 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
 
     // Xử lý khi kết thúc
     recognition.onend = () => {
-      console.log('🛑 Speech recognition ended')
-      
-      // Clear timeout
       if (silenceTimeoutRef.current) {
         clearTimeout(silenceTimeoutRef.current)
       }
@@ -224,10 +186,8 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
 
     // Xử lý khi bắt đầu
     recognition.onstart = () => {
-      console.log('▶️ Speech recognition started')
       setIsListening(true)
       setError(null)
-      // Không bắt đầu timeout ngay - chỉ bắt đầu sau khi đã nói lần đầu
     }
 
     recognitionRef.current = recognition
@@ -240,35 +200,25 @@ export const useVoiceSearch = (options: UseVoiceSearchOptions = {}): UseVoiceSea
         clearTimeout(silenceTimeoutRef.current)
       }
     }
-  }, [isSupported, lang, continuous, interimResults, maxAlternatives]) // Loại bỏ resetSilenceTimeout
+  }, [isSupported, lang, continuous, interimResults, maxAlternatives])
 
   // Bắt đầu ghi âm
   const startListening = useCallback(() => {
-    console.log('🎙️ startListening called')
-    console.log('isSupported:', isSupported)
-    console.log('isListening:', isListening)
-    console.log('recognitionRef.current:', recognitionRef.current)
-    
     if (!isSupported) {
-      console.error('❌ Browser not supported')
       setError('Trình duyệt không hỗ trợ tìm kiếm bằng giọng nói.')
       return
     }
 
     if (recognitionRef.current && !isListening) {
       try {
-        console.log('🚀 Starting recognition...')
         setError(null)
         setTranscript('')
         setInterimTranscript('')
         recognitionRef.current.start()
-        console.log('✅ Recognition started successfully')
       } catch (err) {
-        console.error('❌ Error starting recognition:', err)
+        console.error('Error starting recognition:', err)
         setError('Không thể bắt đầu ghi âm. Vui lòng thử lại.')
       }
-    } else {
-      console.warn('⚠️ Cannot start: recognitionRef or already listening')
     }
   }, [isSupported, isListening])
 

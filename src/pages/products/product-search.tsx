@@ -116,6 +116,27 @@ const ProductSearch: React.FC = () => {
     return desktop
   }
 
+  // Helper function để format plain text notes thành HTML
+  const formatPlainTextNotes = (text: string): string => {
+    // Thay thế • và + bằng xuống dòng + ký tự gốc
+    return text
+      .split('\n')
+      .map(line => {
+        // Xử lý dòng bắt đầu bằng •
+        if (line.trim().startsWith('•')) {
+          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`;
+        }
+        // Xử lý dòng bắt đầu bằng +
+        if (line.trim().startsWith('+')) {
+          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`;
+        }
+        // Dòng thường
+        return line.trim() ? `<div>${line.trim()}</div>` : '';
+      })
+      .filter(line => line) // Loại bỏ dòng trống
+      .join('');
+  }
+
   // Cấu hình columns cho DataTable
   const columns = [
     {
@@ -138,14 +159,26 @@ const ProductSearch: React.FC = () => {
     {
       key: "notes",
       title: "Ghi chú",
-      width: getColumnWidth(180, 250, 350), // Mobile: 180, Tablet: 250, Desktop: 350
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div 
-          className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'
-        >
-          {record.notes || <span className="text-gray-300">Không có ghi chú</span>}
-        </div>
-      ),
+      width: getColumnWidth(150, 250, 350), // Mobile: 150, Tablet: 250, Desktop: 350
+      render: (_: unknown, record: ExtendedProduct) => {
+        const isHTML = record.notes && /<[^>]+>/.test(record.notes);
+        
+        return (
+          <div 
+            className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'
+          >
+            {record.notes ? (
+              isHTML ? (
+                <div dangerouslySetInnerHTML={{ __html: record.notes }} />
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: formatPlainTextNotes(record.notes) }} />
+              )
+            ) : (
+              <span className="text-gray-300">Không có ghi chú</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "price",
