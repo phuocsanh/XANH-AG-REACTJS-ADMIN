@@ -139,13 +139,25 @@ const ProductSearch: React.FC = () => {
       key: "notes",
       title: "Ghi chú",
       width: getColumnWidth(150, 250, 350), // Mobile: 150, Tablet: 250, Desktop: 350
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div 
-          className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'
-        >
-          {record.notes || <span className="text-gray-300">Không có ghi chú</span>}
-        </div>
-      ),
+      render: (_: unknown, record: ExtendedProduct) => {
+        const isHTML = record.notes && /<[^>]+>/.test(record.notes);
+        
+        return (
+          <div 
+            className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'
+          >
+            {record.notes ? (
+              isHTML ? (
+                <div dangerouslySetInnerHTML={{ __html: record.notes }} />
+              ) : (
+                <div style={{ whiteSpace: 'pre-wrap' }}>{record.notes}</div>
+              )
+            ) : (
+              <span className="text-gray-300">Không có ghi chú</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "price",

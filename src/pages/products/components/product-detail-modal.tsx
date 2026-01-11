@@ -65,14 +65,27 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </Descriptions.Item>
           {product.notes && (
             <Descriptions.Item label='Ghi chú'>
-              <div 
-                style={{ 
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word' 
-                }}
-              >
-                {product.notes}
-              </div>
+              {/<[^>]+>/.test(product.notes) ? (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: product.notes }}
+                  style={{ 
+                    maxHeight: '200px', 
+                    overflowY: 'auto',
+                    wordBreak: 'break-word'
+                  }}
+                />
+              ) : (
+                <div 
+                  style={{ 
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}
+                >
+                  {product.notes}
+                </div>
+              )}
             </Descriptions.Item>
           )}
           <Descriptions.Item label='Mô tả'>
