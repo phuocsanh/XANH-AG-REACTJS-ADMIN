@@ -29,6 +29,23 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     }).format(value)
   }
 
+  // Helper function để format plain text notes thành HTML
+  const formatPlainTextNotes = (text: string): string => {
+    return text
+      .split('\n')
+      .map(line => {
+        if (line.trim().startsWith('•')) {
+          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`;
+        }
+        if (line.trim().startsWith('+')) {
+          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`;
+        }
+        return line.trim() ? `<div>${line.trim()}</div>` : '';
+      })
+      .filter(line => line)
+      .join('');
+  }
+
   return (
     <Modal
       title='Chi tiết sản phẩm'
@@ -76,15 +93,13 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 />
               ) : (
                 <div 
+                  dangerouslySetInnerHTML={{ __html: formatPlainTextNotes(product.notes) }}
                   style={{ 
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
                     maxHeight: '200px',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    wordBreak: 'break-word'
                   }}
-                >
-                  {product.notes}
-                </div>
+                />
               )}
             </Descriptions.Item>
           )}

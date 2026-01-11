@@ -116,6 +116,27 @@ const ProductSearch: React.FC = () => {
     return desktop
   }
 
+  // Helper function để format plain text notes thành HTML
+  const formatPlainTextNotes = (text: string): string => {
+    // Thay thế • và + bằng xuống dòng + ký tự gốc
+    return text
+      .split('\n')
+      .map(line => {
+        // Xử lý dòng bắt đầu bằng •
+        if (line.trim().startsWith('•')) {
+          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`;
+        }
+        // Xử lý dòng bắt đầu bằng +
+        if (line.trim().startsWith('+')) {
+          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`;
+        }
+        // Dòng thường
+        return line.trim() ? `<div>${line.trim()}</div>` : '';
+      })
+      .filter(line => line) // Loại bỏ dòng trống
+      .join('');
+  }
+
   // Cấu hình columns cho DataTable
   const columns = [
     {
@@ -150,7 +171,7 @@ const ProductSearch: React.FC = () => {
               isHTML ? (
                 <div dangerouslySetInnerHTML={{ __html: record.notes }} />
               ) : (
-                <div style={{ whiteSpace: 'pre-wrap' }}>{record.notes}</div>
+                <div dangerouslySetInnerHTML={{ __html: formatPlainTextNotes(record.notes) }} />
               )
             ) : (
               <span className="text-gray-300">Không có ghi chú</span>
