@@ -106,11 +106,11 @@ export interface ProductListParams {
 export interface ExtendedProductListParams extends ProductListParams {
   search?: string
   keyword?: string
-  trade_name?: string
-  name?: string
-  code?: string
-  status?: string
-  type_id?: number
+  trade_name?: string // Tên thương mại (hiệu thuốc)
+  name?: string // Tên sản phẩm
+  code?: string // Mã sản phẩm
+  status?: string // Trạng thái
+  type_id?: number // ID loại sản phẩm
   categoryId?: number
   subCategoryId?: number
   featured?: boolean
