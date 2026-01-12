@@ -9,7 +9,6 @@ import {
   ExtendedProductListParams,
 } from "@/models/product.model"
 import { handleApiError } from "@/utils/error-handler"
-import { usePaginationQuery } from "@/hooks/use-pagination-query"
 import { mapSearchResponse } from "@/utils/api-response-mapper"
 
 
@@ -245,6 +244,7 @@ export const useProductsQuery = (params?: Record<string, any>) => {
       };
 
       if (params?.keyword) payload.keyword = params.keyword;
+      if (params?.trade_name) payload.trade_name = params.trade_name;
       if (params?.name) payload.name = params.name;
       if (params?.code) payload.code = params.code;
       if (params?.status) payload.status = params.status;

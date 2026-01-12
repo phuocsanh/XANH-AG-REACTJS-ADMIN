@@ -105,9 +105,17 @@ export interface ProductListParams {
 
 export interface ExtendedProductListParams extends ProductListParams {
   search?: string
+  keyword?: string
+  trade_name?: string
+  name?: string
+  code?: string
+  status?: string
+  type_id?: number
   categoryId?: number
   subCategoryId?: number
   featured?: boolean
+  sort_by?: string
+  sort_direction?: 'ASC' | 'DESC'
 }
 
 // Product Stats interface
