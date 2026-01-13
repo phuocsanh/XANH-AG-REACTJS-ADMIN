@@ -159,7 +159,7 @@ const ProductSearch: React.FC = () => {
     {
       key: "notes",
       title: "Ghi chú",
-      width: getColumnWidth(150, 250, 350), // Mobile: 150, Tablet: 250, Desktop: 350
+      width: getColumnWidth(210, 250, 350), // Mobile: 210, Tablet: 250, Desktop: 350
       render: (_: unknown, record: ExtendedProduct) => {
         const isHTML = record.notes && /<[^>]+>/.test(record.notes);
         
