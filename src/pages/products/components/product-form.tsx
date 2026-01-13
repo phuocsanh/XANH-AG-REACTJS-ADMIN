@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { Button, message, Form, Spin, Modal, Alert } from "antd"
 import { SaveOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons"
 import { Sparkles } from "lucide-react"
@@ -170,6 +170,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   })
 
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(false)
 
@@ -548,7 +549,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           } as any,
         })
         message.success("Cập nhật sản phẩm thành công")
-        navigate("/products")
+        navigate(`/products${location.search}`)
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await createProductMutation.mutateAsync(serverData as any)

@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
 
 import { Product, ExtendedProduct } from "../../models/product.model"
 import { useProductsQuery } from "../../queries/product"
@@ -7,11 +7,8 @@ import { useProductTypesQuery } from "@/queries/product-type"
 import { ProductType } from "../../models/product-type.model"
 import {
   Button,
-  Modal,
   Tag,
-  Image,
   Space,
-  Descriptions,
 } from "antd"
 import { TableProps } from "antd"
 import {
@@ -31,10 +28,43 @@ import ProductDetailModal from "./components/product-detail-modal"
 
 
 const ProductsList: React.FC = () => {
-  // State quản lý UI & Data Params
-  const [filters, setFilters] = React.useState<Record<string, any>>({})
-  const [currentPage, setCurrentPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(10)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Lấy các giá trị từ URL, nếu không có thì dùng mặc định
+  const currentPage = Number(searchParams.get("page")) || 1
+  const pageSize = Number(searchParams.get("pageSize")) || 10
+
+  // Chuyển đổi searchParams thành filters object
+  const filters = React.useMemo(() => {
+    const f: Record<string, any> = {}
+    searchParams.forEach((value, key) => {
+      if (key !== "page" && key !== "pageSize") {
+        f[key] = value
+      }
+    })
+    return f
+  }, [searchParams])
+
+  // Hàm cập nhật URL search params
+  const updateUrlParams = React.useCallback((newParams: Record<string, any>, resetPage = false) => {
+    const params = new URLSearchParams(searchParams)
+    
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+
+    if (resetPage) {
+      params.set("page", "1")
+    }
+
+    setSearchParams(params)
+  }, [searchParams, setSearchParams])
 
   // State modals
   const [isViewModalVisible, setIsViewModalVisible] = React.useState<boolean>(false)
@@ -43,7 +73,6 @@ const ProductsList: React.FC = () => {
   const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(null)
   const [currentProduct, setCurrentProduct] = React.useState<Product | null>(null)
 
-  const navigate = useNavigate()
   const deleteProductMutation = useDeleteProductMutation()
 
   // Build Params cho Query
@@ -60,35 +89,31 @@ const ProductsList: React.FC = () => {
   const products = productsData?.data?.items || [] 
   const totalProducts = productsData?.data?.total || 0
 
-  const handleEditProduct = (product: Product) => {
+  const handleEditProduct = React.useCallback((product: Product) => {
     if (!product) return
-    navigate(`/products/edit/${product.id}`)
-  }
+    // Lưu lại search hiện tại để quay lại đúng trang
+    navigate(`/products/edit/${product.id}${location.search}`)
+  }, [navigate, location.search])
 
   const { data: productTypesData, isLoading: isLoadingTypes } = useProductTypesQuery()
   const productTypes: ProductType[] = productTypesData?.data?.items || []
 
   // Xóa bộ lọc
   const handleClearFilters = () => {
-      setFilters({})
-      setCurrentPage(1)
+      setSearchParams({})
   }
 
   // Update Filter trực tiếp từ Header Input
-  const handleFilterChange = (key: string, value: any) => {
-      const newFilters = { ...filters, [key]: value };
-      if (!value && value !== 0) delete newFilters[key]; // Xóa key nếu value rỗng
-      console.log('Filter change:', key, value, newFilters);
-      setFilters(newFilters);
-      setCurrentPage(1); // Reset về trang 1 khi filter
-  }
+  const handleFilterChange = React.useCallback((key: string, value: any) => {
+      updateUrlParams({ [key]: value }, true)
+  }, [updateUrlParams])
 
   // Xử lý xóa sản phẩm - cập nhật để set state cho modal
-  const handleDelete = (product: Product) => {
+  const handleDelete = React.useCallback((product: Product) => {
     // Set state để hiển thị modal xác nhận
     setDeletingProduct(product)
     setDeleteConfirmVisible(true)
-  }
+  }, [])
 
   // Xử lý xác nhận xóa
   const handleConfirmDelete = async () => {
@@ -115,19 +140,6 @@ const ProductsList: React.FC = () => {
 
   const loading = isLoadingProducts || isLoadingTypes
 
-  // Hàm tiện ích để xử lý đường dẫn ảnh
-  const getImageUrl = React.useCallback((url: string | undefined): string => {
-    if (!url) return "https://via.placeholder.com/80?text=No+Image"
-
-    // Nếu là đường dẫn đầy đủ thì trả về nguyên gốc
-    if (url.startsWith("http")) return url
-
-    // Nếu là đường dẫn tương đối thì thêm base URL
-    if (url.startsWith("/")) return `http://localhost:3003${url}`
-
-    // Trường hợp còn lại trả về nguyên gốc
-    return url
-  }, [])
 
   // Helper function for currency formatting
   const formatCurrency = (value: number) => {
@@ -142,39 +154,35 @@ const ProductsList: React.FC = () => {
     pagination,
     tableFilters,
     sorter: any,
-    extra
   ) => {
-    const newFilters = { ...filters }
-
-    // 1. Pagination
-    if (pagination.current && pagination.pageSize) {
-       setCurrentPage(pagination.current)
-       setPageSize(pagination.pageSize)
+    const newParams: Record<string, any> = {
+      page: pagination.current,
+      pageSize: pagination.pageSize
     }
 
     // 2. Native Filters (Category, Status)
     if (tableFilters.category) {
-       newFilters.type_id = (tableFilters.category as string[])[0]
+       newParams.type_id = (tableFilters.category as string[])[0]
     } else {
-       delete newFilters.type_id
+       newParams.type_id = ""
     }
 
     if (tableFilters.status) {
-       newFilters.status = (tableFilters.status as string[])[0]
+       newParams.status = (tableFilters.status as string[])[0]
     } else {
-       delete newFilters.status
+       newParams.status = ""
     }
 
     // 3. Sorter
     if (sorter && sorter.order) {
-        newFilters.sort_by = sorter.field
-        newFilters.sort_direction = sorter.order === 'ascend' ? 'ASC' : 'DESC'
+        newParams.sort_by = sorter.field
+        newParams.sort_direction = sorter.order === 'ascend' ? 'ASC' : 'DESC'
     } else {
-        delete newFilters.sort_by
-        delete newFilters.sort_direction
+        newParams.sort_by = ""
+        newParams.sort_direction = ""
     }
 
-    setFilters(newFilters)
+    updateUrlParams(newParams)
   }
 
   // Cấu hình columns cho DataTable
