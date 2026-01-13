@@ -300,7 +300,7 @@ export const useCreateProductMutation = () => {
     onSuccess: () => {
       // Invalidate tất cả queries liên quan đến products
       queryClient.invalidateQueries({ 
-        queryKey: ["/products"],
+        queryKey: productKeys.all,
         exact: false 
       })
       toast.success("Tạo sản phẩm thành công!")
@@ -332,7 +332,7 @@ export const useUpdateProductMutation = () => {
     onSuccess: (data, variables) => {
       // Invalidate tất cả queries liên quan đến products
       queryClient.invalidateQueries({ 
-        queryKey: ["/products"],
+        queryKey: productKeys.all,
         exact: false 
       })
       // Invalidate query detail cụ thể
@@ -359,7 +359,7 @@ export const useDeleteProductMutation = () => {
     onSuccess: () => {
       // Invalidate tất cả queries liên quan đến products
       queryClient.invalidateQueries({ 
-        queryKey: ["/products"],
+        queryKey: productKeys.all,
         exact: false 
       })
       toast.success("Xóa sản phẩm thành công!")
