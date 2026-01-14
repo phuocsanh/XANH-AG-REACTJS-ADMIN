@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import dayjs from 'dayjs';
 
 // Schema cho item trong phiếu nhập hàng
 export const receiptItemSchema = z.object({
@@ -15,6 +16,7 @@ export const receiptItemSchema = z.object({
 // Schema cho form tạo phiếu nhập hàng
 export const receiptFormSchema = z.object({
   supplierId: z.number().min(1, 'Vui lòng chọn nhà cung cấp'),
+  bill_date: z.any().optional(),
   description: z.string().optional(),
   status: z.string().default('draft'),
   items: z.array(receiptItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
@@ -87,6 +89,7 @@ export type ReceiptFormData = z.infer<typeof receiptFormSchema>;
 // Default values
 export const defaultReceiptValues: Partial<ReceiptFormData> = {
   status: 'draft',
+  bill_date: dayjs(), // Mặc định là ngày hiện tại
   items: [],
   hasSharedShipping: false,
   sharedShippingCost: 0,

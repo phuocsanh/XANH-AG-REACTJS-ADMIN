@@ -38,6 +38,7 @@ export interface InventoryReceipt {
   id: number
   code: string
   notes?: string // Thay description thành notes để khớp với backend
+  bill_date?: string // Ngày trên hóa đơn/ngày nhập hàng thực tế
   status: string // Trạng thái là string text tiếng Việt (đã map) hoặc raw string
   status_code?: string // status code raw (draft, pending...)
   total_amount: number // Thay totalAmount thành total_amount và string thành number để khớp với backend
@@ -132,6 +133,7 @@ export interface InventoryReceiptApiResponse {
   id: number
   code: string
   description?: string // Giữ nguyên để tương thích với API response
+  bill_date?: string // Ngày hóa đơn
   status: string // Backend trả về string
   total_amount: string // Thay totalAmount thành total_amount
   supplier_id?: number // Thêm supplier_id
@@ -210,6 +212,7 @@ export function mapApiResponseToInventoryReceipt(
     id: apiReceipt.id,
     code: apiReceipt.code,
     notes: apiReceipt.description || apiReceipt.notes, // Hỗ trợ cả 2 fields
+    bill_date: apiReceipt.bill_date,
     status: getInventoryReceiptStatusText(apiReceipt.status), // Chuyển status number thành text
     status_code: apiReceipt.status, // Giữ nguyên status code raw
     total_amount: parseFloat(apiReceipt.total_amount), // Chuyển string thành number
@@ -346,6 +349,7 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   supplier_id: number // ID nhà cung cấp (bắt buộc)
   total_amount: number // Tổng tiền (bắt buộc)
   notes?: string // Ghi chú (tùy chọn)
+  bill_date?: string // Ngày hóa đơn (tùy chọn)
   status: string // Trạng thái phiếu nhập: draft, approved, cancelled (bắt buộc)
   created_by: number // ID người tạo (bắt buộc)
   items: CreateInventoryReceiptItemRequest[] // Danh sách chi tiết phiếu nhập

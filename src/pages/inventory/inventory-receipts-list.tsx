@@ -324,6 +324,14 @@ const InventoryReceiptsList: React.FC = () => {
       ),
     },
     {
+      title: "Ngày nhập",
+      dataIndex: "bill_date",
+      key: "bill_date",
+      width: 120,
+      render: (date: string, record: InventoryReceipt) => 
+        date ? dayjs(date).format("DD/MM/YYYY") : dayjs(record.created_at).format("DD/MM/YYYY"),
+    },
+    {
       title: (
         <FilterHeader 
             title="Nhà cung cấp" 

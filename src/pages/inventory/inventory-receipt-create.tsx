@@ -211,6 +211,7 @@ const InventoryReceiptCreate: React.FC = () => {
       reset({
         supplierId: existingReceipt.supplier_id,
         status: existingReceipt.status_code || existingReceipt.status || 'draft',
+        bill_date: existingReceipt.bill_date ? dayjs(existingReceipt.bill_date) : dayjs(existingReceipt.created_at),
         description: existingReceipt.notes || '',
         items: mappedItems,
         hasSharedShipping: !!receipt.shared_shipping_cost,
@@ -312,6 +313,7 @@ const InventoryReceiptCreate: React.FC = () => {
         supplier_id: data.supplierId,
         total_amount: grandTotal,
         notes: data.description,
+        bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
         status: data.status || "draft",
         created_by: 1, // Fallback if needed
         
@@ -398,7 +400,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
       <form onSubmit={handleFormSubmit(onSubmit)}>
         <Card className='mb-4'>
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
             <FormComboBox
               label='Nhà cung cấp'
               name='supplierId'
@@ -425,6 +427,15 @@ const InventoryReceiptCreate: React.FC = () => {
                 value: status,
                 label: getInventoryReceiptStatusText(status)
               }))}
+            />
+
+            <FormDatePicker
+              label='Ngày nhập hàng'
+              name='bill_date'
+              control={control}
+              required
+              placeholder='Chọn ngày nhập hàng'
+              className='w-full'
             />
           </div>
 

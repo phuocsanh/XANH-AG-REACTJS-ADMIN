@@ -470,7 +470,10 @@ const InventoryReceiptDetail: React.FC = () => {
                       <Descriptions.Item label="Mô tả / Ghi chú" span={2}>
                         {receipt.notes || <Text type="secondary" italic>Không có ghi chú</Text>}
                       </Descriptions.Item>
-                      <Descriptions.Item label="Ngày thực hiện">
+                      <Descriptions.Item label="Ngày nhập hàng">
+                        <Text strong>{receipt.bill_date ? dayjs(receipt.bill_date).format("DD/MM/YYYY") : dayjs(receipt.created_at).format("DD/MM/YYYY")}</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Ngày tạo hệ thống">
                         {dayjs(receipt.created_at).format("DD/MM/YYYY HH:mm")}
                       </Descriptions.Item>
                       <Descriptions.Item label="Cập nhật cuối">
