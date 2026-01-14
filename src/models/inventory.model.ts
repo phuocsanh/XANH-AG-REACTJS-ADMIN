@@ -66,7 +66,11 @@ export interface InventoryReceipt {
   adjusted_amount?: number
   returned_amount?: number
   final_amount?: number
+  supplier_amount?: number
   debt_amount?: number
+  is_shipping_paid_to_supplier?: boolean
+  shared_shipping_cost?: number
+  shipping_allocation_method?: string
   
   // Flags
   has_returns?: boolean
@@ -126,6 +130,7 @@ export interface InventoryReceiptItem {
   product?: any // Thay bằng Product interface nếu có thể import
   batch_number?: string
   expiry_date?: string
+  individual_shipping_cost?: number
 }
 
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
@@ -242,7 +247,11 @@ export function mapApiResponseToInventoryReceipt(
     adjusted_amount: apiReceipt.adjusted_amount ? parseFloat(apiReceipt.adjusted_amount) : 0,
     returned_amount: apiReceipt.returned_amount ? parseFloat(apiReceipt.returned_amount) : 0,
     final_amount: apiReceipt.final_amount ? parseFloat(apiReceipt.final_amount) : undefined,
+    supplier_amount: apiReceipt.supplier_amount ? parseFloat(apiReceipt.supplier_amount) : undefined,
     debt_amount: apiReceipt.debt_amount ? parseFloat(apiReceipt.debt_amount) : 0,
+    is_shipping_paid_to_supplier: apiReceipt.is_shipping_paid_to_supplier,
+    shared_shipping_cost: apiReceipt.shared_shipping_cost ? parseFloat(apiReceipt.shared_shipping_cost) : 0,
+    shipping_allocation_method: apiReceipt.shipping_allocation_method,
     
     // Flags
     has_returns: apiReceipt.has_returns,
@@ -274,6 +283,7 @@ export function mapApiResponseToInventoryReceiptItem(
     total_price: parseFloat(apiItem.total_price || '0'),
     expiry_date: apiItem.expiry_date, // Thêm expiry_date
     batch_number: apiItem.batch_number, // Thêm batch_number
+    individual_shipping_cost: apiItem.individual_shipping_cost ? parseFloat(apiItem.individual_shipping_cost) : 0,
     notes: apiItem.notes,
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
@@ -369,6 +379,7 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
   shared_shipping_cost?: number // Phí vận chuyển chung (tùy chọn)
   shipping_allocation_method?: 'by_value' | 'by_quantity' // Phương thức phân bổ (tùy chọn)
+  is_shipping_paid_to_supplier?: boolean // Phí ship trả cho NCC hay đơn vị ngoài (tùy chọn)
 }
 
 // Interface cho request cập nhật phiếu nhập hàng

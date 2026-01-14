@@ -156,7 +156,7 @@ const useItemColumns = ({
       },
     },
     {
-      title: "Phí VC riêng",
+      title: "Phí Vận Chuyển/Bốc Vác riêng",
       dataIndex: "individual_shipping_cost",
       key: "individual_shipping_cost",
       width: 140,

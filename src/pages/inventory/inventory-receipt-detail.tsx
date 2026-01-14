@@ -15,6 +15,7 @@ import {
   Descriptions,
   Tabs,
   Badge,
+  Tooltip,
 } from "antd"
 import DataTable from "@/components/common/data-table"
 import {
@@ -253,9 +254,17 @@ const InventoryReceiptDetail: React.FC = () => {
       title: "Đơn giá",
       dataIndex: "unit_cost",
       key: "unit_cost",
-      width: 130,
+      width: 120,
       align: "right",
       render: (p) => (p || 0).toLocaleString("vi-VN") + " ₫",
+    },
+    {
+      title: "Phí Bốc Vác",
+      dataIndex: "individual_shipping_cost",
+      key: "individual_shipping_cost",
+      width: 120,
+      align: "right",
+      render: (p) => p > 0 ? (p || 0).toLocaleString("vi-VN") + " ₫" : "-",
     },
     {
       title: "Thành tiền",
@@ -463,10 +472,27 @@ const InventoryReceiptDetail: React.FC = () => {
                         <Text strong>{receipt.supplier?.name || `ID #${receipt.supplier_id}`}</Text>
                       </Descriptions.Item>
                       <Descriptions.Item label="Tổng giá trị">
-                        <Text strong className="text-lg text-green-600">
+                        <Text strong className="text-lg text-blue-600">
                           {(receipt.total_amount || 0).toLocaleString("vi-VN")} ₫
                         </Text>
                       </Descriptions.Item>
+                      {Number(receipt.shared_shipping_cost) > 0 && (
+                        <Descriptions.Item label="Phí vận chuyển/bốc vác">
+                          <Text strong className="text-orange-600">
+                            {Number(receipt.shared_shipping_cost).toLocaleString("vi-VN")} ₫
+                          </Text>
+                        </Descriptions.Item>
+                      )}
+                      {receipt.supplier_amount !== undefined && receipt.supplier_amount !== receipt.total_amount && (
+                        <Descriptions.Item label="Nợ NCC gốc">
+                          <Tooltip title="Tổng số tiền phải trả cho NCC (Đã trừ các phí tự thanh toán ngoài)">
+                            <Text strong className="text-lg text-orange-600">
+                              {(receipt.supplier_amount || 0).toLocaleString("vi-VN")} ₫
+                              <InfoCircleOutlined className="ml-1 text-xs" />
+                            </Text>
+                          </Tooltip>
+                        </Descriptions.Item>
+                      )}
                       <Descriptions.Item label="Mô tả / Ghi chú" span={2}>
                         {receipt.notes || <Text type="secondary" italic>Không có ghi chú</Text>}
                       </Descriptions.Item>

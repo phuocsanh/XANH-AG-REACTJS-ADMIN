@@ -221,6 +221,7 @@ const InventoryReceiptCreate: React.FC = () => {
         paidAmount: Number(receipt.paid_amount || 0),
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
+        isShippingPaidToSupplier: receipt.is_shipping_paid_to_supplier !== false, // Mặc định là true nếu không phải false
       })
 
       // Set images (vẫn giữ fileList state cho component Upload)
@@ -243,11 +244,18 @@ const InventoryReceiptCreate: React.FC = () => {
     const totalSharedShipping = watchedHasSharedShipping ? Number(watchedSharedShippingCost) : 0
     
     const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
+    
+    // Tính số tiền nợ nhà cung cấp (Owed to Supplier)
+    const isShippingPaidToSupplier = watch("isShippingPaidToSupplier")
+    const shippingTotal = totalIndividualShipping + totalSharedShipping
+    const supplierAmount = isShippingPaidToSupplier ? grandTotal : totalProductValue
+    
     return {
       totalProductValue,
       totalIndividualShipping,
       totalSharedShipping,
       grandTotal,
+      supplierAmount,
     }
   }
 
@@ -314,8 +322,9 @@ const InventoryReceiptCreate: React.FC = () => {
       let payment_status = 'unpaid';
       
       if (data.status === 'approved') {
+        const { supplierAmount } = calculateTotals();
         if (data.paymentType === 'full') {
-          paid_amount = grandTotal;
+          paid_amount = supplierAmount;
           payment_status = 'paid';
         } else if (data.paymentType === 'partial') {
           paid_amount = data.paidAmount || 0;
@@ -346,7 +355,8 @@ const InventoryReceiptCreate: React.FC = () => {
         // Thanh toán
         paid_amount: paid_amount,
         payment_status: payment_status,
-        debt_amount: grandTotal - paid_amount,
+        is_shipping_paid_to_supplier: data.isShippingPaidToSupplier,
+        debt_amount: calculateTotals().supplierAmount - paid_amount,
         payment_method: data.status === 'approved' && data.paymentType !== 'debt' ? data.paymentMethod : null,
         payment_due_date: data.status === 'approved' && data.paymentType !== 'full' ? 
           (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null) : null,
@@ -517,8 +527,8 @@ const InventoryReceiptCreate: React.FC = () => {
             </div>
           )}
 
-          {/* Phần phí vận chuyển chung */}
-          <Card title="Phí Vận Chuyển Chung (Tùy chọn)" className='mt-4'>
+          {/* Phần phí vận chuyển/bốc vác */}
+          <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
             <Controller
               name="hasSharedShipping"
               control={control}
@@ -527,7 +537,7 @@ const InventoryReceiptCreate: React.FC = () => {
                   checked={field.value}
                   onChange={(e) => field.onChange(e.target.checked)}
                 >
-                  Có phí vận chuyển chung
+                  Có phí vận chuyển/bốc vác
                 </Checkbox>
               )}
             />
@@ -544,7 +554,29 @@ const InventoryReceiptCreate: React.FC = () => {
                 />
                 
                 <div className="mt-4">
-                  <Text className="block mb-2">Phương thức phân bổ</Text>
+                  <Text className="block mb-2 font-medium text-blue-600">Thanh toán phí vận chuyển</Text>
+                  <Controller
+                    name="isShippingPaidToSupplier"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox 
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="text-gray-600"
+                      >
+                        Trả phí này cho nhà cung cấp (Tính vào công nợ NCC)
+                      </Checkbox>
+                    )}
+                  />
+                  {!watch('isShippingPaidToSupplier') && (
+                    <div className="mt-1 text-xs text-orange-500 italic">
+                      * Phí này sẽ được tính vào giá vốn sản phẩm nhưng KHÔNG tính vào tiền nợ NCC.
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  <Text className="block mb-2">Phương thức phân bổ phí chung</Text>
                   <Controller
                     name="allocationMethod"
                     control={control}
@@ -668,7 +700,7 @@ const InventoryReceiptCreate: React.FC = () => {
               
               {calculateTotals().totalSharedShipping > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span>Phí vận chuyển chung:</span>
+                  <span>Phí vận chuyển/bốc vác:</span>
                   <strong>{calculateTotals().totalSharedShipping.toLocaleString('vi-VN')} VND</strong>
                 </div>
               )}
@@ -681,11 +713,26 @@ const InventoryReceiptCreate: React.FC = () => {
                 borderTop: '2px solid #d9d9d9',
                 fontSize: 18,
               }}>
-                <span>TỔNG THANH TOÁN:</span>
-                <strong style={{ color: '#52c41a' }}>
+                <span>TỔNG GIÁ TRỊ NHẬP KHO:</span>
+                <strong style={{ color: '#1890ff' }}>
                   {calculateTotals().grandTotal.toLocaleString('vi-VN')} VND
                 </strong>
               </div>
+
+              {!watch('isShippingPaidToSupplier') && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  marginTop: 8,
+                  fontSize: 16,
+                  color: '#fa8c16'
+                }}>
+                  <span>NỢ NHÀ CUNG CẤP (Trừ ship):</span>
+                  <strong>
+                    {calculateTotals().supplierAmount.toLocaleString('vi-VN')} VND
+                  </strong>
+                </div>
+              )}
             </div>
           </div>
 

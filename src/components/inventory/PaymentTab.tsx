@@ -132,9 +132,10 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
 
   const paymentData = (payments || []) as any[];
 
-  const grandTotal = receipt.final_amount ?? receipt.total_amount ?? 0;
-  const paidAmount = receipt.paid_amount ?? 0;
-  const debtAmount = receipt.debt_amount ?? 0;
+  const grandTotal = Number(receipt.final_amount) || Number(receipt.total_amount) || 0;
+  const supplierAmount = Number((receipt as any).supplier_amount) || grandTotal;
+  const paidAmount = Number(receipt.paid_amount) || 0;
+  const debtAmount = Number(receipt.debt_amount) || 0;
 
   const normalizedStatus = normalizeReceiptStatus(receipt.status_code || receipt.status);
 
@@ -142,17 +143,28 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
     <div className="space-y-4 py-4">
       {/* 1. Tổng quan thanh toán */}
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
           <Card bordered={false} className="bg-gray-50 shadow-sm">
             <Statistic
-              title="Tổng tiền (Sau trả hàng)"
+              title="Tổng giá trị nhập"
               value={grandTotal}
               formatter={(value) => formatCurrency(Number(value))}
               valueStyle={{ color: '#000' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
+          <Card bordered={false} className="bg-orange-50 shadow-sm">
+            <Statistic
+              title="Tổng nợ thực tế (NCC)"
+              value={supplierAmount}
+              formatter={(value) => formatCurrency(Number(value))}
+              valueStyle={{ color: '#d46b08' }}
+              suffix={supplierAmount !== grandTotal ? <Text type="secondary" style={{ fontSize: '10px', display: 'block' }}>*(Đã trừ phí trả ngoài)</Text> : null}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
           <Card bordered={false} className="bg-blue-50 shadow-sm">
             <Statistic
               title="Đã thanh toán"
@@ -163,10 +175,10 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={6}>
           <Card bordered={false} className={debtAmount > 0 ? "bg-red-50 shadow-sm" : "bg-green-50 shadow-sm"}>
             <Statistic
-              title="Còn nợ"
+              title="Còn nợ NCC"
               value={debtAmount}
               formatter={(value) => formatCurrency(Number(value))}
               valueStyle={{ color: debtAmount > 0 ? '#cf1322' : '#3f8600' }}

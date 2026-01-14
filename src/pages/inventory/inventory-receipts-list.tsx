@@ -19,6 +19,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
@@ -405,14 +406,27 @@ const InventoryReceiptsList: React.FC = () => {
       key: "debt_amount",
       width: 150,
       align: "right",
-      render: (amount: number) => (
-        <Text style={{ color: amount > 0 ? '#ff4d4f' : '#52c41a' }}>
-          {new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(amount || 0)}
-        </Text>
-      ),
+      render: (amount: number, record: InventoryReceipt) => {
+        const finalAmount = Number(record.final_amount) || Number(record.total_amount) || 0;
+        const supplierAmount = Number(record.supplier_amount) || finalAmount;
+        const hasExcludedCosts = supplierAmount !== finalAmount;
+
+        return (
+          <Space size="small">
+            {hasExcludedCosts && (
+              <Tooltip title={`Tổng nợ NCC gốc: ${supplierAmount.toLocaleString('vi-VN')} VND (Đã trừ phí vận chuyển trả ngoài)`}>
+                <InfoCircleOutlined style={{ color: '#faad14', fontSize: '12px' }} />
+              </Tooltip>
+            )}
+            <Text style={{ color: amount > 0 ? '#ff4d4f' : '#52c41a' }}>
+              {new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(amount || 0)}
+            </Text>
+          </Space>
+        )
+      },
     },
     {
       title: "TT Thanh toán",

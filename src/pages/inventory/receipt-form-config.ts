@@ -21,10 +21,11 @@ export const receiptFormSchema = z.object({
   status: z.string().default('draft'),
   items: z.array(receiptItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
   
-  // Phí vận chuyển chung
+  // Phí vận chuyển/bốc vác
   hasSharedShipping: z.boolean().default(false),
   sharedShippingCost: z.number().min(0).default(0),
   allocationMethod: z.enum(['by_value', 'by_quantity']).default('by_value'),
+  isShippingPaidToSupplier: z.boolean().default(true),
   
   // Hình ảnh
   images: z.any().optional(),
@@ -35,11 +36,11 @@ export const receiptFormSchema = z.object({
   paymentMethod: z.string().optional(),
   paymentDueDate: z.any().optional(),
 }).superRefine((data, ctx) => {
-  // 1. Validate phí vận chuyển chung (áp dụng cho mọi trạng thái)
+  // 1. Validate phí vận chuyển/bốc vác (áp dụng cho mọi trạng thái)
   if (data.hasSharedShipping && (!data.sharedShippingCost || data.sharedShippingCost <= 0)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Vui lòng nhập số phí vận chuyển chung lớn hơn 0',
+      message: 'Vui lòng nhập số phí vận chuyển/bốc vác lớn hơn 0',
       path: ['sharedShippingCost'],
     });
   }
@@ -106,4 +107,5 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   images: [],
   paymentType: 'partial',
   paidAmount: 0,
+  isShippingPaidToSupplier: true,
 };
