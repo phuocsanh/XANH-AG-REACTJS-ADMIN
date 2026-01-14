@@ -62,6 +62,8 @@ export const useCreateAdjustmentMutation = () => {
     onSuccess: async () => {
       // Refetch để refresh danh sách ngay lập tức
       await queryClient.refetchQueries({ queryKey: ['adjustments'] })
+      // Invalidate products vì tồn kho có thể đã thay đổi (nếu tạo với trạng thái approved)
+      invalidateResourceQueries('products')
       message.success('Tạo phiếu điều chỉnh thành công!')
     },
     onError: (error) => {

@@ -40,6 +40,7 @@ import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
 import { ProductSubtype } from "@/models/product-subtype.model"
 import ProductComparisonPanel from "@/pages/products/components/ProductComparisonPanel"
+import AdjustStockModal from "./AdjustStockModal"
 import { useProductsQuery } from "@/queries/product"
 import { UPLOAD_TYPES } from "@/services/upload.service"
 // Thêm import cho ImageAnalyzer
@@ -186,11 +187,13 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   // State cho AI Image Studio
   const [studioVisible, setStudioVisible] = useState(false)
+  const [adjustModalVisible, setAdjustModalVisible] = useState(false)
   const uploadMutation = useUploadImageMutation()
 
   // Watch form values
   const watchedName = watch("name")
   const watchedTradeName = watch("trade_name")
+  const watchedQuantity = watch("quantity") || 0
 
   // Xác định ID sản phẩm để sử dụng từ props
   const currentProductId = productId ? parseInt(productId) : 0
@@ -926,15 +929,30 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 </div>
 
                 <div className='w-full'>
-                  <FormFieldNumber
-                    name='quantity'
-                    control={control}
-                    label='Số lượng'
-                    placeholder='Nhập số lượng'
-                    required
-                    rules={{ required: "Vui lòng nhập số lượng" }}
-                    className='w-full'
-                  />
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <FormFieldNumber
+                        name='quantity'
+                        control={control}
+                        label='Số lượng'
+                        placeholder='Nhập số lượng'
+                        required
+                        rules={{ required: "Vui lòng nhập số lượng" }}
+                        className='w-full'
+                        disabled={isEdit} // Khóa không cho sửa trực tiếp khi update
+                      />
+                    </div>
+                    {isEdit && (
+                      <Button 
+                        htmlType="button" 
+                        type="default" 
+                        className="mb-0 h-[38px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                        onClick={() => setAdjustModalVisible(true)}
+                      >
+                        Điều chỉnh
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Thêm trường profit_margin_percent */}
@@ -1155,6 +1173,20 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         </div>
       </div>
       </Card>
+
+      {/* Modal điều chỉnh tồn kho */}
+      {isEdit && productItemData && (
+        <AdjustStockModal
+          visible={adjustModalVisible}
+          onClose={() => setAdjustModalVisible(false)}
+          product={{
+            id: currentProductId,
+            name: watchedName || (productItemData as any)?.name,
+            trade_name: watchedTradeName || (productItemData as any)?.trade_name,
+            currentQuantity: watchedQuantity,
+          }}
+        />
+      )}
     </div>
   )
 }
