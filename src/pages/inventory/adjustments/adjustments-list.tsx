@@ -27,7 +27,7 @@ import {
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
 
-import { InventoryAdjustment } from "@/models/inventory-adjustment.model"
+import { InventoryAdjustment, getAdjustmentTypeText } from "@/models/inventory-adjustment.model"
 import {
   useAdjustmentsQuery,
   useDeleteAdjustmentMutation,
@@ -195,8 +195,8 @@ const AdjustmentsList: React.FC = () => {
       width: 100,
       align: "center",
       render: (type: string) => (
-        <Tag color={type === "IN" ? "green" : "red"}>
-          {type === "IN" ? "Tăng kho" : "Giảm kho"}
+        <Tag color={(type === "IN" || type === "INCREASE") ? "green" : "red"}>
+          {getAdjustmentTypeText(type)}
         </Tag>
       ),
     },

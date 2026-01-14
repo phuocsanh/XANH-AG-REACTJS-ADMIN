@@ -119,4 +119,19 @@ export const normalizeAdjustmentStatus = (status: any): AdjustmentStatus => {
 export enum AdjustmentType {
   IN = 'IN',
   OUT = 'OUT',
+  INCREASE = 'INCREASE', // Dự phòng cho các phiên bản cũ/khác
+  DECREASE = 'DECREASE', // Dự phòng cho các phiên bản cũ/khác
+}
+
+// Hàm map loại điều chỉnh sang tiếng Việt
+export const getAdjustmentTypeText = (type: string): string => {
+  if (!type) return 'Không xác định';
+  const t = type.toUpperCase();
+  const typeMap: { [key: string]: string } = {
+    'IN': 'Tăng kho',
+    'INCREASE': 'Tăng kho',
+    'OUT': 'Giảm kho',
+    'DECREASE': 'Giảm kho',
+  }
+  return typeMap[t] || type;
 }

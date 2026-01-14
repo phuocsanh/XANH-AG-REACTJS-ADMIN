@@ -59,7 +59,7 @@ const AdjustStockModal: React.FC<AdjustStockModalProps> = ({ visible, onClose, p
     try {
       // 1. Tạo phiếu điều chỉnh với trạng thái Approved để tác động kho ngay
       const adjustmentData = {
-        adjustment_type: quantityChange > 0 ? 'INCREASE' : 'DECREASE',
+        adjustment_type: quantityChange > 0 ? 'IN' : 'OUT',
         reason: values.reason,
         status: 'approved', // Duyệt ngay lập tức
         items: [

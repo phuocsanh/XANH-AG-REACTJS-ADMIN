@@ -258,8 +258,10 @@ const AdjustmentCreate = () => {
                         label="Loại điều chỉnh"
                         placeholder="Chọn loại điều chỉnh"
                         options={[
-                          { value: 'IN', label: 'Tăng kho (IN)' },
-                          { value: 'OUT', label: 'Giảm kho (OUT)' },
+                          { value: 'IN', label: 'Tăng kho' },
+                          { value: 'OUT', label: 'Giảm kho' },
+                          { value: 'INCREASE', label: 'Tăng kho' },
+                          { value: 'DECREASE', label: 'Giảm kho' },
                         ]}
                         disabled={isReadOnly}
                       />
