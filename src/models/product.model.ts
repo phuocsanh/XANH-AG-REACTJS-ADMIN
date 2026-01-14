@@ -30,7 +30,7 @@ export interface Product {
   average_cost_price: string
   unit_id?: number
   unit?: { id: number; name: string }
-  latest_purchase_price?: number
+  latest_purchase_price?: string
   created_at: string
   updated_at: string
   // Thêm 2 trường mới
