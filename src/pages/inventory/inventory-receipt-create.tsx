@@ -144,7 +144,7 @@ const InventoryReceiptCreate: React.FC = () => {
     fetchNextPage,
   ])
 
-  const { fields: itemFields, append, remove } = useFieldArray({
+  const { fields: itemFields, prepend, remove } = useFieldArray({
     control,
     name: "items",
   })
@@ -257,7 +257,7 @@ const InventoryReceiptCreate: React.FC = () => {
   }
 
   const handleAddItem = useCallback(() => {
-    append({
+    prepend({
       product_id: 0,
       product_name: "",
       quantity: 1,
@@ -265,7 +265,7 @@ const InventoryReceiptCreate: React.FC = () => {
       total_price: 0,
       individual_shipping_cost: 0,
     })
-  }, [append])
+  }, [prepend])
 
   const handleDeleteItem = useCallback((index: number) => {
     remove(index)
