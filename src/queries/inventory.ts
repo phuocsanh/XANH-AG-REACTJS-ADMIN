@@ -669,6 +669,8 @@ export const useInventoryStatsQuery = () => {
       const response = await api.get<InventoryReceiptStats>("/inventory/receipts/stats")
       return response
     },
+    refetchOnMount: true,
+    staleTime: 0,
   })
 }
 
@@ -943,6 +945,7 @@ export const useAddPaymentMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receipt-payments'] })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success('Thêm thanh toán thành công')
     },
     onError: (error: unknown) => {
@@ -961,6 +964,7 @@ export const useDeletePaymentMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receipt-payments'] })
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.stats() }) // Cập nhật thống kê
       toast.success('Xóa thanh toán thành công')
     },
     onError: (error: unknown) => {
