@@ -35,7 +35,16 @@ export const receiptFormSchema = z.object({
   paymentMethod: z.string().optional(),
   paymentDueDate: z.any().optional(),
 }).superRefine((data, ctx) => {
-  // Chỉ validate thanh toán khi phiếu đã duyệt
+  // 1. Validate phí vận chuyển chung (áp dụng cho mọi trạng thái)
+  if (data.hasSharedShipping && (!data.sharedShippingCost || data.sharedShippingCost <= 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Vui lòng nhập số phí vận chuyển chung lớn hơn 0',
+      path: ['sharedShippingCost'],
+    });
+  }
+
+  // 2. Chỉ validate thanh toán khi phiếu đã duyệt
   if (data.status !== 'approved') {
     return; // Bỏ qua validation thanh toán cho phiếu nháp
   }
