@@ -946,10 +946,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       <Button 
                         htmlType="button" 
                         type="default" 
-                        className="mb-0 h-[38px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                        className="mb-[24px] h-[32px] border-blue-200 text-blue-600 hover:bg-blue-50 px-2"
                         onClick={() => setAdjustModalVisible(true)}
+                        title="Điều chỉnh tồn kho"
                       >
-                        Điều chỉnh
+                        ✏️
                       </Button>
                     )}
                   </div>
