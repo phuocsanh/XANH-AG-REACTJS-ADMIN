@@ -205,6 +205,12 @@ export interface InventoryHistoryListResponse {
 }
 
 // Mapper functions
+// Helper function để lấy tên hiển thị của user (Nickname hoặc Account)
+const formatUserDisplayName = (user: any) => {
+  if (!user) return undefined;
+  return user.user_profile?.nickname || user.full_name || user.account || user.username || `ID: ${user.id}`;
+};
+
 export function mapApiResponseToInventoryReceipt(
   apiReceipt: any // Đổi sang any để nhận thêm payment fields
 ): InventoryReceipt {
@@ -245,8 +251,14 @@ export function mapApiResponseToInventoryReceipt(
     
     // Relations
     payments: apiReceipt.payments,
-    creator: apiReceipt.creator,
-    approver: apiReceipt.approver,
+    creator: apiReceipt.creator ? {
+      ...apiReceipt.creator,
+      full_name: formatUserDisplayName(apiReceipt.creator)
+    } : undefined,
+    approver: apiReceipt.approver ? {
+      ...apiReceipt.approver,
+      full_name: formatUserDisplayName(apiReceipt.approver)
+    } : undefined,
   }
 }
 
