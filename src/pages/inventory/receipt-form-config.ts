@@ -100,8 +100,8 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   status: 'draft',
   bill_date: dayjs(), // Mặc định là ngày hiện tại
   items: [],
-  hasSharedShipping: true,
-  sharedShippingCost: 100000, // Đặt mặc định 100k như trong ảnh
+  hasSharedShipping: false,
+  sharedShippingCost: 0,
   allocationMethod: 'by_quantity',
   images: [],
   paymentType: 'partial',
