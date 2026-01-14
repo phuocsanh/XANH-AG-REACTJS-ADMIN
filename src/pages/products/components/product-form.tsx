@@ -929,31 +929,27 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 </div>
 
                 <div className='w-full'>
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <FormFieldNumber
-                        name='quantity'
-                        control={control}
-                        label='Số lượng'
-                        placeholder='Nhập số lượng'
-                        required
-                        rules={{ required: "Vui lòng nhập số lượng" }}
-                        className='w-full'
-                        disabled={isEdit} // Khóa không cho sửa trực tiếp khi update
-                      />
-                    </div>
-                    {isEdit && (
-                      <Button 
-                        htmlType="button" 
-                        type="default" 
-                        className="mb-[24px] h-[32px] border-blue-200 text-blue-600 hover:bg-blue-50 px-2"
-                        onClick={() => setAdjustModalVisible(true)}
-                        title="Điều chỉnh tồn kho"
-                      >
-                        ✏️
-                      </Button>
-                    )}
-                  </div>
+                  <FormFieldNumber
+                    name='quantity'
+                    control={control}
+                    label='Số lượng'
+                    placeholder='Nhập số lượng'
+                    required
+                    rules={{ required: "Vui lòng nhập số lượng" }}
+                    className='w-full'
+                    disabled={isEdit}
+                    {...(isEdit && {
+                      addonAfter: (
+                        <div 
+                          className="cursor-pointer px-2 hover:text-blue-500 transition-colors"
+                          onClick={() => setAdjustModalVisible(true)}
+                          title="Điều chỉnh tồn kho"
+                        >
+                          ✏️
+                        </div>
+                      )
+                    })}
+                  />
                 </div>
 
                 {/* Thêm trường profit_margin_percent */}
