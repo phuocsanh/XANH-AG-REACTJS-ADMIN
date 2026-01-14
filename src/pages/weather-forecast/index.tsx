@@ -185,7 +185,11 @@ export default function WeatherForecastPage() {
     )
   }, [searchTerm])
 
-  const getWeatherIcon = (code: number, size = "w-8 h-8") => {
+  const getWeatherIcon = (code: number, size = "w-8 h-8", isActive = false) => {
+    if (isActive) {
+      if (code === 0 || code === 1) return <Sun className={`${size} text-white`} />
+      return <Cloud className={`${size} text-white`} />
+    }
     if (code === 0 || code === 1) return <Sun className={`${size} text-yellow-400`} />
     if (code >= 2 && code <= 3) return <Cloud className={`${size} text-blue-400`} />
     if (code >= 51 && code <= 65) return <CloudRain className={`${size} text-blue-600`} />
@@ -370,21 +374,33 @@ export default function WeatherForecastPage() {
                   <button
                     key={day.date}
                     onClick={() => setActiveTab(i)}
-                    className={`flex-shrink-0 snap-start min-w-[110px] sm:min-w-[140px] p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all duration-300 transform ${i === 0 ? 'ml-1' : ''} ${
+                    className={`flex-shrink-0 snap-start min-w-[110px] sm:min-w-[140px] p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all duration-500 transform ${i === 0 ? 'ml-1' : ''} ${
                       activeTab === i 
-                      ? 'bg-agri-600 text-white shadow-xl scale-[1.03] sm:scale-105 ring-2 sm:ring-4 ring-agri-100' 
-                      : 'bg-white text-gray-500 hover:bg-agri-50 border border-agri-100 hover:scale-[1.02]'
-                    } ${isToday ? 'ring-2 ring-orange-500' : ''}`}
+                      ? 'bg-gradient-to-br from-agri-600 via-agri-700 to-agri-800 text-white shadow-2xl scale-[1.03] sm:scale-110 z-30' 
+                      : 'bg-white text-gray-500 hover:bg-agri-50 border border-agri-100 hover:scale-[1.02] z-10'
+                    } ${isToday ? 'ring-4 ring-agri-400Ring ring-offset-2' : ''}`}
+                    style={isToday ? { 
+                      boxShadow: activeTab === i 
+                        ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1), 0 0 0 4px #4ade80' 
+                        : '0 0 0 2px #fff, 0 0 0 5px #4ade80' 
+                    } : {}}
                   >
-                    <p className={`text-[8px] sm:text-[10px] font-black uppercase mb-1 sm:mb-3 tracking-widest ${activeTab === i ? 'text-agri-200' : 'text-gray-400'}`}>
-                      {new Date(day.date).toLocaleDateString('vi', { weekday: 'long' }).toUpperCase()}
-                    </p>
+                    <div className="flex flex-col items-center">
+                      <p className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${activeTab === i ? 'text-agri-200' : 'text-gray-400'}`}>
+                        {new Date(day.date).toLocaleDateString('vi', { weekday: 'long' }).toUpperCase()}
+                      </p>
+                      {isToday && (
+                        <span className={`text-[7px] sm:text-[9px] font-black px-2 py-0.5 rounded-full mb-1 sm:mb-2 ${activeTab === i ? 'bg-white text-agri-700' : 'bg-agri-600 text-white'}`}>
+                          HÔM NAY
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-col items-center">
                       <p className="text-xl sm:text-3xl font-black tabular-nums">{new Date(day.date).getDate()}<span className="text-xs sm:text-lg opacity-50 ml-0.5">/{new Date(day.date).getMonth() + 1}</span></p>
                       <p className={`text-[7px] sm:text-[9px] font-bold uppercase tracking-wider mt-0.5 ${activeTab === i ? 'text-agri-200' : 'text-gray-400'}`}>Ngày/Tháng</p>
                     </div>
                     <div className="my-3 sm:my-5 flex justify-center">
-                      {getWeatherIcon(day.weatherCode, "w-8 h-8 sm:w-12 sm:h-12")}
+                      {getWeatherIcon(day.weatherCode, "w-8 h-8 sm:w-12 sm:h-12", activeTab === i)}
                     </div>
                     <p className={`text-[11px] sm:text-sm font-black ${activeTab === i ? 'text-white' : 'text-gray-800'}`}>{day.tempMax}°<span className="opacity-40 font-bold mx-1">/</span>{day.tempMin}°</p>
                   </button>
