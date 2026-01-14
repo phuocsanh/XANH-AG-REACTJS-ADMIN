@@ -69,6 +69,7 @@ import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locat
 import LocationMap from '@/components/LocationMap';
 import ComboBox from '@/components/common/combo-box';
 import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs, Popover } from 'antd';
+import { useFormGuard } from '@/hooks/use-form-guard';
 import {
   salesInvoiceSchema,
   SalesInvoiceFormData,
@@ -253,7 +254,7 @@ const CreateSalesInvoice = () => {
     watch,
     setValue,
     getValues,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<SalesInvoiceFormData>({
     resolver: zodResolver(salesInvoiceSchema),
     defaultValues: defaultSalesInvoiceValues,
@@ -263,6 +264,8 @@ const CreateSalesInvoice = () => {
     control,
     name: 'items',
   });
+
+  const { confirmExit } = useFormGuard(isDirty);
 
   // Queries
   const { data: customers } = useCustomerSearchQuery(customerSearch);
@@ -1651,7 +1654,7 @@ ${productInfo}`;
 
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Box display="flex" alignItems="center">
-          <IconButton onClick={() => navigate('/sales-invoices')} sx={{ mr: { xs: 1, md: 2 } }}>
+          <IconButton onClick={() => confirmExit(() => navigate('/sales-invoices'))} sx={{ mr: { xs: 1, md: 2 } }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography 
@@ -2233,11 +2236,11 @@ ${productInfo}`;
                   </Popover>
                 </Box>
 
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/sales-invoices')}
-                  disabled={createMutation.isPending}
-                >
+                  <Button
+                    variant="outlined"
+                    onClick={() => confirmExit(() => navigate('/sales-invoices'))}
+                    disabled={createMutation.isPending}
+                  >
                   Hủy
                 </Button>
                 <Button

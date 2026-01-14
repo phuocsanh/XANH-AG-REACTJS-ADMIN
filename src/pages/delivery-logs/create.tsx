@@ -25,6 +25,7 @@ import { useProductSearch } from '../../queries/product';
 import { useCustomerSearch } from '../../queries/customer';
 import { useAllUsersQuery } from '../../queries/user';
 import ComboBox from '../../components/common/combo-box';
+import { useFormGuard } from '@/hooks/use-form-guard';
 
 import { toast } from 'react-toastify';
 
@@ -43,6 +44,8 @@ const CreateDeliveryLog: React.FC = () => {
   const [form] = Form.useForm();
   const [mode, setMode] = useState<CreationMode>('from_invoice');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const { confirmExit } = useFormGuard(isFormDirty);
   
   // Load data nếu đang edit
   const stateData = location.state?.deliveryLog;
@@ -352,6 +355,7 @@ const CreateDeliveryLog: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
+          onValuesChange={() => setIsFormDirty(true)}
           initialValues={{ mode: 'from_invoice' }}
         >
           {/* Mode Selection - Chỉ hiện khi tạo mới */}
@@ -691,7 +695,7 @@ const CreateDeliveryLog: React.FC = () => {
               <Button type="primary" htmlType="submit" loading={isLoading}>
                 {isEditMode ? "Cập Nhật" : "Tạo Phiếu Giao Hàng"}
               </Button>
-              <Button onClick={() => navigate('/delivery-logs')}>Hủy</Button>
+              <Button onClick={() => confirmExit(() => navigate('/delivery-logs'))}>Hủy</Button>
             </Space>
           </Form.Item>
         </Form>

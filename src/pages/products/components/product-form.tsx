@@ -1,8 +1,9 @@
 
 import React, { useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Button, message, Form, Spin, Modal, Alert } from "antd"
-import { SaveOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons"
+import { Button, message, Form, Spin, Modal, Alert, Typography, Card } from "antd"
+import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons"
+import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -46,6 +47,8 @@ import { ImageAnalyzer, ExtractedProductData } from "@/components/image-analyzer
 import ImageStudio from "@/components/image-studio/image-studio"
 import { useUploadImageMutation } from "@/queries/upload"
 import { UploadType } from "@/services/upload.service"
+
+const { Title } = Typography
 
 // TiptapEditor component
 const TiptapEditor: React.FC<{
@@ -158,7 +161,7 @@ const TiptapEditor: React.FC<{
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const { control, handleSubmit, watch, reset, setValue, getValues } = useForm<ProductFormValues>({
+  const { control, handleSubmit, watch, reset, setValue, getValues, formState: { isDirty } } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: defaultProductFormValues,
   })
@@ -205,6 +208,17 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { data: symbols } = useSymbolsQuery()
   // Thêm query cho danh sách sản phẩm
   const { data: allProducts } = useProductsQuery({ offset: 0, limit: 1000 })
+
+  // Kiểm tra dirty cho cả form và nội dung rich text
+  // Lưu ý: Chỉ coi là dirty nếu dữ liệu thực sự khác với dữ liệu ban đầu từ API (nếu đang ở mode Edit)
+  const productItemData = productData && 'data' in (productData as any) ? (productData as any).data : productData;
+  const isFormDirty = isDirty || 
+    (isEdit && productItemData ? 
+      (description !== (productItemData as any)?.description || notes !== (productItemData as any)?.notes) : 
+      (description !== "" || (notes !== "" && notes !== "<p></p>"))
+    );
+
+  const { confirmExit } = useFormGuard(isFormDirty);
 
   // Debug log
 
@@ -658,7 +672,21 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   return (
     <div className=''>
-      <div className='grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6'>
+      {/* Header cho Form */}
+      <div className='flex items-center mb-6'>
+        <Button
+          type='text'
+          icon={<ArrowLeftOutlined />}
+          onClick={() => confirmExit(() => navigate(`/products${location.search}`))}
+          className='mr-4'
+        />
+        <Title level={3} className='mb-0'>
+          {isEdit ? "Chỉnh sửa sản phẩm" : "Thêm Sản phẩm mới"}
+        </Title>
+      </div>
+      
+      <Card className="mb-4">
+        <div className='grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6'>
         {/* Form sản phẩm - 2 cột */}
         <div className='lg:col-span-2'>
           <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden">
@@ -1077,7 +1105,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 <div style={{ textAlign: "right", marginTop: "24px" }}>
                   <Button
                     style={{ marginRight: "8px" }}
-                    onClick={() => navigate("/products")}
+                    onClick={() => confirmExit(() => navigate(`/products${location.search}`))}
                   >
                     Hủy
                   </Button>
@@ -1126,6 +1154,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           </div>
         </div>
       </div>
+      </Card>
     </div>
   )
 }

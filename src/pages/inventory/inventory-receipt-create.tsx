@@ -65,6 +65,7 @@ import {
 import { useMobile, useTablet } from "@/hooks/use-media-query"
 import { useProductSearch } from "@/queries/product"
 import { useSupplierSearch } from "@/queries/supplier"
+import { useFormGuard } from "@/hooks/use-form-guard"
 
 
 
@@ -94,7 +95,7 @@ const InventoryReceiptCreate: React.FC = () => {
     setValue,
     getValues,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
   } = useForm<ReceiptFormData>({
     resolver: zodResolver(receiptFormSchema),
@@ -177,6 +178,8 @@ const InventoryReceiptCreate: React.FC = () => {
     )
   }, [supplierData?.pages])
 
+  const { confirmExit } = useFormGuard(isDirty);
+
 
   // Queries
   const createReceiptMutation = useCreateInventoryReceiptMutation()
@@ -249,7 +252,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Handlers
   const handleBack = () => {
-    navigate("/inventory/receipts")
+    confirmExit(() => navigate("/inventory/receipts"))
   }
 
   const handleAddItem = useCallback(() => {

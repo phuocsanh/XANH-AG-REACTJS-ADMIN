@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useFormGuard } from '@/hooks/use-form-guard';
 import {
   Box,
   Button,
@@ -46,7 +47,7 @@ const CreateSalesReturn = () => {
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<SalesReturnFormData>({
     resolver: zodResolver(salesReturnSchema),
     defaultValues: defaultSalesReturnValues,
@@ -56,6 +57,8 @@ const CreateSalesReturn = () => {
     control,
     name: 'items',
   });
+
+  const { confirmExit } = useFormGuard(isDirty);
 
   // Search invoices
   const { data: invoicesData } = useSalesInvoicesQuery({
@@ -158,7 +161,7 @@ const CreateSalesReturn = () => {
   return (
     <Box>
       <Box display="flex" alignItems="center" mb={3}>
-        <IconButton onClick={() => navigate('/sales-returns')} sx={{ mr: 2 }}>
+        <IconButton onClick={() => confirmExit(() => navigate('/sales-returns'))} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
@@ -523,7 +526,7 @@ const CreateSalesReturn = () => {
             <Box display="flex" gap={2} justifyContent="flex-end">
               <Button
                 variant="outlined"
-                onClick={() => navigate('/sales-returns')}
+                onClick={() => confirmExit(() => navigate('/sales-returns'))}
                 disabled={createMutation.isPending}
               >
                 Hủy
