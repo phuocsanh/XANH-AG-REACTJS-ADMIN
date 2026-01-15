@@ -67,8 +67,8 @@ const useItemColumns = ({
                         <div className=" leading-tight">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
                         <div className="text-[10px] text-gray-400">Tên sản phẩm:</div>
                         <div className=" leading-tight">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
-                        <div className="text-[10px] text-gray-400">Đơn vị tính:</div>
-                        <div className=" leading-tight">{getValues(`items.${index}.unit_name`) || 'Chưa có'}</div>
+                        <div className="text-[10px] text-gray-400">Đơn vị tính:  <div className=" leading-tight">{getValues(`items.${index}.unit_name`) || 'Chưa có'}</div></div>
+                       
                       </div>
                     }
                     placement="topLeft"
