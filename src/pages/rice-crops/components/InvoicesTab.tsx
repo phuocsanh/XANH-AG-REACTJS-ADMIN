@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Tag, Typography, Card, Statistic, Row, Col, Empty, Spin, Button, Modal, Select, Space, Input } from 'antd';
-import { PlusOutlined, ShopOutlined, FileTextOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { Table, Tag, Typography, Card, Statistic, Row, Col, Empty, Spin, Button, Modal, Select, Space, Input, Divider } from 'antd';
+import { PlusOutlined, ShopOutlined, FileTextOutlined, DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, useFieldArray, useWatch, Control } from 'react-hook-form';
 import api from '@/utils/api';
@@ -90,6 +90,8 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const [editingRecord, setEditingRecord] = useState<MergedPurchase | null>(null);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [currentViewingRecord, setCurrentViewingRecord] = useState<MergedPurchase | null>(null);
   
   // React Hook Form
   const { control, handleSubmit, reset, watch, setValue } = useForm<ExternalPurchaseFormValues>({
@@ -262,6 +264,12 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       },
     });
   };
+  
+  // Xử lý xem chi tiết hóa đơn
+  const handleViewDetail = (record: MergedPurchase) => {
+    setCurrentViewingRecord(record);
+    setIsDetailModalOpen(true);
+  };
 
   const onExternalFormSubmit = async (values: ExternalPurchaseFormValues) => {
     // Tính lại tổng tiền để đảm bảo chính xác
@@ -415,33 +423,46 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
       render: (_, record) => {
         const canEdit = isAdmin || record.created_by === currentUserId;
         
-        return record.source === 'external' ? (
+        return (
           <Space size="middle">
-            {canEdit && (
-              <Button
-                type="text"
-                icon={<EditOutlined style={{ color: '#1890ff' }} />}
-                className="flex items-center justify-center w-10 h-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEditExternal(record);
-                }}
-              />
-            )}
-            {canEdit && (
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                className="flex items-center justify-center w-10 h-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteExternal(record);
-                }}
-              />
+            <Button
+              type="text"
+              icon={<EyeOutlined style={{ color: '#52c41a' }} />}
+              className="flex items-center justify-center w-10 h-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetail(record);
+              }}
+            />
+            {record.source === 'external' && (
+              <>
+                {canEdit && (
+                  <Button
+                    type="text"
+                    icon={<EditOutlined style={{ color: '#1890ff' }} />}
+                    className="flex items-center justify-center w-10 h-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditExternal(record);
+                    }}
+                  />
+                )}
+                {canEdit && (
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    className="flex items-center justify-center w-10 h-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteExternal(record);
+                    }}
+                  />
+                )}
+              </>
             )}
           </Space>
-        ) : null;
+        );
       },
     },
   ];
@@ -749,6 +770,139 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
 
           <TotalCalculator control={control} />
         </form>
+      </Modal>
+
+      {/* Modal xem chi tiết hóa đơn */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <FileTextOutlined className="text-blue-500" />
+            <span>Chi tiết hóa đơn {currentViewingRecord?.code}</span>
+            {currentViewingRecord?.source === 'system' ? (
+              <Tag color="blue">Cửa hàng XANH</Tag>
+            ) : (
+              <Tag color="orange">Tự nhập</Tag>
+            )}
+          </div>
+        }
+        open={isDetailModalOpen}
+        onCancel={() => {
+          setIsDetailModalOpen(false);
+          setCurrentViewingRecord(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setIsDetailModalOpen(false);
+            setCurrentViewingRecord(null);
+          }}>
+            Đóng
+          </Button>
+        ]}
+        width={700}
+      >
+        {currentViewingRecord && (
+          <div className="py-2">
+            <Row gutter={[24, 24]}>
+              <Col span={12}>
+                <div className="mb-4">
+                  <Text type="secondary" className="block text-xs uppercase mb-1">Nhà cung cấp</Text>
+                  <Text strong className="text-base">
+                    {currentViewingRecord.supplier === 'Hệ thống' ? 'Cửa hàng XANH' : currentViewingRecord.supplier}
+                  </Text>
+                </div>
+                <div className="mb-4">
+                  <Text type="secondary" className="block text-xs uppercase mb-1">Ngày lập hóa đơn</Text>
+                  <Text strong>{dayjs(currentViewingRecord.date).format('DD/MM/YYYY')}</Text>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div className="mb-4 text-right">
+                  <Text type="secondary" className="block text-xs uppercase mb-1">Trạng thái</Text>
+                  {(() => {
+                    const statusConfig: Record<string, { text: string; color: string }> = {
+                      draft: { text: 'Nháp', color: 'default' },
+                      confirmed: { text: 'Đã xác nhận', color: 'blue' },
+                      paid: { text: 'Đã thanh toán', color: 'green' },
+                      partial: { text: 'Thanh toán một phần', color: 'orange' },
+                      pending: { text: 'Chưa thanh toán', color: 'red' },
+                      cancelled: { text: 'Đã hủy', color: 'red' },
+                    };
+                    const config = statusConfig[currentViewingRecord.status] || { text: currentViewingRecord.status, color: 'default' };
+                    return <Tag color={config.color} className="mr-0">{config.text}</Tag>;
+                  })()}
+                </div>
+                <div className="mb-4 text-right">
+                  <Text type="secondary" className="block text-xs uppercase mb-1">Phương thức thanh toán</Text>
+                  <Tag color="blue" className="mr-0">{currentViewingRecord.payment_method || 'Không rõ'}</Tag>
+                </div>
+              </Col>
+            </Row>
+
+            <Divider className="my-2" />
+
+            <div className="mb-4">
+              <Text strong className="block mb-2">Danh sách sản phẩm</Text>
+              <Table
+                dataSource={currentViewingRecord.items}
+                pagination={false}
+                size="small"
+                rowKey={(record, index) => index?.toString() || '0'}
+                columns={[
+                  {
+                    title: 'Sản phẩm',
+                    dataIndex: 'product_name',
+                    key: 'product_name',
+                    render: (text, item) => text || item?.product?.trade_name || item?.product?.name || 'Sản phẩm'
+                  },
+                  {
+                    title: 'SL',
+                    dataIndex: 'quantity',
+                    key: 'quantity',
+                    width: 70,
+                    align: 'center',
+                  },
+                  {
+                    title: 'Đơn giá',
+                    dataIndex: 'unit_price',
+                    key: 'unit_price',
+                    align: 'right',
+                    render: (val) => formatCurrency(val || 0)
+                  },
+                  {
+                    title: 'Thành tiền',
+                    key: 'total',
+                    align: 'right',
+                    render: (_, item) => formatCurrency((item.quantity || 0) * (item.unit_price || 0))
+                  }
+                ]}
+              />
+            </div>
+
+            {currentViewingRecord.notes && (
+              <div className="mb-4 p-3 bg-gray-50 rounded">
+                <Text type="secondary" className="block text-xs uppercase mb-1">Ghi chú</Text>
+                <Text italic>{currentViewingRecord.notes}</Text>
+              </div>
+            )}
+
+            <Card bodyStyle={{ padding: '12px' }} className="bg-gray-50 border-none shadow-none">
+              <Row gutter={16}>
+                <Col span={8} className="text-center">
+                  <Text type="secondary" className="block text-xs uppercase">Tổng tiền</Text>
+                  <Text strong className="text-lg text-green-600">{formatCurrency(currentViewingRecord.total_amount)}</Text>
+                </Col>
+                <Col span={8} className="text-center border-x border-gray-200">
+                  <Text type="secondary" className="block text-xs uppercase">Đã thanh toán</Text>
+                  <Text strong className="text-lg text-blue-600">{formatCurrency(currentViewingRecord.paid_amount || 0)}</Text>
+                </Col>
+                <Col span={8} className="text-center">
+                  <Text type="secondary" className="block text-xs uppercase">Còn nợ</Text>
+                  <Text strong className="text-lg text-red-600">{formatCurrency(currentViewingRecord.remaining_amount || 0)}</Text>
+                </Col>
+              </Row>
+            </Card>
+          </div>
+        )}
       </Modal>
     </div>
   );
