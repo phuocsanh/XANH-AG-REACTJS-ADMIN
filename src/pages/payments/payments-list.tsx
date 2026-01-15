@@ -489,7 +489,11 @@ const PaymentsList: React.FC = () => {
       >
         {viewingPayment && (
           <div className='mt-4'>
-            <Descriptions bordered column={{ xs: 1, sm: 2 }}>
+            <Descriptions 
+              bordered 
+              column={1} 
+              labelStyle={{ width: '160px' }}
+            >
               <Descriptions.Item label='Mã PT'>
                 <span className='font-bold'>{viewingPayment.code}</span>
               </Descriptions.Item>
@@ -498,7 +502,7 @@ const PaymentsList: React.FC = () => {
                    <Tag color="cyan">{viewingPayment.debt_note_code}</Tag>
                 ) : "-"}
               </Descriptions.Item>
-              <Descriptions.Item label='Khách hàng' span={2}>
+              <Descriptions.Item label='Khách hàng'>
                 {viewingPayment.customer?.name || viewingPayment.customer_name || '-'}
               </Descriptions.Item>
               <Descriptions.Item label='Số tiền'>
@@ -521,6 +525,11 @@ const PaymentsList: React.FC = () => {
               <Descriptions.Item label='Ngày thu'>
                 {new Date(viewingPayment.payment_date).toLocaleDateString("vi-VN")}
               </Descriptions.Item>
+              {viewingPayment.notes && (
+                <Descriptions.Item label='Ghi chú'>
+                  {viewingPayment.notes}
+                </Descriptions.Item>
+              )}
             </Descriptions>
 
             <Divider />
