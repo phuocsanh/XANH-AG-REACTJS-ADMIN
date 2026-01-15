@@ -7,7 +7,6 @@ import {
   Tag,
   Button,
   Spin,
-  Space,
   Breadcrumb,
 } from 'antd';
 import {
@@ -64,27 +63,12 @@ const statusLabels: Record<CropStatus, string> = {
   failed: 'Thất bại',
 };
 
-// Helper function để format số theo chuẩn Việt Nam
-const formatVietnameseNumber = (value: number | string | null | undefined, decimals: number = 2): string => {
-  if (value === null || value === undefined || value === '') return '-';
-  
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '-';
-  
-  // Format với số chữ số thập phân
-  const parts = num.toFixed(decimals).split('.');
-  
-  // Thêm dấu chấm ngăn cách hàng nghìn
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  
-  // Nối lại với dấu phẩy cho phần thập phân
-  return parts.join(',');
-};
+// Xóa hàm formatVietnameseNumber không sử dụng
 
 const RiceCropDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('information'); // Mặc định là tab Thông tin chung (key: 'information')
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
   const riceCropId = id ? parseInt(id, 10) : 0;
@@ -140,13 +124,13 @@ const RiceCropDetail: React.FC = () => {
               <span style={{ color: '#000' }}>{riceCrop.location || '-'}</span>
             </Descriptions.Item>
             <Descriptions.Item label="Giai đoạn">
-              <Tag color={(growthStageColors as any)[riceCrop.growth_stage]}>
-                {(growthStageLabels as any)[riceCrop.growth_stage]}
+              <Tag color={growthStageColors[riceCrop.growth_stage as keyof typeof growthStageColors]}>
+                {growthStageLabels[riceCrop.growth_stage as keyof typeof growthStageLabels]}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
-              <Tag color={(statusColors as any)[riceCrop.status]}>
-                {(statusLabels as any)[riceCrop.status]}
+              <Tag color={statusColors[riceCrop.status as keyof typeof statusColors]}>
+                {statusLabels[riceCrop.status as keyof typeof statusLabels]}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày gieo">
@@ -275,8 +259,8 @@ const RiceCropDetail: React.FC = () => {
         <h1 className="text-xl sm:text-2xl font-bold m-0 break-words">
           {riceCrop.field_name}
         </h1>
-        <Tag color={(statusColors as any)[riceCrop.status]} className="m-0 text-sm sm:text-base py-0.5 px-2">
-          {(statusLabels as any)[riceCrop.status]}
+        <Tag color={statusColors[riceCrop.status as keyof typeof statusColors]} className="m-0 text-sm sm:text-base py-0.5 px-2">
+          {statusLabels[riceCrop.status as keyof typeof statusLabels]}
         </Tag>
       </div>
 
