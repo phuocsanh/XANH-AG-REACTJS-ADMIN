@@ -117,7 +117,7 @@ const InventoryReceiptsList: React.FC = () => {
   }, [receiptsData])
 
   const { data: statsData, isLoading: isLoadingStats, refetch: refetchStats } =
-    useInventoryStatsQuery()
+    useInventoryStatsQuery(filters.supplier_id)
 
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
@@ -504,6 +504,38 @@ const InventoryReceiptsList: React.FC = () => {
       <Row gutter={[8, 16]} style={{ marginBottom: "24px" }}>
         <Col span={24}>
           <Title level={4} className="md:text-2xl">Quản lý nhập hàng</Title>
+        </Col>
+
+        {/* Filter Nhà cung cấp */}
+        <Col span={24}>
+          <Card size="small" bodyStyle={{ padding: '12px' }}>
+            <Row gutter={[8, 8]} align="middle">
+              <Col xs={24} sm={12} md={8} lg={6}>
+                <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                  <Text strong style={{ fontSize: '12px' }}>📦 Lọc theo nhà cung cấp:</Text>
+                  <FilterHeader 
+                    title=""
+                    value={filters.supplier_id}
+                    onChange={(val) => handleFilterChange('supplier_id', val)}
+                    inputType="combobox"
+                    comboBoxProps={{
+                      options: supplierOptions,
+                      onSearch: setSearchTermSupplier,
+                      placeholder: "Tất cả nhà cung cấp",
+                      loading: isLoadingSuppliers,
+                    }}
+                  />
+                </Space>
+              </Col>
+              {filters.supplier_id && (
+                <Col xs={24} sm={12} md={16} lg={18}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    📊 Thống kê bên dưới là của <strong>{supplierOptions.find(s => s.value === filters.supplier_id)?.label}</strong>
+                  </Text>
+                </Col>
+              )}
+            </Row>
+          </Card>
         </Col>
 
         {/* Thống kê tổng quan */}

@@ -947,3 +947,25 @@ body {
 .custom-range-picker-unlinked .ant-picker-panels {
   gap: 12px;
 }
+
+/* CSS cho ComboBox dropdown - Cho phép text xuống dòng */
+.combobox-dropdown-wrap-text .ant-select-item-option-content {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  line-height: 1.4 !important;
+}
+
+/* Tăng chiều cao tối thiểu của item để chứa text nhiều dòng */
+.combobox-dropdown-wrap-text .ant-select-item {
+  min-height: 32px !important;
+  height: auto !important;
+  padding: 6px 12px !important;
+}
+
+/* Giữ cho highlighted item vẫn hiển thị đầy đủ */
+.combobox-dropdown-wrap-text .ant-select-item-option-active,
+.combobox-dropdown-wrap-text .ant-select-item-option-selected {
+  min-height: 32px !important;
+  height: auto !important;
+}

@@ -55,7 +55,7 @@ export const inventoryKeys = {
     [...inventoryKeys.history(), "list", params] as const,
   historyByProduct: (productId: number, params?: InventoryHistoryListParams) =>
     [...inventoryKeys.history(), "product", productId, params] as const,
-  stats: () => [...inventoryKeys.all, "stats"] as const,
+  stats: (supplier_id?: number) => supplier_id ? [...inventoryKeys.all, "stats", supplier_id] as const : [...inventoryKeys.all, "stats"] as const,
   batches: () => [...inventoryKeys.all, "batches"] as const,
   batch: (id: number) => [...inventoryKeys.batches(), "detail", id] as const,
   batchByProduct: (productId: number) =>
@@ -657,16 +657,17 @@ export const useInventoryHistoryByProductQuery = (
 // ========== INVENTORY STATS HOOKS ==========
 
 /**
- * Hook lấy thống kê tồn kho
- */
-/**
  * Hook lấy thống kê tồn kho (Sử dụng endpoint stats mới từ server)
+ * @param supplier_id - ID nhà cung cấp (tùy chọn). Nếu có, trả về thống kê riêng của NCC đó
  */
-export const useInventoryStatsQuery = () => {
+export const useInventoryStatsQuery = (supplier_id?: number) => {
   return useQuery({
-    queryKey: inventoryKeys.stats(),
+    queryKey: supplier_id ? inventoryKeys.stats(supplier_id) : inventoryKeys.stats(),
     queryFn: async () => {
-      const response = await api.get<InventoryReceiptStats>("/inventory/receipts/stats")
+      const url = supplier_id 
+        ? `/inventory/receipts/stats?supplier_id=${supplier_id}`
+        : "/inventory/receipts/stats"
+      const response = await api.get<InventoryReceiptStats>(url)
       return response
     },
     refetchOnMount: true,

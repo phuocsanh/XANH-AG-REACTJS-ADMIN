@@ -201,6 +201,7 @@ function ComboBox({
       className={className}
       style={style}
       size={size}
+      popupClassName="combobox-dropdown-wrap-text"
       notFoundContent={
         isLoading ? (
           <div style={{ textAlign: "center" }}>Đang tải...</div>

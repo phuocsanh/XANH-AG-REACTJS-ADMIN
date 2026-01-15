@@ -298,6 +298,7 @@ function FormComboBox<T extends FieldValues>({
                 )
               }
               options={finalOptions as DefaultOptionType[]}
+              popupClassName="combobox-dropdown-wrap-text"
               {...selectProps}
             />
             {error && (
