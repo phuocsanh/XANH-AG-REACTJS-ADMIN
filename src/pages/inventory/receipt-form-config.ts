@@ -6,6 +6,7 @@ export const receiptItemSchema = z.object({
   product_id: z.number().min(1, 'Vui lòng chọn sản phẩm'),
   product_name: z.string().optional(),
   scientific_name: z.string().optional(),
+  unit_name: z.string().optional(),
   quantity: z.number().min(1, 'Số lượng phải lớn hơn 0'),
   unit_cost: z.number().min(0, 'Đơn giá phải lớn hơn hoặc bằng 0'),
   total_price: z.number().min(0),

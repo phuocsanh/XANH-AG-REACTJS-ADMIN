@@ -200,6 +200,7 @@ const InventoryReceiptCreate: React.FC = () => {
         product_id: item.product_id,
         product_name: item.product_name || item.product?.trade_name || item.product?.name || '',
         scientific_name: item.product?.name || '',
+        unit_name: item.product?.unit?.name || '',
         quantity: item.quantity,
         unit_cost: Number(item.unit_cost || item.unitPrice || 0),
         total_price: Number(item.total_price || 0),

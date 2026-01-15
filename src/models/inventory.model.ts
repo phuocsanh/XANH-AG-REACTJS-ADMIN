@@ -392,6 +392,7 @@ export interface InventoryReceiptItemForm
   key: string
   product_name?: string
   scientific_name?: string
+  unit_name?: string
 }
 
 // Interface cho request tạo chi tiết phiếu nhập hàng

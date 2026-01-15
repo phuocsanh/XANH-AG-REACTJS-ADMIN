@@ -62,11 +62,13 @@ const useItemColumns = ({
               render={({ field }) => (
                   <Tooltip 
                     title={
-                      <div className="flex flex-col py-1">
-                        <div className="text-xs text-gray-300 mb-1">Tên thương mại:</div>
-                        <div className="font-bold mb-2">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
-                        <div className="text-xs text-gray-300 mb-1">Tên sản phẩm:</div>
-                        <div className="font-bold">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
+                      <div className="flex flex-col py-0.5" style={{ fontSize: '10px' }}>
+                        <div className="text-[10px] text-gray-400">Tên thương mại:</div>
+                        <div className=" leading-tight">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
+                        <div className="text-[10px] text-gray-400">Tên sản phẩm:</div>
+                        <div className=" leading-tight">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
+                        <div className="text-[10px] text-gray-400">Đơn vị tính:</div>
+                        <div className=" leading-tight">{getValues(`items.${index}.unit_name`) || 'Chưa có'}</div>
                       </div>
                     }
                     placement="topLeft"
@@ -90,12 +92,13 @@ const useItemColumns = ({
                             if (name) {
                               setValue(`items.${index}.product_name`, name)
                             }
-                            // Lưu tên sản phẩm gốc (scientific name) để hiển thị tooltip
+                            // Lưu tên sản phẩm gốc (scientific name) và ĐVT để hiển thị tooltip
                             if (selectedOpt.name) {
                               setValue(`items.${index}.scientific_name`, selectedOpt.name)
-                            } else if (selectedOpt.label && !selectedOpt.trade_name) {
-                              setValue(`items.${index}.scientific_name`, selectedOpt.label)
                             }
+                            
+                            const unitName = selectedOpt.unit?.name || selectedOpt.unit_name || ""
+                            setValue(`items.${index}.unit_name`, unitName)
 
                             if (selectedOpt.cost_price !== undefined) {
                               const cost = selectedOpt.cost_price
