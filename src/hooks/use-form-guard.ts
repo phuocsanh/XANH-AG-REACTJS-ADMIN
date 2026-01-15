@@ -40,7 +40,12 @@ export const useFormGuard = (isDirty: boolean, message = "Bạn có thay đổi 
     window.history.pushState({ guarded: true }, '');
 
     const handlePopState = (event: PopStateEvent) => {
-      if (isDirtyRef.current && !isConfirmedRef.current) {
+      // Nếu đã confirm thoát, không chặn nữa
+      if (isConfirmedRef.current) {
+        return;
+      }
+      
+      if (isDirtyRef.current) {
         // Nếu dirty, chặn lại bằng cách đẩy lại state (vì URL đã thực sự thay đổi một phần ở mức browser)
         // Hiển thị modal xác nhận của Ant Design
         Modal.confirm({
