@@ -723,21 +723,7 @@ const InventoryReceiptCreate: React.FC = () => {
                 </strong>
               </div>
 
-              {/* Luôn hiển thị nợ NCC (chỉ tiền hàng, không tính ship) */}
-              {(calculateTotals().totalIndividualShipping > 0 || calculateTotals().totalSharedShipping > 0) && (
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  marginTop: 8,
-                  fontSize: 16,
-                  color: '#fa8c16'
-                }}>
-                  <span>NỢ NHÀ CUNG CẤP (Chỉ tiền hàng):</span>
-                  <strong>
-                    {calculateTotals().supplierAmount.toLocaleString('vi-VN')} VND
-                  </strong>
-                </div>
-              )}
+
             </div>
           </div>
 
