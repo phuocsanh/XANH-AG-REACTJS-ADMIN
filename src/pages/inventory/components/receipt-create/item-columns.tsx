@@ -64,17 +64,19 @@ const useItemColumns = ({
                     title={
                       <div className="flex flex-col py-1">
                         <div className="text-xs text-gray-300 mb-1">Tên thương mại:</div>
-                        <div className="font-bold mb-2">{getValues(`items.${index}.product_name`)}</div>
+                        <div className="font-bold mb-2">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
                         <div className="text-xs text-gray-300 mb-1">Tên sản phẩm:</div>
-                        <div className="font-bold">{getValues(`items.${index}.scientific_name`)}</div>
+                        <div className="font-bold">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
                       </div>
                     }
                     placement="topLeft"
                     mouseEnterDelay={0.5}
                   >
-                    <ComboBox
-                      {...field}
-                      placeholder='Chọn sản phẩm'
+                    <div className="w-full">
+                      <ComboBox
+                        {...field}
+                        title=""
+                        placeholder='Chọn sản phẩm'
                       {...comboBoxProps}
                       showSearch={true}
                       onChange={(value, option) => {
@@ -108,7 +110,8 @@ const useItemColumns = ({
                       }}
                       style={{ width: "100%" }}
                     />
-                  </Tooltip>
+                  </div>
+                </Tooltip>
               )}
             />
           </div>

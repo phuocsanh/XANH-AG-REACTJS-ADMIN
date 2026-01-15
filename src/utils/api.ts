@@ -277,9 +277,9 @@ api.instance.interceptors.response.use(
       // Nếu success = true
       if (response.data.success === true) {
         
-        // ✨ QUAN TRỌNG: Nếu response có pagination, giữ nguyên toàn bộ response
+        // ✨ QUAN TRỌNG: Nếu response có pagination hoặc total (paginated search), giữ nguyên toàn bộ response
         // Đây là response từ search endpoints
-        if ("pagination" in response.data) {
+        if ("pagination" in response.data || "total" in response.data) {
           // Không unwrap, giữ nguyên response.data
           return response;
         }

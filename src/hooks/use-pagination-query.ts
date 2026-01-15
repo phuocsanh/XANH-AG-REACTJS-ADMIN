@@ -70,6 +70,32 @@ export const usePaginationQuery = <T>(
           } as PaginationResponse<T>
         } else if (
           "data" in response &&
+          Array.isArray(response.data) &&
+          ("pagination" in response || "total" in response)
+        ) {
+          // Trường hợp response mới từ NestJS: { success: true, data: [items], pagination: { total, ... } }
+          // Hoặc cấu trúc { data: [items], total, page, limit }
+          const pagination = (response as any).pagination || response;
+          const total = pagination.total ?? response.data.length;
+          const pageNum = pagination.page ?? 1;
+          const limitNum = pagination.limit ?? 10;
+          
+          return {
+            data: {
+              items: response.data,
+              total: total,
+              page: pageNum,
+              limit: limitNum,
+              total_pages: pagination.totalPages || Math.ceil(total / limitNum),
+              has_next: pagination.has_next ?? (pageNum * limitNum < total),
+              has_prev: pagination.has_prev ?? (pageNum > 1),
+            },
+            status: (response as any).status || 200,
+            message: (response as any).message || "Success",
+            success: (response as any).success ?? true,
+          } as PaginationResponse<T>
+        } else if (
+          "data" in response &&
           typeof response.data === "object" &&
           response.data !== null &&
           "items" in response.data &&

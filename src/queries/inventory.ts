@@ -106,6 +106,12 @@ export const useInventoryReceiptsQuery = (
         total: number
         page: number
         limit: number
+        pagination?: {
+          total: number
+          page: number
+          limit: number
+          totalPages: number
+        }
       }>('/inventory/receipts/search', {
         page,
         limit,
@@ -118,15 +124,20 @@ export const useInventoryReceiptsQuery = (
         sort: 'created_at:DESC',
       })
 
+      const items = response.data || []
+      const total = response.pagination?.total ?? response.total ?? items.length
+      const pageNum = response.pagination?.page ?? response.page ?? page
+      const limitNum = response.pagination?.limit ?? response.limit ?? limit
+
       return {
         data: {
-          items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
-          has_prev: response.page > 1,
+          items,
+          total,
+          page: pageNum,
+          limit: limitNum,
+          total_pages: Math.ceil(total / limitNum),
+          has_next: pageNum * limitNum < total,
+          has_prev: pageNum > 1,
         },
         status: 200,
         message: 'Success',

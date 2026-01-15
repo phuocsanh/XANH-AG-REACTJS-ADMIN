@@ -77,51 +77,54 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 title={
                   <div className="flex flex-col py-1">
                     <div className="text-xs text-gray-300 mb-1">Tên thương mại:</div>
-                    <div className="font-bold mb-2">{getValues(`items.${index}.product_name`)}</div>
+                    <div className="font-bold mb-2">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
                     <div className="text-xs text-gray-300 mb-1">Tên sản phẩm:</div>
-                    <div className="font-bold">{getValues(`items.${index}.scientific_name`)}</div>
+                    <div className="font-bold">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
                   </div>
                 }
                 placement="topLeft"
                 mouseEnterDelay={0.5}
               >
-                <ComboBox
-                  {...field}
-                  placeholder='Chọn sản phẩm'
-                  {...comboBoxProps}
-                  showSearch={true}
-                  onChange={(value, option) => {
-                    field.onChange(value)
-                    
-                    if (option) {
-                      const optArray = Array.isArray(option) ? option : [option]
-                      const selectedOpt = optArray[0] as any
+                <div className="w-full">
+                  <ComboBox
+                    {...field}
+                    title=""
+                    placeholder='Chọn sản phẩm'
+                    {...comboBoxProps}
+                    showSearch={true}
+                    onChange={(value, option) => {
+                      field.onChange(value)
                       
-                      if (selectedOpt) {
-                        const name = selectedOpt.trade_name || selectedOpt.name || selectedOpt.label || ""
-                        if (name) {
-                          setValue(`items.${index}.product_name`, name)
-                        }
-                        // Lưu tên sản phẩm gốc (scientific name) để hiển thị tooltip
-                        if (selectedOpt.name) {
-                          setValue(`items.${index}.scientific_name`, selectedOpt.name)
-                        } else if (selectedOpt.label && !selectedOpt.trade_name) {
-                          setValue(`items.${index}.scientific_name`, selectedOpt.label)
-                        }
+                      if (option) {
+                        const optArray = Array.isArray(option) ? option : [option]
+                        const selectedOpt = optArray[0] as any
+                        
+                        if (selectedOpt) {
+                          const name = selectedOpt.trade_name || selectedOpt.name || selectedOpt.label || ""
+                          if (name) {
+                            setValue(`items.${index}.product_name`, name)
+                          }
+                          // Lưu tên sản phẩm gốc (scientific name) để hiển thị tooltip
+                          if (selectedOpt.name) {
+                            setValue(`items.${index}.scientific_name`, selectedOpt.name)
+                          } else if (selectedOpt.label && !selectedOpt.trade_name) {
+                            setValue(`items.${index}.scientific_name`, selectedOpt.label)
+                          }
 
-                        if (selectedOpt.cost_price !== undefined) {
-                          const cost = selectedOpt.cost_price
-                          setValue(`items.${index}.unit_cost`, cost)
-                          
-                          // Cập nhật thành tiền
-                          const qty = getValues(`items.${index}.quantity`) || 0
-                          setValue(`items.${index}.total_price`, qty * cost)
+                          if (selectedOpt.cost_price !== undefined) {
+                            const cost = selectedOpt.cost_price
+                            setValue(`items.${index}.unit_cost`, cost)
+                            
+                            // Cập nhật thành tiền
+                            const qty = getValues(`items.${index}.quantity`) || 0
+                            setValue(`items.${index}.total_price`, qty * cost)
+                          }
                         }
                       }
-                    }
-                  }}
-                  style={{ width: "100%" }}
-                />
+                    }}
+                    style={{ width: "100%" }}
+                  />
+                </div>
               </Tooltip>
             )}
           />
