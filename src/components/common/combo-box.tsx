@@ -1,5 +1,5 @@
 import React from "react"
-import { Select, Form } from "antd"
+import { Select, Form, Tooltip } from "antd"
 import { SelectProps, DefaultOptionType } from "antd/es/select"
 
 // Interface cho option của ComboBox
@@ -7,7 +7,9 @@ interface ComboBoxOption {
   value: string | number
   label: string
   disabled?: boolean
-  [key: string]: unknown
+  scientific_name?: string
+  unit_name?: string
+  [key: string]: any
 }
 
 // Interface cho props của ComboBox
@@ -198,6 +200,36 @@ function ComboBox({
       mode={mode}
       maxTagCount={maxTagCount}
       maxTagTextLength={maxTagTextLength}
+      optionRender={(option) => {
+        const data = option.data as ComboBoxOption
+        // Nếu có tên khoa học hoặc đơn vị tính thì hiển thị Tooltip khi hover vào item trong dropdown
+        if (data?.scientific_name || data?.unit_name) {
+          return (
+            <Tooltip 
+              title={
+                <div className="flex flex-col py-1" style={{ fontSize: '11px' }}>
+                  {data.scientific_name && (
+                    <>
+                      <div className="text-[#bfbfbf] mb-0.5">Tên sản phẩm:</div>
+                      <div className="text-white font-medium mb-1 leading-tight">{data.scientific_name}</div>
+                    </>
+                  )}
+                  {data.unit_name && (
+                    <div className="text-[#bfbfbf]">
+                      Đơn vị tính: <span className="text-white">{data.unit_name}</span>
+                    </div>
+                  )}
+                </div>
+              }
+              placement="right"
+              mouseEnterDelay={0.5}
+            >
+              <div style={{ width: '100%' }}>{option.label}</div>
+            </Tooltip>
+          )
+        }
+        return option.label
+      }}
       className={className}
       style={style}
       size={size}

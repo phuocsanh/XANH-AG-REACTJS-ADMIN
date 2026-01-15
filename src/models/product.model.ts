@@ -42,6 +42,7 @@ export interface Product {
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú về sản phẩm
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  unit_name?: string // Tên đơn vị tính (được map thêm)
 }
 
 // Extend Product interface để tương thích với DataTable

@@ -122,6 +122,9 @@ const InventoryReceiptCreate: React.FC = () => {
         ...product,
         label: product.trade_name || product.name,
         value: product.id,
+        // Bổ sung các trường cho Tooltip trong ComboBox
+        scientific_name: product.name,
+        unit_name: product.unit?.name || product.unit_name || "",
       }))
     })
   }, [data?.pages])

@@ -1990,7 +1990,9 @@ ${productInfo}`;
                     data={productsData?.data?.items?.map((product: Product) => {
                       return {
                         value: product.id,
-                        label: product.trade_name || product.name // Ưu tiên hiển thị Hiệu thuốc
+                        label: product.trade_name || product.name, // Ưu tiên hiển thị Hiệu thuốc
+                        scientific_name: product.name,
+                        unit_name: product.unit?.name || product.unit_name || ""
                       };
                     }) || []}
                     value={undefined}
