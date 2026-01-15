@@ -511,6 +511,16 @@ const PaymentsList: React.FC = () => {
                   {formatCurrency(viewingPayment.allocated_amount)}
                 </span>
               </Descriptions.Item>
+              <Descriptions.Item label='Phương thức'>
+                <Tag color="blue">
+                  {paymentMethodLabels[
+                    viewingPayment.payment_method as keyof typeof paymentMethodLabels
+                  ] || viewingPayment.payment_method}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label='Ngày thu'>
+                {new Date(viewingPayment.payment_date).toLocaleDateString("vi-VN")}
+              </Descriptions.Item>
             </Descriptions>
 
             <Divider />
@@ -566,9 +576,9 @@ const PaymentsList: React.FC = () => {
               <strong>Hành động này sẽ:</strong>
             </p>
             <ul style={{ paddingLeft: 20 }}>
-              <li>✓ Xóa payment và allocations</li>
+              <li>✓ Xóa phiếu thu và các phân bổ</li>
               <li>✓ Hoàn trả tiền vào công nợ</li>
-              <li>✓ Cập nhật lại trạng thái invoices</li>
+              <li>✓ Cập nhật lại trạng thái hóa đơn</li>
             </ul>
             <p style={{ marginTop: 12 }}>
               Bạn có chắc chắn muốn tiếp tục?

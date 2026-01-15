@@ -45,4 +45,5 @@ export const defaultSettlePaymentValues: SettlePaymentFormData = {
 export const paymentMethodLabels = {
   cash: 'Tiền mặt',
   transfer: 'Chuyển khoản',
+  debt: 'Công nợ',
 };

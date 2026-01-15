@@ -127,6 +127,8 @@ export const useAddPaymentMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ["payments"] })
+      queryClient.invalidateQueries({ queryKey: ["merged-purchases"] })
       toast.success("Thanh toán thành công!")
     },
     onError: (error: unknown) => {
