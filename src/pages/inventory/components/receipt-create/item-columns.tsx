@@ -11,15 +11,17 @@ import DatePicker from "@/components/common/DatePicker"
 import ComboBox from "@/components/common/combo-box"
 import Field from "@/components/common/field"
 
-import { InventoryReceiptItemForm } from "@/models/inventory.model"
 import { Controller } from "react-hook-form"
 import dayjs from "dayjs"
 
 
 const { Text } = Typography
 
+/**
+ * Props cho hook useItemColumns
+ */
 interface ItemColumnsProps {
-  handleDeleteItem: (index: number) => void
+  handleDeleteItem: (index: number) => void // Hàm xóa một dòng sản phẩm
   comboBoxProps: {
     data: { value: number; label: string }[]
     isLoading: boolean
@@ -28,11 +30,14 @@ interface ItemColumnsProps {
     isFetchingNextPage: boolean
     fetchNextPage: () => void
   }
-  control: any
-  setValue: any
-  getValues: any
+  control: any // Đối tượng control từ react-hook-form
+  setValue: any // Hàm setValue từ react-hook-form
+  getValues: any // Hàm getValues từ react-hook-form
 }
 
+/**
+ * Hook định nghĩa các cột cho bảng nhập kho
+ */
 const useItemColumns = ({
   handleDeleteItem,
   comboBoxProps,
@@ -67,7 +72,7 @@ const useItemColumns = ({
                         <div className=" leading-tight">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
                         <div className="text-[10px] text-gray-400">Tên sản phẩm:</div>
                         <div className=" leading-tight">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
-                        <div className="text-[10px] text-gray-400">Đơn vị tính:  <div className=" leading-tight">{getValues(`items.${index}.unit_name`) || 'Chưa có'}</div></div>
+                        <div className="text-[10px] text-gray-400">Đơn vị tính: <span className="text-white">{getValues(`items.${index}.unit_name`) || 'Chưa có'}</span></div>
                        
                       </div>
                     }
