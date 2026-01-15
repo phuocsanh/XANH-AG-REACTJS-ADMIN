@@ -658,13 +658,32 @@ const InventoryReceiptCreate: React.FC = () => {
                   )}
 
                   {watchedPaymentType === 'partial' && (
-                    <FormFieldNumber
-                      label="Số tiền trả trước"
-                      name="paidAmount"
-                      control={control}
-                      addonAfter="VND"
-                      required
-                    />
+                    <>
+                      <FormFieldNumber
+                        label="Số tiền trả trước"
+                        name="paidAmount"
+                        control={control}
+                        addonAfter="VND"
+                        required
+                      />
+                      
+                      {/* Hiển thị số tiền còn nợ NCC */}
+                      {watch('paidAmount') && (
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-orange-700">
+                              Còn nợ NCC:
+                            </span>
+                            <strong className="text-lg text-orange-600">
+                              {(calculateTotals().supplierAmount - (watch('paidAmount') || 0)).toLocaleString('vi-VN')} VND
+                            </strong>
+                          </div>
+                          <p className="text-xs text-orange-600 mt-1">
+                            (Đã trừ phí vận chuyển/bốc vác bạn tự chịu)
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   { (watchedPaymentType as string) !== 'full' && (
