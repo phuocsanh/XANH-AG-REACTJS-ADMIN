@@ -413,7 +413,7 @@ const InventoryReceiptsList: React.FC = () => {
 
         return (
           <Space size="small">
-            {hasExcludedCosts && (
+            {hasExcludedCosts && amount > 0 && (
               <Tooltip title={`Tổng tiền hàng: ${supplierAmount.toLocaleString('vi-VN')} đ (Đã trừ phí vận chuyển ${(finalAmount - supplierAmount).toLocaleString('vi-VN')} đ)`}>
                 <InfoCircleOutlined style={{ color: '#faad14', fontSize: '12px' }} />
               </Tooltip>
