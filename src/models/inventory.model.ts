@@ -68,7 +68,6 @@ export interface InventoryReceipt {
   final_amount?: number
   supplier_amount?: number
   debt_amount?: number
-  is_shipping_paid_to_supplier?: boolean
   shared_shipping_cost?: number
   shipping_allocation_method?: string
   
@@ -249,7 +248,6 @@ export function mapApiResponseToInventoryReceipt(
     final_amount: apiReceipt.final_amount ? parseFloat(apiReceipt.final_amount) : undefined,
     supplier_amount: apiReceipt.supplier_amount ? parseFloat(apiReceipt.supplier_amount) : undefined,
     debt_amount: apiReceipt.debt_amount ? parseFloat(apiReceipt.debt_amount) : 0,
-    is_shipping_paid_to_supplier: apiReceipt.is_shipping_paid_to_supplier,
     shared_shipping_cost: apiReceipt.shared_shipping_cost ? parseFloat(apiReceipt.shared_shipping_cost) : 0,
     shipping_allocation_method: apiReceipt.shipping_allocation_method,
     
@@ -379,7 +377,6 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
   shared_shipping_cost?: number // Phí vận chuyển chung (tùy chọn)
   shipping_allocation_method?: 'by_value' | 'by_quantity' // Phương thức phân bổ (tùy chọn)
-  is_shipping_paid_to_supplier?: boolean // Phí ship trả cho NCC hay đơn vị ngoài (tùy chọn)
 }
 
 // Interface cho request cập nhật phiếu nhập hàng

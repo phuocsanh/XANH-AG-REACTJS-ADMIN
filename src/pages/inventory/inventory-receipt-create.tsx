@@ -221,7 +221,6 @@ const InventoryReceiptCreate: React.FC = () => {
         paidAmount: Number(receipt.paid_amount || 0),
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
-        isShippingPaidToSupplier: receipt.is_shipping_paid_to_supplier !== false, // Mặc định là true nếu không phải false
       })
 
       // Set images (vẫn giữ fileList state cho component Upload)
@@ -245,10 +244,9 @@ const InventoryReceiptCreate: React.FC = () => {
     
     const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
     
-    // Tính số tiền nợ nhà cung cấp (Owed to Supplier)
-    const isShippingPaidToSupplier = watch("isShippingPaidToSupplier")
-    const shippingTotal = totalIndividualShipping + totalSharedShipping
-    const supplierAmount = isShippingPaidToSupplier ? grandTotal : totalProductValue
+    // Nợ NCC = CHỈ tiền hàng (KHÔNG BAO GIỜ tính phí vận chuyển)
+    // Phí vận chuyển chỉ để kiểm soát tổng chi phí, không liên quan công nợ NCC
+    const supplierAmount = totalProductValue
     
     return {
       totalProductValue,
@@ -355,7 +353,7 @@ const InventoryReceiptCreate: React.FC = () => {
         // Thanh toán
         paid_amount: paid_amount,
         payment_status: payment_status,
-        is_shipping_paid_to_supplier: data.isShippingPaidToSupplier,
+        is_shipping_paid_to_supplier: false, // Luôn false - phí ship không liên quan NCC
         debt_amount: calculateTotals().supplierAmount - paid_amount,
         payment_method: data.status === 'approved' && data.paymentType !== 'debt' ? data.paymentMethod : null,
         payment_due_date: data.status === 'approved' && data.paymentType !== 'full' ? 
@@ -553,27 +551,6 @@ const InventoryReceiptCreate: React.FC = () => {
                   className="mt-4"
                 />
                 
-                <div className="mt-4">
-                  <Text className="block mb-2 font-medium text-blue-600">Thanh toán phí vận chuyển</Text>
-                  <Controller
-                    name="isShippingPaidToSupplier"
-                    control={control}
-                    render={({ field }) => (
-                      <Checkbox 
-                        checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                        className="text-gray-600"
-                      >
-                        Trả phí này cho nhà cung cấp (Tính vào công nợ NCC)
-                      </Checkbox>
-                    )}
-                  />
-                  {!watch('isShippingPaidToSupplier') && (
-                    <div className="mt-1 text-xs text-orange-500 italic">
-                      * Phí này sẽ được tính vào giá vốn sản phẩm nhưng KHÔNG tính vào tiền nợ NCC.
-                    </div>
-                  )}
-                </div>
 
                 <div className="mt-4">
                   <Text className="block mb-2">Phương thức phân bổ phí chung</Text>
@@ -596,6 +573,14 @@ const InventoryReceiptCreate: React.FC = () => {
                       </Radio.Group>
                     )}
                   />
+                </div>
+                
+                {/* Ghi chú: Phí vận chuyển luôn do bạn tự chịu, không tính vào nợ NCC */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Text className="text-sm text-blue-700">
+                    💡 <strong>Lưu ý:</strong> Phí vận chuyển/bốc vác này chỉ để kiểm soát tổng chi phí đơn hàng. 
+                    Bạn tự thanh toán cho đơn vị vận chuyển, <strong>không tính vào công nợ nhà cung cấp</strong>.
+                  </Text>
                 </div>
               </>
             )}
@@ -738,7 +723,8 @@ const InventoryReceiptCreate: React.FC = () => {
                 </strong>
               </div>
 
-              {!watch('isShippingPaidToSupplier') && (
+              {/* Luôn hiển thị nợ NCC (chỉ tiền hàng, không tính ship) */}
+              {(calculateTotals().totalIndividualShipping > 0 || calculateTotals().totalSharedShipping > 0) && (
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -746,7 +732,7 @@ const InventoryReceiptCreate: React.FC = () => {
                   fontSize: 16,
                   color: '#fa8c16'
                 }}>
-                  <span>NỢ NHÀ CUNG CẤP (Trừ ship):</span>
+                  <span>NỢ NHÀ CUNG CẤP (Chỉ tiền hàng):</span>
                   <strong>
                     {calculateTotals().supplierAmount.toLocaleString('vi-VN')} VND
                   </strong>

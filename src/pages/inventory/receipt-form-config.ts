@@ -25,7 +25,6 @@ export const receiptFormSchema = z.object({
   hasSharedShipping: z.boolean().default(false),
   sharedShippingCost: z.number().min(0).default(0),
   allocationMethod: z.enum(['by_value', 'by_quantity']).default('by_value'),
-  isShippingPaidToSupplier: z.boolean().default(true),
   
   // Hình ảnh
   images: z.any().optional(),
@@ -107,5 +106,4 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   images: [],
   paymentType: 'partial',
   paidAmount: 0,
-  isShippingPaidToSupplier: true,
 };
