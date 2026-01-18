@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Modal, Button, Upload, message, Spin, Space, Slider, Alert } from 'antd';
-import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined } from '@ant-design/icons';
+import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select } from 'antd';
+import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined } from '@ant-design/icons';
 import { Sparkles, X } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
 import bgSanPham from '@/assets/images/bg-san-pham.png';
+import logo3 from '@/assets/images/logo3.png';
 
 interface ImageStudioProps {
   visible: boolean;
@@ -28,6 +29,33 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   const [scale, setScale] = useState(0.18);
   const [positionX, setPositionX] = useState(500); 
   const [positionY, setPositionY] = useState(550); 
+  
+  // Canvas size states
+  const [canvasWidth, setCanvasWidth] = useState(1000);
+  const [canvasHeight, setCanvasHeight] = useState(1000);
+  
+  // Logo watermark states
+  const [showLogo, setShowLogo] = useState(true);
+  const [logoScale, setLogoScale] = useState(0.15);
+  const [logoX, setLogoX] = useState(850);
+  const [logoY, setLogoY] = useState(850);
+  const [isDraggingLogo, setIsDraggingLogo] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Text and Emoji states
+  interface OverlayItem {
+    id: string;
+    text: string;
+    x: number;
+    y: number;
+    size: number;
+    color: string;
+    font: string;
+    type: 'text' | 'emoji';
+  }
+  const [overlayItems, setOverlayItems] = useState<OverlayItem[]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isDraggingItem, setIsDraggingItem] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -183,14 +211,16 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
     const bgImg = new window.Image();
     const productImg = new window.Image();
+    const logoImg = new window.Image();
 
     bgImg.src = bgSanPham;
     productImg.src = (processedImage || originalImage) as string;
+    logoImg.src = logo3;
 
     const draw = () => {
       if (bgImg.complete && productImg.complete) {
-        ctx.clearRect(0, 0, 1000, 1000);
-        ctx.drawImage(bgImg, 0, 0, 1000, 1000);
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight);
         
         const pWidth = productImg.width;
         const pHeight = productImg.height;
@@ -208,14 +238,48 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
         );
         
         ctx.globalAlpha = 1.0;
+
+        // Draw logo watermark
+        if (showLogo && logoImg.complete) {
+          const logoWidth = logoImg.width * logoScale;
+          const logoHeight = logoImg.height * logoScale;
+          ctx.drawImage(
+            logoImg,
+            logoX - logoWidth / 2,
+            logoY - logoHeight / 2,
+            logoWidth,
+            logoHeight
+          );
+        }
+
+        // Draw overlay items (Text and Emojis)
+        overlayItems.forEach(item => {
+          ctx.fillStyle = item.color;
+          ctx.font = `${item.size}px ${item.font}`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          if (item.id === selectedItemId) {
+            // Draw a subtle border around selected item
+            const metrics = ctx.measureText(item.text);
+            const w = metrics.width + 10;
+            const h = item.size + 10;
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+          }
+          
+          ctx.fillText(item.text, item.x, item.y);
+        });
       }
     };
 
     bgImg.onload = draw;
     productImg.onload = draw;
+    logoImg.onload = draw;
     draw();
 
-  }, [visible, originalImage, processedImage, scale, positionX, positionY]);
+  }, [visible, originalImage, processedImage, scale, positionX, positionY, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId]);
 
   // AI Background Removal
   const processAI = async () => {
@@ -250,6 +314,82 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     }, 'image/png');
   };
 
+  // Copy ảnh vào clipboard
+  const handleCopyImage = async () => {
+    if (!canvasRef.current) return;
+    try {
+      const blob = await new Promise<Blob>((resolve) => {
+        canvasRef.current!.toBlob((b) => b && resolve(b), 'image/png');
+      });
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      message.success('Đã copy ảnh vào clipboard!');
+    } catch (error) {
+      console.error('Copy error:', error);
+      message.error('Không thể copy ảnh');
+    }
+  };
+
+  // Download ảnh
+  const handleDownload = () => {
+    if (!canvasRef.current) return;
+    canvasRef.current.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `product-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        message.success('Đã tải ảnh xuống!');
+      }
+    }, 'image/png');
+  };
+
+  // Thêm text mới
+  const addText = () => {
+    const newItem: OverlayItem = {
+      id: Date.now().toString(),
+      text: 'NHẬP CHỮ VÀO ĐÂY',
+      x: canvasWidth / 2,
+      y: canvasHeight / 2,
+      size: 60,
+      color: '#000000',
+      font: 'Arial',
+      type: 'text'
+    };
+    setOverlayItems([...overlayItems, newItem]);
+    setSelectedItemId(newItem.id);
+  };
+
+  // Thêm emoji
+  const addEmoji = (emoji: string) => {
+    const newItem: OverlayItem = {
+      id: Date.now().toString(),
+      text: emoji,
+      x: canvasWidth / 2,
+      y: canvasHeight / 2,
+      size: 100,
+      color: '#000000',
+      font: 'Arial',
+      type: 'emoji'
+    };
+    setOverlayItems([...overlayItems, newItem]);
+    setSelectedItemId(newItem.id);
+  };
+
+  // Cập nhật item
+  const updateItem = (id: string, updates: Partial<OverlayItem>) => {
+    setOverlayItems(overlayItems.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  // Xóa item
+  const removeItem = (id: string) => {
+    setOverlayItems(overlayItems.filter(item => item.id !== id));
+    if (selectedItemId === id) setSelectedItemId(null);
+  };
+
   return (
     <Modal
       title={<div className="flex items-center gap-2 font-bold"><Sparkles className="w-5 h-5 text-green-600" /> AI IMAGE STUDIO</div>}
@@ -259,6 +399,24 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       centered
       footer={[
         <Button key="cancel" onClick={onCancel} size="large">Hủy</Button>,
+        <Button 
+          key="copy" 
+          icon={<CopyOutlined />} 
+          disabled={!processedImage}
+          onClick={handleCopyImage}
+          size="large"
+        >
+          Copy ảnh
+        </Button>,
+        <Button 
+          key="download" 
+          icon={<SaveOutlined />} 
+          disabled={!processedImage}
+          onClick={handleDownload}
+          size="large"
+        >
+          Tải xuống
+        </Button>,
         <Button 
           key="save" 
           type="primary" 
@@ -369,28 +527,173 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           </div>
 
           {processedImage && (
-            <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-green-500">
-              <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                2. Căn chỉnh vị trí
-              </h4>
-              
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between text-[11px] font-bold mb-2">
-                    <span>TO / NHỎ</span>
-                    <span className="text-blue-600 font-mono">{Math.round(scale * 100)}%</span>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-green-500">
+                <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  2. Căn chỉnh vị trí
+                </h4>
+                
+                <div className="space-y-6">
+                  {/* Canvas Size Controls */}
+                  <div className="pb-4 border-b border-gray-200">
+                    <div className="text-[11px] font-bold mb-3 text-gray-600">KÍCH THƯỚC ẢNH (PX)</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-gray-500 block mb-1">Rộng</label>
+                        <input 
+                          type="number" 
+                          value={canvasWidth}
+                          onChange={(e) => setCanvasWidth(Math.max(100, parseInt(e.target.value) || 1000))}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                          min="100"
+                          max="3000"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-500 block mb-1">Cao</label>
+                        <input 
+                          type="number" 
+                          value={canvasHeight}
+                          onChange={(e) => setCanvasHeight(Math.max(100, parseInt(e.target.value) || 1000))}
+                          className="w-full px-2 py-1 border rounded text-sm"
+                          min="100"
+                          max="3000"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <Slider min={0.1} max={1.5} step={0.01} value={scale} onChange={setScale} />
-                </div>
 
-                <div>
-                  <div className="flex justify-between text-[11px] font-bold mb-2 uppercase"><span>Lên / Xuống</span></div>
-                  <Slider min={0} max={1000} value={positionY} onChange={setPositionY} />
-                </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] font-bold mb-2">
+                      <span>TO / NHỎ</span>
+                      <span className="text-blue-600 font-mono">{Math.round(scale * 100)}%</span>
+                    </div>
+                    <Slider min={0.1} max={1.5} step={0.01} value={scale} onChange={setScale} />
+                  </div>
 
-                <div>
-                  <div className="flex justify-between text-[11px] font-bold mb-2 uppercase"><span>Trái / Phải</span></div>
-                  <Slider min={0} max={1000} value={positionX} onChange={setPositionX} />
+                  <div>
+                    <div className="flex justify-between text-[11px] font-bold mb-2 uppercase"><span>Lên / Xuống</span></div>
+                    <Slider min={0} max={canvasHeight} value={positionY} onChange={setPositionY} />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] font-bold mb-2 uppercase"><span>Trái / Phải</span></div>
+                    <Slider min={0} max={canvasWidth} value={positionX} onChange={setPositionX} />
+                  </div>
+
+                  {/* Logo Watermark Controls */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] font-bold text-gray-600">LOGO THƯƠNG HIỆU</span>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={showLogo}
+                          onChange={(e) => setShowLogo(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-[10px]">Hiển thị</span>
+                      </label>
+                    </div>
+                    
+                    {showLogo && (
+                      <div>
+                        <div className="flex justify-between text-[11px] font-bold mb-2">
+                          <span>Kích thước logo</span>
+                          <span className="text-blue-600 font-mono">{Math.round(logoScale * 100)}%</span>
+                        </div>
+                        <Slider min={0.05} max={0.5} step={0.01} value={logoScale} onChange={setLogoScale} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Text & Emoji Controls */}
+              <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-blue-500">
+                <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  3. Thêm nội dung
+                </h4>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button icon={<FontSizeOutlined />} onClick={addText} block size="small">Thêm Chữ</Button>
+                    <Button icon={<SmileOutlined />} onClick={() => addEmoji('🌾')} block size="small">Thêm Emoji</Button>
+                  </div>
+
+                  {selectedItemId && overlayItems.find(i => i.id === selectedItemId) && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase">Đang chỉnh sửa</span>
+                        <Button 
+                          type="text" 
+                          danger 
+                          icon={<DeleteOutlined />} 
+                          size="small" 
+                          onClick={() => removeItem(selectedItemId)} 
+                        />
+                      </div>
+
+                      {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                        <Input 
+                          value={overlayItems.find(i => i.id === selectedItemId)?.text}
+                          onChange={(e) => updateItem(selectedItemId, { text: e.target.value })}
+                          placeholder="Nhập nội dung..."
+                        />
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Màu sắc</label>
+                          <input 
+                            type="color" 
+                            className="w-full h-8 p-0 border-0 bg-transparent cursor-pointer"
+                            value={overlayItems.find(i => i.id === selectedItemId)?.color}
+                            onChange={(e) => updateItem(selectedItemId, { color: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Cỡ chữ</label>
+                          <Slider 
+                            min={10} 
+                            max={200} 
+                            value={overlayItems.find(i => i.id === selectedItemId)?.size} 
+                            onChange={(val) => updateItem(selectedItemId, { size: val })}
+                          />
+                        </div>
+                      </div>
+
+                      {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                        <div>
+                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Phông chữ</label>
+                          <Select 
+                            className="w-full" 
+                            size="small"
+                            value={overlayItems.find(i => i.id === selectedItemId)?.font}
+                            onChange={(val) => updateItem(selectedItemId, { font: val })}
+                          >
+                            <Select.Option value="Arial">Arial</Select.Option>
+                            <Select.Option value="Times New Roman">Times New Roman</Select.Option>
+                            <Select.Option value="Courier New">Courier New</Select.Option>
+                            <Select.Option value="Verdana">Verdana</Select.Option>
+                            <Select.Option value="Impact">Impact</Select.Option>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                    {['🌾', '🌱', '🍃', '🌿', '🍂', '🍁', '🍄', '🍅', '🥦', '🌽', '🍋', '🍎', '🍐', '🍑', '🍒', '🍓', '🎁', '⭐', '🔥', '💯', '✅', '🆕', '💥', '💰'].map(emoji => (
+                      <button 
+                        key={emoji} 
+                        className="text-xl hover:scale-125 transition-transform"
+                        onClick={() => addEmoji(emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -408,9 +711,90 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               <div className="shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] border-[16px] border-white bg-white rounded-sm overflow-hidden scale-100 transition-transform duration-500">
                 <canvas 
                   ref={canvasRef} 
-                  width={1000} 
-                  height={1000} 
-                  style={{ width: '500px', height: '500px', display: 'block' }} 
+                  width={canvasWidth} 
+                  height={canvasHeight} 
+                  style={{ 
+                    width: `${Math.min(canvasWidth / 2, 500)}px`, 
+                    height: `${Math.min(canvasHeight / 2, 500)}px`, 
+                    display: 'block',
+                    cursor: isDraggingLogo ? 'grabbing' : 'grab'
+                  }}
+                  onMouseDown={(e) => {
+                    if (!showLogo) return;
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+                    
+                    // Check if click is on any overlay item first (highest priority)
+                    const canvas = canvasRef.current!;
+                    const ctx = canvas.getContext('2d')!;
+                    
+                    for (let i = overlayItems.length - 1; i >= 0; i--) {
+                      const item = overlayItems[i];
+                      ctx.font = `${item.size}px ${item.font}`;
+                      const metrics = ctx.measureText(item.text);
+                      const w = metrics.width + 10;
+                      const h = item.size + 10;
+                      
+                      if (
+                        mouseX >= item.x - w / 2 &&
+                        mouseX <= item.x + w / 2 &&
+                        mouseY >= item.y - h / 2 &&
+                        mouseY <= item.y + h / 2
+                      ) {
+                        setIsDraggingItem(true);
+                        setSelectedItemId(item.id);
+                        setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                        return;
+                      }
+                    }
+
+                    // No overlay item clicked, clear selection
+                    setSelectedItemId(null);
+
+                    // Check if click is on logo
+                    const logoImg = new window.Image();
+                    logoImg.src = logo3;
+                    const logoWidth = logoImg.width * logoScale;
+                    const logoHeight = logoImg.height * logoScale;
+                    
+                    if (
+                      mouseX >= logoX - logoWidth / 2 &&
+                      mouseX <= logoX + logoWidth / 2 &&
+                      mouseY >= logoY - logoHeight / 2 &&
+                      mouseY <= logoY + logoHeight / 2
+                    ) {
+                      setIsDraggingLogo(true);
+                      setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+
+                    if (isDraggingItem && selectedItemId) {
+                      updateItem(selectedItemId, { 
+                        x: mouseX - dragOffset.x, 
+                        y: mouseY - dragOffset.y 
+                      });
+                    } else if (isDraggingLogo && showLogo) {
+                      setLogoX(mouseX - dragOffset.x);
+                      setLogoY(mouseY - dragOffset.y);
+                    }
+                  }}
+                  onMouseUp={() => {
+                    setIsDraggingLogo(false);
+                    setIsDraggingItem(false);
+                  }}
+                  onMouseLeave={() => {
+                    setIsDraggingLogo(false);
+                    setIsDraggingItem(false);
+                  }}
                 />
               </div>
               {!processedImage && (

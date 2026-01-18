@@ -52,6 +52,8 @@ import FarmServiceCostsPage from "./pages/farm-service-costs"
 import ProductComparisonPage from "./pages/product-comparison"
 // Thêm import cho trang test upload
 import UploadTestPage from "./pages/upload-test"
+// Thêm import cho trang AI Image Studio
+import ImageStudioPage from "./pages/image-studio"
 // Thêm import cho các module quản lý bán hàng
 import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
@@ -328,6 +330,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="product:read">
                           <ProductComparisonPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/image-studio'
+                      element={
+                        <ProtectedRoute requiredPermission="product:read">
+                          <ImageStudioPage />
                         </ProtectedRoute>
                       }
                     />

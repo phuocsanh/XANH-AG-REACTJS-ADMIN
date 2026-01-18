@@ -21,7 +21,7 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch } from "react-icons/md"
+import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch, MdAutoAwesome } from "react-icons/md"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
@@ -69,6 +69,11 @@ const Sidebar: React.FC = () => {
     else if (path.startsWith('/products') || path.startsWith('/product-comparison')) {
       setActiveTab(1)
       setIsToggleSubmenu(true)
+    }
+    // AI Image Studio
+    else if (path.startsWith('/image-studio')) {
+      setActiveTab(42)
+      setIsToggleSubmenu(false)
     }
     // Loại sản phẩm
     else if (path.startsWith('/category')) {
@@ -429,6 +434,20 @@ const Sidebar: React.FC = () => {
                   📅
                 </span>
                 Lịch Vạn Niên
+              </Button>
+            </Link>
+          </li>
+
+          <li>
+            <Link to='/image-studio'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 42 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(42)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdAutoAwesome className='text-yellow-400' />
+                </span>
+                AI Image Studio
               </Button>
             </Link>
           </li>
