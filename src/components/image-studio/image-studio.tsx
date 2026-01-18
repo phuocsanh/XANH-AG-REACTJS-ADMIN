@@ -144,6 +144,26 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     return () => window.removeEventListener('paste', handlePaste);
   }, [handlePaste]);
 
+  // Phím tắt xóa item
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!visible || !selectedItemId) return;
+      
+      // Nếu đang focus vào input thì không xóa (tránh xóa nhầm khi đang gõ)
+      if (document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        removeItem(selectedItemId);
+        message.info('Đã xóa đối tượng');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, selectedItemId, overlayItems]);
+
   // Camera logic
   const startCamera = async () => {
     try {
@@ -693,6 +713,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         {emoji}
                       </button>
                     ))}
+                  </div>
+                  
+                  <div className="text-[9px] text-gray-400 mt-2 italic px-2">
+                    💡 Chọn Chữ/Emoji rồi nhấn phím <b>Delete</b> hoặc <b>Backspace</b> để xóa nhanh!
                   </div>
                 </div>
               </div>
