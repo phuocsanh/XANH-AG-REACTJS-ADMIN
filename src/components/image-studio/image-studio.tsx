@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select } from 'antd';
+import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip } from 'antd';
 import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined } from '@ant-design/icons';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles, X, Eraser } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
 import bgSanPham from '@/assets/images/bg-san-pham.png';
@@ -51,13 +51,44 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     size: number;
     color: string;
     font: string;
+    width: number;
     type: 'text' | 'emoji';
   }
   const [overlayItems, setOverlayItems] = useState<OverlayItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDraggingItem, setIsDraggingItem] = useState(false);
+  const [isResizingItem, setIsResizingItem] = useState(false);
+  
+  // Eraser states
+  const [isEraserMode, setIsEraserMode] = useState(false);
+  const [brushMode, setBrushMode] = useState<'erase' | 'restore'>('erase');
+  const [brushSize, setBrushSize] = useState(30);
+  const [isErasing, setIsErasing] = useState(false);
+  const [eraserTrigger, setEraserTrigger] = useState(0);
+  const [maskHistory, setMaskHistory] = useState<string[]>([]);
+  const maskCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+  const isExportingRef = useRef(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Initialize/Reset mask canvas when processed image changes
+  useEffect(() => {
+    if (processedImage) {
+      const img = new window.Image();
+      img.src = processedImage;
+      img.onload = () => {
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = img.width;
+        maskCanvas.height = img.height;
+        maskCanvasRef.current = maskCanvas;
+        setMaskHistory([]); // Reset history for new image
+      };
+    } else {
+      maskCanvasRef.current = null;
+      setMaskHistory([]);
+    }
+  }, [processedImage]);
 
   // Cleanup Object URLs
   useEffect(() => {
@@ -223,7 +254,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
   // Canvas drawing
   useEffect(() => {
-    if (!visible || !canvasRef.current || (!originalImage && !processedImage)) return;
+    if (!visible || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -234,31 +265,50 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     const logoImg = new window.Image();
 
     bgImg.src = bgSanPham;
-    productImg.src = (processedImage || originalImage) as string;
+    productImg.src = (processedImage || originalImage) ? (processedImage || originalImage) as string : '';
     logoImg.src = logo3;
 
     const draw = () => {
-      if (bgImg.complete && productImg.complete) {
+      // Clear and draw background as long as it's loaded
+      if (bgImg.complete) {
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         ctx.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight);
         
-        const pWidth = productImg.width;
-        const pHeight = productImg.height;
-        const displayWidth = pWidth * scale;
-        const displayHeight = pHeight * scale;
+        // Only draw product if an image is selected
+        if ((processedImage || originalImage) && productImg.complete) {
+          const pWidth = productImg.width;
+          const pHeight = productImg.height;
+          const displayWidth = pWidth * scale;
+          const displayHeight = pHeight * scale;
 
-        if (!processedImage) ctx.globalAlpha = 0.5;
+          if (!processedImage) ctx.globalAlpha = 0.5;
 
-        ctx.drawImage(
-          productImg,
-          positionX - displayWidth / 2,
-          positionY - displayHeight / 2,
-          displayWidth,
-          displayHeight
-        );
+          // Create temporary canvas for product + mask
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = productImg.width;
+          tempCanvas.height = productImg.height;
+          const tempCtx = tempCanvas.getContext('2d')!;
+          
+          tempCtx.drawImage(productImg, 0, 0);
+          
+          // Apply erase mask if exists
+          if (maskCanvasRef.current) {
+            tempCtx.globalCompositeOperation = 'destination-out';
+            tempCtx.drawImage(maskCanvasRef.current, 0, 0);
+            tempCtx.globalCompositeOperation = 'source-over';
+          }
+
+          ctx.drawImage(
+            tempCanvas,
+            positionX - displayWidth / 2,
+            positionY - displayHeight / 2,
+            displayWidth,
+            displayHeight
+          );
+          
+          ctx.globalAlpha = 1.0;
+        }
         
-        ctx.globalAlpha = 1.0;
-
         // Draw logo watermark
         if (showLogo && logoImg.complete) {
           const logoWidth = logoImg.width * logoScale;
@@ -272,25 +322,95 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           );
         }
 
-        // Draw overlay items (Text and Emojis)
+        // Draw overlay items (Text and Emojis) - ALWAYS DRAW EVEN WITHOUT PRODUCT
         overlayItems.forEach(item => {
           ctx.fillStyle = item.color;
           ctx.font = `${item.size}px ${item.font}`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           
-          if (item.id === selectedItemId) {
-            // Draw a subtle border around selected item
-            const metrics = ctx.measureText(item.text);
-            const w = metrics.width + 10;
-            const h = item.size + 10;
-            ctx.strokeStyle = '#3b82f6';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+          if (item.type === 'text') {
+            const words = item.text.split(' ');
+            let line = '';
+            const lines = [];
+            
+            for (let n = 0; n < words.length; n++) {
+              const testLine = line + words[n] + ' ';
+              const metrics = ctx.measureText(testLine);
+              const testWidth = metrics.width;
+              if (testWidth > item.width && n > 0) {
+                lines.push(line);
+                line = words[n] + ' ';
+              } else {
+                line = testLine;
+              }
+            }
+            lines.push(line);
+
+            const lineHeight = item.size * 1.2;
+            const totalHeight = lines.length * lineHeight;
+
+            if (item.id === selectedItemId) {
+              ctx.strokeStyle = '#3b82f6';
+              ctx.lineWidth = 2;
+              const rectX = item.x - item.width / 2 - 5;
+              const rectY = item.y - totalHeight / 2 - 5;
+              const rectW = item.width + 10;
+              const rectH = totalHeight + 10;
+              ctx.strokeRect(rectX, rectY, rectW, rectH);
+
+              // Draw resize handles (circles at right and left centers)
+              if (!isExportingRef.current) {
+                ctx.fillStyle = '#3b82f6';
+                // Right handle
+                ctx.beginPath();
+                ctx.arc(item.x + item.width / 2 + 5, item.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Left handle
+                ctx.beginPath();
+                ctx.arc(item.x - item.width / 2 - 5, item.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
+            }
+
+            lines.forEach((l, i) => {
+              ctx.fillText(l, item.x, item.y - (totalHeight / 2) + (i * lineHeight) + (lineHeight / 2));
+            });
+          } else {
+            // Emojis don't wrap
+            if (item.id === selectedItemId) {
+              const metrics = ctx.measureText(item.text);
+              const w = metrics.width + 10;
+              const h = item.size + 10;
+              ctx.strokeStyle = '#3b82f6';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+            }
+            ctx.fillText(item.text, item.x, item.y);
           }
-          
-          ctx.fillText(item.text, item.x, item.y);
         });
+
+        // Draw brush preview circle
+        if (isEraserMode && !isExportingRef.current && mousePos.x >= 0) {
+          ctx.beginPath();
+          ctx.arc(mousePos.x, mousePos.y, brushSize, 0, Math.PI * 2);
+          ctx.strokeStyle = brushMode === 'erase' ? 'rgba(255, 0, 0, 0.5)' : 'rgba(0, 255, 0, 0.5)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // Draw a small crosshair in center
+          ctx.beginPath();
+          ctx.moveTo(mousePos.x - 5, mousePos.y);
+          ctx.lineTo(mousePos.x + 5, mousePos.y);
+          ctx.moveTo(mousePos.x, mousePos.y - 5);
+          ctx.lineTo(mousePos.x, mousePos.y + 5);
+          ctx.stroke();
+        }
       }
     };
 
@@ -299,7 +419,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     logoImg.onload = draw;
     draw();
 
-  }, [visible, originalImage, processedImage, scale, positionX, positionY, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId]);
+  }, [visible, originalImage, processedImage, scale, positionX, positionY, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId, isErasing, isEraserMode, eraserTrigger, mousePos, brushMode, brushSize]);
 
   // AI Background Removal
   const processAI = async () => {
@@ -323,48 +443,86 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     }
   };
 
+  const saveMaskState = () => {
+    if (maskCanvasRef.current) {
+      setMaskHistory(prev => [...prev.slice(-19), maskCanvasRef.current!.toDataURL()]);
+    }
+  };
+
+  const undoEraser = () => {
+    if (maskHistory.length === 0 || !maskCanvasRef.current) return;
+    
+    const newHistory = [...maskHistory];
+    const lastState = newHistory.pop()!;
+    setMaskHistory(newHistory);
+    
+    const img = new window.Image();
+    img.src = lastState;
+    img.onload = () => {
+      const ctx = maskCanvasRef.current!.getContext('2d')!;
+      ctx.clearRect(0, 0, maskCanvasRef.current!.width, maskCanvasRef.current!.height);
+      ctx.drawImage(img, 0, 0);
+      setEraserTrigger(prev => prev + 1);
+    };
+  };
+
+  const wrapInExport = async (action: () => Promise<void> | void) => {
+    isExportingRef.current = true;
+    setEraserTrigger(prev => prev + 1); // Force redraw without cursor
+    await new Promise(resolve => setTimeout(resolve, 10)); // Give it a frame to redraw
+    await action();
+    isExportingRef.current = false;
+    setEraserTrigger(prev => prev + 1);
+  };
+
   const handleSave = () => {
     if (!canvasRef.current) return;
-    canvasRef.current.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], 'product-ai.png', { type: 'image/png' });
-        onSave(file);
-        onCancel();
-      }
-    }, 'image/png');
+    wrapInExport(() => {
+      canvasRef.current!.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'product-ai.png', { type: 'image/png' });
+          onSave(file);
+          onCancel();
+        }
+      }, 'image/png');
+    });
   };
 
   // Copy ảnh vào clipboard
   const handleCopyImage = async () => {
     if (!canvasRef.current) return;
-    try {
-      const blob = await new Promise<Blob>((resolve) => {
-        canvasRef.current!.toBlob((b) => b && resolve(b), 'image/png');
-      });
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      message.success('Đã copy ảnh vào clipboard!');
-    } catch (error) {
-      console.error('Copy error:', error);
-      message.error('Không thể copy ảnh');
-    }
+    wrapInExport(async () => {
+      try {
+        const blob = await new Promise<Blob>((resolve) => {
+          canvasRef.current!.toBlob((b) => b && resolve(b), 'image/png');
+        });
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        message.success('Đã copy ảnh vào clipboard!');
+      } catch (error) {
+        console.error('Copy error:', error);
+        message.error('Không thể copy ảnh');
+      }
+    });
   };
 
   // Download ảnh
   const handleDownload = () => {
     if (!canvasRef.current) return;
-    canvasRef.current.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `product-${Date.now()}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        message.success('Đã tải ảnh xuống!');
-      }
-    }, 'image/png');
+    wrapInExport(() => {
+      canvasRef.current!.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `product-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          message.success('Đã tải ảnh xuống!');
+        }
+      }, 'image/png');
+    });
   };
 
   // Thêm text mới
@@ -374,9 +532,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       text: 'NHẬP CHỮ VÀO ĐÂY',
       x: canvasWidth / 2,
       y: canvasHeight / 2,
-      size: 60,
+      size: 40,
       color: '#000000',
       font: 'Arial',
+      width: 400,
       type: 'text'
     };
     setOverlayItems([...overlayItems, newItem]);
@@ -393,6 +552,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       size: 100,
       color: '#000000',
       font: 'Arial',
+      width: 150,
       type: 'emoji'
     };
     setOverlayItems([...overlayItems, newItem]);
@@ -417,6 +577,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       onCancel={onCancel}
       width={1200}
       centered
+      className="responsive-modal"
+      style={{ top: 20 }}
       footer={[
         <Button key="cancel" onClick={onCancel} size="large">Hủy</Button>,
         <Button 
@@ -626,6 +788,94 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       </div>
                     )}
                   </div>
+
+                  {/* Eraser Tool Controls */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] font-bold text-gray-600 uppercase">Cục tẩy (Xóa thừa)</span>
+                      <Button 
+                        size="small"
+                        type={isEraserMode ? "primary" : "default"}
+                        icon={<Eraser size={14} />}
+                        onClick={() => setIsEraserMode(!isEraserMode)}
+                        className={isEraserMode ? "bg-red-500 hover:bg-red-600" : ""}
+                      >
+                        {isEraserMode ? "Đang bật" : "Bật tẩy"}
+                      </Button>
+                    </div>
+                    
+                    {isEraserMode && (
+                      <div className="p-3 bg-red-50 rounded-lg border border-red-100 space-y-3">
+                        <div className="flex gap-2">
+                          <Button 
+                            block 
+                            size="small" 
+                            type={brushMode === 'erase' ? 'primary' : 'default'}
+                            danger={brushMode === 'erase'}
+                            onClick={() => setBrushMode('erase')}
+                          >
+                            Xóa phần thừa
+                          </Button>
+                          <Button 
+                            block 
+                            size="small" 
+                            type={brushMode === 'restore' ? 'primary' : 'default'}
+                            className={brushMode === 'restore' ? "bg-green-600 hover:bg-green-700" : ""}
+                            onClick={() => setBrushMode('restore')}
+                          >
+                            Khôi phục
+                          </Button>
+                        </div>
+
+                        <Alert 
+                          message={
+                            <span className="text-[10px]">
+                              {brushMode === 'erase' 
+                                ? "Tô lên phần thừa để xóa đi." 
+                                : "Tô lên phần bị xóa nhầm để khôi phục."}
+                            </span>
+                          } 
+                          type={brushMode === 'erase' ? "warning" : "success"} 
+                          showIcon 
+                          className="py-1"
+                        />
+                        <div>
+                          <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span>Kích thước cọ</span>
+                            <span>{brushSize}px</span>
+                          </div>
+                          <Slider min={5} max={100} value={brushSize} onChange={setBrushSize} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            block 
+                            size="small" 
+                            disabled={maskHistory.length === 0}
+                            icon={<UndoOutlined />} 
+                            onClick={undoEraser}
+                          >
+                            Quay lại
+                          </Button>
+                          <Button 
+                            block 
+                            size="small" 
+                            icon={<X size={14} />} 
+                            onClick={() => {
+                              if (maskCanvasRef.current) {
+                                saveMaskState();
+                                const ctx = maskCanvasRef.current.getContext('2d')!;
+                                ctx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
+                                setEraserTrigger(prev => prev + 1);
+                                message.info('Đã khôi phục toàn bộ ảnh gốc');
+                              }
+                            }}
+                          >
+                            Làm lại đầu
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -660,6 +910,18 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           onChange={(e) => updateItem(selectedItemId, { text: e.target.value })}
                           placeholder="Nhập nội dung..."
                         />
+                      )}
+
+                      {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                        <div>
+                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Độ rộng vùng chữ</label>
+                          <Slider 
+                            min={100} 
+                            max={canvasWidth} 
+                            value={overlayItems.find(i => i.id === selectedItemId)?.width} 
+                            onChange={(val) => updateItem(selectedItemId, { width: val })}
+                          />
+                        </div>
                       )}
 
                       <div className="grid grid-cols-2 gap-2">
@@ -724,7 +986,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           )}
         </div>
 
-        <div className="lg:col-span-3 bg-gray-200/50 rounded-2xl flex items-center justify-center p-8 relative overflow-hidden min-h-[650px] border-2 border-dashed border-gray-300 shadow-inner">
+        <div className="lg:col-span-3 bg-gray-200/50 rounded-2xl flex items-center justify-center p-4 lg:p-8 relative overflow-hidden min-h-[400px] lg:min-h-[650px] border-2 border-dashed border-gray-300 shadow-inner">
           {loading ? (
              <div className="text-center z-10 bg-white/90 p-10 rounded-3xl shadow-2xl backdrop-blur-md border border-white">
                 <Spin size="large" />
@@ -738,19 +1000,45 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                   width={canvasWidth} 
                   height={canvasHeight} 
                   style={{ 
-                    width: `${Math.min(canvasWidth / 2, 500)}px`, 
-                    height: `${Math.min(canvasHeight / 2, 500)}px`, 
+                    width: '100%',
+                    maxWidth: `${Math.min(canvasWidth / 2, 500)}px`, 
+                    height: 'auto',
                     display: 'block',
-                    cursor: isDraggingLogo ? 'grabbing' : 'grab'
+                    cursor: isEraserMode ? 'none' : (isDraggingLogo ? 'grabbing' : 'grab'),
+                    touchAction: 'none' // Prevent scrolling when interacting with canvas
                   }}
                   onMouseDown={(e) => {
-                    if (!showLogo) return;
                     const rect = canvasRef.current!.getBoundingClientRect();
                     const scaleX = canvasWidth / rect.width;
                     const scaleY = canvasHeight / rect.height;
                     const mouseX = (e.clientX - rect.left) * scaleX;
                     const mouseY = (e.clientY - rect.top) * scaleY;
                     
+                    setMousePos({ x: mouseX, y: mouseY });
+
+                    // Check if click is on resize handles of selected item
+                    if (selectedItemId) {
+                      const item = overlayItems.find(i => i.id === selectedItemId);
+                      if (item && item.type === 'text') {
+                        // Check right handle
+                        const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
+                        // Check left handle
+                        const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
+
+                        if (distR < 25 || distL < 25) {
+                          setIsResizingItem(true);
+                          return;
+                        }
+                      }
+                    }
+
+                    // Eraser mode logic
+                    if (isEraserMode && processedImage && maskCanvasRef.current) {
+                      saveMaskState();
+                      setIsErasing(true);
+                      return;
+                    }
+
                     // Check if click is on any overlay item first (highest priority)
                     const canvas = canvasRef.current!;
                     const ctx = canvas.getContext('2d')!;
@@ -779,19 +1067,21 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     setSelectedItemId(null);
 
                     // Check if click is on logo
-                    const logoImg = new window.Image();
-                    logoImg.src = logo3;
-                    const logoWidth = logoImg.width * logoScale;
-                    const logoHeight = logoImg.height * logoScale;
-                    
-                    if (
-                      mouseX >= logoX - logoWidth / 2 &&
-                      mouseX <= logoX + logoWidth / 2 &&
-                      mouseY >= logoY - logoHeight / 2 &&
-                      mouseY <= logoY + logoHeight / 2
-                    ) {
-                      setIsDraggingLogo(true);
-                      setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                    if (showLogo) {
+                      const logoImg = new window.Image();
+                      logoImg.src = logo3;
+                      const logoWidth = logoImg.width * logoScale;
+                      const logoHeight = logoImg.height * logoScale;
+                      
+                      if (
+                        mouseX >= logoX - logoWidth / 2 &&
+                        mouseX <= logoX + logoWidth / 2 &&
+                        mouseY >= logoY - logoHeight / 2 &&
+                        mouseY <= logoY + logoHeight / 2
+                      ) {
+                        setIsDraggingLogo(true);
+                        setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                      }
                     }
                   }}
                   onMouseMove={(e) => {
@@ -800,6 +1090,46 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     const scaleY = canvasHeight / rect.height;
                     const mouseX = (e.clientX - rect.left) * scaleX;
                     const mouseY = (e.clientY - rect.top) * scaleY;
+                    
+                    setMousePos({ x: mouseX, y: mouseY });
+
+                    if (isResizingItem && selectedItemId) {
+                      const item = overlayItems.find(i => i.id === selectedItemId);
+                      if (item) {
+                        const newWidth = Math.abs(mouseX - item.x) * 2;
+                        updateItem(selectedItemId, { width: Math.max(50, newWidth) });
+                      }
+                      return;
+                    }
+
+                    if (isErasing && isEraserMode && maskCanvasRef.current) {
+                      const ctx = maskCanvasRef.current.getContext('2d')!;
+                      const productImg = new window.Image();
+                      productImg.src = (processedImage || originalImage) as string;
+                      
+                      const pWidth = productImg.width;
+                      const pHeight = productImg.height;
+                      const displayWidth = pWidth * scale;
+                      const displayHeight = pHeight * scale;
+                      
+                      const originX = positionX - displayWidth / 2;
+                      const originY = positionY - displayHeight / 2;
+                      const relX = (mouseX - originX) / (displayWidth / pWidth);
+                      const relY = (mouseY - originY) / (displayHeight / pHeight);
+                      
+                      if (brushMode === 'erase') {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.fillStyle = 'black';
+                      } else {
+                        ctx.globalCompositeOperation = 'destination-out';
+                      }
+
+                      ctx.beginPath();
+                      ctx.arc(relX, relY, brushSize / scale, 0, Math.PI * 2);
+                      ctx.fill();
+                      setEraserTrigger(prev => prev + 1); 
+                      return;
+                    }
 
                     if (isDraggingItem && selectedItemId) {
                       updateItem(selectedItemId, { 
@@ -814,10 +1144,114 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                   onMouseUp={() => {
                     setIsDraggingLogo(false);
                     setIsDraggingItem(false);
+                    setIsResizingItem(false);
+                    setIsErasing(false);
+                    setMousePos({ x: -100, y: -100 });
                   }}
                   onMouseLeave={() => {
                     setIsDraggingLogo(false);
                     setIsDraggingItem(false);
+                    setIsResizingItem(false);
+                    setIsErasing(false);
+                    setMousePos({ x: -100, y: -100 });
+                  }}
+                  onMouseEnter={(e) => {
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+                    setMousePos({ x: mouseX, y: mouseY });
+                  }}
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (touch.clientX - rect.left) * scaleX;
+                    const mouseY = (touch.clientY - rect.top) * scaleY;
+                    
+                    // Create a fake mouse event to reuse existing logic
+                    const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY } as any;
+                    
+                    // Manually trigger the mouse down logic (simplified)
+                    if (selectedItemId) {
+                      const item = overlayItems.find(i => i.id === selectedItemId);
+                      if (item && item.type === 'text') {
+                        const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
+                        const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
+                        if (distR < 35 || distL < 35) { // Larger hit area for touch
+                          setIsResizingItem(true);
+                          return;
+                        }
+                      }
+                    }
+
+                    if (isEraserMode && processedImage && maskCanvasRef.current) {
+                      saveMaskState();
+                      setIsErasing(true);
+                      return;
+                    }
+
+                    const ctx = canvasRef.current!.getContext('2d')!;
+                    for (let i = overlayItems.length - 1; i >= 0; i--) {
+                      const item = overlayItems[i];
+                      ctx.font = `${item.size}px ${item.font}`;
+                      const metrics = ctx.measureText(item.text);
+                      const w = metrics.width + 30; // Larger for touch
+                      const h = item.size + 30;
+                      if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                        setIsDraggingItem(true);
+                        setSelectedItemId(item.id);
+                        setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                        return;
+                      }
+                    }
+                    setSelectedItemId(null);
+                  }}
+                  onTouchMove={(e) => {
+                    const touch = e.touches[0];
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (touch.clientX - rect.left) * scaleX;
+                    const mouseY = (touch.clientY - rect.top) * scaleY;
+
+                    if (isResizingItem && selectedItemId) {
+                      const item = overlayItems.find(i => i.id === selectedItemId);
+                      if (item) {
+                        const newWidth = Math.abs(mouseX - item.x) * 2;
+                        updateItem(selectedItemId, { width: Math.max(50, newWidth) });
+                      }
+                    } else if (isErasing && isEraserMode && maskCanvasRef.current) {
+                      const ctx = maskCanvasRef.current.getContext('2d')!;
+                      const productImg = new window.Image();
+                      productImg.src = (processedImage || originalImage) as string;
+                      const displayWidth = productImg.width * scale;
+                      const displayHeight = productImg.height * scale;
+                      const originX = positionX - displayWidth / 2;
+                      const originY = positionY - displayHeight / 2;
+                      const relX = (mouseX - originX) / (displayWidth / productImg.width);
+                      const relY = (mouseY - originY) / (displayHeight / productImg.height);
+                      
+                      if (brushMode === 'erase') {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.fillStyle = 'black';
+                      } else {
+                        ctx.globalCompositeOperation = 'destination-out';
+                      }
+                      ctx.beginPath();
+                      ctx.arc(relX, relY, brushSize / scale, 0, Math.PI * 2);
+                      ctx.fill();
+                      setEraserTrigger(prev => prev + 1);
+                    } else if (isDraggingItem && selectedItemId) {
+                      updateItem(selectedItemId, { x: mouseX - dragOffset.x, y: mouseY - dragOffset.y });
+                    }
+                  }}
+                  onTouchEnd={() => {
+                    setIsDraggingItem(false);
+                    setIsResizingItem(false);
+                    setIsErasing(false);
                   }}
                 />
               </div>
