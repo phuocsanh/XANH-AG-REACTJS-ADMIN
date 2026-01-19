@@ -18,6 +18,9 @@ import {
   Input,
   InputNumber,
   Alert,
+  Table,
+  Divider,
+  Typography,
 } from "antd"
 import {
   PlusOutlined,
@@ -25,6 +28,7 @@ import {
   EditOutlined,
   DollarOutlined,
   SearchOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons"
 import { DatePicker, RangePicker } from '@/components/common'
 import dayjs from 'dayjs';
@@ -57,6 +61,12 @@ const SalesInvoicesList: React.FC = () => {
   
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState('')
+  
+  // State cho báo cáo tổng hợp lịch sử khách hàng
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = React.useState(false);
+  const [historyData, setHistoryData] = React.useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = React.useState(false);
+  const [currentCustomer, setCurrentCustomer] = React.useState<{id: number, name: string} | null>(null);
 
   const navigate = useNavigate()
 
@@ -252,6 +262,34 @@ const SalesInvoicesList: React.FC = () => {
       setIsDetailModalVisible(true);
     }
   }
+
+  const handleOpenHistory = async (invoice: ExtendedSalesInvoice) => {
+    if (!invoice.customer_id) {
+      toast.warning("Hóa đơn này không có thông tin khách hàng");
+      return;
+    }
+    
+    setCurrentCustomer({
+      id: invoice.customer_id,
+      name: invoice.customer_name || 'Khách hàng'
+    });
+    setIsHistoryModalVisible(true);
+    setHistoryLoading(true);
+    
+    try {
+      // Gọi API lấy lịch sử, truyền thêm season_id từ bộ lọc hiện tại
+      const seasonId = filters?.season_id;
+      const response = await api.get<any[]>(`/sales/customer/${invoice.customer_id}/purchase-history`, {
+        params: { seasonId }
+      });
+      setHistoryData(response || []);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+      toast.error('Không thể tải lịch sử mua hàng');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const handleCloseDetailModal = () => {
     setIsDetailModalVisible(false)
@@ -500,6 +538,14 @@ const SalesInvoicesList: React.FC = () => {
             size='small'
           >
             Xem
+          </Button>
+          <Button
+            icon={<FileTextOutlined />}
+            onClick={() => handleOpenHistory(record)}
+            size='small'
+            title="Xem tất cả lịch sử mua hàng"
+          >
+            Tất cả
           </Button>
           {record.status === 'draft' && (
             <Button
@@ -766,6 +812,112 @@ const SalesInvoicesList: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Modal Báo cáo tổng hợp mua hàng của khách hàng */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <FileTextOutlined className="text-blue-500" />
+            <span>Báo cáo mua hàng: {currentCustomer?.name}</span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => setIsHistoryModalVisible(false)}
+        width={1000}
+        footer={[
+          <Button key='close' onClick={() => setIsHistoryModalVisible(false)}>
+            Đóng
+          </Button>,
+        ]}
+      >
+        <div className="py-2">
+          {filters.season_id && seasonsData?.data?.items && (
+            <Alert 
+              message={`Đang lọc theo mùa vụ: ${seasonsData.data.items.find((s: any) => s.id === filters.season_id)?.name || 'Không xác định'}`}
+              type="info" 
+              className="mb-4"
+              showIcon
+            />
+          )}
+
+          <Table
+            dataSource={historyData}
+            loading={historyLoading}
+            pagination={false}
+            scroll={{ y: 500 }}
+            rowKey={(record, index) => `${record.invoice_id}-${index}`}
+            summary={(pageData) => {
+              let totalAmount = 0;
+              pageData.forEach(({ total_price }) => {
+                totalAmount += total_price;
+              });
+
+              return (
+                <Table.Summary.Row className="bg-gray-50 font-bold">
+                  <Table.Summary.Cell index={0} colSpan={5} className="text-right">
+                    TỔNG CỘNG:
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} className="text-right text-green-600">
+                    {formatCurrency(totalAmount)}
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} />
+                </Table.Summary.Row>
+              );
+            }}
+            columns={[
+              {
+                title: 'Ngày hóa đơn',
+                dataIndex: 'date',
+                key: 'date',
+                width: 120,
+                render: (date) => dayjs(date).format('DD/MM/YYYY'),
+              },
+              {
+                title: 'Tên hàng',
+                dataIndex: 'product_name',
+                key: 'product_name',
+              },
+              {
+                title: 'ĐVT',
+                dataIndex: 'unit',
+                key: 'unit',
+                width: 100,
+                align: 'center',
+              },
+              {
+                title: 'SL',
+                dataIndex: 'quantity',
+                key: 'quantity',
+                width: 80,
+                align: 'right',
+              },
+              {
+                title: 'Đơn giá',
+                dataIndex: 'unit_price',
+                key: 'unit_price',
+                width: 120,
+                align: 'right',
+                render: (val) => formatCurrency(val),
+              },
+              {
+                title: 'Thành tiền',
+                dataIndex: 'total_price',
+                key: 'total_price',
+                width: 140,
+                align: 'right',
+                render: (val) => formatCurrency(val),
+              },
+              {
+                title: 'Mã HĐ',
+                dataIndex: 'invoice_code',
+                key: 'invoice_code',
+                width: 150,
+                render: (code) => <Tag color="blue">{code}</Tag>,
+              }
+            ]}
+          />
+        </div>
       </Modal>
     </div>
   )

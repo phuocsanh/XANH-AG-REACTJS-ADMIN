@@ -9,6 +9,7 @@ import {
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { Header } from "./components/header"
 import Sidebar from "./components/sidebar"
+import { App as AntApp } from "antd"
 import { Dashboard } from "./pages/dashboard"
 import Products from "./pages/products"
 import ProductsList from "./pages/products/products-list"
@@ -204,7 +205,7 @@ function App() {
   }
 
   return (
-    <>
+    <AntApp>
       <BrowserRouter>
         <AppContent 
           values={values}
@@ -215,7 +216,7 @@ function App() {
           setIsMobileSidebarOpen={setIsMobileSidebarOpen}
         />
       </BrowserRouter>
-    </>
+    </AntApp>
   )
 }
 

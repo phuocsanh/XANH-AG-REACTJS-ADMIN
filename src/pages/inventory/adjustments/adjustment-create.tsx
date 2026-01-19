@@ -46,6 +46,7 @@ import {
 } from './form-config';
 import { handleApiError } from '@/utils/error-handler';
 import { LoadingSpinner } from '@/components/common';
+import { useFormGuard } from '@/hooks/use-form-guard';
 
 const AdjustmentCreate = () => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ const AdjustmentCreate = () => {
     setValue,
     watch,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AdjustmentFormData>({
     resolver: zodResolver(adjustmentFormSchema),
     defaultValues: defaultAdjustmentValues,
@@ -88,6 +89,8 @@ const AdjustmentCreate = () => {
   const attachImageMutation = useAttachImageToAdjustmentMutation();
   const deleteImageMutation = useDeleteAdjustmentImageMutation();
   const uploadFileMutation = useUploadFileMutation();
+
+  const { confirmExit } = useFormGuard(isDirty);
 
   const productList = productsData?.data?.items || [];
 
@@ -212,7 +215,7 @@ const AdjustmentCreate = () => {
   return (
     <Box>
       <Box display="flex" alignItems="center" mb={3}>
-        <IconButton onClick={() => navigate('/inventory/adjustments')} sx={{ mr: 2 }}>
+        <IconButton onClick={() => confirmExit(() => navigate('/inventory/adjustments'))} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
           <Typography variant="h4" fontWeight="bold">
@@ -509,7 +512,7 @@ const AdjustmentCreate = () => {
               <Box display="flex" gap={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/inventory/adjustments')}
+                  onClick={() => confirmExit(() => navigate('/inventory/adjustments'))}
                   disabled={createMutation.isPending || updateMutation.isPending}
                 >
                   {isReadOnly ? 'Đóng' : 'Hủy'}

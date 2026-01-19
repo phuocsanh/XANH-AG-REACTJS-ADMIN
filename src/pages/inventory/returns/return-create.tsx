@@ -1,6 +1,7 @@
 // Form tạo phiếu trả hàng - React Hook Form version
 
 import { useState, useEffect, useMemo } from 'react';
+import { useFormGuard } from '@/hooks/use-form-guard';
 import { message } from 'antd';
 import {
   Box,
@@ -73,7 +74,7 @@ const ReturnCreate = () => {
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ReturnFormData>({
     resolver: zodResolver(returnFormSchema),
     defaultValues: defaultReturnValues,
@@ -88,6 +89,9 @@ const ReturnCreate = () => {
   const { data: receiptsData } = useInventoryReceiptsQuery(
     receiptSearch ? { limit: 20, code: receiptSearch } : undefined
   );
+  
+  const { confirmExit } = useFormGuard(isDirty);
+
   const createMutation = useCreateReturnMutation();
   const updateMutation = useUpdateReturnMutation();
   const attachImageMutation = useAttachImageToReturnMutation();
@@ -106,9 +110,9 @@ const ReturnCreate = () => {
       console.log('📝 Setting form data:', existingReturn);
       
       setValue('receipt_id', existingReturn.receipt_id || 0);
-      setValue('supplier_id', existingReturn.supplier_id);
-      setValue('return_code', existingReturn.code);
-      setValue('reason', existingReturn.reason);
+      setValue('supplier_id', existingReturn.supplier_id || 0);
+      setValue('return_code', existingReturn.code || '');
+      setValue('reason', existingReturn.reason || '');
       setValue('notes', existingReturn.notes || '');
       
       setValue('status', existingReturn.status as any || 'draft');
@@ -292,7 +296,7 @@ const ReturnCreate = () => {
   return (
     <Box>
       <Box display="flex" alignItems="center" mb={3}>
-        <IconButton onClick={() => navigate('/inventory/returns')} sx={{ mr: 2 }}>
+        <IconButton onClick={() => confirmExit(() => navigate('/inventory/returns'))} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" fontWeight="bold">
@@ -607,7 +611,7 @@ const ReturnCreate = () => {
             <Box display="flex" gap={2} justifyContent="flex-end">
               <Button
                 variant="outlined"
-                onClick={() => navigate('/inventory/returns')}
+                onClick={() => confirmExit(() => navigate('/inventory/returns'))}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 Hủy
