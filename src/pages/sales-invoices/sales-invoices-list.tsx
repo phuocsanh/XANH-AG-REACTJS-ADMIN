@@ -4,6 +4,8 @@ import {
   useSalesInvoicesQuery,
   useAddPaymentMutation,
 } from "@/queries/sales-invoice"
+import api from "@/utils/api"
+import { toast } from "react-toastify"
 import { useSeasonsQuery } from "@/queries/season"
 
 import {
@@ -212,23 +214,42 @@ const SalesInvoicesList: React.FC = () => {
   // Handlers
   const handleViewInvoice = async (invoice: SalesInvoice) => {
     try {
-      // Gọi API để lấy chi tiết đầy đủ (bao gồm items)
-      const response = await fetch(`http://localhost:3003/sales/invoice/${invoice.id}`)
-      const result = await response.json()
-      
-      if (result.success && result.data) {
-        setViewingInvoice(result.data)
-        setIsDetailModalVisible(true)
-      } else {
-        // Fallback: dùng data từ list nếu API lỗi
-        setViewingInvoice(invoice)
-        setIsDetailModalVisible(true)
+      if (!invoice?.id) {
+        toast.error("Không tìm thấy ID hóa đơn");
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching invoice details:', error)
-      // Fallback: dùng data từ list nếu API lỗi
-      setViewingInvoice(invoice)
-      setIsDetailModalVisible(true)
+
+      // Sử dụng api utility để lấy chi tiết đầy đủ (bao gồm items)
+      console.log(`[DEBUG] Fetching detail for Invoice ID: ${invoice.id}, Code: ${invoice.code}`);
+      
+      const response = await api.get<any>(`/sales/invoice/${invoice.id}`);
+      
+      console.log('[DEBUG] API Response:', response);
+
+      if (response) {
+        // Kiểm tra mảng items ở mọi nơi có thể (items, invoice_items, sales_invoice_items)
+        const items = response.items || response.invoice_items || response.sales_invoice_items || [];
+        
+        // Nếu API trả về mảng rỗng trong khi DB có, ta cần log kỹ hơn
+        if (items.length === 0) {
+          console.warn('[DEBUG] API returned empty items array for invoice:', invoice.id);
+        }
+
+        setViewingInvoice({ ...response, items });
+        setIsDetailModalVisible(true);
+      } else {
+        throw new Error("API không trả về dữ liệu");
+      }
+    } catch (error: any) {
+      console.error('[DEBUG] Fetch detail error:', error);
+      
+      // Thông báo lỗi rõ ràng nếu API fail (401, 500, v.v.)
+      const errorMsg = error?.response?.data?.message || error?.message || "Không thể lấy thông tin chi tiết từ máy chủ";
+      toast.error(`Lỗi: ${errorMsg}`);
+      
+      // Vẫn hiện modal với dữ liệu từ list nhưng kèm cảnh báo
+      setViewingInvoice({ ...invoice, items: [] });
+      setIsDetailModalVisible(true);
     }
   }
 
@@ -678,7 +699,7 @@ const SalesInvoicesList: React.FC = () => {
                           <div className='font-medium text-green-600'>
                             {formatCurrency(
                               item.quantity * item.unit_price -
-                                item.discount_amount
+                                (item.discount_amount || 0)
                             )}
                           </div>
                         </div>
@@ -687,9 +708,12 @@ const SalesInvoicesList: React.FC = () => {
                   ))}
                 </Space>
               ) : (
-                <div className='text-center text-gray-500 py-4'>
-                  Không có sản phẩm
-                </div>
+                <Alert
+                  message="Không tìm thấy sản phẩm"
+                  description={`Hệ thống không tìm thấy mặt hàng nào cho hóa đơn ID: ${viewingInvoice.id}. Vui lòng kiểm tra lại trên DB hoặc liên hệ kỹ thuật.`}
+                  type="warning"
+                  showIcon
+                />
               )}
             </div>
           </div>
