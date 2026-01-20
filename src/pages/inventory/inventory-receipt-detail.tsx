@@ -243,6 +243,12 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (name) => <Text strong>{name}</Text>,
     },
     {
+      title: "ĐVT",
+      key: "unit_name",
+      width: 80,
+      render: (_, record) => record.product?.unit?.name || record.product?.unit_name || "-",
+    },
+    {
       title: "Số lượng",
       dataIndex: "quantity",
       key: "quantity",
@@ -550,13 +556,14 @@ const InventoryReceiptDetail: React.FC = () => {
                   return (
                     <Table.Summary fixed>
                       <Table.Summary.Row className="bg-gray-50">
-                        <Table.Summary.Cell index={0} colSpan={2}><Text strong>Tổng cộng hàng hóa</Text></Table.Summary.Cell>
-                        <Table.Summary.Cell index={2} align="right"><Text strong>{totalQ.toLocaleString("vi-VN")}</Text></Table.Summary.Cell>
-                        <Table.Summary.Cell index={3} />
-                        <Table.Summary.Cell index={4} align="right">
+                        <Table.Summary.Cell index={0} colSpan={3}><Text strong>Tổng cộng hàng hóa</Text></Table.Summary.Cell>
+                        <Table.Summary.Cell index={3} align="right"><Text strong>{totalQ.toLocaleString("vi-VN")}</Text></Table.Summary.Cell>
+                        <Table.Summary.Cell index={4} />
+                        <Table.Summary.Cell index={5} />
+                        <Table.Summary.Cell index={6} align="right">
                           <Text strong className="text-green-600">{totalA.toLocaleString("vi-VN")} ₫</Text>
                         </Table.Summary.Cell>
-                        <Table.Summary.Cell index={5} colSpan={2} />
+                        <Table.Summary.Cell index={7} colSpan={2} />
                       </Table.Summary.Row>
                     </Table.Summary>
                   )

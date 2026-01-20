@@ -127,6 +127,25 @@ const useItemColumns = ({
       },
     },
     {
+      title: "ĐVT",
+      key: "unit_name",
+      width: 80,
+      align: "center",
+      render: (_, __, index) => {
+        return (
+          <div className="text-center">
+            <Controller
+              name={`items.${index}.unit_name`}
+              control={control}
+              render={({ field }) => (
+                <span>{field.value || "-"}</span>
+              )}
+            />
+          </div>
+        )
+      },
+    },
+    {
       title: "SL",
       dataIndex: "quantity",
       key: "quantity",

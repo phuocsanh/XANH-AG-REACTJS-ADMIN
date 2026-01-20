@@ -134,6 +134,18 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
         </div>
         <div className='grid grid-cols-2 gap-3'>
           <div>
+            <label className='block text-xs mb-1'>Đơn vị tính</label>
+            <Controller
+              name={`items.${index}.unit_name`}
+              control={control}
+              render={({ field }) => (
+                <div className="p-2 bg-gray-50 border rounded min-h-[32px] flex items-center text-gray-500 text-sm">
+                  {field.value || "-"}
+                </div>
+              )}
+            />
+          </div>
+          <div>
             <label className='block text-xs mb-1'>Số lượng *</label>
             <Controller
               name={`items.${index}.quantity`}
@@ -178,7 +190,24 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
             />
           </div>
           <div>
-            <label className='block text-xs mb-1'>Phí VC riêng</label>
+            <label className='block text-xs mb-1'>Thành tiền</label>
+            <Controller
+              name={`items.${index}.total_price`}
+              control={control}
+              render={({ field }) => (
+                <div className="p-2 bg-green-50 border border-green-100 rounded text-right min-h-[32px] flex items-center justify-end">
+                  <Text strong className="text-green-600 text-sm">
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(field.value || 0)}
+                  </Text>
+                </div>
+              )}
+            />
+          </div>
+          <div className="col-span-2">
+            <label className='block text-xs mb-1'>Phí vận chuyển riêng (nếu có)</label>
             <Controller
               name={`items.${index}.individual_shipping_cost`}
               control={control}
@@ -187,24 +216,8 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                   {...field}
                   min={0}
                   placeholder='0'
+                  addonAfter="VND"
                 />
-              )}
-            />
-          </div>
-          <div>
-            <label className='block text-xs mb-1'>Thành tiền</label>
-            <Controller
-              name={`items.${index}.total_price`}
-              control={control}
-              render={({ field }) => (
-                <div className="p-2 bg-gray-50 border rounded text-right min-h-[32px] flex items-center justify-end">
-                  <Text strong style={{ color: "#52c41a" }}>
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(field.value || 0)}
-                  </Text>
-                </div>
               )}
             />
           </div>
