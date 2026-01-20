@@ -4,6 +4,7 @@ import * as z from 'zod';
 export const salesInvoiceItemSchema = z.object({
   product_id: z.number().min(1, 'Vui lòng chọn sản phẩm'),
   product_name: z.string().optional(),
+  unit_name: z.string().optional(),
   quantity: z.number().min(1, 'Số lượng phải lớn hơn 0'),
   unit_price: z.number().min(0, 'Giá phải lớn hơn hoặc bằng 0'),
   discount_amount: z.number().min(0, 'Giảm giá phải lớn hơn hoặc bằng 0').default(0),

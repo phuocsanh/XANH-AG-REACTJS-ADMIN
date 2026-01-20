@@ -6,11 +6,13 @@ export interface SalesInvoiceItem {
   id: number;
   product_id: number;
   product_name?: string;
+  unit_name?: string;
   product?: {
     id: number;
     name: string;
     trade_name?: string;
     code?: string;
+    unit?: { id: number; name: string };
   };
   quantity: number;
   unit_price: number;
@@ -73,6 +75,8 @@ export interface CreateSalesInvoiceDto {
   gift_value?: number;
   items: {
     product_id: number;
+    product_name?: string;
+    unit_name?: string;
     quantity: number;
     unit_price: number;
     discount_amount?: number;

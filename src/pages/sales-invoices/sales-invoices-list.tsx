@@ -734,7 +734,7 @@ const SalesInvoicesList: React.FC = () => {
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>
-                            SL: {item.quantity}
+                            SL: {item.quantity} {item.unit_name || (item as any).product?.unit?.name || (item as any).product?.unit_name}
                           </div>
                           <div className='text-sm text-gray-500'>
                             Giá: {formatCurrency(item.unit_price)}

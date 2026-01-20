@@ -369,6 +369,7 @@ const CreateSalesInvoice = () => {
         setValue('items', invoice.items.map((item: any) => ({
           product_id: item.product_id,
           product_name: item.product_name,
+          unit_name: item.unit_name || '',
           quantity: item.quantity,
           unit_price: item.unit_price,
           discount_amount: item.discount_amount || 0,
@@ -697,6 +698,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     append({
       product_id: product.id,
       product_name: product.trade_name || product.name,
+      unit_name: product.unit_name || product.unit?.name || '',
       quantity: 1,
       unit_price: unitPrice,
       discount_amount: 0,
@@ -2045,7 +2047,7 @@ ${productInfo}`;
                   product_name: item.product_name || '',
                   quantity: item.quantity,
                   unit_price: item.unit_price,
-                  unit: (item as any).unit || '',
+                  unit: item.unit_name || '',
                 }))}
                 customerAddress={watch('customer_address')}
                 customerName={watch('customer_name')}
@@ -2345,7 +2347,14 @@ ${productInfo}`;
                           onChange={() => handleProductToggleForAdvisory(product.id)}
                         />
                         <Box ml={2}>
-                          <Typography fontWeight="bold">{product.trade_name || product.name}</Typography>
+                          <Typography fontWeight="bold">
+                            {product.trade_name || product.name}
+                            {product.unit_name && (
+                              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                ({product.unit_name})
+                              </Typography>
+                            )}
+                          </Typography>
                           <Box>
                             {product.ingredient?.map((ing: string, index: number) => (
                               <Tag key={index} color="blue">{ing}</Tag>

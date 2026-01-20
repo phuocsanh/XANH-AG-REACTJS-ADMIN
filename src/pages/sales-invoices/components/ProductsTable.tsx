@@ -32,6 +32,7 @@ interface ProductField {
   id: string;
   product_id: number;
   product_name?: string;
+  unit_name?: string;
   quantity: number;
   unit_price: number;
   discount_amount: number;
@@ -89,6 +90,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
             <TableHead>
               <TableRow>
                 <TableCell>Sản phẩm</TableCell>
+                <TableCell align="center">ĐVT</TableCell>
                 <TableCell align="center">Loại giá</TableCell>
                 <TableCell align="right">Số lượng</TableCell>
                 <TableCell align="right">Đơn giá</TableCell>
@@ -109,6 +111,11 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     <TableCell>
                       <Typography variant="body2" fontWeight="bold">
                         {watch(`items.${index}.product_name`)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Typography variant="body2" color="text.secondary">
+                        {watch(`items.${index}.unit_name`)}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
@@ -242,6 +249,11 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="subtitle1" fontWeight="bold">
                   {watch(`items.${index}.product_name`)}
+                  {watch(`items.${index}.unit_name`) && (
+                    <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      ({watch(`items.${index}.unit_name`)})
+                    </Typography>
+                  )}
                 </Typography>
                 <Box>
                   <IconButton
