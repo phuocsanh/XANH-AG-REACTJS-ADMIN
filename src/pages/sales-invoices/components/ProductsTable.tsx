@@ -78,7 +78,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
               borderSpacing: 0,
               borderCollapse: 'collapse',
               '& .MuiTableCell-root': { 
-                padding: '2px 2px',
+                padding: '4px 4px',
                 whiteSpace: 'nowrap',
                 border: '1px solid #e0e0e0',
                 fontSize: '0.8rem'
@@ -87,7 +87,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 fontWeight: 600,
                 fontSize: '0.8rem',
                 backgroundColor: '#f5f5f5',
-                padding: '2px 2px'
+                padding: '4px 4px'
               }
             }}
           >
@@ -318,7 +318,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
               }}>
                 {/* Row 1: ĐVT & Tồn kho */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Đơn vị
                   </Typography>
                   <Field 
@@ -328,7 +328,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                   />
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Tồn kho
                   </Typography>
                   <Field 
@@ -341,7 +341,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
 
                 {/* Row 2: Loại giá & Số lượng */}
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Loại giá
                   </Typography>
                   <Controller
@@ -378,7 +378,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 </Box>
 
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Số lượng
                   </Typography>
                   <Controller
@@ -425,7 +425,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 </Box>
 
                 <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Giảm giá
                   </Typography>
                   <Controller
