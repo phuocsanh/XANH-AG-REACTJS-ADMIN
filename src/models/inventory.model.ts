@@ -126,6 +126,7 @@ export interface InventoryReceiptItem {
   created_at: string
   updated_at: string
   product_name?: string
+  unit_name?: string
   product?: any // Thay bằng Product interface nếu có thể import
   batch_number?: string
   expiry_date?: string
@@ -286,6 +287,7 @@ export function mapApiResponseToInventoryReceiptItem(
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
     product_name: apiItem.product?.trade_name || apiItem.product?.name || apiItem.product_name || '',
+    unit_name: apiItem.product?.unit?.name || apiItem.product?.unit_name || apiItem.unit_name || '',
     ...(apiItem.product && { product: apiItem.product }),  // Giữ lại product relation nếu có
   }
 }

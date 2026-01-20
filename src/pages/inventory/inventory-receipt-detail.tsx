@@ -246,7 +246,7 @@ const InventoryReceiptDetail: React.FC = () => {
       title: "ĐVT",
       key: "unit_name",
       width: 80,
-      render: (_, record) => record.product?.unit?.name || record.product?.unit_name || "-",
+      render: (_, record) => record.unit_name || record.product?.unit?.name || "-",
     },
     {
       title: "Số lượng",

@@ -367,6 +367,7 @@ const InventoryReceiptCreate: React.FC = () => {
         // Items
         items: data.items.map((item) => ({
           product_id: item.product_id,
+          unit_name: item.unit_name,
           quantity: item.quantity,
           unit_cost: item.unit_cost,
           total_price: item.total_price,
