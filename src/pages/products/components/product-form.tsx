@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Button, message, Form, Spin, Modal, Alert, Typography, Card } from "antd"
+import { Button, message, Form, Spin, Alert, Typography, Card } from "antd"
 import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons"
 import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
@@ -188,6 +188,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   // State cho AI Image Studio
   const [studioVisible, setStudioVisible] = useState(false)
   const [adjustModalVisible, setAdjustModalVisible] = useState(false)
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false) // State để đánh dấu đã submit thành công
   const uploadMutation = useUploadImageMutation()
 
   // Watch form values
@@ -221,7 +222,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       (description !== "" || (notes !== "" && notes !== "<p></p>"))
     );
 
-  const { confirmExit } = useFormGuard(isFormDirty);
+  const { confirmExit } = useFormGuard(isFormDirty && !isSubmitSuccess);
 
   // Debug log
 
@@ -565,16 +566,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
         })
+        setIsSubmitSuccess(true)
         message.success("Cập nhật sản phẩm thành công")
         navigate(`/products${location.search}`)
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await createProductMutation.mutateAsync(serverData as any)
-        Modal.success({
-          title: "Thành công",
-          content: "Thêm sản phẩm thành công!",
-          okText: "Xác nhận",
-        })
+        setIsSubmitSuccess(true)
+        message.success("Thêm sản phẩm thành công!")
+        reset()
+        navigate(`/products${location.search}`)
       }
     } catch (error: any) {
       console.error("Error saving product:", error)
