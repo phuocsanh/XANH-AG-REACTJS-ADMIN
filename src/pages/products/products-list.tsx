@@ -205,6 +205,15 @@ const ProductsList: React.FC = () => {
       ),
     },
     {
+      key: "unit",
+      title: "Đơn vị",
+      width: 100,
+      render: (_: unknown, record: ExtendedProduct) => {
+          const unitName = record.unit_name || (typeof record.unit === 'object' && record.unit ? record.unit.name : '---');
+          return <div className='text-gray-600'>{unitName}</div>
+      },
+    },
+    {
       key: "name",
       title: (
         <FilterHeader 
@@ -229,7 +238,7 @@ const ProductsList: React.FC = () => {
         filterMultiple: false,
         render: (_: unknown, record: ExtendedProduct) => {
             const typeName = typeof record.type === 'object' && record.type 
-                ? (record.type as any).name 
+                ? record.type.name 
                 : productTypes.find(t => t.id === record.type)?.name;
             return <div className='text-gray-600'>{typeName || '---'}</div>
         },

@@ -68,7 +68,7 @@ import { frontendAiService } from '@/services/ai.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
 import ComboBox from '@/components/common/combo-box';
-import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs, Popover } from 'antd';
+import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs, Popover, App as AntApp } from 'antd';
 import { useFormGuard } from '@/hooks/use-form-guard';
 import {
   salesInvoiceSchema,
@@ -167,6 +167,7 @@ const CreateSalesInvoice = () => {
   
   const [customerSearch, setCustomerSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
+  const { message: antMessage } = AntApp.useApp();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isGuestCustomer, setIsGuestCustomer] = useState(true);
   const [selectedRiceCropId, setSelectedRiceCropId] = useState<number | undefined>(undefined);
@@ -520,7 +521,7 @@ const CreateSalesInvoice = () => {
       setValue('rice_crop_id', undefined);
       setSelectedRiceCropId(undefined);
       
-      message.info('Vui lòng chọn Mùa vụ và Ruộng lúa cho khách hàng này');
+      antMessage.info('Vui lòng chọn Mùa vụ và Ruộng lúa cho khách hàng này');
     } else {
       // Khách vãng lai
       setIsGuestCustomer(true);
@@ -547,7 +548,7 @@ const CreateSalesInvoice = () => {
    */
   const handleGenerateWarning = async (silent = false) => {
     if (items.length === 0) {
-      if (!silent) message.warning('Vui lòng thêm sản phẩm vào đơn hàng trước');
+      if (!silent) antMessage.warning('Vui lòng thêm sản phẩm vào đơn hàng trước');
       return;
     }
 
@@ -567,7 +568,7 @@ const CreateSalesInvoice = () => {
         .join('\n');
 
       if (!productDescriptions) {
-        if (!silent) message.warning('Không tìm thấy mô tả sản phẩm');
+        if (!silent) antMessage.warning('Không tìm thấy mô tả sản phẩm');
         setIsGeneratingWarning(false);
         return;
       }
@@ -589,13 +590,13 @@ Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.
       
       if (response.success && response.answer) {
         setValue('warning', response.answer.trim());
-        if (!silent) message.success('Đã tạo lưu ý bằng AI');
+        if (!silent) antMessage.success('Đã tạo lưu ý bằng AI');
       } else {
-        if (!silent) message.error('Không thể tạo lưu ý. Vui lòng thử lại.');
+        if (!silent) antMessage.error('Không thể tạo lưu ý. Vui lòng thử lại.');
       }
     } catch (error) {
       console.error('Error generating warning:', error);
-      if (!silent) message.error('Có lỗi xảy ra khi tạo lưu ý');
+      if (!silent) antMessage.error('Có lỗi xảy ra khi tạo lưu ý');
     } finally {
       setIsGeneratingWarning(false);
     }
@@ -641,7 +642,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         const result = response.answer.trim();
         if (result !== 'OK' && result.toLowerCase() !== 'ok') {
           setConflictWarning(result);
-          message.warning('⚠️ Phát hiện xung đột với đơn hàng trước!');
+          antMessage.warning('⚠️ Phát hiện xung đột với đơn hàng trước!');
         } else {
           setConflictWarning(null);
         }
@@ -686,6 +687,17 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     const currentPaymentMethod = watch('payment_method');
     const isDebt = currentPaymentMethod === 'debt';
     
+    // Kiểm tra xem sản phẩm đã có trong danh sách chưa
+    const currentItems = getValues('items') || [];
+    const existingItemIndex = currentItems.findIndex((item: any) => Number(item.product_id) === Number(product.id));
+
+    if (existingItemIndex !== -1) {
+      // Nếu sản phẩm đã tồn tại, hiển thị thông báo và không thêm mới (sử dụng antMessage cho context antd)
+      antMessage.warning(`Sản phẩm "${product.trade_name || product.name}" đã có trong danh sách!`);
+      setProductSearch('');
+      return;
+    }
+    
     // Nếu là công nợ -> dùng giá nợ (nếu có), ngược lại dùng giá tiền mặt
     const priceType = isDebt ? 'credit' : 'cash';
     
@@ -709,6 +721,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
             ? Number(product.average_cost_price)
             : Number(product.average_cost_price.replace(/[^0-9]/g, '')))
         : Number(product.average_cost_price || 0),
+      stock_quantity: product.quantity || 0,
     });
     setProductSearch('');
   };
@@ -724,11 +737,11 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     // ✨ Validation: Nếu có khách hàng từ hệ thống, bắt buộc phải có season_id và rice_crop_id
     if (data.customer_id) {
       if (!data.season_id) {
-        message.error('Vui lòng chọn Mùa vụ cho khách hàng này');
+        antMessage.error('Vui lòng chọn Mùa vụ cho khách hàng này');
         return;
       }
       if (!data.rice_crop_id) {
-        message.error('Vui lòng chọn Ruộng lúa cho khách hàng này');
+        antMessage.error('Vui lòng chọn Ruộng lúa cho khách hàng này');
         return;
       }
     }
@@ -739,32 +752,32 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     if (isDeliveryEnabled) {
       // Nếu bật nhưng không có data hoặc thiếu thông tin → BẮT BUỘC phải điền đủ
       if (!deliveryData) {
-        message.error('Vui lòng điền đầy đủ thông tin phiếu giao hàng');
+        antMessage.error('Vui lòng điền đầy đủ thông tin phiếu giao hàng');
         return;
       }
       // Kiểm tra các trường bắt buộc
       if (!deliveryData.delivery_date) {
-        message.error('Vui lòng chọn ngày giao hàng');
+        antMessage.error('Vui lòng chọn ngày giao hàng');
         return;
       }
       if (!deliveryData.delivery_start_time) {
-        message.error('Vui lòng chọn giờ giao hàng');
+        antMessage.error('Vui lòng chọn giờ giao hàng');
         return;
       }
       if (!deliveryData.receiver_name) {
-        message.error('Vui lòng nhập tên người nhận');
+        antMessage.error('Vui lòng nhập tên người nhận');
         return;
       }
       if (!deliveryData.receiver_phone) {
-        message.error('Vui lòng nhập SĐT người nhận');
+        antMessage.error('Vui lòng nhập SĐT người nhận');
         return;
       }
       if (!deliveryData.delivery_address) {
-        message.error('Vui lòng nhập địa chỉ giao hàng');
+        antMessage.error('Vui lòng nhập địa chỉ giao hàng');
         return;
       }
       if (!deliveryData.items || deliveryData.items.length === 0) {
-        message.error('Vui lòng chọn ít nhất 1 sản phẩm để giao');
+        antMessage.error('Vui lòng chọn ít nhất 1 sản phẩm để giao');
         return;
       }
     }
@@ -800,7 +813,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       // Update existing invoice
       updateMutation.mutate({ id: parseInt(id), invoice: submitData as any }, {
         onSuccess: () => {
-          message.success('Cập nhật hóa đơn thành công!');
+          antMessage.success('Cập nhật hóa đơn thành công!');
           navigate('/sales-invoices');
         }
       });
@@ -808,7 +821,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       // Create new invoice
       createMutation.mutate(submitData as any, {
         onSuccess: (response) => {
-          message.success('Tạo hóa đơn thành công!');
+          antMessage.success('Tạo hóa đơn thành công!');
           
           // Nếu người dùng chọn in phiếu giao hàng
           const responseData = response as any;
@@ -1014,7 +1027,7 @@ ${productInfo}`;
     } catch (err) {
       const errorMessage = (err as Error).message || 'Có lỗi khi lấy dữ liệu thời tiết';
       console.error(errorMessage);
-      message.error('Không thể lấy dữ liệu thời tiết mới nhất');
+      antMessage.error('Không thể lấy dữ liệu thời tiết mới nhất');
     } finally {
       setIsWeatherLoading(false);
     }
@@ -1073,11 +1086,11 @@ ${productInfo}`;
 
   const detectUserLocation = () => {
     if (!navigator.geolocation) {
-      message.error('Trình duyệt của bạn không hỗ trợ định vị.');
+      antMessage.error('Trình duyệt của bạn không hỗ trợ định vị.');
       return;
     }
 
-    const hide = message.loading('Đang xác định vị trí chi tiết...', 0);
+    const hide = antMessage.loading('Đang xác định vị trí chi tiết...', 0);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -1104,10 +1117,10 @@ ${productInfo}`;
             lon: longitude
           });
           hide();
-          message.success(`Đã cập nhật: ${detailedName}`);
+          antMessage.success(`Đã cập nhật: ${detailedName}`);
         } catch (error) {
           hide();
-          message.error('Không thể lấy tên địa điểm chi tiết.');
+          antMessage.error('Không thể lấy tên địa điểm chi tiết.');
           
           // Fallback: Tìm địa điểm gần nhất trong danh sách có sẵn
           let nearestLocation = VIETNAM_LOCATIONS[0];
@@ -1127,7 +1140,7 @@ ${productInfo}`;
       (error) => {
         hide();
         console.error('Lỗi định vị:', error);
-        message.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập.');
+        antMessage.error('Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập.');
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -1998,6 +2011,7 @@ ${productInfo}`;
                       };
                     }) || []}
                     value={undefined}
+                    searchValue={productSearch}
                     onChange={(value: string | number) => {
                       const product = productsData?.data?.items?.find((p: Product) => p.id === value);
                       if (product) {
@@ -2321,7 +2335,7 @@ ${productInfo}`;
                           lat: selectedLocation.latitude,
                           lon: selectedLocation.longitude
                         });
-                        message.success('Đã lưu vị trí!');
+                        antMessage.success('Đã lưu vị trí!');
                       }}
                       disabled={updateLocationMutation.isPending}
                       title="Lưu vị trí"

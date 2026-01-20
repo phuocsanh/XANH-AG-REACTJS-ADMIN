@@ -149,6 +149,15 @@ const ProductSearch: React.FC = () => {
       ),
     },
     {
+      key: "unit",
+      title: "Đơn vị",
+      width: getColumnWidth(80, 100, 100),
+      render: (_: unknown, record: ExtendedProduct) => {
+          const unitName = record.unit_name || (typeof record.unit === 'object' && record.unit ? record.unit.name : '---');
+          return <div className='text-gray-600'>{unitName}</div>
+      },
+    },
+    {
       key: "name",
       title: "Tên sản phẩm",
       width: getColumnWidth(150, 180, 220), // Mobile: 150, Tablet: 180, Desktop: 220

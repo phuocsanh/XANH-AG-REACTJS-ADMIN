@@ -17,6 +17,7 @@ interface NumberInputProps {
   status?: "error" | "warning"
   addonAfter?: React.ReactNode
   addonBefore?: React.ReactNode
+  allowClear?: boolean
 }
 
 const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
