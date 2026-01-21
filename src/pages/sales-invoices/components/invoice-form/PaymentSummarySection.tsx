@@ -104,6 +104,11 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
 
             {/* Right Column */}
             <Box flex={1}>
+              {/* Căn rỗng để khớp với "Tổng tiền hàng" bên trái */}
+              <Box mb={1} sx={{ display: { xs: 'none', md: 'block' } }}>
+                <Typography>&nbsp;</Typography>
+              </Box>
+              
               <FormFieldNumber
                 name="partial_payment_amount"
                 control={control}
