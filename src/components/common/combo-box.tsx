@@ -63,7 +63,7 @@ function ComboBox({
   showSearch = true,
   filterOption,
   enableLoadMore = true,
-  searchDebounceMs = 1000, 
+  searchDebounceMs = 300, 
   mode,
   maxTagCount,
   maxTagTextLength,
@@ -77,8 +77,17 @@ function ComboBox({
 }: ComboBoxProps) {
   // Xác định filterOption: Nếu không truyền vào, tự động tắt (false) khi có search async
   const finalFilterOption = filterOption !== undefined 
-    ? filterOption 
-    : (externalOnSearch ? false : true)
+  // State nội bộ để quản lý việc hiển thị chữ ngay lập tức khi gõ (Uncontrolled-like behavior)
+  const [innerSearchValue, setInnerSearchValue] = React.useState<string | undefined>(
+    selectProps.searchValue as string
+  )
+
+  // Đồng bộ lại khi cha muốn chủ động thay đổi (ví dụ khi reset form)
+  React.useEffect(() => {
+    if (selectProps.searchValue !== undefined) {
+      setInnerSearchValue(selectProps.searchValue as string)
+    }
+  }, [selectProps.searchValue])
 
   // Log để debug
   console.log("ComboBox render", { finalFilterOption, hasExternalSearch: !!externalOnSearch })
@@ -90,22 +99,18 @@ function ComboBox({
   // Debounce timer ref
   const searchTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
-  // Handle search với debounce
+  // Handle search: Cập nhật UI ngay lập tức và báo cho cha
   const handleSearch = React.useCallback(
     (value: string) => {
+      // 1. Cập nhật state nội bộ ngay lập tức để UI không bị lag
+      setInnerSearchValue(value)
+      
+      // 2. Báo cho component cha để filter/gọi API
       if (externalOnSearch) {
-        // Clear timeout cũ nếu có
-        if (searchTimerRef.current) {
-          clearTimeout(searchTimerRef.current)
-        }
-        
-        // Set timeout mới
-        searchTimerRef.current = setTimeout(() => {
-          externalOnSearch(value)
-        }, searchDebounceMs)
+        externalOnSearch(value);
       }
     },
-    [externalOnSearch, searchDebounceMs]
+    [externalOnSearch]
   )
 
   // Cleanup khi unmount
@@ -187,6 +192,7 @@ function ComboBox({
   const selectComponent = (
     <Select
       {...selectProps}
+      searchValue={innerSearchValue}
       value={displayValue}
       onChange={handleChange}
       placeholder={placeholder}

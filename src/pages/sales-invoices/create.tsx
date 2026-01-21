@@ -2018,7 +2018,7 @@ ${productInfo}`;
                         handleAddProduct(product);
                       }
                     }}
-                    onSearch={setProductSearch}
+                    onSearch={(val) => setProductSearch(val)}
                     filterOption={false}
                     allowClear
                     showSearch
