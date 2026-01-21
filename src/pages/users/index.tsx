@@ -85,6 +85,8 @@ const PendingUsersTab: React.FC = () => {
     {
       title: 'Hành động',
       key: 'action',
+      fixed: 'right' as const,
+      width: 120,
       render: (_: any, record: UserResponse) => {
         const canManage = canManageUser(currentUser, record);
         
@@ -167,6 +169,7 @@ const PendingUsersTab: React.FC = () => {
       rowKey={(record) => record.id || record.user_id}
       loading={isLoading}
       pagination={{ pageSize: 10 }}
+      scroll={{ x: 800 }}
     />
   );
 };
@@ -206,6 +209,8 @@ const AllUsersTab: React.FC = () => {
       title: 'Tài khoản',
       dataIndex: 'account',
       key: 'account',
+      width: 150,
+      fixed: 'left' as const,
     },
     {
       title: (
@@ -299,6 +304,8 @@ const AllUsersTab: React.FC = () => {
     {
       title: 'Hành động',
       key: 'action',
+      fixed: 'right' as const,
+      width: 150,
       render: (_: any, record: UserResponse) => {
         const canManage = canManageUser(currentUser, record);
         const isActive = record.status?.toUpperCase() === 'ACTIVE';
@@ -377,6 +384,7 @@ const AllUsersTab: React.FC = () => {
       rowKey={(record) => record.id || record.user_id}
       loading={isLoading}
       pagination={{ pageSize: 10 }}
+      scroll={{ x: 1000 }}
     />
   );
 };
