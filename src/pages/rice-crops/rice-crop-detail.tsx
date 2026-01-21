@@ -206,7 +206,7 @@ const RiceCropDetail: React.FC = () => {
     {
       key: 'profit',
       label: '📊 Báo cáo lợi nhuận',
-      children: <ProfitReportTab riceCropId={riceCrop.id} />,
+      children: <ProfitReportTab riceCropId={riceCrop.id} amountOfLand={Number(riceCrop.amount_of_land)} />,
     },
   ];
 

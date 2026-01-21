@@ -7,7 +7,6 @@ import {
   Table,
   Tag,
   Progress,
-  Typography,
 } from 'antd';
 import {
   DollarOutlined,
@@ -18,11 +17,10 @@ import { useProfitReport } from '@/queries/profit-report';
 
 interface ProfitReportTabProps {
   riceCropId: number;
+  amountOfLand?: number;
 }
 
-const { Title } = Typography;
-
-const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
+const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfLand = 1 }) => {
   const { data: report, isLoading } = useProfitReport(riceCropId);
 
   if (isLoading) {
@@ -40,6 +38,9 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
     roi,
     cost_breakdown = [],
   } = report;
+
+  // Tính chi phí trên mỗi công
+  const costPerLand = amountOfLand > 0 ? total_cost / amountOfLand : 0;
 
   // Ensure cost_breakdown is an array
   const safeCostBreakdown = Array.isArray(cost_breakdown) ? cost_breakdown : [];
@@ -68,7 +69,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
   return (
     <div>
       <Row gutter={[16, 16]} className="mb-6">
-        <Col xs={12} sm={8}>
+        <Col xs={12} sm={6}>
           <Card bodyStyle={{ padding: '12px' }} className="h-full">
             <Statistic
               title={<span className="text-xs sm:text-base">Doanh thu</span>}
@@ -80,7 +81,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={8}>
+        <Col xs={12} sm={6}>
           <Card bodyStyle={{ padding: '12px' }} className="h-full">
             <Statistic
               title={<span className="text-xs sm:text-base">Chi phí</span>}
@@ -92,19 +93,31 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId }) => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
+        <Col xs={12} sm={6}>
+          <Card bodyStyle={{ padding: '12px' }} className="h-full">
+            <Statistic
+              title={<span className="text-xs sm:text-base text-warning">CP / Công</span>}
+              value={costPerLand}
+              precision={0}
+              valueStyle={{ color: '#fa8c16', fontSize: '18px', fontWeight: 'bold' }}
+              prefix={<DollarOutlined style={{ fontSize: '14px' }} />}
+              suffix="₫"
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
           <Card bodyStyle={{ padding: '12px' }} className="h-full">
             <Statistic
               title={<span className="text-sm sm:text-base">Lợi nhuận ròng</span>}
               value={net_profit}
               precision={0}
-              valueStyle={{ color: net_profit >= 0 ? '#3f8600' : '#cf1322', fontSize: '20px', fontWeight: 'bold' }}
-              prefix={<DollarOutlined style={{ fontSize: '16px' }} />}
+              valueStyle={{ color: net_profit >= 0 ? '#3f8600' : '#cf1322', fontSize: '18px', fontWeight: 'bold' }}
+              prefix={<DollarOutlined style={{ fontSize: '14px' }} />}
               suffix="₫"
             />
             <div className="mt-1">
-              <Tag color={roi >= 0 ? 'green' : 'red'} className="text-xs">
-                Tỉ suất lãi: {roi.toFixed(1)}%
+              <Tag color={roi >= 0 ? 'green' : 'red'} className="text-[10px] px-1">
+                ROI: {roi.toFixed(1)}%
               </Tag>
             </div>
           </Card>
