@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, Table, Button, Tag, Card, Form, Input, Select, Space, Popconfirm, Dropdown } from 'antd';
-import { UserOutlined, CheckOutlined, UserAddOutlined, MoreOutlined, CheckCircleOutlined, StopOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useRolesQuery, usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCreateUserByAdminMutation, CreateUserByAdminDto, useActivateUserMutation, useDeactivateUserMutation, useDeleteUserMutation } from '@/queries/user';
+import { UserOutlined, CheckOutlined, UserAddOutlined, MoreOutlined, CheckCircleOutlined, StopOutlined, DeleteOutlined, KeyOutlined } from '@ant-design/icons';
+import { useRolesQuery, usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCreateUserByAdminMutation, CreateUserByAdminDto, useActivateUserMutation, useDeactivateUserMutation, useDeleteUserMutation, useResetPasswordMutation } from '@/queries/user';
 import { UserResponse } from '@/models/auth.model';
 import { useAppStore } from '@/stores';
 import { canManageUser } from '@/utils/permission';
@@ -191,6 +191,7 @@ const AllUsersTab: React.FC = () => {
   const activateMutation = useActivateUserMutation();
   const deactivateMutation = useDeactivateUserMutation();
   const deleteMutation = useDeleteUserMutation();
+  const resetPasswordMutation = useResetPasswordMutation();
   const currentUser = useAppStore((state) => state.userInfo);
 
   const columns = [
@@ -316,6 +317,12 @@ const AllUsersTab: React.FC = () => {
             onClick: () => deactivateMutation.mutate(record.id || record.user_id),
           }] : []),
           ...(canManage ? [{
+            key: 'reset-password',
+            label: 'Đặt lại mật khẩu',
+            icon: <KeyOutlined />,
+            onClick: () => {},
+          }] : []),
+          ...(canManage ? [{
             key: 'delete',
             label: 'Xóa tài khoản',
             icon: <DeleteOutlined />,
@@ -337,14 +344,22 @@ const AllUsersTab: React.FC = () => {
                   ? undefined 
                   : item.onClick,
               })),
-              onClick: (e) => {
-                if (e.key === 'delete') {
-                  if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
-                    deleteMutation.mutate(record.id || record.user_id);
+                onClick: (e) => {
+                  if (e.key === 'delete') {
+                    if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+                      deleteMutation.mutate(record.id || record.user_id);
+                    }
+                  } else if (e.key === 'reset-password') {
+                    const newPassword = window.prompt('Nhập mật khẩu mới cho tài khoản này:', '123456');
+                    if (newPassword) {
+                      resetPasswordMutation.mutate({ 
+                        userId: record.id || record.user_id, 
+                        password: newPassword 
+                      });
+                    }
                   }
-                }
-              },
-            }}
+                },
+              }}
             trigger={['click']}
           >
             <Button icon={<MoreOutlined />}>Hành động</Button>

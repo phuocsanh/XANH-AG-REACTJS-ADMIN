@@ -9,6 +9,7 @@ import {
   useDeleteCustomerMutation,
   useCreateCustomerAccountMutation,
 } from "@/queries/customer"
+import { useResetPasswordMutation } from "@/queries/user"
 import {
   Button,
   Input,
@@ -28,6 +29,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   UserAddOutlined,
+  KeyOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -129,6 +131,7 @@ const CustomersList: React.FC = () => {
   const updateMutation = useUpdateCustomerMutation()
   const deleteMutation = useDeleteCustomerMutation()
   const createAccountMutation = useCreateCustomerAccountMutation()
+  const resetPasswordMutation = useResetPasswordMutation()
 
   // Hàm xử lý thêm khách hàng
   const handleAddCustomer = () => {
@@ -252,6 +255,28 @@ const CustomersList: React.FC = () => {
       await createAccountMutation.mutateAsync(customer.id)
     } catch (error) {
       console.error('Error in handleCreateAccount:', error)
+    }
+  }
+
+  // Xử lý đặt lại mật khẩu cho tài khoản khách hàng
+  const handleResetPassword = async (customer: ExtendedCustomer) => {
+    const userId = customer.users?.[0]?.id
+    if (!userId) return
+
+    const newPassword = window.prompt(
+      `Nhập mật khẩu mới cho tài khoản của "${customer.name}":`,
+      "123456"
+    )
+
+    if (newPassword) {
+      try {
+        await resetPasswordMutation.mutateAsync({
+          userId,
+          password: newPassword,
+        })
+      } catch (error) {
+        console.error("Error resetting password:", error)
+      }
     }
   }
 
@@ -400,13 +425,20 @@ const CustomersList: React.FC = () => {
               title='Chỉnh sửa'
             />
             {/* Chỉ hiển thị nút tạo tài khoản nếu CHƯA có tài khoản */}
-            {!hasAccount && (
+            {!hasAccount ? (
               <Button
                 type="dashed"
                 icon={<UserAddOutlined />}
                 onClick={() => handleCreateAccount(record)}
                 title='Tạo tài khoản đăng nhập'
                 loading={createAccountMutation.isPending}
+              />
+            ) : (
+              <Button
+                icon={<KeyOutlined />}
+                onClick={() => handleResetPassword(record)}
+                title='Đặt lại mật khẩu'
+                loading={resetPasswordMutation.isPending}
               />
             )}
             <Button

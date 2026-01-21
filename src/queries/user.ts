@@ -169,3 +169,18 @@ export const useDeleteUserMutation = () => {
     },
   });
 };
+
+export const useResetPasswordMutation = () => {
+  return useMutation({
+    mutationFn: async ({ userId, password }: { userId: number; password: string }) => {
+      const response = await api.postRaw(`/users/${userId}/reset-password`, { password });
+      return response;
+    },
+    onSuccess: () => {
+      toast.success("Đặt lại mật khẩu thành công!");
+    },
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi đặt lại mật khẩu");
+    },
+  });
+};

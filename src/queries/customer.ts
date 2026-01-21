@@ -396,8 +396,8 @@ export const useCreateCustomerAccountMutation = () => {
     onSuccess: (data: { account: string; temp_password: string; customer_name: string }) => {
       invalidateResourceQueries("/customers")
       toast.success(
-        `Tạo tài khoản thành công!\nSố điện thoại: ${data.account}`,
-        { autoClose: 3000 }
+        `Tạo tài khoản thành công!\nSố điện thoại: ${data.account}\nMật khẩu: ${data.temp_password}`,
+        { autoClose: 5000 }
       )
     },
     onError: (error: unknown) => {
