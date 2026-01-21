@@ -9,7 +9,7 @@ interface ComboBoxOption {
   disabled?: boolean
   scientific_name?: string
   unit_name?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // Interface cho props của ComboBox
@@ -76,7 +76,8 @@ function ComboBox({
   ...selectProps
 }: ComboBoxProps) {
   // Xác định filterOption: Nếu không truyền vào, tự động tắt (false) khi có search async
-  const finalFilterOption = filterOption !== undefined 
+  const finalFilterOption = filterOption !== undefined ? filterOption : (externalOnSearch ? false : true);
+
   // State nội bộ để quản lý việc hiển thị chữ ngay lập tức khi gõ (Uncontrolled-like behavior)
   const [innerSearchValue, setInnerSearchValue] = React.useState<string | undefined>(
     selectProps.searchValue as string
@@ -89,28 +90,33 @@ function ComboBox({
     }
   }, [selectProps.searchValue])
 
-  // Log để debug
-  console.log("ComboBox render", { finalFilterOption, hasExternalSearch: !!externalOnSearch })
-
   // Sử dụng data từ bên ngoài nếu có, ngược lại dùng static options
   const displayOptions = externalData || staticOptions
 
 
   // Debounce timer ref
-  const searchTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const searchTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Handle search: Cập nhật UI ngay lập tức và báo cho cha
+  // Handle search: Cập nhật UI ngay lập tức và báo cho cha sau một khoảng delay (debounce)
   const handleSearch = React.useCallback(
     (value: string) => {
       // 1. Cập nhật state nội bộ ngay lập tức để UI không bị lag
       setInnerSearchValue(value)
       
-      // 2. Báo cho component cha để filter/gọi API
+      // 2. Báo cho component cha để filter/gọi API với debounce
       if (externalOnSearch) {
-        externalOnSearch(value);
+        // Xóa timer cũ nếu có
+        if (searchTimerRef.current) {
+          clearTimeout(searchTimerRef.current)
+        }
+        
+        // Thiết lập timer mới
+        searchTimerRef.current = setTimeout(() => {
+          externalOnSearch(value);
+        }, searchDebounceMs);
       }
     },
-    [externalOnSearch]
+    [externalOnSearch, searchDebounceMs]
   )
 
   // Cleanup khi unmount
@@ -123,30 +129,16 @@ function ComboBox({
   }, [])
 
   // Function để load more data
-  const loadMore = () => {
+  const loadMore = React.useCallback(() => {
     if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
       fetchNextPage()
     }
-  }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Xử lý scroll để load more
   const handlePopupScroll = React.useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const { target } = e
       const element = target as HTMLDivElement
-
-      // Log để debug
-      console.log("Scroll event:", {
-        scrollTop: element.scrollTop,
-        offsetHeight: element.offsetHeight,
-        scrollHeight: element.scrollHeight,
-        isAtBottom:
-          element.scrollTop + element.offsetHeight >= element.scrollHeight - 5,
-        enableLoadMore,
-        hasNextPage,
-        isFetching,
-        isFetchingNextPage,
-      })
 
       if (
         enableLoadMore &&
@@ -155,7 +147,6 @@ function ComboBox({
         !isFetchingNextPage &&
         element.scrollTop + element.offsetHeight >= element.scrollHeight - 5
       ) {
-        console.log("Triggering load more...")
         loadMore()
       }
     },

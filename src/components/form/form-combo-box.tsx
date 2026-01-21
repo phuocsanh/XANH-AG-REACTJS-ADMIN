@@ -43,6 +43,7 @@ interface FormComboBoxProps<T extends FieldValues>
 
   // Props cho pagination
   enableLoadMore?: boolean
+  searchDebounceMs?: number
 
   // Props cho multi-select
   mode?: "multiple" | "tags"
@@ -96,6 +97,7 @@ function FormComboBox<T extends FieldValues>({
   showSearch = true,
   filterOption = true,
   enableLoadMore = true,
+  searchDebounceMs = 1000,
   mode,
   maxTagCount,
   maxTagTextLength,
@@ -123,7 +125,7 @@ function FormComboBox<T extends FieldValues>({
   }
 
   // Debounce timer ref
-  const searchTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const searchTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Handle search với debounce 1.5s
   const handleSearch = useCallback(
@@ -137,10 +139,10 @@ function FormComboBox<T extends FieldValues>({
         // Set timeout mới
         searchTimerRef.current = setTimeout(() => {
           externalOnSearch(value)
-        }, 1500)
+        }, searchDebounceMs)
       }
     },
-    [externalOnSearch]
+    [externalOnSearch, searchDebounceMs]
   )
 
   // Cleanup khi unmount
@@ -153,11 +155,11 @@ function FormComboBox<T extends FieldValues>({
   }, [])
 
   // Function để load more data
-  const loadMore = () => {
+  const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage && fetchNextPage) {
       fetchNextPage()
     }
-  }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // Handle scroll để load more cho async mode
   const handlePopupScroll = useCallback(
@@ -243,7 +245,7 @@ function FormComboBox<T extends FieldValues>({
       isFetchingNextPage,
       hasNextPage,
       enableLoadMore,
-      finalOptions?.length,
+      finalOptions,
     ]
   )
 

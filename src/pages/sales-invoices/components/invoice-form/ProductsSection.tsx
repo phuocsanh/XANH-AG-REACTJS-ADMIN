@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 // Component quản lý danh sách sản phẩm trong hóa đơn
 import React from 'react';
 import { Card, CardContent, Typography, Alert } from '@mui/material';
@@ -67,6 +68,7 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
             }
           }}
           onSearch={(val) => setProductSearch(val)}
+          searchDebounceMs={1000}
           filterOption={false}
           allowClear
           showSearch
