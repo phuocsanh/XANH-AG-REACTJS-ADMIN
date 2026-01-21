@@ -51,8 +51,9 @@ const PendingUsersTab: React.FC = () => {
     },
     {
       title: 'Nickname',
-      dataIndex: 'nickname',
+      dataIndex: ['user_profile', 'nickname'],
       key: 'nickname',
+      render: (text: string, record: UserResponse) => (record as any).user_profile?.nickname || 'N/A',
     },
     {
       title: 'Role',
@@ -215,9 +216,9 @@ const AllUsersTab: React.FC = () => {
             onChange={(val) => handleFilterChange('nickname', val)}
         />
       ),
-      dataIndex: 'nickname',
+      dataIndex: ['user_profile', 'nickname'],
       key: 'nickname',
-      render: (text: string, record: any) => record.nickname || record.profile?.nickname || 'N/A',
+      render: (text: string, record: any) => text || record.nickname || 'N/A',
     },
     {
       title: (

@@ -102,10 +102,16 @@ export interface UserResponse {
   user_account: string // Keep for backward compatibility
   id?: number // New field from RBAC spec
   account?: string // New field from RBAC spec
-  nickname?: string
-  role?: Role
-  status?: string // PENDING, ACTIVE, INACTIVE
-  created_at?: string
+  nickname?: string;
+  role?: Role;
+  user_profile?: {
+    nickname?: string;
+    avatar?: string;
+    mobile?: string;
+    email?: string;
+  };
+  status?: string; // PENDING, ACTIVE, INACTIVE
+  created_at?: string;
 }
 
 // Response từ API login thành công từ server NestJS
