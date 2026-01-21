@@ -217,7 +217,7 @@ const CreateSalesInvoice = () => {
     defaultValues: defaultSalesInvoiceValues,
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, prepend } = useFieldArray({
     control,
     name: 'items',
   });
@@ -637,7 +637,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         unitPrice = Number(product.credit_price);
     }
 
-    append({
+    prepend({
       product_id: product.id,
       product_name: product.trade_name || product.name,
       unit_name: product.unit_name || product.unit?.name || '',
