@@ -205,7 +205,7 @@ const RiceCropDetail: React.FC = () => {
     },
     {
       key: 'profit',
-      label: '📊 Báo cáo lợi nhuận',
+      label: '📊 Báo cáo lợi nhuận nông dân',
       children: <ProfitReportTab riceCropId={riceCrop.id} amountOfLand={Number(riceCrop.amount_of_land)} />,
     },
   ];
