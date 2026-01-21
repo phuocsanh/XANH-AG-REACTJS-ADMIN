@@ -1,65 +1,27 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import dayjs from 'dayjs';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
   Typography,
-  TextField,
   Grid,
-  Card,
-  CardContent,
-  Autocomplete,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Divider,
-  Alert,
   Tabs,
   Tab,
-  List,
-  ListItem,
-  Checkbox,
-  FormControlLabel,
-  CircularProgress,
-  Radio,
-  RadioGroup,
 } from '@mui/material';
-import { FormFieldNumber, FormField, FormComboBox } from '@/components/form';
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
-  Save as SaveIcon,
 } from '@mui/icons-material';
-import { Select as AntSelect } from 'antd';
 import {
   PrinterOutlined,
-  MenuOutlined,
-  EnvironmentOutlined,
-  AimOutlined,
-  SyncOutlined,
-  ReloadOutlined,
-  ThunderboltOutlined,
-  CloseOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery } from '@/queries/product';
 import { Customer } from '@/models/customer';
-import { Season } from '@/models/season';
 import { Product } from '@/models/product.model';
 import { SalesInvoice } from '@/models/sales-invoice';
 import { useAiService } from '@/hooks/use-ai-service';
@@ -67,22 +29,28 @@ import { weatherService, WeatherData, SimplifiedWeatherData } from '@/services/w
 import { frontendAiService } from '@/services/ai.service';
 import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locations';
 import LocationMap from '@/components/LocationMap';
-import ComboBox from '@/components/common/combo-box';
-import { Tag, Space, Spin, Modal as AntModal, message, Card as AntCard, Tabs as AntTabs, Popover, App as AntApp } from 'antd';
+import { Modal as AntModal, App as AntApp } from 'antd';
 import { useFormGuard } from '@/hooks/use-form-guard';
 import {
   salesInvoiceSchema,
   SalesInvoiceFormData,
   defaultSalesInvoiceValues,
-  paymentMethodLabels,
-  priceTypeLabels,
 } from './form-config';
-import { ProductsTable } from './components/ProductsTable';
 import { DeliveryInfoSection } from './components/DeliveryInfoSection';
-import { WeatherForecastTabs } from './weather-forecast-tabs';
-import { CreateDeliveryLogDto } from '@/models/delivery-log.model';
+// Refactored Components
+import { 
+  CustomerInfoSection, 
+  InvoiceInfoSection, 
+  ProductsSection, 
+  PaymentSummarySection, 
+  InvoiceActions 
+} from './components/invoice-form';
+import { TechnicalAdvisoryTab } from './components/advisory-tab/TechnicalAdvisoryTab';
+import { DiseaseWarningTab } from './components/disease-tab/DiseaseWarningTab';
+import { PrintOptionsModal } from './components/print-modal/PrintOptionsModal';
+import { generatePrintContent as generatePrintContentUtil } from './utils/print-utils';
 
-// Disease Warning Imports
+// Disease Warning Queries
 import {
   useLocationQuery,
   useUpdateLocationMutation,
@@ -113,17 +81,9 @@ import {
   useGrainDiscolorationWarningQuery,
   useRunGrainDiscolorationAnalysisMutation,
 } from '@/queries/grain-discoloration';
-import {
-  WarningCard,
-  DailyDataTable,
-  LocationForm,
-  DiseaseWarningCard,
-} from '@/components/disease-warning';
-import { UpdateLocationDto } from '@/models/rice-blast';
 import { useRiceCrops } from '@/queries/rice-crop';
-import { CropStatus, RiceCrop } from '@/models/rice-farming';
-
-const { TabPane } = AntTabs;
+import { CropStatus } from '@/models/rice-farming';
+import { CreateDeliveryLogDto } from '@/models/delivery-log.model';
 
 interface Recommendation {
   time: string;
@@ -161,16 +121,15 @@ const CreateSalesInvoice = () => {
   const isEditMode = !!id;
   
   // Fetch invoice data if in edit mode
-  const { data: invoiceData, isLoading: isLoadingInvoice } = useSalesInvoiceQuery(
+  const { data: invoiceData } = useSalesInvoiceQuery(
     id ? parseInt(id) : 0
   );
-  
+
   const [customerSearch, setCustomerSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const { message: antMessage } = AntApp.useApp();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isGuestCustomer, setIsGuestCustomer] = useState(true);
-  const [selectedRiceCropId, setSelectedRiceCropId] = useState<number | undefined>(undefined);
   const [currentTab, setCurrentTab] = useState(0);
   const [diseaseWarningTab, setDiseaseWarningTab] = useState('rice-blast');
 
@@ -198,14 +157,12 @@ const CreateSalesInvoice = () => {
   const [selectedProductIdsForAdvisory, setSelectedProductIdsForAdvisory] = useState<number[]>([]);
   const [mixResult, setMixResult] = useState('');
   const [sortResult, setSortResult] = useState('');
-  const [weatherForecast, setWeatherForecast] = useState<WeatherData[]>([]); // Dữ liệu đã filter (chỉ khung giờ tốt) cho "Thời điểm phun thuốc"
   const [fullWeatherForecast, setFullWeatherForecast] = useState<WeatherData[]>([]); // Dữ liệu đầy đủ tất cả giờ cho "Dự báo 2 ngày"
   const [sprayingRecommendations, setSprayingRecommendations] = useState<Recommendation[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [weatherTabValue, setWeatherTabValue] = useState(0); // Tab index cho dự báo thời tiết
-  
+
   // Location state - Khởi tạo từ database
   const [selectedLocation, setSelectedLocation] = useState<Location>(() => {
     if (diseaseLocation) {
@@ -230,12 +187,11 @@ const CreateSalesInvoice = () => {
     diseaseWarning: true
   });
   const [selectedAdvisorySections, setSelectedAdvisorySections] = useState({
-    mix: true,
+  mix: true,
     sort: true,
     spray: true
   });
   const [selectedPrintDiseases, setSelectedPrintDiseases] = useState<string[]>([]);
-  const printContentRef = useRef<HTMLDivElement>(null);
   
   // AI Warning Generation States
   const [isGeneratingWarning, setIsGeneratingWarning] = useState(false);
@@ -290,11 +246,6 @@ const CreateSalesInvoice = () => {
   
   // Watch season_id để filter Ruộng lúa
   const selectedSeasonId = watch('season_id');
-
-  // Lấy tất cả Ruộng lúa đang hoạt động (để chọn trước)
-  const { data: allActiveRiceCrops } = useRiceCrops({ 
-    status: CropStatus.ACTIVE 
-  });
   
   // Lấy Ruộng lúa của khách hàng đã chọn VÀ theo mùa vụ đã chọn
   const { data: customerRiceCrops, isLoading: isLoadingRiceCrops } = useRiceCrops({ 
@@ -307,12 +258,6 @@ const CreateSalesInvoice = () => {
   const createMutation = useCreateSalesInvoiceMutation();
   const updateMutation = useUpdateSalesInvoiceMutation();
 
-  // State để hiển thị lợi nhuận khi nhấn giữ
-  const [showProfit, setShowProfit] = useState(false);
-  const pressTimerRef = useRef<any>(null);
-  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-
   // State để lưu kết quả tính toán
   const [calculatedProfit, setCalculatedProfit] = useState({
     revenue: 0,
@@ -322,7 +267,6 @@ const CreateSalesInvoice = () => {
   });
 
   const items = watch('items') || [];
-  const discountAmount = watch('discount_amount');
   const partialPaymentAmount = watch('partial_payment_amount');
   const seasonId = watch('season_id');
   const customerId = watch('customer_id');
@@ -337,7 +281,6 @@ const CreateSalesInvoice = () => {
   useEffect(() => {
     if (selectedCustomer) {
       setValue('rice_crop_id', undefined);
-      setSelectedRiceCropId(undefined);
     }
   }, [selectedSeasonId, selectedCustomer, setValue]);
 
@@ -389,11 +332,6 @@ const CreateSalesInvoice = () => {
           phone: invoice.customer_phone || '',
           address: invoice.customer_address || '',
         } as Customer);
-      }
-
-      // Khôi phục trạng thái selectedRiceCropId
-      if (invoice.rice_crop_id) {
-        setSelectedRiceCropId(invoice.rice_crop_id);
       }
 
       // Khôi phục thông tin giao hàng nếu có
@@ -519,7 +457,6 @@ const CreateSalesInvoice = () => {
       // ✨ BẮT BUỘC: Reset season và rice crop để người dùng chọn lại
       setValue('season_id', undefined);
       setValue('rice_crop_id', undefined);
-      setSelectedRiceCropId(undefined);
       
       antMessage.info('Vui lòng chọn Mùa vụ và Ruộng lúa cho khách hàng này');
     } else {
@@ -532,16 +469,9 @@ const CreateSalesInvoice = () => {
       // Khách vãng lai không cần season/rice crop
       setValue('season_id', activeSeason?.id); // Set lại active season
       setValue('rice_crop_id', undefined);
-      setSelectedRiceCropId(undefined);
     }
   };
 
-  const handleRiceCropSelect = (riceCropId: number | undefined) => {
-
-    setSelectedRiceCropId(riceCropId);
-    setValue('rice_crop_id', riceCropId);
-    // Không cần auto-fill ngược lại season/customer vì flow hiện tại là xuôi: Customer -> Season -> Rice Crop
-  };
 
   /**
    * Generate warning using AI based on product descriptions
@@ -940,9 +870,8 @@ ${productInfo}`;
       const cachedData = localStorage.getItem(CACHE_KEY);
       if (cachedData) {
         try {
-          const { timestamp, forecast, recommendations } = JSON.parse(cachedData);
+          const { timestamp, recommendations } = JSON.parse(cachedData);
           if (Date.now() - timestamp < 30 * 60 * 1000) {
-            setWeatherForecast(forecast);
             if (recommendations && recommendations.length > 0) {
               setSprayingRecommendations(recommendations);
             }
@@ -986,9 +915,6 @@ ${productInfo}`;
       
       // Lưu dữ liệu đầy đủ (tất cả giờ trong 2 ngày) cho phần hiển thị tabs
       setFullWeatherForecast(filteredData);
-      
-      // Lưu dữ liệu đã filter (chỉ khung giờ tốt) cho phần "Thời điểm phun thuốc"
-      setWeatherForecast(optimalHoursData);
       
       const simplifiedData = weatherService.simplifyWeatherData(optimalHoursData);
       
@@ -1240,400 +1166,44 @@ ${productInfo}`;
 
   const generatePrintContent = () => {
     const items = getValues('items') || [];
-    // CSS cho A4 (210mm) - Layout đầy đủ
-    const stylesA4 = `
-      <style>
-        @page { size: A4; margin: 15mm; }
-        body { font-family: 'Times New Roman', serif; line-height: 1.5; color: #000; font-size: 14px; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        .section { margin-bottom: 25px; }
-        .section-title { font-size: 16px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 5px; text-transform: uppercase; }
-        .row { display: flex; margin-bottom: 5px; }
-        .label { font-weight: bold; width: 150px; }
-        .value { flex: 1; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .total-section { margin-top: 15px; text-align: right; }
-        .warning-box { border: 1px solid #faad14; background-color: #fffbe6; padding: 15px; border-radius: 4px; margin-bottom: 15px; }
-        .warning-header { display: flex; align-items: center; margin-bottom: 10px; font-weight: bold; color: #d46b08; }
-        .warning-content { white-space: pre-line; }
-        .risk-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 12px; margin-right: 10px; }
-        .risk-CAO { background-color: #f5222d; }
-        .risk-TRUNG_BINH { background-color: #fa8c16; color: #000; }
-        .risk-THAP { background-color: #52c41a; }
-        .footer { margin-top: 40px; text-align: center; font-style: italic; font-size: 12px; }
-        
-        /* Disease Warning Specific Styles */
-        .disease-warning-item { margin-bottom: 20px; padding: 10px; border-left: 4px solid #fa8c16; background: #fff; }
-        .disease-title { font-weight: bold; font-size: 15px; color: #d46b08; margin-bottom: 5px; }
-        .disease-content { font-size: 14px; line-height: 1.6; }
-      </style>
-    `;
-
-    // CSS cho K80 (80mm) - Layout đơn giản, font nhỏ hơn
-    const stylesK80 = `
-      <style>
-        @page { size: 80mm auto; margin: 2mm; }
-        body { font-family: 'Arial', sans-serif; line-height: 1.3; color: #000; font-size: 11px; max-width: 76mm; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
-        .header h2 { font-size: 14px; margin: 5px 0; }
-        .section { margin-bottom: 10px; }
-        .section-title { font-size: 12px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 5px; padding-bottom: 3px; }
-        .row { margin-bottom: 3px; }
-        .label { font-weight: bold; display: inline-block; }
-        .value { display: inline; }
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 10px; }
-        th, td { border: 1px solid #ccc; padding: 3px; text-align: left; }
-        th { background-color: #f0f0f0; font-size: 10px; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .total-section { margin-top: 8px; text-align: right; font-size: 11px; }
-        .warning-box { border: 1px solid #faad14; background-color: #fffbe6; padding: 5px; margin-bottom: 8px; }
-        .warning-header { font-weight: bold; color: #d46b08; margin-bottom: 3px; font-size: 11px; }
-        .warning-content { white-space: pre-line; font-size: 10px; }
-        .footer { margin-top: 15px; text-align: center; font-style: italic; font-size: 9px; }
-        .disease-warning-item { margin-bottom: 8px; padding: 5px; border-left: 2px solid #fa8c16; }
-        .disease-title { font-weight: bold; font-size: 11px; color: #d46b08; margin-bottom: 3px; }
-        .disease-content { font-size: 10px; line-height: 1.4; }
-      </style>
-    `;
-
-    const styles = paperSize === 'K80' ? stylesK80 : stylesA4;
-
-
-    let content = `
-      <html>
-        <head>
-          <title>${printSections.invoice ? 'Phiếu Tư Vấn & Hóa Đơn' : 'Phiếu Giao Hàng'}</title>
-          ${styles}
-        </head>
-        <body>
-    `;
-
-    // Header khác nhau tùy theo có in hóa đơn hay không
-    if (printSections.invoice) {
-      content += `
-          <div class="header">
-            <h2>PHIẾU TƯ VẤN & HÓA ĐƠN BÁN HÀNG</h2>
-            <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}</p>
-          </div>
-      `;
-    } else {
-      // Nếu chỉ in phiếu giao hàng, hiển thị ngày tạo đơn giản
-      content += `
-          <div class="header">
-            <p>Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}</p>
-          </div>
-      `;
-    }
-    
-
-    // 1. INVOICE SECTION
-    if (printSections.invoice) {
-      content += `
-        <div class="section">
-          <div class="section-title">I. THÔNG TIN KHÁCH HÀNG & ĐƠN HÀNG</div>
-          <div class="row"><span class="label">Khách hàng:</span><span class="value">${watch('customer_name') || 'Khách lẻ'}</span></div>
-          <div class="row"><span class="label">Số điện thoại:</span><span class="value">${watch('customer_phone') || '-'}</span></div>
-          <div class="row"><span class="label">Địa chỉ:</span><span class="value">${watch('customer_address') || '-'}</span></div>
-          
-          <table>
-            <thead>
-              <tr>
-                <th>STT</th>
-                <th>Sản phẩm</th>
-                <th class="text-center">SL</th>
-                <th class="text-right">Đơn giá</th>
-                <th class="text-right">Thành tiền</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map((item, index) => `
-                <tr>
-                  <td class="text-center">${index + 1}</td>
-                  <td>${item.product_name}</td>
-                  <td class="text-center">${item.quantity}</td>
-                  <td class="text-right">${formatCurrency(item.unit_price)}</td>
-                  <td class="text-right">${formatCurrency(item.quantity * item.unit_price - (item.discount_amount || 0))}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="total-section">
-            <div class="row" style="justify-content: flex-end"><span class="label">Tổng tiền:</span><span class="value" style="flex: 0 auto">${formatCurrency(finalAmount)}</span></div>
-            ${partialPaymentAmount > 0 ? `<div class="row" style="justify-content: flex-end"><span class="label">Đã trả:</span><span class="value" style="flex: 0 auto">${formatCurrency(partialPaymentAmount)}</span></div>` : ''}
-            ${remainingAmount > 0 ? `<div class="row" style="justify-content: flex-end"><span class="label">Còn nợ:</span><span class="value" style="flex: 0 auto; font-weight: bold;">${formatCurrency(remainingAmount)}</span></div>` : ''}
-          </div>
-          
-          ${customerId && seasonId && customerSeasonStats ? `
-            <div style="margin-top: 15px; padding: 10px; background-color: #f5f5f5; border-left: 4px solid #1976d2;">
-              <div style="font-weight: bold; color: #1976d2; margin-bottom: 8px;">
-                📊 Thống kê mùa vụ: ${seasons?.data?.items?.find((s: Season) => s.id === seasonId)?.name || ''}
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span>Tổng tiền mua hàng:</span>
-                <span style="font-weight: bold; color: #2e7d32;">${formatCurrency(customerSeasonStats.totalPurchase || 0)}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span>Tổng nợ:</span>
-                <span style="font-weight: bold; color: #d32f2f;">${formatCurrency(customerSeasonStats.totalDebt || 0)}</span>
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-    
-    // Thêm Lưu ý quan trọng và Ghi chú nếu có
-    if (printSections.invoice) {
-      const warning = watch('warning');
-      const notes = watch('notes');
-      
-      if (warning || notes) {
-        content += `<div class="section">`;
-        
-        if (warning) {
-          content += `
-            <div style="margin-bottom: 15px;">
-              <strong>Lưu ý quan trọng:</strong>
-              <div style="margin-top: 5px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107;">${warning.replace(/\n/g, '<br>')}</div>
-            </div>
-          `;
-        }
-        
-        if (notes) {
-          content += `
-            <div style="margin-bottom: 15px;">
-              <strong>Ghi chú:</strong>
-              <div style="margin-top: 5px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #6c757d;">${notes.replace(/\n/g, '<br>')}</div>
-            </div>
-          `;
-        }
-        
-        content += `</div>`;
+    return generatePrintContentUtil({
+      paperSize,
+      printSections,
+      customerInfo: {
+        name: watch('customer_name'),
+        phone: watch('customer_phone'),
+        address: watch('customer_address'),
+        warning: watch('warning'),
+        notes: watch('notes'),
+      },
+      items,
+      formatCurrency,
+      finalAmount,
+      partialPaymentAmount,
+      remainingAmount,
+      seasonStats: {
+        customerId,
+        seasonId,
+        stats: customerSeasonStats,
+        seasonsData: seasons,
+      },
+      delivery: {
+        isEnabled: isDeliveryEnabled,
+        shouldPrint: shouldPrintDelivery,
+        data: deliveryData,
+      },
+      advisory: {
+        sections: selectedAdvisorySections,
+        mixResult,
+        sortResult,
+        sprayingRecommendations,
+      },
+      disease: {
+        location: diseaseLocation,
+        selectedDiseases: selectedPrintDiseases,
+        availableWarnings,
       }
-    }
-
-
-    // 2. DELIVERY LOG SECTION (Hiển thị ngay dưới Hóa đơn)
-    if (isDeliveryEnabled && shouldPrintDelivery && deliveryData) {
-      if (printSections.invoice) {
-        content += `<div style="border-top: 2px dashed #ccc; margin: 20px 0; padding-top: 20px;"></div>`;
-      }
-      
-      // Fix Invalid Date Logic & Format Time string
-      let deliveryTimeStr = '';
-      if (deliveryData.delivery_start_time) {
-          if (dayjs.isDayjs(deliveryData.delivery_start_time)) {
-              deliveryTimeStr = deliveryData.delivery_start_time.format('HH:mm');
-          } else if (typeof deliveryData.delivery_start_time === 'string') {
-              deliveryTimeStr = deliveryData.delivery_start_time.substring(0, 5);
-          }
-      }
-
-      content += `
-        <div style="text-align: center; margin-bottom: 20px; ${!printSections.invoice ? 'margin-top: 30px;' : ''}">
-          <h3 style="margin: 0; text-transform: uppercase;">Phiếu Giao Hàng</h3>
-          <p style="margin: 5px 0; font-size: 13px;">Ngày giao: ${deliveryData.delivery_date ? dayjs(deliveryData.delivery_date).format('DD/MM/YYYY') : ''} ${deliveryTimeStr}</p>
-        </div>
-      `;
-
-      if (!printSections.invoice) {
-        // Hiển thị đầy đủ nếu KHÔNG in kèm hóa đơn
-        content += `
-          <div class="section">
-             <div class="row"><span class="label">Người nhận:</span><span class="value">${deliveryData.receiver_name || ''}</span></div>
-             <div class="row"><span class="label">Số điện thoại:</span><span class="value">${deliveryData.receiver_phone || ''}</span></div>
-             <div class="row"><span class="label">Địa chỉ giao:</span><span class="value">${deliveryData.delivery_address || ''}</span></div>
-             <div class="row"><span class="label">Ghi chú:</span><span class="value">${deliveryData.delivery_notes || 'Không có'}</span></div>
-          </div>
-        `;
-      } else {
-        // Nếu ĐÃ in hóa đơn, chỉ hiện Ghi chú (nếu có), bỏ hết địa chỉ
-        if (deliveryData.delivery_notes) {
-            content += `
-              <div class="section">
-                 <div class="row"><span class="label">Ghi chú:</span><span class="value">${deliveryData.delivery_notes}</span></div>
-              </div>
-            `;
-        }
-      }
-
-      content += `
-        <div class="section">
-          <div class="section-title">DANH SÁCH HÀNG HÓA CẦN GIAO</div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 50px; text-align: center;">STT</th>
-                <th>Tên hàng hóa</th>
-                <th style="width: 80px; text-align: center;">ĐVT</th>
-                <th style="width: 80px; text-align: right;">SL</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-
-      if (deliveryData.items && deliveryData.items.length > 0) {
-        deliveryData.items.forEach((item, index) => {
-          const originalItem = (item.sales_invoice_item_id !== undefined) ? items[item.sales_invoice_item_id] : null;
-          const productName = originalItem ? (originalItem.product_name || `Sản phẩm #${(item.sales_invoice_item_id || 0) + 1}`) : 'Unknown';
-          const unit = (originalItem as any)?.unit || '';
-
-          content += `
-            <tr>
-              <td style="text-align: center;">${index + 1}</td>
-              <td>${productName}</td>
-              <td style="text-align: center;">${unit}</td>
-              <td style="text-align: right;">${item.quantity}</td>
-            </tr>
-          `;
-        });
-      } else {
-        content += `<tr><td colspan="4" class="text-center">Chưa chọn sản phẩm</td></tr>`;
-      }
-
-      content += `
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-           <div class="row"><span class="label">Tài xế:</span><span class="value">${deliveryData.driver_name || '...'}</span></div>
-           <div class="row"><span class="label">Biển số xe:</span><span class="value">${deliveryData.vehicle_number || '...'}</span></div>
-        </div>
-      `;
-
-      // Chỉ hiện phần ký tên nếu KHÔNG in hóa đơn
-      if (!printSections.invoice) {
-        content += `
-        <div style="margin-top: 30px; display: flex; justify-content: space-between; text-align: center;">
-             <div style="width: 30%">
-                <strong>Người giao hàng</strong><br>
-                <span style="font-size: 11px; font-style: italic;">(Ký, họ tên)</span>
-             </div>
-             <div style="width: 30%">
-                <strong>Người nhận hàng</strong><br>
-                <span style="font-size: 11px; font-style: italic;">(Ký, họ tên)</span>
-             </div>
-        </div>
-        `;
-      }
-      
-      content += `<br/>`;
-    }
-
-    // 2. TECHNICAL ADVISORY SECTION
-    const showMix = printSections.advisory && selectedAdvisorySections.mix && mixResult;
-    const showSort = printSections.advisory && selectedAdvisorySections.sort && sortResult;
-    const showSpray = printSections.advisory && selectedAdvisorySections.spray && sprayingRecommendations.length > 0;
-
-    if (showMix || showSort || showSpray) {
-      content += `<div class="section"><div class="section-title">II. TƯ VẤN KỸ THUẬT</div>`;
-      
-      if (showMix) {
-        content += `
-          <div style="margin-bottom: 15px;">
-            <strong>Phối trộn thuốc:</strong>
-            <div style="margin-top: 5px;">${mixResult.replace(/\n/g, '<br>')}</div>
-          </div>
-        `;
-      }
-
-      if (showSort) {
-        content += `
-          <div style="margin-bottom: 15px;">
-            <strong>Thứ tự pha thuốc:</strong>
-            <div style="margin-top: 5px;">${sortResult.replace(/\n/g, '<br>')}</div>
-          </div>
-        `;
-      }
-
-      if (showSpray) {
-        content += `
-          <div style="margin-bottom: 15px;">
-            <strong>Thời điểm phun thuốc tốt nhất:</strong>
-            <ul style="margin-top: 5px; padding-left: 20px;">
-              ${sprayingRecommendations.map(rec => `
-                <li>
-                  <strong>${rec.time}</strong> - Mưa: ${rec.rain_prob}, Gió: ${rec.wind_speed}, ${rec.condition}
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-        `;
-      }
-      
-      content += `</div>`;
-    }
-
-    // 3. DISEASE WARNING SECTION
-    if (printSections.diseaseWarning) {
-      const activeWarnings = availableWarnings.filter(w => selectedPrintDiseases.includes(w.id));
-
-      if (activeWarnings.length > 0) {
-        content += `<div class="section"><div class="section-title">III. CẢNH BÁO BỆNH/SÂU HẠI (Tại ${diseaseLocation?.name || 'Vị trí đã chọn'})</div>`;
-        
-        activeWarnings.forEach(w => {
-          let messageHtml = w.data?.message || '';
-          
-          // Loại bỏ phần "PHÂN TÍCH CHI TIẾT" và "KHUYẾN NGHỊ" khỏi message
-          // Chỉ lấy phần từ đầu đến trước "PHÂN TÍCH CHI TIẾT" hoặc "🔍 PHÂN TÍCH CHI TIẾT"
-          const detailIndex = messageHtml.indexOf('PHÂN TÍCH CHI TIẾT');
-          const detailIndexWithEmoji = messageHtml.indexOf('🔍 PHÂN TÍCH CHI TIẾT');
-          
-          let cutIndex = -1;
-          if (detailIndex !== -1 && detailIndexWithEmoji !== -1) {
-            cutIndex = Math.min(detailIndex, detailIndexWithEmoji);
-          } else if (detailIndex !== -1) {
-            cutIndex = detailIndex;
-          } else if (detailIndexWithEmoji !== -1) {
-            cutIndex = detailIndexWithEmoji;
-          }
-          
-          if (cutIndex !== -1) {
-            messageHtml = messageHtml.substring(0, cutIndex).trim();
-          }
-          
-          content += `
-            <div class="disease-warning-item">
-              <div class="disease-title">
-                ${w.name}
-              </div>
-              <div class="disease-content">
-                ${messageHtml.replace(/\n/g, '<br>')}
-              </div>
-            </div>
-          `;
-        });
-        
-        content += `</div>`;
-      } else if (diseaseLocation && selectedPrintDiseases.length === 0 && availableWarnings.length === 0) {
-         // Only show this if there are NO warnings at all available, not just because none are selected
-         content += `
-          <div class="section">
-            <div class="section-title">III. CẢNH BÁO BỆNH/SÂU HẠI</div>
-            <p>Hiện tại chưa phát hiện nguy cơ cao tại khu vực ${diseaseLocation.name}.</p>
-          </div>
-        `;
-      }
-    }
-
-
-
-    content += `
-          <div class="footer">
-            <p>Cảm ơn quý khách đã tin tưởng sử dụng sản phẩm & dịch vụ!</p>
-            <p>Hệ thống Xanh AG - Đồng hành cùng nhà nông</p>
-          </div>
-        </body>
-      </html>
-    `;
-    return content;
+    });
   };
 
   const handlePrint = () => {
@@ -1728,331 +1298,58 @@ ${productInfo}`;
             
             {/* Customer Information */}
             <Grid item xs={12} md={6}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>
-                    Thông tin khách hàng
-                  </Typography>
-
-                  <FormComboBox
-                    name="customer_id"
-                    control={control}
-                    label="Tìm khách hàng (tên hoặc SĐT)"
-                    placeholder="Nhập tên hoặc số điện thoại... (Để trống nếu là khách vãng lai)"
-                    data={customers?.map((c: Customer) => ({
-                      value: c.id,
-                      label: `${c.name} - ${c.phone}`
-                    })) || []}
-                    onSearch={setCustomerSearch}
-                    onSelectionChange={(value) => {
-                      const customer = customers?.find((c: Customer) => c.id === value);
-                      handleCustomerSelect(customer || null);
-                    }}
-                    allowClear
-                    showSearch
-                  />
-
-                  <FormField
-                    name="customer_name"
-                    control={control}
-                    label="Tên khách hàng *"
-                    placeholder="Nhập tên khách hàng"
-                    required
-                    disabled={!isGuestCustomer}
-                  />
-
-                  <FormField
-                    name="customer_phone"
-                    control={control}
-                    label="Số điện thoại *"
-                    placeholder="Nhập số điện thoại"
-                    required
-                    disabled={!isGuestCustomer}
-                  />
-
-                  <FormField
-                    name="customer_address"
-                    control={control}
-                    label="Địa chỉ"
-                    placeholder="Nhập địa chỉ"
-                    type="textarea"
-                    rows={2}
-                    disabled={!isGuestCustomer}
-                  />
-
-                  {/* Hiển thị thống kê khách hàng trong mùa vụ */}
-                  {selectedCustomer && watch('season_id') && (
-                    <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                      <Typography variant="subtitle2" color="primary" gutterBottom>
-                        📊 Thống kê mùa vụ: {seasons?.data?.items?.find((s: Season) => s.id === watch('season_id'))?.name || ''}
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Tổng tiền mua hàng:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="success.main">
-                            {formatCurrency(customerSeasonStats?.totalPurchase || 0)}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Tổng nợ:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold" color="error.main">
-                            {formatCurrency(customerSeasonStats?.totalDebt || 0)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                  )}
-
-
-                </CardContent>
-              </Card>
+              <CustomerInfoSection
+                control={control}
+                customers={customers}
+                customerSearch={customerSearch}
+                setCustomerSearch={setCustomerSearch}
+                handleCustomerSelect={handleCustomerSelect}
+                selectedCustomer={selectedCustomer}
+                isGuestCustomer={isGuestCustomer}
+                customerSeasonStats={customerSeasonStats}
+                formatCurrency={formatCurrency}
+              />
             </Grid>
 
             {/* Invoice Information */}
             <Grid item xs={12} md={6}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>
-                    Thông tin hóa đơn
-                  </Typography>
-
-                  <FormComboBox
-                    name="season_id"
-                    control={control}
-                    label={selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}
-                    placeholder="Chọn mùa vụ"
-                    required={!!selectedCustomer}
-                    options={seasons?.data?.items?.map((season: Season) => ({
-                      value: season.id,
-                      label: `${season.name} (${season.year})`
-                    })) || []}
-                    allowClear
-                    showSearch
-                  />
-
-                  {/* Chọn Ruộng lúa - BẮT BUỘC khi đã chọn khách hàng */}
-                  {selectedCustomer && (
-                    <Box sx={{ mt: 2 }}>
-                      {isLoadingRiceCrops ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, height: 56 }}>
-                          <CircularProgress size={24} />
-                          <Typography variant="body2" color="text.secondary">
-                            Đang tải Danh sách ruộng lúa...
-                          </Typography>
-                        </Box>
-                      ) : customerRiceCrops?.data && customerRiceCrops.data.length > 0 ? (
-                        <FormComboBox
-                          name="rice_crop_id"
-                          control={control}
-                          label="Ruộng lúa *"
-                          placeholder="Chọn ruộng lúa"
-                          required
-                          options={customerRiceCrops.data.map((crop: RiceCrop) => ({
-                            value: crop.id,
-                            label: `${crop.field_name} - ${crop.rice_variety} (${new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(crop.field_area))} m²)`
-                          }))}
-                          onSelectionChange={(value) => {
-                            setSelectedRiceCropId(value as number);
-                          }}
-                          allowClear
-                          showSearch
-                        />
-                      ) : (
-                        <Alert severity="warning">
-                          Khách hàng này chưa có Ruộng lúa nào trong mùa vụ này.
-                        </Alert>
-                      )}
-                    </Box>
-                  )}
-
-                  <FormComboBox
-                    name="payment_method"
-                    control={control}
-                    label="Phương thức thanh toán *"
-                    placeholder="Chọn phương thức thanh toán"
-                    required
-                    options={Object.entries(paymentMethodLabels).map(([value, label]) => ({
-                      value,
-                      label
-                    }))}
-                    allowClear={false}
-                    showSearch={false}
-                  />
-
-                  <Box sx={{ mb: 2 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <Typography variant="body2" color="text.secondary">
-                        Lưu ý quan trọng
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleGenerateWarning(false)}
-                        disabled={isGeneratingWarning || items.length === 0}
-                        startIcon={
-                          isGeneratingWarning ? (
-                            <Spin size="small" />
-                          ) : (
-                            <SyncOutlined />
-                          )
-                        }
-                        sx={{ ml: 'auto' }}
-                      >
-                        {isGeneratingWarning ? 'Đang tạo...' : 'Tạo bằng AI'}
-                      </Button>
-                    </Box>
-                    <FormField
-                      name="warning"
-                      control={control}
-                      label=""
-                      placeholder="AI sẽ tự động tạo lưu ý dựa trên mô tả sản phẩm, hoặc bạn có thể nhập thủ công"
-                      type="textarea"
-                      rows={2}
-                    />
-                  </Box>
-
-                  {latestInvoice?.warning && (
-                    <Alert 
-                      severity="info" 
-                      sx={{ mb: 2 }}
-                      action={
-                        <Button color="inherit" size="small" onClick={() => setValue('warning', latestInvoice.warning)}>
-                          Sử dụng
-                        </Button>
-                      }
-                    >
-                      <Typography variant="caption" display="block" fontWeight="bold">
-                        Lưu ý từ đơn hàng trước ({new Date(latestInvoice.created_at).toLocaleDateString('vi-VN')}):
-                      </Typography>
-                      <Typography variant="body2">
-                        {latestInvoice.warning}
-                      </Typography>
-                    </Alert>
-                  )}
-
-                  {conflictWarning && (
-                    <Alert 
-                      severity="error" 
-                      sx={{ mb: 2 }}
-                      icon={isCheckingConflict ? <Spin size="small" /> : undefined}
-                    >
-                      <Typography variant="caption" display="block" fontWeight="bold">
-                        ⚠️ Cảnh báo xung đột:
-                      </Typography>
-                      <Typography variant="body2">
-                        {conflictWarning}
-                      </Typography>
-                    </Alert>
-                  )}
-
-                  <FormField
-                        name="notes"
-                        control={control}
-                        label="Ghi chú"
-                        type="textarea"
-                        rows={3}
-                        placeholder="Nhập ghi chú hóa đơn..."
-                        className="mb-4"
-                      />
-
-                  {/* Quà tặng khi bán hàng */}
-                  <Box sx={{ mt: 2, p: 2, bgcolor: '#fff9e6', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" mb={2} color="text.secondary">
-                      🎁 Quà tặng (tùy chọn)
-                    </Typography>
-                    
-                    <FormField
-                      name="gift_description"
-                      control={control}
-                      label="Mô tả quà tặng"
-                      type="text"
-                      placeholder="VD: 1 thùng nước ngọt Coca"
-                      className="mb-3"
-                    />
-
-                    <FormFieldNumber
-                      name="gift_value"
-                      control={control}
-                      label="Giá trị quà tặng"
-                      min={0}
-                      size="large"
-                      placeholder="0"
-                      className="mb-0"
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      Giá trị quà tặng quy đổi ra tiền (VD: 200,000 đ)
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
+              <InvoiceInfoSection
+                control={control}
+                setValue={setValue}
+                selectedCustomer={selectedCustomer}
+                seasons={seasons}
+                customerRiceCrops={customerRiceCrops}
+                isLoadingRiceCrops={isLoadingRiceCrops}
+                latestInvoice={latestInvoice}
+                conflictWarning={conflictWarning}
+                isCheckingConflict={isCheckingConflict}
+                isGeneratingWarning={isGeneratingWarning}
+                handleGenerateWarning={handleGenerateWarning}
+                items={items}
+              />
             </Grid>
 
             {/* Products */}
             <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>
-                    Danh sách sản phẩm
-                  </Typography>
-
-                  <ComboBox
-                    label="Thêm sản phẩm"
-                    placeholder="Tìm kiếm sản phẩm..."
-                    data={productsData?.data?.items?.map((product: Product) => {
-                      return {
-                        value: product.id,
-                        label: product.trade_name || product.name, // Ưu tiên hiển thị Hiệu thuốc
-                        scientific_name: product.name,
-                        unit_name: product.unit?.name || product.unit_name || ""
-                      };
-                    }) || []}
-                    value={undefined}
-                    searchValue={productSearch}
-                    onChange={(value: string | number) => {
-                      const product = productsData?.data?.items?.find((p: Product) => p.id === value);
-                      if (product) {
-                        handleAddProduct(product);
-                      }
-                    }}
-                    onSearch={(val) => setProductSearch(val)}
-                    filterOption={false}
-                    allowClear
-                    showSearch
-                  />
-
-                  {latestInvoice?.warning && (
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                      💡 Tích chọn sản phẩm cần kiểm tra xung đột với lưu ý đơn hàng trước
-                    </Typography>
-                  )}
-
-                  {errors.items && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                      {errors.items.message}
-                    </Alert>
-                  )}
-
-
-                  <ProductsTable
-                    fields={fields}
-                    control={control}
-                    watch={watch}
-                    setValue={setValue}
-                    remove={remove}
-                    formatCurrency={formatCurrency}
-                    selectedProductIdsForAdvisory={selectedProductIdsForAdvisory}
-                    setSelectedProductIdsForAdvisory={setSelectedProductIdsForAdvisory}
-                    productsData={productsData}
-                  />
-                </CardContent>
-              </Card>
+              <ProductsSection
+                control={control}
+                watch={watch}
+                setValue={setValue}
+                fields={fields}
+                remove={remove}
+                productsData={productsData}
+                productSearch={productSearch}
+                setProductSearch={setProductSearch}
+                handleAddProduct={handleAddProduct}
+                formatCurrency={formatCurrency}
+                selectedProductIdsForAdvisory={selectedProductIdsForAdvisory}
+                setSelectedProductIdsForAdvisory={setSelectedProductIdsForAdvisory}
+                latestInvoice={latestInvoice}
+                errors={errors}
+              />
             </Grid>
 
-            {/* Delivery Information Section */}
+            {/* Delivery Information */}
             <Grid item xs={12}>
               <DeliveryInfoSection
                 items={items.map((item, index) => ({
@@ -2074,985 +1371,83 @@ ${productInfo}`;
 
             {/* Payment Summary */}
             <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" mb={1}>
-                    Thanh toán
-                  </Typography>
-
-                  {/* Layout for MOBILE - Single column with correct order */}
-                  <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-                    <Box display="flex" justifyContent="space-between" mb={0.5}>
-                      <Typography>Tổng tiền hàng:</Typography>
-                      <Typography fontWeight="bold">{formatCurrency(totalAmount)}</Typography>
-                    </Box>
-
-                    <FormFieldNumber
-                      name="discount_amount"
-                      control={control}
-                      label="Giảm giá tổng đơn"
-                      min={0}
-                      size="large"
-                      placeholder="0"
-                      className="mb-4"
-                    />
-
-                    <FormFieldNumber
-                      name="partial_payment_amount"
-                      control={control}
-                      label="Số tiền khách trả trước"
-                      min={0}
-                      max={finalAmount}
-                      size="large"
-                      placeholder="0"
-                      className="mb-4"
-                    />
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 1, display: 'block' }}>
-                      Nhập số tiền khách trả trước (nếu trả một phần)
-                    </Typography>
-
-                    <Divider sx={{ my: 1 }} />
-
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="h6">Tổng thanh toán:</Typography>
-                      <Typography variant="h6" color="success.main" fontWeight="bold">
-                        {formatCurrency(finalAmount)}
-                      </Typography>
-                    </Box>
-
-                    {remainingAmount > 0 && (
-                      <Alert severity="warning">
-                        <Typography variant="body2">
-                          Số tiền còn nợ: <strong>{formatCurrency(remainingAmount)}</strong>
-                        </Typography>
-                        <Typography variant="caption">
-                          Hệ thống sẽ tự động tạo công nợ cho số tiền này
-                        </Typography>
-                      </Alert>
-                    )}
-                  </Box>
-
-                  {/* Layout for DESKTOP - Two columns */}
-                  <Grid container spacing={2} sx={{ display: { xs: 'none', md: 'flex' } }}>
-                    <Grid item xs={12} md={6} sx={{ order: { xs: 1, md: 1 } }}>
-                      <Box display="flex" justifyContent="space-between" mb={0.5}>
-                        <Typography>Tổng tiền hàng:</Typography>
-                        <Typography fontWeight="bold">{formatCurrency(totalAmount)}</Typography>
-                      </Box>
-
-                      <FormFieldNumber
-                        name="discount_amount"
-                        control={control}
-                        label="Giảm giá tổng đơn"
-                        min={0}
-                        size="large"
-                        placeholder="0"
-                        className="mb-4"
-                      />
-
-                      {/* Divider and Total - Order 3 on mobile, 2 on desktop */}
-                      <Box sx={{ order: { xs: 3, md: 2 } }}>
-                        <Divider sx={{ my: 1 }} />
-
-                      <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography variant="h6">Tổng thanh toán:</Typography>
-                        <Typography variant="h6" color="success.main" fontWeight="bold">
-                          {formatCurrency(finalAmount)}
-                        </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-
-                    <Grid item xs={12} md={6} sx={{ order: { xs: 2, md: 2 } }}>
-                      {/* Spacer to align with "Tổng tiền hàng" on the left - Only on desktop */}
-                      <Box display={{ xs: 'none', md: 'flex' }} justifyContent="space-between" mb={0.5} sx={{ visibility: 'hidden' }}>
-                        <Typography>Spacer</Typography>
-                      </Box>
-
-                      <FormFieldNumber
-                        name="partial_payment_amount"
-                        control={control}
-                        label="Số tiền khách trả trước"
-                        min={0}
-                        max={finalAmount}
-                        size="large"
-                        placeholder="0"
-                        className="mb-4"
-                      />
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 1, display: 'block' }}>
-                        Nhập số tiền khách trả trước (nếu trả một phần)
-                      </Typography>
-
-                      {remainingAmount > 0 && (
-                        <Alert severity="warning">
-                          <Typography variant="body2">
-                            Số tiền còn nợ: <strong>{formatCurrency(remainingAmount)}</strong>
-                          </Typography>
-                          <Typography variant="caption">
-                            Hệ thống sẽ tự động tạo công nợ cho số tiền này
-                          </Typography>
-                        </Alert>
-                      )}
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
+              <PaymentSummarySection
+                control={control}
+                totalAmount={totalAmount}
+                finalAmount={finalAmount}
+                partialPaymentAmount={partialPaymentAmount}
+                formatCurrency={formatCurrency}
+              />
             </Grid>
 
             {/* Actions */}
             <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', position: 'relative' }}>
-                {/* Nút hiển thị lợi nhuận - Hover để xem */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    bottom: 0,
-                  }}
-                >
-                  <Popover
-                    content={
-                      <div style={{ minWidth: 200 }}>
-                        <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
-                          Dự kiến:
-                        </div>
-                        <div 
-                          style={{ 
-                            fontSize: 20, 
-                            fontWeight: 'bold',
-                            color: calculatedProfit.profit >= 0 ? '#52c41a' : '#ff4d4f',
-                            marginBottom: 4,
-                          }}
-                        >
-                          {new Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(calculatedProfit.profit)}
-                        </div>
-                        <div style={{ fontSize: 12, color: '#666' }}>
-                          Tỷ suất: {calculatedProfit.margin.toFixed(2)}%
-                        </div>
-                      </div>
-                    }
-                    trigger="hover"
-                    placement="topLeft"
-                  >
-                    <IconButton
-                      size="small"
-                      sx={{
-                        bgcolor: calculatedProfit.profit >= 0 ? 'success.light' : 'error.light',
-                        '&:hover': {
-                          bgcolor: calculatedProfit.profit >= 0 ? 'success.main' : 'error.main',
-                        },
-                        width: 32,
-                        height: 32,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <ThunderboltOutlined style={{ fontSize: 16, color: '#fff' }} />
-                    </IconButton>
-                  </Popover>
-                </Box>
-
-                  <Button
-                    variant="outlined"
-                    onClick={() => confirmExit(() => navigate('/sales-invoices'))}
-                    disabled={createMutation.isPending}
-                  >
-                  Hủy
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={handleSubmit((data) => onSubmit({ ...data, status: 'draft' }))}
-                  disabled={createMutation.isPending}
-                  startIcon={<SaveIcon sx={{ color: 'text.secondary' }} />}
-                >
-                  Lưu nháp
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSubmit((data) => {
-                     let status: 'draft' | 'confirmed' | 'paid' = 'confirmed';
-                     // Nếu thanh toán tiền mặt và trả đủ -> Paid
-                     if (data.payment_method === 'cash' && (data.final_amount - data.partial_payment_amount) <= 0) {
-                        status = 'paid';
-                     }
-                     onSubmit({ ...data, status });
-                  })}
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending ? 'Đang tạo...' : 'Lưu & Xác nhận'}
-                </Button>
-              </Box>
+              <InvoiceActions
+                onCancel={() => confirmExit(() => navigate('/sales-invoices'))}
+                onSaveDraft={handleSubmit((data) => onSubmit({ ...data, status: 'draft' }))}
+                onSaveConfirm={handleSubmit((data) => {
+                  let status: 'draft' | 'confirmed' | 'paid' = 'confirmed';
+                  if (data.payment_method === 'cash' && (data.final_amount - data.partial_payment_amount) <= 0) {
+                    status = 'paid';
+                  }
+                  onSubmit({ ...data, status });
+                })}
+                isPending={createMutation.isPending}
+                calculatedProfit={calculatedProfit}
+              />
             </Grid>
           </Grid>
         </TabPanel>
 
         {/* TAB 2: Technical Advisory */}
         <TabPanel value={currentTab} index={1}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" mb={2}>
-                Tư vấn kỹ thuật & Thời tiết
-              </Typography>
-
-              {/* Location Display - Compact */}
-              <Box sx={{ mb: 2, p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
-                  {/* Location Info */}
-                  <Box display="flex" alignItems="center" gap={1} flex={1} minWidth={0}>
-                    <EnvironmentOutlined style={{ fontSize: 18, color: '#1976d2' }} />
-                    <Typography fontWeight="bold" noWrap sx={{ flex: 1, minWidth: 0 }}>
-                      {selectedLocation.name}
-                    </Typography>
-                  </Box>
-                  
-                  {/* Action Buttons - Icon Only */}
-                  <Box display="flex" gap={0.5}>
-                    <IconButton 
-                      size="small" 
-                      onClick={detectUserLocation} 
-                      title="Lấy vị trí hiện tại"
-                      color="default"
-                    >
-                      <AimOutlined />
-                    </IconButton>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => setIsMapModalVisible(true)}
-                      title="Chọn vị trí trên bản đồ"
-                      color="primary"
-                    >
-                      <EnvironmentOutlined />
-                    </IconButton>
-                    <IconButton 
-                      size="small"
-                      onClick={() => {
-                        updateLocationMutation.mutate({
-                          name: selectedLocation.name,
-                          lat: selectedLocation.latitude,
-                          lon: selectedLocation.longitude
-                        });
-                        antMessage.success('Đã lưu vị trí!');
-                      }}
-                      disabled={updateLocationMutation.isPending}
-                      title="Lưu vị trí"
-                      color="success"
-                    >
-                      <SaveIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Product Selection */}
-              {items.length > 0 ? (
-                <>
-                  <Typography variant="subtitle2" mb={1}>
-                    Sản phẩm trong hóa đơn (chọn để phân tích phối trộn):
-                  </Typography>
-                  <List>
-                    {invoiceProducts.map((product) => (
-                      <ListItem key={product.id} dense>
-                        <Checkbox
-                          checked={selectedProductIdsForAdvisory.includes(product.id)}
-                          onChange={() => handleProductToggleForAdvisory(product.id)}
-                        />
-                        <Box ml={2}>
-                          <Typography fontWeight="bold">
-                            {product.trade_name || product.name}
-                            {product.unit_name && (
-                              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                ({product.unit_name})
-                              </Typography>
-                            )}
-                          </Typography>
-                          <Box>
-                            {product.ingredient?.map((ing: string, index: number) => (
-                              <Tag key={index} color="blue">{ing}</Tag>
-                            ))}
-                          </Box>
-                        </Box>
-                      </ListItem>
-                    ))}
-                  </List>
-
-                  <Box mt={2}>
-                    <Space>
-                      <Button
-                        variant="contained"
-                        onClick={handleAnalyze}
-                        disabled={isAnalyzing || selectedProductIdsForAdvisory.length < 2}
-                      >
-                        {isAnalyzing ? <Spin size="small" /> : 'Phân tích Phối trộn & Sắp xếp'}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<PrinterOutlined />}
-                        onClick={handlePrint}
-                        disabled={!mixResult && !sortResult && sprayingRecommendations.length === 0}
-                      >
-                        In kết quả
-                      </Button>
-                    </Space>
-                  </Box>
-                </>
-              ) : (
-                <Alert severity="info">
-                  Vui lòng thêm sản phẩm vào hóa đơn để sử dụng tính năng Phân tích Phối trộn & Sắp xếp thuốc.
-                  <br />
-                  Các tính năng Thời tiết bên dưới vẫn hoạt động bình thường.
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-
-          {isAnalyzing && (
-            <Box textAlign="center" mb={3}>
-              <Spin size="large" />
-              <Typography mt={2}>Đang phân tích yêu cầu...</Typography>
-            </Box>
-          )}
-
-          {isWeatherLoading && (
-            <Box textAlign="center" mb={3}>
-              <Spin size="large" />
-              <Typography mt={2}>Đang lấy dữ liệu thời tiết và phân tích...</Typography>
-            </Box>
-          )}
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Grid container spacing={2}>
-            {/* Mix Result */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>
-                    Kết quả Phân tích Phối trộn
-                  </Typography>
-                  {mixResult ? (
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: mixResult
-                          .replace(/\n\n/g, '</p><p>')
-                          .replace(/\n/g, '<br>')
-                          .replace(/^(<br>)+|(<br>)+$/g, '')
-                          .replace(/^|$/, '<p>')
-                          .replace(/<p><\/p>/g, '')
-                      }}
-                    />
-                  ) : (
-                    <Typography color="text.secondary">Chưa có kết quả phân tích phối trộn</Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Sort Result */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>
-                    Sắp xếp thứ tự pha thuốc
-                  </Typography>
-                  {sortResult ? (
-                    <div>
-                      {sortResult.split('\n').filter(line => line.trim()).map((line, index) => (
-                        <Typography key={index} mb={1}>
-                          {line.trim()}
-                        </Typography>
-                      ))}
-                    </div>
-                  ) : (
-                    <Typography color="text.secondary">Chưa có kết quả sắp xếp</Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Weather & Spraying Time */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h6">
-                      Thời điểm phun thuốc tốt nhất
-                    </Typography>
-                  </Box>
-                  {sprayingRecommendations.length > 0 ? (
-                    <List>
-                      {sprayingRecommendations.map((item, index) => (
-                        <ListItem key={index} sx={{ borderBottom: '1px solid #eee' }}>
-                          <Box width="100%">
-                            <Box display="flex" justifyContent="space-between" mb={0.5}>
-                              <Typography fontWeight="bold" color="primary">
-                                🕒 {item.time}
-                              </Typography>
-                              <Typography fontWeight="bold" color="success.main">
-                                ☔ Khả năng mưa: {item.rain_prob}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" gap={2} flexWrap="wrap" fontSize="0.875rem">
-                              <span>🌡️ Nhiệt độ: {item.temperature}</span>
-                              <span>💨 Tốc độ gió: {item.wind_speed}</span>
-                              <span>🌤️ {item.condition}</span>
-                            </Box>
-                          </Box>
-                        </ListItem>
-                      ))}
-                    </List>
-                  ) : (
-                    <Box textAlign="center" py={4} color="text.secondary">
-                      {isWeatherLoading ? <Spin /> : 'Chưa có dữ liệu phân tích'}
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Weather Forecast */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h6">
-                      Dự báo thời tiết 2 ngày tới
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => fetchWeatherForecast(true)}
-                      title="Lấy dữ liệu mới nhất"
-                    >
-                      <SyncOutlined spin={isWeatherLoading} />
-                    </IconButton>
-                  </Box>
-                  <WeatherForecastTabs 
-                    weatherData={fullWeatherForecast}
-                    formatTime={formatTime}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Bảng thông tin dạng thuốc BVTV */}
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>
-                    📋 Danh sách Mã Dạng Thuốc BVTV (Từ Mát → Gây Nóng)
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    Danh sách dưới đây sắp xếp các mã dạng thuốc từ an toàn nhất (mát) đến cần thận trọng nhất (gây nóng).
-                  </Typography>
-                  
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: 1.5,
-                    p: 2,
-                    bgcolor: '#f5f5f5',
-                    borderRadius: 1
-                  }}>
-                    {/* Mát nhất */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
-                      <code style={{ 
-                        backgroundColor: '#f6ffed', 
-                        border: '1px solid #b7eb8f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#52c41a'
-                      }}>SL</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
-                      <code style={{ 
-                        backgroundColor: '#f6ffed', 
-                        border: '1px solid #b7eb8f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#52c41a'
-                      }}>AL</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
-                      <code style={{ 
-                        backgroundColor: '#f6ffed', 
-                        border: '1px solid #b7eb8f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#52c41a'
-                      }}>SP</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟢</span>
-                      <code style={{ 
-                        backgroundColor: '#f6ffed', 
-                        border: '1px solid #b7eb8f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#52c41a'
-                      }}>SG</code>
-                    </Box>
-
-                    {/* Mát vừa */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
-                      <code style={{ 
-                        backgroundColor: '#fffbe6', 
-                        border: '1px solid #ffe58f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#faad14'
-                      }}>SC</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
-                      <code style={{ 
-                        backgroundColor: '#fffbe6', 
-                        border: '1px solid #ffe58f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#faad14'
-                      }}>WG</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
-                      <code style={{ 
-                        backgroundColor: '#fffbe6', 
-                        border: '1px solid #ffe58f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#faad14'
-                      }}>WP</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟡</span>
-                      <code style={{ 
-                        backgroundColor: '#fffbe6', 
-                        border: '1px solid #ffe58f',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#faad14'
-                      }}>DC</code>
-                    </Box>
-
-                    {/* Trung bình */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
-                      <code style={{ 
-                        backgroundColor: '#fff7e6', 
-                        border: '1px solid #ffd591',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#fa8c16'
-                      }}>CS</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
-                      <code style={{ 
-                        backgroundColor: '#fff7e6', 
-                        border: '1px solid #ffd591',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#fa8c16'
-                      }}>SE</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
-                      <code style={{ 
-                        backgroundColor: '#fff7e6', 
-                        border: '1px solid #ffd591',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#fa8c16'
-                      }}>ME</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🟠</span>
-                      <code style={{ 
-                        backgroundColor: '#fff7e6', 
-                        border: '1px solid #ffd591',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#fa8c16'
-                      }}>EW</code>
-                    </Box>
-
-                    {/* Gây nóng */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
-                      <code style={{ 
-                        backgroundColor: '#fff1f0', 
-                        border: '1px solid #ffa39e',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#ff4d4f'
-                      }}>EC</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
-                      <code style={{ 
-                        backgroundColor: '#fff1f0', 
-                        border: '1px solid #ffa39e',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#ff4d4f'
-                      }}>OD</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
-                      <code style={{ 
-                        backgroundColor: '#fff1f0', 
-                        border: '1px solid #ffa39e',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#ff4d4f'
-                      }}>DP</code>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <span style={{ fontSize: '1.2rem' }}>🔴</span>
-                      <code style={{ 
-                        backgroundColor: '#fff1f0', 
-                        border: '1px solid #ffa39e',
-                        padding: '4px 8px', 
-                        borderRadius: '4px',
-                        fontWeight: 600,
-                        color: '#ff4d4f'
-                      }}>DS</code>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ mt: 2, p: 2, bgcolor: '#e6f7ff', borderRadius: 1 }}>
-                    <Typography variant="body2" color="primary.main">
-                      💡 <strong>Lưu ý:</strong> Dạng thuốc "mát" (🟢 SL, AL, SP, SG) an toàn khi phun trưa nắng. Dạng "gây nóng" (🔴 EC, OD, DP, DS) chỉ nên phun sáng sớm hoặc chiều mát để tránh phỏng lá.
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+          <TechnicalAdvisoryTab 
+            currentTab={currentTab}
+            selectedLocation={selectedLocation}
+            detectUserLocation={detectUserLocation}
+            setIsMapModalVisible={setIsMapModalVisible}
+            updateLocationMutation={updateLocationMutation}
+            antMessage={antMessage}
+            items={items}
+            invoiceProducts={invoiceProducts}
+            selectedProductIdsForAdvisory={selectedProductIdsForAdvisory}
+            handleProductToggleForAdvisory={handleProductToggleForAdvisory}
+            handleAnalyze={handleAnalyze}
+            handlePrint={handlePrint}
+            isAnalyzing={isAnalyzing}
+            mixResult={mixResult}
+            sortResult={sortResult}
+            sprayingRecommendations={sprayingRecommendations}
+            isWeatherLoading={isWeatherLoading}
+            error={error}
+            fullWeatherForecast={fullWeatherForecast}
+            fetchWeatherForecast={fetchWeatherForecast}
+            formatTime={formatTime}
+          />
         </TabPanel>
 
         {/* TAB 3: Disease Warning */}
         <TabPanel value={currentTab} index={2}>
-          <Box sx={{ px: 2, mt:-5 }}>
-            {/* Header Actions */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h1">
-              </Typography>
-              <Space>
-                <Button
-                  variant="outlined"
-                  startIcon={<ReloadOutlined />}
-                  onClick={() => {
-                    switch (diseaseWarningTab) {
-                      case 'rice-blast': if (riceBlastWarning) runRiceBlastMutation.mutate(); break;
-                      case 'bacterial-blight': if (bacterialBlightWarning) runBacterialBlightMutation.mutate(); break;
-                      case 'stem-borer': if (stemBorerWarning) runStemBorerMutation.mutate(); break;
-                      case 'gall-midge': if (gallMidgeWarning) runGallMidgeMutation.mutate(); break;
-                      case 'brown-plant-hopper': if (brownPlantHopperWarning) runBrownPlantHopperMutation.mutate(); break;
-                      case 'sheath-blight': if (sheathBlightWarning) runSheathBlightMutation.mutate(); break;
-                      case 'grain-discoloration': if (grainDiscolorationWarning) runGrainDiscolorationMutation.mutate(); break;
-                    }
-                    // Refetch location
-                    updateLocationMutation.mutate(diseaseLocation as UpdateLocationDto);
-                  }}
-                  disabled={
-                    runRiceBlastMutation.isPending || 
-                    runBacterialBlightMutation.isPending ||
-                    runStemBorerMutation.isPending ||
-                    runGallMidgeMutation.isPending ||
-                    runBrownPlantHopperMutation.isPending ||
-                    runSheathBlightMutation.isPending ||
-                    runGrainDiscolorationMutation.isPending
-                  }
-                >
-                  Làm mới
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<ThunderboltOutlined />}
-                  onClick={() => {
-                    runRiceBlastMutation.mutate();
-                    runBacterialBlightMutation.mutate();
-                    runStemBorerMutation.mutate();
-                    runGallMidgeMutation.mutate();
-                    runBrownPlantHopperMutation.mutate();
-                    runSheathBlightMutation.mutate();
-                    runGrainDiscolorationMutation.mutate();
-                  }}
-                  disabled={
-                    !diseaseLocation ||
-                    runRiceBlastMutation.isPending || 
-                    runBacterialBlightMutation.isPending ||
-                    runStemBorerMutation.isPending ||
-                    runGallMidgeMutation.isPending ||
-                    runBrownPlantHopperMutation.isPending ||
-                    runSheathBlightMutation.isPending ||
-                    runGrainDiscolorationMutation.isPending
-                  }
-                >
-                  Phân tích tất cả
-                </Button>
-              </Space>
-            </Box>
-
-            {/* Location Form */}
-            <Box sx={{ mb: 3 }}>
-              <LocationForm
-                location={diseaseLocation}
-                onSubmit={(values: UpdateLocationDto) => {
-                  updateLocationMutation.mutate(values, {
-                    onSuccess: () => {
-                      // Tự động chạy phân tích cho tất cả module
-                      setTimeout(() => {
-                        runRiceBlastMutation.mutate();
-                        runBacterialBlightMutation.mutate();
-                        runStemBorerMutation.mutate();
-                        runGallMidgeMutation.mutate();
-                        runBrownPlantHopperMutation.mutate();
-                        runSheathBlightMutation.mutate();
-                        runGrainDiscolorationMutation.mutate();
-                      }, 500);
-                    }
-                  });
-                }}
-                loading={updateLocationMutation.isPending}
-              />
-            </Box>
-
-            {/* Disease Warnings Tabs */}
-            <AntCard>
-              <AntTabs activeKey={diseaseWarningTab} onChange={setDiseaseWarningTab}>
-                {/* Rice Blast Tab */}
-                <TabPane tab="🦠 Bệnh Đạo Ôn" key="rice-blast">
-                  <Box sx={{ pt: 2 }}>
-                    {riceBlastWarning ? (
-                      <>
-                        <WarningCard warning={riceBlastWarning} title="Bệnh Đạo Ôn" loading={runRiceBlastMutation.isPending} />
-                        {riceBlastWarning.daily_data && riceBlastWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={riceBlastWarning.daily_data} 
-                              loading={runRiceBlastMutation.isPending}
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo bệnh đạo ôn. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-
-                {/* Bacterial Blight Tab */}
-                <TabPane tab="🍃 Bệnh Cháy Bìa Lá" key="bacterial-blight">
-                  <Box sx={{ pt: 2 }}>
-                    {bacterialBlightWarning ? (
-                      <>
-                        <WarningCard warning={bacterialBlightWarning} title="Bệnh Cháy Bìa Lá" loading={runBacterialBlightMutation.isPending} />
-                        {bacterialBlightWarning.daily_data && bacterialBlightWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={bacterialBlightWarning.daily_data} 
-                              loading={runBacterialBlightMutation.isPending}
-                              diseaseType="bacterial-blight"
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo bệnh cháy bìa lá. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-
-                {/* Stem Borer Tab */}
-                <TabPane tab="🐛 Sâu Đục Thân" key="stem-borer">
-                  <Box sx={{ pt: 2 }}>
-                    {stemBorerWarning ? (
-                      <>
-                        <DiseaseWarningCard 
-                          warning={stemBorerWarning} 
-                          loading={runStemBorerMutation.isPending}
-                          title="SÂU ĐỤC THÂN"
-                          borderColor="#fa8c16"
-                        />
-                        {stemBorerWarning.daily_data && stemBorerWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={stemBorerWarning.daily_data} 
-                              loading={runStemBorerMutation.isPending}
-                              diseaseType="stem-borer"
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo Sâu Đục Thân. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-
-                {/* Gall Midge Tab */}
-                <TabPane tab="🦟 Muỗi Hành" key="gall-midge">
-                  <Box sx={{ pt: 2 }}>
-                    {gallMidgeWarning ? (
-                      <>
-                        <DiseaseWarningCard 
-                          warning={gallMidgeWarning} 
-                          loading={runGallMidgeMutation.isPending}
-                          title="MUỖI HÀNH"
-                          borderColor="#722ed1"
-                        />
-                        {gallMidgeWarning.daily_data && gallMidgeWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={gallMidgeWarning.daily_data} 
-                              loading={runGallMidgeMutation.isPending}
-                              diseaseType="gall-midge"
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo Muỗi Hành. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-
-                {/* Brown Plant Hopper Tab */}
-                <TabPane tab="🦗 Rầy Nâu" key="brown-plant-hopper">
-                  <Box sx={{ pt: 2 }}>
-                    {brownPlantHopperWarning ? (
-                      <>
-                        <DiseaseWarningCard 
-                          warning={brownPlantHopperWarning} 
-                          loading={runBrownPlantHopperMutation.isPending}
-                          title="RẦY NÂU"
-                          borderColor="#13c2c2"
-                        />
-                        {brownPlantHopperWarning.daily_data && brownPlantHopperWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={brownPlantHopperWarning.daily_data} 
-                              loading={runBrownPlantHopperMutation.isPending}
-                              diseaseType="brown-plant-hopper"
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo Rầy Nâu. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-
-                {/* Sheath Blight Tab */}
-                <TabPane tab="🍂 Bệnh Khô Vằn" key="sheath-blight">
-                  <Box sx={{ pt: 2 }}>
-                    {sheathBlightWarning ? (
-                      <>
-                        <DiseaseWarningCard 
-                          warning={sheathBlightWarning} 
-                          loading={runSheathBlightMutation.isPending}
-                          title="BỆNH KHÔ VẰN"
-                          borderColor="#eb2f96"
-                        />
-                        {sheathBlightWarning.daily_data && sheathBlightWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={sheathBlightWarning.daily_data} 
-                              loading={runSheathBlightMutation.isPending}
-                              diseaseType="sheath-blight"
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo Bệnh Khô Vằn. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-
-                {/* Grain Discoloration Tab */}
-                <TabPane tab="🌾 Bệnh Lem Lép Hạt" key="grain-discoloration">
-                  <Box sx={{ pt: 2 }}>
-                    {grainDiscolorationWarning ? (
-                      <>
-                        <DiseaseWarningCard 
-                          warning={grainDiscolorationWarning} 
-                          loading={runGrainDiscolorationMutation.isPending}
-                          title="BỆNH LEM LÉP HẠT"
-                          borderColor="#a0d911"
-                        />
-                        {grainDiscolorationWarning.daily_data && grainDiscolorationWarning.daily_data.length > 0 && (
-                          <AntCard title="📊 Dữ liệu chi tiết 7 ngày" style={{ marginTop: 16 }}>
-                            <DailyDataTable 
-                              data={grainDiscolorationWarning.daily_data} 
-                              loading={runGrainDiscolorationMutation.isPending}
-                              diseaseType="grain-discoloration"
-                            />
-                          </AntCard>
-                        )}
-                      </>
-                    ) : (
-                      <Alert severity="warning">
-                        Chưa có dữ liệu cảnh báo Bệnh Lem Lép Hạt. Vui lòng cập nhật vị trí ruộng lúa.
-                      </Alert>
-                    )}
-                  </Box>
-                </TabPane>
-              </AntTabs>
-            </AntCard>
-          </Box>
+          <DiseaseWarningTab 
+            diseaseWarningTab={diseaseWarningTab}
+            setDiseaseWarningTab={setDiseaseWarningTab}
+            diseaseLocation={diseaseLocation}
+            updateLocationMutation={updateLocationMutation}
+            riceBlastWarning={riceBlastWarning}
+            bacterialBlightWarning={bacterialBlightWarning}
+            stemBorerWarning={stemBorerWarning}
+            gallMidgeWarning={gallMidgeWarning}
+            brownPlantHopperWarning={brownPlantHopperWarning}
+            sheathBlightWarning={sheathBlightWarning}
+            grainDiscolorationWarning={grainDiscolorationWarning}
+            runRiceBlastMutation={runRiceBlastMutation}
+            runBacterialBlightMutation={runBacterialBlightMutation}
+            runStemBorerMutation={runStemBorerMutation}
+            runGallMidgeMutation={runGallMidgeMutation}
+            runBrownPlantHopperMutation={runBrownPlantHopperMutation}
+            runSheathBlightMutation={runSheathBlightMutation}
+            runGrainDiscolorationMutation={runGrainDiscolorationMutation}
+          />
         </TabPanel>
       </form>
 
@@ -3080,273 +1475,31 @@ ${productInfo}`;
       </AntModal>
 
       {/* Print Options Modal */}
-      <AntModal
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', pr: 4 }}>
-            <Box sx={{ display: { xs: 'none', md: 'block' } }}>Tùy chọn in phiếu tư vấn</Box>
-            {/* Nút toggle nằm trực tiếp trong Header Modal trên mobile */}
-            <Box 
-              onClick={() => setIsPrintOptionsOpen(!isPrintOptionsOpen)}
-              sx={{ 
-                display: { xs: 'flex', md: 'none' }, 
-                alignItems: 'center', 
-                gap: 1,
-                border: '1.5px solid #2e7d32',
-                color: '#2e7d32',
-                borderRadius: '20px',
-                padding: '2px 12px',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                bgcolor: 'white'
-              }}
-            >
-              <MenuOutlined />
-              <span>Tùy chọn in</span>
-            </Box>
-          </Box>
-        }
-        open={isPrintModalVisible}
+      <PrintOptionsModal 
+        isVisible={isPrintModalVisible}
         onCancel={() => setIsPrintModalVisible(false)}
         onOk={handlePrintConfirm}
-        okText="In phiếu"
-        cancelText="Hủy"
-        width={1000}
-        style={{ top: 20 }}
-        styles={{
-          body: {
-            maxHeight: 'calc(100vh - 200px)',
-            overflowY: 'auto'
-          }
-        }}
-        // Mobile: Full screen drawer from left
-        className="print-options-modal"
-      >
-        <Grid container spacing={{ xs: 1, md: 3 }}>
-          {/* Overlay backdrop - Click to close */}
-          <Box
-            className={`drawer-overlay ${isPrintOptionsOpen ? 'visible' : ''}`}
-            sx={{ display: { xs: 'block', md: 'none' } }}
-            onClick={() => setIsPrintOptionsOpen(false)}
-          />
-
-          {/* Left Column: Settings (Side Drawer on Mobile) */}
-          <Grid item xs={12} md={4} className={isPrintOptionsOpen ? 'open' : ''}>
-            {/* Drawer Header for mobile */}
-            <Box 
-              sx={{ 
-                display: { xs: 'flex', md: 'none' }, 
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 2,
-                pb: 1,
-                borderBottom: '1px solid #eee'
-              }}
-            >
-              <Typography variant="subtitle1" fontWeight="bold">Cấu hình in</Typography>
-              <Button 
-                variant="text" 
-                size="small" 
-                onClick={() => setIsPrintOptionsOpen(false)}
-                sx={{ minWidth: 'auto', p: 0.5 }}
-              >
-                <CloseOutlined />
-              </Button>
-            </Box>
-            
-            <Box display="flex" flexDirection="column" gap={{ xs: 1.5, md: 2 }}>
-              <Typography variant="h6" fontSize="1rem" fontWeight="bold">Khổ giấy</Typography>
-              
-              <RadioGroup value={paperSize} onChange={(e) => setPaperSize(e.target.value as 'A4' | 'K80')}>
-                <FormControlLabel 
-                  value="A4" 
-                  control={<Radio />} 
-                  label={
-                    <Box>
-                      <Typography variant="body2" fontWeight="bold">A4 (210mm)</Typography>
-                      <Typography variant="caption" color="text.secondary">Máy in văn phòng - Layout đầy đủ</Typography>
-                    </Box>
-                  } 
-                />
-                <FormControlLabel 
-                  value="K80" 
-                  control={<Radio />} 
-                  label={
-                    <Box>
-                      <Typography variant="body2" fontWeight="bold">K80 (80mm)</Typography>
-                      <Typography variant="caption" color="text.secondary">Máy in nhiệt/hóa đơn - Layout đơn giản</Typography>
-                    </Box>
-                  } 
-                />
-              </RadioGroup>
-
-              <Divider />
-
-              <Typography variant="h6" fontSize="1rem">Tùy chọn nội dung</Typography>
-              
-              {/* Invoice Section */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={printSections.invoice}
-                    onChange={() => handlePrintSectionChange('invoice')}
-                  />
-                }
-                label="Thông tin hóa đơn & Khách hàng"
-              />
-
-              {/* Delivery Log Section - Chỉ hiện khi đã bật tạo phiếu giao hàng */}
-              {isDeliveryEnabled && (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={shouldPrintDelivery}
-                      onChange={(e) => setShouldPrintDelivery(e.target.checked)}
-                      disabled={!deliveryData} // Disable nếu chưa điền đủ thông tin
-                    />
-                  }
-                  label={
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <span>In phiếu giao hàng</span>
-                      {!deliveryData && (
-                        <Typography variant="caption" color="error">
-                          (Vui lòng điền đủ thông tin phiếu giao)
-                        </Typography>
-                      )}
-                    </Box>
-                  }
-                />
-              )}
-
-              {/* Advisory Section */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={printSections.advisory}
-                    onChange={() => handlePrintSectionChange('advisory')}
-                    disabled={!mixResult && !sortResult && sprayingRecommendations.length === 0}
-                  />
-                }
-                label="Tư vấn kỹ thuật"
-              />
-              {printSections.advisory && (
-                <Box ml={3} display="flex" flexDirection="column" gap={0.5}>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={selectedAdvisorySections.mix}
-                        onChange={(e) => setSelectedAdvisorySections(prev => ({ ...prev, mix: e.target.checked }))}
-                        disabled={!mixResult}
-                      />
-                    }
-                    label={<Typography variant="body2">Phối trộn thuốc</Typography>}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={selectedAdvisorySections.sort}
-                        onChange={(e) => setSelectedAdvisorySections(prev => ({ ...prev, sort: e.target.checked }))}
-                        disabled={!sortResult}
-                      />
-                    }
-                    label={<Typography variant="body2">Thứ tự pha thuốc</Typography>}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={selectedAdvisorySections.spray}
-                        onChange={(e) => setSelectedAdvisorySections(prev => ({ ...prev, spray: e.target.checked }))}
-                        disabled={sprayingRecommendations.length === 0}
-                      />
-                    }
-                    label={<Typography variant="body2">Thời điểm phun thuốc tốt nhất</Typography>}
-                  />
-                </Box>
-              )}
-
-              {/* Disease Warning Section */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={printSections.diseaseWarning}
-                    onChange={() => handlePrintSectionChange('diseaseWarning')}
-                    disabled={!diseaseLocation}
-                  />
-                }
-                label="Cảnh báo Bệnh/Sâu hại"
-              />
-              
-              {printSections.diseaseWarning && availableWarnings.length > 0 && (
-                <Box ml={3} display="flex" flexDirection="column" gap={0.5}>
-                  {availableWarnings.map(w => (
-                    <FormControlLabel
-                      key={w.id}
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={selectedPrintDiseases.includes(w.id)}
-                          onChange={() => {
-                            setSelectedPrintDiseases(prev => 
-                              prev.includes(w.id) 
-                                ? prev.filter(id => id !== w.id)
-                                : [...prev, w.id]
-                            );
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2">
-                          {w.name} <span style={{ 
-                            color: w.data?.risk_level === 'CAO' ? '#f5222d' : '#fa8c16',
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem'
-                          }}>
-                            ({w.data?.risk_level === 'CAO' ? 'CAO' : 'TB'})
-                          </span>
-                        </Typography>
-                      }
-                    />
-                  ))}
-                </Box>
-              )}
-
-
-
-            </Box>
-          </Grid>
-
-          {/* Right Column: Preview */}
-          <Grid item xs={12} md={8}>
-            <Typography variant="h6" fontSize="1rem" mb={2} sx={{ display: { xs: 'none', md: 'block' } }}>Xem trước bản in</Typography>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                height: '600px', 
-                overflow: 'hidden', 
-                bgcolor: '#f5f5f5',
-                display: 'flex',
-                justifyContent: 'center',
-                p: 2
-              }}
-            >
-              <iframe
-                srcDoc={generatePrintContent()}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  backgroundColor: 'white',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}
-                title="Print Preview"
-              />
-            </Paper>
-          </Grid>
-        </Grid>
-      </AntModal>
+        isPrintOptionsOpen={isPrintOptionsOpen}
+        setIsPrintOptionsOpen={setIsPrintOptionsOpen}
+        paperSize={paperSize}
+        setPaperSize={setPaperSize}
+        printSections={printSections}
+        handlePrintSectionChange={handlePrintSectionChange}
+        isDeliveryEnabled={isDeliveryEnabled}
+        shouldPrintDelivery={shouldPrintDelivery}
+        setShouldPrintDelivery={setShouldPrintDelivery}
+        deliveryData={deliveryData}
+        mixResult={mixResult}
+        sortResult={sortResult}
+        sprayingRecommendations={sprayingRecommendations}
+        selectedAdvisorySections={selectedAdvisorySections}
+        setSelectedAdvisorySections={setSelectedAdvisorySections}
+        diseaseLocation={diseaseLocation}
+        availableWarnings={availableWarnings}
+        selectedPrintDiseases={selectedPrintDiseases}
+        setSelectedPrintDiseases={setSelectedPrintDiseases}
+        generatePrintContent={generatePrintContent}
+      />
 
       {/* Print Styles */}
       <style>{`
@@ -3422,11 +1575,6 @@ ${productInfo}`;
             font-size: 0.9rem !important;
           }
           
-          /* Toggle button - BỎ CSS NEGATIVE TOP VÌ ĐÃ ĐƯA VÀO TITLE */
-          .print-options-toggle {
-             display: none;
-          }
-
           /* Tùy chỉnh Header Modal trên mobile */
           .print-options-modal .ant-modal-title {
             display: block !important;
@@ -3478,3 +1626,4 @@ ${productInfo}`;
 };
 
 export default CreateSalesInvoice;
+
