@@ -35,6 +35,7 @@ export const salesInvoiceSchema = z.object({
   gift_value: z.number().min(0, 'Giá trị quà tặng phải lớn hơn hoặc bằng 0').default(0),
   items: z.array(salesInvoiceItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
   status: z.enum(['draft', 'confirmed', 'paid']).optional(),
+  sale_date: z.string().optional(),
 }).refine((data) => {
   // Nếu có customer_id (khách hàng từ hệ thống), bắt buộc phải có season_id
   if (data.customer_id && !data.season_id) {
@@ -78,6 +79,7 @@ export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
   gift_value: 0,
   items: [],
   status: 'draft',
+  sale_date: new Date().toISOString(),
 };
 
 export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {

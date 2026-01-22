@@ -148,13 +148,13 @@ const SalesInvoicesList: React.FC = () => {
     } else {
     }
 
-    // Created At Range
-    if (tableFilters.created_at && tableFilters.created_at.length === 2) {
-      newFilters.start_date = tableFilters.created_at[0]
-      newFilters.end_date = tableFilters.created_at[1]
+    // Sale Date Range
+    if (tableFilters.sale_date && tableFilters.sale_date.length === 2) {
+      newFilters.sale_date_start = tableFilters.sale_date[0]
+      newFilters.sale_date_end = tableFilters.sale_date[1]
     } else {
-      delete newFilters.start_date
-      delete newFilters.end_date
+      delete newFilters.sale_date_start
+      delete newFilters.sale_date_end
     }
 
     setFilters(newFilters)
@@ -514,15 +514,15 @@ const SalesInvoicesList: React.FC = () => {
       },
     },
     {
-      key: "created_at",
-      title: "Ngày tạo",
-      dataIndex: "created_at",
+      key: "sale_date",
+      title: "Ngày bán",
+      dataIndex: "sale_date",
       width: 120,
-      ...getDateColumnSearchProps('created_at'),
-      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
-      render: (value: string) => (
+      ...getDateColumnSearchProps('sale_date'),
+      filteredValue: (filters.sale_date_start && filters.sale_date_end) ? [filters.sale_date_start, filters.sale_date_end] : null,
+      render: (value: string, record: ExtendedSalesInvoice) => (
         <div>
-          {new Date(value).toLocaleDateString("vi-VN")}
+          {dayjs(value || record.created_at).format("DD/MM/YYYY")}
         </div>
       ),
     },
@@ -628,11 +628,17 @@ const SalesInvoicesList: React.FC = () => {
                   {viewingInvoice.customer_phone}
                 </div>
                 {viewingInvoice.customer_address && (
-                  <div className='text-gray-500 text-sm mt-1'>
-                    {viewingInvoice.customer_address}
-                  </div>
-                )}
-              </Card>
+                <div className='text-gray-500 text-sm mt-1'>
+                  {viewingInvoice.customer_address}
+                </div>
+              )}
+              <div className='mt-3'>
+                <div className='text-gray-500 text-sm'>Ngày bán</div>
+                <div className='font-medium'>
+                  {dayjs(viewingInvoice.sale_date || viewingInvoice.created_at).format("DD/MM/YYYY")}
+                </div>
+              </div>
+            </Card>
 
               <Card>
                 <div className='text-gray-500 text-sm'>Thông tin thanh toán</div>

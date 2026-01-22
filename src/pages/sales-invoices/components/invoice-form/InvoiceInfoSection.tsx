@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography, Alert, CircularProgress, Button } from '@mui/material';
 import { Control, UseFormSetValue } from 'react-hook-form';
-import { FormComboBox, FormField, FormFieldNumber } from '@/components/form';
+import { FormComboBox, FormField, FormFieldNumber, FormDatePicker } from '@/components/form';
 import { Season } from '@/models/season';
 import { RiceCrop } from '@/models/rice-farming';
 import { SalesInvoiceFormData, paymentMethodLabels } from '../../form-config';
@@ -94,6 +94,14 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
             )}
           </Box>
         )}
+
+        <FormDatePicker
+          name="sale_date"
+          control={control}
+          label="Ngày bán (mặc định hôm nay)"
+          placeholder="Chọn ngày bán"
+          format="DD/MM/YYYY"
+        />
 
         <FormComboBox
           name="payment_method"

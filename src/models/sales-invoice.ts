@@ -50,9 +50,9 @@ export interface SalesInvoice {
   created_at: Date | string;
   updated_at: Date | string;
   items?: SalesInvoiceItem[];
-  // Quà tặng khi bán hàng
   gift_description?: string;
   gift_value?: number;
+  sale_date?: Date | string;
 }
 
 export interface CreateSalesInvoiceDto {
@@ -82,6 +82,7 @@ export interface CreateSalesInvoiceDto {
     discount_amount?: number;
     notes?: string;
   }[];
+  sale_date?: string;
   // Thông tin giao hàng (tùy chọn)
   delivery_log?: CreateDeliveryLogDto;
 }
