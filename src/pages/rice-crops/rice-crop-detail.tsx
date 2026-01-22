@@ -23,7 +23,7 @@ import FarmingSchedulesTab from './components/FarmingSchedulesTab';
 import GrowthTrackingTab from './components/GrowthTrackingTab';
 import ProfitReportTab from './components/ProfitReportTab';
 import { InvoicesTab } from './components/InvoicesTab';
-import { EditRiceCropModal } from './components/EditRiceCropModal';
+import { RiceCropModal } from './components/RiceCropModal';
 import FarmServiceCostTab from './components/FarmServiceCostTab';
 import { useAppStore } from '@/stores/store';
 import { hasPermission } from '@/utils/permission';
@@ -277,10 +277,10 @@ const RiceCropDetail: React.FC = () => {
         />
       </div>
 
-      <EditRiceCropModal
+      <RiceCropModal
         open={isEditModalVisible}
         onCancel={() => setIsEditModalVisible(false)}
-        riceCrop={riceCrop}
+        editingCrop={riceCrop}
       />
     </div>
   );
