@@ -13,16 +13,19 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const messaging = getMessaging(app);
-export const remoteConfig = getRemoteConfig(app);
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+export const remoteConfig = typeof window !== 'undefined' ? getRemoteConfig(app) : null;
 
-// Set fetch interval to 0 for development, default (12 hours) for production
-remoteConfig.settings.minimumFetchIntervalMillis = import.meta.env.DEV ? 0 : 43200000;
+if (remoteConfig) {
+  // Set fetch interval to 0 for development, default (12 hours) for production
+  remoteConfig.settings.minimumFetchIntervalMillis = import.meta.env.DEV ? 0 : 43200000;
+}
 
 /**
  * Lấy giá trị cấu hình theo key
  */
 export const getRemoteConfigValue = async (key: string) => {
+  if (!remoteConfig) return "";
   try {
     const activated = await fetchAndActivate(remoteConfig);
     console.log(`🔄 Remote Config fetch result for "${key}":`, activated ? 'Activated' : 'No change');
@@ -41,6 +44,7 @@ export const getRemoteConfigValue = async (key: string) => {
  * Lấy tất cả giá trị cấu hình có prefix cụ thể
  */
 export const getAllRemoteValues = async (prefix: string): Promise<string[]> => {
+  if (!remoteConfig) return [];
   try {
     await fetchAndActivate(remoteConfig);
     const allValues = getAll(remoteConfig);
@@ -55,6 +59,7 @@ export const getAllRemoteValues = async (prefix: string): Promise<string[]> => {
 };
 
 export const requestForToken = async () => {
+  if (!messaging) return null;
   try {
     const currentToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
     if (currentToken) {
@@ -73,6 +78,7 @@ export const requestForToken = async () => {
 
 export const onMessageListener = () =>
   new Promise((resolve) => {
+    if (!messaging) return;
     onMessage(messaging, (payload) => {
       resolve(payload);
     });

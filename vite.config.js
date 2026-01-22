@@ -93,8 +93,7 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'maskable'
           }
-        ],
-        gcm_sender_id: "103953800507"
+        ]
       },
 
       devOptions: {
