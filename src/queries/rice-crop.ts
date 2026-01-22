@@ -2,7 +2,8 @@
  * React Query hooks cho Quản Lý Canh Tác (Rice Crop)
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { handleApiError } from "@/utils/error-handler"
 import api from '@/utils/api';
 import type {
   RiceCrop,
@@ -58,6 +59,113 @@ export const useRiceCrops = (params?: Record<string, unknown>, options?: { enabl
     enabled: options?.enabled,
   });
 };
+
+/**
+ * Interface cho API response theo đúng format của ComboBox
+ */
+export interface RiceCropSearchResponse {
+  data: Array<any>
+  total: number
+  hasMore: boolean
+  nextPage?: number
+}
+
+interface SearchRiceCropsParams {
+  page: number
+  limit: number
+  search?: string
+  season_id?: number
+  customer_id?: number
+}
+
+/**
+ * Hàm search ruộng lúa cho ComboBox
+ */
+export const searchRiceCropsApi = async ({
+  page,
+  limit,
+  search = "",
+  season_id,
+  customer_id,
+}: SearchRiceCropsParams): Promise<RiceCropSearchResponse> => {
+  try {
+    const searchDto: any = {
+      page,
+      limit,
+      season_id,
+      customer_id,
+    }
+
+    if (search.trim()) {
+      searchDto.keyword = search.trim()
+    }
+
+    const response = await api.postRaw<{
+      data: RiceCrop[]
+      total: number
+      page: number
+      limit: number
+    }>('/rice-crops/search', searchDto)
+
+    // Chuyển đổi dữ liệu sang format của ComboBox
+    const mappedData = (response.data || []).map((crop: RiceCrop) => ({
+      ...crop,
+      value: crop.id,
+      label: `${crop.field_name} - ${crop.customer?.name || 'N/A'}`,
+    }))
+
+    const total = response.total || mappedData.length
+    const currentPage = response.page || page
+    const currentLimit = response.limit || limit
+    const hasMore = total > currentPage * currentLimit
+
+    return {
+      data: mappedData,
+      total,
+      hasMore,
+      nextPage: hasMore ? currentPage + 1 : undefined,
+    }
+  } catch (error) {
+    console.error("Error searching rice crops:", error)
+    handleApiError(error, "Có lỗi xảy ra khi tìm kiếm ruộng lúa")
+    return {
+      data: [],
+      total: 0,
+      hasMore: false,
+      nextPage: undefined,
+    }
+  }
+}
+
+/**
+ * Hook search ruộng lúa cho ComboBox với infinite loading
+ */
+export const useRiceCropSearch = (
+  params: { search?: string; season_id?: number; customer_id?: number } = {},
+  limit: number = 20,
+  enabled: boolean = true
+) => {
+  const { search = "", season_id, customer_id } = params
+  return useInfiniteQuery<RiceCropSearchResponse, Error>({
+    queryKey: [...riceCropKeys.all, "search-infinite", search, season_id, customer_id],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await searchRiceCropsApi({
+        page: pageParam as number,
+        limit,
+        search,
+        season_id,
+        customer_id,
+      })
+      return response
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextPage : undefined
+    },
+    enabled: enabled,
+    staleTime: 5 * 60 * 1000,
+  })
+}
 
 /**
  * Lấy chi tiết Ruộng lúa

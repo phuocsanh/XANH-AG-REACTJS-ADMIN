@@ -1,20 +1,20 @@
 /**
- * Modal tạo mới và chỉnh sửa Ruộng lúa
- * Sử dụng react-hook-form và các component custom của dự án
+ * Modal dùng chung cho việc Tạo mới và Chỉnh sửa Ruộng lúa
+ * Sử dụng react-hook-form, infinite loading cho ComboBox và tự động tính diện tích
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Modal, message } from 'antd';
 import { useForm } from 'react-hook-form';
 import { FormField, FormFieldNumber, FormComboBox, FormDatePicker } from '@/components/form';
 import { useCreateRiceCrop, useUpdateRiceCrop } from '@/queries/rice-crop';
-import { useCustomersQuery } from '@/queries/customer';
-import { useSeasonsQuery } from '@/queries/season';
+import { useCustomerSearch } from '@/queries/customer';
+import { useSeasonSearch } from '@/queries/season';
 import { useAreasQuery } from '@/queries/area-of-each-plot-of-land';
 import { GrowthStage, CropStatus, type RiceCrop, type CreateRiceCropDto } from '@/models/rice-farming';
 import { useAppStore } from '@/stores/store';
 import dayjs from 'dayjs';
 
-interface CreateRiceCropModalProps {
+interface RiceCropModalProps {
   open: boolean;
   onCancel: () => void;
   editingCrop?: RiceCrop | null;
@@ -33,21 +33,87 @@ interface RiceCropFormValues {
   sowing_date?: string;
   transplanting_date?: string;
   expected_harvest_date?: string;
+  actual_harvest_date?: string;
+  growth_stage?: GrowthStage;
+  status?: CropStatus;
   notes?: string;
 }
 
-export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
+// Nhãn cho giai đoạn sinh trưởng
+const growthStageLabels: Record<GrowthStage, string> = {
+  seedling: 'Giai đoạn mạ',
+  tillering: 'Đẻ nhánh',
+  panicle: 'Làm đòng',
+  heading: 'Trổ bông',
+  grain_filling: 'Vô gạo',
+  ripening: 'Chín',
+  harvested: 'Đã thu hoạch',
+};
+
+// Nhãn cho trạng thái
+const statusLabels: Record<CropStatus, string> = {
+  active: 'Đang canh tác',
+  harvested: 'Đã thu hoạch',
+  failed: 'Thất bại',
+};
+
+export const RiceCropModal: React.FC<RiceCropModalProps> = ({
   open,
   onCancel,
   editingCrop,
 }) => {
+  const isEditMode = !!editingCrop;
   const createMutation = useCreateRiceCrop();
   const updateMutation = useUpdateRiceCrop();
-  const { data: customersData } = useCustomersQuery({ limit: 1000 });
-  const { data: seasonsData } = useSeasonsQuery({ limit: 100 });
+  
+  // State tìm kiếm cho ComboBox
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [seasonSearch, setSeasonSearch] = useState('');
+
+  // Hooks tìm kiếm infinite loading (mỗi lần load 20 cái)
+  const { 
+    data: customerSearchData, 
+    isLoading: isCustomerLoading,
+    isFetching: isCustomerFetching,
+    hasNextPage: customerHasNextPage,
+    isFetchingNextPage: isCustomerFetchingNextPage,
+    fetchNextPage: fetchNextCustomerPage,
+  } = useCustomerSearch(customerSearch, 20, open);
+
+  const { 
+    data: seasonSearchData, 
+    isLoading: isSeasonLoading,
+    isFetching: isSeasonFetching,
+    hasNextPage: seasonHasNextPage,
+    isFetchingNextPage: isSeasonFetchingNextPage,
+    fetchNextPage: fetchNextSeasonPage,
+  } = useSeasonSearch(seasonSearch, 20, open);
+
   const { data: areasData } = useAreasQuery({ limit: 100 });
   const { userInfo } = useAppStore();
   const isCustomer = userInfo?.role?.code === 'CUSTOMER';
+
+  // Chuyển đổi dữ liệu sang options
+  const customerOptions = useMemo(() => {
+    return customerSearchData?.pages.flatMap(page => page.data) || [];
+  }, [customerSearchData]);
+
+  const seasonOptions = useMemo(() => {
+    return seasonSearchData?.pages.flatMap(page => page.data) || [];
+  }, [seasonSearchData]);
+
+  const areaOptions = useMemo(() => {
+    return areasData?.data?.items?.map((a: any) => ({
+      label: `${a.name} - ${Number(a.acreage).toLocaleString('vi-VN')}m²`,
+      value: a.id,
+    })) || [];
+  }, [areasData]);
+
+  const growthStageOptions = useMemo(() => 
+    Object.entries(growthStageLabels).map(([value, label]) => ({ value, label })), []);
+
+  const statusOptions = useMemo(() => 
+    Object.entries(statusLabels).map(([value, label]) => ({ value, label })), []);
 
   const { control, handleSubmit, reset, watch, setValue } = useForm<RiceCropFormValues>({
     defaultValues: {
@@ -59,11 +125,10 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
     },
   });
 
-  // Watch các trường để tự động tính diện tích
+  // Tự động tính diện tích
   const watchedAmountOfLand = watch('amount_of_land');
   const watchedAreaId = watch('area_of_each_plot_of_land_id');
 
-  // Tự động tính diện tích khi có đủ thông tin
   useEffect(() => {
     if (watchedAmountOfLand && watchedAreaId && areasData?.data?.items) {
       const selectedArea = areasData.data.items.find((area: any) => area.id === watchedAreaId);
@@ -91,6 +156,9 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
           sowing_date: editingCrop.sowing_date || undefined,
           transplanting_date: editingCrop.transplanting_date || undefined,
           expected_harvest_date: editingCrop.expected_harvest_date || undefined,
+          actual_harvest_date: editingCrop.actual_harvest_date || undefined,
+          growth_stage: editingCrop.growth_stage,
+          status: editingCrop.status,
           notes: editingCrop.notes || '',
         });
       } else {
@@ -107,6 +175,9 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
           sowing_date: undefined,
           transplanting_date: undefined,
           expected_harvest_date: undefined,
+          actual_harvest_date: undefined,
+          growth_stage: GrowthStage.SEEDLING,
+          status: CropStatus.ACTIVE,
           notes: '',
         });
       }
@@ -115,15 +186,16 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
 
   const onSubmit = async (data: RiceCropFormValues) => {
     try {
-      const dto: CreateRiceCropDto = {
+      const dto: any = {
         ...data,
         area_of_each_plot_of_land_id: data.area_of_each_plot_of_land_id || undefined,
         sowing_date: data.sowing_date ? dayjs(data.sowing_date).format('YYYY-MM-DD') : undefined,
         transplanting_date: data.transplanting_date ? dayjs(data.transplanting_date).format('YYYY-MM-DD') : undefined,
         expected_harvest_date: data.expected_harvest_date ? dayjs(data.expected_harvest_date).format('YYYY-MM-DD') : undefined,
+        actual_harvest_date: data.actual_harvest_date ? dayjs(data.actual_harvest_date).format('YYYY-MM-DD') : undefined,
       };
 
-      if (editingCrop) {
+      if (isEditMode && editingCrop) {
         await updateMutation.mutateAsync({ id: editingCrop.id, dto });
         message.success('Cập nhật Ruộng lúa thành công!');
       } else {
@@ -138,30 +210,15 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
     }
   };
 
-  const customerOptions = customersData?.data?.items?.map((c: any) => ({
-    label: `${c.name} - ${c.phone}`,
-    value: c.id,
-  })) || [];
-
-  const seasonOptions = seasonsData?.data?.items?.map((s: any) => ({
-    label: `${s.name} (${s.year})`,
-    value: s.id,
-  })) || [];
-
-  const areaOptions = areasData?.data?.items?.map((a: any) => ({
-    label: `${a.name} - ${Number(a.acreage).toLocaleString('vi-VN')}m²`,
-    value: a.id,
-  })) || [];
-
   return (
     <Modal
-      title={editingCrop ? 'Chỉnh sửa Ruộng lúa' : 'Tạo Ruộng lúa mới'}
+      title={isEditMode ? 'Chỉnh sửa Ruộng lúa' : 'Tạo Ruộng lúa mới'}
       open={open}
       onCancel={onCancel}
       onOk={handleSubmit(onSubmit)}
       confirmLoading={createMutation.isPending || updateMutation.isPending}
       width={800}
-      okText={editingCrop ? 'Cập nhật' : 'Tạo mới'}
+      okText={isEditMode ? 'Cập nhật' : 'Tạo mới'}
       cancelText="Hủy"
     >
       <form className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-4">
@@ -170,7 +227,13 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
           name="customer_id"
           control={control}
           rules={{ required: 'Vui lòng chọn khách hàng' }}
-          options={customerOptions}
+          data={customerOptions}
+          isLoading={isCustomerLoading}
+          isFetching={isCustomerFetching}
+          hasNextPage={customerHasNextPage}
+          isFetchingNextPage={isCustomerFetchingNextPage}
+          fetchNextPage={fetchNextCustomerPage}
+          onSearch={setCustomerSearch}
           placeholder="Chọn khách hàng"
           showSearch
           disabled={isCustomer}
@@ -181,8 +244,15 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
           name="season_id"
           control={control}
           rules={{ required: 'Vui lòng chọn mùa vụ' }}
-          options={seasonOptions}
+          data={seasonOptions}
+          isLoading={isSeasonLoading}
+          isFetching={isSeasonFetching}
+          hasNextPage={seasonHasNextPage}
+          isFetchingNextPage={isSeasonFetchingNextPage}
+          fetchNextPage={fetchNextSeasonPage}
+          onSearch={setSeasonSearch}
           placeholder="Chọn mùa vụ"
+          showSearch
         />
 
         <FormField
@@ -220,6 +290,26 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
           placeholder="VD: 5000"
           decimalScale={1}
         />
+
+        {/* Hiển thị Trạng thái và Giai đoạn nếu là chế độ Sửa */}
+        {isEditMode && (
+          <>
+            <FormComboBox
+              label="Giai đoạn sinh trưởng"
+              name="growth_stage"
+              control={control}
+              options={growthStageOptions}
+              required
+            />
+            <FormComboBox
+              label="Trạng thái"
+              name="status"
+              control={control}
+              options={statusOptions}
+              required
+            />
+          </>
+        )}
 
         <FormField
           label="Giống lúa"
@@ -261,6 +351,14 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
           control={control}
         />
 
+        {isEditMode && (
+          <FormDatePicker
+            label="Ngày thu hoạch thực tế"
+            name="actual_harvest_date"
+            control={control}
+          />
+        )}
+
         <FormField
           label="Ghi chú"
           name="notes"
@@ -274,3 +372,5 @@ export const CreateRiceCropModal: React.FC<CreateRiceCropModalProps> = ({
     </Modal>
   );
 };
+
+export default RiceCropModal;

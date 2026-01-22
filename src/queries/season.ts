@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
@@ -61,6 +61,104 @@ export const useSeasonsQuery = (params?: Record<string, unknown>) => {
     },
     refetchOnMount: true,
     staleTime: 0,
+  })
+}
+
+/**
+ * Interface cho API response theo đúng format của ComboBox
+ */
+export interface SeasonSearchResponse {
+  data: Array<any>
+  total: number
+  hasMore: boolean
+  nextPage?: number
+}
+
+interface SearchSeasonsParams {
+  page: number
+  limit: number
+  search?: string
+}
+
+/**
+ * Hàm search mùa vụ cho ComboBox
+ */
+export const searchSeasonsApi = async ({
+  page,
+  limit,
+  search = "",
+}: SearchSeasonsParams): Promise<SeasonSearchResponse> => {
+  try {
+    const searchDto: any = {
+      page,
+      limit,
+    }
+
+    if (search.trim()) {
+      searchDto.keyword = search.trim()
+    }
+
+    const response = await api.postRaw<{
+      data: Season[]
+      total: number
+      page: number
+      limit: number
+    }>('/season/search', searchDto)
+
+    // Chuyển đổi dữ liệu sang format của ComboBox
+    const mappedData = (response.data || []).map((season: Season) => ({
+      ...season,
+      value: season.id,
+      label: `${season.name} (${season.year})`,
+    }))
+
+    const total = response.total || mappedData.length
+    const currentPage = response.page || page
+    const currentLimit = response.limit || limit
+    const hasMore = total > currentPage * currentLimit
+
+    return {
+      data: mappedData,
+      total,
+      hasMore,
+      nextPage: hasMore ? currentPage + 1 : undefined,
+    }
+  } catch (error) {
+    console.error("Error searching seasons:", error)
+    handleApiError(error, "Có lỗi xảy ra khi tìm kiếm mùa vụ")
+    return {
+      data: [],
+      total: 0,
+      hasMore: false,
+      nextPage: undefined,
+    }
+  }
+}
+
+/**
+ * Hook search mùa vụ cho ComboBox với infinite loading
+ */
+export const useSeasonSearch = (
+  searchTerm: string = "",
+  limit: number = 20,
+  enabled: boolean = true
+) => {
+  return useInfiniteQuery<SeasonSearchResponse, Error>({
+    queryKey: [...seasonKeys.all, "search-infinite", searchTerm],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await searchSeasonsApi({
+        page: pageParam as number,
+        limit,
+        search: searchTerm,
+      })
+      return response
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextPage : undefined
+    },
+    enabled: enabled,
+    staleTime: 5 * 60 * 1000,
   })
 }
 

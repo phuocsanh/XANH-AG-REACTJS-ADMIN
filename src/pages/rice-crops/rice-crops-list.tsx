@@ -34,7 +34,7 @@ import { useAppStore } from '@/stores/store';
 import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
 // Import component mới
-import { CreateRiceCropModal } from './components/CreateRiceCropModal';
+import { RiceCropModal } from './components/RiceCropModal';
 // Import query cho diện tích mỗi công đất
 import { useAreasQuery } from "@/queries/area-of-each-plot-of-land";
 import type { RiceCrop, CreateRiceCropDto, GrowthStage, CropStatus } from '@/models/rice-farming';
@@ -499,7 +499,7 @@ const RiceCropsList: React.FC = () => {
         />
       </div>
 
-      <CreateRiceCropModal
+      <RiceCropModal
         open={isFormModalVisible}
         onCancel={handleCloseFormModal}
         editingCrop={editingCrop}

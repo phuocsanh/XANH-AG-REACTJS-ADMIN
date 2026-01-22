@@ -1,17 +1,13 @@
-/**
- * Modal tạo mới và chỉnh sửa chi phí vận hành
- * Sử dụng react-hook-form và các component custom của dự án
- */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Modal, message } from 'antd';
 import { useForm } from 'react-hook-form';
 import { FormField, FormComboBox, FormDatePicker, FormFieldNumber } from '@/components/form';
 import { CreateOperatingCostDto, OperatingCost } from '@/models/operating-cost';
 import { useCreateOperatingCost, useUpdateOperatingCost } from '@/queries/operating-cost';
-import { useSeasonsQuery } from '@/queries/season';
-import { useRiceCrops } from '@/queries/rice-crop';
+import { useSeasonSearch } from '@/queries/season';
+import { useRiceCropSearch } from '@/queries/rice-crop';
 import { useOperatingCostCategories } from '@/queries/operating-cost-category';
-import { useCustomersQuery } from '@/queries/customer';
+import { useCustomerSearch } from '@/queries/customer';
 import dayjs from 'dayjs';
 
 interface CreateOperatingCostModalProps {
@@ -41,10 +37,31 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
   const createMutation = useCreateOperatingCost();
   const updateMutation = useUpdateOperatingCost();
 
-  // Load Seasons, Customers, and Categories for selection
-  const { data: seasons } = useSeasonsQuery({ limit: 100 });
+  // State tìm kiếm
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [seasonSearch, setSeasonSearch] = useState('');
+  const [riceCropSearch, setRiceCropSearch] = useState('');
+
+  // Hooks tìm kiếm infinite loading (mỗi lần load 20 bản ghi)
+  const { 
+    data: seasonSearchData, 
+    isLoading: isSeasonLoading,
+    isFetching: isSeasonFetching,
+    hasNextPage: seasonHasNextPage,
+    isFetchingNextPage: isSeasonFetchingNextPage,
+    fetchNextPage: fetchNextSeasonPage,
+  } = useSeasonSearch(seasonSearch, 20, visible);
+
   const { data: categories } = useOperatingCostCategories({ limit: 100 });
-  const { data: customers } = useCustomersQuery({ limit: 1000 });
+  
+  const { 
+    data: customerSearchData, 
+    isLoading: isCustomerLoading,
+    isFetching: isCustomerFetching,
+    hasNextPage: customerHasNextPage,
+    isFetchingNextPage: isCustomerFetchingNextPage,
+    fetchNextPage: fetchNextCustomerPage,
+  } = useCustomerSearch(customerSearch, 20, visible);
   
   const { control, handleSubmit, reset, watch, setValue } = useForm<OperatingCostFormValues>({
     defaultValues: {
@@ -58,15 +75,40 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
   // Watch season_id and customer_id to filter rice crops
   const watchedSeasonId = watch('season_id');
   const watchedCustomerId = watch('customer_id');
-  
-  const { data: riceCrops, isFetching: isFetchingRiceCrops } = useRiceCrops(
-      { 
-        limit: 100, 
-        season_id: watchedSeasonId,
-        customer_id: watchedCustomerId || undefined,
-      }, 
-      { enabled: !!watchedSeasonId && !!watchedCustomerId }
-  );
+
+  // Hook tìm kiếm ruộng lúa phụ thuộc vào season và customer
+  const { 
+    data: riceCropSearchData, 
+    isLoading: isRiceCropLoading,
+    isFetching: isRiceCropFetching,
+    hasNextPage: riceCropHasNextPage,
+    isFetchingNextPage: isRiceCropFetchingNextPage,
+    fetchNextPage: fetchNextRiceCropPage,
+  } = useRiceCropSearch({
+    search: riceCropSearch,
+    season_id: watchedSeasonId,
+    customer_id: watchedCustomerId || undefined
+  }, 20, visible && !!watchedSeasonId && !!watchedCustomerId);
+
+  // Chuyển đổi dữ liệu từ infinite query sang mảng options
+  const customerOptions = useMemo(() => {
+    return customerSearchData?.pages.flatMap(page => page.data) || [];
+  }, [customerSearchData]);
+
+  const seasonOptions = useMemo(() => {
+    return seasonSearchData?.pages.flatMap(page => page.data) || [];
+  }, [seasonSearchData]);
+
+  const riceCropOptions = useMemo(() => {
+    return riceCropSearchData?.pages.flatMap(page => page.data) || [];
+  }, [riceCropSearchData]);
+
+  const categoryOptions = useMemo(() => {
+    return Array.isArray(categories?.data) ? categories.data.map((c: any) => ({
+      label: c.name,
+      value: c.id,
+    })) : [];
+  }, [categories]);
 
   useEffect(() => {
     if (visible) {
@@ -117,26 +159,6 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
     }
   };
 
-  const seasonOptions = seasons?.data?.items?.map((s: any) => ({
-    label: `${s.name} (${s.year})`,
-    value: s.id,
-  })) || [];
-
-  const categoryOptions = Array.isArray(categories?.data) ? categories.data.map((c: any) => ({
-    label: c.name,
-    value: c.id,
-  })) : [];
-
-  const customerOptions = customers?.data?.items?.map((c: any) => ({
-    label: c.name,
-    value: c.id,
-  })) || [];
-
-  const riceCropOptions = riceCrops?.data?.map((r: any) => ({
-    label: `${r.field_name} - ${r.customer?.name}`,
-    value: r.id,
-  })) || [];
-
   return (
     <Modal
       title={initialData ? "Cập nhật chi phí vận hành" : "Thêm chi phí vận hành mới"}
@@ -181,8 +203,14 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
             control={control}
             label="Mùa vụ"
             rules={{ required: 'Vui lòng chọn mùa vụ' }}
+            data={seasonOptions}
+            isLoading={isSeasonLoading}
+            isFetching={isSeasonFetching}
+            hasNextPage={seasonHasNextPage}
+            isFetchingNextPage={isSeasonFetchingNextPage}
+            fetchNextPage={fetchNextSeasonPage}
+            onSearch={setSeasonSearch}
             placeholder="Chọn mùa vụ"
-            options={seasonOptions}
             showSearch
           />
 
@@ -190,8 +218,14 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
             name="customer_id"
             control={control}
             label="Khách hàng (Tùy chọn)"
+            data={customerOptions}
+            isLoading={isCustomerLoading}
+            isFetching={isCustomerFetching}
+            hasNextPage={customerHasNextPage}
+            isFetchingNextPage={isCustomerFetchingNextPage}
+            fetchNextPage={fetchNextCustomerPage}
+            onSearch={setCustomerSearch}
             placeholder="Chọn khách hàng"
-            options={customerOptions}
             allowClear
             showSearch
           />
@@ -206,11 +240,16 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
             !watchedCustomerId ? "Vui lòng chọn khách hàng trước" :
             "Chọn Ruộng lúa"
           }
-          options={riceCropOptions}
+          data={riceCropOptions}
+          isLoading={isRiceCropLoading}
+          isFetching={isRiceCropFetching}
+          hasNextPage={riceCropHasNextPage}
+          isFetchingNextPage={isRiceCropFetchingNextPage}
+          fetchNextPage={fetchNextRiceCropPage}
+          onSearch={setRiceCropSearch}
           allowClear
           showSearch
           disabled={!watchedSeasonId || !watchedCustomerId}
-          isLoading={isFetchingRiceCrops}
         />
 
         <FormDatePicker
