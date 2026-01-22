@@ -1,12 +1,17 @@
+/**
+ * Modal tạo mới và chỉnh sửa chi phí vận hành
+ * Sử dụng react-hook-form và các component custom của dự án
+ */
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, Select, DatePicker, Button, message } from 'antd';
+import { Modal, message } from 'antd';
+import { useForm } from 'react-hook-form';
+import { FormField, FormComboBox, FormDatePicker, FormFieldNumber } from '@/components/form';
 import { CreateOperatingCostDto, OperatingCost } from '@/models/operating-cost';
 import { useCreateOperatingCost, useUpdateOperatingCost } from '@/queries/operating-cost';
 import { useSeasonsQuery } from '@/queries/season';
 import { useRiceCrops } from '@/queries/rice-crop';
 import { useOperatingCostCategories } from '@/queries/operating-cost-category';
 import { useCustomersQuery } from '@/queries/customer';
-import NumberInput from '@/components/common/number-input';
 import dayjs from 'dayjs';
 
 interface CreateOperatingCostModalProps {
@@ -16,13 +21,23 @@ interface CreateOperatingCostModalProps {
   defaultValues?: Partial<CreateOperatingCostDto>;
 }
 
+interface OperatingCostFormValues {
+  name: string;
+  value: number;
+  category_id: number;
+  season_id: number;
+  customer_id?: number | null;
+  rice_crop_id?: number | null;
+  expense_date: string;
+  description?: string;
+}
+
 const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
   visible,
   onCancel,
   initialData,
   defaultValues,
 }) => {
-  const [form] = Form.useForm();
   const createMutation = useCreateOperatingCost();
   const updateMutation = useUpdateOperatingCost();
 
@@ -31,44 +46,60 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
   const { data: categories } = useOperatingCostCategories({ limit: 100 });
   const { data: customers } = useCustomersQuery({ limit: 1000 });
   
-  // Debug: Log categories structure
-  console.log('Categories data:', categories);
-  
+  const { control, handleSubmit, reset, watch, setValue } = useForm<OperatingCostFormValues>({
+    defaultValues: {
+      name: '',
+      value: 0,
+      expense_date: dayjs().toISOString(),
+      description: '',
+    },
+  });
+
   // Watch season_id and customer_id to filter rice crops
-  const selectedSeasonId = Form.useWatch('season_id', form);
-  const selectedCustomerId = Form.useWatch('customer_id', form);
+  const watchedSeasonId = watch('season_id');
+  const watchedCustomerId = watch('customer_id');
   
   const { data: riceCrops, isFetching: isFetchingRiceCrops } = useRiceCrops(
       { 
         limit: 100, 
-        season_id: selectedSeasonId,
-        customer_id: selectedCustomerId,
+        season_id: watchedSeasonId,
+        customer_id: watchedCustomerId || undefined,
       }, 
-      { enabled: !!selectedSeasonId && !!selectedCustomerId }
+      { enabled: !!watchedSeasonId && !!watchedCustomerId }
   );
 
   useEffect(() => {
-    if (visible && initialData) {
-      form.setFieldsValue({
-        ...initialData,
-        expense_date: initialData.expense_date ? dayjs(initialData.expense_date) : dayjs(),
-      });
-    } else if (visible) {
-      form.resetFields();
-      form.setFieldsValue({
-          expense_date: dayjs(),
+    if (visible) {
+      if (initialData) {
+        reset({
+          name: initialData.name,
+          value: Number(initialData.value),
+          category_id: initialData.category_id,
+          season_id: initialData.season_id,
+          customer_id: initialData.customer_id,
+          rice_crop_id: initialData.rice_crop_id,
+          expense_date: initialData.expense_date,
+          description: initialData.description || '',
+        });
+      } else {
+        reset({
+          name: '',
+          value: 0,
+          expense_date: dayjs().toISOString(),
+          description: '',
           ...defaultValues,
-      });
+        } as any);
+      }
     }
-  }, [visible, initialData, form, defaultValues]);
+  }, [visible, initialData, reset, defaultValues]);
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data: OperatingCostFormValues) => {
     try {
-      const values = await form.validateFields();
-      
       const payload: CreateOperatingCostDto = {
-        ...values,
-        expense_date: values.expense_date.toISOString(),
+        ...data,
+        expense_date: dayjs(data.expense_date).toISOString(),
+        customer_id: data.customer_id || undefined,
+        rice_crop_id: data.rice_crop_id || undefined,
       };
 
       if (initialData) {
@@ -82,135 +113,123 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
       onCancel();
     } catch (error) {
       console.error(error);
+      message.error('Có lỗi xảy ra');
     }
   };
+
+  const seasonOptions = seasons?.data?.items?.map((s: any) => ({
+    label: `${s.name} (${s.year})`,
+    value: s.id,
+  })) || [];
+
+  const categoryOptions = Array.isArray(categories?.data) ? categories.data.map((c: any) => ({
+    label: c.name,
+    value: c.id,
+  })) : [];
+
+  const customerOptions = customers?.data?.items?.map((c: any) => ({
+    label: c.name,
+    value: c.id,
+  })) || [];
+
+  const riceCropOptions = riceCrops?.data?.map((r: any) => ({
+    label: `${r.field_name} - ${r.customer?.name}`,
+    value: r.id,
+  })) || [];
 
   return (
     <Modal
       title={initialData ? "Cập nhật chi phí vận hành" : "Thêm chi phí vận hành mới"}
       open={visible}
       onCancel={onCancel}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
-          Hủy
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          loading={createMutation.isPending || updateMutation.isPending}
-          onClick={handleSubmit}
-        >
-          {initialData ? "Lưu thay đổi" : "Tạo mới"}
-        </Button>,
-      ]}
+      onOk={handleSubmit(onSubmit)}
+      confirmLoading={createMutation.isPending || updateMutation.isPending}
+      okText={initialData ? "Lưu thay đổi" : "Tạo mới"}
+      cancelText="Hủy"
     >
-      <Form form={form} layout="vertical">
-        <Form.Item
+      <div className="mt-4 flex flex-col gap-4">
+        <FormField
           name="name"
+          control={control}
           label="Tên chi phí"
-          rules={[{ required: true, message: 'Vui lòng nhập tên chi phí' }]}
-        >
-          <Input placeholder="VD: Mua phân bón đợt 1" />
-        </Form.Item>
+          rules={{ required: 'Vui lòng nhập tên chi phí' }}
+          placeholder="VD: Mua phân bón đợt 1"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Form.Item
+          <FormFieldNumber
             name="value"
+            control={control}
             label="Số tiền"
-            rules={[{ required: true, message: 'Vui lòng nhập số tiền' }]}
-          >
-            <NumberInput
-              placeholder="0"
-              decimalScale={0}
-              min={0}
-            />
-          </Form.Item>
+            rules={{ required: 'Vui lòng nhập số tiền' }}
+            placeholder="0"
+          />
 
-          <Form.Item
+          <FormComboBox
             name="category_id"
+            control={control}
             label="Loại chi phí"
-            rules={[{ required: true, message: 'Vui lòng chọn loại' }]}
-          >
-            <Select placeholder="Chọn loại chi phí">
-              {Array.isArray(categories?.data) && categories.data.map((c: any) => (
-                <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+            rules={{ required: 'Vui lòng chọn loại' }}
+            placeholder="Chọn loại"
+            options={categoryOptions}
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Form.Item
-                name="season_id"
-                label="Mùa vụ"
-                rules={[{ required: true, message: 'Vui lòng chọn mùa vụ' }]}
-            >
-                <Select placeholder="Chọn mùa vụ" showSearch filterOption={(input, option: any) =>
-                  option?.children?.toLowerCase().includes(input.toLowerCase())
-                }>
-                    {seasons?.data?.items?.map((s: any) => (
-                        <Select.Option key={s.id} value={s.id}>{s.name} ({s.year})</Select.Option>
-                    ))}
-                </Select>
-            </Form.Item>
+          <FormComboBox
+            name="season_id"
+            control={control}
+            label="Mùa vụ"
+            rules={{ required: 'Vui lòng chọn mùa vụ' }}
+            placeholder="Chọn mùa vụ"
+            options={seasonOptions}
+            showSearch
+          />
 
-            <Form.Item
-                name="customer_id"
-                label="Khách hàng (Tùy chọn)"
-                tooltip="Chọn khách hàng để lọc ruộng lúa"
-            >
-                <Select 
-                    allowClear 
-                    placeholder="Chọn khách hàng" 
-                    showSearch 
-                    filterOption={(input, option: any) =>
-                        option?.children?.toLowerCase().includes(input.toLowerCase())
-                    }
-                >
-                    {customers?.data?.items?.map((c: any) => (
-                        <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
-                    ))}
-                </Select>
-            </Form.Item>
+          <FormComboBox
+            name="customer_id"
+            control={control}
+            label="Khách hàng (Tùy chọn)"
+            placeholder="Chọn khách hàng"
+            options={customerOptions}
+            allowClear
+            showSearch
+          />
         </div>
 
-        <Form.Item
-            name="rice_crop_id"
-            label="Thuộc ruộng lúa (Tùy chọn)"
-            tooltip="Chọn nếu chi phí này chỉ dành riêng cho 1 ruộng cụ thể"
-        >
-            <Select 
-                allowClear 
-                placeholder={
-                    !selectedSeasonId ? "Vui lòng chọn mùa vụ trước" :
-                    !selectedCustomerId ? "Vui lòng chọn khách hàng trước" :
-                    "Chọn Ruộng lúa"
-                } 
-                showSearch 
-                filterOption={(input, option: any) =>
-                    option?.children?.toLowerCase().includes(input.toLowerCase())
-                }
-                disabled={!selectedSeasonId || !selectedCustomerId}
-                loading={isFetchingRiceCrops}
-            >
-                {riceCrops?.data?.map((r: any) => (
-                    <Select.Option key={r.id} value={r.id}>{r.field_name} - {r.customer?.name}</Select.Option>
-                ))}
-            </Select>
-        </Form.Item>
+        <FormComboBox
+          name="rice_crop_id"
+          control={control}
+          label="Thuộc ruộng lúa (Tùy chọn)"
+          placeholder={
+            !watchedSeasonId ? "Vui lòng chọn mùa vụ trước" :
+            !watchedCustomerId ? "Vui lòng chọn khách hàng trước" :
+            "Chọn Ruộng lúa"
+          }
+          options={riceCropOptions}
+          allowClear
+          showSearch
+          disabled={!watchedSeasonId || !watchedCustomerId}
+          isLoading={isFetchingRiceCrops}
+        />
 
-        <Form.Item
+        <FormDatePicker
           name="expense_date"
+          control={control}
           label="Ngày chi"
-          rules={[{ required: true, message: 'Vui lòng chọn ngày chi' }]}
-        >
-          <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
-        </Form.Item>
+          rules={{ required: 'Vui lòng chọn ngày chi' }}
+          format="DD/MM/YYYY"
+          className="w-full"
+        />
 
-        <Form.Item name="description" label="Mô tả / Ghi chú">
-          <Input.TextArea rows={3} />
-        </Form.Item>
-      </Form>
+        <FormField
+          name="description"
+          control={control}
+          label="Mô tả / Ghi chú"
+          type="textarea"
+          rows={3}
+        />
+      </div>
     </Modal>
   );
 };

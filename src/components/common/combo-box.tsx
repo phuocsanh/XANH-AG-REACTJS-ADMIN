@@ -36,6 +36,13 @@ interface ComboBoxProps extends Omit<SelectProps, "options" | "children"> {
     value: string | number | (string | number)[],
     option: ComboBoxOption | ComboBoxOption[]
   ) => void
+  // Form hooks/props
+  name?: string
+  rules?: any[]
+  tooltip?: string
+  extra?: React.ReactNode
+  help?: React.ReactNode
+  validateStatus?: "" | "success" | "warning" | "error" | "validating" | undefined
 }
 
 /**
@@ -73,6 +80,12 @@ function ComboBox({
   onSelectionChange,
   value,
   onChange,
+  name,
+  rules,
+  tooltip,
+  extra,
+  help,
+  validateStatus,
   ...selectProps
 }: ComboBoxProps) {
   // Xác định filterOption: Nếu không truyền vào, tự động tắt (false) khi có search async
@@ -241,10 +254,20 @@ function ComboBox({
     />
   )
 
-  // Nếu có label, wrap trong Form.Item
-  if (label) {
+  // Nếu có label hoặc name, wrap trong Form.Item để Ant Design Form quản lý
+  if (label || name) {
     return (
-      <Form.Item label={label} required={required} className={className}>
+      <Form.Item 
+        label={label} 
+        name={name}
+        rules={rules}
+        tooltip={tooltip}
+        extra={extra}
+        help={help}
+        validateStatus={validateStatus}
+        required={required} 
+        className={className}
+      >
         {selectComponent}
       </Form.Item>
     )

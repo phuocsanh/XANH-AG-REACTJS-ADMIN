@@ -16,7 +16,7 @@ import {
   InputNumber,
   message,
 } from 'antd';
-import { DatePicker } from '@/components/common';
+import { DatePicker, ComboBox } from '@/components/common';
 import {
   PlusOutlined,
   EditOutlined,
@@ -33,6 +33,8 @@ import { useRiceCrops, useCreateRiceCrop, useUpdateRiceCrop, useDeleteRiceCrop }
 import { useAppStore } from '@/stores/store';
 import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
+// Import component mới
+import { CreateRiceCropModal } from './components/CreateRiceCropModal';
 // Import query cho diện tích mỗi công đất
 import { useAreasQuery } from "@/queries/area-of-each-plot-of-land";
 import type { RiceCrop, CreateRiceCropDto, GrowthStage, CropStatus } from '@/models/rice-farming';
@@ -82,7 +84,6 @@ const statusLabels: Record<CropStatus, string> = {
 const RiceCropsList: React.FC = () => {
   const navigate = useNavigate();
   const { confirm: confirmModal } = Modal;
-  const [form] = Form.useForm();
   
   // State for combobox search
   const [customerSearch, setCustomerSearch] = useState('');
@@ -251,56 +252,16 @@ const RiceCropsList: React.FC = () => {
   // Hooks for customers and seasons are moved to the top
 
   const { data: areasData } = useAreasQuery({ limit: 100 }); // Load danh sách diện tích
-  const createMutation = useCreateRiceCrop();
-  const updateMutation = useUpdateRiceCrop();
   const deleteMutation = useDeleteRiceCrop();
-
-  // Watch các trường để tự động tính diện tích
-  const watchedAmountOfLand = Form.useWatch('amount_of_land', form);
-  const watchedAreaId = Form.useWatch('area_of_each_plot_of_land_id', form);
-
-  // Tự động tính diện tích khi có đủ thông tin
-  React.useEffect(() => {
-    if (watchedAmountOfLand && watchedAreaId && areasData?.data?.items) {
-      // Tìm diện tích mỗi công đất được chọn
-      const selectedArea = areasData.data.items.find((area: any) => area.id === watchedAreaId);
-      
-      if (selectedArea) {
-        // Tính: Diện tích = Số lượng đất × Diện tích mỗi công đất
-        const calculatedArea = Number(watchedAmountOfLand) * Number(selectedArea.acreage);
-        
-        // Cập nhật vào form
-        form.setFieldsValue({
-          field_area: calculatedArea
-        });
-      }
-    }
-  }, [watchedAmountOfLand, watchedAreaId, areasData, form]);
 
   // Handlers
   const handleAddCrop = () => {
     setEditingCrop(null);
-    form.resetFields();
     setIsFormModalVisible(true);
   };
 
   const handleEditCrop = (crop: RiceCrop) => {
     setEditingCrop(crop);
-    form.setFieldsValue({
-      customer_id: crop.customer_id,
-      season_id: crop.season_id,
-      field_name: crop.field_name,
-      amount_of_land: crop.amount_of_land,
-      area_of_each_plot_of_land_id: crop.area_of_each_plot_of_land_id,
-      field_area: crop.field_area,
-      location: crop.location,
-      rice_variety: crop.rice_variety,
-      seed_source: crop.seed_source,
-      sowing_date: crop.sowing_date ? dayjs(crop.sowing_date) : null,
-      transplanting_date: crop.transplanting_date ? dayjs(crop.transplanting_date) : null,
-      expected_harvest_date: crop.expected_harvest_date ? dayjs(crop.expected_harvest_date) : null,
-      notes: crop.notes,
-    });
     setIsFormModalVisible(true);
   };
 
@@ -334,36 +295,8 @@ const RiceCropsList: React.FC = () => {
     setDeletingCrop(null);
   };
 
-  const handleFormSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      
-      const dto: CreateRiceCropDto = {
-        ...values,
-        sowing_date: values.sowing_date?.format('YYYY-MM-DD'),
-        transplanting_date: values.transplanting_date?.format('YYYY-MM-DD'),
-        expected_harvest_date: values.expected_harvest_date?.format('YYYY-MM-DD'),
-      };
-
-      if (editingCrop) {
-        await updateMutation.mutateAsync({ id: editingCrop.id, dto });
-        message.success('Cập nhật Ruộng lúa thành công!');
-      } else {
-        await createMutation.mutateAsync(dto);
-        message.success('Tạo Ruộng lúa thành công!');
-      }
-
-      setIsFormModalVisible(false);
-      form.resetFields();
-      setEditingCrop(null);
-    } catch (error) {
-      console.error('Form validation failed:', error);
-    }
-  };
-
   const handleCloseFormModal = () => {
     setIsFormModalVisible(false);
-    form.resetFields();
     setEditingCrop(null);
   };
 
@@ -379,7 +312,7 @@ const RiceCropsList: React.FC = () => {
     }));
   };
 
-  const loading = isLoading || createMutation.isPending || updateMutation.isPending;
+  const loading = isLoading || deleteMutation.isPending;
 
   // Cấu hình columns cho DataTable
   const columns = [
@@ -538,7 +471,6 @@ const RiceCropsList: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={() => {
               setEditingCrop(null);
-              form.resetFields();
               setIsFormModalVisible(true);
             }}
           >
@@ -567,151 +499,11 @@ const RiceCropsList: React.FC = () => {
         />
       </div>
 
-      {/* Modal form thêm/sửa Ruộng lúa */}
-      <Modal
-        title={editingCrop ? 'Chỉnh sửa Ruộng lúa' : 'Tạo Ruộng lúa mới'}
+      <CreateRiceCropModal
         open={isFormModalVisible}
         onCancel={handleCloseFormModal}
-        footer={[
-          <Button key="cancel" onClick={handleCloseFormModal}>
-            Hủy
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            loading={createMutation.isPending || updateMutation.isPending}
-            onClick={handleFormSubmit}
-          >
-            {editingCrop ? 'Cập nhật' : 'Tạo mới'}
-          </Button>,
-        ]}
-        width={800}
-      >
-        <Form form={form} layout="vertical" className="mt-4 product-form">
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item
-              label="Khách hàng"
-              name="customer_id"
-              rules={[{ required: true, message: 'Vui lòng chọn khách hàng' }]}
-            >
-              <Select placeholder="Chọn khách hàng" showSearch filterOption={(input, option: any) =>
-                option?.children?.toLowerCase().includes(input.toLowerCase())
-              }>
-                {customersData?.data?.items?.map((customer: any) => (
-                  <Select.Option key={customer.id} value={customer.id}>
-                    {customer.name} - {customer.phone}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              label="Mùa vụ"
-              name="season_id"
-              rules={[{ required: true, message: 'Vui lòng chọn mùa vụ' }]}
-            >
-              <Select placeholder="Chọn mùa vụ">
-                {seasonsData?.data?.items?.map((season: any) => (
-                  <Select.Option key={season.id} value={season.id}>
-                    {season.name} ({season.year})
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              label="Tên ruộng"
-              name="field_name"
-              rules={[{ required: true, message: 'Vui lòng nhập tên ruộng' }]}
-            >
-              <Input placeholder="VD: Ruộng sau nhà" />
-            </Form.Item>
-
-            <Form.Item
-              label="Số công đất"
-              name="amount_of_land"
-              rules={[{ required: true, message: 'Vui lòng nhập số công đất' }]}
-            >
-              <InputNumber
-                min={0}
-                style={{ width: '100%' }}
-                placeholder="VD: 10"
-                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-                parser={(value) => value?.replace(/\./g, '').replace(',', '.') as any}
-                decimalSeparator=","
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Diện tích mỗi công"
-              name="area_of_each_plot_of_land_id"
-              tooltip="Chọn diện tích mỗi công (Không bắt buộc)"
-            >
-              <Select 
-                placeholder="Chọn diện tích"
-                allowClear
-                showSearch
-                filterOption={(input, option: any) =>
-                  option?.children?.toLowerCase().includes(input.toLowerCase())
-                }
-              >
-                {areasData?.data?.items?.map((area: any) => (
-                  <Select.Option key={area.id} value={area.id}>
-                    {area.name} - {Number(area.acreage).toLocaleString('vi-VN')}m²
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              label="Tổng diện tích (m²)"
-              name="field_area"
-              rules={[{ required: true, message: 'Vui lòng nhập diện tích' }]}
-            >
-              <InputNumber
-                min={0}
-                style={{ width: '100%' }}
-                placeholder="VD: 5000"
-                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-                parser={(value) => value?.replace(/\./g, '').replace(',', '.') as any}
-                decimalSeparator=","
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Giống lúa"
-              name="rice_variety"
-              rules={[{ required: true, message: 'Vui lòng nhập giống lúa' }]}
-            >
-              <Input placeholder="VD: OM 5451" />
-            </Form.Item>
-
-            <Form.Item label="Nguồn giống" name="seed_source">
-              <Input placeholder="VD: Trung tâm giống An Giang" />
-            </Form.Item>
-
-            <Form.Item label="Vị trí" name="location">
-              <Input placeholder="VD: Xã Tân Hiệp, An Giang" />
-            </Form.Item>
-
-            <Form.Item label="Ngày gieo mạ" name="sowing_date">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-
-            <Form.Item label="Ngày cấy" name="transplanting_date">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-
-            <Form.Item label="Ngày thu hoạch dự kiến" name="expected_harvest_date">
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </div>
-
-          <Form.Item label="Ghi chú" name="notes">
-            <Input.TextArea rows={3} placeholder="Ghi chú về Ruộng lúa..." />
-          </Form.Item>
-        </Form>
-      </Modal>
+        editingCrop={editingCrop}
+      />
 
 
 
