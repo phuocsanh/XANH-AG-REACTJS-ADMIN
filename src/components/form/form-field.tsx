@@ -69,6 +69,12 @@ function FormField<T extends FieldValues>({
           ? required
           : `Vui lòng nhập ${label.toLowerCase()}`,
     }),
+    ...(rules.required && {
+      required:
+        typeof rules.required === "string"
+          ? rules.required
+          : `Vui lòng nhập ${label.toLowerCase()}`,
+    }),
     ...(rules.min && {
       min: { value: rules.min, message: `Giá trị tối thiểu là ${rules.min}` },
     }),

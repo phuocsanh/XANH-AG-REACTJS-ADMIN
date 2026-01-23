@@ -93,7 +93,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           >
             <TableHead>
               <TableRow>
-                <TableCell>Sản phẩm</TableCell>
+                <TableCell sx={{ maxWidth: '200px', minWidth: '150px' }}>Sản phẩm</TableCell>
                 <TableCell align="center">ĐVT</TableCell>
                 <TableCell align="center">Tồn kho</TableCell>
                 <TableCell align="center">Loại giá</TableCell>
@@ -113,8 +113,16 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
 
                 return (
                   <TableRow key={field.id}>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="bold">
+                    <TableCell sx={{ maxWidth: '200px', minWidth: '150px' }}>
+                      <Typography 
+                        variant="body2" 
+                        fontWeight="bold"
+                        sx={{ 
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word',
+                          lineHeight: 1.3
+                        }}
+                      >
                         {watch(`items.${index}.product_name`)}
                       </Typography>
                     </TableCell>
@@ -130,7 +138,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         const isOver = sellQty > stock;
                         return (
                           <Field 
-                            value={`Kho: ${stock}`}
+                            value={`${stock}`}
                             disabled
                             className="w-full"
                             status={isOver ? 'error' : undefined}

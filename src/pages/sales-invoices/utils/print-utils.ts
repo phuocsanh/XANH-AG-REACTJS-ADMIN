@@ -183,7 +183,7 @@ export const generatePrintContent = (data: PrintData) => {
             ${items.map((item, index) => `
               <tr>
                 <td class="text-center">${index + 1}</td>
-                <td>${item.product_name}</td>
+                <td>${item.product_name}${item.unit_name ? ` (${item.unit_name})` : ''}</td>
                 <td class="text-center">${item.quantity}</td>
                 <td class="text-right">${formatCurrency(item.unit_price)}</td>
                 <td class="text-right">${formatCurrency(item.quantity * item.unit_price - (item.discount_amount || 0))}</td>
