@@ -150,19 +150,20 @@ const SalesInvoicesList: React.FC = () => {
         delete newFilters.payment_status
     }
 
-    // Rice Crop filter (mapped from rice_crop_id column)
+    // Rice Crop filter
     if (tableFilters.rice_crop_id && tableFilters.rice_crop_id.length > 0) {
-        newFilters.rice_crop_filter = tableFilters.rice_crop_id[0]
+        newFilters.rice_crop_id = tableFilters.rice_crop_id[0]
     } else {
+        delete newFilters.rice_crop_id
     }
 
     // Sale Date Range
     if (tableFilters.sale_date && tableFilters.sale_date.length === 2) {
-      newFilters.sale_date_start = tableFilters.sale_date[0]
-      newFilters.sale_date_end = tableFilters.sale_date[1]
+      newFilters.start_date = tableFilters.sale_date[0]
+      newFilters.end_date = tableFilters.sale_date[1]
     } else {
-      delete newFilters.sale_date_start
-      delete newFilters.sale_date_end
+      delete newFilters.start_date
+      delete newFilters.end_date
     }
 
     setFilters(newFilters)

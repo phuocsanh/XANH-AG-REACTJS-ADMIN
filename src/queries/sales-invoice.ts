@@ -30,7 +30,8 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
   const page = (params?.page as number) || 1
   const limit = (params?.limit as number) || 10
   const status = params?.status as string | undefined
-  const riceCropFilter = params?.rice_crop_filter as string | undefined
+  const paymentStatus = params?.payment_status as string | undefined
+  const riceCropId = params?.rice_crop_id as string | number | undefined
 
   return useQuery({
     queryKey: salesInvoiceKeys.list(params),
@@ -43,10 +44,11 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
 
       // Thêm các flat params
       if (status) payload.status = status
-      if (riceCropFilter) payload.rice_crop_filter = riceCropFilter
+      if (paymentStatus) payload.payment_status = paymentStatus
+      if (riceCropId) payload.rice_crop_id = riceCropId
       if (params?.customer_id) payload.customer_id = params.customer_id
       if (params?.keyword) payload.keyword = params.keyword
-      if (params?.search) payload.keyword = params.search // ← Đổi search thành keyword
+      if (params?.search) payload.keyword = params.search 
       
       // Thêm các filter từ FilterHeader
       if (params?.code) payload.code = params.code
@@ -55,8 +57,10 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
       if (params?.season_id) payload.season_id = params.season_id
       
       // Date range filter
-      if (params?.start_date) payload.start_date = params.start_date
-      if (params?.end_date) payload.end_date = params.end_date
+      if (params?.start_date) payload.sale_date_start = params.start_date
+      if (params?.end_date) payload.sale_date_end = params.end_date
+      if (params?.sale_date_start) payload.sale_date_start = params.sale_date_start
+      if (params?.sale_date_end) payload.sale_date_end = params.sale_date_end
 
       // Sort
       if (params?.sort_by) {
