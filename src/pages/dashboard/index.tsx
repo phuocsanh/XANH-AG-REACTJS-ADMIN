@@ -103,7 +103,7 @@ export const Dashboard = () => {
 
     // Hóa đơn tháng này
     const monthInvoices = invoices.filter((inv: any) => {
-      const invDate = new Date(inv.created_at);
+      const invDate = new Date(inv.sale_date || inv.created_at);
       return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
     });
 
@@ -158,7 +158,7 @@ export const Dashboard = () => {
       }
 
       const monthInvoices = invoices.filter((inv: any) => {
-        const invDate = new Date(inv.created_at);
+        const invDate = new Date(inv.sale_date || inv.created_at);
         return invDate.getMonth() === month && invDate.getFullYear() === year;
       });
 

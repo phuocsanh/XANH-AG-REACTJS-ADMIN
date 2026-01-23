@@ -26,6 +26,7 @@ export interface InvoiceProfit {
   invoice_code: string;
   customer_name: string;
   created_at: Date;
+  sale_date?: Date;
   total_amount: number;        // Tổng doanh thu
   cost_of_goods_sold: number;  // Tổng giá vốn hàng bán
   gross_profit: number;        // Lợi nhuận gộp

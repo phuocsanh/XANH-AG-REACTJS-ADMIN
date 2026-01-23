@@ -18,6 +18,7 @@ import {
   Input,
   Tooltip,
 } from 'antd';
+import dayjs from 'dayjs';
 import ComboBox from '@/components/common/combo-box';
 import {
   DollarOutlined,
@@ -973,7 +974,7 @@ const ProfitReportsPage: React.FC = () => {
               {/* Thông tin bổ sung */}
               <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
                 <p><strong>Khách hàng:</strong> {invoiceProfit.customer_name}</p>
-                <p><strong>Ngày tạo:</strong> {new Date(invoiceProfit.created_at).toLocaleString('vi-VN')}</p>
+                <p><strong>Ngày bán:</strong> {dayjs(invoiceProfit.sale_date || invoiceProfit.created_at).format('DD/MM/YYYY HH:mm')}</p>
               </div>
 
               <Divider>Chi tiết từng sản phẩm</Divider>

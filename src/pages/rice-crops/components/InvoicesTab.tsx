@@ -594,7 +594,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
               <Space>
                 <Text strong>{invoice.code}</Text>
                 <Text type="secondary">-</Text>
-                <Text>{new Date(invoice.created_at).toLocaleDateString('vi-VN')}</Text>
+                <Text>{new Date(invoice.sale_date || invoice.created_at).toLocaleDateString('vi-VN')}</Text>
                 <Text type="secondary">-</Text>
                 <Text style={{ color: '#52c41a' }}>{formatCurrency(invoice.final_amount)}</Text>
               </Space>

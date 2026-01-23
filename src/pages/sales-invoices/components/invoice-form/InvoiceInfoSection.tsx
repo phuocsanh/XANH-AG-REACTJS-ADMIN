@@ -160,7 +160,7 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
             }
           >
             <Typography variant="caption" display="block" fontWeight="bold">
-              Lưu ý từ đơn hàng trước ({new Date(latestInvoice.created_at).toLocaleDateString('vi-VN')}):
+              Lưu ý từ đơn hàng trước ({new Date(latestInvoice.sale_date || latestInvoice.created_at).toLocaleDateString('vi-VN')}):
             </Typography>
             <Typography variant="body2">
               {latestInvoice.warning}
