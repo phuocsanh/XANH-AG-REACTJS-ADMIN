@@ -24,6 +24,7 @@ import {
   Table,
   Divider,
   Typography,
+  App,
 } from "antd"
 import {
   PlusOutlined,
@@ -55,6 +56,7 @@ interface ExtendedSalesInvoice extends SalesInvoice {
 }
 
 const SalesInvoicesList: React.FC = () => {
+  const { modal } = App.useApp()
   // State quản lý UI
   const [filters, setFilters] = React.useState<Record<string, any>>({})
   const [isDetailModalVisible, setIsDetailModalVisible] =
@@ -347,14 +349,14 @@ const SalesInvoicesList: React.FC = () => {
 
   const handleDeleteInvoice = (invoice: SalesInvoice) => {
     if (invoice.status !== 'draft') {
-      Modal.warning({
+      modal.warning({
         title: 'Không thể xóa',
         content: `Hóa đơn đã ${invoice.status === 'paid' ? 'thanh toán' : 'xác nhận'} không thể xóa cứng. Vui lòng sử dụng chức năng Hủy hoặc Hoàn tiền để đảm bảo tồn kho.`,
       })
       return
     }
 
-    Modal.confirm({
+    modal.confirm({
       title: 'Xác nhận xóa hóa đơn',
       content: `Bạn có chắc chắn muốn xóa hóa đơn nháp ${invoice.code}?`,
       okText: 'Xóa',
@@ -363,6 +365,7 @@ const SalesInvoicesList: React.FC = () => {
       onOk: async () => {
         try {
           await deleteInvoiceMutation.mutateAsync(invoice.id)
+          handleCloseDetailModal()
         } catch (error) {
           console.error("Delete invoice failed:", error)
         }
@@ -371,7 +374,7 @@ const SalesInvoicesList: React.FC = () => {
   }
 
   const handleCancelInvoice = (invoice: SalesInvoice) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Xác nhận hủy hóa đơn',
       content: `Bạn có chắc chắn muốn hủy hóa đơn ${invoice.code}? Hệ thống sẽ tự động hoàn lại sản phẩm vào kho và xóa nợ tương ứng.`,
       okText: 'Hủy hóa đơn',
@@ -380,6 +383,7 @@ const SalesInvoicesList: React.FC = () => {
       onOk: async () => {
         try {
           await cancelInvoiceMutation.mutateAsync(invoice.id)
+          handleCloseDetailModal()
         } catch (error) {
           console.error("Cancel invoice failed:", error)
         }
@@ -388,7 +392,7 @@ const SalesInvoicesList: React.FC = () => {
   }
 
   const handleRefundInvoice = (invoice: SalesInvoice) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Xác nhận hoàn tiền',
       content: `Yêu cầu hoàn trả hóa đơn ${invoice.code}? Hệ thống sẽ hoàn lại số lượng sản phẩm vào kho.`,
       okText: 'Hoàn tiền',
@@ -397,6 +401,7 @@ const SalesInvoicesList: React.FC = () => {
       onOk: async () => {
         try {
           await refundInvoiceMutation.mutateAsync(invoice.id)
+          handleCloseDetailModal()
         } catch (error) {
           console.error("Refund invoice failed:", error)
         }
@@ -735,6 +740,39 @@ const SalesInvoicesList: React.FC = () => {
           <Button key='close' onClick={handleCloseDetailModal}>
             Đóng
           </Button>,
+          viewingInvoice?.status === 'confirmed' && (
+            <Button
+              key='cancel'
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={() => handleCancelInvoice(viewingInvoice)}
+              loading={cancelInvoiceMutation.isPending}
+            >
+              Hủy hóa đơn
+            </Button>
+          ),
+          viewingInvoice?.status === 'paid' && (
+            <Button
+              key='refund'
+              danger
+              icon={<UndoOutlined />}
+              onClick={() => handleRefundInvoice(viewingInvoice)}
+              loading={refundInvoiceMutation.isPending}
+            >
+              Hoàn trả / Hoàn tiền
+            </Button>
+          ),
+          viewingInvoice?.status === 'draft' && (
+            <Button
+              key='delete'
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteInvoice(viewingInvoice)}
+              loading={deleteInvoiceMutation.isPending}
+            >
+              Xóa nháp
+            </Button>
+          ),
         ]}
         width={800}
       >
