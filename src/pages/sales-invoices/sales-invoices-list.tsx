@@ -454,25 +454,21 @@ const SalesInvoicesList: React.FC = () => {
     },
     {
       key: "rice_crop_id",
+      dataIndex: "rice_crop_id",
       title: "Ruộng lúa",
       width: 150,
       filters: [
           { text: "Có liên kết Ruộng lúa", value: "has_crop" },
-          { text: "Không liên kết", value: "no_crop" },
+          { text: "Chưa liên kết Ruộng lúa", value: "no_crop" },
       ],
-      filteredValue: filters.rice_crop_filter ? [filters.rice_crop_filter] : null,
+      filteredValue: filters.rice_crop_id ? [filters.rice_crop_id] : null,
       filterMultiple: false,
-      render: (record: ExtendedSalesInvoice) => {
-        const crop = record.rice_crop
+      render: (value: any, record: ExtendedSalesInvoice) => {
+        if (!value) return <Tag color="default">Chưa liên kết</Tag>
         return (
-          <div>
-            {crop ? (
-              <div className="flex flex-col">
-                <span className="font-medium">{crop.field_name}</span>
-              </div>
-            ) : (
-              "-"
-            )}
+          <div className='flex flex-col'>
+            <div className='font-medium text-blue-600'>{record.rice_crop?.field_name || "Mảnh ruộng"}</div>
+            <div className='text-xs text-gray-500'>{record.rice_crop?.rice_variety}</div>
           </div>
         )
       },
@@ -512,13 +508,13 @@ const SalesInvoicesList: React.FC = () => {
     },
     {
       key: "status",
+      dataIndex: "status",
       title: "Trạng thái",
       width: 130,
       filters: Object.entries(invoiceStatusLabels).map(([value, text]) => ({ text, value })),
       filteredValue: filters.status ? [filters.status] : null,
       filterMultiple: false,
-      render: (record: ExtendedSalesInvoice) => {
-        const status = record.status
+      render: (status: string) => {
         return (
           <Tag color={getStatusColor(status)}>
             {invoiceStatusLabels[status as keyof typeof invoiceStatusLabels] ||
@@ -529,16 +525,17 @@ const SalesInvoicesList: React.FC = () => {
     },
     {
       key: "payment_status",
+      dataIndex: "payment_status",
       title: "Thanh toán",
       width: 150,
       filters: Object.entries(paymentStatusLabels).map(([value, text]) => ({ text, value })),
       filteredValue: filters.payment_status ? [filters.payment_status] : null,
       filterMultiple: false,
-      render: (record: ExtendedSalesInvoice) => {
-        const status = record.payment_status || 'pending'
+      render: (status: string) => {
+        const displayStatus = status || 'pending'
         return (
-          <Tag color={getPaymentStatusColor(status)}>
-            {paymentStatusLabels[status as keyof typeof paymentStatusLabels] || status}
+          <Tag color={getPaymentStatusColor(displayStatus)}>
+            {paymentStatusLabels[displayStatus as keyof typeof paymentStatusLabels] || displayStatus}
           </Tag>
         )
       },
