@@ -3,6 +3,7 @@ import { SalesInvoice } from "@/models/sales-invoice"
 import {
   useSalesInvoicesQuery,
   useAddPaymentMutation,
+  useDeleteSalesInvoiceMutation,
 } from "@/queries/sales-invoice"
 import api from "@/utils/api"
 import { toast } from "react-toastify"
@@ -29,6 +30,7 @@ import {
   DollarOutlined,
   SearchOutlined,
   FileTextOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons"
 import { DatePicker, RangePicker } from '@/components/common'
 import dayjs from 'dayjs';
@@ -186,6 +188,7 @@ const SalesInvoicesList: React.FC = () => {
     ...filters
   })
   const addPaymentMutation = useAddPaymentMutation()
+  const deleteInvoiceMutation = useDeleteSalesInvoiceMutation()
   
   // Load mùa vụ với search
   const { data: seasonsData } = useSeasonsQuery({ 
@@ -334,6 +337,23 @@ const SalesInvoicesList: React.FC = () => {
     } catch (error) {
       console.error("Payment failed:", error)
     }
+  }
+
+  const handleDeleteInvoice = (invoice: SalesInvoice) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa hóa đơn',
+      content: `Bạn có chắc chắn muốn xóa hóa đơn ${invoice.code}? Hành động này không thể hoàn tác và sẽ ảnh hưởng đến kho hàng cũng như công nợ khách hàng.`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await deleteInvoiceMutation.mutateAsync(invoice.id)
+        } catch (error) {
+          console.error("Delete invoice failed:", error)
+        }
+      },
+    })
   }
 
   // Helpers
@@ -582,6 +602,13 @@ const SalesInvoicesList: React.FC = () => {
               Trả nợ
             </Button>
           )}
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteInvoice(record)}
+            size='small'
+            title="Xóa hóa đơn"
+          />
         </Space>
       ),
     },
