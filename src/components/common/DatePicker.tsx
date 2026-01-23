@@ -43,6 +43,7 @@ const viLocale = {
 
 /**
  * RangePicker component với cấu hình độc lập bảng lịch
+ * Cho phép người dùng chuyển đổi tháng ở hai bảng một cách độc lập
  */
 export const RangePicker: React.FC<any> = (props) => {
   return (

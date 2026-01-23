@@ -38,11 +38,10 @@ import {
   useInventoryStatsQuery,
 } from "@/queries/inventory"
 import { useSupplierSearch } from "@/queries/supplier"
-import { LoadingSpinner } from "@/components/common"
+import { LoadingSpinner, RangePicker } from "@/components/common"
 import FilterHeader from '@/components/common/filter-header'
 
 const { Title, Text } = Typography
-const { RangePicker } = DatePicker
 
 const InventoryReceiptsList: React.FC = () => {
   const navigate = useNavigate()

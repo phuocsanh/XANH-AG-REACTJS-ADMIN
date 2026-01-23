@@ -13,12 +13,12 @@ import {
   Spin,
   Alert,
   Select,
-  DatePicker,
   Space,
   Typography,
   Divider,
   Tag,
 } from 'antd';
+import { DatePicker, RangePicker } from '@/components/common';
 import {
   DollarOutlined,
   RiseOutlined,
@@ -26,7 +26,17 @@ import {
   ShoppingCartOutlined,
   PercentageOutlined,
 } from '@ant-design/icons';
-import { Column } from '@ant-design/charts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  LabelList,
+} from 'recharts';
 import { useCustomerProfitReport } from '@/queries/store-profit-report';
 import { useSeasonsQuery } from '@/queries/season';
 import type {
@@ -36,7 +46,6 @@ import type {
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 
-const { RangePicker } = DatePicker;
 const { Text, Title } = Typography;
 
 interface CustomerProfitTabProps {
@@ -192,21 +201,7 @@ const CustomerProfitTab: React.FC<CustomerProfitTabProps> = ({ customerId }) => 
     }));
   };
 
-  const columnConfig = {
-    data: getSeasonChartData(),
-    xField: 'season',
-    yField: 'profit',
-    label: {
-      position: 'top' as const,
-      formatter: (datum: any) => formatCurrency(datum.profit),
-    },
-    yAxis: {
-      label: {
-        formatter: (v: string) => formatCurrency(Number(v)),
-      },
-    },
-    color: ({ profit }: any) => (profit > 0 ? '#3f8600' : '#cf1322'),
-  };
+
 
   if (isLoading) {
     return (
@@ -315,7 +310,45 @@ const CustomerProfitTab: React.FC<CustomerProfitTabProps> = ({ customerId }) => 
       {/* Biểu đồ lợi nhuận theo mùa vụ */}
       {reportData.by_season.length > 0 && (
         <Card className="mb-6" title="Lợi Nhuận Theo Mùa Vụ">
-          <Column {...columnConfig} />
+          <div style={{ width: '100%', height: 400 }}>
+            <ResponsiveContainer>
+              <BarChart
+                data={getSeasonChartData()}
+                margin={{ top: 30, right: 30, left: 20, bottom: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis 
+                  dataKey="season" 
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => {
+                    if (v === 0) return '0';
+                    return v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : formatCurrency(v);
+                  }}
+                />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                  formatter={(value: number) => [formatCurrency(value), 'Lợi nhuận']}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                />
+                <Bar dataKey="profit" radius={[4, 4, 0, 0]} barSize={50}>
+                  {getSeasonChartData().map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#3f8600' : '#cf1322'} />
+                  ))}
+                  <LabelList 
+                    dataKey="profit" 
+                    position="top" 
+                    formatter={(v: number) => formatCurrency(v)}
+                    style={{ fontSize: '12px', fill: '#666' }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       )}
 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select, DatePicker, Button, Form, Row, Col } from 'antd';
+import { Input, Select, Button, Form, Row, Col } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DatePicker, RangePicker } from './DatePicker';
 
 const { Search } = Input;
 const { Option } = Select;
-const { RangePicker } = DatePicker;
 
 interface FilterOption {
   label: string;

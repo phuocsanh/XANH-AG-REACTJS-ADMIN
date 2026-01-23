@@ -934,7 +934,13 @@ body {
 }
 
 
-/* Ép hiển thị các nút điều hướng nội bộ cho RangePicker độc lập */
+/* Ép hiển thị các nút điều hướng nội bộ cho RangePicker độc lập (unlinked) */
+.custom-range-picker-unlinked .ant-picker-header > button {
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Tăng độ ưu tiên cho các nút cụ thể nếu cần */
 .custom-range-picker-unlinked .ant-picker-panel:first-child .ant-picker-header-next-btn,
 .custom-range-picker-unlinked .ant-picker-panel:first-child .ant-picker-header-super-next-btn,
 .custom-range-picker-unlinked .ant-picker-panel:last-child .ant-picker-header-prev-btn,

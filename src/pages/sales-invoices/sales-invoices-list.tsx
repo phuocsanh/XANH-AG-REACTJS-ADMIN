@@ -36,7 +36,7 @@ import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
 import { useNavigate } from "react-router-dom"
-import { invoiceStatusLabels, paymentMethodLabels } from "./form-config"
+import { invoiceStatusLabels, paymentMethodLabels, paymentStatusLabels } from "./form-config"
 import { TablePaginationConfig, TableProps } from "antd"
 import { FilterValue, SorterResult } from "antd/es/table/interface"
 
@@ -77,6 +77,7 @@ const SalesInvoicesList: React.FC = () => {
         <RangePicker 
             style={{ marginBottom: 8, display: 'flex' }}
             format="DD/MM/YYYY"
+            linkedPanels={false}
             value={
                 selectedKeys && selectedKeys[0] 
                 ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
@@ -140,6 +141,13 @@ const SalesInvoicesList: React.FC = () => {
         newFilters.status = tableFilters.status[0]
     } else {
         delete newFilters.status
+    }
+
+    // Payment status filter
+    if (tableFilters.payment_status && tableFilters.payment_status.length > 0) {
+        newFilters.payment_status = tableFilters.payment_status[0]
+    } else {
+        delete newFilters.payment_status
     }
 
     // Rice Crop filter (mapped from rice_crop_id column)
@@ -352,6 +360,17 @@ const SalesInvoicesList: React.FC = () => {
     return colorMap[status] || "default"
   }
 
+  const getPaymentStatusColor = (status: string) => {
+    const colorMap: Record<string, string> = {
+      pending: "error",
+      partial: "warning",
+      paid: "success",
+      refunded: "orange",
+      cancelled: "default",
+    }
+    return colorMap[status] || "default"
+  }
+
   const loading = isLoading || addPaymentMutation.isPending
 
   // Columns
@@ -494,13 +513,7 @@ const SalesInvoicesList: React.FC = () => {
       key: "status",
       title: "Trạng thái",
       width: 130,
-      filters: [
-          { text: "Nháp", value: "draft" },
-          { text: "Đã xác nhận", value: "confirmed" },
-          { text: "Đã thanh toán", value: "paid" },
-          { text: "Đã hủy", value: "cancelled" },
-          { text: "Hoàn tiền", value: "refunded" },
-      ],
+      filters: Object.entries(invoiceStatusLabels).map(([value, text]) => ({ text, value })),
       filteredValue: filters.status ? [filters.status] : null,
       filterMultiple: false,
       render: (record: ExtendedSalesInvoice) => {
@@ -509,6 +522,22 @@ const SalesInvoicesList: React.FC = () => {
           <Tag color={getStatusColor(status)}>
             {invoiceStatusLabels[status as keyof typeof invoiceStatusLabels] ||
               status}
+          </Tag>
+        )
+      },
+    },
+    {
+      key: "payment_status",
+      title: "Thanh toán",
+      width: 150,
+      filters: Object.entries(paymentStatusLabels).map(([value, text]) => ({ text, value })),
+      filteredValue: filters.payment_status ? [filters.payment_status] : null,
+      filterMultiple: false,
+      render: (record: ExtendedSalesInvoice) => {
+        const status = record.payment_status || 'pending'
+        return (
+          <Tag color={getPaymentStatusColor(status)}>
+            {paymentStatusLabels[status as keyof typeof paymentStatusLabels] || status}
           </Tag>
         )
       },

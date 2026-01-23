@@ -109,3 +109,12 @@ export const priceTypeLabels = {
   cash: 'Giá tiền mặt',
   credit: 'Giá bán nợ',
 };
+
+export const paymentStatusLabels = {
+  pending: 'Chưa thanh toán',
+  partial: 'Thanh toán một phần',
+  paid: 'Đã thanh toán',
+  refunded: 'Đã hoàn tiền',
+  cancelled: 'Đã hủy',
+};
+

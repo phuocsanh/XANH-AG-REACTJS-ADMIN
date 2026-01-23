@@ -9,7 +9,7 @@ import {
   EyeOutlined,
   SearchOutlined,
 } from "@ant-design/icons"
-import { DatePicker } from 'antd';
+import { DatePicker, RangePicker } from '@/components/common';
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -42,9 +42,8 @@ const SalesReturnsList: React.FC = () => {
   const getDateColumnSearchProps = (dataIndex: string): any => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <DatePicker.RangePicker 
-            style={{ marginBottom: 8, display: 'flex' }}
-            format="DD/MM/YYYY"
+        <RangePicker 
+            linkedPanels={false}
             value={
                 selectedKeys && selectedKeys[0] 
                 ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
