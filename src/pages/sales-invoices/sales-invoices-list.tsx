@@ -605,7 +605,7 @@ const SalesInvoicesList: React.FC = () => {
         const dateValue = value || record.created_at
         return (
           <div>
-            {dateValue ? dayjs.utc(dateValue).format("DD/MM/YYYY") : "-"}
+            {dateValue ? dayjs(dateValue).format("DD/MM/YYYY") : "-"}
           </div>
         )
       },

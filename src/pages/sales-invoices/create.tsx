@@ -305,6 +305,11 @@ const CreateSalesInvoice = () => {
       setValue('notes', invoice.notes || '');
       setValue('warning', invoice.warning || '');
       
+      // Khôi phục ngày bán
+      if (invoice.sale_date) {
+        setValue('sale_date', invoice.sale_date);
+      }
+      
       // Set items if available
       if (invoice.items && invoice.items.length > 0) {
         // Suy luận price_type từ payment_method của invoice
