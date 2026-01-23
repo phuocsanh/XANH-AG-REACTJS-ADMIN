@@ -186,6 +186,44 @@ export const useDeleteSalesInvoiceMutation = () => {
 }
 
 /**
+ * Hook hủy hóa đơn
+ */
+export const useCancelSalesInvoiceMutation = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.patchRaw<SalesInvoice>(`/sales/invoice/${id}/cancel`)
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
+      toast.success("Hủy hóa đơn thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi hủy hóa đơn")
+    },
+  })
+}
+
+/**
+ * Hook hoàn tiền hóa đơn
+ */
+export const useRefundSalesInvoiceMutation = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.patchRaw<SalesInvoice>(`/sales/invoice/${id}/refund`)
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
+      toast.success("Hoàn tiền hóa đơn thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi hoàn tiền")
+    },
+  })
+}
+
+/**
  * Hook lấy hóa đơn gần nhất của khách hàng
  */
 export const useLatestInvoiceByCustomerQuery = (customerId: number | undefined) => {

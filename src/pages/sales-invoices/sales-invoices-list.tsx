@@ -4,6 +4,8 @@ import {
   useSalesInvoicesQuery,
   useAddPaymentMutation,
   useDeleteSalesInvoiceMutation,
+  useCancelSalesInvoiceMutation,
+  useRefundSalesInvoiceMutation,
 } from "@/queries/sales-invoice"
 import api from "@/utils/api"
 import { toast } from "react-toastify"
@@ -31,6 +33,8 @@ import {
   SearchOutlined,
   FileTextOutlined,
   DeleteOutlined,
+  CloseCircleOutlined,
+  UndoOutlined,
 } from "@ant-design/icons"
 import { DatePicker, RangePicker } from '@/components/common'
 import dayjs from 'dayjs';
@@ -189,6 +193,8 @@ const SalesInvoicesList: React.FC = () => {
   })
   const addPaymentMutation = useAddPaymentMutation()
   const deleteInvoiceMutation = useDeleteSalesInvoiceMutation()
+  const cancelInvoiceMutation = useCancelSalesInvoiceMutation()
+  const refundInvoiceMutation = useRefundSalesInvoiceMutation()
   
   // Load mùa vụ với search
   const { data: seasonsData } = useSeasonsQuery({ 
@@ -340,9 +346,17 @@ const SalesInvoicesList: React.FC = () => {
   }
 
   const handleDeleteInvoice = (invoice: SalesInvoice) => {
+    if (invoice.status !== 'draft') {
+      Modal.warning({
+        title: 'Không thể xóa',
+        content: `Hóa đơn đã ${invoice.status === 'paid' ? 'thanh toán' : 'xác nhận'} không thể xóa cứng. Vui lòng sử dụng chức năng Hủy hoặc Hoàn tiền để đảm bảo tồn kho.`,
+      })
+      return
+    }
+
     Modal.confirm({
       title: 'Xác nhận xóa hóa đơn',
-      content: `Bạn có chắc chắn muốn xóa hóa đơn ${invoice.code}? Hành động này không thể hoàn tác và sẽ ảnh hưởng đến kho hàng cũng như công nợ khách hàng.`,
+      content: `Bạn có chắc chắn muốn xóa hóa đơn nháp ${invoice.code}?`,
       okText: 'Xóa',
       okType: 'danger',
       cancelText: 'Hủy',
@@ -351,6 +365,40 @@ const SalesInvoicesList: React.FC = () => {
           await deleteInvoiceMutation.mutateAsync(invoice.id)
         } catch (error) {
           console.error("Delete invoice failed:", error)
+        }
+      },
+    })
+  }
+
+  const handleCancelInvoice = (invoice: SalesInvoice) => {
+    Modal.confirm({
+      title: 'Xác nhận hủy hóa đơn',
+      content: `Bạn có chắc chắn muốn hủy hóa đơn ${invoice.code}? Hệ thống sẽ tự động hoàn lại sản phẩm vào kho và xóa nợ tương ứng.`,
+      okText: 'Hủy hóa đơn',
+      okType: 'danger',
+      cancelText: 'Quay lại',
+      onOk: async () => {
+        try {
+          await cancelInvoiceMutation.mutateAsync(invoice.id)
+        } catch (error) {
+          console.error("Cancel invoice failed:", error)
+        }
+      },
+    })
+  }
+
+  const handleRefundInvoice = (invoice: SalesInvoice) => {
+    Modal.confirm({
+      title: 'Xác nhận hoàn tiền',
+      content: `Yêu cầu hoàn trả hóa đơn ${invoice.code}? Hệ thống sẽ hoàn lại số lượng sản phẩm vào kho.`,
+      okText: 'Hoàn tiền',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await refundInvoiceMutation.mutateAsync(invoice.id)
+        } catch (error) {
+          console.error("Refund invoice failed:", error)
         }
       },
     })
@@ -592,7 +640,8 @@ const SalesInvoicesList: React.FC = () => {
               Sửa
             </Button>
           )}
-          {record.status !== 'draft' && record.remaining_amount > 0 && (
+          {record.status !== 'draft' && record.remaining_amount > 0 && 
+           record.status !== 'cancelled' && record.status !== 'refunded' && (
             <Button
               type='primary'
               icon={<DollarOutlined />}
@@ -602,13 +651,43 @@ const SalesInvoicesList: React.FC = () => {
               Trả nợ
             </Button>
           )}
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDeleteInvoice(record)}
-            size='small'
-            title="Xóa hóa đơn"
-          />
+          
+          {/* Hủy cho hóa đơn confirmed/partial nợ */}
+          {record.status === 'confirmed' && (
+            <Button
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={() => handleCancelInvoice(record)}
+              size='small'
+              title="Hủy hóa đơn"
+            >
+              Hủy
+            </Button>
+          )}
+
+          {/* Hoàn tiền cho hóa đơn đã paid */}
+          {record.status === 'paid' && (
+            <Button
+              danger
+              icon={<UndoOutlined />}
+              onClick={() => handleRefundInvoice(record)}
+              size='small'
+              title="Hoàn trả / Hoàn tiền"
+            >
+              Hoàn trả
+            </Button>
+          )}
+
+          {/* Chỉ hiển thị nút xóa cho hóa đơn Nháp */}
+          {record.status === 'draft' && (
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteInvoice(record)}
+              size='small'
+              title="Xóa hóa đơn nháp"
+            />
+          )}
         </Space>
       ),
     },
