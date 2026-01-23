@@ -32,6 +32,8 @@ import {
 } from "@ant-design/icons"
 import { DatePicker, RangePicker } from '@/components/common'
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
@@ -531,11 +533,14 @@ const SalesInvoicesList: React.FC = () => {
       width: 120,
       ...getDateColumnSearchProps('sale_date'),
       filteredValue: (filters.sale_date_start && filters.sale_date_end) ? [filters.sale_date_start, filters.sale_date_end] : null,
-      render: (value: string, record: ExtendedSalesInvoice) => (
-        <div>
-          {dayjs(value || record.created_at).format("DD/MM/YYYY")}
-        </div>
-      ),
+      render: (value: string, record: ExtendedSalesInvoice) => {
+        const dateValue = value || record.created_at
+        return (
+          <div>
+            {dateValue ? dayjs.utc(dateValue).format("DD/MM/YYYY") : "-"}
+          </div>
+        )
+      },
     },
     {
       key: "action",
