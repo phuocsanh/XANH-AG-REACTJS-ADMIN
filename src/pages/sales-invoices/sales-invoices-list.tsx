@@ -506,23 +506,7 @@ const SalesInvoicesList: React.FC = () => {
         )
       },
     },
-    {
-      key: "status",
-      dataIndex: "status",
-      title: "Trạng thái",
-      width: 130,
-      filters: Object.entries(invoiceStatusLabels).map(([value, text]) => ({ text, value })),
-      filteredValue: filters.status ? [filters.status] : null,
-      filterMultiple: false,
-      render: (status: string) => {
-        return (
-          <Tag color={getStatusColor(status)}>
-            {invoiceStatusLabels[status as keyof typeof invoiceStatusLabels] ||
-              status}
-          </Tag>
-        )
-      },
-    },
+
     {
       key: "payment_status",
       dataIndex: "payment_status",
