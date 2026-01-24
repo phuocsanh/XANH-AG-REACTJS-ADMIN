@@ -833,7 +833,15 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
                 </div>
                 <div className="mb-4 text-right">
                   <Text type="secondary" className="block text-xs uppercase mb-1">Phương thức thanh toán</Text>
-                  <Tag color="blue" className="mr-0">{currentViewingRecord.payment_method || 'Không rõ'}</Tag>
+                  {(() => {
+                    const methodConfig: Record<string, string> = {
+                      cash: 'Tiền mặt',
+                      transfer: 'Chuyển khoản',
+                      debt: 'Công nợ',
+                    };
+                    const text = methodConfig[currentViewingRecord.payment_method] || currentViewingRecord.payment_method || 'Không rõ';
+                    return <Tag color="blue" className="mr-0">{text}</Tag>;
+                  })()}
                 </div>
               </Col>
             </Row>
@@ -847,30 +855,39 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
                 pagination={false}
                 size="small"
                 rowKey={(record, index) => index?.toString() || '0'}
+                scroll={{ x: 600 }}
                 columns={[
                   {
                     title: 'Sản phẩm',
                     dataIndex: 'product_name',
                     key: 'product_name',
-                    render: (text, item) => text || item?.product?.trade_name || item?.product?.name || 'Sản phẩm'
+                    width: 250,
+                    fixed: 'left',
+                    render: (text, item) => (
+                      <div className="whitespace-normal break-words min-w-[200px]">
+                        {text || item?.product?.trade_name || item?.product?.name || 'Sản phẩm'}
+                      </div>
+                    )
                   },
                   {
                     title: 'SL',
                     dataIndex: 'quantity',
                     key: 'quantity',
-                    width: 70,
+                    width: 60,
                     align: 'center',
                   },
                   {
                     title: 'Đơn giá',
                     dataIndex: 'unit_price',
                     key: 'unit_price',
+                    width: 120,
                     align: 'right',
                     render: (val) => formatCurrency(val || 0)
                   },
                   {
                     title: 'Thành tiền',
                     key: 'total',
+                    width: 120,
                     align: 'right',
                     render: (_, item) => formatCurrency((item.quantity || 0) * (item.unit_price || 0))
                   }
