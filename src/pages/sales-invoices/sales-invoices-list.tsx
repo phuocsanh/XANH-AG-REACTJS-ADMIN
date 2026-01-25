@@ -288,23 +288,27 @@ const SalesInvoicesList: React.FC = () => {
     }
   }
 
-  const handleUpdateSaleDate = async (date: dayjs.Dayjs | null) => {
-    if (!viewingInvoice || !date) return;
+  const handleUpdateInvoiceField = async (fields: any, msg = 'Cập nhật thành công') => {
+    if (!viewingInvoice) return;
     
     try {
       await updateInvoiceMutation.mutateAsync({
         id: viewingInvoice.id,
-        invoice: {
-          sale_date: date.toISOString(),
-        }
+        invoice: fields
       }, {
         onSuccess: (updatedInvoice: any) => {
           setViewingInvoice(updatedInvoice.data || updatedInvoice);
-          toast.success('Cập nhật ngày bán thành công');
+          toast.success(msg);
         }
       });
     } catch (error) {
-      console.error('Error updating sale date:', error);
+      console.error('Error updating invoice:', error);
+    }
+  };
+
+  const handleUpdateSaleDate = (date: dayjs.Dayjs | null) => {
+    if (date) {
+      handleUpdateInvoiceField({ sale_date: date.toISOString() }, 'Cập nhật ngày bán thành công');
     }
   };
 
@@ -639,6 +643,20 @@ const SalesInvoicesList: React.FC = () => {
       },
     },
     {
+      key: "notes",
+      title: "Ghi chú",
+      dataIndex: "notes",
+      width: 200,
+      render: (notes: string) => (
+        <Typography.Text 
+          ellipsis={{ tooltip: notes }} 
+          style={{ maxWidth: 180, fontSize: '13px', color: '#666' }}
+        >
+          {notes || "-"}
+        </Typography.Text>
+      ),
+    },
+    {
       key: "action",
       title: "Thao tác",
       width: 250,
@@ -919,22 +937,40 @@ const SalesInvoicesList: React.FC = () => {
               />
             )}
 
-            {viewingInvoice.warning && (
-              <Alert
-                message='⚠️ Lưu ý quan trọng'
-                description={viewingInvoice.warning}
-                type='error'
-                showIcon
-                className='mb-4'
-              />
-            )}
+            <Alert
+              message={
+                 <div className="flex items-center justify-between">
+                    <span>⚠️ Lưu ý quan trọng</span>
+                 </div>
+              }
+              description={
+                <Typography.Paragraph
+                  editable={{
+                    onChange: (val) => handleUpdateInvoiceField({ warning: val }, 'Cập nhật lưu ý thành công'),
+                    tooltip: 'Nhấn để sửa lưu ý',
+                  }}
+                  className="mb-0"
+                >
+                  {viewingInvoice.warning || "Chưa có lưu ý quan trọng. Nhấp vào đây để thêm..."}
+                </Typography.Paragraph>
+              }
+              type='error'
+              showIcon
+              className='mb-4'
+            />
 
-            {viewingInvoice.notes && (
-              <div className='mb-4'>
-                <div className='text-gray-500 text-sm mb-1'>Ghi chú</div>
-                <div>{viewingInvoice.notes}</div>
-              </div>
-            )}
+            <div className='mb-4 py-3 px-4 bg-gray-50 rounded-lg border border-gray-100'>
+              <div className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2'>Ghi chú hóa đơn</div>
+              <Typography.Paragraph
+                editable={{
+                  onChange: (val) => handleUpdateInvoiceField({ notes: val }, 'Cập nhật ghi chú thành công'),
+                  tooltip: 'Nhấn để sửa ghi chú',
+                }}
+                className="mb-0 text-gray-700"
+              >
+                {viewingInvoice.notes || "Chưa có ghi chú. Nhấp vào đây để thêm..."}
+              </Typography.Paragraph>
+            </div>
 
             <div className='mt-4'>
               <div className='font-medium text-lg mb-3'>Danh sách sản phẩm</div>
