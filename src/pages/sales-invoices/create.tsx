@@ -661,6 +661,22 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     setProductSearch('');
   };
 
+  // Hàm xóa sản phẩm khỏi danh sách và đồng thời xóa khỏi selectedProductIdsForAdvisory
+  const handleRemoveProduct = (index: number) => {
+    const currentItems = getValues('items') || [];
+    const productToRemove = currentItems[index];
+    
+    if (productToRemove) {
+      // Xóa product_id khỏi selectedProductIdsForAdvisory
+      setSelectedProductIdsForAdvisory(prev => 
+        prev.filter(id => id !== productToRemove.product_id)
+      );
+    }
+    
+    // Xóa sản phẩm khỏi form
+    remove(index);
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -1341,7 +1357,7 @@ ${productInfo}`;
                 watch={watch}
                 setValue={setValue}
                 fields={fields}
-                remove={remove}
+                remove={handleRemoveProduct}
                 productsData={productsData}
                 productSearch={productSearch}
                 setProductSearch={setProductSearch}
