@@ -41,6 +41,9 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
   latestInvoice,
   errors,
 }) => {
+  // State để force re-render ComboBox khi cần clear
+  const [comboBoxKey, setComboBoxKey] = React.useState(0);
+
   return (
     <Card>
       <CardContent>
@@ -49,6 +52,7 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
         </Typography>
 
         <ComboBox
+          key={comboBoxKey} // Force re-render khi key thay đổi
           label="Thêm sản phẩm"
           placeholder="Tìm kiếm sản phẩm..."
           data={productsData?.data?.items?.map((product: Product) => {
@@ -67,6 +71,8 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
               handleAddProduct(product);
               // Xóa sạch ComboBox sau khi thêm sản phẩm
               setProductSearch('');
+              // Force re-render ComboBox để clear hoàn toàn
+              setComboBoxKey(prev => prev + 1);
             }
           }}
           onSearch={(val) => setProductSearch(val)}
