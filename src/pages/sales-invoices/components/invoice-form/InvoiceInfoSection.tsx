@@ -49,9 +49,9 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
         <FormComboBox
           name="season_id"
           control={control}
-          label={selectedCustomer ? 'Mùa vụ' : 'Mùa vụ'}
+          label="Mùa vụ"
           placeholder="Chọn mùa vụ"
-          required={!!selectedCustomer}
+          required
           options={seasons?.data?.items?.map((season: Season) => ({
             value: season.id,
             label: `${season.name} (${season.year})`

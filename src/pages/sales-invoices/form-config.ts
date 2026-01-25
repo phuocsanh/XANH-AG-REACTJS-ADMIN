@@ -20,7 +20,7 @@ export const salesInvoiceSchema = z.object({
   customer_name: z.string().min(1, 'Tên khách hàng là bắt buộc'),
   customer_phone: z.string().min(10, 'Số điện thoại phải có ít nhất 10 số'),
   customer_address: z.string().optional(),
-  season_id: z.number().optional(),
+  season_id: z.number({ required_error: 'Vui lòng chọn Mùa vụ' }).min(1, 'Vui lòng chọn Mùa vụ'),
   rice_crop_id: z.number().optional(),
   invoice_code: z.string().optional(),
   notes: z.string().optional(),
@@ -36,15 +36,6 @@ export const salesInvoiceSchema = z.object({
   items: z.array(salesInvoiceItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
   status: z.enum(['draft', 'confirmed', 'paid']).optional(),
   sale_date: z.string().optional(),
-}).refine((data) => {
-  // Nếu có customer_id (khách hàng từ hệ thống), bắt buộc phải có season_id
-  if (data.customer_id && !data.season_id) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Vui lòng chọn Mùa vụ cho khách hàng này',
-  path: ['season_id'], // Lỗi sẽ hiển thị ở field season_id
 }).refine((data) => {
   // Nếu có customer_id (khách hàng từ hệ thống), bắt buộc phải có rice_crop_id
   if (data.customer_id && !data.rice_crop_id) {
@@ -64,7 +55,7 @@ export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
   customer_name: '',
   customer_phone: '',
   customer_address: '',
-  season_id: undefined,
+  season_id: undefined as any,
   rice_crop_id: undefined,
   invoice_code: '',
   notes: '',

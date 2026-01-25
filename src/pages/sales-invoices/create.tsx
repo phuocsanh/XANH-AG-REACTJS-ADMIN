@@ -277,6 +277,13 @@ const CreateSalesInvoice = () => {
 
 
 
+  // Tự động set season_id nếu có activeSeason (chỉ cho form tạo mới)
+  useEffect(() => {
+    if (!isEditMode && activeSeason?.id && !getValues('season_id')) {
+      setValue('season_id', activeSeason.id);
+    }
+  }, [activeSeason, isEditMode, setValue, getValues]);
+
   // Reset rice_crop_id khi thay đổi season_id
   useEffect(() => {
     if (selectedCustomer) {
@@ -460,7 +467,7 @@ const CreateSalesInvoice = () => {
       setValue('customer_address', customer.address || '');
       
       // ✨ BẮT BUỘC: Reset season và rice crop để người dùng chọn lại
-      setValue('season_id', undefined);
+      setValue('season_id', undefined as any);
       setValue('rice_crop_id', undefined);
       
       antMessage.info('Vui lòng chọn Mùa vụ và Ruộng lúa cho khách hàng này');
@@ -472,7 +479,7 @@ const CreateSalesInvoice = () => {
       setValue('customer_phone', '');
       setValue('customer_address', '');
       // Khách vãng lai không cần season/rice crop
-      setValue('season_id', activeSeason?.id); // Set lại active season
+      setValue('season_id', activeSeason?.id as any); // Set lại active season
       setValue('rice_crop_id', undefined);
     }
   };
