@@ -185,6 +185,13 @@ function ComboBox({
     [onChange, onSelectionChange]
   )
 
+  // Đồng bộ innerSearchValue khi value prop thay đổi thành undefined (clear)
+  React.useEffect(() => {
+    if (value === undefined || value === null) {
+      setInnerSearchValue(undefined)
+    }
+  }, [value])
+
   // Ép kiểu displayOptions thành DefaultOptionType[]
   const mappedOptions = displayOptions as DefaultOptionType[]
 
