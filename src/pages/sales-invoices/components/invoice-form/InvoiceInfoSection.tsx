@@ -49,7 +49,7 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
         <FormComboBox
           name="season_id"
           control={control}
-          label={selectedCustomer ? 'Mùa vụ *' : 'Mùa vụ'}
+          label={selectedCustomer ? 'Mùa vụ' : 'Mùa vụ'}
           placeholder="Chọn mùa vụ"
           required={!!selectedCustomer}
           options={seasons?.data?.items?.map((season: Season) => ({
@@ -74,7 +74,7 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
               <FormComboBox
                 name="rice_crop_id"
                 control={control}
-                label="Ruộng lúa *"
+                label="Ruộng lúa"
                 placeholder="Chọn ruộng lúa"
                 required
                 options={customerRiceCrops.data.map((crop: RiceCrop) => ({
@@ -106,7 +106,7 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
         <FormComboBox
           name="payment_method"
           control={control}
-          label="Phương thức thanh toán *"
+          label="Phương thức thanh toán"
           placeholder="Chọn phương thức thanh toán"
           required
           options={Object.entries(paymentMethodLabels).map(([value, label]) => ({

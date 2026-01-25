@@ -276,6 +276,7 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
           label="Diện tích mỗi công"
           name="area_of_each_plot_of_land_id"
           control={control}
+          rules={{ required: 'Vui lòng chọn diện tích mỗi công' }}
           options={areaOptions}
           placeholder="Chọn diện tích"
           allowClear

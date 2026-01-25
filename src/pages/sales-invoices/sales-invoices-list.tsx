@@ -6,6 +6,7 @@ import {
   useDeleteSalesInvoiceMutation,
   useCancelSalesInvoiceMutation,
   useRefundSalesInvoiceMutation,
+  useUpdateSalesInvoiceMutation,
 } from "@/queries/sales-invoice"
 import api from "@/utils/api"
 import { toast } from "react-toastify"
@@ -25,6 +26,7 @@ import {
   Divider,
   Typography,
   App,
+  Popover,
 } from "antd"
 import {
   PlusOutlined,
@@ -197,6 +199,7 @@ const SalesInvoicesList: React.FC = () => {
   const deleteInvoiceMutation = useDeleteSalesInvoiceMutation()
   const cancelInvoiceMutation = useCancelSalesInvoiceMutation()
   const refundInvoiceMutation = useRefundSalesInvoiceMutation()
+  const updateInvoiceMutation = useUpdateSalesInvoiceMutation()
   
   // Load mùa vụ với search
   const { data: seasonsData } = useSeasonsQuery({ 
@@ -284,6 +287,26 @@ const SalesInvoicesList: React.FC = () => {
       setIsDetailModalVisible(true);
     }
   }
+
+  const handleUpdateSaleDate = async (date: dayjs.Dayjs | null) => {
+    if (!viewingInvoice || !date) return;
+    
+    try {
+      await updateInvoiceMutation.mutateAsync({
+        id: viewingInvoice.id,
+        invoice: {
+          sale_date: date.toISOString(),
+        }
+      }, {
+        onSuccess: (updatedInvoice: any) => {
+          setViewingInvoice(updatedInvoice.data || updatedInvoice);
+          toast.success('Cập nhật ngày bán thành công');
+        }
+      });
+    } catch (error) {
+      console.error('Error updating sale date:', error);
+    }
+  };
 
   const handleOpenHistory = async (invoice: ExtendedSalesInvoice) => {
     if (!invoice.customer_id) {
@@ -794,8 +817,33 @@ const SalesInvoicesList: React.FC = () => {
               )}
               <div className='mt-3'>
                 <div className='text-gray-500 text-sm'>Ngày bán</div>
-                <div className='font-medium'>
-                  {dayjs(viewingInvoice.sale_date || viewingInvoice.created_at).format("DD/MM/YYYY")}
+                <div className='flex items-center gap-3'>
+                  <span className='font-medium text-base'>
+                    {dayjs(viewingInvoice.sale_date || viewingInvoice.created_at).format("DD/MM/YYYY")}
+                  </span>
+                  <Popover
+                    content={
+                      <div className="p-1">
+                        <DatePicker 
+                          value={dayjs(viewingInvoice.sale_date || viewingInvoice.created_at)}
+                          format="DD/MM/YYYY"
+                          onChange={(date) => handleUpdateSaleDate(date)}
+                          allowClear={false}
+                        />
+                      </div>
+                    }
+                    title="Thay đổi ngày bán"
+                    trigger="click"
+                    placement="right"
+                  >
+                    <Button 
+                      size="small" 
+                      icon={<EditOutlined />} 
+                      className="flex items-center"
+                    >
+                      Sửa
+                    </Button>
+                  </Popover>
                 </div>
               </div>
             </Card>
