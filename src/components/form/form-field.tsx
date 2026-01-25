@@ -157,7 +157,7 @@ function FormField<T extends FieldValues>({
     <Form.Item
       label={label}
       className={className}
-      required={required}
+      required={required || !!rules.required}
       layout='vertical'
     >
       <Controller

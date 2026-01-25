@@ -49,7 +49,7 @@ function FormRangePicker<T extends FieldValues>({
   return (
     <Form.Item
       label={label}
-      required={required}
+      required={required || !!rules.required}
       className={className}
       layout="vertical"
     >
