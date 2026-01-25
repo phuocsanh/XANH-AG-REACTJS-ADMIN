@@ -4,7 +4,6 @@ import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
 import { SalesInvoice, CreateSalesInvoiceDto, AddPaymentDto } from "@/models/sales-invoice"
 import { handleApiError } from "@/utils/error-handler"
-import { usePaginationQuery } from "@/hooks/use-pagination-query"
 import { deliveryLogKeys } from "./delivery-logs"
 
 import { mapSearchResponse } from "@/utils/api-response-mapper"
@@ -105,14 +104,16 @@ export const useSalesInvoiceQuery = (id: number) => {
  */
 export const useCreateSalesInvoiceMutation = () => {
   return useMutation({
-    mutationFn: async (invoice: CreateSalesInvoiceDto) => {
-      const response = await api.postRaw<SalesInvoice>("/sales/invoice", invoice as any)
+    mutationFn: async (vars: { invoice: CreateSalesInvoiceDto; silent?: boolean }) => {
+      const response = await api.postRaw<SalesInvoice>("/sales/invoice", vars.invoice as any)
       return response
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: deliveryLogKeys.lists() })
-      toast.success("Tạo hóa đơn thành công!")
+      if (!variables.silent) {
+        toast.success("Tạo hóa đơn thành công!")
+      }
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi tạo hóa đơn")
@@ -152,13 +153,16 @@ export const useUpdateSalesInvoiceMutation = () => {
     }: {
       id: number
       invoice: Partial<CreateSalesInvoiceDto>
+      silent?: boolean
     }) => {
       const response = await api.patchRaw<SalesInvoice>(`/sales/invoice/${id}`, invoice as any)
       return response
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
-      toast.success("Cập nhật hóa đơn thành công!")
+      if (!variables.silent) {
+        toast.success("Cập nhật hóa đơn thành công!")
+      }
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi cập nhật hóa đơn")

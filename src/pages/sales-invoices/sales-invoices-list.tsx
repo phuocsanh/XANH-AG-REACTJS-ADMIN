@@ -18,12 +18,9 @@ import {
   Space,
   Modal,
   Card,
-  Descriptions,
-  Input,
   InputNumber,
   Alert,
   Table,
-  Divider,
   Typography,
   App,
   Popover,
@@ -47,7 +44,7 @@ import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
 import { useNavigate } from "react-router-dom"
-import { invoiceStatusLabels, paymentMethodLabels, paymentStatusLabels } from "./form-config"
+import { paymentMethodLabels, paymentStatusLabels } from "./form-config"
 import { TablePaginationConfig, TableProps } from "antd"
 import { FilterValue, SorterResult } from "antd/es/table/interface"
 
@@ -294,7 +291,8 @@ const SalesInvoicesList: React.FC = () => {
     try {
       await updateInvoiceMutation.mutateAsync({
         id: viewingInvoice.id,
-        invoice: fields
+        invoice: fields,
+        silent: true
       }, {
         onSuccess: (updatedInvoice: any) => {
           setViewingInvoice(updatedInvoice.data || updatedInvoice);

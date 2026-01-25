@@ -761,7 +761,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
 
     if (isEditMode && id) {
       // Update existing invoice
-      updateMutation.mutate({ id: parseInt(id), invoice: submitData as any }, {
+      updateMutation.mutate({ id: parseInt(id), invoice: submitData as any, silent: true }, {
         onSuccess: () => {
           antMessage.success('Cập nhật hóa đơn thành công!');
           navigate('/sales-invoices');
@@ -769,7 +769,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       });
     } else {
       // Create new invoice
-      createMutation.mutate(submitData as any, {
+      createMutation.mutate({ invoice: submitData as any, silent: true }, {
         onSuccess: (response) => {
           antMessage.success('Tạo hóa đơn thành công!');
           
