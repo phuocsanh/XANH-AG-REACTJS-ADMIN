@@ -658,7 +658,6 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         : Number(product.average_cost_price || 0),
       stock_quantity: product.quantity || 0,
     });
-    setProductSearch('');
   };
 
   // Hàm xóa sản phẩm khỏi danh sách và đồng thời xóa khỏi selectedProductIdsForAdvisory

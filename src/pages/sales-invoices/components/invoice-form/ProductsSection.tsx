@@ -65,6 +65,8 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
             const product = productsData?.data?.items?.find((p: Product) => p.id === value);
             if (product) {
               handleAddProduct(product);
+              // Xóa sạch ComboBox sau khi thêm sản phẩm
+              setProductSearch('');
             }
           }}
           onSearch={(val) => setProductSearch(val)}
