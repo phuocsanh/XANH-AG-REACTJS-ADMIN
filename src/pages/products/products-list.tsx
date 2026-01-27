@@ -372,14 +372,15 @@ const ProductsList: React.FC = () => {
 
   return (
     <div className='p-2 md:p-6'>
-      <div className='flex justify-between items-center mb-6'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
         <h1 className='text-2xl font-bold'>Danh sách sản phẩm</h1>
-        <Space>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
             {Object.keys(filters).length > 0 && (
                 <Button 
                     onClick={handleClearFilters}
                     icon={<FilterOutlined />}
                     danger
+                    className="w-full sm:w-auto"
                 >
                     Xóa bộ lọc
                 </Button>
@@ -388,10 +389,11 @@ const ProductsList: React.FC = () => {
             type='primary'
             icon={<PlusOutlined />}
             onClick={() => navigate("/products/new")}
+            className="w-full sm:w-auto"
             >
             Thêm sản phẩm
             </Button>
-        </Space>
+        </div>
       </div>
 
 

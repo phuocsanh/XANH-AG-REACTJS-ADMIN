@@ -620,12 +620,13 @@ const CustomersList: React.FC = () => {
 
   return (
     <div className='p-2 md:p-6'>
-      <div className='flex justify-between items-center mb-6'>
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
         <h1 className='text-2xl font-bold'>Quản lý Khách hàng</h1>
         <Button
           type='primary'
           icon={<PlusOutlined />}
           onClick={handleAddCustomer}
+          className="w-full sm:w-auto"
         >
           Thêm khách hàng
         </Button>
