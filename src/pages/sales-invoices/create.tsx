@@ -742,14 +742,12 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     // Chuẩn bị delivery_log nếu có
     let deliveryLogData = deliveryData;
     if (deliveryData && deliveryData.items) {
-      // Vì chúng ta sẽ đảo ngược items ở dưới, nên cần tính lại index ở đây để khớp với danh sách mới
-      const itemsCount = data.items?.length || 0;
       deliveryLogData = {
         ...deliveryData,
         items: deliveryData.items.map((item) => ({
           ...item,
-          // Tính lại index sau khi đảo ngược: newIndex = (total - 1) - oldIndex
-          sales_invoice_item_id: (itemsCount - 1) - (item.sales_invoice_item_id as number),
+          // sales_invoice_item_id chính là index trong danh sách sản phẩm
+          sales_invoice_item_id: item.sales_invoice_item_id,
         })),
       };
     }
@@ -757,7 +755,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     
     const submitData = {
       ...data,
-      items: data.items ? [...data.items].reverse() : [], // Đảo ngược thứ tự danh sách sản phẩm trước khi gửi lên server
+      items: data.items || [], // Gửi nguyên thứ tự như giao diện (mới nhất ở trên)
       remaining_amount: remainingAmount,
       customer_id: data.customer_id || null,
       delivery_log: deliveryLogData || undefined,
