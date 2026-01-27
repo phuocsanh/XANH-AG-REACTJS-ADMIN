@@ -742,13 +742,14 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     // Chuẩn bị delivery_log nếu có
     let deliveryLogData = deliveryData;
     if (deliveryData && deliveryData.items) {
-      // Map sales_invoice_item_id từ index sang ID thực tế
-      // Lưu ý: Backend sẽ tự động map sau khi tạo invoice items
+      // Vì chúng ta sẽ đảo ngược items ở dưới, nên cần tính lại index ở đây để khớp với danh sách mới
+      const itemsCount = data.items?.length || 0;
       deliveryLogData = {
         ...deliveryData,
         items: deliveryData.items.map((item) => ({
           ...item,
-          // sales_invoice_item_id hiện tại là index, backend sẽ map lại
+          // Tính lại index sau khi đảo ngược: newIndex = (total - 1) - oldIndex
+          sales_invoice_item_id: (itemsCount - 1) - (item.sales_invoice_item_id as number),
         })),
       };
     }
@@ -756,6 +757,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     
     const submitData = {
       ...data,
+      items: data.items ? [...data.items].reverse() : [], // Đảo ngược thứ tự danh sách sản phẩm trước khi gửi lên server
       remaining_amount: remainingAmount,
       customer_id: data.customer_id || null,
       delivery_log: deliveryLogData || undefined,
