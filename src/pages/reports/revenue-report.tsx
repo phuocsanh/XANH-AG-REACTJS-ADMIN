@@ -10,7 +10,9 @@ import {
   Alert, 
   Spin,
   Table,
-  Tag
+  Tag,
+  Button,
+  Modal
 } from 'antd';
 import { DatePicker } from '@/components/common';
 import { 
@@ -29,7 +31,6 @@ import {
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { usePeriodStoreProfitReport, useSyncTaxableDataMutation } from '@/queries/store-profit-report';
-import { Button, Modal } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -111,23 +112,8 @@ const RevenueReportPage: React.FC = () => {
   const { mutate: syncTaxableData, isPending: isSyncing } = useSyncTaxableDataMutation();
 
   const handleSyncTaxableData = () => {
-    Modal.confirm({
-      title: 'Đồng bộ dữ liệu thuế',
-      icon: <ExclamationCircleOutlined />,
-      content: (
-        <div>
-          <p>Hệ thống sẽ thực hiện các việc sau:</p>
-          <ul className="list-disc pl-5">
-            <li>Duyệt lại các sản phẩm có đánh dấu &quot;Hóa đơn đầu vào&quot; để khởi tạo tồn kho thuế.</li>
-            <li>Cập nhật số lượng tính thuế cho các hóa đơn bán hàng cũ của những sản phẩm này.</li>
-          </ul>
-          <p className="mt-4 text-orange-600 font-medium">Lưu ý: Thao tác này có thể mất một chút thời gian tùy vào lượng dữ liệu.</p>
-        </div>
-      ),
-      okText: 'Bắt đầu đồng bộ',
-      cancelText: 'Hủy',
-      onOk: () => syncTaxableData(),
-    });
+    console.log('🔵 Bắt đầu đồng bộ dữ liệu thuế...');
+    syncTaxableData();
   };
 
   return (
