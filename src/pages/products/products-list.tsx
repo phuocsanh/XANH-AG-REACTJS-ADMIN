@@ -345,11 +345,12 @@ const ProductsList: React.FC = () => {
       title: "Hành động",
       width: 120,
       render: (record: ExtendedProduct) => (
-        <Space size='small'>
+        <Space size='small' onClick={(e) => e.stopPropagation()}>
           <Button
             icon={<EyeOutlined />}
             size="small"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setCurrentProduct(record)
               setIsViewModalVisible(true)
             }}
@@ -358,7 +359,8 @@ const ProductsList: React.FC = () => {
           <Button
             icon={<HistoryOutlined />}
             size="small"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setCurrentProduct(record)
               setIsExpiryModalVisible(true)
             }}
@@ -367,7 +369,10 @@ const ProductsList: React.FC = () => {
           <Button
             icon={<EditOutlined />}
             size="small"
-            onClick={() => handleEditProduct(record)}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleEditProduct(record)
+            }}
             title='Sửa'
           />
           <Button
@@ -375,7 +380,10 @@ const ProductsList: React.FC = () => {
             icon={<DeleteOutlined />}
             size="small"
             title='Xóa'
-            onClick={() => handleDelete(record)}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDelete(record)
+            }}
           />
         </Space>
       ),
@@ -428,6 +436,10 @@ const ProductsList: React.FC = () => {
           searchableColumns={[]} // Disable client-side search
           showSearch={false} // Disable client-side search UI
           showFilters={false} // Disable client-side filter UI
+          onRow={(record) => ({
+            onClick: () => handleEditProduct(record as Product),
+            className: 'cursor-pointer hover:bg-gray-50 transition-colors',
+          })}
         />
       </div>
 
