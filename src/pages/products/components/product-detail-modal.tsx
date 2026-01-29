@@ -123,6 +123,9 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <Descriptions.Item label='Giá bán (Nợ)'>
             {product.credit_price ? formatCurrency(Number(product.credit_price)) : "Chưa thiết lập"}
           </Descriptions.Item>
+          <Descriptions.Item label='GBKT'>
+            {product.tax_selling_price ? formatCurrency(Number(product.tax_selling_price)) : "Chưa thiết lập"}
+          </Descriptions.Item>
           <Descriptions.Item label='Giá sau giảm'>
             {formatCurrency(Number(product.discounted_price || 0))}
           </Descriptions.Item>

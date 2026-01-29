@@ -267,6 +267,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           volume: productItem.volume?.trim() || "",
           price: String(productItem.price || ""),
           credit_price: String(productItem.credit_price || ""), // Giá bán nợ
+          tax_selling_price: String(productItem.tax_selling_price || ""), // Giá bán khai thuế
           type: productItem.type || undefined,
           quantity: productItem.quantity || 0,
           attributes: productItem.attributes || {},
@@ -492,6 +493,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Giữ nguyên giá trị price vì đã được xử lý trong FormField
         price: values.price,
         credit_price: values.credit_price || "", // Giá bán nợ
+        tax_selling_price: values.tax_selling_price || "", // Giá bán khai thuế
         symbol_id: values.symbol_id,
         sub_types: values.sub_types || [],
         profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
@@ -513,6 +515,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         volume: convertedValues.volume,
         price: convertedValues.price,
         credit_price: convertedValues.credit_price, // Giá bán nợ
+        tax_selling_price: convertedValues.tax_selling_price, // Giá bán khai thuế
         type: convertedValues.type,
         quantity: convertedValues.quantity,
         description: convertedValues.description,
@@ -904,6 +907,19 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     control={control}
                     label='Giá bán nợ (VNĐ)'
                     placeholder='Nhập giá bán nợ'
+                    required
+                    className='w-full'
+                    fixedDecimalScale={false}
+                    outputType="string"
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='tax_selling_price'
+                    control={control}
+                    label='GBKT (VNĐ)'
+                    placeholder='Nhận GBKT'
                     required
                     className='w-full'
                     fixedDecimalScale={false}

@@ -16,6 +16,11 @@ export const productFormSchema = z.object({
     .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
       message: "Giá bán nợ phải là số >= 0"
     }),
+  tax_selling_price: z.string()
+    .min(1, "GBKT không được để trống")
+    .refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
+      message: "GBKT phải là số >= 0"
+    }),
   type: z.number().min(1, "Vui lòng chọn loại sản phẩm"),
   quantity: z.number().min(0, "Số lượng không hợp lệ"),
   discount: z.string().optional(),
@@ -79,6 +84,7 @@ export interface ProductFormValues {
   profit_margin_percent: string
   average_cost_price: string
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  tax_selling_price: string // Giá bán khai thuế
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list?: { key: string; value: any }[]
 }
@@ -110,6 +116,7 @@ export interface ConvertedProductValues {
   profit_margin_percent: string
   average_cost_price: string
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  tax_selling_price: string // Giá bán khai thuế
   suggested_price?: string
 }
 
@@ -131,5 +138,6 @@ export const defaultProductFormValues: ProductFormValues = {
   profit_margin_percent: "", // Thêm trường mới
   average_cost_price: "", // Thêm trường mới
   has_input_invoice: true, // Mặc định là có hóa đơn
+  tax_selling_price: "0", // Giá khai thuế mặc định là 0
   // Các trường optional khác sẽ là undefined theo mặc định
 }

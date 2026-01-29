@@ -42,6 +42,7 @@ export interface Product {
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú về sản phẩm
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  tax_selling_price: string // Giá bán khai thuế
   unit_name?: string // Tên đơn vị tính (được map thêm)
 }
 
@@ -67,6 +68,7 @@ export interface ProductFormValues
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
+  tax_selling_price: string // Giá bán khai thuế
 }
 
 export interface CreateProductRequest extends AnyObject {
@@ -89,6 +91,7 @@ export interface CreateProductRequest extends AnyObject {
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
+  tax_selling_price: string // Giá bán khai thuế
 }
 
 export interface UpdateProductRequest
@@ -154,6 +157,7 @@ export interface ConvertedProductValues {
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
+  tax_selling_price: string // Giá bán khai thuế
 }
 
 export interface ProductFormProps {

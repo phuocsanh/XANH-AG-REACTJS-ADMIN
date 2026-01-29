@@ -664,6 +664,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
             : Number(product.average_cost_price.replace(/[^0-9]/g, '')))
         : Number(product.average_cost_price || 0),
       stock_quantity: product.quantity || 0,
+      tax_selling_price: product.tax_selling_price || '0',
     });
   };
 

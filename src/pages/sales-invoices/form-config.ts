@@ -12,6 +12,7 @@ export const salesInvoiceItemSchema = z.object({
   price_type: z.enum(['cash', 'credit']).default('cash'), // Loại giá: tiền mặt hoặc nợ
   average_cost_price: z.number().min(0).optional(), // ✅ Giá vốn để tính lợi nhuận
   stock_quantity: z.number().optional(), // ✅ Số lượng tồn kho hiện tại
+  tax_selling_price: z.string().optional(), // ✅ Giá bán khai thuế
 });
 
 // Schema cho hóa đơn

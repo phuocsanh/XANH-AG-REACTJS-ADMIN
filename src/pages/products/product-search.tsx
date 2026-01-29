@@ -216,6 +216,19 @@ const ProductSearch: React.FC = () => {
       ),
     },
     {
+      key: "tax_selling_price",
+      title: "GBKT",
+      width: 140,
+      render: (value: string, record: ExtendedProduct) => (
+        <div className='font-bold text-pink-600'>
+          {record.tax_selling_price ? new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+          }).format(Number(record.tax_selling_price)) : "---"}
+        </div>
+      ),
+    },
+    {
       key: "has_input_invoice",
       title: "Hóa đơn",
       width: 100,

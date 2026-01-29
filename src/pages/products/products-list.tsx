@@ -268,6 +268,18 @@ const ProductsList: React.FC = () => {
         ),
     },
     {
+        key: "tax_selling_price",
+        dataIndex: "tax_selling_price",
+        title: "GBKT",
+        width: 120,
+        sorter: true,
+        render: (value: string) => (
+          <div className='font-medium text-pink-600'>
+            {value ? formatCurrency(Number(value)) : '---'}
+          </div>
+        ),
+    },
+    {
       key: "quantity",
       dataIndex: "quantity", // Needed for sorter to identify field
       title: "Số lượng",
