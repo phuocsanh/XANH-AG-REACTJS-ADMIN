@@ -22,11 +22,14 @@ import {
   PieChartOutlined,
   FileProtectOutlined,
   FileExcelOutlined,
-  MinusCircleOutlined
+  MinusCircleOutlined,
+  SyncOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import { usePeriodStoreProfitReport } from '@/queries/store-profit-report';
+import { usePeriodStoreProfitReport, useSyncTaxableDataMutation } from '@/queries/store-profit-report';
+import { Button, Modal } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -105,6 +108,28 @@ const RevenueReportPage: React.FC = () => {
     },
   ];
 
+  const { mutate: syncTaxableData, isPending: isSyncing } = useSyncTaxableDataMutation();
+
+  const handleSyncTaxableData = () => {
+    Modal.confirm({
+      title: 'Đồng bộ dữ liệu thuế',
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <div>
+          <p>Hệ thống sẽ thực hiện các việc sau:</p>
+          <ul className="list-disc pl-5">
+            <li>Duyệt lại các sản phẩm có đánh dấu &quot;Hóa đơn đầu vào&quot; để khởi tạo tồn kho thuế.</li>
+            <li>Cập nhật số lượng tính thuế cho các hóa đơn bán hàng cũ của những sản phẩm này.</li>
+          </ul>
+          <p className="mt-4 text-orange-600 font-medium">Lưu ý: Thao tác này có thể mất một chút thời gian tùy vào lượng dữ liệu.</p>
+        </div>
+      ),
+      okText: 'Bắt đầu đồng bộ',
+      cancelText: 'Hủy',
+      onOk: () => syncTaxableData(),
+    });
+  };
+
   return (
     <div className='p-6 md:p-10 bg-gray-50 min-h-screen'>
       {/* Header */}
@@ -112,6 +137,17 @@ const RevenueReportPage: React.FC = () => {
         <div>
           <Title level={2} className="!mb-0 !text-emerald-800">Báo cáo doanh thu & Lợi nhuận</Title>
           <Text type="secondary">Thống kê chi tiết tình hình kinh doanh theo khoảng thời gian chọn lọc</Text>
+          <div className="mt-2">
+            <Button 
+              type="link" 
+              icon={<SyncOutlined spin={isSyncing} />} 
+              onClick={handleSyncTaxableData}
+              loading={isSyncing}
+              className="p-0 text-emerald-600 hover:text-emerald-700"
+            >
+              Đồng bộ dữ liệu thuế cũ
+            </Button>
+          </div>
         </div>
         <Card className="shadow-sm border-emerald-100" bodyStyle={{ padding: '12px 24px' }}>
           <Space direction="vertical" size={2}>

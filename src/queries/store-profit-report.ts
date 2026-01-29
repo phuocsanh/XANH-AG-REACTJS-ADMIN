@@ -141,3 +141,27 @@ export const usePeriodStoreProfitReport = (startDate: string, endDate: string) =
     enabled: !!startDate && !!endDate,
   });
 };
+
+/**
+ * Hook mutation để đồng bộ dữ liệu tồn kho thuế (Taxable Pool)
+ */
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { message } from 'antd';
+
+export const useSyncTaxableDataMutation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async () => {
+      return api.postRaw<any>('/inventory/sync-taxable-data', {});
+    },
+    onSuccess: (data: any) => {
+      message.success(`Đã đồng bộ xong: ${data.productsUpdated} sản phẩm, ${data.salesItemsUpdated} item bán hàng.`);
+      // Refetch các báo cáo lợi nhuận để cập nhật số liệu mới
+      queryClient.invalidateQueries({ queryKey: storeProfitReportKeys.all });
+    },
+    onError: (error: any) => {
+      message.error(`Lỗi khi đồng bộ dữ liệu: ${error.message || 'Vui lòng thử lại sau'}`);
+    }
+  });
+};

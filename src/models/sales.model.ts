@@ -72,6 +72,8 @@ export interface SalesInvoiceItem {
   total_price: number
   /** Số tiền giảm giá */
   discount_amount?: number
+  /** Số lượng tính thuế */
+  taxable_quantity: number
   /** Ghi chú */
   notes?: string
   /** Ngày tạo */

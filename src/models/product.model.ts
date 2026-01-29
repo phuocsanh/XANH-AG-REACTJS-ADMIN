@@ -44,6 +44,7 @@ export interface Product {
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
   unit_name?: string // Tên đơn vị tính (được map thêm)
+  taxable_quantity_stock: number // Số lượng tồn kho có hóa đơn (bể thuế)
 }
 
 // Extend Product interface để tương thích với DataTable
