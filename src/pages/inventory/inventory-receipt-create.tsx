@@ -226,6 +226,7 @@ const InventoryReceiptCreate: React.FC = () => {
         paidAmount: Number(receipt.paid_amount || 0),
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
+        is_taxable: !!existingReceipt.is_taxable,
       })
 
       // Set images (vẫn giữ fileList state cho component Upload)
@@ -344,6 +345,7 @@ const InventoryReceiptCreate: React.FC = () => {
         notes: data.description,
         bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
         status: data.status || "draft",
+        is_taxable: !!data.is_taxable,
         created_by: 1, // Fallback if needed
         
         // Phí vận chuyển chung
@@ -470,14 +472,33 @@ const InventoryReceiptCreate: React.FC = () => {
             />
           </div>
 
-          <FormField
-            label='Mô tả'
-            name='description'
-            control={control}
-            type="textarea"
-            placeholder='Nhập mô tả (nếu có)'
-            rows={3}
-          />
+            <FormField
+              label='Mô tả'
+              name='description'
+              control={control}
+              type="textarea"
+              placeholder='Nhập mô tả (nếu có)'
+              rows={3}
+            />
+
+            <div className="mt-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+              <Controller
+                name="is_taxable"
+                control={control}
+                render={({ field }) => (
+                  <Checkbox 
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="text-blue-700 font-medium"
+                  >
+                    Có hóa đơn/chứng từ đầu vào (Hàng tính thuế)
+                  </Checkbox>
+                )}
+              />
+              <p className="mt-1 ml-6 text-xs text-blue-600">
+                Khi chọn, tất cả sản phẩm trong phiếu này sẽ được cộng vào &quot;Tồn thuế&quot; và được ưu tiên trừ khi bán hàng.
+              </p>
+            </div>
         </Card>
 
           <Divider className='my-4' />

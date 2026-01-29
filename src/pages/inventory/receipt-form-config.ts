@@ -31,6 +31,9 @@ export const receiptFormSchema = z.object({
   // Hình ảnh
   images: z.any().optional(),
 
+  // Thuế
+  is_taxable: z.boolean().default(false),
+
   // Thanh toán
   paymentType: z.enum(['full', 'partial', 'debt']).default('partial'),
   paidAmount: z.number().min(0).default(0),
@@ -106,6 +109,7 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   sharedShippingCost: 0,
   allocationMethod: 'by_quantity',
   images: [],
+  is_taxable: false,
   paymentType: 'partial',
   paidAmount: 0,
 };
