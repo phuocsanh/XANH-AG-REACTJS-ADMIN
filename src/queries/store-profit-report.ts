@@ -2,8 +2,9 @@
  * React Query hooks cho báo cáo lợi nhuận cửa hàng (Store Profit Report)
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/utils/api';
+import { message } from 'antd';
 import type {
   InvoiceProfit,
   SeasonStoreProfit,
@@ -145,23 +146,26 @@ export const usePeriodStoreProfitReport = (startDate: string, endDate: string) =
 /**
  * Hook mutation để đồng bộ dữ liệu tồn kho thuế (Taxable Pool)
  */
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { message } from 'antd';
-
 export const useSyncTaxableDataMutation = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async () => {
-      return api.postRaw<any>('/inventory/sync-taxable-data', {});
+      // Sử dụng api.instance để bỏ qua unwrap nếu cần hoặc gọi trực tiếp
+      const response = await api.instance.post('/inventory/sync-taxable-data', {});
+      return response.data;
     },
-    onSuccess: (data: any) => {
-      message.success(`Đã đồng bộ xong: ${data.productsUpdated} sản phẩm, ${data.salesItemsUpdated} item bán hàng.`);
+    onSuccess: (response: any) => {
+      // Backend trả về bọc trong { success, data }
+      const data = response.data || response;
+      message.success(`Đã đồng bộ xong: ${data.productsUpdated || 0} sản phẩm, ${data.salesItemsUpdated || 0} item bán hàng.`);
       // Refetch các báo cáo lợi nhuận để cập nhật số liệu mới
       queryClient.invalidateQueries({ queryKey: storeProfitReportKeys.all });
     },
     onError: (error: any) => {
-      message.error(`Lỗi khi đồng bộ dữ liệu: ${error.message || 'Vui lòng thử lại sau'}`);
+      console.error('❌ Lỗi đồng bộ:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Vui lòng thử lại sau';
+      message.error(`Lỗi khi đồng bộ dữ liệu: ${errorMsg}`);
     }
   });
 };
