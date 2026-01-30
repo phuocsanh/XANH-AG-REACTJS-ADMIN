@@ -11,8 +11,7 @@ import {
   Spin,
   Table,
   Tag,
-  Button,
-  Modal
+  Button
 } from 'antd';
 import { DatePicker } from '@/components/common';
 import { 
@@ -25,11 +24,11 @@ import {
   FileProtectOutlined,
   FileExcelOutlined,
   MinusCircleOutlined,
-  SyncOutlined,
-  ExclamationCircleOutlined
+  SyncOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
+import type { PeriodInvoice, PeriodInvoiceItem } from '@/models/store-profit';
 import { usePeriodStoreProfitReport, useSyncTaxableDataMutation } from '@/queries/store-profit-report';
 
 const { Title, Text } = Typography;
@@ -340,6 +339,124 @@ const RevenueReportPage: React.FC = () => {
                   <div className="font-bold uppercase tracking-wider">Lợi nhuận ròng cuối cùng:</div>
                   <div className="text-2xl font-black">{formatMoney(summary.net_profit)}</div>
                 </div>
+              </Card>
+            </Col>
+
+            <Col span={24}>
+              <Card 
+                title={<Space><ShoppingOutlined className="text-emerald-600" /> Danh sách hóa đơn & Sản phẩm đã bán</Space>} 
+                className="rounded-2xl shadow-sm border-none overflow-hidden"
+                bodyStyle={{ padding: 0 }}
+              >
+                <Table 
+                  key={`${startDate}-${endDate}-${report?.invoices?.length}`}
+                  dataSource={report?.invoices || []} 
+                  rowKey="invoice_id"
+                  pagination={{ pageSize: 50, showSizeChanger: true }}
+                  className="revenue-invoices-table"
+                  columns={[
+                    {
+                      title: 'Mã hóa đơn',
+                      dataIndex: 'invoice_code',
+                      key: 'invoice_code',
+                      width: 150,
+                      render: (code: string) => <Text strong className="text-emerald-700">{code}</Text>
+                    },
+                    {
+                      title: 'Khách hàng',
+                      dataIndex: 'customer_name',
+                      key: 'customer_name',
+                    },
+                    {
+                      title: 'Ngày bán',
+                      dataIndex: 'sale_date',
+                      key: 'sale_date',
+                      width: 180,
+                      render: (date: string) => dayjs(date).format('DD/MM/YYYY HH:mm')
+                    },
+                    {
+                      title: 'Tổng tiền',
+                      dataIndex: 'total_amount',
+                      key: 'total_amount',
+                      align: 'right' as const,
+                      width: 150,
+                      render: (amount: number) => <Text strong>{formatMoney(amount)}</Text>
+                    }
+                  ]}
+                  expandable={{
+                    defaultExpandAllRows: true,
+                    expandedRowRender: (record: PeriodInvoice) => (
+                      <div className="p-4 bg-gray-50 rounded-lg m-2 border border-gray-100 shadow-inner">
+                        <Title level={5} className="!mb-4 !mt-0 flex items-center gap-2">
+                          <ShoppingOutlined className="text-emerald-600" /> Chi tiết sản phẩm trong hóa đơn {record.invoice_code}
+                        </Title>
+                        <Table
+                          dataSource={record.items}
+                          rowKey={(item: PeriodInvoiceItem, index?: number) => `${record.invoice_id}-${item.product_name}-${index}`}
+                          pagination={false}
+                          size="small"
+                          className="bg-white rounded-md overflow-hidden border border-gray-200"
+                          columns={[
+                            {
+                              title: 'Tên sản phẩm',
+                              dataIndex: 'product_name',
+                              key: 'product_name',
+                              render: (text: string) => <Text strong>{text}</Text>
+                            },
+                            {
+                              title: 'Số lượng',
+                              dataIndex: 'quantity',
+                              key: 'quantity',
+                              render: (qty: number, item: PeriodInvoiceItem) => (
+                                <Tag className="rounded-full">
+                                  {qty} {item.unit_name}
+                                </Tag>
+                              )
+                            },
+                            {
+                              title: 'Đơn giá',
+                              dataIndex: 'unit_price',
+                              key: 'unit_price',
+                              align: 'right' as const,
+                              render: (price: number) => formatMoney(price)
+                            },
+                            {
+                              title: 'Thành tiền',
+                              dataIndex: 'total_price',
+                              key: 'total_price',
+                              align: 'right' as const,
+                              render: (total: number) => <Text strong className="text-emerald-600">{formatMoney(total)}</Text>
+                            },
+                            {
+                              title: 'Hóa đơn đầu vào',
+                              dataIndex: 'has_input_invoice',
+                              key: 'has_input_invoice',
+                              align: 'center' as const,
+                              render: (has: boolean, item: PeriodInvoiceItem) => {
+                                if (!has) {
+                                  return (
+                                    <Tag color="default" icon={<FileExcelOutlined />} className="rounded-md border-gray-200">
+                                      Không
+                                    </Tag>
+                                  );
+                                }
+                                
+                                const isFullyTaxable = Number(item.taxable_quantity) >= Number(item.quantity);
+                                return (
+                                  <Tag color="blue" icon={<FileProtectOutlined />} className="rounded-md border-blue-200">
+                                    {isFullyTaxable ? 'Có' : `Có (${Number(item.taxable_quantity)}/${Number(item.quantity)})`}
+                                  </Tag>
+                                );
+                              }
+                            }
+                          ]}
+                        />
+                      </div>
+                    ),
+                    columnTitle: 'Xem chi tiết',
+                    rowExpandable: (record: PeriodInvoice) => record.items.length > 0
+                  }}
+                />
               </Card>
             </Col>
           </Row>

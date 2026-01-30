@@ -247,8 +247,28 @@ export interface PeriodSummary {
   invoice_count: number;
 }
 
+export interface PeriodInvoiceItem {
+  product_name: string;
+  quantity: number;
+  unit_name: string;
+  unit_price: number;
+  total_price: number;
+  has_input_invoice: boolean;
+  taxable_quantity: number;
+}
+
+export interface PeriodInvoice {
+  invoice_id: number;
+  invoice_code: string;
+  customer_name: string;
+  sale_date: Date;
+  total_amount: number;
+  items: PeriodInvoiceItem[];
+}
+
 export interface PeriodReport {
   summary: PeriodSummary;
+  invoices: PeriodInvoice[];
   start_date: Date;
   end_date: Date;
 }
