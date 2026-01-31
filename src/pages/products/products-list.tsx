@@ -280,6 +280,17 @@ const ProductsList: React.FC = () => {
         ),
     },
     {
+      key: "has_input_invoice",
+      dataIndex: "has_input_invoice",
+      title: "Hóa đơn",
+      width: 110,
+      render: (value: boolean) => (
+        <Tag color={value ? "blue" : "default"}>
+          {value ? "Có hóa đơn" : "Không hóa đơn"}
+        </Tag>
+      ),
+    },
+    {
       key: "quantity",
       dataIndex: "quantity", // Needed for sorter to identify field
       title: "Số lượng",
