@@ -428,6 +428,20 @@ const RevenueReportPage: React.FC = () => {
                               render: (total: number) => <Text strong className="text-emerald-600">{formatMoney(total)}</Text>
                             },
                             {
+                              title: 'GBKT',
+                              dataIndex: 'tax_selling_price',
+                              key: 'tax_selling_price',
+                              align: 'right' as const,
+                              render: (price: number) => price > 0 ? formatMoney(price) : '-'
+                            },
+                            {
+                              title: 'TTKT',
+                              dataIndex: 'taxable_total_amount',
+                              key: 'taxable_total_amount',
+                              align: 'right' as const,
+                              render: (total: number) => total > 0 ? <Text strong className="text-blue-600">{formatMoney(total)}</Text> : '-'
+                            },
+                            {
                               title: 'Hóa đơn đầu vào',
                               dataIndex: 'has_input_invoice',
                               key: 'has_input_invoice',

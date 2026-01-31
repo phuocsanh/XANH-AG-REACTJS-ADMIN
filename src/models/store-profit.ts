@@ -255,6 +255,8 @@ export interface PeriodInvoiceItem {
   total_price: number;
   has_input_invoice: boolean;
   taxable_quantity: number;
+  tax_selling_price?: number;
+  taxable_total_amount?: number;
 }
 
 export interface PeriodInvoice {
