@@ -315,14 +315,14 @@ const InventoryReceiptCreate: React.FC = () => {
       
       const totalDiscountForItem = item.itemDiscount + allocatedGlobalDisc
       const netUnitCost = item.quantity > 0 
-        ? (item.valueAfterItemDisc - allocatedGlobalDisc) / item.quantity 
+        ? Math.round((item.valueAfterItemDisc - allocatedGlobalDisc) / item.quantity)
         : item.unit_cost
         
       return {
         ...item,
         totalDiscountForItem,
         netUnitCost,
-        netTotalValue: item.valueAfterItemDisc - allocatedGlobalDisc
+        netTotalValue: Math.round(item.valueAfterItemDisc - allocatedGlobalDisc)
       }
     })
 
@@ -337,15 +337,15 @@ const InventoryReceiptCreate: React.FC = () => {
     const supplierAmount = totalProductValueRaw - totalDiscountAmount
     
     return {
-      totalProductValue: totalProductValueRaw,
-      totalValueAfterItemDiscounts,
-      totalIndividualShipping,
-      totalSharedShipping,
-      discountAmount: totalDiscountAmount,
-      globalDiscountAmount,
-      totalItemDiscount: totalItemDiscounts,
-      grandTotal,
-      supplierAmount,
+      totalProductValue: Math.round(totalProductValueRaw),
+      totalValueAfterItemDiscounts: Math.round(totalValueAfterItemDiscounts),
+      totalIndividualShipping: Math.round(totalIndividualShipping),
+      totalSharedShipping: Math.round(totalSharedShipping),
+      discountAmount: Math.round(totalDiscountAmount),
+      globalDiscountAmount: Math.round(globalDiscountAmount),
+      totalItemDiscount: Math.round(totalItemDiscounts),
+      grandTotal: Math.round(grandTotal),
+      supplierAmount: Math.round(supplierAmount),
       finalItems, // Trả về danh sách items kèm giá thực tế
     }
   }
