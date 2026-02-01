@@ -413,7 +413,7 @@ const InventoryReceiptCreate: React.FC = () => {
       }
 
       const totals = calculateTotals()
-
+      
       // 2. Chuẩn bị dữ liệu gửi lên server
       // Tính toán thông tin thanh toán dựa trên paymentType nếu duyệt luôn
       let paid_amount = 0;
@@ -424,7 +424,7 @@ const InventoryReceiptCreate: React.FC = () => {
           paid_amount = totals.supplierAmount;
           payment_status = 'paid';
         } else if (data.paymentType === 'partial') {
-          paid_amount = data.paidAmount || 0;
+          paid_amount = Math.round(data.paidAmount || 0); // Đảm bảo làm tròn
           payment_status = 'partial';
         } else {
           paid_amount = 0;
@@ -434,7 +434,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
       const submissionData: any = {
         supplier_id: data.supplierId,
-        total_amount: totals.grandTotal,
+        total_amount: Math.round(totals.grandTotal), // Ép làm tròn lần cuối
         notes: data.description,
         bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
         status: data.status || "draft",
@@ -442,17 +442,17 @@ const InventoryReceiptCreate: React.FC = () => {
         created_by: 1, // Fallback if needed
         
         // Phí vận chuyển chung
-        shared_shipping_cost: data.hasSharedShipping ? data.sharedShippingCost : 0,
+        shared_shipping_cost: Math.round(data.hasSharedShipping ? data.sharedShippingCost : 0),
         shipping_allocation_method: data.allocationMethod,
         
         // Images
         ...(imageUrls.length > 0 && { images: imageUrls }),
         
         // Thanh toán
-        paid_amount: paid_amount,
+        paid_amount: Math.round(paid_amount),
         payment_status: payment_status,
         is_shipping_paid_to_supplier: false,
-        debt_amount: totals.supplierAmount - paid_amount,
+        debt_amount: Math.round(totals.supplierAmount - paid_amount),
         payment_method: data.status === 'approved' && data.paymentType !== 'debt' ? data.paymentMethod : null,
         payment_due_date: data.status === 'approved' && data.paymentType !== 'full' ? 
           (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null) : null,
