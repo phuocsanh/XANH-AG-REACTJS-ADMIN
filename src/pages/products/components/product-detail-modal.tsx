@@ -123,6 +123,9 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <Descriptions.Item label='Giá bán (Nợ)'>
             {product.credit_price ? formatCurrency(Number(product.credit_price)) : "Chưa thiết lập"}
           </Descriptions.Item>
+          <Descriptions.Item label='Giá vốn trung bình'>
+            {formatCurrency(Number(product.average_cost_price || 0))}
+          </Descriptions.Item>
           <Descriptions.Item label='GBKT'>
             {product.tax_selling_price ? formatCurrency(Number(product.tax_selling_price)) : "Chưa thiết lập"}
           </Descriptions.Item>
@@ -157,9 +160,6 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           )}
           <Descriptions.Item label='Phần trăm lợi nhuận'>
             {product.profit_margin_percent || "0"}%
-          </Descriptions.Item>
-          <Descriptions.Item label='Giá vốn trung bình'>
-            {formatCurrency(Number(product.average_cost_price || 0))}
           </Descriptions.Item>
           <Descriptions.Item label='Giá bán đề xuất'>
             {product.suggested_price
