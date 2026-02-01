@@ -482,6 +482,14 @@ const InventoryReceiptDetail: React.FC = () => {
                           {(receipt.total_amount || 0).toLocaleString("vi-VN")} ₫
                         </Text>
                       </Descriptions.Item>
+                      {Number(receipt.discount_amount) > 0 && (
+                        <Descriptions.Item label="Chiết khấu">
+                          <Text strong className="text-green-600">
+                            -{Number(receipt.discount_amount).toLocaleString("vi-VN")} ₫
+                            {receipt.discount_type === 'percentage' && ` (${receipt.discount_value}%)`}
+                          </Text>
+                        </Descriptions.Item>
+                      )}
                       {Number(receipt.shared_shipping_cost) > 0 && (
                         <Descriptions.Item label="Phí vận chuyển/bốc vác">
                           <Text strong className="text-orange-600">

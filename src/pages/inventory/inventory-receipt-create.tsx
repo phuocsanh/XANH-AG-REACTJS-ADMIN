@@ -159,6 +159,8 @@ const InventoryReceiptCreate: React.FC = () => {
   const watchedPaymentType = watch("paymentType")
   const watchedPaidAmount = watch("paidAmount") || 0
   const watchedStatus = watch("status") // Theo dõi trạng thái phiếu nhập
+  const watchedDiscountType = watch("discountType")
+  const watchedDiscountValue = watch("discountValue") || 0
   
   // State và hooks tìm kiếm nhà cung cấp
   const {
@@ -227,6 +229,8 @@ const InventoryReceiptCreate: React.FC = () => {
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
         is_taxable: !!existingReceipt.is_taxable,
+        discountType: receipt.discount_type || 'percentage',
+        discountValue: Number(receipt.discount_value || 0),
       })
 
       // Set images (vẫn giữ fileList state cho component Upload)
@@ -248,16 +252,25 @@ const InventoryReceiptCreate: React.FC = () => {
     const totalIndividualShipping = watchedItems.reduce((sum, item) => sum + (Number(item.individual_shipping_cost) || 0), 0)
     const totalSharedShipping = watchedHasSharedShipping ? Number(watchedSharedShippingCost) : 0
     
-    const grandTotal = totalProductValue + totalIndividualShipping + totalSharedShipping
+    // Tính tiền chiết khấu
+    let discountAmount = 0
+    if (watchedDiscountType === 'percentage') {
+      discountAmount = (totalProductValue * (Number(watchedDiscountValue) || 0)) / 100
+    } else {
+      discountAmount = Number(watchedDiscountValue) || 0
+    }
+
+    const grandTotal = totalProductValue - discountAmount + totalIndividualShipping + totalSharedShipping
     
-    // Nợ NCC = CHỈ tiền hàng (KHÔNG BAO GIỜ tính phí vận chuyển)
+    // Nợ NCC = Tiền hàng - Chiết khấu (KHÔNG BAO GIỜ tính phí vận chuyển)
     // Phí vận chuyển chỉ để kiểm soát tổng chi phí, không liên quan công nợ NCC
-    const supplierAmount = totalProductValue
+    const supplierAmount = totalProductValue - discountAmount
     
     return {
       totalProductValue,
       totalIndividualShipping,
       totalSharedShipping,
+      discountAmount,
       grandTotal,
       supplierAmount,
     }
@@ -379,6 +392,11 @@ const InventoryReceiptCreate: React.FC = () => {
             individual_shipping_cost: item.individual_shipping_cost,
           }),
         })),
+
+        // Chiết khấu
+        discount_amount: calculateTotals().discountAmount,
+        discount_value: data.discountValue,
+        discount_type: data.discountType,
       };
 
       // 3. Gọi API Create hoặc Update
@@ -552,6 +570,55 @@ const InventoryReceiptCreate: React.FC = () => {
             </div>
           )}
 
+          {/* Phần chiết khấu */}
+          <Card title="Chiết khấu (Tùy chọn)" className='mt-4'>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Text className="block mb-2">Loại chiết khấu</Text>
+                <Controller
+                  name="discountType"
+                  control={control}
+                  render={({ field }) => (
+                    <Radio.Group 
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    >
+                      <Space>
+                        <Radio value="fixed_amount">Số tiền cố định (VND)</Radio>
+                        <Radio value="percentage">Phần trăm (%)</Radio>
+                      </Space>
+                    </Radio.Group>
+                  )}
+                />
+              </div>
+              
+              <FormFieldNumber
+                label={watchedDiscountType === 'percentage' ? "Phần trăm (%)" : "Số tiền giảm (VND)"}
+                name="discountValue"
+                control={control}
+                addonAfter={watchedDiscountType === 'percentage' ? "%" : "VND"}
+                placeholder={watchedDiscountType === 'percentage' ? "Nhập %" : "Nhập số tiền"}
+              />
+            </div>
+            {watchedDiscountValue > 0 && (
+              <div className="mt-2 text-sm flex items-center gap-2">
+                <span className="text-green-600 font-medium">
+                  Tổng giảm: -{calculateTotals().discountAmount.toLocaleString('vi-VN')} VND
+                </span>
+                {watchedDiscountType === 'fixed_amount' && calculateTotals().totalProductValue > 0 && (
+                  <span className="text-gray-400 italic text-xs">
+                    (Tương đương: {((calculateTotals().discountAmount / calculateTotals().totalProductValue) * 100).toFixed(2)}%)
+                  </span>
+                )}
+                {watchedDiscountType === 'percentage' && (
+                  <span className="text-gray-400 italic text-xs">
+                    (Đã tính dựa trên tổng tiền hàng)
+                  </span>
+                )}
+              </div>
+            )}
+          </Card>
+
           {/* Phần phí vận chuyển/bốc vác */}
           <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
             <Controller
@@ -721,6 +788,13 @@ const InventoryReceiptCreate: React.FC = () => {
                 <span>Tổng tiền hàng:</span>
                 <strong>{calculateTotals().totalProductValue.toLocaleString('vi-VN')} VND</strong>
               </div>
+
+              {calculateTotals().discountAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#52c41a' }}>
+                  <span>Chiết khấu ({watchedDiscountType === 'percentage' ? `${watchedDiscountValue}%` : 'Cố định'}):</span>
+                  <strong>-{calculateTotals().discountAmount.toLocaleString('vi-VN')} VND</strong>
+                </div>
+              )}
               
               {calculateTotals().totalIndividualShipping > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>

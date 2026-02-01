@@ -71,6 +71,11 @@ export interface InventoryReceipt {
   shared_shipping_cost?: number
   shipping_allocation_method?: string
   
+  // Discount fields
+  discount_amount?: number
+  discount_value?: number
+  discount_type?: 'percentage' | 'fixed_amount'
+  
   // Flags
   has_returns?: boolean
   has_adjustments?: boolean
@@ -153,6 +158,10 @@ export interface InventoryReceiptApiResponse {
   created_at: string
   updated_at: string
   approved_at?: string
+  shipping_allocation_method?: string
+  discount_amount?: string | number
+  discount_value?: string | number
+  discount_type?: string
   items?: InventoryReceiptItemApiResponse[]
 }
 
@@ -254,6 +263,11 @@ export function mapApiResponseToInventoryReceipt(
     debt_amount: apiReceipt.debt_amount ? parseFloat(apiReceipt.debt_amount) : 0,
     shared_shipping_cost: apiReceipt.shared_shipping_cost ? parseFloat(apiReceipt.shared_shipping_cost) : 0,
     shipping_allocation_method: apiReceipt.shipping_allocation_method,
+    
+    // Discount fields
+    discount_amount: apiReceipt.discount_amount ? parseFloat(apiReceipt.discount_amount) : 0,
+    discount_value: apiReceipt.discount_value ? parseFloat(apiReceipt.discount_value) : 0,
+    discount_type: apiReceipt.discount_type,
     
     // Flags
     has_returns: apiReceipt.has_returns,
