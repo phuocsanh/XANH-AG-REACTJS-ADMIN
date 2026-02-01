@@ -121,6 +121,7 @@ export const useInventoryReceiptsQuery = (
         ...(params?.supplier_id && { supplier_id: params.supplier_id }),
         ...(params?.startDate && { start_date: params.startDate }),
         ...(params?.endDate && { end_date: params.endDate }),
+        ...(params?.payment_status && { payment_status: params.payment_status }),
         sort: 'created_at:DESC',
       })
 

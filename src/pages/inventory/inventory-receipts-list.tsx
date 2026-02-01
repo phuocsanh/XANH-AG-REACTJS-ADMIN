@@ -93,6 +93,10 @@ const InventoryReceiptsList: React.FC = () => {
        params.supplier_id = filters.supplier_id 
     }
 
+    if (filters.payment_status) {
+      params.payment_status = filters.payment_status
+    }
+
     if (filters.start_date && filters.end_date) {
       params.startDate = filters.start_date
       params.endDate = filters.end_date
@@ -428,7 +432,19 @@ const InventoryReceiptsList: React.FC = () => {
       },
     },
     {
-      title: "TT Thanh toán",
+      title: (
+        <FilterHeader 
+            title="TT Thanh toán" 
+            value={filters.payment_status} 
+            onChange={(val) => handleFilterChange('payment_status', val)}
+            inputType="select"
+            options={[
+              { label: "Đã thanh toán", value: "paid" },
+              { label: "Một phần", value: "partial" },
+              { label: "Chưa TT", value: "unpaid" },
+            ]}
+        />
+      ),
       dataIndex: "payment_status",
       key: "payment_status",
       width: 150,
