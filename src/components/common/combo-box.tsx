@@ -43,6 +43,7 @@ interface ComboBoxProps extends Omit<SelectProps, "options" | "children"> {
   extra?: React.ReactNode
   help?: React.ReactNode
   validateStatus?: "" | "success" | "warning" | "error" | "validating" | undefined
+  noFormItem?: boolean
 }
 
 /**
@@ -86,6 +87,7 @@ function ComboBox({
   extra,
   help,
   validateStatus,
+  noFormItem = false,
   ...selectProps
 }: ComboBoxProps) {
   // Xác định filterOption: Nếu không truyền vào, tự động tắt (false) khi có search async
@@ -262,7 +264,7 @@ function ComboBox({
   )
 
   // Nếu có label hoặc name, wrap trong Form.Item để Ant Design Form quản lý
-  if (label || name) {
+  if (!noFormItem && (label || name)) {
     return (
       <Form.Item 
         label={label} 

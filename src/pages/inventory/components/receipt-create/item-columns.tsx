@@ -86,7 +86,7 @@ const useItemColumns = ({
                     <div className="w-full">
                       <ComboBox
                         {...field}
-                        title=""
+                        noFormItem
                         placeholder='Chọn sản phẩm'
                       {...comboBoxProps}
                       showSearch={true}
