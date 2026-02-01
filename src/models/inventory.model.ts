@@ -139,6 +139,9 @@ export interface InventoryReceiptItem {
   batch_number?: string
   expiry_date?: string
   individual_shipping_cost?: number
+  discount_amount?: number
+  discount_value?: number
+  discount_type?: 'percentage' | 'fixed_amount'
 }
 
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
@@ -300,6 +303,9 @@ export function mapApiResponseToInventoryReceiptItem(
     expiry_date: apiItem.expiry_date, // Thêm expiry_date
     batch_number: apiItem.batch_number, // Thêm batch_number
     individual_shipping_cost: apiItem.individual_shipping_cost ? parseFloat(apiItem.individual_shipping_cost) : 0,
+    discount_amount: apiItem.discount_amount ? parseFloat(apiItem.discount_amount) : 0,
+    discount_value: apiItem.discount_value ? parseFloat(apiItem.discount_value) : 0,
+    discount_type: apiItem.discount_type,
     notes: apiItem.notes,
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,

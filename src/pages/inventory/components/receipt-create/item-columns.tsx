@@ -206,6 +206,34 @@ const useItemColumns = ({
       },
     },
     {
+      title: "Chiết khấu mặt hàng",
+      dataIndex: "discountValue",
+      key: "discountValue",
+      width: 140,
+      align: "right",
+      render: (val: number, record: any, index: number) => {
+        return (
+          <div className="flex flex-col gap-1">
+            <Controller
+              name={`items.${index}.discountValue`}
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  {...field}
+                  min={0}
+                  placeholder='0'
+                  addonAfter={getValues(`items.${index}.discountType`) === 'percentage' ? "%" : "đ"}
+                  onChange={(value) => {
+                    field.onChange(value || 0)
+                  }}
+                />
+              )}
+            />
+          </div>
+        )
+      },
+    },
+    {
       title: "Phí Vận Chuyển/Bốc Vác riêng",
       dataIndex: "individual_shipping_cost",
       key: "individual_shipping_cost",

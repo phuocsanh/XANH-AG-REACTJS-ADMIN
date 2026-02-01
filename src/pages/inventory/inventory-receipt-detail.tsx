@@ -265,6 +265,36 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (p) => (p || 0).toLocaleString("vi-VN") + " ₫",
     },
     {
+      title: "Chiết khấu",
+      dataIndex: "discount_amount",
+      key: "discount_amount",
+      width: 120,
+      align: "right",
+      render: (p, record: any) => p > 0 ? (
+        <Tooltip title={`Loại: ${record.discount_type === 'percentage' ? record.discount_value + '%' : 'Cố định'}`}>
+          <Text type="danger">-{p.toLocaleString("vi-VN")} ₫</Text>
+        </Tooltip>
+      ) : "-",
+    },
+    {
+      title: "Giá vốn thực",
+      dataIndex: "final_unit_cost",
+      key: "final_unit_cost",
+      width: 130,
+      align: "right",
+      render: (p, record: any) => {
+        // Tính toán fallback nếu backend chưa có final_unit_cost (cho data cũ)
+        const finalCost = p !== undefined && p !== null ? p : (record.unit_cost || 0);
+        return (
+          <Tooltip title="Đã bao gồm chiết khấu và phí ship">
+            <Text strong className="text-blue-600">
+              {(finalCost || 0).toLocaleString("vi-VN")} ₫
+            </Text>
+          </Tooltip>
+        );
+      },
+    },
+    {
       title: "Phí Bốc Vác",
       dataIndex: "individual_shipping_cost",
       key: "individual_shipping_cost",
@@ -568,10 +598,11 @@ const InventoryReceiptDetail: React.FC = () => {
                         <Table.Summary.Cell index={3} align="right"><Text strong>{totalQ.toLocaleString("vi-VN")}</Text></Table.Summary.Cell>
                         <Table.Summary.Cell index={4} />
                         <Table.Summary.Cell index={5} />
-                        <Table.Summary.Cell index={6} align="right">
+                        <Table.Summary.Cell index={6} />
+                        <Table.Summary.Cell index={7} align="right">
                           <Text strong className="text-green-600">{totalA.toLocaleString("vi-VN")} ₫</Text>
                         </Table.Summary.Cell>
-                        <Table.Summary.Cell index={7} colSpan={2} />
+                        <Table.Summary.Cell index={8} colSpan={2} />
                       </Table.Summary.Row>
                     </Table.Summary>
                   )

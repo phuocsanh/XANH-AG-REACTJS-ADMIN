@@ -11,7 +11,11 @@ export const receiptItemSchema = z.object({
   unit_cost: z.number().min(0, 'Đơn giá phải lớn hơn hoặc bằng 0'),
   total_price: z.number().min(0),
   expiry_date: z.any().optional(),
-  individual_shipping_cost: z.number().min(0).optional(),
+  batch_number: z.string().optional(),
+  individual_shipping_cost: z.number().optional().default(0),
+  discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
+  discountValue: z.number().min(0).default(0),
+  discount_amount: z.number().optional().default(0),
   notes: z.string().optional(),
 });
 

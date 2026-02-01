@@ -248,29 +248,48 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Hàm tính tổng tiền (dùng watched values)
   const calculateTotals = () => {
-    const totalProductValue = watchedItems.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0)
-    const totalIndividualShipping = watchedItems.reduce((sum, item) => sum + (Number(item.individual_shipping_cost) || 0), 0)
-    const totalSharedShipping = watchedHasSharedShipping ? Number(watchedSharedShippingCost) : 0
+    // 1. Tính chiết khấu riêng trên từng mặt hàng
+    const totalItemDiscount = watchedItems.reduce((sum, item) => {
+      let itemDisc = 0
+      if (item.discountType === 'percentage') {
+        itemDisc = ((Number(item.unit_cost) || 0) * (Number(item.quantity) || 0) * (Number(item.discountValue) || 0)) / 100
+      } else {
+        itemDisc = Number(item.discountValue) || 0
+      }
+      return sum + itemDisc
+    }, 0)
+
+    const totalProductValueRaw = watchedItems.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0)
     
-    // Tính tiền chiết khấu
-    let discountAmount = 0
+    // Tiền hàng sau khi đã trừ chiết khấu riêng trên từng item
+    const productValueAfterItemDiscounts = totalProductValueRaw - totalItemDiscount
+
+    // 2. Tính chiết khấu tổng của cả đơn hàng (Global discount)
+    let globalDiscountAmount = 0
     if (watchedDiscountType === 'percentage') {
-      discountAmount = (totalProductValue * (Number(watchedDiscountValue) || 0)) / 100
+      // Chiết khấu tổng tính trên giá trị còn lại sau khi đã trừ các chiết khấu riêng
+      globalDiscountAmount = (productValueAfterItemDiscounts * (Number(watchedDiscountValue) || 0)) / 100
     } else {
-      discountAmount = Number(watchedDiscountValue) || 0
+      globalDiscountAmount = Number(watchedDiscountValue) || 0
     }
 
-    const grandTotal = totalProductValue - discountAmount + totalIndividualShipping + totalSharedShipping
+    const totalDiscountAmount = totalItemDiscount + globalDiscountAmount
     
-    // Nợ NCC = Tiền hàng - Chiết khấu (KHÔNG BAO GIỜ tính phí vận chuyển)
-    // Phí vận chuyển chỉ để kiểm soát tổng chi phí, không liên quan công nợ NCC
-    const supplierAmount = totalProductValue - discountAmount
+    const totalIndividualShipping = watchedItems.reduce((sum, item) => sum + (Number(item.individual_shipping_cost) || 0), 0)
+    const totalSharedShipping = watchedHasSharedShipping ? Number(watchedSharedShippingCost) : 0
+
+    const grandTotal = totalProductValueRaw - totalDiscountAmount + totalIndividualShipping + totalSharedShipping
+    
+    // Nợ NCC = Tiền hàng - Tổng chiết khấu (KHÔNG BAO GIỜ tính phí vận chuyển)
+    const supplierAmount = totalProductValueRaw - totalDiscountAmount
     
     return {
-      totalProductValue,
+      totalProductValue: totalProductValueRaw,
       totalIndividualShipping,
       totalSharedShipping,
-      discountAmount,
+      discountAmount: totalDiscountAmount,
+      globalDiscountAmount,
+      totalItemDiscount,
       grandTotal,
       supplierAmount,
     }
@@ -289,6 +308,9 @@ const InventoryReceiptCreate: React.FC = () => {
       unit_cost: 0,
       total_price: 0,
       individual_shipping_cost: 0,
+      discountType: 'fixed_amount',
+      discountValue: 0,
+      discount_amount: 0,
     })
   }, [prepend])
 
@@ -380,21 +402,32 @@ const InventoryReceiptCreate: React.FC = () => {
           (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null) : null,
         
         // Items
-        items: data.items.map((item) => ({
-          product_id: item.product_id,
-          unit_name: item.unit_name,
-          quantity: item.quantity,
-          unit_cost: item.unit_cost,
-          total_price: item.total_price,
-          expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
-          notes: item.notes,
-          ...(item.individual_shipping_cost && {
-            individual_shipping_cost: item.individual_shipping_cost,
-          }),
-        })),
+        items: data.items.map((item) => {
+          let itemDiscountAmount = 0
+          if (item.discountType === 'percentage') {
+            itemDiscountAmount = ((Number(item.unit_cost) || 0) * (Number(item.quantity) || 0) * (Number(item.discountValue) || 0)) / 100
+          } else {
+            itemDiscountAmount = Number(item.discountValue) || 0
+          }
 
-        // Chiết khấu
-        discount_amount: calculateTotals().discountAmount,
+          return {
+            product_id: item.product_id,
+            unit_name: item.unit_name,
+            quantity: item.quantity,
+            unit_cost: item.unit_cost,
+            total_price: item.total_price,
+            expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
+            notes: item.notes,
+            individual_shipping_cost: item.individual_shipping_cost || 0,
+            // Chiết khấu item
+            discount_amount: itemDiscountAmount,
+            discount_value: item.discountValue,
+            discount_type: item.discountType,
+          }
+        }),
+
+        // Chiết khấu tổng (Global)
+        discount_amount: calculateTotals().globalDiscountAmount,
         discount_value: data.discountValue,
         discount_type: data.discountType,
       };
