@@ -36,7 +36,8 @@ export const receiptFormSchema = z.object({
   images: z.any().optional(),
 
   // Chiết khấu
-  discountType: z.enum(['percentage', 'fixed_amount']).default('percentage'),
+  discountMethod: z.enum(['none', 'per_item', 'global']).default('none'),
+  discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
 
   // Thuế
@@ -117,6 +118,7 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   sharedShippingCost: 0,
   allocationMethod: 'by_quantity',
   images: [],
+  discountMethod: 'none',
   discountType: 'fixed_amount',
   discountValue: 0,
   is_taxable: false,

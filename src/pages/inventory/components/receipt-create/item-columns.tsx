@@ -1,6 +1,6 @@
 import { ColumnsType } from "antd/es/table"
 
-import { Button, Popconfirm, Typography, Tooltip } from "antd"
+import { Button, Popconfirm, Typography, Tooltip, Radio } from "antd"
 
 
 import { DeleteOutlined } from "@ant-design/icons"
@@ -34,6 +34,7 @@ interface ItemColumnsProps {
   setValue: any // Hàm setValue từ react-hook-form
   getValues: any // Hàm getValues từ react-hook-form
   calculateTotals: () => any
+  discountMethod: 'none' | 'per_item' | 'global'
 }
 
 /**
@@ -46,8 +47,9 @@ const useItemColumns = ({
   setValue,
   getValues,
   calculateTotals,
+  discountMethod,
 }: ItemColumnsProps): ColumnsType<any> => {
-  return [
+  const columns: ColumnsType<any> = [
     {
       title: "STT",
       key: "index",
@@ -211,11 +213,29 @@ const useItemColumns = ({
       title: "Chiết khấu mặt hàng",
       dataIndex: "discountValue",
       key: "discountValue",
-      width: 140,
+      width: 180,
       align: "right",
       render: (val: number, record: any, index: number) => {
         return (
           <div className="flex flex-col gap-1">
+            <Controller
+              name={`items.${index}.discountType`}
+              control={control}
+              render={({ field }) => (
+                <Radio.Group 
+                  size="small" 
+                  value={field.value} 
+                  onChange={(e: any) => {
+                    field.onChange(e.target.value)
+                    setValue(`items.${index}.discountValue`, 0) // Reset value khi đổi loại
+                  }}
+                  className="mb-1"
+                >
+                  <Radio.Button value="fixed_amount">đ</Radio.Button>
+                  <Radio.Button value="percentage">%</Radio.Button>
+                </Radio.Group>
+              )}
+            />
             <Controller
               name={`items.${index}.discountValue`}
               control={control}
@@ -373,6 +393,17 @@ const useItemColumns = ({
       },
     },
   ]
+
+  return columns.filter(col => {
+    if (col.key === 'discountValue') {
+      return discountMethod === 'per_item';
+    }
+    // Giá thực nhập luôn hiện nếu có bất kỳ loại chiết khấu nào active
+    if (col.key === 'net_unit_cost') {
+      return discountMethod !== 'none';
+    }
+    return true;
+  });
 }
 
 export default useItemColumns

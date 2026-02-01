@@ -161,6 +161,7 @@ const InventoryReceiptCreate: React.FC = () => {
   const watchedStatus = watch("status") // Theo dõi trạng thái phiếu nhập
   const watchedDiscountType = watch("discountType")
   const watchedDiscountValue = watch("discountValue") || 0
+  const watchedDiscountMethod = watch("discountMethod")
   
   // State và hooks tìm kiếm nhà cung cấp
   const {
@@ -229,7 +230,8 @@ const InventoryReceiptCreate: React.FC = () => {
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
         is_taxable: !!existingReceipt.is_taxable,
-        discountType: receipt.discount_type || 'percentage',
+        discountMethod: 'none',
+        discountType: receipt.discount_type || 'fixed_amount',
         discountValue: Number(receipt.discount_value || 0),
       })
 
@@ -246,6 +248,24 @@ const InventoryReceiptCreate: React.FC = () => {
     }
   }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, reset])
 
+  // Reset chiết khấu khi đổi phương thức để tránh tính chồng chéo
+  useEffect(() => {
+    if (watchedDiscountMethod === 'none') {
+      setValue('discountValue', 0)
+      const currentItems = getValues('items') || []
+      currentItems.forEach((_, index) => {
+        setValue(`items.${index}.discountValue`, 0)
+      })
+    } else if (watchedDiscountMethod === 'per_item') {
+      setValue('discountValue', 0)
+    } else if (watchedDiscountMethod === 'global') {
+      const currentItems = getValues('items') || []
+      currentItems.forEach((_, index) => {
+        setValue(`items.${index}.discountValue`, 0)
+      })
+    }
+  }, [watchedDiscountMethod, setValue, getValues])
+
   // Hàm tính tổng tiền (dùng watched values)
   const calculateTotals = () => {
     const totalProductValueRaw = watchedItems.reduce((sum, item) => sum + (Number(item.unit_cost || 0) * Number(item.quantity || 0)), 0)
@@ -257,10 +277,12 @@ const InventoryReceiptCreate: React.FC = () => {
       const itemBaseValue = unitCost * quantity
       
       let itemDisc = 0
-      if (item.discountType === 'percentage') {
-        itemDisc = (itemBaseValue * (Number(item.discountValue) || 0)) / 100
-      } else {
-        itemDisc = Number(item.discountValue) || 0
+      if (watchedDiscountMethod === 'per_item') {
+        if (item.discountType === 'percentage') {
+          itemDisc = (itemBaseValue * (Number(item.discountValue) || 0)) / 100
+        } else {
+          itemDisc = Number(item.discountValue) || 0
+        }
       }
       
       const valueAfterItemDisc = itemBaseValue - itemDisc
@@ -276,10 +298,12 @@ const InventoryReceiptCreate: React.FC = () => {
 
     // 2. Tính chiết khấu tổng của cả đơn hàng (Global discount)
     let globalDiscountAmount = 0
-    if (watchedDiscountType === 'percentage') {
-      globalDiscountAmount = (totalValueAfterItemDiscounts * (Number(watchedDiscountValue) || 0)) / 100
-    } else {
-      globalDiscountAmount = Number(watchedDiscountValue) || 0
+    if (watchedDiscountMethod === 'global') {
+      if (watchedDiscountType === 'percentage') {
+        globalDiscountAmount = (totalValueAfterItemDiscounts * (Number(watchedDiscountValue) || 0)) / 100
+      } else {
+        globalDiscountAmount = Number(watchedDiscountValue) || 0
+      }
     }
 
     // 3. Phân bổ chiết khấu tổng vào từng item để có Giá vốn thực
@@ -357,6 +381,7 @@ const InventoryReceiptCreate: React.FC = () => {
     setValue,
     getValues,
     calculateTotals,
+    discountMethod: watchedDiscountMethod,
   })
 
   const onSubmit = async (data: ReceiptFormData) => {
@@ -577,10 +602,27 @@ const InventoryReceiptCreate: React.FC = () => {
 
           <Divider className='my-4' />
 
-          <div className='mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
-            <Text strong className='text-lg'>
-              Danh sách sản phẩm
-            </Text>
+          <div className='mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+            <div className="flex flex-col gap-2">
+              <Text strong className='text-lg'>
+                Danh sách sản phẩm
+              </Text>
+              <Controller
+                name="discountMethod"
+                control={control}
+                render={({ field }) => (
+                  <Radio.Group 
+                    size="small"
+                    value={field.value} 
+                    onChange={(e) => field.onChange(e.target.value)}
+                  >
+                    <Radio value="none">Không CK</Radio>
+                    <Radio value="per_item">CK từng món</Radio>
+                    <Radio value="global">CK tổng đơn</Radio>
+                  </Radio.Group>
+                )}
+              />
+            </div>
             <Button
               type='primary'
               icon={<PlusOutlined />}
@@ -627,53 +669,55 @@ const InventoryReceiptCreate: React.FC = () => {
           )}
 
           {/* Phần chiết khấu */}
-          <Card title="Chiết khấu (Tùy chọn)" className='mt-4'>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Text className="block mb-2">Loại chiết khấu</Text>
-                <Controller
-                  name="discountType"
+          {watchedDiscountMethod === 'global' && (
+            <Card title="Chiết khấu (Tùy chọn)" className='mt-4'>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Text className="block mb-2">Loại chiết khấu</Text>
+                  <Controller
+                    name="discountType"
+                    control={control}
+                    render={({ field }) => (
+                      <Radio.Group 
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      >
+                        <Space>
+                          <Radio value="fixed_amount">Số tiền cố định (VND)</Radio>
+                          <Radio value="percentage">Phần trăm (%)</Radio>
+                        </Space>
+                      </Radio.Group>
+                    )}
+                  />
+                </div>
+                
+                <FormFieldNumber
+                  label={watchedDiscountType === 'percentage' ? "Phần trăm (%)" : "Số tiền giảm (VND)"}
+                  name="discountValue"
                   control={control}
-                  render={({ field }) => (
-                    <Radio.Group 
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    >
-                      <Space>
-                        <Radio value="fixed_amount">Số tiền cố định (VND)</Radio>
-                        <Radio value="percentage">Phần trăm (%)</Radio>
-                      </Space>
-                    </Radio.Group>
-                  )}
+                  addonAfter={watchedDiscountType === 'percentage' ? "%" : "VND"}
+                  placeholder={watchedDiscountType === 'percentage' ? "Nhập %" : "Nhập số tiền"}
                 />
               </div>
-              
-              <FormFieldNumber
-                label={watchedDiscountType === 'percentage' ? "Phần trăm (%)" : "Số tiền giảm (VND)"}
-                name="discountValue"
-                control={control}
-                addonAfter={watchedDiscountType === 'percentage' ? "%" : "VND"}
-                placeholder={watchedDiscountType === 'percentage' ? "Nhập %" : "Nhập số tiền"}
-              />
-            </div>
-            {watchedDiscountValue > 0 && (
-              <div className="mt-2 text-sm flex items-center gap-2">
-                <span className="text-green-600 font-medium">
-                  Tổng giảm: -{calculateTotals().discountAmount.toLocaleString('vi-VN')} VND
-                </span>
-                {watchedDiscountType === 'fixed_amount' && calculateTotals().totalProductValue > 0 && (
-                  <span className="text-gray-400 italic text-xs">
-                    (Tương đương: {((calculateTotals().discountAmount / calculateTotals().totalProductValue) * 100).toFixed(2)}%)
+              {watchedDiscountValue > 0 && (
+                <div className="mt-2 text-sm flex items-center gap-2">
+                  <span className="text-green-600 font-medium">
+                    Tổng giảm: -{calculateTotals().discountAmount.toLocaleString('vi-VN')} VND
                   </span>
-                )}
-                {watchedDiscountType === 'percentage' && (
-                  <span className="text-gray-400 italic text-xs">
-                    (Đã tính dựa trên tổng tiền hàng)
-                  </span>
-                )}
-              </div>
-            )}
-          </Card>
+                  {watchedDiscountType === 'fixed_amount' && calculateTotals().totalProductValue > 0 && (
+                    <span className="text-gray-400 italic text-xs">
+                      (Tương đương: {((calculateTotals().discountAmount / calculateTotals().totalProductValue) * 100).toFixed(2)}%)
+                    </span>
+                  )}
+                  {watchedDiscountType === 'percentage' && (
+                    <span className="text-gray-400 italic text-xs">
+                      (Đã tính dựa trên tổng tiền hàng)
+                    </span>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Phần phí vận chuyển/bốc vác */}
           <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
