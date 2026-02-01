@@ -33,6 +33,7 @@ interface ItemColumnsProps {
   control: any // Đối tượng control từ react-hook-form
   setValue: any // Hàm setValue từ react-hook-form
   getValues: any // Hàm getValues từ react-hook-form
+  calculateTotals: () => any
 }
 
 /**
@@ -44,6 +45,7 @@ const useItemColumns = ({
   control,
   setValue,
   getValues,
+  calculateTotals,
 }: ItemColumnsProps): ColumnsType<any> => {
   return [
     {
@@ -234,6 +236,23 @@ const useItemColumns = ({
       },
     },
     {
+      title: "Giá thực nhập",
+      key: "net_unit_cost",
+      width: 130,
+      align: "right",
+      render: (_, __, index) => {
+        const results = calculateTotals()
+        const netCost = results.finalItems[index]?.netUnitCost || 0
+        return (
+          <Tooltip title="Giá đã trừ chiết khấu dòng & chiết khấu tổng">
+            <Text strong className="text-blue-600">
+              {netCost.toLocaleString("vi-VN")} đ
+            </Text>
+          </Tooltip>
+        )
+      },
+    },
+    {
       title: "Phí Vận Chuyển/Bốc Vác riêng",
       dataIndex: "individual_shipping_cost",
       key: "individual_shipping_cost",
@@ -261,24 +280,20 @@ const useItemColumns = ({
       key: "total_price",
       width: 150,
       align: "right",
-      render: (_, record: any, index: number) => {
+      render: (_, __, index) => {
+        const results = calculateTotals()
+        const netTotal = results.finalItems[index]?.netTotalValue || 0
         return (
-          <Controller
-            name={`items.${index}.total_price`}
-            control={control}
-            render={({ field }) => (
-              <Text
-                strong
-                style={{ color: "#52c41a" }}
-                className='truncate text-sm'
-              >
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(field.value || 0)}
-              </Text>
-            )}
-          />
+          <Text
+            strong
+            style={{ color: "#52c41a" }}
+            className='truncate text-sm'
+          >
+            {new Intl.NumberFormat("vi-VN", {
+              style: "currency",
+              currency: "VND",
+            }).format(netTotal)}
+          </Text>
         )
       },
     },
