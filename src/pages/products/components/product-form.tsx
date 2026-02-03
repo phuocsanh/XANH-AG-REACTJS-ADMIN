@@ -287,6 +287,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
           notes: productItem.notes || "", // Ghi chú
           has_input_invoice: productItem.has_input_invoice !== undefined ? productItem.has_input_invoice : true, // Hóa đơn đầu vào
+          taxable_quantity_stock: productItem.taxable_quantity_stock || 0, // Số lượng tồn khai thuế
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
@@ -546,6 +547,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           : [],
         notes: notes || "", // Ghi chú (rich text HTML)
         has_input_invoice: convertedValues.has_input_invoice,
+        taxable_quantity_stock: convertedValues.taxable_quantity_stock,
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -1083,6 +1085,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       { label: "Có hóa đơn", value: true },
                       { label: "Không có hóa đơn", value: false },
                     ]}
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='taxable_quantity_stock'
+                    control={control}
+                    label='Số lượng tồn khai thuế'
+                    placeholder='Nhập số lượng tồn khai thuế'
                     className='w-full'
                   />
                 </div>

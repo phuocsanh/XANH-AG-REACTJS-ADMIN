@@ -8,6 +8,9 @@ import { ProductType } from "../../models/product-type.model"
 import {
   Button,
   Tag,
+  Popover,
+  InputNumber,
+  message,
   Space,
 } from "antd"
 import { TableProps } from "antd"
@@ -21,10 +24,64 @@ import {
 } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
 import { ConfirmModal } from "../../components/common"
-import { useDeleteProductMutation } from "@/queries/product"
+import { useDeleteProductMutation, useUpdateProductMutation } from "@/queries/product"
 import FilterHeader from "@/components/common/filter-header"
 import BatchExpiryModal from "./components/batch-expiry-modal"
 import ProductDetailModal from "./components/product-detail-modal"
+
+interface TaxableStockEditorProps {
+  value: number;
+  record: ExtendedProduct;
+  onUpdate: (id: number, newValue: number) => Promise<void>;
+  isPending: boolean;
+}
+
+const TaxableStockEditor: React.FC<TaxableStockEditorProps> = ({ value, record, onUpdate, isPending }) => {
+  const [editingValue, setEditingValue] = React.useState<number>(value || 0);
+  const [isPopoverVisible, setIsPopoverVisible] = React.useState(false);
+
+  // Cập nhật editingValue khi value từ props thay đổi (ví dụ sau khi update thành công)
+  React.useEffect(() => {
+    setEditingValue(value || 0);
+  }, [value]);
+
+  const handleUpdate = async () => {
+    await onUpdate(record.id, editingValue);
+    setIsPopoverVisible(false);
+  };
+
+  return (
+    <Popover
+      content={
+        <Space>
+          <InputNumber
+            min={0}
+            value={editingValue}
+            onChange={(val) => setEditingValue(val || 0)}
+            onPressEnter={handleUpdate}
+            autoFocus
+          />
+          <Button 
+              type="primary" 
+              size="small" 
+              onClick={handleUpdate}
+              loading={isPending}
+          >
+            Lưu
+          </Button>
+        </Space>
+      }
+      title="Sửa tồn thuế"
+      trigger="click"
+      open={isPopoverVisible}
+      onOpenChange={setIsPopoverVisible}
+    >
+      <Tag color={value > 0 ? 'blue' : 'default'} className="cursor-pointer hover:opacity-80">
+        {value || 0}
+      </Tag>
+    </Popover>
+  );
+};
 
 
 const ProductsList: React.FC = () => {
@@ -74,6 +131,7 @@ const ProductsList: React.FC = () => {
   const [currentProduct, setCurrentProduct] = React.useState<Product | null>(null)
 
   const deleteProductMutation = useDeleteProductMutation()
+  const updateProductMutation = useUpdateProductMutation()
 
   // Build Params cho Query
   const queryParams = React.useMemo(() => ({
@@ -348,10 +406,26 @@ const ProductsList: React.FC = () => {
       width: 120,
       align: 'center' as const,
       sorter: true,
-      render: (value: number) => (
-        <Tag color={value > 0 ? 'blue' : 'default'}>
-          {value || 0}
-        </Tag>
+      render: (value: number, record: ExtendedProduct) => (
+        <TaxableStockEditor 
+          value={value} 
+          record={record} 
+          isPending={updateProductMutation.isPending}
+          onUpdate={async (id, newValue) => {
+            try {
+              await updateProductMutation.mutateAsync({
+                id,
+                productData: {
+                  id,
+                  taxable_quantity_stock: newValue
+                }
+              });
+              message.success("Cập nhật tồn thuế thành công!");
+            } catch (error) {
+              console.error("Error updating taxable stock:", error);
+            }
+          }}
+        />
       ),
     },
     {
@@ -402,7 +476,7 @@ const ProductsList: React.FC = () => {
         </Space>
       ),
     },
-  ], [filters, productTypes, handleEditProduct, handleFilterChange, handleDelete])
+  ], [filters, productTypes, handleEditProduct, handleFilterChange, handleDelete, updateProductMutation])
 
   return (
     <div className='p-2 md:p-6'>
