@@ -196,6 +196,47 @@ const InventoryReceiptCreate: React.FC = () => {
   const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(receiptId || 0)
   const { data: existingItems, isLoading: isLoadingItems } = useInventoryReceiptItemsQuery(receiptId || 0)
 
+  // Logic xử lý nút "Tất cả là hàng tính thuế"
+  const watchedIsTaxable = watch("is_taxable")
+  // watchedItems đã được khai báo ở trên (dòng 156) nên không khai báo lại
+
+  // Chiều 1: Checkbox thay đổi -> Cập nhật danh sách
+  useEffect(() => {
+    // Chỉ xử lý khi có sự thay đổi thực sự để tránh loop
+    const currentItems = getValues("items") || []
+    if (currentItems.length === 0) return
+
+    if (watchedIsTaxable) {
+      // Nếu tích chọn: Điền đầy SL Thuế = SL cho những dòng chưa đủ
+      currentItems.forEach((item: any, index: number) => {
+        if (item.taxable_quantity !== item.quantity) {
+          setValue(`items.${index}.taxable_quantity`, item.quantity)
+        }
+      })
+    } else {
+      // Nếu bỏ tích: Kiểm tra nếu tất cả đang là "Full thuế" thì mới reset về 0
+      // Điều này giúp tránh việc vô tình xóa sạch dữ liệu nếu user chỉ muốn sửa 1 dòng
+      const isAllFullyTaxable = currentItems.every((item: any) => item.taxable_quantity === item.quantity && item.quantity > 0)
+      if (isAllFullyTaxable) {
+        currentItems.forEach((item: any, index: number) => {
+          setValue(`items.${index}.taxable_quantity`, 0)
+        })
+      }
+    }
+  }, [watchedIsTaxable, setValue, getValues])
+
+  // Chiều 2: Danh sách thay đổi (nhập tay) -> Cập nhật ngược lại Checkbox
+  useEffect(() => {
+    if (watchedIsTaxable && watchedItems.length > 0) {
+      const isStillAllTaxable = watchedItems.every((item: any) => 
+        Number(item.taxable_quantity) === Number(item.quantity) && Number(item.quantity) > 0
+      )
+      if (!isStillAllTaxable) {
+        setValue("is_taxable", false)
+      }
+    }
+  }, [watchedItems, watchedIsTaxable, setValue])
+
   // Pre-fill form khi load dữ liệu trong edit mode
   useEffect(() => {
     if (isEditMode && existingReceipt && existingItems && !isLoadingReceipt && !isLoadingItems) {
@@ -592,12 +633,12 @@ const InventoryReceiptCreate: React.FC = () => {
                     onChange={(e) => field.onChange(e.target.checked)}
                     className="text-blue-700 font-medium"
                   >
-                    Có hóa đơn/chứng từ đầu vào (Hàng tính thuế)
+                    Tất cả là hàng tính thuế (Có hóa đơn đầu vào)
                   </Checkbox>
                 )}
               />
-              <p className="mt-1 ml-6 text-xs text-blue-600">
-                Khi chọn, tất cả sản phẩm trong phiếu này sẽ được cộng vào &quot;Tồn thuế&quot; và được ưu tiên trừ khi bán hàng.
+              <p className="mt-1 ml-6 text-xs text-blue-600 italic">
+                Mẹo: Tích chọn để tự động điền SL Thuế cho tất cả mặt hàng. Nếu chỉ một vài món có thuế, anh nên để trống ô này và tự nhập số lượng vào cột &quot;SL Thuế&quot; bên dưới.
               </p>
             </div>
         </Card>

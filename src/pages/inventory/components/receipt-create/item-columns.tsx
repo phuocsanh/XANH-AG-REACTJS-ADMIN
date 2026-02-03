@@ -169,6 +169,12 @@ const useItemColumns = ({
                   const qty = value || 1
                   field.onChange(qty)
                   
+                  // Cập nhật SL Thuế nếu đang lớn hơn SL mới
+                  const currentTaxQty = getValues(`items.${index}.taxable_quantity`) || 0
+                  if (currentTaxQty > qty) {
+                    setValue(`items.${index}.taxable_quantity`, qty)
+                  }
+
                   // Cập nhật thành tiền
                   const cost = getValues(`items.${index}.unit_cost`) || 0
                   setValue(`items.${index}.total_price`, qty * cost)
