@@ -256,7 +256,7 @@ const ReturnDetail: React.FC = () => {
                     {new Intl.NumberFormat("vi-VN", {
                       style: "currency",
                       currency: "VND",
-                    }).format(parseFloat(returnData.total_amount))}
+                    }).format(returnData.total_amount)}
                   </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Lý do trả hàng" span={2}>

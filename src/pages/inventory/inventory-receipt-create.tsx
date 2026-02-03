@@ -213,6 +213,7 @@ const InventoryReceiptCreate: React.FC = () => {
         individual_shipping_cost: Number(item.individual_shipping_cost || 0),
         expiry_date: item.expiry_date,
         notes: item.notes,
+        taxable_quantity: item.taxable_quantity || 0,
       }))
 
       // Reset toàn bộ form với dữ liệu mới
@@ -366,6 +367,7 @@ const InventoryReceiptCreate: React.FC = () => {
       discountType: 'fixed_amount',
       discountValue: 0,
       discount_amount: 0,
+      taxable_quantity: 0,
     })
   }, [prepend])
 

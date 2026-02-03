@@ -47,6 +47,10 @@ export interface InventoryReturn {
   supplier?: any
   items?: InventoryReturnItem[]
   refunds?: InventoryReturnRefund[]
+  
+  // Timestamps
+  approved_at?: string
+  cancelled_at?: string
 }
 
 // Type alias cho return item
@@ -161,6 +165,8 @@ export const mapApiResponseToReturn = (
     updated_at: apiReturn.updated_at,
     items: apiReturn.items,
     supplier: apiReturn.supplier,
+    approved_at: apiReturn.approved_at,
+    cancelled_at: apiReturn.cancelled_at,
   }
 }
 

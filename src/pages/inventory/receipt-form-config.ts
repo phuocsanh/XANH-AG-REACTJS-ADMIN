@@ -13,6 +13,7 @@ export const receiptItemSchema = z.object({
   expiry_date: z.any().optional(),
   batch_number: z.string().optional(),
   individual_shipping_cost: z.number().optional().default(0),
+  taxable_quantity: z.number().min(0).optional().default(0),
   discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
   discount_amount: z.number().optional().default(0),

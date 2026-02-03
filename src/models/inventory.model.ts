@@ -139,6 +139,7 @@ export interface InventoryReceiptItem {
   batch_number?: string
   expiry_date?: string
   individual_shipping_cost?: number
+  taxable_quantity?: number
 }
 
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
@@ -421,6 +422,9 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
   
   // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
   individual_shipping_cost?: number // Phí vận chuyển riêng cho sản phẩm này (tùy chọn)
+  
+  // ===== TRƯỜNG MỚI - SỐ LƯỢNG KHAI THUẾ =====
+  taxable_quantity?: number // Số lượng có hóa đơn đầu vào (để khai thuế)
 }
 
 // Interface cho request cập nhật chi tiết phiếu nhập hàng

@@ -180,6 +180,36 @@ const useItemColumns = ({
       },
     },
     {
+      title: "SL Thuế",
+      dataIndex: "taxable_quantity",
+      key: "taxable_quantity",
+      width: 100,
+      align: "right",
+      render: (taxableQty: number, record: any, index: number) => {
+        return (
+          <Controller
+            name={`items.${index}.taxable_quantity`}
+            control={control}
+            render={({ field }) => (
+              <Tooltip title="Số lượng có hóa đơn đầu vào (để khai thuế)">
+                <NumberInput
+                  {...field}
+                  min={0}
+                  max={getValues(`items.${index}.quantity`) || 0}
+                  placeholder='SL thuế'
+                  onChange={(value) => {
+                    const maxQty = getValues(`items.${index}.quantity`) || 0
+                    const taxQty = Math.min(value || 0, maxQty)
+                    field.onChange(taxQty)
+                  }}
+                />
+              </Tooltip>
+            )}
+          />
+        )
+      },
+    },
+    {
       title: "Đơn giá",
       dataIndex: "unit_cost",
       key: "unit_cost",

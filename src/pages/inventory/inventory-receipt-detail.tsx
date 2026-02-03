@@ -257,6 +257,20 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (q) => (q || 0).toLocaleString("vi-VN"),
     },
     {
+      title: "SL Thuế",
+      dataIndex: "taxable_quantity",
+      key: "taxable_quantity",
+      width: 100,
+      align: "right",
+      render: (q) => (
+        <Tooltip title="Số lượng có hóa đơn đầu vào">
+          <Tag color={q > 0 ? "blue" : "default"}>
+            {(q || 0).toLocaleString("vi-VN")}
+          </Tag>
+        </Tooltip>
+      ),
+    },
+    {
       title: "Đơn giá",
       dataIndex: "unit_cost",
       key: "unit_cost",
