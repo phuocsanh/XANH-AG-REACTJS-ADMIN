@@ -24,12 +24,8 @@ export default function LunarCalendarPage() {
   
   // Hàm format ngày tháng tiếng Việt
   const getVietnameseDateString = (date: Date) => {
-    return date.toLocaleDateString('vi-VN', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+    return `${days[date.getDay()]}, ngày ${date.getDate()} tháng ${date.getMonth() + 1}, ${date.getFullYear()}`
   }
 
   // Tính số ngày trong tháng
