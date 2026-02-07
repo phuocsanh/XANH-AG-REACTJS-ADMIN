@@ -93,6 +93,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           >
             <TableHead>
               <TableRow>
+                <TableCell align="center" sx={{ width: 40 }}>STT</TableCell>
                 <TableCell sx={{ minWidth: 200 }}>Sản phẩm</TableCell>
                 <TableCell align="center" sx={{ width: 60 }}>ĐVT</TableCell>
                 <TableCell align="center" sx={{ width: 80 }}>Tồn kho</TableCell>
@@ -112,6 +113,9 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
 
                 return (
                   <TableRow key={field.id}>
+                    <TableCell align="center">
+                      <Typography variant="body2">{index + 1}</Typography>
+                    </TableCell>
                     <TableCell sx={{ minWidth: 200 }}>
                       <Typography 
                         variant="body2" 

@@ -841,31 +841,37 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
 
   const createMixPrompt = (products: Product[]): string => {
     const productInfo = products.map((product: Product) => 
-      `- ${product.trade_name || product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
+      `- ${product.trade_name || product.name}:
+        + Thành phần: ${product.ingredient?.join(', ') || 'Không có'}
+        + Mô tả: ${product.description || 'Không có'}
+        + Ghi chú: ${product.notes || 'Không có'}`
     ).join('\n');
     
-    return `Phân tích khả năng phối trộn các loại thuốc sau.
-QUAN TRỌNG: TRẢ LỜI HOÀN TOÀN BẰNG TIẾNG VIỆT.
+    return `Phân tích khả năng phối trộn CHUNG của nhóm thuốc dưới đây trong cùng 1 bình phun.
+QUAN TRỌNG: TRẢ LỜI HOÀN TOÀN BẰNG TIẾNG VIỆT, CỰC KỲ NGẮN GỌN.
 
-Yêu cầu trả lời NGẮN GỌN:
-- Kết luận: CÓ/KHÔNG
-- Lý do: (1 câu ngắn bằng tiếng Việt)
+Yêu cầu về nội dung:
+1. Nếu tất cả phối trộn được: Trả về duy nhất 1 dòng "Kết luận: CÓ. Lý do: Các hoạt chất này an toàn khi phối trộn chung."
+2. Nếu có cặp thuốc kỵ nhau: Chỉ liệt kê các cặp kỵ nhau đó (Tên thuốc + Lý do ngắn gọn). Không liệt kê các cặp an toàn.
 
-Danh sách thuốc:
+Danh sách thuốc cần phân tích:
 ${productInfo}`;
   };
 
   const createSortPrompt = (products: Product[]): string => {
     const productInfo = products.map((product: Product) => 
-      `- ${product.trade_name || product.name}: ${product.ingredient?.join(', ') || 'Không có thông tin thành phần'}`
+      `- ${product.trade_name || product.name}:
+        + Thành phần: ${product.ingredient?.join(', ') || 'Không có'}
+        + Mô tả: ${product.description || 'Không có'}
+        + Ghi chú: ${product.notes || 'Không có'}`
     ).join('\n');
     
-    return `Sắp xếp thứ tự sử dụng các loại thuốc sau để đạt hiệu quả tốt nhất.
-QUAN TRỌNG: TRẢ LỜI HOÀN TOÀN BẰNG TIẾNG VIỆT.
+    return `Sắp xếp thứ tự hòa tan các loại thuốc sau vào bình phun (Từ ưu tiên 1 đến hết).
+QUAN TRỌNG: TRẢ LỜI HOÀN TOÀN BẰNG TIẾNG VIỆT, CỰC KỲ NGẮN GỌN.
 
-Yêu cầu trả lời NGẮN GỌN:
-- Liệt kê tên thuốc theo thứ tự (dùng số thứ tự: 1, 2, 3...)
-- Lý do ngắn gọn (1 câu cho mỗi thuốc bằng tiếng Việt)
+Yêu cầu trả lời:
+1. Chỉ liệt kê danh sách theo thứ tự: 1. [Tên thuốc] -> 2. [Tên thuốc]...
+2. Một câu giải thích ngắn gọn tại sao sắp xếp như vậy (ví dụ: Thứ tự pha theo quy tắc bột -> nước -> dầu).
 
 Danh sách thuốc:
 ${productInfo}`;
