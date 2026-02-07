@@ -392,19 +392,18 @@ export const useInventoryReceiptItemsQuery = (receiptId: number) => {
  * Hook cập nhật chi tiết phiếu nhập hàng
  */
 export const useUpdateInventoryReceiptItemMutation = () => {
-  return useMutation({
+  return useMutation( {
     mutationFn: async ({
       id,
       item,
     }: {
       id: number
-      item: UpdateInventoryReceiptItemRequest
+      item: Partial<UpdateInventoryReceiptItemRequest>
     }) => {
-      const response = await api.putRaw<InventoryReceiptItemApiResponse>(
-        `/inventory/receipt-items/${id}`,
+      const response = await api.patchRaw<InventoryReceiptItemApiResponse>(
+        `/inventory/receipt/item/${id}`,
         item
       )
-      // Không cần mapping vì interface đã giống nhau
       return response
     },
     onSuccess: (data, variables) => {

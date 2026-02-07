@@ -16,6 +16,7 @@ import {
   Tabs,
   Badge,
   Tooltip,
+  InputNumber,
 } from "antd"
 import DataTable from "@/components/common/data-table"
 import {
@@ -47,6 +48,7 @@ import {
   useCancelInventoryReceiptMutation,
   useDeleteInventoryReceiptMutation,
   useInventoryReceiptHistoryQuery,
+  useUpdateInventoryReceiptItemMutation,
 } from "@/queries/inventory"
 import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
 import PaymentTab from "@/components/inventory/PaymentTab"
@@ -260,15 +262,66 @@ const InventoryReceiptDetail: React.FC = () => {
       title: "SL Thuế",
       dataIndex: "taxable_quantity",
       key: "taxable_quantity",
-      width: 100,
+      width: 120,
       align: "right",
-      render: (q) => (
-        <Tooltip title="Số lượng có hóa đơn đầu vào">
-          <Tag color={q > 0 ? "blue" : "default"}>
-            {(q || 0).toLocaleString("vi-VN")}
-          </Tag>
-        </Tooltip>
-      ),
+      render: (q, record) => {
+        const [editing, setEditing] = React.useState(false);
+        const [value, setValue] = React.useState(q || 0);
+        const updateMutation = useUpdateInventoryReceiptItemMutation();
+
+        const handleSave = async () => {
+          try {
+            await updateMutation.mutateAsync({
+              id: record.id,
+              item: { taxable_quantity: value }
+            });
+            setEditing(false);
+            refetchReceipt(); // Refresh data
+          } catch (error) {
+            console.error("Error updating taxable quantity:", error);
+          }
+        };
+
+        // Chỉ cho edit nếu phiếu đã duyệt
+        const canEdit = normalizedStatus === InventoryReceiptStatus.APPROVED;
+
+        if (editing && canEdit) {
+          return (
+            <Space.Compact>
+              <InputNumber
+                min={0}
+                max={record.quantity}
+                value={value}
+                onChange={(val: number | null) => setValue(val || 0)}
+                onPressEnter={handleSave}
+                autoFocus
+                size="small"
+                style={{ width: 70 }}
+              />
+              <Button 
+                type="primary" 
+                size="small"
+                onClick={handleSave}
+                loading={updateMutation.isPending}
+              >
+                Lưu
+              </Button>
+            </Space.Compact>
+          );
+        }
+
+        return (
+          <Tooltip title={canEdit ? "Click để sửa SL Thuế" : "Số lượng có hóa đơn đầu vào"}>
+            <Tag 
+              color={q > 0 ? "blue" : "default"}
+              onClick={() => canEdit && setEditing(true)}
+              className={canEdit ? "cursor-pointer hover:opacity-80" : ""}
+            >
+              {(q || 0).toLocaleString("vi-VN")}
+            </Tag>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Đơn giá",
