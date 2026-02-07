@@ -298,6 +298,7 @@ export function mapApiResponseToInventoryReceiptItem(
     updated_at: apiItem.updated_at,
     product_name: apiItem.product?.trade_name || apiItem.product?.name || apiItem.product_name || '',
     unit_name: apiItem.product?.unit?.name || apiItem.product?.unit_name || apiItem.unit_name || '',
+    taxable_quantity: apiItem.taxable_quantity, // Bổ sung trường taxable_quantity
     ...(apiItem.product && { product: apiItem.product }),  // Giữ lại product relation nếu có
   }
 }
