@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
 import {
   Card,
   Row,
@@ -46,12 +46,48 @@ const { Title, Text } = Typography
 const InventoryReceiptsList: React.FC = () => {
   const navigate = useNavigate()
 
-  // State quản lý tìm kiếm và lọc
-  const [filters, setFilters] = useState<Record<string, any>>({})
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-  })
+  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+
+  // Lấy các giá trị từ URL
+  const currentPage = Number(searchParams.get("page")) || 1
+  const pageSize = Number(searchParams.get("limit")) || 10
+
+  // Chuyển đổi searchParams thành filters object
+  const filters = useMemo(() => {
+    const f: Record<string, any> = {}
+    searchParams.forEach((value, key) => {
+      if (key !== "page" && key !== "limit") {
+        // Chuyển đổi ID sang number nếu cần
+        if (key.endsWith('_id')) {
+          const numValue = Number(value)
+          f[key] = isNaN(numValue) ? value : numValue
+        } else {
+          f[key] = value
+        }
+      }
+    })
+    return f
+  }, [searchParams])
+
+  // Hàm cập nhật URL search params
+  const updateUrlParams = React.useCallback((newParams: Record<string, any>, resetPage = false) => {
+    const params = new URLSearchParams(searchParams)
+    
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+
+    if (resetPage) {
+      params.set("page", "1")
+    }
+
+    setSearchParams(params)
+  }, [searchParams, setSearchParams])
 
   // State tìm kiếm nhà cung cấp cho Filter ComboBox
   const [searchTermSupplier, setSearchTermSupplier] = useState("")
@@ -76,8 +112,8 @@ const InventoryReceiptsList: React.FC = () => {
   // Tạo params cho API call
   const queryParams = useMemo<InventoryReceiptListParams>(() => {
     const params: InventoryReceiptListParams = {
-      limit: pagination.limit,
-      offset: (pagination.page - 1) * pagination.limit,
+      limit: pageSize,
+      offset: (currentPage - 1) * pageSize,
     }
 
     if (filters.code) {
@@ -103,7 +139,7 @@ const InventoryReceiptsList: React.FC = () => {
     }
 
     return params
-  }, [filters, pagination])
+  }, [filters, pageSize, currentPage])
 
   // Queries
   const {
@@ -130,27 +166,21 @@ const InventoryReceiptsList: React.FC = () => {
     newPagination: any,
     tableFilters: any,
   ) => {
-    setPagination((prev) => ({
-      ...prev,
+    const newParams: Record<string, any> = {
       page: newPagination.current || 1,
       limit: newPagination.pageSize || 10,
-    }))
-
-    const newFilters = { ...filters }
-
-    // Status Filter
-    if (tableFilters.status && tableFilters.status.length > 0) {
-      newFilters.status = tableFilters.status[0]
     }
 
-    setFilters(newFilters)
+    // Status Filter từ cột table nếu có
+    if (tableFilters.status && tableFilters.status.length > 0) {
+      newParams.status = tableFilters.status[0]
+    }
+
+    updateUrlParams(newParams)
   }
 
   const handleFilterChange = (key: string, value: any) => {
-    const newFilters = { ...filters, [key]: value }
-    if (!value && value !== 0) delete newFilters[key]
-    setFilters(newFilters)
-    setPagination((prev) => ({ ...prev, page: 1 }))
+    updateUrlParams({ [key]: value }, true)
   }
 
   const handleCreateReceipt = () => {
@@ -212,7 +242,7 @@ const InventoryReceiptsList: React.FC = () => {
 
   // Action handlers
   const handleViewReceipt = (receipt: InventoryReceipt) => {
-    navigate(`/inventory/receipt/${receipt.id}`)
+    navigate(`/inventory/receipt/${receipt.id}${location.search}`)
   }
 
   const handleDeleteReceipt = async (id: number) => {
@@ -300,7 +330,7 @@ const InventoryReceiptsList: React.FC = () => {
       width: 60,
       align: 'center',
       render: (_: unknown, __: InventoryReceipt, index: number) => {
-        const stt = (pagination.page - 1) * pagination.limit + index + 1;
+        const stt = (currentPage - 1) * pageSize + index + 1;
         return <div className='font-medium text-gray-600'>{stt}</div>;
       },
     },
@@ -666,8 +696,8 @@ const InventoryReceiptsList: React.FC = () => {
             dataSource={mappedReceipts}
             rowKey='id'
             pagination={{
-              current: pagination.page,
-              pageSize: pagination.limit,
+              current: currentPage,
+              pageSize: pageSize,
               total,
               showSizeChanger: true,
               showQuickJumper: true,

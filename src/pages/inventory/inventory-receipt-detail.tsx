@@ -92,7 +92,7 @@ const InventoryReceiptDetail: React.FC = () => {
 
   // Handlers
   const handleBack = () => {
-    navigate("/inventory/receipts")
+    navigate(`/inventory/receipts${location.search}`)
   }
 
   const handleEdit = () => {
