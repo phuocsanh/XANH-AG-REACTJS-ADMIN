@@ -93,16 +93,15 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ maxWidth: '200px', minWidth: '150px' }}>Sản phẩm</TableCell>
-                <TableCell align="center">ĐVT</TableCell>
-                <TableCell align="center">Tồn kho</TableCell>
-                <TableCell align="center">Loại giá</TableCell>
-                <TableCell align="right">Số lượng</TableCell>
-                <TableCell align="right">Đơn giá</TableCell>
-                <TableCell align="right">Giảm giá</TableCell>
-                <TableCell align="right">Thành tiền</TableCell>
-                <TableCell align="center">Xóa</TableCell>
-                <TableCell align="center">Phân tích</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>Sản phẩm</TableCell>
+                <TableCell align="center" sx={{ width: 60 }}>ĐVT</TableCell>
+                <TableCell align="center" sx={{ width: 80 }}>Tồn kho</TableCell>
+                <TableCell align="center" sx={{ width: 150 }}>Loại giá</TableCell>
+                <TableCell align="right" sx={{ width: 100 }}>Số lượng</TableCell>
+                <TableCell align="right" sx={{ width: 160 }}>Đơn giá</TableCell>
+                <TableCell align="right" sx={{ width: 140 }}>Giảm giá</TableCell>
+                <TableCell align="center" sx={{ width: 160 }}>Thành tiền</TableCell>
+                <TableCell align="center" sx={{ width: 50 }}>Xóa</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -113,7 +112,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
 
                 return (
                   <TableRow key={field.id}>
-                    <TableCell sx={{ maxWidth: '200px', minWidth: '150px' }}>
+                    <TableCell sx={{ minWidth: 200 }}>
                       <Typography 
                         variant="body2" 
                         fontWeight="bold"
@@ -251,19 +250,6 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         <DeleteIcon />
                       </IconButton>
                     </TableCell>
-                    <TableCell align="center">
-                      <Checkbox
-                        checked={selectedProductIdsForAdvisory.includes(field.product_id)}
-                        onChange={() => {
-                          const productId = field.product_id;
-                          setSelectedProductIdsForAdvisory(prev =>
-                            prev.includes(productId)
-                              ? prev.filter(id => id !== productId)
-                              : [...prev, productId]
-                          );
-                        }}
-                      />
-                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -295,18 +281,6 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                   {watch(`items.${index}.product_name`)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: -0.5 }}>
-                  <Checkbox
-                    size="small"
-                    checked={selectedProductIdsForAdvisory.includes(field.product_id)}
-                    onChange={() => {
-                      const productId = field.product_id;
-                      setSelectedProductIdsForAdvisory(prev =>
-                        prev.includes(productId)
-                          ? prev.filter(id => id !== productId)
-                          : [...prev, productId]
-                      );
-                    }}
-                  />
                   <IconButton
                     size="small"
                     color="error"

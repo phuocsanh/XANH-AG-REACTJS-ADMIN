@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
-import { useProductsQuery } from '@/queries/product';
+import { useProductsQuery, useProductsByIdsQuery } from '@/queries/product';
 import { Customer } from '@/models/customer';
 import { Product } from '@/models/product.model';
 import { SalesInvoice } from '@/models/sales-invoice';
@@ -234,6 +234,16 @@ const CreateSalesInvoice = () => {
   });
   const { data: latestInvoiceResponse } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
   
+  const items = watch('items') || [];
+
+  // Lấy toàn bộ thông tin sản phẩm có trong hóa đơn (bao gồm cả thành phần/ingredients)
+  // để đảm bảo tab Tư vấn kỹ thuật luôn có đủ dữ liệu, không bị phụ thuộc vào kết quả search
+  const productIdsInInvoice = useMemo(() => {
+    return (items || []).map(item => item.product_id).filter(id => !!id);
+  }, [items]);
+
+  const { data: fullInvoiceProducts } = useProductsByIdsQuery(productIdsInInvoice);
+  
   // Filter out current invoice if we are editing the latest one
   const latestInvoice = useMemo(() => {
     // API interceptor đã unwrap response, latestInvoiceResponse đã là SalesInvoice hoặc null
@@ -266,7 +276,6 @@ const CreateSalesInvoice = () => {
     margin: 0,
   });
 
-  const items = watch('items') || [];
   const partialPaymentAmount = watch('partial_payment_amount');
   const seasonId = watch('season_id');
   const customerId = watch('customer_id');
@@ -332,6 +341,9 @@ const CreateSalesInvoice = () => {
           notes: item.notes || '',
           price_type: inferredPriceType as 'cash' | 'credit', // Suy luận từ payment_method
         })));
+
+        // ✅ Mặc định chọn tất cả sản phẩm để phân tích khi load dữ liệu chỉnh sửa
+        setSelectedProductIdsForAdvisory(invoice.items.map((item: any) => item.product_id));
       }
       
       // Set selected customer if customer_id exists
@@ -666,6 +678,9 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       stock_quantity: product.quantity || 0,
       tax_selling_price: product.tax_selling_price || '0',
     });
+
+    // ✅ Mặc định đưa sản phẩm mới vào danh sách phân tích kỹ thuật
+    setSelectedProductIdsForAdvisory(prev => [...prev, product.id]);
   };
 
   // Hàm xóa sản phẩm khỏi danh sách và đồng thời xóa khỏi selectedProductIdsForAdvisory
@@ -801,13 +816,15 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
 
   // ============ TECHNICAL ADVISORY FUNCTIONS ============
 
-  // Get products in invoice for advisory
-  const invoiceProducts = items
-    .map(item => {
-      const product = (productsData?.data?.items || []).find((p: Product) => p.id === item.product_id);
-      return product;
-    })
-    .filter((p): p is Product => p !== undefined);
+  // Get products in invoice for advisory (using full detailed data from useProductsByIdsQuery)
+  const invoiceProducts = useMemo(() => {
+    if (!fullInvoiceProducts) return [];
+    
+    // Sắp xếp lại theo thứ tự items trong hóa đơn để đồng bộ giao diện
+    return items.map(item => {
+      return fullInvoiceProducts.find(p => p.id === item.product_id);
+    }).filter((p): p is Product => p !== undefined);
+  }, [items, fullInvoiceProducts]);
 
   // Get selected products for advisory
   const selectedProductsForAdvisory = invoiceProducts.filter(p => 
