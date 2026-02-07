@@ -236,6 +236,67 @@ const InventoryReceiptDetail: React.FC = () => {
     return <Space wrap>{buttons}</Space>
   }
 
+  // Component để edit inline SL Thuế
+  const TaxableQuantityEditor: React.FC<{
+    value: number;
+    record: InventoryReceiptItem;
+    canEdit: boolean;
+  }> = ({ value, record, canEdit }) => {
+    const [editing, setEditing] = React.useState(false);
+    const [editValue, setEditValue] = React.useState(value || 0);
+    const updateMutation = useUpdateInventoryReceiptItemMutation();
+
+    const handleSave = async () => {
+      try {
+        await updateMutation.mutateAsync({
+          id: record.id,
+          item: { taxable_quantity: editValue }
+        });
+        setEditing(false);
+        refetchReceipt();
+      } catch (error) {
+        console.error("Error updating taxable quantity:", error);
+      }
+    };
+
+    if (editing && canEdit) {
+      return (
+        <Space.Compact>
+          <InputNumber
+            min={0}
+            max={record.quantity}
+            value={editValue}
+            onChange={(val: number | null) => setEditValue(val || 0)}
+            onPressEnter={handleSave}
+            autoFocus
+            size="small"
+            style={{ width: 70 }}
+          />
+          <Button 
+            type="primary" 
+            size="small"
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+          >
+            Lưu
+          </Button>
+        </Space.Compact>
+      );
+    }
+
+    return (
+      <Tooltip title={canEdit ? "Click để sửa SL Thuế" : "Số lượng có hóa đơn đầu vào"}>
+        <Tag 
+          color={value > 0 ? "blue" : "default"}
+          onClick={() => canEdit && setEditing(true)}
+          className={canEdit ? "cursor-pointer hover:opacity-80" : ""}
+        >
+          {(value || 0).toLocaleString("vi-VN")}
+        </Tag>
+      </Tooltip>
+    );
+  };
+
   // Cấu hình cột sản phẩm
   const itemColumns: ColumnsType<InventoryReceiptItem> = [
     {
@@ -264,64 +325,13 @@ const InventoryReceiptDetail: React.FC = () => {
       key: "taxable_quantity",
       width: 120,
       align: "right",
-      render: (q, record) => {
-        const [editing, setEditing] = React.useState(false);
-        const [value, setValue] = React.useState(q || 0);
-        const updateMutation = useUpdateInventoryReceiptItemMutation();
-
-        const handleSave = async () => {
-          try {
-            await updateMutation.mutateAsync({
-              id: record.id,
-              item: { taxable_quantity: value }
-            });
-            setEditing(false);
-            refetchReceipt(); // Refresh data
-          } catch (error) {
-            console.error("Error updating taxable quantity:", error);
-          }
-        };
-
-        // Chỉ cho edit nếu phiếu đã duyệt
-        const canEdit = normalizedStatus === InventoryReceiptStatus.APPROVED;
-
-        if (editing && canEdit) {
-          return (
-            <Space.Compact>
-              <InputNumber
-                min={0}
-                max={record.quantity}
-                value={value}
-                onChange={(val: number | null) => setValue(val || 0)}
-                onPressEnter={handleSave}
-                autoFocus
-                size="small"
-                style={{ width: 70 }}
-              />
-              <Button 
-                type="primary" 
-                size="small"
-                onClick={handleSave}
-                loading={updateMutation.isPending}
-              >
-                Lưu
-              </Button>
-            </Space.Compact>
-          );
-        }
-
-        return (
-          <Tooltip title={canEdit ? "Click để sửa SL Thuế" : "Số lượng có hóa đơn đầu vào"}>
-            <Tag 
-              color={q > 0 ? "blue" : "default"}
-              onClick={() => canEdit && setEditing(true)}
-              className={canEdit ? "cursor-pointer hover:opacity-80" : ""}
-            >
-              {(q || 0).toLocaleString("vi-VN")}
-            </Tag>
-          </Tooltip>
-        );
-      },
+      render: (q, record) => (
+        <TaxableQuantityEditor 
+          value={q || 0}
+          record={record}
+          canEdit={normalizedStatus === InventoryReceiptStatus.APPROVED}
+        />
+      ),
     },
     {
       title: "Đơn giá",
