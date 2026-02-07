@@ -407,16 +407,11 @@ export const useUpdateInventoryReceiptItemMutation = () => {
       return response
     },
     onSuccess: (data, variables) => {
-      // Cập nhật cache cho phiếu và chi tiết
-      queryClient.setQueryData(
-        inventoryKeys.receiptItems(variables.id),
-        (oldData: InventoryReceiptItem[] | undefined) =>
-          oldData?.map((item) =>
-            item.id === variables.id ? { ...item, ...data } : item
-          ) || []
-      )
-      toast.success("Cập nhật chi tiết phiếu nhập hàng thành công!")
-      return data
+      // Invalidate cache để force refetch
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receiptItems(variables.id) });
+      toast.success("Cập nhật số lượng thuế thành công!");
+      return data;
     },
     onError: (error: unknown) => {
       handleApiError(
