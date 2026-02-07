@@ -975,3 +975,12 @@ body {
   min-height: 32px !important;
   height: auto !important;
 }
+
+/* Ngăn chặn overscroll chaining trên mobile cho các dropdown (fix lỗi scroll cả trang khi scroll combobox) */
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-dropdown,
+.ant-dropdown-menu {
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+}
