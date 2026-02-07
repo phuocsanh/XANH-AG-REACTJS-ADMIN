@@ -505,13 +505,12 @@ const InventoryReceiptCreate: React.FC = () => {
           product_id: item.product_id,
           unit_name: item.unit_name,
           quantity: item.quantity,
-          // Giá nhập gửi lên BE là giá thực tế sau khi trừ hết chiết khấu
+          taxable_quantity: item.taxable_quantity || 0, // Bổ sung trường này
           unit_cost: item.netUnitCost,
           total_price: item.netTotalValue,
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,
           individual_shipping_cost: item.individual_shipping_cost || 0,
-          // Không gửi chiết khấu riêng nữa vì đã trừ vào unit_cost
           discount_amount: 0,
           discount_value: 0,
           discount_type: 'fixed_amount',
