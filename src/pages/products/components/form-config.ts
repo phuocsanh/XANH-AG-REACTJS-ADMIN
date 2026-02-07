@@ -22,7 +22,7 @@ export const productFormSchema = z.object({
       message: "GBKT phải là số >= 0"
     }),
   type: z.number().min(1, "Vui lòng chọn loại sản phẩm"),
-  quantity: z.number().min(0, "Số lượng không hợp lệ"),
+  quantity: z.coerce.number().min(0, "Số lượng không hợp lệ"),
   discount: z.string().optional(),
   description: z.string().optional(),
   thumb: z.array(z.any()).optional(),
@@ -40,7 +40,7 @@ export const productFormSchema = z.object({
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
   has_input_invoice: z.boolean().default(true), // Bắt buộc nhập, mặc định là có hóa đơn
-  taxable_quantity_stock: z.number().optional(), // Số lượng tồn khai thuế
+  taxable_quantity_stock: z.coerce.number().optional(), // Số lượng tồn khai thuế
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list: z.array(z.object({
     key: z.string(),

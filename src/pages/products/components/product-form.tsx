@@ -287,7 +287,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
           notes: productItem.notes || "", // Ghi chú
           has_input_invoice: productItem.has_input_invoice !== undefined ? productItem.has_input_invoice : true, // Hóa đơn đầu vào
-          taxable_quantity_stock: productItem.taxable_quantity_stock || 0, // Số lượng tồn khai thuế
+          taxable_quantity_stock: Number(productItem.taxable_quantity_stock || 0), // Ép kiểu number để tránh lỗi string từ database "0.00"
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
