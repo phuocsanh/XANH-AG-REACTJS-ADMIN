@@ -951,12 +951,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   <FormFieldNumber
                     name='quantity'
                     control={control}
-                    label='Số lượng'
-                    placeholder='Nhập số lượng'
-                    required
-                    rules={{ required: "Vui lòng nhập số lượng" }}
+                    label={
+                      <span>
+                        Số lượng <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
+                      </span>
+                    }
+                    placeholder='Số lượng sẽ tự tăng khi nhập hàng'
                     className='w-full'
-                    disabled={isEdit}
+                    disabled={true}
                     {...(isEdit && {
                       addonAfter: (
                         <div 
@@ -1084,7 +1086,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     options={[
                       { label: "Có hóa đơn", value: true },
                       { label: "Không có hóa đơn", value: false },
-                    ]}
+                      ]}
                     className='w-full'
                   />
                 </div>
@@ -1093,9 +1095,14 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   <FormFieldNumber
                     name='taxable_quantity_stock'
                     control={control}
-                    label='Số lượng tồn khai thuế'
-                    placeholder='Nhập số lượng tồn khai thuế'
+                    label={
+                      <span>
+                        SL tồn khai thuế <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
+                      </span>
+                    }
+                    placeholder='Số lượng thuế sẽ tự tăng khi nhập hàng'
                     className='w-full'
+                    disabled={true}
                   />
                 </div>
               </div>
