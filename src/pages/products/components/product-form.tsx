@@ -288,6 +288,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           notes: productItem.notes || "", // Ghi chú
           has_input_invoice: productItem.has_input_invoice !== undefined ? productItem.has_input_invoice : true, // Hóa đơn đầu vào
           taxable_quantity_stock: Number(productItem.taxable_quantity_stock || 0), // Ép kiểu number để tránh lỗi string từ database "0.00"
+          is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
+          show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
@@ -500,6 +502,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
         average_cost_price: values.average_cost_price || "", // Thêm trường mới
         has_input_invoice: values.has_input_invoice,
+        is_sold_on_web: values.is_sold_on_web,
+        show_price_on_web: values.show_price_on_web,
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -548,6 +552,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         notes: notes || "", // Ghi chú (rich text HTML)
         has_input_invoice: convertedValues.has_input_invoice,
         taxable_quantity_stock: convertedValues.taxable_quantity_stock,
+        is_sold_on_web: convertedValues.is_sold_on_web,
+        show_price_on_web: convertedValues.show_price_on_web,
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -1103,6 +1109,34 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     placeholder='Số lượng thuế sẽ tự tăng khi nhập hàng'
                     className='w-full'
                     disabled={true}
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='is_sold_on_web'
+                    control={control}
+                    label='Bán trên Web'
+                    placeholder='Chọn'
+                    options={[
+                      { label: "Có", value: true },
+                      { label: "Không", value: false },
+                    ]}
+                    className='w-full'
+                  />
+                </div>
+
+                <div className='w-full'>
+                  <FormComboBox
+                    name='show_price_on_web'
+                    control={control}
+                    label='Hiển thị giá trên Web'
+                    placeholder='Chọn'
+                    options={[
+                      { label: "Hiện giá", value: true },
+                      { label: "Giá liên hệ", value: false },
+                    ]}
+                    className='w-full'
                   />
                 </div>
               </div>

@@ -45,6 +45,8 @@ export interface Product {
   tax_selling_price: string // Giá bán khai thuế
   unit_name?: string // Tên đơn vị tính (được map thêm)
   taxable_quantity_stock: number // Số lượng tồn kho có hóa đơn (bể thuế)
+  is_sold_on_web: boolean
+  show_price_on_web: boolean
 }
 
 // Extend Product interface để tương thích với DataTable
@@ -70,6 +72,8 @@ export interface ProductFormValues
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
+  is_sold_on_web?: boolean
+  show_price_on_web?: boolean
 }
 
 export interface CreateProductRequest extends AnyObject {
@@ -93,6 +97,8 @@ export interface CreateProductRequest extends AnyObject {
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
+  is_sold_on_web?: boolean
+  show_price_on_web?: boolean
 }
 
 export interface UpdateProductRequest
@@ -159,6 +165,8 @@ export interface ConvertedProductValues {
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
+  is_sold_on_web?: boolean
+  show_price_on_web?: boolean
 }
 
 export interface ProductFormProps {

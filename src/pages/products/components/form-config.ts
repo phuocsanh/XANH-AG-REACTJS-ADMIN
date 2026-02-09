@@ -41,6 +41,8 @@ export const productFormSchema = z.object({
   average_cost_price: z.string().optional(), // Không bắt buộc
   has_input_invoice: z.boolean().default(true), // Bắt buộc nhập, mặc định là có hóa đơn
   taxable_quantity_stock: z.coerce.number().optional(), // Số lượng tồn khai thuế
+  is_sold_on_web: z.boolean().default(false),
+  show_price_on_web: z.boolean().default(true),
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list: z.array(z.object({
     key: z.string(),
@@ -87,6 +89,8 @@ export interface ProductFormValues {
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
   taxable_quantity_stock?: number // Số lượng tồn khai thuế
+  is_sold_on_web?: boolean
+  show_price_on_web?: boolean
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list?: { key: string; value: any }[]
 }
@@ -143,5 +147,7 @@ export const defaultProductFormValues: ProductFormValues = {
   has_input_invoice: true, // Mặc định là có hóa đơn
   tax_selling_price: "0", // Giá khai thuế mặc định là 0
   taxable_quantity_stock: 0, // Mặc định là 0
+  is_sold_on_web: false,
+  show_price_on_web: true,
   // Các trường optional khác sẽ là undefined theo mặc định
 }
