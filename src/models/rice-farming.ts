@@ -101,6 +101,7 @@ export interface RiceCrop {
   sowing_date?: string;
   sowing_lunar_date?: string;
   transplanting_date?: string;
+  transplanting_lunar_date?: string;
   expected_harvest_date?: string;
   expected_harvest_lunar_date?: string;
   actual_harvest_date?: string;
@@ -248,6 +249,7 @@ export interface CreateRiceCropDto {
   sowing_date?: string;
   sowing_lunar_date?: string;
   transplanting_date?: string;
+  transplanting_lunar_date?: string;
   expected_harvest_date?: string;
   expected_harvest_lunar_date?: string;
   notes?: string;
@@ -265,6 +267,8 @@ export interface UpdateRiceCropDto {
   rice_variety?: string;
   sowing_date?: string;
   sowing_lunar_date?: string;
+  transplanting_date?: string;
+  transplanting_lunar_date?: string;
   expected_harvest_date?: string;
   expected_harvest_lunar_date?: string;
   yield_amount?: number;

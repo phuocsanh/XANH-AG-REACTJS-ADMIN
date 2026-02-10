@@ -31,8 +31,11 @@ interface RiceCropFormValues {
   rice_variety: string;
   seed_source?: string;
   sowing_date?: string;
+  sowing_lunar_date?: string;
   transplanting_date?: string;
+  transplanting_lunar_date?: string;
   expected_harvest_date?: string;
+  expected_harvest_lunar_date?: string;
   actual_harvest_date?: string;
   growth_stage?: GrowthStage;
   status?: CropStatus;
@@ -121,9 +124,14 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
       amount_of_land: 0,
       field_area: 0,
       rice_variety: '',
+      sowing_lunar_date: '',
+      transplanting_lunar_date: '',
+      expected_harvest_lunar_date: '',
       notes: '',
     },
   });
+
+  const { convertSolar2Lunar } = require('@/lib/lunar-calendar');
 
   // Tự động tính diện tích
   const watchedAmountOfLand = watch('amount_of_land');
@@ -138,6 +146,47 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
       }
     }
   }, [watchedAmountOfLand, watchedAreaId, areasData, setValue]);
+
+  // Tự động tính ngày âm lịch
+  const watchedSowingDate = watch('sowing_date');
+  const watchedTransplantingDate = watch('transplanting_date');
+  const watchedExpectedHarvestDate = watch('expected_harvest_date');
+
+  useEffect(() => {
+    if (watchedSowingDate) {
+      const date = dayjs(watchedSowingDate);
+      if (date.isValid()) {
+        const [d, m] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+        setValue('sowing_lunar_date', `${d}/${m} (Âm lịch)`);
+      }
+    } else {
+      setValue('sowing_lunar_date', '');
+    }
+  }, [watchedSowingDate, setValue]);
+
+  useEffect(() => {
+    if (watchedTransplantingDate) {
+      const date = dayjs(watchedTransplantingDate);
+      if (date.isValid()) {
+        const [d, m] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+        setValue('transplanting_lunar_date', `${d}/${m} (Âm lịch)`);
+      }
+    } else {
+      setValue('transplanting_lunar_date', '');
+    }
+  }, [watchedTransplantingDate, setValue]);
+
+  useEffect(() => {
+    if (watchedExpectedHarvestDate) {
+      const date = dayjs(watchedExpectedHarvestDate);
+      if (date.isValid()) {
+        const [d, m] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+        setValue('expected_harvest_lunar_date', `${d}/${m} (Âm lịch)`);
+      }
+    } else {
+      setValue('expected_harvest_lunar_date', '');
+    }
+  }, [watchedExpectedHarvestDate, setValue]);
 
   // Reset form khi open hoặc editingCrop thay đổi
   useEffect(() => {
@@ -154,8 +203,11 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
           rice_variety: editingCrop.rice_variety,
           seed_source: editingCrop.seed_source || '',
           sowing_date: editingCrop.sowing_date || undefined,
+          sowing_lunar_date: editingCrop.sowing_lunar_date || '',
           transplanting_date: editingCrop.transplanting_date || undefined,
+          transplanting_lunar_date: editingCrop.transplanting_lunar_date || '',
           expected_harvest_date: editingCrop.expected_harvest_date || undefined,
+          expected_harvest_lunar_date: editingCrop.expected_harvest_lunar_date || '',
           actual_harvest_date: editingCrop.actual_harvest_date || undefined,
           growth_stage: editingCrop.growth_stage,
           status: editingCrop.status,
@@ -173,8 +225,11 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
           rice_variety: '',
           seed_source: '',
           sowing_date: undefined,
+          sowing_lunar_date: '',
           transplanting_date: undefined,
+          transplanting_lunar_date: '',
           expected_harvest_date: undefined,
+          expected_harvest_lunar_date: '',
           actual_harvest_date: undefined,
           growth_stage: GrowthStage.SEEDLING,
           status: CropStatus.ACTIVE,
@@ -340,16 +395,40 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
           control={control}
         />
 
+        <FormField
+          label="Ngày gieo âm lịch"
+          name="sowing_lunar_date"
+          control={control}
+          placeholder="Tự động tính..."
+          disabled
+        />
+
         <FormDatePicker
           label="Ngày cấy"
           name="transplanting_date"
           control={control}
         />
 
+        <FormField
+          label="Ngày cấy âm lịch"
+          name="transplanting_lunar_date"
+          control={control}
+          placeholder="Tự động tính..."
+          disabled
+        />
+
         <FormDatePicker
           label="Ngày thu hoạch dự kiến"
           name="expected_harvest_date"
           control={control}
+        />
+
+        <FormField
+          label="Ngày thu hoạch âm lịch"
+          name="expected_harvest_lunar_date"
+          control={control}
+          placeholder="Tự động tính..."
+          disabled
         />
 
         {isEditMode && (

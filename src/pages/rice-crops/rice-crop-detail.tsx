@@ -134,19 +134,34 @@ const RiceCropDetail: React.FC = () => {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày gieo">
-              <span style={{ color: '#000' }}>
-                {riceCrop.sowing_date ? dayjs(riceCrop.sowing_date).format('DD/MM/YYYY') : '-'}
-              </span>
+              <div className="flex flex-col">
+                <span style={{ color: '#000' }}>
+                  {riceCrop.sowing_date ? dayjs(riceCrop.sowing_date).format('DD/MM/YYYY') : '-'}
+                </span>
+                {riceCrop.sowing_lunar_date && (
+                  <span className="text-[11px] text-[#2c7a32] font-semibold">{riceCrop.sowing_lunar_date}</span>
+                )}
+              </div>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày cấy">
-              <span style={{ color: '#000' }}>
-                {riceCrop.transplanting_date ? dayjs(riceCrop.transplanting_date).format('DD/MM/YYYY') : '-'}
-              </span>
+              <div className="flex flex-col">
+                <span style={{ color: '#000' }}>
+                  {riceCrop.transplanting_date ? dayjs(riceCrop.transplanting_date).format('DD/MM/YYYY') : '-'}
+                </span>
+                {riceCrop.transplanting_lunar_date && (
+                  <span className="text-[11px] text-[#2c7a32] font-semibold">{riceCrop.transplanting_lunar_date}</span>
+                )}
+              </div>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày thu hoạch dự kiến">
-              <span style={{ color: '#000' }}>
-                {riceCrop.expected_harvest_date ? dayjs(riceCrop.expected_harvest_date).format('DD/MM/YYYY') : '-'}
-              </span>
+              <div className="flex flex-col">
+                <span style={{ color: '#000' }}>
+                  {riceCrop.expected_harvest_date ? dayjs(riceCrop.expected_harvest_date).format('DD/MM/YYYY') : '-'}
+                </span>
+                {riceCrop.expected_harvest_lunar_date && (
+                  <span className="text-[11px] text-[#2c7a32] font-semibold">{riceCrop.expected_harvest_lunar_date}</span>
+                )}
+              </div>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày thu hoạch thực tế">
               <span style={{ color: '#000' }}>
