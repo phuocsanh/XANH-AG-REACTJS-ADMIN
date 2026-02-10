@@ -92,15 +92,17 @@ export interface RiceCrop {
   customer_id: number;
   season_id: number;
   field_name: string;
-  amount_of_land: number; // Đổi tên từ large_labor_days
+  amount_of_land?: number;
   field_area: number;
   area_of_each_plot_of_land_id?: number; // Thêm trường này
   location?: string;
   rice_variety: string;
   seed_source?: string;
   sowing_date?: string;
+  sowing_lunar_date?: string;
   transplanting_date?: string;
   expected_harvest_date?: string;
+  expected_harvest_lunar_date?: string;
   actual_harvest_date?: string;
   growth_stage: GrowthStage;
   status: CropStatus;
@@ -237,15 +239,17 @@ export interface CreateRiceCropDto {
   customer_id: number;
   season_id: number;
   field_name: string;
-  amount_of_land: number; // Đổi tên từ large_labor_days
+  amount_of_land?: number;
   field_area: number;
   area_of_each_plot_of_land_id?: number; // Thêm trường này
   location?: string;
   rice_variety: string;
   seed_source?: string;
   sowing_date?: string;
+  sowing_lunar_date?: string;
   transplanting_date?: string;
   expected_harvest_date?: string;
+  expected_harvest_lunar_date?: string;
   notes?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;  // Index signature để tương thích với api.postRaw
@@ -254,12 +258,15 @@ export interface CreateRiceCropDto {
 /** DTO cập nhật Ruộng lúa */
 export interface UpdateRiceCropDto {
   field_name?: string;
-  amount_of_land?: number; // Đổi tên từ large_labor_days
+  amount_of_land?: number;
   field_area?: number;
   area_of_each_plot_of_land_id?: number; // Thêm trường này
   location?: string;
   rice_variety?: string;
+  sowing_date?: string;
+  sowing_lunar_date?: string;
   expected_harvest_date?: string;
+  expected_harvest_lunar_date?: string;
   yield_amount?: number;
   quality_grade?: string;
   notes?: string;
