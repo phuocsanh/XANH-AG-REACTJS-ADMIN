@@ -462,6 +462,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   }
 
   const onSubmit = async (values: ProductFormValues) => {
+    console.log("🚀 ~ ProductForm ~ onSubmit called with values:", values);
     try {
       setLoading(true)
 
@@ -713,7 +714,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         <div className='lg:col-span-2'>
           <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden">
             <Spin spinning={loading || productLoading || initialLoading}>
-              <form onSubmit={handleSubmit(onSubmit)} className="product-form">
+              <form onSubmit={handleSubmit(onSubmit, (errors) => console.error("❌ Form Validation Errors:", errors))} className="product-form">
               {/* Component trích xuất thông tin từ hình ảnh - Hỗ trợ cả tạo mới và chỉnh sửa */}
               <div className="px-3 md:px-6 pt-3 md:pt-6">
                 <ImageAnalyzer 

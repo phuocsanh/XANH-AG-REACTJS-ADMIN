@@ -23,7 +23,7 @@ function AppProviderTanStack({ children }: { children: React.ReactNode }) {
   return (
     // Provide the client to your App
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider theme={themeConfig}>
+      <ConfigProvider theme={themeConfig} wave={{ disabled: true }}>
         <MuiThemeProvider theme={muiTheme}>
           {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
           <CssBaseline />

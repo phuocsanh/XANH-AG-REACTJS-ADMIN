@@ -49,7 +49,11 @@ export const productFormSchema = z.object({
     value: z.any()
   })).optional(),
   unit_conversions: z.array(z.object({
-    id: z.number().optional(),
+    id: z.preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().optional()),
     unit_id: z.number().min(1, "Vui lòng chọn đơn vị"),
     conversion_factor: z.coerce.number().min(0, "Hệ số không hợp lệ"),
     is_base_unit: z.boolean().default(false),
@@ -59,7 +63,11 @@ export const productFormSchema = z.object({
     notes: z.string().optional(),
   })).optional(),
   components: z.array(z.object({
-    id: z.number().optional(),
+    id: z.preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }, z.number().optional()),
     componentProductId: z.number().min(1, "Vui lòng chọn nguyên liệu"),
     quantity: z.coerce.number().min(0.0001, "Số lượng phải lớn hơn 0"),
     unitId: z.number().optional(),
