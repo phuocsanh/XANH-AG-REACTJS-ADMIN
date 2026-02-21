@@ -60,19 +60,35 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
   // Lấy ra conversion unit (phần tử thứ 2 trong mảng)
   const hasConversion = fields.length > 1;
 
-  const handleToggleConversion = (checked: boolean) => {
-    if (checked && fields.length === 1) {
+  const handleToggleConversion = (e: React.MouseEvent, checked: boolean) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (checked && fields.length <= 1) {
+      // Nếu chưa có đơn vị quy đổi (length = 0 hoặc 1), thêm mới
+      if (fields.length === 0 && mainUnitId) {
+        // Đảm bảo có base unit trước
+        append({
+          unit_id: mainUnitId,
+          conversion_factor: 1,
+          is_base_unit: true,
+          is_purchase_unit: true,
+          is_sales_unit: true,
+        });
+      }
+      
       append({
         unit_id: undefined as any,
         conversion_factor: 1,
         is_base_unit: false,
         is_purchase_unit: true,
         is_sales_unit: true,
-      })
+      });
     } else if (!checked && fields.length > 1) {
-      remove(1)
+      // Xóa đơn vị quy đổi (giữ lại base unit ở index 0)
+      remove(1);
     }
-  }
+  };
 
   return (
     <div className="bg-blue-50/30 p-4 rounded-lg border border-blue-100 mb-6 mt-4">
@@ -81,7 +97,7 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
           Quy cách đóng gói:
         </Typography.Text>
         <Typography.Link 
-          onClick={() => handleToggleConversion(!hasConversion)}
+          onClick={(e) => handleToggleConversion(e, !hasConversion)}
           className="text-xs"
         >
           {hasConversion ? "[ Bỏ quy đổi ]" : "[ Thêm đơn vị quy đổi (Bao, Thùng...) ]"}

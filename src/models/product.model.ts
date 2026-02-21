@@ -18,6 +18,17 @@ export interface ProductUnitConversion {
   notes?: string
 }
 
+// Interface cho thành phần sản phẩm (BOM)
+export interface ProductComponent {
+  id?: number
+  productId?: number
+  componentProductId: number
+  componentProduct?: Product
+  quantity: number
+  unitId?: number
+  unit?: { id: number; name: string }
+}
+
 // Interface cho dữ liệu sản phẩm từ API
 export interface Product {
   id: number
@@ -63,6 +74,7 @@ export interface Product {
   is_sold_on_web: boolean
   show_price_on_web: boolean
   unit_conversions?: ProductUnitConversion[]
+  components?: ProductComponent[]
 }
 
 // Extend Product interface để tương thích với DataTable
@@ -76,6 +88,7 @@ import { AnyObject } from "./common"
 // và thêm các trường mới
 export interface ProductFormValues
   extends Omit<CreateProductRequest, "thumb" | "pictures"> {
+  components?: ProductComponent[]
   thumb?: UploadFile[]
   pictures?: UploadFile[]
   unit?: string // Đơn vị tính
@@ -94,6 +107,7 @@ export interface ProductFormValues
 }
 
 export interface CreateProductRequest extends AnyObject {
+  components?: any[]
   name: string
   price: string
   type: number

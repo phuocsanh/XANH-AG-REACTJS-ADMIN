@@ -49,6 +49,7 @@ import ImageStudio from "@/components/image-studio/image-studio"
 import { useUploadImageMutation } from "@/queries/upload"
 import { UploadType } from "@/services/upload.service"
 import ProductUnitConversionTable from "./ProductUnitConversionTable"
+import ProductBOMTable from "./ProductBOMTable"
 
 const { Title } = Typography
 
@@ -235,10 +236,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         setInitialLoading(true)
 
         // Lấy dữ liệu từ response
-        // Cần handle trường hợp response bọc trong object { data: ... }
-        let productItem = productData as Product | { data: Product };
-        if (productItem && 'data' in productItem) {
-            productItem = productItem.data;
+        let productItem: any = productData;
+        if (productData && 'data' in (productData as any)) {
+            productItem = (productData as any).data;
         }
 
         if (!productItem) {
@@ -300,6 +300,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 .filter(([key]) => key !== 'unit') // Lọc bỏ trường unit vì đã có trường riêng
                 .map(([key, value]) => ({ key, value }))
             : [],
+          
+          components: productItem.components || [],
         } as ProductFormValues)
 
         // Product type will be watched through watchedType
@@ -558,6 +560,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
         unit_conversions: values.unit_conversions || [],
+        components: values.components || [],
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -961,6 +964,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                    <ProductUnitConversionTable control={control} />
                 </div>
 
+
                 <div className='w-full'>
                   <FormFieldNumber
                     name='quantity'
@@ -1191,6 +1195,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     uploadType={UPLOAD_TYPES.PRODUCT}
                     className='w-full'
                   />
+                </div>
+
+                <div className='w-full'>
+                  <ProductBOMTable control={control} />
                 </div>
 
                 {renderProductAttributes()}

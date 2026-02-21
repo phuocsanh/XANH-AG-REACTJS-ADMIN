@@ -76,6 +76,9 @@ import CreateSalesReturn from "./pages/sales-returns/create"
 // Thêm import cho inventory returns và adjustments
 import ReturnsPage from "./pages/inventory/returns"
 import AdjustmentsPage from "./pages/inventory/adjustments"
+import InventoryMixturesList from "./pages/inventory/mixtures"
+import InventoryMixtureCreate from "./pages/inventory/mixtures/create"
+import InventoryMixtureDetail from "./pages/inventory/mixtures/detail"
 import OperatingCostCategoriesPage from './pages/operating-costs/categories'
 import OperatingCostsPage from "./pages/operating-costs"
 import GiftCostsPage from "./pages/operating-costs/gift-costs"
@@ -530,6 +533,32 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="inventory:manage">
                           <AdjustmentsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Routes cho Phối trộn sản phẩm */}
+                    <Route
+                      path='/inventory/mixtures'
+                      element={
+                        <ProtectedRoute requiredPermission="inventory:read">
+                          <InventoryMixturesList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/inventory/mixtures/create'
+                      element={
+                        <ProtectedRoute requiredPermission="inventory:manage">
+                          <InventoryMixtureCreate />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/inventory/mixtures/:id'
+                      element={
+                        <ProtectedRoute requiredPermission="inventory:read">
+                          <InventoryMixtureDetail />
                         </ProtectedRoute>
                       }
                     />
