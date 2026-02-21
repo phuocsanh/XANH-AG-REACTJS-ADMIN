@@ -35,7 +35,7 @@ export const productFormSchema = z.object({
   // Thêm 2 trường mới
   symbol_id: z.number().optional(),
   ingredient: z.string().min(1, "Vui lòng nhập thành phần nguyên liệu"), // Bắt buộc nhập
-  notes: z.string().optional(), // Ghi chú (tùy chọn)
+  notes: z.string().nullable().optional(), // Ghi chú (tùy chọn)
   // Thêm 2 trường mới từ server
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
@@ -60,7 +60,7 @@ export const productFormSchema = z.object({
     is_purchase_unit: z.boolean().default(false),
     is_sales_unit: z.boolean().default(false),
     sort_order: z.number().optional(),
-    notes: z.string().optional(),
+    notes: z.string().nullable().optional(),
   })).optional(),
   components: z.array(z.object({
     id: z.preprocess((val) => {

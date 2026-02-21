@@ -160,23 +160,28 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                   if (selectedConv) {
                                     const factor = Number(selectedConv.conversion_factor) || 1;
                                     setValue(`items.${index}.conversion_factor`, factor);
+                                    
+                                    // Cập nhật đơn giá theo hệ số quy đổi
+                                    const productsItems = (productsData?.data?.items || []);
+                                    const product = productsItems.find((p: any) => p.id === field.product_id);
+                                    const isCash = watch(`items.${index}.price_type`) === 'cash';
+                                    const basePrice = Number(isCash ? product?.price : (product?.credit_price || product?.price)) || 0;
+                                    setValue(`items.${index}.unit_price`, basePrice * factor);
+
                                     // Cập nhật base_quantity
                                     const qty = Number(watch(`items.${index}.quantity`)) || 0;
                                     const baseQty = qty * factor;
                                     setValue(`items.${index}.base_quantity`, baseQty);
                                     
-                                    // Lưu tên đơn vị chính xác (bao gồm cả label có factor nếu cần)
-                                    const label = selectedConv.is_base_unit 
-                                      ? (selectedConv.unit?.name || selectedConv.unit_name) 
-                                      : `${selectedConv.unit?.name || selectedConv.unit_name} (${factor})`;
-                                    setValue(`items.${index}.unit_name`, label);
+                                    // Lưu tên đơn vị
+                                    setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name);
 
-                                    // Kiểm tra tồn kho sau khi đổi đơn vị
+                                    // Kiểm tra tồn kho
                                     const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
                                     if (baseQty > stock) {
                                       const unitLabel = selectedConv.unit?.name || selectedConv.unit_name || '';
                                       const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
-                                      antMessage.warning(`Số lượng (${qty} ${unitLabel}) vượt quá tồn kho (${displayStock} ${unitLabel})!`);
+                                      antMessage.warning(`Số lượng vượt quá tồn kho (${displayStock} ${unitLabel})!`);
                                     }
                                   }
                                 }}
@@ -426,6 +431,14 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                               if (selectedConv) {
                                 const factor = Number(selectedConv.conversion_factor) || 1;
                                 setValue(`items.${index}.conversion_factor`, factor);
+                                
+                                // Cập nhật đơn giá theo hệ số quy đổi (Mobile)
+                                const productsItems = (productsData?.data?.items || []);
+                                const product = productsItems.find((p: any) => p.id === field.product_id);
+                                const isCash = watch(`items.${index}.price_type`) === 'cash';
+                                const basePrice = Number(isCash ? product?.price : (product?.credit_price || product?.price)) || 0;
+                                setValue(`items.${index}.unit_price`, basePrice * factor);
+
                                 setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name);
                                 
                                 // Cập nhật base_quantity

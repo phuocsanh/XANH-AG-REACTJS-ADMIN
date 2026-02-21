@@ -5,7 +5,7 @@ import { Button, message, Form, Spin, Alert, Typography, Card } from "antd"
 import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons"
 import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   FormField,
@@ -226,9 +226,13 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   const { confirmExit } = useFormGuard(isFormDirty && !isSubmitSuccess);
 
-  // Debug log
+  const watchedUnitId = useWatch({
+    control,
+    name: 'unit_id',
+  });
 
-
+  const unitsList = (units as any)?.data?.items || [];
+  const mainUnitName = unitsList.find((u: any) => u.id === watchedUnitId)?.name || '';
 
   useEffect(() => {
     if (isEdit && productData && !productLoading) {
@@ -903,13 +907,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                <div className='w-full'>
+                <div className='col-span-1'>
                   <FormFieldNumber
                     name='price'
                     control={control}
-                    label='Giá bán tiền mặt (VNĐ)'
-                    placeholder='Nhập giá bán tiền mặt'
-                    required
+                    label={`Giá bán tiền mặt (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}
+                    placeholder='150.000'
                     className='w-full'
                     fixedDecimalScale={false}
                     outputType="string"
@@ -917,26 +920,24 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                <div className='w-full'>
+                <div className='col-span-1'>
                   <FormFieldNumber
                     name='credit_price'
                     control={control}
-                    label='Giá bán nợ (VNĐ)'
-                    placeholder='Nhập giá bán nợ'
-                    required
+                    label={`Giá bán nợ (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}
+                    placeholder='160.000'
                     className='w-full'
                     fixedDecimalScale={false}
                     outputType="string"
                   />
                 </div>
 
-                <div className='w-full'>
+                <div className='col-span-1'>
                   <FormFieldNumber
                     name='tax_selling_price'
                     control={control}
-                    label='GBKT (VNĐ)'
-                    placeholder='Nhận GBKT'
-                    required
+                    label={`GBKT (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}
+                    placeholder='140.000'
                     className='w-full'
                     fixedDecimalScale={false}
                     outputType="string"
