@@ -140,6 +140,9 @@ export interface InventoryReceiptItem {
   expiry_date?: string
   individual_shipping_cost?: number
   taxable_quantity?: number
+  unit_id?: number
+  conversion_factor?: number
+  base_quantity?: number
 }
 
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)

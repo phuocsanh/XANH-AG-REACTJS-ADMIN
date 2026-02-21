@@ -48,6 +48,7 @@ import { ImageAnalyzer, ExtractedProductData } from "@/components/image-analyzer
 import ImageStudio from "@/components/image-studio/image-studio"
 import { useUploadImageMutation } from "@/queries/upload"
 import { UploadType } from "@/services/upload.service"
+import ProductUnitConversionTable from "./ProductUnitConversionTable"
 
 const { Title } = Typography
 
@@ -290,6 +291,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           taxable_quantity_stock: Number(productItem.taxable_quantity_stock || 0), // Ép kiểu number để tránh lỗi string từ database "0.00"
           is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
           show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
+          
+          unit_conversions: productItem.unit_conversions || [],
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
@@ -554,6 +557,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         taxable_quantity_stock: convertedValues.taxable_quantity_stock,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
+        unit_conversions: values.unit_conversions || [],
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -951,6 +955,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     required
                     rules={{ required: "Vui lòng chọn đơn vị tính" }}
                   />
+                </div>
+
+                <div className='md:col-span-2 mt-2'>
+                   <ProductUnitConversionTable control={control} />
                 </div>
 
                 <div className='w-full'>

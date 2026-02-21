@@ -106,15 +106,31 @@ const useItemColumns = ({
                               setValue(`items.${index}.scientific_name`, selectedOpt.name)
                             }
                             
-                            const unitName = selectedOpt.unit?.name || selectedOpt.unit_name || ""
+                            // Tìm đơn vị nhập hàng mặc định
+                            const conversions = selectedOpt.unit_conversions || [];
+                            const purchaseConv = conversions.find((c: any) => c.is_purchase_unit);
+                            const unitId = purchaseConv ? purchaseConv.unit_id : selectedOpt.unit_id;
+                            const factor = purchaseConv ? Number(purchaseConv.conversion_factor) : 1;
+                            
+                            const unitName = purchaseConv 
+                              ? (purchaseConv.is_base_unit ? (purchaseConv.unit?.name || purchaseConv.unit_name) : `${purchaseConv.unit?.name || purchaseConv.unit_name} (${factor})`)
+                              : (selectedOpt.unit?.name || selectedOpt.unit_name || "");
+
                             setValue(`items.${index}.unit_name`, unitName)
+                            setValue(`items.${index}.unit_id`, unitId)
+                            setValue(`items.${index}.conversion_factor`, factor)
+
+                            const qty = getValues(`items.${index}.quantity`) || 0
+                            setValue(`items.${index}.base_quantity`, qty * factor)
+
+                            // Lưu conversions để dùng cho select ĐVT
+                            setValue(`items.${index}.conversions`, selectedOpt.unit_conversions || [])
 
                             if (selectedOpt.cost_price !== undefined) {
                               const cost = selectedOpt.cost_price
                               setValue(`items.${index}.unit_cost`, cost)
                               
                               // Cập nhật thành tiền
-                              const qty = getValues(`items.${index}.quantity`) || 0
                               setValue(`items.${index}.total_price`, qty * cost)
                             }
                           }
@@ -132,19 +148,70 @@ const useItemColumns = ({
     },
     {
       title: "ĐVT",
-      key: "unit_name",
-      width: 80,
+      key: "unit_id",
+      width: 120,
       align: "center",
       render: (_, __, index) => {
+        const conversions = getValues(`items.${index}.conversions`) || []
+        const hasConversions = conversions.length > 0
+
         return (
           <div className="text-center">
-            <Controller
-              name={`items.${index}.unit_name`}
-              control={control}
-              render={({ field }) => (
-                <span>{field.value || "-"}</span>
-              )}
-            />
+            {hasConversions ? (
+              <Controller
+                name={`items.${index}.unit_id`}
+                control={control}
+                render={({ field }) => (
+                  <Tooltip title={(() => {
+                    const factor = Number(getValues(`items.${index}.conversion_factor`)) || 1;
+                    const unitName = getValues(`items.${index}.unit_name`) || '';
+                    const conversions = getValues(`items.${index}.conversions`) || [];
+                    const baseUnit = conversions.find((c: any) => c.is_base_unit);
+                    const baseUnitName = baseUnit?.unit?.name || baseUnit?.unit_name || 'đơn vị cơ sở';
+                    if (factor === 1) return `Đơn vị cơ sở (${unitName})`;
+                    return `1 ${unitName} = ${factor} ${baseUnitName}`;
+                  })()}>
+                    <div>
+                      <ComboBox
+                        {...field}
+                        noFormItem
+                        options={conversions.map((c: any) => {
+                          const factorValue = Number(c.conversion_factor) || 1;
+                          const isBase = c.is_base_unit;
+                          const label = isBase 
+                            ? (c.unit?.name || c.unit_name) 
+                            : `${c.unit?.name || c.unit_name} (${factorValue})`;
+                          
+                          return {
+                            label: label || "---",
+                            value: c.unit_id,
+                          };
+                        })}
+                        onChange={(val) => {
+                          field.onChange(val)
+                          const selectedConv = conversions.find((c: any) => c.unit_id === val)
+                          if (selectedConv) {
+                            const factor = Number(selectedConv.conversion_factor) || 1
+                            setValue(`items.${index}.conversion_factor`, factor)
+                            setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name)
+                            
+                            // Cập nhật base_quantity
+                            const qty = getValues(`items.${index}.quantity`) || 0
+                            setValue(`items.${index}.base_quantity`, qty * factor)
+                          }
+                        }}
+                      />
+                    </div>
+                  </Tooltip>
+                )}
+              />
+            ) : (
+              <Controller
+                name={`items.${index}.unit_name`}
+                control={control}
+                render={({ field }) => <span>{field.value || "-"}</span>}
+              />
+            )}
           </div>
         )
       },
@@ -178,6 +245,10 @@ const useItemColumns = ({
                   // Cập nhật thành tiền
                   const cost = getValues(`items.${index}.unit_cost`) || 0
                   setValue(`items.${index}.total_price`, qty * cost)
+
+                  // Cập nhật base_quantity
+                  const factor = getValues(`items.${index}.conversion_factor`) || 1
+                  setValue(`items.${index}.base_quantity`, qty * factor)
                 }}
               />
             )}

@@ -138,6 +138,12 @@ export interface CreateSalesInvoiceItemRequest extends AnyObject {
   discount_amount?: number
   /** Ghi chú */
   notes?: string
+  /** ID đơn vị bán hàng */
+  sale_unit_id?: number
+  /** Hệ số quy đổi */
+  conversion_factor?: number
+  /** Số lượng quy đổi cơ sở */
+  base_quantity?: number
 }
 
 /**

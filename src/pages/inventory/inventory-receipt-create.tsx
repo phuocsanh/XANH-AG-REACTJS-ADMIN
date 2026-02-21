@@ -255,6 +255,10 @@ const InventoryReceiptCreate: React.FC = () => {
         expiry_date: item.expiry_date,
         notes: item.notes,
         taxable_quantity: item.taxable_quantity || 0,
+        unit_id: item.unit_id,
+        conversion_factor: Number(item.conversion_factor || 1),
+        base_quantity: Number(item.base_quantity || item.quantity),
+        conversions: item.product?.unit_conversions || [],
       }))
 
       // Reset toàn bộ form với dữ liệu mới
@@ -409,6 +413,10 @@ const InventoryReceiptCreate: React.FC = () => {
       discountValue: 0,
       discount_amount: 0,
       taxable_quantity: 0,
+      unit_id: undefined,
+      conversion_factor: 1,
+      base_quantity: 1,
+      conversions: [],
     })
   }, [prepend])
 
@@ -503,7 +511,10 @@ const InventoryReceiptCreate: React.FC = () => {
         // Items - Sử dụng giá đã chiết khấu làm giá nhập chính thức
         items: totals.finalItems.map((item: any) => ({
           product_id: item.product_id,
+          unit_id: item.unit_id,
           unit_name: item.unit_name,
+          conversion_factor: item.conversion_factor || 1,
+          base_quantity: item.base_quantity || item.quantity,
           quantity: item.quantity,
           taxable_quantity: item.taxable_quantity || 0, // Bổ sung trường này
           unit_cost: item.netUnitCost,

@@ -13,6 +13,10 @@ export const salesInvoiceItemSchema = z.object({
   average_cost_price: z.number().min(0).optional(), // ✅ Giá vốn để tính lợi nhuận
   stock_quantity: z.number().optional(), // ✅ Số lượng tồn kho hiện tại
   tax_selling_price: z.string().optional(), // ✅ Giá bán khai thuế
+  sale_unit_id: z.number().optional(), // Đã thêm
+  conversion_factor: z.number().optional().default(1), // Đã thêm
+  base_quantity: z.number().optional(), // Đã thêm
+  conversions: z.array(z.any()).optional(), // Đã thêm
 });
 
 // Schema cho hóa đơn
@@ -81,6 +85,10 @@ export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {
   discount_amount: 0,
   notes: '',
   price_type: 'credit', // Mặc định là giá bán nợ
+  sale_unit_id: undefined,
+  conversion_factor: 1,
+  base_quantity: 1,
+  conversions: [],
 };
 
 export const paymentMethodLabels = {

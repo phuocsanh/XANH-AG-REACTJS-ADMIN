@@ -111,8 +111,23 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                             setValue(`items.${index}.scientific_name`, selectedOpt.name)
                           }
                           
-                          const unitName = selectedOpt.unit?.name || selectedOpt.unit_name || ""
+                          // Tìm đơn vị nhập hàng mặc định
+                          const conversions = selectedOpt.unit_conversions || [];
+                          const purchaseConv = conversions.find((c: any) => c.is_purchase_unit);
+                          const unitId = purchaseConv ? purchaseConv.unit_id : selectedOpt.unit_id;
+                          const factor = purchaseConv ? Number(purchaseConv.conversion_factor) : 1;
+                          
+                          const unitName = purchaseConv 
+                            ? (purchaseConv.is_base_unit ? (purchaseConv.unit?.name || purchaseConv.unit_name) : `${purchaseConv.unit?.name || purchaseConv.unit_name} (${factor})`)
+                            : (selectedOpt.unit?.name || selectedOpt.unit_name || "");
+
                           setValue(`items.${index}.unit_name`, unitName)
+                          setValue(`items.${index}.unit_id`, unitId)
+                          setValue(`items.${index}.conversion_factor`, factor)
+                          
+                          const qty = getValues(`items.${index}.quantity`) || 0
+                          setValue(`items.${index}.base_quantity`, qty * factor)
+                          setValue(`items.${index}.conversions`, conversions)
 
                           if (selectedOpt.cost_price !== undefined) {
                             const cost = selectedOpt.cost_price
@@ -135,15 +150,63 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
         <div className='grid grid-cols-2 gap-3'>
           <div>
             <label className='block text-xs mb-1'>Đơn vị tính</label>
-            <Controller
-              name={`items.${index}.unit_name`}
-              control={control}
-              render={({ field }) => (
-                <div className="p-2 bg-gray-50 border rounded min-h-[32px] flex items-center text-gray-500 text-sm">
-                  {field.value || "-"}
-                </div>
-              )}
-            />
+            {(() => {
+              const conversions = getValues(`items.${index}.conversions`) || []
+              const hasConversions = conversions.length > 0
+
+              if (!hasConversions) {
+                return (
+                  <Controller
+                    name={`items.${index}.unit_name`}
+                    control={control}
+                    render={({ field }) => (
+                      <div className="p-2 bg-gray-50 border rounded min-h-[32px] flex items-center text-gray-500 text-sm">
+                        {field.value || "-"}
+                      </div>
+                    )}
+                  />
+                )
+              }
+
+              return (
+                <Controller
+                  name={`items.${index}.unit_id`}
+                  control={control}
+                  render={({ field }) => (
+                    <ComboBox
+                      {...field}
+                      noFormItem
+                      options={conversions.map((c: any) => {
+                        const factorValue = Number(c.conversion_factor) || 1;
+                        const isBase = c.is_base_unit;
+                        const label = isBase 
+                          ? (c.unit?.name || c.unit_name) 
+                          : `${c.unit?.name || c.unit_name} (${factorValue})`;
+                        
+                        return {
+                          label: label || "---",
+                          value: c.unit_id,
+                        };
+                      })}
+                      onChange={(val) => {
+                        field.onChange(val)
+                        const selectedConv = conversions.find((c: any) => c.unit_id === val)
+                        if (selectedConv) {
+                          const factor = Number(selectedConv.conversion_factor) || 1
+                          setValue(`items.${index}.conversion_factor`, factor)
+                          setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name)
+                          
+                          // Cập nhật base_quantity
+                          const qty = getValues(`items.${index}.quantity`) || 0
+                          setValue(`items.${index}.base_quantity`, qty * factor)
+                        }
+                      }}
+                      style={{ width: "100%" }}
+                    />
+                  )}
+                />
+              )
+            })()}
           </div>
           <div>
             <label className='block text-xs mb-1'>Số lượng *</label>

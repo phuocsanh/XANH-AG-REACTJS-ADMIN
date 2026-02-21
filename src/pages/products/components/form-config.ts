@@ -48,6 +48,16 @@ export const productFormSchema = z.object({
     key: z.string(),
     value: z.any()
   })).optional(),
+  unit_conversions: z.array(z.object({
+    id: z.number().optional(),
+    unit_id: z.number().min(1, "Vui lòng chọn đơn vị"),
+    conversion_factor: z.coerce.number().min(0, "Hệ số không hợp lệ"),
+    is_base_unit: z.boolean().default(false),
+    is_purchase_unit: z.boolean().default(false),
+    is_sales_unit: z.boolean().default(false),
+    sort_order: z.number().optional(),
+    notes: z.string().optional(),
+  })).optional(),
 })
 
 // Schema validation cho form tạo sản phẩm mới (yêu cầu thêm một số trường bắt buộc)
@@ -93,6 +103,7 @@ export interface ProductFormValues {
   show_price_on_web?: boolean
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list?: { key: string; value: any }[]
+  unit_conversions?: any[]
 }
 
 // Interface cho ConvertedProductValues (phù hợp với cấu trúc hiện tại)
@@ -125,6 +136,7 @@ export interface ConvertedProductValues {
   tax_selling_price: string // Giá bán khai thuế
   taxable_quantity_stock?: number // Số lượng tồn khai thuế
   suggested_price?: string
+  unit_conversions?: any[]
 }
 
 // Giá trị mặc định cho form
@@ -149,5 +161,5 @@ export const defaultProductFormValues: ProductFormValues = {
   taxable_quantity_stock: 0, // Mặc định là 0
   is_sold_on_web: false,
   show_price_on_web: true,
-  // Các trường optional khác sẽ là undefined theo mặc định
+  unit_conversions: [],
 }

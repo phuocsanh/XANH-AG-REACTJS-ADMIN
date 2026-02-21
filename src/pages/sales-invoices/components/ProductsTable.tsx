@@ -13,6 +13,7 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Tooltip,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Controller, Control, UseFormWatch, UseFormSetValue } from 'react-hook-form';
@@ -41,6 +42,10 @@ interface ProductField {
   notes?: string;
   price_type: 'cash' | 'credit';
   stock_quantity?: number;
+  sale_unit_id?: number;
+  conversion_factor?: number;
+  base_quantity?: number;
+  conversions?: any[];
 }
 
 interface ProductsTableProps {
@@ -96,7 +101,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 <TableCell align="center" sx={{ width: 40 }}>STT</TableCell>
                 <TableCell sx={{ minWidth: 200 }}>Sản phẩm</TableCell>
                 <TableCell align="center" sx={{ width: 60 }}>ĐVT</TableCell>
-                <TableCell align="center" sx={{ width: 80 }}>Tồn kho</TableCell>
+                <TableCell align="center" sx={{ width: 100 }}>Tồn kho</TableCell>
                 <TableCell align="center" sx={{ width: 150 }}>Loại giá</TableCell>
                 <TableCell align="right" sx={{ width: 100 }}>Số lượng</TableCell>
                 <TableCell align="right" sx={{ width: 160 }}>Đơn giá</TableCell>
@@ -130,23 +135,96 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
-                      <Typography variant="body2" color="text.secondary">
-                        {watch(`items.${index}.unit_name`)}
-                      </Typography>
+                      {(() => {
+                        const conversions = watch(`items.${index}.conversions`) || [];
+                        const hasConversions = conversions.length > 0;
+                        
+                        if (!hasConversions) {
+                          return (
+                            <Typography variant="body2" color="text.secondary">
+                              {watch(`items.${index}.unit_name`)}
+                            </Typography>
+                          );
+                        }
+
+                        return (
+                          <Controller
+                            name={`items.${index}.sale_unit_id`}
+                            control={control}
+                            render={({ field: unitField }) => (
+                              <ComboBox
+                                value={unitField.value}
+                                onChange={(value) => {
+                                  unitField.onChange(value);
+                                  const selectedConv = conversions.find((c: any) => c.unit_id === value);
+                                  if (selectedConv) {
+                                    const factor = Number(selectedConv.conversion_factor) || 1;
+                                    setValue(`items.${index}.conversion_factor`, factor);
+                                    // Cập nhật base_quantity
+                                    const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                                    const baseQty = qty * factor;
+                                    setValue(`items.${index}.base_quantity`, baseQty);
+                                    
+                                    // Lưu tên đơn vị chính xác (bao gồm cả label có factor nếu cần)
+                                    const label = selectedConv.is_base_unit 
+                                      ? (selectedConv.unit?.name || selectedConv.unit_name) 
+                                      : `${selectedConv.unit?.name || selectedConv.unit_name} (${factor})`;
+                                    setValue(`items.${index}.unit_name`, label);
+
+                                    // Kiểm tra tồn kho sau khi đổi đơn vị
+                                    const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                                    if (baseQty > stock) {
+                                      const unitLabel = selectedConv.unit?.name || selectedConv.unit_name || '';
+                                      const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
+                                      antMessage.warning(`Số lượng (${qty} ${unitLabel}) vượt quá tồn kho (${displayStock} ${unitLabel})!`);
+                                    }
+                                  }
+                                }}
+                                options={conversions.map((c: any) => {
+                                  const factorValue = Number(c.conversion_factor) || 1;
+                                  const isBase = c.is_base_unit;
+                                  // Label chuẩn: Tên đơn vị + (Hệ số) nếu không phải đơn vị gốc
+                                  const label = isBase 
+                                    ? (c.unit?.name || c.unit_name) 
+                                    : `${c.unit?.name || c.unit_name} (${factorValue})`;
+                                  
+                                  return {
+                                    label: label || "---",
+                                    value: c.unit_id,
+                                  };
+                                })}
+                                size="small"
+                                style={{ width: 100 }}
+                                showSearch={false}
+                              />
+                            )}
+                          />
+                        );
+                      })()}
                     </TableCell>
                     <TableCell align="center">
                       {(() => {
                         const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                        const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
                         const sellQty = Number(watch(`items.${index}.quantity`)) || 0;
-                        const isOver = sellQty > stock;
+                        const baseQty = sellQty * factor;
+                        const isOver = baseQty > stock;
+                        
+                        // Tính tồn kho theo đơn vị đã chọn (ví dụ: KG quy đổi ra BAO)
+                        const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
+                        
                         return (
-                          <Field 
-                            value={`${stock}`}
-                            disabled
-                            className="w-full"
-                            status={isOver ? 'error' : undefined}
-                            size="small"
-                          />
+                          <Tooltip title={`Tồn thực tế: ${stock} (Đơn vị cơ sở)`} arrow>
+                            <div style={{ minWidth: '70px' }}>
+                              <Field 
+                                value={`${displayStock}`}
+                                disabled
+                                className="w-full text-center"
+                                status={isOver ? 'error' : undefined}
+                                size="small"
+                              />
+                            </div>
+                          </Tooltip>
                         );
                       })()}
                     </TableCell>
@@ -195,12 +273,26 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                               field.onChange(val);
                               if (val !== null) {
                                 const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                                if (val > stock) {
-                                  antMessage.warning(`Số lượng nhập (${val}) vượt quá tồn kho (${stock})!`);
+                                const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                                const baseQty = Number(val) * factor;
+                                
+                                if (baseQty > stock) {
+                                  const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
+                                  const unitName = watch(`items.${index}.unit_name`) || '';
+                                  antMessage.warning(`Số lượng nhập (${val} ${unitName}) vượt quá tồn kho (${displayStock} ${unitName})!`);
                                 }
+                                
+                                // Cập nhật base_quantity
+                                setValue(`items.${index}.base_quantity`, baseQty);
                               }
                             }}
                             min={1}
+                            status={(() => {
+                              const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                              const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                              const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                              return (qty * factor > stock) ? 'error' : undefined;
+                            })()}
                             allowClear
                             size="small"
                             style={{ width: 90 }}
@@ -307,22 +399,88 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Đơn vị
                   </Typography>
-                  <Field 
-                    value={watch(`items.${index}.unit_name`) || '---'}
-                    disabled
-                    className="w-full"
-                  />
+                  {(() => {
+                    const conversions = watch(`items.${index}.conversions`) || [];
+                    const hasConversions = conversions.length > 0;
+                    
+                    if (!hasConversions) {
+                      return (
+                        <Field 
+                          value={watch(`items.${index}.unit_name`) || '---'}
+                          disabled
+                          className="w-full"
+                        />
+                      );
+                    }
+
+                    return (
+                      <Controller
+                        name={`items.${index}.sale_unit_id`}
+                        control={control}
+                        render={({ field: unitField }) => (
+                          <ComboBox
+                            value={unitField.value}
+                            onChange={(value) => {
+                              unitField.onChange(value);
+                              const selectedConv = conversions.find((c: any) => c.unit_id === value);
+                              if (selectedConv) {
+                                const factor = Number(selectedConv.conversion_factor) || 1;
+                                setValue(`items.${index}.conversion_factor`, factor);
+                                setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name);
+                                
+                                // Cập nhật base_quantity
+                                const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                                const baseQty = qty * factor;
+                                setValue(`items.${index}.base_quantity`, baseQty);
+
+                                // Kiểm tra tồn kho mobile
+                                const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                                if (baseQty > stock) {
+                                  const unitLabel = selectedConv.unit?.name || selectedConv.unit_name || '';
+                                  const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
+                                  antMessage.warning(`Số lượng vượt quá tồn kho (${displayStock} ${unitLabel})!`);
+                                }
+                              }
+                            }}
+                            options={conversions.map((c: any) => {
+                              const factorValue = Number(c.conversion_factor) || 1;
+                              const label = c.is_base_unit 
+                                ? (c.unit?.name || c.unit_name) 
+                                : `${c.unit?.name || c.unit_name} (${factorValue})`;
+                                
+                              return {
+                                label: label || "---",
+                                value: c.unit_id,
+                              };
+                            })}
+                            style={{ width: '100%' }}
+                            showSearch={false}
+                          />
+                        )}
+                      />
+                    );
+                  })()}
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
                     Tồn kho
                   </Typography>
-                  <Field 
-                    value={`Kho: ${stock}`}
-                    disabled
-                    className="w-full"
-                    status={remaining < 0 ? 'error' : undefined}
-                  />
+                  {(() => {
+                    const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                    const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                    const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
+                    const sellQty = Number(watch(`items.${index}.quantity`)) || 0;
+                    const isOver = (sellQty * factor) > stock;
+
+                    return (
+                      <Field 
+                        value={`${displayStock}`}
+                        disabled
+                        className="w-full"
+                        status={isOver ? 'error' : undefined}
+                      />
+                    );
+                  })()}
                 </Box>
 
                 {/* Row 2: Loại giá & Số lượng */}
@@ -375,14 +533,27 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         value={field.value}
                         onChange={(val) => {
                           field.onChange(val);
-                          if (val !== null) {
-                            const stockQty = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                            if (val > stockQty) {
-                              antMessage.warning(`Số lượng nhập (${val}) vượt quá tồn kho (${stockQty})!`);
+                            if (val !== null) {
+                              const stockQty = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                              const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                              const baseQty = Number(val) * factor;
+
+                              if (baseQty > stockQty) {
+                                const displayStock = factor > 0 ? (stockQty / factor).toFixed(2) : stockQty;
+                                antMessage.warning(`Số lượng vượt quá tồn kho (${displayStock})!`);
+                              }
+                              
+                              // Cập nhật base_quantity
+                              setValue(`items.${index}.base_quantity`, baseQty);
                             }
-                          }
-                        }}
+                          }}
                         min={1}
+                        status={(() => {
+                          const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                          const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                          const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                          return (qty * factor > stock) ? 'error' : undefined;
+                        })()}
                         allowClear
                         style={{ width: '100%' }}
                       />

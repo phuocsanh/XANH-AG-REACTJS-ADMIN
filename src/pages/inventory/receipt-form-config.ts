@@ -14,6 +14,10 @@ export const receiptItemSchema = z.object({
   batch_number: z.string().optional(),
   individual_shipping_cost: z.number().optional().default(0),
   taxable_quantity: z.number().min(0).optional().default(0),
+  unit_id: z.number().optional(), // Đã thêm
+  conversion_factor: z.number().optional().default(1), // Đã thêm
+  base_quantity: z.number().optional(), // Đã thêm
+  conversions: z.array(z.any()).optional(), // Đã thêm
   discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
   discount_amount: z.number().optional().default(0),

@@ -661,10 +661,18 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         unitPrice = Number(product.credit_price);
     }
 
+    // Tìm đơn vị bán hàng mặc định trong danh sách quy đổi
+    const salesConv = product.unit_conversions?.find((c: any) => c.is_sales_unit);
+    const saleUnitId = salesConv ? salesConv.unit_id : product.unit_id;
+    const factor = salesConv ? Number(salesConv.conversion_factor) : 1;
+    const unitName = salesConv 
+      ? (salesConv.is_base_unit ? (salesConv.unit?.name || salesConv.unit_name) : `${salesConv.unit?.name || salesConv.unit_name} (${factor})`)
+      : (product.unit_name || product.unit?.name || '');
+
     prepend({
       product_id: product.id,
       product_name: product.trade_name || product.name,
-      unit_name: product.unit_name || product.unit?.name || '',
+      unit_name: unitName,
       quantity: 1,
       unit_price: unitPrice,
       discount_amount: 0,
@@ -677,6 +685,10 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         : Number(product.average_cost_price || 0),
       stock_quantity: product.quantity || 0,
       tax_selling_price: product.tax_selling_price || '0',
+      sale_unit_id: saleUnitId,
+      conversion_factor: factor,
+      base_quantity: factor,
+      conversions: product.unit_conversions || [],
     });
 
     // ✅ Mặc định đưa sản phẩm mới vào danh sách phân tích kỹ thuật

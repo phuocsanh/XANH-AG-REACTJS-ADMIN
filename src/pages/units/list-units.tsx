@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Button, message, Space, Modal, Form, Input, Select, Tag } from "antd"
+import { Button, message, Space, Modal, Form, Input, Select, Tag, Alert } from "antd"
 import { PlusOutlined } from "@ant-design/icons"
 import { CreateUnitDto, UpdateUnitDto } from "../../models/unit.model"
 import DataTable from "../../components/common/data-table"
@@ -153,6 +153,13 @@ const ListUnits = () => {
         </div>
 
         <div className='card shadow border-0 p-3 mt-4'>
+          <Alert
+            message="Thông tin hướng dẫn"
+            description="Bạn chỉ cần tạo các tên đơn vị cơ bản (Kg, Bao, Chai...) tại đây. Các quy cách đóng gói cụ thể (vi dụ: Bao 50kg, Bao 25kg) sẽ được cấu hình linh hoạt cho từng sản phẩm trong trang Sửa Sản Phẩm."
+            type="info"
+            showIcon
+            className="mb-4"
+          />
           <DataTable<UnitRecord>
             columns={[
               {

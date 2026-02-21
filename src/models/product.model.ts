@@ -3,6 +3,21 @@
 import { BaseStatus } from "@/constant/base-status"
 import { UploadFile } from "antd/lib/upload/interface"
 
+// Interface cho quy đổi đơn vị tính
+export interface ProductUnitConversion {
+  id?: number
+  product_id?: number
+  unit_id: number
+  unit?: { id: number; name: string }
+  unit_name?: string
+  conversion_factor: number
+  is_base_unit: boolean
+  is_purchase_unit: boolean
+  is_sales_unit: boolean
+  sort_order?: number
+  notes?: string
+}
+
 // Interface cho dữ liệu sản phẩm từ API
 export interface Product {
   id: number
@@ -47,6 +62,7 @@ export interface Product {
   taxable_quantity_stock: number // Số lượng tồn kho có hóa đơn (bể thuế)
   is_sold_on_web: boolean
   show_price_on_web: boolean
+  unit_conversions?: ProductUnitConversion[]
 }
 
 // Extend Product interface để tương thích với DataTable
@@ -74,6 +90,7 @@ export interface ProductFormValues
   tax_selling_price: string // Giá bán khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
+  unit_conversions?: ProductUnitConversion[]
 }
 
 export interface CreateProductRequest extends AnyObject {
@@ -99,6 +116,7 @@ export interface CreateProductRequest extends AnyObject {
   tax_selling_price: string // Giá bán khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
+  unit_conversions?: ProductUnitConversion[]
 }
 
 export interface UpdateProductRequest
