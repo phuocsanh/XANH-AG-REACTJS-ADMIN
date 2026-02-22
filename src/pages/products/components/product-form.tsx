@@ -23,7 +23,7 @@ import {
   useUpdateProductMutation,
   useCreateProductMutation,
 } from "../../../queries/product"
-import { Product, ProductFormProps } from "../../../models/product.model"
+import { Product, ProductFormProps, ProductUnitConversion, ProductComponent } from "../../../models/product.model"
 import {
   productFormSchema,
   ProductFormValues,
@@ -296,7 +296,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
           show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
           
-          unit_conversions: productItem.unit_conversions || [],
+          unit_conversions: (productItem.unit_conversions || []).map((conv: ProductUnitConversion) => ({
+            ...conv,
+            conversion_factor: conv.conversion_factor !== undefined ? Number(conv.conversion_factor) : undefined
+          })),
           
           // Chuyển đổi attributes object thành array cho form
           attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
@@ -305,7 +308,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 .map(([key, value]) => ({ key, value }))
             : [],
           
-          components: productItem.components || [],
+          components: (productItem.components || []).map((comp: ProductComponent) => ({
+            ...comp,
+            quantity: comp.quantity !== undefined ? Number(comp.quantity) : 0
+          })),
         } as ProductFormValues)
 
         // Product type will be watched through watchedType
