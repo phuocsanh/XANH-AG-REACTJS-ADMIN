@@ -5,7 +5,7 @@ import { Button, message, Form, Spin, Alert, Typography, Card } from "antd"
 import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons"
 import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
-import { useForm, useFieldArray, useWatch } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   FormField,
@@ -724,6 +724,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         <div className='lg:col-span-2'>
           <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden">
             <Spin spinning={loading || productLoading || initialLoading}>
+      <FormProvider {...{ control, handleSubmit, watch, reset, setValue, getValues, formState: { isDirty } } as any}>
               <form onSubmit={handleSubmit(onSubmit, (errors) => console.error("❌ Form Validation Errors:", errors))} className="product-form">
               {/* Component trích xuất thông tin từ hình ảnh - Hỗ trợ cả tạo mới và chỉnh sửa */}
               <div className="px-3 md:px-6 pt-3 md:pt-6">
@@ -1229,6 +1230,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 </div>
               </div>
             </form>
+            </FormProvider>
             </Spin>
           </div>
         </div>

@@ -64,6 +64,7 @@ interface FormComboBoxProps<T extends FieldValues>
   // Props cho styling
   className?: string
   style?: React.CSSProperties
+  inputStyle?: React.CSSProperties
   size?: "large" | "middle" | "small"
 
   // Callback functions
@@ -104,6 +105,7 @@ function FormComboBox<T extends FieldValues>({
   rules,
   className,
   style,
+  inputStyle,
   size = "middle",
   onSelectionChange,
   ...selectProps
@@ -301,6 +303,7 @@ function FormComboBox<T extends FieldValues>({
               }
               options={finalOptions as DefaultOptionType[]}
               popupClassName="combobox-dropdown-wrap-text"
+              style={inputStyle}
               {...selectProps}
             />
             {error && (
