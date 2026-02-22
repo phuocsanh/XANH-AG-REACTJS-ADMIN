@@ -620,7 +620,7 @@ const InventoryReceiptDetail: React.FC = () => {
             <div className="p-0 md:p-6 data-table-mobile-scroll">
               <DataTable
                 columns={itemColumns as any}
-                data={items as any}
+                data={[...items].reverse() as any}
                 rowKey="id"
                 pagination={false}
                 size="middle"

@@ -339,8 +339,8 @@ const CreateSalesInvoice = () => {
           unit_price: item.unit_price,
           discount_amount: item.discount_amount || 0,
           notes: item.notes || '',
-          price_type: inferredPriceType as 'cash' | 'credit', // Suy luận từ payment_method
-        })));
+          price_type: inferredPriceType as 'cash' | 'credit',
+        })).reverse());
 
         // ✅ Mặc định chọn tất cả sản phẩm để phân tích khi load dữ liệu chỉnh sửa
         setSelectedProductIdsForAdvisory(invoice.items.map((item: any) => item.product_id));
@@ -783,7 +783,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     
     const submitData = {
       ...data,
-      items: data.items || [], // Gửi nguyên thứ tự như giao diện (mới nhất ở trên)
+      items: [...(data.items || [])].reverse(), // Đảo ngược lại để đúng thứ tự thêm vào (cũ nhất lên đầu)
       remaining_amount: remainingAmount,
       customer_id: data.customer_id || null,
       delivery_log: deliveryLogData || undefined,
@@ -1228,7 +1228,7 @@ ${productInfo}`;
   ].filter(w => w.data);
 
   const generatePrintContent = () => {
-    const items = getValues('items') || [];
+    const items = [...(getValues('items') || [])].reverse(); // Đảo ngược lại để in món cũ trước, món mới sau
     return generatePrintContentUtil({
       paperSize,
       printSections,

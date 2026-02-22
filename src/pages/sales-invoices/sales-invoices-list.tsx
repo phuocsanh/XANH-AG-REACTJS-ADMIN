@@ -975,7 +975,7 @@ const SalesInvoicesList: React.FC = () => {
               <div className='font-medium text-lg mb-3'>Danh sách sản phẩm</div>
               {viewingInvoice.items && viewingInvoice.items.length > 0 ? (
                 <Space direction='vertical' className='w-full' size='small'>
-                  {viewingInvoice.items.map((item, index) => (
+                  {[...(viewingInvoice.items)].reverse().map((item, index) => (
                     <Card key={index} size='small'>
                       <div className='grid grid-cols-4 gap-4'>
                         <div className='col-span-2'>

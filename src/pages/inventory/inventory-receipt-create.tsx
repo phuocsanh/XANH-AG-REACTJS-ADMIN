@@ -259,7 +259,7 @@ const InventoryReceiptCreate: React.FC = () => {
         conversion_factor: Number(item.conversion_factor || 1),
         base_quantity: Number(item.base_quantity || item.quantity),
         conversions: item.product?.unit_conversions || [],
-      }))
+      })).reverse()
 
       // Reset toàn bộ form với dữ liệu mới
       reset({
@@ -525,7 +525,7 @@ const InventoryReceiptCreate: React.FC = () => {
           discount_amount: 0,
           discount_value: 0,
           discount_type: 'fixed_amount',
-        })),
+        })).reverse(),
 
         // Chiết khấu đơn hàng gửi 0 vì đã phân bổ vào từng item theo yêu cầu
         discount_amount: 0,
