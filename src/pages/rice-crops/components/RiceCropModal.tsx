@@ -13,6 +13,7 @@ import { useAreasQuery } from '@/queries/area-of-each-plot-of-land';
 import { GrowthStage, CropStatus, type RiceCrop, type CreateRiceCropDto } from '@/models/rice-farming';
 import { useAppStore } from '@/stores/store';
 import dayjs from 'dayjs';
+import { convertSolar2Lunar } from '@/lib/lunar-calendar';
 
 interface RiceCropModalProps {
   open: boolean;
@@ -131,7 +132,7 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
     },
   });
 
-  const { convertSolar2Lunar } = require('@/lib/lunar-calendar');
+
 
   // Tự động tính diện tích
   const watchedAmountOfLand = watch('amount_of_land');
