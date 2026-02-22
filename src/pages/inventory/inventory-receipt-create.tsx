@@ -267,7 +267,7 @@ const InventoryReceiptCreate: React.FC = () => {
         status: existingReceipt.status_code || existingReceipt.status || 'draft',
         bill_date: existingReceipt.bill_date ? dayjs(existingReceipt.bill_date) : dayjs(existingReceipt.created_at),
         description: existingReceipt.notes || '',
-        items: mappedItems,
+        items: mappedItems.reverse(),
         hasSharedShipping: !!receipt.shared_shipping_cost,
         sharedShippingCost: Number(receipt.shared_shipping_cost || 0),
         allocationMethod: (receipt.shipping_allocation_method as any) || 'by_value',
