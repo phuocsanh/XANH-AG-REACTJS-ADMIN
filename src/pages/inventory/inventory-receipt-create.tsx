@@ -267,7 +267,7 @@ const InventoryReceiptCreate: React.FC = () => {
         status: existingReceipt.status_code || existingReceipt.status || 'draft',
         bill_date: existingReceipt.bill_date ? dayjs(existingReceipt.bill_date) : dayjs(existingReceipt.created_at),
         description: existingReceipt.notes || '',
-        items: mappedItems,
+        items: mappedItems.reverse(),
         hasSharedShipping: !!receipt.shared_shipping_cost,
         sharedShippingCost: Number(receipt.shared_shipping_cost || 0),
         allocationMethod: (receipt.shipping_allocation_method as any) || 'by_value',
@@ -525,7 +525,7 @@ const InventoryReceiptCreate: React.FC = () => {
           discount_amount: 0,
           discount_value: 0,
           discount_type: 'fixed_amount',
-        })),
+        })).reverse(),
 
         // Chiết khấu đơn hàng gửi 0 vì đã phân bổ vào từng item theo yêu cầu
         discount_amount: 0,
