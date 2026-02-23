@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react"
-import { Typography, Select, Radio } from "antd"
+import { Typography, Radio } from "antd"
 import { Control, useFieldArray, useWatch, Controller, useFormContext } from "react-hook-form"
 import NumberInput from "@/components/common/number-input"
 import { useUnitsQuery } from "@/queries/unit"
 import { ProductFormValues } from "./form-config"
+import { FormComboBox } from "@/components/form"
 
 interface ProductUnitConversionTableProps {
   control: Control<ProductFormValues>
@@ -58,14 +59,14 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
   // Chặn chọn đơn vị trùng nhau
   useEffect(() => {
     const convUnitId = watchedConversions?.[1]?.unit_id;
-    if (convUnitId && convUnitId === mainUnitId) {
+    if (convUnitId && Number(convUnitId) === Number(mainUnitId)) {
        setValue('unit_conversions.1.unit_id', undefined);
     }
   }, [mainUnitId, watchedConversions, setValue]);
 
-  const getUnitName = (id: number | undefined) => {
-    if (id === undefined) return "..."
-    return units.find((u: any) => u.id === id)?.name || "..."
+  const getUnitName = (id: number | string | undefined) => {
+    if (id === undefined || id === null) return "..."
+    return units.find((u: any) => Number(u.id) === Number(id))?.name || "..."
   }
 
   const hasConversion = fields.length > 1;
@@ -133,19 +134,15 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
                         <span className="text-slate-300 font-black text-sm italic">1</span>
                         {direction === 'big_to_base' ? (
                             <div className="w-[85px]">
-                                <Controller
+                                <FormComboBox
                                     name="unit_conversions.1.unit_id"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Select
-                                            {...field}
-                                            placeholder="..."
-                                            options={units.filter((u: any) => u.id !== mainUnitId).map((u: any) => ({ label: u.name, value: u.id }))}
-                                            variant="borderless"
-                                            className="font-bold text-blue-600 w-full text-sm"
-                                            style={{ height: '32px' }}
-                                        />
-                                    )}
+                                    placeholder="..."
+                                    options={units.filter((u) => Number(u.id) !== Number(mainUnitId)).map((u) => ({ label: u.name, value: u.id }))}
+                                    variant="borderless"
+                                    className="font-bold text-blue-600 w-full text-sm mb-0"
+                                    style={{ marginBottom: 0 }}
+                                    inputStyle={{ height: '32px', border: 'none', boxShadow: 'none' }}
                                 />
                             </div>
                         ) : (
@@ -189,18 +186,14 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
                             </span>
                         ) : (
                             <div className="flex-1 min-w-[90px]">
-                                <Controller
+                                <FormComboBox
                                     name="unit_conversions.1.unit_id"
                                     control={control}
-                                    render={({ field }) => (
-                                        <Select
-                                            {...field}
-                                            placeholder="..."
-                                            options={units.filter((u: any) => u.id !== mainUnitId).map((u: any) => ({ label: u.name, value: u.id }))}
-                                            style={{ width: '100%', height: '32px' }}
-                                            className="text-sm"
-                                        />
-                                    )}
+                                    placeholder="..."
+                                    options={units.filter((u) => Number(u.id) !== Number(mainUnitId)).map((u) => ({ label: u.name, value: u.id }))}
+                                    className="w-full mb-0"
+                                    style={{ width: '100%', marginBottom: 0 }}
+                                    inputStyle={{ height: '32px' }}
                                 />
                             </div>
                         )}

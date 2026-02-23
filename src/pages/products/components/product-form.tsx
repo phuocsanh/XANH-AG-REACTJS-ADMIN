@@ -276,9 +276,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           type: productItem.type || undefined,
           quantity: productItem.quantity || 0,
           attributes: productItem.attributes || {},
-          unit_id: productItem.unit_id || undefined, // Đơn vị tính
+          unit_id: productItem.unit_id ? Number(productItem.unit_id) : undefined, // Đơn vị tính
           sub_types: productItem.sub_product_type || [], // Loại phụ sản phẩm
-          symbol_id: productItem.symbol_id || undefined,
+          symbol_id: productItem.symbol_id ? Number(productItem.symbol_id) : undefined,
           discount: productItem.discount || "",
           status: productItem.status || "active",
           thumb: productItem.thumb ? [normalizeFile(productItem.thumb, 0)] : [], // Ảnh đại diện
@@ -298,6 +298,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           
           unit_conversions: (productItem.unit_conversions || []).map((conv: ProductUnitConversion) => ({
             ...conv,
+            unit_id: conv.unit_id ? Number(conv.unit_id) : undefined,
             conversion_factor: conv.conversion_factor !== undefined ? Number(conv.conversion_factor) : undefined
           })),
           
