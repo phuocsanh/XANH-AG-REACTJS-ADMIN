@@ -66,13 +66,14 @@ const DebtNotesList: React.FC = () => {
   })
 
   // Tự động chọn mùa vụ mới nhất khi vào trang lần đầu
+  const isInitialized = React.useRef(false)
   React.useEffect(() => {
-    // Chỉ set nếu chưa có season_id trong filters và có activeSeason
-    if (!filters.season_id && activeSeason?.id) {
-      console.log('🌾 Tự động chọn mùa vụ mới nhất:', activeSeason.name)
+    // Chỉ set mặc định một lần duy nhất khi mới vào trang và có dữ liệu mùa vụ active
+    if (!isInitialized.current && activeSeason?.id) {
       setFilters(prev => ({ ...prev, season_id: activeSeason.id }))
+      isInitialized.current = true
     }
-  }, [activeSeason, filters.season_id]) // Thêm filters.season_id vào dependencies
+  }, [activeSeason])
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (_dataIndex: string) => ({
