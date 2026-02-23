@@ -20,6 +20,7 @@ export const storeProfitReportKeys = {
   invoice: (invoiceId: number) => [...storeProfitReportKeys.all, 'invoice', invoiceId] as const,
   season: (seasonId: number) => [...storeProfitReportKeys.all, 'season', seasonId] as const,
   customer: (customerId: number, filters?: {
+    customerName?: string;
     seasonId?: number;
     startDate?: string;
     endDate?: string;
@@ -86,6 +87,7 @@ export const useSeasonStoreProfit = (seasonId: number) => {
 export const useCustomerProfitReport = (
   customerId: number,
   filters?: {
+    customerName?: string;
     seasonId?: number;
     startDate?: string;
     endDate?: string;
@@ -95,6 +97,7 @@ export const useCustomerProfitReport = (
     queryKey: storeProfitReportKeys.customer(customerId, filters),
     queryFn: async () => {
       const params = new URLSearchParams();
+      if (filters?.customerName) params.append('customerName', filters.customerName);
       if (filters?.seasonId) params.append('seasonId', filters.seasonId.toString());
       if (filters?.startDate) params.append('startDate', filters.startDate);
       if (filters?.endDate) params.append('endDate', filters.endDate);
@@ -105,7 +108,7 @@ export const useCustomerProfitReport = (
       const response = await api.get<any>(url);
       return response as CustomerProfitReport;
     },
-    enabled: !!customerId && customerId > 0,
+    enabled: (!!customerId && customerId > 0) || (customerId === 0 && !!filters?.customerName),
   });
 };
 
