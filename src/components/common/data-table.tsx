@@ -401,8 +401,8 @@ const DataTable = <T extends Record<string, unknown>>({
           scroll={{ x: "max-content" }}
           pagination={{
             ...paginationConfig,
-            ...(tableProps.pagination ? tableProps.pagination : {}),
-            total: tableProps.pagination && tableProps.pagination.total !== undefined 
+            ...(tableProps.pagination || {}),
+            total: (tableProps.pagination && typeof tableProps.pagination.total === 'number') 
                 ? tableProps.pagination.total 
                 : filteredData.length,
           }}
