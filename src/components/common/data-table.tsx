@@ -393,6 +393,7 @@ const DataTable = <T extends Record<string, unknown>>({
         </LoadingSpinner>
       ) : (
         <Table
+          {...tableProps}
           size="small"
           columns={finalColumns}
           dataSource={filteredData}
@@ -406,7 +407,6 @@ const DataTable = <T extends Record<string, unknown>>({
                 : filteredData.length,
           }}
           onChange={handleTableChange}
-          {...tableProps}
         />
       )}
     </div>
