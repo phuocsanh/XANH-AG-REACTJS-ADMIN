@@ -25,7 +25,6 @@ export const debtNoteKeys = {
 export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
   const page = (params?.page as number) || 1
   const limit = (params?.limit as number) || 10
-  const status = params?.status as string | undefined
 
   return useQuery({
     queryKey: debtNoteKeys.list(params),
@@ -36,11 +35,12 @@ export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
         limit,
       }
 
-      // Thêm các flat params
-      if (status) payload.status = status
-      if (params?.customer_id) payload.customer_id = params.customer_id
-      if (params?.season_id) payload.season_id = params.season_id
-      if (params?.keyword) payload.keyword = params.keyword
+      // Thêm các flat params từ params (filters từ UI như customer_name, code, status...)
+      Object.keys(params || {}).forEach(key => {
+        if (!['page', 'limit', 'sort_by', 'sort_direction'].includes(key) && params?.[key] !== undefined && params?.[key] !== null && params?.[key] !== '') {
+          payload[key] = params[key]
+        }
+      })
 
       // Sort
       if (params?.sort_by) {
