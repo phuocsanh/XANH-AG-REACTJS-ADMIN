@@ -59,7 +59,7 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
   // Chặn chọn đơn vị trùng nhau
   useEffect(() => {
     const convUnitId = watchedConversions?.[1]?.unit_id;
-    if (convUnitId && convUnitId === mainUnitId) {
+    if (convUnitId && Number(convUnitId) === Number(mainUnitId)) {
        setValue('unit_conversions.1.unit_id', undefined);
     }
   }, [mainUnitId, watchedConversions, setValue]);
