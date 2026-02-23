@@ -70,6 +70,7 @@ const ProfitReportsPage: React.FC = () => {
 
   // State cho tab Customer
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | undefined>();
+  const [guestCustomerName, setGuestCustomerName] = useState<string>('');
   const [customerSeasonFilter, setCustomerSeasonFilter] = useState<number | undefined>();
 
   // State cho tìm kiếm mùa vụ
@@ -134,7 +135,10 @@ const ProfitReportsPage: React.FC = () => {
     isLoading: isLoadingCustomerProfit 
   } = useCustomerProfitReport(
     selectedCustomerId || 0,
-    { seasonId: customerSeasonFilter }
+    { 
+      customerName: guestCustomerName,
+      seasonId: customerSeasonFilter 
+    }
   );
 
   // Format số tiền
@@ -425,7 +429,23 @@ const ProfitReportsPage: React.FC = () => {
                         dataIndex: 'customer_name', 
                         key: 'customer_name', 
                         width: 180, 
-                        render: (text) => <div style={{ minWidth: 160, fontWeight: 500, whiteSpace: 'normal' }}>{text}</div>
+                        render: (text, record: any) => (
+                          <div 
+                            style={{ minWidth: 160, fontWeight: 500, whiteSpace: 'normal', color: '#1890ff', cursor: 'pointer' }}
+                            onClick={() => {
+                              setActiveTab('customer');
+                              if (record.customer_id) {
+                                setSelectedCustomerId(record.customer_id);
+                                setGuestCustomerName('');
+                              } else {
+                                setSelectedCustomerId(0);
+                                setGuestCustomerName(record.customer_name);
+                              }
+                            }}
+                          >
+                            {text}
+                          </div>
+                        )
                       },
                       { title: 'Số HĐ', dataIndex: 'total_invoices', key: 'total_invoices', width: 100 },
                       { 
@@ -997,14 +1017,17 @@ const ProfitReportsPage: React.FC = () => {
   const renderCustomerReport = () => {
     return (
       <div>
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
-            <label className="block mb-2 font-medium">Chọn khách hàng:</label>
+            <label className="block mb-2 font-medium">Chọn khách hàng hệ thống:</label>
             <ComboBox
               style={{ width: '100%' }}
-              placeholder="Tìm kiếm khách hàng..."
-              value={selectedCustomerId}
-              onChange={(val) => setSelectedCustomerId(val ? Number(val) : undefined)}
+              placeholder="Tìm kiếm khách hàng hệ thống..."
+              value={selectedCustomerId || undefined}
+              onChange={(val) => {
+                setSelectedCustomerId(val ? Number(val) : undefined);
+                if (val) setGuestCustomerName('');
+              }}
               onSearch={setCustomerKeyword}
               filterOption={false}
               options={customersData?.data?.items?.map((customer: any) => ({
@@ -1012,6 +1035,24 @@ const ProfitReportsPage: React.FC = () => {
                 label: `${customer.name} - ${customer.phone || ''}`
               })) || []}
               isLoading={isLoadingCustomers}
+              allowClear
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-medium">Tìm tên khách vãng lai:</label>
+            <Input.Search
+              placeholder="Nhập tên khách vãng lai (VD: Lễ...)"
+              allowClear
+              enterButton="Tìm kiếm"
+              onSearch={(val) => {
+                if (val.trim()) {
+                  setGuestCustomerName(val.trim());
+                  setSelectedCustomerId(0);
+                } else {
+                  setGuestCustomerName('');
+                }
+              }}
             />
           </div>
 
@@ -1029,6 +1070,7 @@ const ProfitReportsPage: React.FC = () => {
                 label: `${season.name} (${season.year})`
               })) || []}
               isLoading={isLoadingSeasons}
+              allowClear
             />
           </div>
         </div>
@@ -1039,11 +1081,11 @@ const ProfitReportsPage: React.FC = () => {
           </div>
         )}
 
-        {!selectedCustomerId && !isLoadingCustomerProfit && (
-          <Empty description="Vui lòng chọn khách hàng để xem báo cáo lợi nhuận" />
+        {!selectedCustomerId && !guestCustomerName && !isLoadingCustomerProfit && (
+          <Empty description="Vui lòng chọn khách hàng hoặc nhập tên khách vãng lai để xem báo cáo lợi nhuận" />
         )}
 
-        {selectedCustomerId && customerProfit && !isLoadingCustomerProfit && (
+        {(selectedCustomerId || guestCustomerName) && customerProfit && !isLoadingCustomerProfit && (
           <div>
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
               <h2 className="text-xl font-bold text-blue-800 mb-2">👤 Khách hàng: {customerProfit.customer_name}</h2>
