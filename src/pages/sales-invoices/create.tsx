@@ -421,7 +421,8 @@ const CreateSalesInvoice = () => {
              const qty = Number(item.quantity || 0);
              const iDiscount = Number(item.discount_amount || 0);
              totalRev += (qty * uPrice) - iDiscount;
-             totalCst += (qty * cstPrice);
+             const factor = Number(item.conversion_factor || 1);
+             totalCst += (qty * factor * cstPrice);
           }
         });
         const calProfit = totalRev - totalCst;
