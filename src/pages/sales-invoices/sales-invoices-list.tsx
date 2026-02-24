@@ -1054,9 +1054,9 @@ const SalesInvoicesList: React.FC = () => {
                 min={0}
                 max={viewingInvoice.remaining_amount}
                 formatter={(value) =>
-                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
                 }
-                parser={(value) => Number(value!.replace(/\$\s?|(,*)/g, ""))}
+                parser={(value) => Number(value!.replace(/\$\s?|(\.*)/g, ""))}
               />
             </div>
           </div>
