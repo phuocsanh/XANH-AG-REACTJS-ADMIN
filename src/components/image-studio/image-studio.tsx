@@ -108,6 +108,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   const isExportingRef = useRef(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const logoImgRef = useRef<HTMLImageElement | null>(null);
 
   // Initialize/Reset mask canvas when processed image changes
   useEffect(() => {
@@ -447,6 +448,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     bgImg.src = bgSanPham;
     productImg.src = (processedImage || originalImage) ? (processedImage || originalImage) as string : '';
     logoImg.src = logo3;
+    logoImgRef.current = logoImg;
 
     const draw = () => {
       // Clear and draw background as long as it's loaded
@@ -1731,16 +1733,19 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     setSelectedItemId(null);
 
                     if (showLogo) {
-                      const logoWidth = 150 * logoScale; 
-                      const logoHeight = 40 * logoScale; 
+                      const lImg = logoImgRef.current;
+                      const logoWidth = lImg && lImg.width > 0 ? lImg.width * logoScale : 150 * logoScale;
+                      const logoHeight = lImg && lImg.height > 0 ? lImg.height * logoScale : 150 * logoScale;
+                      const hitPadding = 30;
                       if (
-                        mouseX >= logoX - logoWidth / 2 &&
-                        mouseX <= logoX + logoWidth / 2 &&
-                        mouseY >= logoY - logoHeight / 2 &&
-                        mouseY <= logoY + logoHeight / 2
+                        mouseX >= logoX - logoWidth / 2 - hitPadding &&
+                        mouseX <= logoX + logoWidth / 2 + hitPadding &&
+                        mouseY >= logoY - logoHeight / 2 - hitPadding &&
+                        mouseY <= logoY + logoHeight / 2 + hitPadding
                       ) {
                         setIsDraggingLogo(true);
                         setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                        return;
                       }
                     }
                   }}
@@ -1905,16 +1910,19 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                     // Check if touch is on logo
                     if (showLogo) {
-                      const logoWidth = 150 * logoScale; 
-                      const logoHeight = 40 * logoScale; 
+                      const lImg = logoImgRef.current;
+                      const logoWidth = lImg && lImg.width > 0 ? lImg.width * logoScale : 150 * logoScale;
+                      const logoHeight = lImg && lImg.height > 0 ? lImg.height * logoScale : 150 * logoScale;
+                      const hitPadding = 30;
                       if (
-                        mouseX >= logoX - logoWidth / 2 &&
-                        mouseX <= logoX + logoWidth / 2 &&
-                        mouseY >= logoY - logoHeight / 2 &&
-                        mouseY <= logoY + logoHeight / 2
+                        mouseX >= logoX - logoWidth / 2 - hitPadding &&
+                        mouseX <= logoX + logoWidth / 2 + hitPadding &&
+                        mouseY >= logoY - logoHeight / 2 - hitPadding &&
+                        mouseY <= logoY + logoHeight / 2 + hitPadding
                       ) {
                         setIsDraggingLogo(true);
                         setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                        return;
                       }
                     }
                   }}
