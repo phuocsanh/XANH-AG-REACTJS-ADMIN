@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip } from 'antd';
 import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined } from '@ant-design/icons';
-import { Sparkles, X, Eraser } from 'lucide-react';
+import { Sparkles, X, Eraser, ShieldCheck, Box, Truck, Award, PackageCheck } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
 import bgSanPham from '@/assets/images/bg-san-pham.png';
@@ -52,12 +52,49 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     color: string;
     font: string;
     width: number;
-    type: 'text' | 'emoji';
+    type: 'text' | 'emoji' | 'image' | 'badge';
+    imageSrc?: string;
+    itemScale?: number;
+    opacity?: number;
+    icon?: string;
+    iconType?: 'emoji' | 'lucide';
+    bgColor?: string;
+    bgGradient?: string[];
   }
   const [overlayItems, setOverlayItems] = useState<OverlayItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDraggingItem, setIsDraggingItem] = useState(false);
   const [isResizingItem, setIsResizingItem] = useState(false);
+  
+  // Templates states
+  interface StudioTemplate {
+    id: string;
+    name: string;
+    canvasWidth: number;
+    canvasHeight: number;
+    scale: number;
+    positionX: number;
+    positionY: number;
+    showLogo: boolean;
+    logoScale: number;
+    logoX: number;
+    logoY: number;
+    overlayItems: OverlayItem[];
+    isSystem?: boolean;
+  }
+  interface SavedBadge {
+    id: string;
+    text: string;
+    icon: string;
+    iconType: 'emoji' | 'lucide';
+    bgColor: string;
+    bgGradient?: string[];
+    color: string;
+    size: number;
+  }
+  const [userBadges, setUserBadges] = useState<SavedBadge[]>([]);
+
+  const [templates, setTemplates] = useState<StudioTemplate[]>([]);
   
   // Eraser states
   const [isEraserMode, setIsEraserMode] = useState(false);
@@ -249,8 +286,151 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       setScale(0.18);
       setPositionX(500);
       setPositionY(550);
+      
+      // Load templates from localStorage
+      const savedTemplates = localStorage.getItem('image_studio_templates');
+      const systemPresets: StudioTemplate[] = [
+        {
+          id: 'sys-1',
+          name: 'Mẫu chuẩn vuông (Default)',
+          canvasWidth: 1000,
+          canvasHeight: 1000,
+          scale: 0.18,
+          positionX: 500,
+          positionY: 550,
+          showLogo: true,
+          logoScale: 0.15,
+          logoX: 850,
+          logoY: 850,
+          overlayItems: [],
+          isSystem: true
+        },
+        {
+          id: 'sys-2',
+          name: 'Mẫu Banner đứng',
+          canvasWidth: 800,
+          canvasHeight: 1200,
+          scale: 0.15,
+          positionX: 400,
+          positionY: 700,
+          showLogo: true,
+          logoScale: 0.18,
+          logoX: 400,
+          logoY: 200,
+          overlayItems: [
+            { id: 't1', type: 'text', text: 'NÔNG SẢN XANH', x: 400, y: 100, size: 60, color: '#16a34a', font: 'Impact', width: 600 },
+            { id: 't2', type: 'text', text: 'CHẤT LƯỢNG THẬT - GIÁ TRỊ THẬT', x: 400, y: 150, size: 30, color: '#4b5563', font: 'Arial', width: 600 }
+          ],
+          isSystem: true
+        },
+        {
+          id: 'sys-xanh',
+          name: 'Mẫu XANH AG (Dọc)',
+          canvasWidth: 800,
+          canvasHeight: 1200,
+          scale: 0.15,
+          positionX: 400,
+          positionY: 850,
+          showLogo: true,
+          logoScale: 0.22,
+          logoX: 400,
+          logoY: 150,
+          overlayItems: [
+            { id: 'x-1', type: 'text', text: 'XANH AG', x: 400, y: 280, size: 70, color: '#FFFFFF', font: 'Times New Roman', width: 700 },
+            { id: 'x-2', type: 'text', text: 'bạn đồng hành của mọi nhà nông', x: 400, y: 360, size: 40, color: '#FFFFFF', font: 'Arial', width: 700 },
+            { id: 'x-3', type: 'text', text: '✅ Cam kết chính hãng', x: 400, y: 500, size: 30, color: '#FFFFFF', font: 'Arial', width: 500 },
+            { id: 'x-4', type: 'text', text: '✅ Gói hàng cẩn thận', x: 400, y: 560, size: 30, color: '#FFFFFF', font: 'Arial', width: 500 },
+            { id: 'x-5', type: 'text', text: '✅ Giao hàng nhanh chóng', x: 400, y: 620, size: 30, color: '#FFFFFF', font: 'Arial', width: 500 }
+          ],
+          isSystem: true
+        }
+      ];
+      
+      if (savedTemplates) {
+        try {
+          const parsed = JSON.parse(savedTemplates);
+          setTemplates([...systemPresets, ...parsed]);
+        } catch (e) {
+          setTemplates(systemPresets);
+        }
+      } else {
+        setTemplates(systemPresets);
+      }
+
+      // Load user badges
+      const savedBadges = localStorage.getItem('image_studio_user_badges');
+      if (savedBadges) {
+        try {
+          setUserBadges(JSON.parse(savedBadges));
+        } catch (e) {
+          setUserBadges([]);
+        }
+      }
     }
   }, [visible]);
+
+  const saveCurrentAsTemplate = () => {
+    const templateName = prompt('Nhập tên cho mẫu thiết kế này:', `Mẫu thiết kế ${new Date().toLocaleTimeString()}`);
+    if (!templateName) return;
+
+    const newTemplate: StudioTemplate = {
+      id: Date.now().toString(),
+      name: templateName,
+      canvasWidth,
+      canvasHeight,
+      scale,
+      positionX,
+      positionY,
+      showLogo,
+      logoScale,
+      logoX,
+      logoY,
+      overlayItems
+    };
+
+    const userTemplates = templates.filter(t => !t.isSystem);
+    const updated = [...userTemplates, newTemplate];
+    localStorage.setItem('image_studio_templates', JSON.stringify(updated));
+    setTemplates(prev => [...prev.filter(t => t.isSystem), ...updated]);
+    message.success('Đã lưu mẫu thiết kế mới!');
+  };
+
+  const applyTemplate = (template: StudioTemplate) => {
+    setCanvasWidth(template.canvasWidth);
+    setCanvasHeight(template.canvasHeight);
+    setScale(template.scale);
+    setPositionX(template.positionX);
+    setPositionY(template.positionY);
+    setShowLogo(template.showLogo);
+    setLogoScale(template.logoScale);
+    setLogoX(template.logoX);
+    setLogoY(template.logoY);
+    setOverlayItems(template.overlayItems.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)})));
+    message.success(`Đã áp dụng mẫu: ${template.name}`);
+  };
+
+  const resetToNewDesign = () => {
+    setOriginalImage(null);
+    setProcessedImage(null);
+    setOverlayItems([]);
+    setScale(0.18);
+    setPositionX(500);
+    setPositionY(550);
+    setShowLogo(true);
+    setLogoScale(0.15);
+    setLogoX(850);
+    setLogoY(850);
+    setSelectedItemId(null);
+    message.info('Đã chuẩn bị Canvas trống để thiết kế mẫu mới.');
+  };
+
+  const deleteTemplate = (id: string) => {
+    const updated = templates.filter(t => t.id !== id);
+    const userTemplates = updated.filter(t => !t.isSystem);
+    localStorage.setItem('image_studio_templates', JSON.stringify(userTemplates));
+    setTemplates(updated);
+    message.info('Đã xóa mẫu thiết kế');
+  };
 
   // Canvas drawing
   useEffect(() => {
@@ -271,17 +451,16 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     const draw = () => {
       // Clear and draw background as long as it's loaded
       if (bgImg.complete) {
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         ctx.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight);
+
+        const hasProductImage = !!(processedImage || originalImage);
         
-        // Only draw product if an image is selected
-        if ((processedImage || originalImage) && productImg.complete) {
+        // Draw product image OR placeholder if in design mode
+        if (hasProductImage && productImg.complete) {
           const pWidth = productImg.width;
           const pHeight = productImg.height;
           const displayWidth = pWidth * scale;
           const displayHeight = pHeight * scale;
-
-          // if (!processedImage) ctx.globalAlpha = 0.5;
 
           // Create temporary canvas for product + mask
           const tempCanvas = document.createElement('canvas');
@@ -305,12 +484,34 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             displayWidth,
             displayHeight
           );
+        } else if (!hasProductImage && !loading && bgImg.complete) {
+          // Show placeholder for layout designing
+          const pWidth = 1000;
+          const pHeight = 1000;
+          const displayWidth = pWidth * scale;
+          const displayHeight = pHeight * scale;
+
+          ctx.save();
+          ctx.setLineDash([10, 10]);
+          ctx.strokeStyle = 'rgba(156, 163, 175, 0.8)';
+          ctx.lineWidth = 3;
+          const startX = positionX - displayWidth / 2;
+          const startY = positionY - displayHeight / 2;
           
-          ctx.globalAlpha = 1.0;
+          ctx.strokeRect(startX, startY, displayWidth, displayHeight);
+          
+          ctx.fillStyle = 'rgba(156, 163, 175, 0.5)';
+          ctx.fillRect(startX, startY, displayWidth, displayHeight);
+          
+          ctx.fillStyle = '#4b5563';
+          ctx.font = `bold ${Math.max(12, 40 * scale)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.fillText('VÙNG HIỂN THỊ SẢN PHẨM', positionX, positionY);
+          ctx.restore();
         }
-        
+
         // Draw logo watermark
-        if (showLogo && logoImg.complete) {
+        if (bgImg.complete && showLogo && logoImg.complete) {
           const logoWidth = logoImg.width * logoScale;
           const logoHeight = logoImg.height * logoScale;
           ctx.drawImage(
@@ -324,11 +525,6 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
         // Draw overlay items (Text and Emojis) - ALWAYS DRAW EVEN WITHOUT PRODUCT
         overlayItems.forEach(item => {
-          ctx.fillStyle = item.color;
-          ctx.font = `${item.size}px ${item.font}`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          
           if (item.type === 'text') {
             const words = item.text.split(' ');
             let line = '';
@@ -381,8 +577,108 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             lines.forEach((l, i) => {
               ctx.fillText(l, item.x, item.y - (totalHeight / 2) + (i * lineHeight) + (lineHeight / 2));
             });
+          } else if (item.type === 'image' && item.imageSrc) {
+            const img = new window.Image();
+            img.src = item.imageSrc;
+            if (img.complete) {
+              const w = img.width * (item.itemScale || 1);
+              const h = img.height * (item.itemScale || 1);
+              ctx.save();
+              ctx.globalAlpha = item.opacity ?? 1;
+              ctx.drawImage(img, item.x - w / 2, item.y - h / 2, w, h);
+              ctx.restore();
+
+              if (item.id === selectedItemId) {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+              }
+            }
+          } else if (item.type === 'badge') {
+            // Draw badge (rounded rect + icon + text)
+            ctx.font = `bold ${item.size}px ${item.font}`;
+            const metrics = ctx.measureText(item.text);
+            const textWidth = metrics.width;
+            const iconSize = item.size * 1.2;
+            const padding = item.size * 0.8;
+            const badgeHeight = item.size + padding * 2;
+            const badgeWidth = textWidth + iconSize + padding * 3;
+
+            // Draw rounded rect background
+            const bx = item.x - badgeWidth / 2;
+            const by = item.y - badgeHeight / 2;
+            const radius = badgeHeight / 2;
+
+            if (item.bgGradient && item.bgGradient.length >= 2) {
+              const bgG = item.bgGradient;
+              const gradient = ctx.createLinearGradient(bx, by, bx + badgeWidth, by);
+              bgG.forEach((color, index) => {
+                gradient.addColorStop(index / (bgG.length - 1), color);
+              });
+              ctx.fillStyle = gradient;
+            } else {
+              ctx.fillStyle = item.bgColor || '#16a34a';
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(bx + radius, by);
+            ctx.lineTo(bx + badgeWidth - radius, by);
+            ctx.quadraticCurveTo(bx + badgeWidth, by, bx + badgeWidth, by + radius);
+            ctx.lineTo(bx + badgeWidth, by + badgeHeight - radius);
+            ctx.quadraticCurveTo(bx + badgeWidth, by + badgeHeight, bx + badgeWidth - radius, by + badgeHeight);
+            ctx.lineTo(bx + radius, by + badgeHeight);
+            ctx.quadraticCurveTo(bx, by + badgeHeight, bx, by + badgeHeight - radius);
+            ctx.lineTo(bx, by + radius);
+            ctx.quadraticCurveTo(bx, by, bx + radius, by);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw selection border
+            if (item.id === selectedItemId && item.type !== 'badge') {
+              ctx.strokeStyle = '#3b82f6';
+              ctx.lineWidth = 3;
+              ctx.stroke();
+            }
+
+          // Draw icon (emoji or lucide)
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = item.color || '#FFFFFF';
+          
+          if (item.icon) {
+            const isLucideIcon = item.iconType === 'lucide' || (!item.iconType && ['shield-check', 'box', 'truck', 'award', 'package-check'].includes(item.icon));
+            
+            if (isLucideIcon) {
+              // Create SVG string and draw to canvas
+              const iconColor = item.color || '#FFFFFF';
+              const svgMap: { [key: string]: string } = {
+                'shield-check': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
+                'box': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`,
+                'truck': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-5h-7v5a1 1 0 0 0 1 1Z"/><path d="M16 8h4.7a1.5 1.5 0 0 1 1.3.8L22 12"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>`,
+                'award': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>`,
+                'package-check': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 2 2 4-4"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`
+              };
+
+              const svgString = svgMap[item.icon];
+              if (svgString) {
+                const img = new Image();
+                img.src = 'data:image/svg+xml;base64,' + btoa(svgString);
+                if (img.complete) {
+                  ctx.drawImage(img, bx + padding, item.y - iconSize / 2, iconSize, iconSize);
+                }
+              }
+            } else {
+              ctx.font = `${iconSize}px Arial`;
+              ctx.fillText(item.icon, bx + padding + iconSize / 2, item.y);
+            }
+          }
+
+            // Draw text
+            ctx.font = `bold ${item.size}px ${item.font}`;
+            ctx.textAlign = 'left';
+            ctx.fillText(item.text, bx + padding * 2 + iconSize, item.y);
           } else {
-            // Emojis don't wrap
+            // Emojis
             if (item.id === selectedItemId) {
               const metrics = ctx.measureText(item.text);
               const w = metrics.width + 10;
@@ -529,14 +825,14 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   const addText = () => {
     const newItem: OverlayItem = {
       id: Date.now().toString(),
-      text: 'NHẬP CHỮ VÀO ĐÂY',
+      type: 'text',
+      text: 'Nhấp để sửa nội dung',
       x: canvasWidth / 2,
       y: canvasHeight / 2,
-      size: 40,
+      size: 50,
       color: '#000000',
       font: 'Arial',
-      width: 400,
-      type: 'text'
+      width: 300
     };
     setOverlayItems([...overlayItems, newItem]);
     setSelectedItemId(newItem.id);
@@ -546,17 +842,115 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   const addEmoji = (emoji: string) => {
     const newItem: OverlayItem = {
       id: Date.now().toString(),
+      type: 'emoji',
       text: emoji,
       x: canvasWidth / 2,
       y: canvasHeight / 2,
-      size: 100,
+      size: 60,
       color: '#000000',
       font: 'Arial',
-      width: 150,
-      type: 'emoji'
+      width: 150
     };
     setOverlayItems([...overlayItems, newItem]);
     setSelectedItemId(newItem.id);
+  };
+
+  const addImageItem = (file: File) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.src = url;
+    img.onload = () => {
+      const newItem: OverlayItem = {
+        id: Date.now().toString(),
+        text: '',
+        x: canvasWidth / 2,
+        y: canvasHeight / 2,
+        size: img.height, // Store height in size for hit detection
+        color: '',
+        font: '',
+        width: img.width, // Store width in width for hit detection
+        type: 'image',
+        imageSrc: url,
+        itemScale: 0.5,
+        opacity: 1
+      };
+      setOverlayItems([...overlayItems, newItem]);
+      setSelectedItemId(newItem.id);
+    };
+  };
+
+  const addLogoAsItem = () => {
+    const img = new window.Image();
+    img.src = logo3;
+    img.onload = () => {
+      const newItem: OverlayItem = {
+        id: Date.now().toString(),
+        text: '',
+        x: canvasWidth / 2,
+        y: canvasHeight / 2,
+        size: img.height,
+        color: '',
+        font: '',
+        width: img.width,
+        type: 'image',
+        imageSrc: logo3,
+        itemScale: 0.22,
+        opacity: 1
+      };
+      setOverlayItems([...overlayItems, newItem]);
+      setSelectedItemId(newItem.id);
+    };
+  };
+
+
+  const addCustomBadge = () => {
+    const newItem: OverlayItem = {
+      id: Date.now().toString(),
+      text: 'NHÃN CỦA BẠN',
+      icon: 'shield-check',
+      iconType: 'lucide',
+      x: canvasWidth / 2,
+      y: canvasHeight / 2,
+      size: 45,
+      color: '#FFFFFF',
+      font: 'Arial',
+      width: 400,
+      type: 'badge',
+      bgColor: '#16a34a'
+    };
+    setOverlayItems([...overlayItems, newItem]);
+    setSelectedItemId(newItem.id);
+  };
+
+  const saveSelectedAsBadge = () => {
+    const item = overlayItems.find(i => i.id === selectedItemId);
+    if (!item || item.type !== 'badge') {
+        message.warning('Vui lòng chọn một Nhãn (Badge) để lưu');
+        return;
+    }
+
+    const newSavedBadge: SavedBadge = {
+        id: Date.now().toString(),
+        text: item.text,
+        icon: item.icon || '',
+        iconType: item.iconType || 'lucide',
+        bgColor: item.bgColor || '#16a34a',
+        bgGradient: item.bgGradient,
+        color: item.color || '#FFFFFF',
+        size: item.size
+    };
+
+    const updated = [...userBadges, newSavedBadge];
+    setUserBadges(updated);
+    localStorage.setItem('image_studio_user_badges', JSON.stringify(updated));
+    message.success('Đã lưu nhãn vào thư viện của bạn');
+  };
+
+  const deleteSavedBadge = (id: string) => {
+    const updated = userBadges.filter(b => b.id !== id);
+    setUserBadges(updated);
+    localStorage.setItem('image_studio_user_badges', JSON.stringify(updated));
+    message.success('Đã xóa nhãn khỏi thư viện');
   };
 
   // Cập nhật item
@@ -897,8 +1291,92 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-2">
-                    <Button icon={<FontSizeOutlined />} onClick={addText} block size="small">Thêm Chữ</Button>
-                    <Button icon={<SmileOutlined />} onClick={() => addEmoji('🌾')} block size="small">Thêm Emoji</Button>
+                    <Button icon={<FontSizeOutlined />} onClick={addText} block size="small">Chữ</Button>
+                    <Button icon={<SmileOutlined />} onClick={() => addEmoji('🌾')} block size="small">Emoji</Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Upload 
+                      beforeUpload={(file) => { addImageItem(file); return false; }}
+                      showUploadList={false}
+                      accept="image/*"
+                    >
+                      <Button icon={<PictureOutlined />} block size="small">Thêm Ảnh</Button>
+                    </Upload>
+                    <Button icon={<SmileOutlined />} onClick={addLogoAsItem} block size="small">Logo Xanh</Button>
+                  </div>
+
+                  <div className="bg-gray-50 p-2 rounded border space-y-2">
+                    <div className="flex justify-between items-center">
+                       <label className="text-[9px] font-bold text-gray-400 uppercase">Thư viện Nhãn của bạn</label>
+                       <Space>
+                         <Button size="small" type="link" className="text-[9px] p-0 h-auto" onClick={resetToNewDesign}>Xóa Canvas</Button>
+                         <Button size="small" type="link" className="text-[9px] p-0 h-auto" onClick={addCustomBadge}>+ Tạo mới</Button>
+                       </Space>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                       
+                       {userBadges.length > 0 && <div className="text-[8px] text-gray-300 mt-1 uppercase font-bold">Thư viện của bạn</div>}
+                       {userBadges.map(b => (
+                         <div key={b.id} className="flex gap-1 group items-center">
+                           <Button 
+                             size="small" 
+                             className="text-[10px] text-left flex-1" 
+                             onClick={() => {
+                               const newItem: OverlayItem = {
+                                 id: Date.now().toString(),
+                                 text: b.text,
+                                 icon: b.icon,
+                                 iconType: b.iconType || (['shield-check', 'box', 'truck', 'award', 'package-check'].includes(b.icon) ? 'lucide' : 'emoji'),
+                                 x: canvasWidth / 2,
+                                 y: canvasHeight / 2,
+                                 size: b.size,
+                                 color: b.color,
+                                 font: 'Arial',
+                                 width: 400,
+                                 type: 'badge',
+                                 bgColor: b.bgColor,
+                                 bgGradient: b.bgGradient
+                               };
+                               setOverlayItems([...overlayItems, newItem]);
+                               setSelectedItemId(newItem.id);
+                             }}
+                           >
+                             <div className="flex items-center gap-2 overflow-hidden py-1 px-1">
+                               <div 
+                                 className="h-6 rounded-full flex items-center px-3 gap-1 flex-shrink-0"
+                                 style={{ 
+                                   background: b.bgGradient ? `linear-gradient(to right, ${b.bgGradient.join(', ')})` : b.bgColor 
+                                 }}
+                               >
+                                  {b.icon && (
+                                    <span style={{ fontSize: '10px', color: b.color, display: 'flex' }}>
+                                      {b.iconType === 'emoji' ? b.icon : (
+                                        b.icon === 'shield-check' ? <ShieldCheck size={12} color={b.color} /> :
+                                        b.icon === 'box' ? <Box size={12} color={b.color} /> :
+                                        b.icon === 'truck' ? <Truck size={12} color={b.color} /> :
+                                        b.icon === 'award' ? <Award size={12} color={b.color} /> :
+                                        b.icon === 'package-check' ? <PackageCheck size={12} color={b.color} /> : <ShieldCheck size={12} color={b.color} />
+                                      )}
+                                    </span>
+                                  )}
+                                  <span className="font-bold whitespace-nowrap overflow-hidden text-ellipsis uppercase" style={{ fontSize: '8px', color: b.color }}>
+                                    {b.text}
+                                  </span>
+                               </div>
+                             </div>
+                           </Button>
+                           <Button 
+                             size="small" 
+                             type="text" 
+                             danger 
+                             className="opacity-0 group-hover:opacity-100 p-1 h-auto" 
+                             onClick={() => deleteSavedBadge(b.id)}
+                             icon={<X size={10} />}
+                           />
+                         </div>
+                       ))}
+                    </div>
                   </div>
 
                   {selectedItemId && overlayItems.find(i => i.id === selectedItemId) && (
@@ -945,10 +1423,12 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Cỡ chữ</label>
+                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">
+                            {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 'Kích thước Nhãn' : 'Cỡ chữ'}
+                          </label>
                           <Slider 
                             min={10} 
-                            max={200} 
+                            max={overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 150 : 200} 
                             value={overlayItems.find(i => i.id === selectedItemId)?.size} 
                             onChange={(val) => updateItem(selectedItemId, { size: val })}
                           />
@@ -972,6 +1452,180 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           </Select>
                         </div>
                       )}
+
+                       {overlayItems.find(i => i.id === selectedItemId)?.type === 'image' && (
+                        <div className="space-y-3">
+                           <div>
+                              <label className="text-[9px] text-gray-500 block mb-1 uppercase">Vị trí & Kích thước</label>
+                              <div className="space-y-2">
+                                <div>
+                                  <label className="text-[8px] text-gray-400">Tỷ lệ (Scale)</label>
+                                  <Slider 
+                                    min={0.01} 
+                                    max={2} 
+                                    step={0.01}
+                                    value={overlayItems.find(i => i.id === selectedItemId)?.itemScale || 0.5} 
+                                    onChange={(val) => updateItem(selectedItemId, { itemScale: val })}
+                                  />
+                                </div>
+                              </div>
+                           </div>
+                         </div>
+                       )}
+
+                        {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' && (
+                          <div className="space-y-3 mt-2">
+                             <div className="flex gap-2">
+                                <Button 
+                                  size="small" 
+                                  className={`flex-1 text-[9px] ${!overlayItems.find(i => i.id === selectedItemId)?.bgGradient ? 'bg-blue-100 border-blue-300 font-bold' : ''}`}
+                                  onClick={() => updateItem(selectedItemId, { bgGradient: undefined })}
+                                >
+                                  MÀU ĐƠN
+                                </Button>
+                                <Button 
+                                  size="small" 
+                                  className={`flex-1 text-[9px] ${overlayItems.find(i => i.id === selectedItemId)?.bgGradient ? 'bg-blue-100 border-blue-300 font-bold' : ''}`}
+                                  onClick={() => updateItem(selectedItemId, { bgGradient: ['#D4AF37', '#FFD700', '#D4AF37'] })}
+                                >
+                                  GRADIENT ✨
+                                </Button>
+                             </div>
+
+                             {!overlayItems.find(i => i.id === selectedItemId)?.bgGradient ? (
+                                <div>
+                                  <label className="text-[8px] text-gray-400 font-bold uppercase">Màu Nền Nhãn</label>
+                                  <input 
+                                    type="color" 
+                                    className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
+                                    value={overlayItems.find(i => i.id === selectedItemId)?.bgColor}
+                                    onChange={(e) => updateItem(selectedItemId, { bgColor: e.target.value })}
+                                  />
+                                </div>
+                             ) : (
+                               <div className="space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[8px] text-gray-400 font-bold">MÀU ĐẦU</label>
+                                      <input 
+                                        type="color" 
+                                        className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
+                                        value={overlayItems.find(i => i.id === selectedItemId)?.bgGradient?.[0] || '#D4AF37'}
+                                        onChange={(e) => {
+                                          const current = overlayItems.find(i => i.id === selectedItemId)?.bgGradient || ['#D4AF37', '#FFD700'];
+                                          updateItem(selectedItemId, { bgGradient: [e.target.value, current[current.length - 1]] });
+                                        }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[8px] text-gray-400 font-bold">MÀU CUỐI</label>
+                                      <input 
+                                        type="color" 
+                                        className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
+                                        value={overlayItems.find(i => i.id === selectedItemId)?.bgGradient?.slice(-1)[0] || '#FFD700'}
+                                        onChange={(e) => {
+                                          const current = overlayItems.find(i => i.id === selectedItemId)?.bgGradient || ['#D4AF37', '#FFD700'];
+                                          updateItem(selectedItemId, { bgGradient: [current[0], e.target.value] });
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <label className="text-[8px] text-gray-400 font-bold uppercase block mt-1">Hoặc dùng mẫu sẵn</label>
+                                  <div className="grid grid-cols-2 gap-1">
+                                    {[
+                                      { name: 'VÀNG GOLD', colors: ['#D4AF37', '#FFD700', '#D4AF37'] },
+                                      { name: 'XANH NGỌC', colors: ['#11998e', '#38ef7d'] },
+                                      { name: 'HOÀNG HÔN', colors: ['#ff5f6d', '#ffc371'] },
+                                      { name: 'ĐẠI DƯƠNG', colors: ['#2193b0', '#6dd5ed'] },
+                                      { name: 'PREMIUM', colors: ['#232526', '#414345'] },
+                                      { name: 'TÍM SEN', colors: ['#da22ff', '#9733ee'] }
+                                    ].map(g => (
+                                      <button 
+                                        key={g.name}
+                                        className="h-6 rounded flex items-center justify-center text-[7px] text-white font-bold transition-transform hover:scale-105 shadow-sm"
+                                        style={{ background: `linear-gradient(to right, ${g.colors.join(', ')})` }}
+                                        onClick={() => updateItem(selectedItemId, { bgGradient: g.colors })}
+                                      >
+                                        {g.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                               </div>
+                             )}
+
+                             <div>
+                                <label className="text-[8px] text-gray-400 font-bold uppercase">Màu Chữ & Biểu Tượng</label>
+                                <input 
+                                  type="color" 
+                                  className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
+                                  value={overlayItems.find(i => i.id === selectedItemId)?.color}
+                                  onChange={(e) => updateItem(selectedItemId, { color: e.target.value })}
+                                />
+                             </div>
+                          </div>
+                        )}
+                           {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' && (
+                             <div className="pt-2 border-t border-gray-100 space-y-2">
+                               <label className="text-[9px] text-gray-500 block mb-1 uppercase">Thiết kế Nhãn</label>
+                               <div>
+                                 <label className="text-[8px] text-gray-400">Chọn Icon chuyên nghiệp (Màu trắng)</label>
+                                 <div className="flex flex-wrap gap-2 mb-3">
+                                   {[
+                                     { id: 'shield-check', label: 'Bảo vệ' },
+                                     { id: 'box', label: 'Hộp' },
+                                     { id: 'truck', label: 'Xe tải' },
+                                     { id: 'award', label: 'Chất lượng' },
+                                     { id: 'package-check', label: 'Kiểm hàng' }
+                                   ].map(iconObj => (
+                                     <button 
+                                       key={iconObj.id} 
+                                       title={iconObj.label}
+                                       className={`p-2 rounded border flex items-center justify-center hover:bg-blue-50 ${overlayItems.find(i => i.id === selectedItemId)?.icon === iconObj.id ? 'bg-blue-100 border-blue-300' : 'bg-white'}`}
+                                       onClick={() => updateItem(selectedItemId, { icon: iconObj.id, iconType: 'lucide' })}
+                                     >
+                                        <div className="w-4 h-4 text-gray-600 flex items-center justify-center">
+                                           {iconObj.id === 'shield-check' && <ShieldCheck size={14} />}
+                                           {iconObj.id === 'box' && <Box size={14} />}
+                                           {iconObj.id === 'truck' && <Truck size={14} />}
+                                           {iconObj.id === 'award' && <Award size={14} />}
+                                           {iconObj.id === 'package-check' && <PackageCheck size={14} />}
+                                        </div>
+                                     </button>
+                                   ))}
+                                 </div>
+                                 <label className="text-[8px] text-gray-400">Hoặc dùng Emoji riêng</label>
+                                 <Input 
+                                   size="small" 
+                                   value={overlayItems.find(i => i.id === selectedItemId)?.iconType === 'emoji' ? overlayItems.find(i => i.id === selectedItemId)?.icon : ''} 
+                                   onChange={(e) => updateItem(selectedItemId, { icon: e.target.value, iconType: 'emoji' })}
+                                   placeholder="Gõ emoji..."
+                                 />
+                               </div>
+                               <div>
+                                 <label className="text-[8px] text-gray-400">Nội dung chữ</label>
+                                 <Input.TextArea 
+                                   size="small" 
+                                   rows={1}
+                                   value={overlayItems.find(i => i.id === selectedItemId)?.text} 
+                                   onChange={(e) => updateItem(selectedItemId, { text: e.target.value })}
+                                 />
+                               </div>
+                             </div>
+                           )}
+
+                           {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' && (
+                             <Button 
+                               block 
+                               size="small" 
+                               type="primary" 
+                               icon={<SaveOutlined />}
+                               onClick={saveSelectedAsBadge}
+                               className="mt-2 bg-blue-500"
+                             >
+                               Lưu vào thư viện nhãn
+                             </Button>
+                           )}
                     </div>
                   )}
 
@@ -992,6 +1646,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                   </div>
                 </div>
               </div>
+
             </div>
           )}
         </div>
@@ -1023,42 +1678,43 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     const scaleY = canvasHeight / rect.height;
                     const mouseX = (e.clientX - rect.left) * scaleX;
                     const mouseY = (e.clientY - rect.top) * scaleY;
-                    
-                    setMousePos({ x: mouseX, y: mouseY });
-
-                    // Check if click is on resize handles of selected item
-                    if (selectedItemId) {
+                                       if (selectedItemId) {
                       const item = overlayItems.find(i => i.id === selectedItemId);
                       if (item && item.type === 'text') {
-                        // Check right handle
                         const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
-                        // Check left handle
                         const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
-
                         if (distR < 25 || distL < 25) {
                           setIsResizingItem(true);
                           return;
                         }
                       }
                     }
-
-                    // Eraser mode logic
-                    if (isEraserMode && processedImage && maskCanvasRef.current) {
-                      saveMaskState();
-                      setIsErasing(true);
-                      return;
-                    }
-
-                    // Check if click is on any overlay item first (highest priority)
-                    const canvas = canvasRef.current!;
-                    const ctx = canvas.getContext('2d')!;
                     
+                    const ctx = canvasRef.current!.getContext('2d')!;
                     for (let i = overlayItems.length - 1; i >= 0; i--) {
                       const item = overlayItems[i];
-                      ctx.font = `${item.size}px ${item.font}`;
-                      const metrics = ctx.measureText(item.text);
-                      const w = metrics.width + 10;
-                      const h = item.size + 10;
+                      let w = 0;
+                      let h = 0;
+
+                      if (item.type === 'text') {
+                        ctx.font = `${item.size}px ${item.font}`;
+                        const metrics = ctx.measureText(item.text);
+                        w = item.width || metrics.width + 20;
+                        h = item.size + 20;
+                      } else if (item.type === 'image') {
+                        w = item.width * (item.itemScale || 1);
+                        h = (item.size || item.width) * (item.itemScale || 1); 
+                      } else if (item.type === 'badge') {
+                        ctx.font = `bold ${item.size}px ${item.font}`;
+                        const metrics = ctx.measureText(item.text);
+                        const iconSize = item.size * 1.2;
+                        const padding = item.size * 0.8;
+                        h = item.size + padding * 2;
+                        w = metrics.width + iconSize + padding * 3;
+                      } else {
+                        w = item.size * 1.5;
+                        h = item.size * 1.5;
+                      }
                       
                       if (
                         mouseX >= item.x - w / 2 &&
@@ -1072,17 +1728,11 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         return;
                       }
                     }
-
-                    // No overlay item clicked, clear selection
                     setSelectedItemId(null);
 
-                    // Check if click is on logo
                     if (showLogo) {
-                      const logoImg = new window.Image();
-                      logoImg.src = logo3;
-                      const logoWidth = logoImg.width * logoScale;
-                      const logoHeight = logoImg.height * logoScale;
-                      
+                      const logoWidth = 150 * logoScale; 
+                      const logoHeight = 40 * logoScale; 
                       if (
                         mouseX >= logoX - logoWidth / 2 &&
                         mouseX <= logoX + logoWidth / 2 &&
@@ -1180,11 +1830,11 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     const scaleY = canvasHeight / rect.height;
                     const mouseX = (touch.clientX - rect.left) * scaleX;
                     const mouseY = (touch.clientY - rect.top) * scaleY;
+
+                    // Chuyển đổi tọa độ chạm sang tọa độ canvas
+                    const adjX = mouseX; 
+                    const adjY = mouseY;
                     
-                    // Create a fake mouse event to reuse existing logic
-                    const fakeEvent = { clientX: touch.clientX, clientY: touch.clientY } as any;
-                    
-                    // Manually trigger the mouse down logic (simplified)
                     if (selectedItemId) {
                       const item = overlayItems.find(i => i.id === selectedItemId);
                       if (item && item.type === 'text') {
@@ -1206,11 +1856,45 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     const ctx = canvasRef.current!.getContext('2d')!;
                     for (let i = overlayItems.length - 1; i >= 0; i--) {
                       const item = overlayItems[i];
-                      ctx.font = `${item.size}px ${item.font}`;
-                      const metrics = ctx.measureText(item.text);
-                      const w = metrics.width + 30; // Larger for touch
-                      const h = item.size + 30;
-                      if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                      let w = 0;
+                      let h = 0;
+
+                      if (item.type === 'text') {
+                        ctx.font = `${item.size}px ${item.font}`;
+                        const words = item.text.split(' ');
+                        const lineHeight = item.size * 1.2;
+                        let lineCount = 1;
+                        let line = '';
+                        for (let n = 0; n < words.length; n++) {
+                          const testLine = line + words[n] + ' ';
+                          if (ctx.measureText(testLine).width > item.width && n > 0) {
+                            lineCount++;
+                            line = words[n] + ' ';
+                          } else {
+                            line = testLine;
+                          }
+                        }
+                        w = item.width + 20;
+                        h = lineCount * lineHeight + 20;
+                      } else if (item.type === 'image') {
+                        w = item.width * (item.itemScale || 1) + 20;
+                        h = (item.size || item.width) * (item.itemScale || 1) + 20;
+                      } else if (item.type === 'badge') {
+                        ctx.font = `bold ${item.size}px ${item.font}`;
+                        const metrics = ctx.measureText(item.text);
+                        const iconSize = item.size * 1.2;
+                        const padding = item.size * 0.8;
+                        h = item.size + padding * 2 + 20;
+                        w = metrics.width + iconSize + padding * 3 + 20;
+                      } else {
+                        // Emoji
+                        ctx.font = `${item.size}px ${item.font}`;
+                        const metrics = ctx.measureText(item.text);
+                        w = metrics.width + 30;
+                        h = item.size + 30;
+                      }
+
+                      if (adjX >= item.x - w / 2 && adjX <= item.x + w / 2 && adjY >= item.y - h / 2 && adjY <= item.y + h / 2) {
                         setIsDraggingItem(true);
                         setSelectedItemId(item.id);
                         setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
@@ -1218,6 +1902,21 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       }
                     }
                     setSelectedItemId(null);
+
+                    // Check if touch is on logo
+                    if (showLogo) {
+                      const logoWidth = 150 * logoScale; 
+                      const logoHeight = 40 * logoScale; 
+                      if (
+                        mouseX >= logoX - logoWidth / 2 &&
+                        mouseX <= logoX + logoWidth / 2 &&
+                        mouseY >= logoY - logoHeight / 2 &&
+                        mouseY <= logoY + logoHeight / 2
+                      ) {
+                        setIsDraggingLogo(true);
+                        setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                      }
+                    }
                   }}
                   onTouchMove={(e) => {
                     const touch = e.touches[0];
@@ -1227,6 +1926,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     const mouseX = (touch.clientX - rect.left) * scaleX;
                     const mouseY = (touch.clientY - rect.top) * scaleY;
 
+                    const adjX = (mouseX - positionX) / scale;
+                    const adjY = (mouseY - positionY) / scale;
+
                     if (isResizingItem && selectedItemId) {
                       const item = overlayItems.find(i => i.id === selectedItemId);
                       if (item) {
@@ -1234,6 +1936,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         updateItem(selectedItemId, { width: Math.max(50, newWidth) });
                       }
                     } else if (isErasing && isEraserMode && maskCanvasRef.current) {
+                      // Eraser STILL NEEDS relative coordinates
                       const ctx = maskCanvasRef.current.getContext('2d')!;
                       const productImg = new window.Image();
                       productImg.src = (processedImage || originalImage) as string;
@@ -1256,6 +1959,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       setEraserTrigger(prev => prev + 1);
                     } else if (isDraggingItem && selectedItemId) {
                       updateItem(selectedItemId, { x: mouseX - dragOffset.x, y: mouseY - dragOffset.y });
+                    } else if (isDraggingLogo && showLogo) {
+                      setLogoX(mouseX - dragOffset.x);
+                      setLogoY(mouseY - dragOffset.y);
                     }
                   }}
                   onTouchEnd={() => {
