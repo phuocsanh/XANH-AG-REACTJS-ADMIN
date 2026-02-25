@@ -60,6 +60,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     iconType?: 'emoji' | 'lucide';
     bgColor?: string;
     bgGradient?: string[];
+    italic?: boolean;
   }
   const [overlayItems, setOverlayItems] = useState<OverlayItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -92,6 +93,18 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     color: string;
     size: number;
   }
+  useEffect(() => {
+    // Load Google Fonts
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;700&family=Dancing+Script:wght@400;700&family=Pacifico&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
+  const [visibleBadges, setVisibleBadges] = useState(true);
   const [userBadges, setUserBadges] = useState<SavedBadge[]>([]);
 
   const [templates, setTemplates] = useState<StudioTemplate[]>([]);
@@ -528,6 +541,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
         // Draw overlay items (Text and Emojis) - ALWAYS DRAW EVEN WITHOUT PRODUCT
         overlayItems.forEach(item => {
           if (item.type === 'text') {
+            ctx.save();
+            const italicPrefix = item.italic ? 'italic ' : '';
+            ctx.font = `${italicPrefix}${item.size}px ${item.font}`;
+            ctx.fillStyle = item.color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
             const words = item.text.split(' ');
             let line = '';
             const lines = [];
@@ -564,10 +584,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               ctx.strokeRect(rectX, rectY, rectW, rectH);
               ctx.restore();
 
-              // Draw resize handles (circles at right and left centers)
+              // Draw resize handles
               if (!isExportingRef.current) {
                 ctx.fillStyle = '#3b82f6';
-                // Right handle
                 ctx.beginPath();
                 ctx.arc(item.x + item.width / 2 + 5, item.y, 10, 0, Math.PI * 2);
                 ctx.fill();
@@ -575,7 +594,6 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Left handle
                 ctx.beginPath();
                 ctx.arc(item.x - item.width / 2 - 5, item.y, 10, 0, Math.PI * 2);
                 ctx.fill();
@@ -586,6 +604,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             lines.forEach((l, i) => {
               ctx.fillText(l, item.x, item.y - (totalHeight / 2) + (i * lineHeight) + (lineHeight / 2));
             });
+            ctx.restore();
           } else if (item.type === 'image' && item.imageSrc) {
             const img = new window.Image();
             img.src = item.imageSrc;
@@ -1466,21 +1485,41 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         </div>
                       </div>
 
-                      {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
-                        <div>
-                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Phông chữ</label>
-                          <Select 
-                            className="w-full" 
-                            size="small"
-                            value={overlayItems.find(i => i.id === selectedItemId)?.font}
-                            onChange={(val) => updateItem(selectedItemId, { font: val })}
-                          >
-                            <Select.Option value="Arial">Arial</Select.Option>
-                            <Select.Option value="Times New Roman">Times New Roman</Select.Option>
-                            <Select.Option value="Courier New">Courier New</Select.Option>
-                            <Select.Option value="Verdana">Verdana</Select.Option>
-                            <Select.Option value="Impact">Impact</Select.Option>
-                          </Select>
+                       {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-[9px] text-gray-500 block mb-1 uppercase">Phông chữ</label>
+                            <div className="flex gap-2">
+                              <Select 
+                                className="flex-1" 
+                                size="small"
+                                value={overlayItems.find(i => i.id === selectedItemId)?.font}
+                                onChange={(val) => updateItem(selectedItemId, { font: val })}
+                              >
+                                <Select.Option value="Arial">Arial</Select.Option>
+                                <Select.Option value="Roboto">Roboto</Select.Option>
+                                <Select.Option value="Inter">Inter</Select.Option>
+                                <Select.Option value="Montserrat">Montserrat</Select.Option>
+                                <Select.Option value="Dancing Script">Nghệ thuật (Dancing)</Select.Option>
+                                <Select.Option value="Pacifico">Bay bổng (Pacifico)</Select.Option>
+                                <Select.Option value="Times New Roman">Times New Roman</Select.Option>
+                                <Select.Option value="Courier New">Courier New</Select.Option>
+                                <Select.Option value="Verdana">Verdana</Select.Option>
+                                <Select.Option value="Impact">Impact</Select.Option>
+                              </Select>
+                              <Tooltip title="Chữ nghiêng">
+                                <Button 
+                                  size="small"
+                                  type={overlayItems.find(i => i.id === selectedItemId)?.italic ? 'primary' : 'default'}
+                                  onClick={() => {
+                                    const item = overlayItems.find(i => i.id === selectedItemId);
+                                    updateItem(selectedItemId, { italic: !item?.italic });
+                                  }}
+                                  icon={<span className="font-serif italic font-bold">I</span>}
+                                />
+                              </Tooltip>
+                            </div>
+                          </div>
                         </div>
                       )}
 
