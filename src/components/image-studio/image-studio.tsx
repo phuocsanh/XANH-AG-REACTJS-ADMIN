@@ -556,6 +556,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               const rectW = item.width + 10;
               const rectH = totalHeight + 10;
               ctx.strokeRect(rectX, rectY, rectW, rectH);
+              
+              // Dashed highlight
+              ctx.save();
+              ctx.setLineDash([4, 4]);
+              ctx.strokeStyle = '#ffffff';
+              ctx.strokeRect(rectX, rectY, rectW, rectH);
+              ctx.restore();
 
               // Draw resize handles (circles at right and left centers)
               if (!isExportingRef.current) {
@@ -594,6 +601,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                 ctx.strokeStyle = '#3b82f6';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+                
+                // Dashed highlight
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = '#ffffff';
+                ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+                ctx.restore();
               }
             }
           } else if (item.type === 'badge') {
@@ -636,10 +650,18 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             ctx.fill();
 
             // Draw selection border
-            if (item.id === selectedItemId && item.type !== 'badge') {
+            if (item.id === selectedItemId) {
               ctx.strokeStyle = '#3b82f6';
               ctx.lineWidth = 3;
               ctx.stroke();
+              
+              // Thêm nét đứt trắng để nổi bật hơn (hiệu ứng đang chọn)
+              ctx.save();
+              ctx.setLineDash([5, 5]);
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+              ctx.restore();
             }
 
           // Draw icon (emoji or lucide)
@@ -688,6 +710,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               ctx.strokeStyle = '#3b82f6';
               ctx.lineWidth = 2;
               ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+              
+              // Dashed highlight
+              ctx.save();
+              ctx.setLineDash([4, 4]);
+              ctx.strokeStyle = '#ffffff';
+              ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+              ctx.restore();
             }
             ctx.fillText(item.text, item.x, item.y);
           }
