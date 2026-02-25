@@ -36,9 +36,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   
   // Logo watermark states
   const [showLogo, setShowLogo] = useState(true);
-  const [logoScale, setLogoScale] = useState(0.15);
-  const [logoX, setLogoX] = useState(850);
-  const [logoY, setLogoY] = useState(850);
+  const [logoScale, setLogoScale] = useState(0.2);
+  const [logoX, setLogoX] = useState(650);
+  const [logoY, setLogoY] = useState(250);
   const [isDraggingLogo, setIsDraggingLogo] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
