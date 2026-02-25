@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip } from 'antd';
-import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined } from '@ant-design/icons';
+import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined } from '@ant-design/icons';
 import { Sparkles, X, Eraser } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
@@ -281,7 +281,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           const displayWidth = pWidth * scale;
           const displayHeight = pHeight * scale;
 
-          if (!processedImage) ctx.globalAlpha = 0.5;
+          // if (!processedImage) ctx.globalAlpha = 0.5;
 
           // Create temporary canvas for product + mask
           const tempCanvas = document.createElement('canvas');
@@ -584,7 +584,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
         <Button 
           key="copy" 
           icon={<CopyOutlined />} 
-          disabled={!processedImage}
+          disabled={!originalImage && !processedImage}
           onClick={handleCopyImage}
           size="large"
         >
@@ -593,7 +593,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
         <Button 
           key="download" 
           icon={<SaveOutlined />} 
-          disabled={!processedImage}
+          disabled={!originalImage && !processedImage}
           onClick={handleDownload}
           size="large"
         >
@@ -603,7 +603,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           key="save" 
           type="primary" 
           icon={<SaveOutlined />} 
-          disabled={!processedImage}
+          disabled={!originalImage && !processedImage}
           onClick={handleSave}
           size="large"
           className="bg-green-600 hover:bg-green-700 h-auto py-2 px-8"
@@ -635,16 +635,26 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                   </div>
 
                   {!processedImage && (
-                    <Button 
-                      type="primary" 
-                      icon={<Sparkles className="w-4 h-4" />} 
-                      loading={loading}
-                      onClick={processAI}
-                      block
-                      className="bg-blue-600 hover:bg-blue-700 h-10 font-bold shadow-lg shadow-blue-200 mb-4"
-                    >
-                      Thêm nền cho ảnh
-                    </Button>
+                    <div className="flex flex-col gap-2 mb-4">
+                      <Button 
+                        type="primary" 
+                        icon={<Sparkles className="w-4 h-4" />} 
+                        loading={loading}
+                        onClick={processAI}
+                        block
+                        className="bg-blue-600 hover:bg-blue-700 h-10 font-bold shadow-lg shadow-blue-200"
+                      >
+                        Thêm nền bằng AI
+                      </Button>
+                      <Button 
+                        icon={<PictureOutlined />}
+                        onClick={() => { setProcessedImage(originalImage); message.info('Đã chọn sử dụng ảnh gốc.'); }}
+                        block
+                        className="h-10 font-bold border-dashed"
+                      >
+                        Bỏ qua / Dùng ảnh gốc
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -708,7 +718,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             </div>
           </div>
 
-          {processedImage && (
+          {(processedImage || originalImage) && (
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-green-500">
                 <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -1255,11 +1265,11 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                   }}
                 />
               </div>
-              {!processedImage && (
+              {/* {!processedImage && (
                  <div className="absolute top-4 left-4 bg-orange-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-xl animate-bounce border-2 border-white">
                     ĐANG XEM TRƯỚC - HÃY TÁCH NỀN!
                  </div>
-              )}
+              )} */}
             </div>
           ) : (
             <div className="text-center text-gray-400 space-y-6">
