@@ -1734,9 +1734,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                     if (showLogo) {
                       const lImg = logoImgRef.current;
-                      const logoWidth = lImg && lImg.width > 0 ? lImg.width * logoScale : 150 * logoScale;
-                      const logoHeight = lImg && lImg.height > 0 ? lImg.height * logoScale : 150 * logoScale;
-                      const hitPadding = 30;
+                      const baseSize = (lImg && lImg.width > 0) ? lImg.width : 500;
+                      const logoWidth = baseSize * logoScale;
+                      const logoHeight = baseSize * logoScale;
+                      const hitPadding = 60;
                       if (
                         mouseX >= logoX - logoWidth / 2 - hitPadding &&
                         mouseX <= logoX + logoWidth / 2 + hitPadding &&
@@ -1911,9 +1912,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     // Check if touch is on logo
                     if (showLogo) {
                       const lImg = logoImgRef.current;
-                      const logoWidth = lImg && lImg.width > 0 ? lImg.width * logoScale : 150 * logoScale;
-                      const logoHeight = lImg && lImg.height > 0 ? lImg.height * logoScale : 150 * logoScale;
-                      const hitPadding = 30;
+                      const baseSize = (lImg && lImg.width > 0) ? lImg.width : 500;
+                      const logoWidth = baseSize * logoScale;
+                      const logoHeight = baseSize * logoScale;
+                      const hitPadding = 70;
                       if (
                         mouseX >= logoX - logoWidth / 2 - hitPadding &&
                         mouseX <= logoX + logoWidth / 2 + hitPadding &&
