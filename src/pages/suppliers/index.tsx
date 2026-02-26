@@ -1,4 +1,5 @@
-import React, { useState } from "react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Box,
   Button,
@@ -30,7 +31,7 @@ import {
 import { useAppStore } from "@/stores"
 import FilterHeader from "@/components/common/filter-header"
 import { DatePicker, Space, Button as AntButton } from "antd"
-import { SearchOutlined } from "@ant-design/icons"
+import { SearchOutlined, BarChartOutlined } from "@ant-design/icons"
 import dayjs from "dayjs"
 import type { FilterValue, TablePaginationConfig } from "antd/es/table/interface"
 import type { SorterResult } from "antd/es/table/interface"
@@ -40,6 +41,7 @@ interface ExtendedSupplier extends Supplier, Record<string, unknown> {}
 
 // Component chính quản lý nhà cung cấp
 export const Suppliers = () => {
+  const navigate = useNavigate()
   const [openDialog, setOpenDialog] = useState(false)
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
@@ -209,10 +211,14 @@ export const Suppliers = () => {
     setOpenDialog(true)
   }
 
-  // Xử lý mở dialog xóa nhà cung cấp
   const handleDeleteSupplier = (supplier: Supplier) => {
     setSelectedSupplier(supplier)
     setOpenDeleteDialog(true)
+  }
+
+  // Xử lý xem thống kê nhà cung cấp
+  const handleViewStats = (supplier: Supplier) => {
+    navigate(`/suppliers/stats/${supplier.id}`)
   }
 
   // Xử lý submit form
@@ -479,6 +485,15 @@ export const Suppliers = () => {
           searchableColumns={["name", "code", "phone", "email"]}
           onEdit={handleEditSupplier}
           onDelete={handleDeleteSupplier}
+          actionButtons={[
+            {
+              key: "stats",
+              icon: <BarChartOutlined />,
+              tooltip: "Thống kê doanh số",
+              onClick: (record: any) => handleViewStats(record as Supplier),
+              type: "link",
+            }
+          ]}
           onChange={handleTableChange}
           paginationConfig={{
             current: currentPage,

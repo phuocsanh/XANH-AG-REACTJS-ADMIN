@@ -50,7 +50,7 @@ interface DataTableProps<T = Record<string, unknown>>
   data: T[]
   loading?: boolean
   showActions?: boolean
-  actionButtons?: ActionButton[]
+  actionButtons?: ActionButton<T>[]
   onEdit?: (record: T) => void
   onDelete?: (record: T) => void
   onView?: (record: T) => void

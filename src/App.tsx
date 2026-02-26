@@ -40,6 +40,7 @@ import { SignUp } from "./pages/sign-up"
 // Thêm import cho trang pesticides
 import PesticidesPage from "./pages/pesticides"
 import RiceMarketPage from "./pages/rice-market"
+import SupplierStatsPage from "./pages/suppliers/supplier-stats"
 
 import DiseaseWarningPage from "./pages/disease-warning"
 // Thêm import cho trang kiểm tra thuốc bị cấm
@@ -129,9 +130,10 @@ function App() {
   // Fetch Remote Config và lưu vào store khi app khởi động
   useEffect(() => {
     const initRemoteConfig = async () => {
+      if (!remoteConfig) return;
       try {
         console.log('🚀 Initializing Remote Config...')
-        const activated = await fetchAndActivate(remoteConfig)
+        const activated = await fetchAndActivate(remoteConfig!)
         console.log('✅ Remote Config fetched:', activated ? 'New config activated' : 'Using cached config')
         
         // Pre-fetch Tomorrow.io keys để cache
@@ -151,7 +153,7 @@ function App() {
         const storeState = useConfigStore.getState()
         
         keys.forEach(({ name, setter }) => {
-          const value = getValue(remoteConfig, name).asString()
+          const value = getValue(remoteConfig!, name).asString()
           if (value && value.trim()) {
             (storeState as any)[setter](value)
             console.log(`✅ ${name} loaded`)
@@ -400,6 +402,15 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="inventory:manage">
                           <Suppliers />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Thêm route cho thống kê nhà cung cấp */}
+                    <Route
+                      path='/suppliers/stats/:id'
+                      element={
+                        <ProtectedRoute requiredPermission="inventory:manage">
+                          <SupplierStatsPage />
                         </ProtectedRoute>
                       }
                     />
