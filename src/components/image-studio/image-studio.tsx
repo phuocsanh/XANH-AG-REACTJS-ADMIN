@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip, InputNumber } from 'antd';
-import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined, PlusOutlined, HeartOutlined } from '@ant-design/icons';
+import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined, PlusOutlined, HeartOutlined, AlertOutlined } from '@ant-design/icons';
 import { Sparkles, X, Eraser, ShieldCheck, Box, Truck, Award, PackageCheck } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
@@ -2072,7 +2072,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         <div className={overlayItems.find(i => i.id === selectedItemId)?.type === 'emoji' ? 'col-span-2' : ''}>
                           <label className="text-[9px] text-gray-500 block mb-1 uppercase">
                             {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 'Kích thước Nhãn' : 
-                             overlayItems.find(i => i.id === selectedItemId)?.type === 'emoji' ? 'Kích thước Emoji' : 'Cỡ chữ'}
+                             overlayItems.find(i => i.id === selectedItemId)?.type === 'emoji' ? 'Kích thước Biểu tượng' : 'Cỡ chữ'}
                           </label>
                           <div className="flex items-center gap-2">
                             <Slider 
@@ -2091,6 +2091,32 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                               className="w-[60px]"
                             />
                           </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-gray-100">
+                        <label className="text-[8px] font-bold text-gray-400 uppercase mb-2 block">Thư viện Biểu tượng Nông nghiệp</label>
+                        <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto custom-scrollbar p-1 bg-gray-50 rounded">
+                          {[
+                            // Nhóm cây trồng chính
+                            '🌾', '🌱', '🌿', '🍃', '🍀', '🌳', '🌴', '🌻', '🌼',
+                            // Nhóm rau củ
+                            '🍅', '🌽', '🥦', '🥬', '🥒', '🧅', '🧄', '🥔', '🥕', '🌶️', '🍄',
+                            // Nhóm trái cây
+                            '🍎', '🍏', '🍐', '🍋', '🍊', '🍉', '🍇', '🍓', '🍑', '🍍', '🥭',
+                            // Nhóm sâu bệnh/côn trùng (Đối tượng đặc trị)
+                            '🐛', '🐞', '🐜', '🕷️', ' Mosquito', '🐝', '🦗', '🦋',
+                            // Nhóm hiệu ứng/tác dụng
+                            '💊', '🧪', '🛡️', '💧', '🔥', '⚡', '✨', '💯', '✅', '🆕', '💥', '💰', '🚀', '🎯'
+                          ].map(emoji => (
+                            <button 
+                              key={emoji} 
+                              className="text-2xl hover:scale-125 transition-transform p-1 bg-white rounded shadow-sm border border-gray-100 flex items-center justify-center w-10 h-10"
+                              onClick={() => addEmoji(emoji)}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
@@ -2398,22 +2424,63 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 max-h-[150px] overflow-y-auto custom-scrollbar">
-                    {[
-                      '🌾', '🌱', '🍃', '🌿', '🍀', '🌻', '🌼', '🌷', '🍂', '🍁', '🍄', '🌵', '🌳', '🌴', 
-                      '🍅', '🥦', '🌽', '🧅', '🧄', '🥔', '🥕', '🌶️', '🥒', '🍋', '🍎', '🍐', '🍑', '🍒', '🍓', '🍉', '🍇', '🍍', 
-                      '🐛', '🐜', '🐞', '🕷️', '🦟', '🐝',
-                      '☀️', '☁️', '⛅', '⛈️', '💧', '🌡️', 
-                      '🎁', '⭐', '🔥', '💯', '✅', '🆕', '💥', '💰', '🚀', '⚡', '🎯', '💎', '🏷️'
-                    ].map(emoji => (
-                      <button 
-                        key={emoji} 
-                        className="text-xl hover:scale-125 transition-transform p-1"
-                        onClick={() => addEmoji(emoji)}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="space-y-4 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
+                      {/* Nhóm Cây Trồng & Thiên Nhiên */}
+                      <div>
+                        <div className="text-[8px] font-bold text-gray-400 uppercase mb-2">Cây trồng & Môi trường</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {['🌾', '🌱', '🌿', '🍃', '🍀', '🌴', '🌳', '🌵', '🎄', '🎋', '☘️', '🍃', '🍂', '🍁', '🍄', '🌻', '🌼', '🌷'].map(emoji => (
+                             <button key={emoji} className="text-xl hover:scale-125 transition-transform p-1 bg-white rounded border border-gray-50 w-9 h-9 flex items-center justify-center shadow-sm" onClick={() => addEmoji(emoji)}>{emoji}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Nhóm Nông Sản (Rau, Củ, Quả) */}
+                      <div>
+                        <div className="text-[8px] font-bold text-gray-400 uppercase mb-2">Nông sản (Rau, Củ, Quả)</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {['🍅', '🥦', '🌽', '🥬', '🥒', '🧅', '🧄', '🥔', '🥕', '🌶️', '🫑', '🍆', '🥑', '🍎', '🍏', '🍐', '🍋', '🍊', '🍉', '🍇', '🍓', '🍒', '🍑', '🍍', '🥭', '🥝'].map(emoji => (
+                             <button key={emoji} className="text-xl hover:scale-125 transition-transform p-1 bg-white rounded border border-gray-50 w-9 h-9 flex items-center justify-center shadow-sm" onClick={() => addEmoji(emoji)}>{emoji}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Nhóm Sâu Bệnh & Côn Trùng (Đối tượng đặc trị) */}
+                      <div>
+                        <div className="text-[8px] font-bold text-blue-400 uppercase mb-2 flex items-center gap-1">
+                          <AlertOutlined style={{ fontSize: '8px' }} /> Sâu bệnh & Côn trùng
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {['🐛', '🦋', '🐞', '🐜', '🕷️', '🦟', '🦗', '🐝', '🐌'].map(emoji => (
+                             <button key={emoji} className="text-xl hover:scale-125 transition-transform p-1 bg-red-50/50 rounded border border-red-100 w-9 h-9 flex items-center justify-center shadow-sm" onClick={() => addEmoji(emoji)}>{emoji}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Nhóm Thành phần & Công thức */}
+                      <div>
+                        <div className="text-[8px] font-bold text-purple-500 uppercase mb-2">Hoạt chất & Hóa học</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            '🧪', '⚗️', '⚛️', '🧬', '🔬', '🧫', '🧴', '🛢️', '💊', '🌫️', '🧊', '🧂', '💧', '🫧', 
+                            '⚪', '🟢', '🔵', '🔴', '🟡', '⚙️', '💎'
+                          ].map(emoji => (
+                             <button key={emoji} title="Thành phần/Dạng thuốc" className="text-xl hover:scale-125 transition-transform p-1 bg-purple-50/50 rounded border border-purple-100 w-9 h-9 flex items-center justify-center shadow-sm" onClick={() => addEmoji(emoji)}>{emoji}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Nhóm Hiệu Ứng & Công Dụng */}
+                      <div>
+                        <div className="text-[8px] font-bold text-green-500 uppercase mb-2">Tác dụng & Hiệu quả</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {['🛡️', '🌡️', '🔥', '⚡', '✨', '💯', '✅', '🆕', '💥', '💰', '🚀', '🎯', '🌈', '☀️', '⭐'].map(emoji => (
+                             <button key={emoji} className="text-xl hover:scale-125 transition-transform p-1 bg-green-50/50 rounded border border-green-100 w-9 h-9 flex items-center justify-center shadow-sm" onClick={() => addEmoji(emoji)}>{emoji}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="text-[9px] text-gray-400 mt-2 italic px-2">
