@@ -890,7 +890,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           } else {
             // Emojis và các loại khác
             ctx.save();
-            ctx.font = `${item.size}px ${item.font || 'Arial'}`;
+            // Sử dụng font stack hỗ trợ emoji tốt hơn trên các hệ điều hành
+            const emojiFont = '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", "Arial"';
+            ctx.font = `${item.size}px ${emojiFont}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
@@ -931,6 +933,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               ctx.restore();
             } 
             
+            // Emojis thường không ăn màu fillText tùy browser, nhưng cứ giữ fallback
             ctx.fillStyle = item.color || '#000000';
             ctx.fillText(item.text, item.x, item.y);
             ctx.restore();
@@ -2020,84 +2023,69 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       )}
 
                       <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[9px] text-gray-500 block mb-1 uppercase">Màu sắc</label>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex gap-1">
-                              <input 
-                                type="color" 
-                                className="flex-1 h-8 p-0 border-0 bg-transparent cursor-pointer"
-                                value={overlayItems.find(i => i.id === selectedItemId)?.color}
-                                onChange={(e) => {
-                                  const color = e.target.value;
-                                  updateItem(selectedItemId, { color });
-                                  addRecentColor(color);
-                                }}
-                              />
-                              <Tooltip title="Lưu màu này">
-                                <Button 
-                                  size="small" 
-                                  icon={<HeartOutlined />} 
-                                  onClick={() => saveColor(overlayItems.find(i => i.id === selectedItemId)?.color || '#000000')}
+                        {overlayItems.find(i => i.id === selectedItemId)?.type !== 'emoji' && (
+                          <div>
+                            <label className="text-[9px] text-gray-500 block mb-1 uppercase">Màu sắc</label>
+                            <div className="flex flex-col gap-2">
+                              <div className="flex gap-1">
+                                <input 
+                                  type="color" 
+                                  className="flex-1 h-8 p-0 border-0 bg-transparent cursor-pointer"
+                                  value={overlayItems.find(i => i.id === selectedItemId)?.color}
+                                  onChange={(e) => {
+                                    const color = e.target.value;
+                                    updateItem(selectedItemId, { color });
+                                    addRecentColor(color);
+                                  }}
                                 />
-                              </Tooltip>
+                                <Tooltip title="Lưu màu này">
+                                  <Button 
+                                    size="small" 
+                                    icon={<HeartOutlined />} 
+                                    onClick={() => saveColor(overlayItems.find(i => i.id === selectedItemId)?.color || '#000000')}
+                                  />
+                                </Tooltip>
+                              </div>
+
+                              {savedColors.length > 0 && (
+                                <div>
+                                  <label className="text-[8px] text-gray-400 font-bold uppercase block mb-1">Màu yêu thích ❤️</label>
+                                  <div className="flex flex-wrap gap-1">
+                                    {savedColors.map((c, idx) => (
+                                      <div 
+                                        key={idx}
+                                        className="w-4 h-4 rounded-full cursor-pointer border border-gray-200"
+                                        style={{ backgroundColor: c }}
+                                        onClick={() => {
+                                          updateItem(selectedItemId, { color: c });
+                                          addRecentColor(c);
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-
-                            {savedColors.length > 0 && (
-                              <div>
-                                <label className="text-[8px] text-gray-400 font-bold uppercase block mb-1">Màu yêu thích ❤️</label>
-                                <div className="flex flex-wrap gap-1">
-                                  {savedColors.map((c, idx) => (
-                                    <div 
-                                      key={idx}
-                                      className="w-4 h-4 rounded-full cursor-pointer border border-gray-200"
-                                      style={{ backgroundColor: c }}
-                                      onClick={() => {
-                                        updateItem(selectedItemId, { color: c });
-                                        addRecentColor(c);
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {recentColors.length > 0 && (
-                              <div>
-                                <label className="text-[8px] text-gray-400 font-bold uppercase block mb-1 text-[7px]">Vừa dùng</label>
-                                <div className="flex flex-wrap gap-1">
-                                  {recentColors.map((c, idx) => (
-                                    <div 
-                                      key={idx}
-                                      className="w-3.5 h-3.5 rounded-sm cursor-pointer border border-gray-100 opacity-70 hover:opacity-100"
-                                      style={{ backgroundColor: c }}
-                                      onClick={() => {
-                                        updateItem(selectedItemId, { color: c });
-                                        addRecentColor(c);
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            )}
                           </div>
-                        </div>
-                        <div>
+                        )}
+
+                        <div className={overlayItems.find(i => i.id === selectedItemId)?.type === 'emoji' ? 'col-span-2' : ''}>
                           <label className="text-[9px] text-gray-500 block mb-1 uppercase">
-                            {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 'Kích thước Nhãn' : 'Cỡ chữ'}
+                            {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 'Kích thước Nhãn' : 
+                             overlayItems.find(i => i.id === selectedItemId)?.type === 'emoji' ? 'Kích thước Emoji' : 'Cỡ chữ'}
                           </label>
                           <div className="flex items-center gap-2">
                             <Slider 
                               className="flex-1"
                               min={10} 
-                              max={overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 150 : 200} 
+                              max={1000} 
                               value={overlayItems.find(i => i.id === selectedItemId)?.size} 
                               onChange={(val) => updateItem(selectedItemId, { size: val })}
                             />
                             <InputNumber
                               size="small"
                               min={10}
-                              max={overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 500 : 500} // Tăng max lên cho thoải mái
+                              max={1000} 
                               value={overlayItems.find(i => i.id === selectedItemId)?.size}
                               onChange={(val) => updateItem(selectedItemId, { size: val || 10 })}
                               className="w-[60px]"
@@ -2410,11 +2398,17 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                    {['🌾', '🌱', '🍃', '🌿', '🍂', '🍁', '🍄', '🍅', '🥦', '🌽', '🍋', '🍎', '🍐', '🍑', '🍒', '🍓', '🎁', '⭐', '🔥', '💯', '✅', '🆕', '💥', '💰'].map(emoji => (
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 max-h-[150px] overflow-y-auto custom-scrollbar">
+                    {[
+                      '🌾', '🌱', '🍃', '🌿', '🍀', '🌻', '🌼', '🌷', '🍂', '🍁', '🍄', '🌵', '🌳', '🌴', 
+                      '🍅', '🥦', '🌽', '🧅', '🧄', '🥔', '🥕', '🌶️', '🥒', '🍋', '🍎', '🍐', '🍑', '🍒', '🍓', '🍉', '🍇', '🍍', 
+                      '🐛', '🐜', '🐞', '🕷️', '🦟', '🐝',
+                      '☀️', '☁️', '⛅', '⛈️', '💧', '🌡️', 
+                      '🎁', '⭐', '🔥', '💯', '✅', '🆕', '💥', '💰', '🚀', '⚡', '🎯', '💎', '🏷️'
+                    ].map(emoji => (
                       <button 
                         key={emoji} 
-                        className="text-xl hover:scale-125 transition-transform"
+                        className="text-xl hover:scale-125 transition-transform p-1"
                         onClick={() => addEmoji(emoji)}
                       >
                         {emoji}
