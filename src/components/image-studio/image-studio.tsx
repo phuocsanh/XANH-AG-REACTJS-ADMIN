@@ -7,6 +7,8 @@ import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
 import bgSanPham from '@/assets/images/bg-san-pham.png';
 import logo3 from '@/assets/images/logo3.png';
+import leafDecor from '@/assets/images/leaf.png';
+import keDecor from '@/assets/images/ke-san-pham.png';
 
 interface ImageStudioProps {
   visible: boolean;
@@ -36,11 +38,16 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   
   // Logo watermark states
   const [showLogo, setShowLogo] = useState(true);
-  const [logoScale, setLogoScale] = useState(0.2);
-  const [logoX, setLogoX] = useState(500);
-  const [logoY, setLogoY] = useState(180);
+  const [logoScale, setLogoScale] = useState(0.2); // To ra một chút theo yêu cầu
+  const [logoX, setLogoX] = useState(930); 
+  const [logoY, setLogoY] = useState(95);  
   const [isDraggingLogo, setIsDraggingLogo] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Shelf states
+  const [showShelf, setShowShelf] = useState(true); 
+  const [shelfY, setShelfY] = useState(440);   // Vị trí dọc mặc định
+  const [shelfHeight, setShelfHeight] = useState(655); // Chiều cao kệ mặc định
 
   // Text and Emoji states
   interface OverlayItem {
@@ -82,6 +89,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     logoX: number;
     logoY: number;
     overlayItems: OverlayItem[];
+    showShelf?: boolean;
+    shelfY?: number;
+    shelfHeight?: number;
     isSystem?: boolean;
   }
   interface SavedBadge {
@@ -389,10 +399,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionX: 500,
           positionY: 550,
           showLogo: true,
-          logoScale: 0.15,
-          logoX: 850,
-          logoY: 850,
+          logoScale: 0.2,
+          logoX: 930,
+          logoY: 70,
           overlayItems: [],
+          showShelf: true,
+          shelfY: 440,
+          shelfHeight: 655,
           isSystem: true
         },
         {
@@ -405,12 +418,15 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 700,
           showLogo: true,
           logoScale: 0.18,
-          logoX: 400,
-          logoY: 200,
+          logoX: 740,
+          logoY: 80,
           overlayItems: [
             { id: 't1', type: 'text', text: 'NÔNG SẢN XANH', x: 400, y: 100, size: 60, color: '#16a34a', font: 'Impact', width: 600 },
             { id: 't2', type: 'text', text: 'CHẤT LƯỢNG THẬT - GIÁ TRỊ THẬT', x: 400, y: 150, size: 30, color: '#4b5563', font: 'Arial', width: 600 }
           ],
+          showShelf: true,
+          shelfY: 650,
+          shelfHeight: 450,
           isSystem: true
         },
         {
@@ -422,9 +438,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionX: 400,
           positionY: 850,
           showLogo: true,
-          logoScale: 0.22,
-          logoX: 400,
-          logoY: 150,
+          logoScale: 0.2,
+          logoX: 740,
+          logoY: 80,
           overlayItems: [
             { id: 'x-1', type: 'text', text: 'XANH AG', x: 400, y: 280, size: 70, color: '#FFFFFF', font: 'Times New Roman', width: 700 },
             { id: 'x-2', type: 'text', text: 'bạn đồng hành của mọi nhà nông', x: 400, y: 360, size: 40, color: '#FFFFFF', font: 'Arial', width: 700 },
@@ -432,6 +448,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             { id: 'x-4', type: 'text', text: '✅ Gói hàng cẩn thận', x: 400, y: 560, size: 30, color: '#FFFFFF', font: 'Arial', width: 500 },
             { id: 'x-5', type: 'text', text: '✅ Giao hàng nhanh chóng', x: 400, y: 620, size: 30, color: '#FFFFFF', font: 'Arial', width: 500 }
           ],
+          showShelf: true,
+          shelfY: 650,
+          shelfHeight: 450,
           isSystem: true
         }
       ];
@@ -475,7 +494,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       logoScale,
       logoX,
       logoY,
-      overlayItems
+      overlayItems,
+      showShelf,
+      shelfY,
+      shelfHeight
     };
 
     const userTemplates = templates.filter(t => !t.isSystem);
@@ -495,7 +517,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setLogoScale(template.logoScale);
     setLogoX(template.logoX);
     setLogoY(template.logoY);
-    setOverlayItems(template.overlayItems.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)})));
+    setOverlayItems(template.overlayItems ? template.overlayItems.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)})) : []);
+    if (template.showShelf !== undefined) setShowShelf(template.showShelf);
+    if (template.shelfY !== undefined) setShelfY(template.shelfY);
+    if (template.shelfHeight !== undefined) setShelfHeight(template.shelfHeight);
     message.success(`Đã áp dụng mẫu: ${template.name}`);
   };
 
@@ -507,9 +532,12 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setPositionX(500);
     setPositionY(550);
     setShowLogo(true);
-    setLogoScale(0.15);
-    setLogoX(850);
-    setLogoY(850);
+    setLogoScale(0.2);
+    setLogoX(930);
+    setLogoY(70);
+    setShowShelf(true);
+    setShelfY(440);
+    setShelfHeight(655);
     setSelectedItemId(null);
     message.info('Đã chuẩn bị Canvas trống để thiết kế mẫu mới.');
   };
@@ -533,16 +561,38 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     const bgImg = new window.Image();
     const productImg = new window.Image();
     const logoImg = new window.Image();
+    const leafImg = new window.Image(); // Ảnh lá trang trí
+    const keImg = new window.Image(); // Ảnh kệ trang trí
 
     bgImg.src = bgSanPham;
     productImg.src = (processedImage || originalImage) ? (processedImage || originalImage) as string : '';
     logoImg.src = logo3;
+    leafImg.src = leafDecor;
+    keImg.src = keDecor;
     logoImgRef.current = logoImg;
 
     const draw = () => {
       // Clear and draw background as long as it's loaded
       if (bgImg.complete) {
         ctx.drawImage(bgImg, 0, 0, canvasWidth, canvasHeight);
+
+        // Vẽ Kệ Sản Phẩm - Sử dụng ảnh kệ ke.png
+        if (showShelf && keImg.complete) {
+          ctx.save();
+          // Chế độ multiply để loại bỏ nền trắng của ảnh kệ
+          ctx.globalCompositeOperation = 'multiply';
+          
+          const displayH = shelfHeight;
+          const imgRatio = keImg.width / keImg.height;
+          // Cho phép kệ to hơn: Chiều rộng tỉ lệ với chiều cao nhưng có thể tối đa full canvas
+          const sW = Math.min(canvasWidth * 1.5, displayH * imgRatio); 
+          const sX = (canvasWidth - sW) / 2;
+          const sY = shelfY;
+          
+          ctx.drawImage(keImg, sX, sY, sW, displayH);
+
+          ctx.restore();
+        }
 
         const hasProductImage = !!(processedImage || originalImage);
         
@@ -601,7 +651,31 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           ctx.restore();
         }
 
-        // Draw logo watermark
+          // --- Lá cây phủ kệ: dùng leaf.png với multiply (trắng biến mất) ---
+          if (showShelf && leafImg.complete) {
+            ctx.save();
+            // multiply blend: trắng × bất kỳ = bất kỳ (trắng trong suốt)
+            // → nền trắng của leaf.png biến mất, chỉ còn lá xanh
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.globalAlpha = 0.95;
+
+            // Dải lá: chiều rộng full canvas, chiều cao ~22%
+            // Ảnh leaf.png: dải ngang, lá nằm ở phần dưới, trắng ở trên
+            // Đặt sao cho phần lá (dưới ảnh) trùng với mặt trên kệ
+            const leafImgH = leafImg.naturalHeight || leafImg.height || 600;
+            const leafImgW = leafImg.naturalWidth || leafImg.width || 1500;
+
+            const destW = canvasWidth * 1.0;   // Full chiều rộng canvas
+            const destH = canvasHeight * 0.20;  // Thấp lại hơn (20%)
+            const destX = 0;
+            // Pin ảnh lá sát đáy canvas: đáy lá = đáy canvas
+            const destY = canvasHeight - destH;
+
+            ctx.drawImage(leafImg, 0, 0, leafImgW, leafImgH, destX, destY, destW, destH);
+
+            ctx.restore();
+          }
+
         if (bgImg.complete && showLogo && logoImg.complete) {
           const logoWidth = logoImg.width * logoScale;
           const logoHeight = logoImg.height * logoScale;
@@ -843,9 +917,11 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     bgImg.onload = draw;
     productImg.onload = draw;
     logoImg.onload = draw;
+    leafImg.onload = draw; // Khi ảnh lá tải xong thì vẽ lại
+    keImg.onload = draw;   // Khi ảnh kệ tải xong thì vẽ lại
     draw();
 
-  }, [visible, originalImage, processedImage, scale, positionX, positionY, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId, isErasing, isEraserMode, eraserTrigger, mousePos, brushMode, brushSize]);
+  }, [visible, originalImage, processedImage, scale, positionX, positionY, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId, isErasing, isEraserMode, eraserTrigger, mousePos, brushMode, brushSize, showShelf, shelfY, shelfHeight]);
 
   // AI Background Removal
   const processAI = async () => {
@@ -1016,8 +1092,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       const newItem: OverlayItem = {
         id: Date.now().toString(),
         text: '',
-        x: canvasWidth / 2,
-        y: canvasHeight / 2,
+        x: 930,
+        y: 70,
         size: img.height,
         color: '',
         font: '',
@@ -1335,6 +1411,34 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-gray-600 uppercase">Kệ trưng bày</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={showShelf}
+                        onChange={(e) => setShowShelf(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600"
+                      />
+                      <span className="text-[10px] font-bold">Hiển thị</span>
+                    </label>
+                  </div>
+                  {showShelf && (
+                    <div className="px-1">
+                      <div className="flex justify-between text-[10px] font-bold mb-1">
+                        <span className="text-gray-500 uppercase">Vị trí Kệ (Lên/Xuống)</span>
+                      </div>
+                      <Slider min={400} max={1100} value={shelfY} onChange={setShelfY} />
+                      <div className="flex justify-between text-[10px] font-bold mb-1 mt-3">
+                        <span className="text-gray-500 uppercase">Chiều cao kệ</span>
+                        <span className="text-blue-600 font-mono">{shelfHeight}px</span>
+                      </div>
+                      <Slider min={50} max={1000} step={5} value={shelfHeight} onChange={setShelfHeight} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
                     <span className="text-[11px] font-bold text-gray-600 uppercase">Công cụ tẩy xóa</span>
                     <Button 
                       size="small"
@@ -1463,7 +1567,6 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         const italicPrefix = item.italic ? 'italic ' : '';
                         const boldPrefix = item.bold ? 'bold ' : '';
                         ctx.font = `${italicPrefix}${boldPrefix}${item.size}px ${item.font}`;
-                        const metrics = ctx.measureText(item.text);
                         w = item.width;
                         const lines = wrapText(ctx, item.text, item.width);
                         h = lines.length * (item.size * 1.2);
@@ -1473,9 +1576,22 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
                           return;
                         }
+                      } else if (item.type === 'image') {
+                        w = (item.width || 100) * (item.itemScale || 1);
+                        h = (item.size || 100) * (item.itemScale || 1);
+                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                          setSelectedItemId(item.id);
+                          setIsDraggingItem(true);
+                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                          return;
+                        }
                       } else if (item.type === 'badge') {
-                        w = item.size * 3;
-                        h = item.size;
+                        ctx.font = `bold ${item.size}px ${item.font || 'Arial'}`;
+                        const metrics = ctx.measureText(item.text);
+                        const iconSize = item.size * 1.2;
+                        const padding = item.size * 0.8;
+                        w = metrics.width + iconSize + padding * 3;
+                        h = item.size + padding * 2;
                         if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
                           setSelectedItemId(item.id);
                           setIsDraggingItem(true);
@@ -1483,6 +1599,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           return;
                         }
                       } else {
+                        // Emojis hoặc khác
+                        ctx.font = `${item.size}px Arial`;
                         const metrics = ctx.measureText(item.text);
                         w = metrics.width;
                         h = item.size;
@@ -1595,21 +1713,27 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         const ctx = canvasRef.current!.getContext('2d')!;
                         const lines = wrapText(ctx, item.text, item.width);
                         h = lines.length * (item.size * 1.2);
-                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
-                          setSelectedItemId(item.id);
-                          setIsDraggingItem(true);
-                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
-                          return;
-                        }
+                      } else if (item.type === 'image') {
+                        w = (item.width || 100) * (item.itemScale || 1);
+                        h = (item.size || 100) * (item.itemScale || 1);
+                      } else if (item.type === 'badge') {
+                        const ctx = canvasRef.current!.getContext('2d')!;
+                        ctx.font = `bold ${item.size}px ${item.font || 'Arial'}`;
+                        const metrics = ctx.measureText(item.text);
+                        const iconSize = item.size * 1.2;
+                        const padding = item.size * 0.8;
+                        w = metrics.width + iconSize + padding * 3;
+                        h = item.size + padding * 2;
                       } else {
                         w = item.size;
                         h = item.size;
-                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
-                          setSelectedItemId(item.id);
-                          setIsDraggingItem(true);
-                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
-                          return;
-                        }
+                      }
+
+                      if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                        setSelectedItemId(item.id);
+                        setIsDraggingItem(true);
+                        setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                        return;
                       }
                     }
                     setSelectedItemId(null);
@@ -1960,13 +2084,27 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                               <div className="space-y-2">
                                 <div>
                                   <label className="text-[8px] text-gray-400">Tỷ lệ (Scale)</label>
+                               <div className="flex items-center gap-2">
                                   <Slider 
+                                    className="flex-1"
                                     min={0.01} 
-                                    max={2} 
+                                    max={3} 
                                     step={0.01}
                                     value={overlayItems.find(i => i.id === selectedItemId)?.itemScale || 0.5} 
                                     onChange={(val) => updateItem(selectedItemId, { itemScale: val })}
                                   />
+                                  <InputNumber
+                                    size="small"
+                                    min={0.01}
+                                    max={10}
+                                    step={0.01}
+                                    value={overlayItems.find(i => i.id === selectedItemId)?.itemScale || 0.5}
+                                    onChange={(val) => updateItem(selectedItemId, { itemScale: val || 0.5 })}
+                                    className="w-[70px]"
+                                    formatter={value => `${Math.round((value || 0) * 100)}%`}
+                                    parser={value => parseFloat(value?.replace('%', '') || '0') / 100}
+                                  />
+                                </div>
                                 </div>
                               </div>
                            </div>
