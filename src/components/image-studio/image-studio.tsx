@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip } from 'antd';
-import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined } from '@ant-design/icons';
+import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined, PlusOutlined, HeartOutlined } from '@ant-design/icons';
 import { Sparkles, X, Eraser, ShieldCheck, Box, Truck, Award, PackageCheck } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
@@ -61,6 +61,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     bgColor?: string;
     bgGradient?: string[];
     italic?: boolean;
+    bold?: boolean;
   }
   const [overlayItems, setOverlayItems] = useState<OverlayItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -106,6 +107,53 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
   const [visibleBadges, setVisibleBadges] = useState(true);
   const [userBadges, setUserBadges] = useState<SavedBadge[]>([]);
+  const [recentColors, setRecentColors] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('image-studio-recent-colors');
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
+
+  const [savedColors, setSavedColors] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('image-studio-saved-colors');
+      if (saved) return JSON.parse(saved);
+    }
+    return ['#000000', '#FFFFFF', '#ef4444', '#10b981', '#3b82f6']; // Chỉ để vài màu cơ bản nhất
+  });
+
+  const saveColor = (color: string) => {
+    if (!color) return;
+    setSavedColors(prev => {
+      if (prev.some(c => c.toLowerCase() === color.toLowerCase())) {
+        message.info('Màu này đã có trong danh sách lưu');
+        return prev;
+      }
+      const updated = [color, ...prev].slice(0, 20);
+      localStorage.setItem('image-studio-saved-colors', JSON.stringify(updated));
+      message.success('Đã lưu màu');
+      return updated;
+    });
+  };
+
+  const removeSavedColor = (color: string) => {
+    setSavedColors(prev => {
+      const updated = prev.filter(c => c.toLowerCase() !== color.toLowerCase());
+      localStorage.setItem('image-studio-saved-colors', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const addRecentColor = (color: string) => {
+    if (!color) return;
+    setRecentColors(prev => {
+      const filtered = prev.filter(c => c.toLowerCase() !== color.toLowerCase());
+      const updated = [color, ...filtered].slice(0, 10);
+      localStorage.setItem('image-studio-recent-colors', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const [templates, setTemplates] = useState<StudioTemplate[]>([]);
   
@@ -153,6 +201,27 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       if (processedImage?.startsWith('blob:')) URL.revokeObjectURL(processedImage);
     };
   }, [processedImage]);
+
+
+  const wrapText = useCallback((ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    for (let n = 0; n < words.length; n++) {
+      const testLine = currentLine + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        lines.push(currentLine);
+        currentLine = words[n] + ' ';
+      } else {
+        currentLine = testLine;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
+  }, []);
 
   // Handle file/blob selection
   const processNewFile = async (file: File | Blob, fileName: string = 'image.jpg') => {
@@ -543,8 +612,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           if (item.type === 'text') {
             ctx.save();
             const italicPrefix = item.italic ? 'italic ' : '';
-            ctx.font = `${italicPrefix}${item.size}px ${item.font}`;
-            ctx.fillStyle = item.color;
+            const boldPrefix = item.bold ? 'bold ' : '';
+            ctx.font = `${italicPrefix}${boldPrefix}${item.size}px ${item.font}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
@@ -568,7 +637,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             const lineHeight = item.size * 1.2;
             const totalHeight = lines.length * lineHeight;
 
+            // Draw selection border if selected
             if (item.id === selectedItemId) {
+              ctx.save();
               ctx.strokeStyle = '#3b82f6';
               ctx.lineWidth = 2;
               const rectX = item.x - item.width / 2 - 5;
@@ -578,11 +649,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               ctx.strokeRect(rectX, rectY, rectW, rectH);
               
               // Dashed highlight
-              ctx.save();
               ctx.setLineDash([4, 4]);
               ctx.strokeStyle = '#ffffff';
               ctx.strokeRect(rectX, rectY, rectW, rectH);
-              ctx.restore();
 
               // Draw resize handles
               if (!isExportingRef.current) {
@@ -599,8 +668,11 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                 ctx.fill();
                 ctx.stroke();
               }
+              ctx.restore();
             }
 
+            // Draw the actual text - ensure we use the item's color
+            ctx.fillStyle = item.color;
             lines.forEach((l, i) => {
               ctx.fillText(l, item.x, item.y - (totalHeight / 2) + (i * lineHeight) + (lineHeight / 2));
             });
@@ -736,7 +808,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               ctx.strokeStyle = '#ffffff';
               ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
               ctx.restore();
-            }
+            } // Added missing closing brace here
+            ctx.fillStyle = item.color || '#000000';
             ctx.fillText(item.text, item.x, item.y);
           }
         });
@@ -1019,10 +1092,11 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       title={<div className="flex items-center gap-2 font-bold"><Sparkles className="w-5 h-5 text-green-600" /> AI IMAGE STUDIO</div>}
       open={visible}
       onCancel={onCancel}
-      width={1200}
+      width="100%"
       centered
-      className="responsive-modal"
-      style={{ top: 20 }}
+      style={{ top: 0, padding: 0, maxWidth: '100vw' }}
+      className="full-screen-studio-modal"
+      bodyStyle={{ height: 'calc(100vh - 110px)', overflow: 'hidden', padding: '16px' }}
       footer={[
         <Button key="cancel" onClick={onCancel} size="large">Hủy</Button>,
         <Button 
@@ -1050,14 +1124,15 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           disabled={!originalImage && !processedImage}
           onClick={handleSave}
           size="large"
-          className="bg-green-600 hover:bg-green-700 h-auto py-2 px-8"
+          className="bg-green-600 hover:bg-green-700 h-auto py-2 px-8 font-bold"
         >
           XONG & LƯU VÀO SẢN PHẨM
         </Button>
       ]}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1 space-y-4">
+      <div className="flex flex-col lg:flex-row h-full gap-5 overflow-hidden">
+        {/* CỘT TRÁI: NHẬP VÀ CĂN CHỈNH ẢNH */}
+        <div className="w-full lg:w-[300px] flex-shrink-0 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
           <div className="bg-white p-4 rounded-xl border shadow-sm">
             <h4 className="font-bold text-[11px] mb-3 text-gray-400 uppercase tracking-widest">1. Nhập ảnh sản phẩm</h4>
             
@@ -1161,185 +1236,430 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               </div>
             </div>
           </div>
-
           {(processedImage || originalImage) && (
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-green-500">
-                <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  2. Căn chỉnh vị trí
-                </h4>
-                
-                <div className="space-y-6">
-                  {/* Canvas Size Controls */}
-                  <div className="pb-4 border-b border-gray-200">
-                    <div className="text-[11px] font-bold mb-3 text-gray-600">KÍCH THƯỚC ẢNH (PX)</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] text-gray-500 block mb-1">Rộng</label>
-                        <input 
-                          type="number" 
-                          value={canvasWidth}
-                          onChange={(e) => setCanvasWidth(Math.max(100, parseInt(e.target.value) || 1000))}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                          min="100"
-                          max="3000"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] text-gray-500 block mb-1">Cao</label>
-                        <input 
-                          type="number" 
-                          value={canvasHeight}
-                          onChange={(e) => setCanvasHeight(Math.max(100, parseInt(e.target.value) || 1000))}
-                          className="w-full px-2 py-1 border rounded text-sm"
-                          min="100"
-                          max="3000"
-                        />
-                      </div>
+            <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-green-500 space-y-4">
+              <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                2. Căn chỉnh ảnh
+              </h4>
+              
+              <div className="space-y-6">
+                <div className="pb-4 border-b border-gray-100">
+                  <div className="text-[10px] font-bold mb-3 text-gray-500 uppercase">Kích thước khung ảnh</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-gray-400 block mb-1">Rộng (px)</label>
+                      <input 
+                        type="number" 
+                        value={canvasWidth}
+                        onChange={(e) => setCanvasWidth(Math.max(100, parseInt(e.target.value) || 1000))}
+                        className="w-full px-2 py-1 border rounded text-xs"
+                      />
                     </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[11px] font-bold mb-2">
-                      <span>TO / NHỎ</span>
-                      <span className="text-blue-600 font-mono">{Math.round(scale * 100)}%</span>
+                    <div>
+                      <label className="text-[9px] text-gray-400 block mb-1">Cao (px)</label>
+                      <input 
+                        type="number" 
+                        value={canvasHeight}
+                        onChange={(e) => setCanvasHeight(Math.max(100, parseInt(e.target.value) || 1000))}
+                        className="w-full px-2 py-1 border rounded text-xs"
+                      />
                     </div>
-                    <Slider min={0.1} max={1.5} step={0.01} value={scale} onChange={setScale} />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[11px] font-bold mb-2 uppercase"><span>Lên / Xuống</span></div>
-                    <Slider min={0} max={canvasHeight} value={positionY} onChange={setPositionY} />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[11px] font-bold mb-2 uppercase"><span>Trái / Phải</span></div>
-                    <Slider min={0} max={canvasWidth} value={positionX} onChange={setPositionX} />
-                  </div>
-
-                  {/* Logo Watermark Controls */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-bold text-gray-600">LOGO THƯƠNG HIỆU</span>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          checked={showLogo}
-                          onChange={(e) => setShowLogo(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-[10px]">Hiển thị</span>
-                      </label>
-                    </div>
-                    
-                    {showLogo && (
-                      <div>
-                        <div className="flex justify-between text-[11px] font-bold mb-2">
-                          <span>Kích thước logo</span>
-                          <span className="text-blue-600 font-mono">{Math.round(logoScale * 100)}%</span>
-                        </div>
-                        <Slider min={0.05} max={0.5} step={0.01} value={logoScale} onChange={setLogoScale} />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Eraser Tool Controls */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-bold text-gray-600 uppercase">Cục tẩy (Xóa thừa)</span>
-                      <Button 
-                        size="small"
-                        type={isEraserMode ? "primary" : "default"}
-                        icon={<Eraser size={14} />}
-                        onClick={() => setIsEraserMode(!isEraserMode)}
-                        className={isEraserMode ? "bg-red-500 hover:bg-red-600" : ""}
-                      >
-                        {isEraserMode ? "Đang bật" : "Bật tẩy"}
-                      </Button>
-                    </div>
-                    
-                    {isEraserMode && (
-                      <div className="p-3 bg-red-50 rounded-lg border border-red-100 space-y-3">
-                        <div className="flex gap-2">
-                          <Button 
-                            block 
-                            size="small" 
-                            type={brushMode === 'erase' ? 'primary' : 'default'}
-                            danger={brushMode === 'erase'}
-                            onClick={() => setBrushMode('erase')}
-                          >
-                            Xóa phần thừa
-                          </Button>
-                          <Button 
-                            block 
-                            size="small" 
-                            type={brushMode === 'restore' ? 'primary' : 'default'}
-                            className={brushMode === 'restore' ? "bg-green-600 hover:bg-green-700" : ""}
-                            onClick={() => setBrushMode('restore')}
-                          >
-                            Khôi phục
-                          </Button>
-                        </div>
-
-                        <Alert 
-                          message={
-                            <span className="text-[10px]">
-                              {brushMode === 'erase' 
-                                ? "Tô lên phần thừa để xóa đi." 
-                                : "Tô lên phần bị xóa nhầm để khôi phục."}
-                            </span>
-                          } 
-                          type={brushMode === 'erase' ? "warning" : "success"} 
-                          showIcon 
-                          className="py-1"
-                        />
-                        <div>
-                          <div className="flex justify-between text-[10px] font-bold mb-1">
-                            <span>Kích thước cọ</span>
-                            <span>{brushSize}px</span>
-                          </div>
-                          <Slider min={5} max={100} value={brushSize} onChange={setBrushSize} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button 
-                            block 
-                            size="small" 
-                            disabled={maskHistory.length === 0}
-                            icon={<UndoOutlined />} 
-                            onClick={undoEraser}
-                          >
-                            Quay lại
-                          </Button>
-                          <Button 
-                            block 
-                            size="small" 
-                            icon={<X size={14} />} 
-                            onClick={() => {
-                              if (maskCanvasRef.current) {
-                                saveMaskState();
-                                const ctx = maskCanvasRef.current.getContext('2d')!;
-                                ctx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
-                                setEraserTrigger(prev => prev + 1);
-                                message.info('Đã khôi phục toàn bộ ảnh gốc');
-                              }
-                            }}
-                          >
-                            Làm lại đầu
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
+
+                <div>
+                  <div className="flex justify-between text-[11px] font-bold mb-2 uppercase text-gray-600">
+                    <span>Phóng to / Thu nhỏ</span>
+                    <span className="text-blue-600 font-mono">{Math.round(scale * 100)}%</span>
+                  </div>
+                  <Slider min={0.1} max={1.5} step={0.01} value={scale} onChange={setScale} />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <div className="flex justify-between text-[11px] font-bold mb-2 uppercase text-gray-600"><span>Lên / Xuống</span></div>
+                    <Slider min={0} max={canvasHeight} value={positionY} onChange={setPositionY} />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[11px] font-bold mb-2 uppercase text-gray-600"><span>Trái / Phải</span></div>
+                    <Slider min={0} max={canvasWidth} value={positionX} onChange={setPositionX} />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-gray-600 uppercase">Logo thương hiệu</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={showLogo}
+                        onChange={(e) => setShowLogo(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600"
+                      />
+                      <span className="text-[10px] font-bold">Hiển thị</span>
+                    </label>
+                  </div>
+                  
+                  {showLogo && (
+                    <div>
+                      <div className="flex justify-between text-[10px] font-bold mb-2">
+                        <span className="text-gray-500 uppercase">Tỉ lệ logo</span>
+                        <span className="text-blue-600 font-mono">{Math.round(logoScale * 100)}%</span>
+                      </div>
+                      <Slider min={0.05} max={0.5} step={0.01} value={logoScale} onChange={setLogoScale} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-gray-600 uppercase">Công cụ tẩy xóa</span>
+                    <Button 
+                      size="small"
+                      type={isEraserMode ? "primary" : "default"}
+                      icon={<Eraser size={14} />}
+                      onClick={() => setIsEraserMode(!isEraserMode)}
+                      className={isEraserMode ? "bg-red-500 hover:bg-red-600 text-white border-0" : ""}
+                    >
+                      {isEraserMode ? "Đang dùng" : "Bật tẩy"}
+                    </Button>
+                  </div>
+                  
+                  {isEraserMode && (
+                    <div className="p-3 bg-red-50 rounded-lg border border-red-100 space-y-3">
+                      <div className="flex gap-2">
+                        <Button 
+                          block 
+                          size="small" 
+                          type={brushMode === 'erase' ? 'primary' : 'default'}
+                          danger={brushMode === 'erase'}
+                          onClick={() => setBrushMode('erase')}
+                        >
+                          Xóa
+                        </Button>
+                        <Button 
+                          block 
+                          size="small" 
+                          type={brushMode === 'restore' ? 'primary' : 'default'}
+                          className={brushMode === 'restore' ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                          onClick={() => setBrushMode('restore')}
+                        >
+                          Khôi phục
+                        </Button>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                          <span>Kích thước cọ</span>
+                          <span>{brushSize}px</span>
+                        </div>
+                        <Slider min={5} max={100} value={brushSize} onChange={setBrushSize} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          block 
+                          size="small" 
+                          disabled={maskHistory.length === 0}
+                          icon={<UndoOutlined />} 
+                          onClick={undoEraser}
+                        >
+                          Hoàn tác
+                        </Button>
+                        <Button 
+                          block 
+                          size="small" 
+                          icon={<X size={14} />} 
+                          onClick={() => {
+                            if (maskCanvasRef.current) {
+                              saveMaskState();
+                              const ctx = maskCanvasRef.current.getContext('2d')!;
+                              ctx.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
+                              setEraserTrigger(prev => prev + 1);
+                              message.info('Đã khôi phục toàn bộ ảnh gốc');
+                            }
+                          }}
+                        >
+                          Làm lại
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+          )}
+        </div>
 
-              {/* Text & Emoji Controls */}
-              <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-blue-500">
-                <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  3. Thêm nội dung
-                </h4>
+        {/* CỘT GIỮA: KHÔNG GIAN CANVA */}
+        <div className="flex-1 bg-gray-200/50 rounded-2xl flex items-center justify-center p-4 relative overflow-hidden shadow-inner border-2 border-dashed border-gray-300 min-h-[400px]">
+          {loading ? (
+             <div className="text-center z-10 bg-white/90 p-10 rounded-3xl shadow-2xl backdrop-blur-md border border-white">
+                <Spin size="large" />
+                <p className="mt-4 font-bold text-blue-600 text-lg animate-pulse">{loadingText}</p>
+             </div>
+          ) : (originalImage || processedImage) ? (
+            <div className="relative group mx-auto">
+              <div className="shadow-[0_40px_80px_-15px_rgba(0,0,0,0.5)] border-[12px] border-white bg-white rounded-sm overflow-hidden transition-all duration-500">
+                <canvas 
+                  ref={canvasRef} 
+                  width={canvasWidth} 
+                  height={canvasHeight} 
+                  style={{ 
+                    width: 'auto',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    maxHeight: 'calc(100vh - 250px)',
+                    display: 'block',
+                    cursor: isEraserMode ? 'none' : (isDraggingLogo ? 'grabbing' : 'grab'),
+                    touchAction: 'none'
+                  }}
+                  onMouseDown={(e) => {
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+                    
+                    if (selectedItemId) {
+                      const item = overlayItems.find(i => i.id === selectedItemId);
+                      if (item && item.type === 'text') {
+                        const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
+                        const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
+                        if (distR < 25 || distL < 25) {
+                          setIsResizingItem(true);
+                          return;
+                        }
+                      }
+                    }
+                    
+                    const ctx = canvasRef.current!.getContext('2d')!;
+                    for (let i = overlayItems.length - 1; i >= 0; i--) {
+                      const item = overlayItems[i];
+                      let w = 0;
+                      let h = 0;
 
-                <div className="space-y-4">
+                      if (item.type === 'text') {
+                        const italicPrefix = item.italic ? 'italic ' : '';
+                        const boldPrefix = item.bold ? 'bold ' : '';
+                        ctx.font = `${italicPrefix}${boldPrefix}${item.size}px ${item.font}`;
+                        const metrics = ctx.measureText(item.text);
+                        w = item.width;
+                        const lines = wrapText(ctx, item.text, item.width);
+                        h = lines.length * (item.size * 1.2);
+                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                          setSelectedItemId(item.id);
+                          setIsDraggingItem(true);
+                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                          return;
+                        }
+                      } else if (item.type === 'badge') {
+                        w = item.size * 3;
+                        h = item.size;
+                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                          setSelectedItemId(item.id);
+                          setIsDraggingItem(true);
+                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                          return;
+                        }
+                      } else {
+                        const metrics = ctx.measureText(item.text);
+                        w = metrics.width;
+                        h = item.size;
+                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                          setSelectedItemId(item.id);
+                          setIsDraggingItem(true);
+                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                          return;
+                        }
+                      }
+                    }
+
+                    if (showLogo) {
+                      const img = new window.Image();
+                      img.src = logo3;
+                      const logoW = img.width * logoScale;
+                      const logoH = img.height * logoScale;
+                      if (mouseX >= logoX - logoW / 2 && mouseX <= logoX + logoW / 2 && mouseY >= logoY - logoH / 2 && mouseY <= logoY + logoH / 2) {
+                        setIsDraggingLogo(true);
+                        setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
+                        setSelectedItemId(null);
+                        return;
+                      }
+                    }
+
+                    if (isEraserMode) {
+                      setIsErasing(true);
+                      saveMaskState();
+                      return;
+                    }
+
+                    setSelectedItemId(null);
+                  }}
+                  onMouseMove={(e) => {
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (e.clientX - rect.left) * scaleX;
+                    const mouseY = (e.clientY - rect.top) * scaleY;
+                    setMousePos({ x: mouseX, y: mouseY });
+
+                    if (isResizingItem && selectedItemId) {
+                      const item = overlayItems.find(i => i.id === selectedItemId);
+                      if (item) {
+                        const newWidth = Math.max(50, Math.abs(mouseX - item.x) * 2);
+                        updateItem(selectedItemId, { width: newWidth });
+                      }
+                    } else if (isErasing && maskCanvasRef.current) {
+                      const ctx = maskCanvasRef.current.getContext('2d')!;
+                      const productImg = new window.Image();
+                      productImg.src = (processedImage || originalImage) as string;
+                      const displayWidth = productImg.width * scale;
+                      const displayHeight = productImg.height * scale;
+                      const originX = positionX - displayWidth / 2;
+                      const originY = positionY - displayHeight / 2;
+                      const relX = (mouseX - originX) / (displayWidth / productImg.width);
+                      const relY = (mouseY - originY) / (displayHeight / productImg.height);
+                      
+                      if (brushMode === 'erase') {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.fillStyle = 'black';
+                      } else {
+                        ctx.globalCompositeOperation = 'destination-out';
+                      }
+                      ctx.beginPath();
+                      ctx.arc(relX, relY, brushSize / scale, 0, Math.PI * 2);
+                      ctx.fill();
+                      setEraserTrigger(prev => prev + 1);
+                    } else if (isDraggingItem && selectedItemId) {
+                      updateItem(selectedItemId, { x: mouseX - dragOffset.x, y: mouseY - dragOffset.y });
+                    } else if (isDraggingLogo && showLogo) {
+                      setLogoX(mouseX - dragOffset.x);
+                      setLogoY(mouseY - dragOffset.y);
+                    }
+                  }}
+                  onMouseUp={() => {
+                    setIsDraggingItem(false);
+                    setIsResizingItem(false);
+                    setIsErasing(false);
+                    setIsDraggingLogo(false);
+                  }}
+                  onMouseLeave={() => {
+                    setIsDraggingItem(false);
+                    setIsResizingItem(false);
+                    setIsErasing(false);
+                    setIsDraggingLogo(false);
+                    setMousePos({ x: -1, y: -1 });
+                  }}
+                  // Thêm touch events cho mobile nếu cần
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    const rect = canvasRef.current!.getBoundingClientRect();
+                    const scaleX = canvasWidth / rect.width;
+                    const scaleY = canvasHeight / rect.height;
+                    const mouseX = (touch.clientX - rect.left) * scaleX;
+                    const mouseY = (touch.clientY - rect.top) * scaleY;
+                    
+                    if (isEraserMode) {
+                      setIsErasing(true);
+                      saveMaskState();
+                      return;
+                    }
+
+                    for (let i = overlayItems.length - 1; i >= 0; i--) {
+                      const item = overlayItems[i];
+                      let w = 0;
+                      let h = 0;
+                      if (item.type === 'text') {
+                        w = item.width;
+                        const ctx = canvasRef.current!.getContext('2d')!;
+                        const lines = wrapText(ctx, item.text, item.width);
+                        h = lines.length * (item.size * 1.2);
+                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                          setSelectedItemId(item.id);
+                          setIsDraggingItem(true);
+                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                          return;
+                        }
+                      } else {
+                        w = item.size;
+                        h = item.size;
+                        if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
+                          setSelectedItemId(item.id);
+                          setIsDraggingItem(true);
+                          setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
+                          return;
+                        }
+                      }
+                    }
+                    setSelectedItemId(null);
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length > 0) {
+                      const touch = e.touches[0];
+                      const rect = canvasRef.current!.getBoundingClientRect();
+                      const scaleX = canvasWidth / rect.width;
+                      const scaleY = canvasHeight / rect.height;
+                      const mouseX = (touch.clientX - rect.left) * scaleX;
+                      const mouseY = (touch.clientY - rect.top) * scaleY;
+
+                      if (isErasing && maskCanvasRef.current) {
+                        const ctx = maskCanvasRef.current.getContext('2d')!;
+                        const productImg = new window.Image();
+                        productImg.src = (processedImage || originalImage) as string;
+                        const displayWidth = productImg.width * scale;
+                        const displayHeight = productImg.height * scale;
+                        const originX = positionX - displayWidth / 2;
+                        const originY = positionY - displayHeight / 2;
+                        const relX = (mouseX - originX) / (displayWidth / productImg.width);
+                        const relY = (mouseY - originY) / (displayHeight / productImg.height);
+                        
+                        if (brushMode === 'erase') {
+                          ctx.globalCompositeOperation = 'source-over';
+                          ctx.fillStyle = 'black';
+                        } else {
+                          ctx.globalCompositeOperation = 'destination-out';
+                        }
+                        ctx.beginPath();
+                        ctx.arc(relX, relY, brushSize / scale, 0, Math.PI * 2);
+                        ctx.fill();
+                        setEraserTrigger(prev => prev + 1);
+                      } else if (isDraggingItem && selectedItemId) {
+                        updateItem(selectedItemId, { x: mouseX - dragOffset.x, y: mouseY - dragOffset.y });
+                      } else if (isDraggingLogo && showLogo) {
+                        setLogoX(mouseX - dragOffset.x);
+                        setLogoY(mouseY - dragOffset.y);
+                      }
+                    }
+                  }}
+                  onTouchEnd={() => {
+                    setIsDraggingItem(false);
+                    setIsResizingItem(false);
+                    setIsErasing(false);
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-gray-400 space-y-6">
+               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100">
+                  <CameraOutlined style={{ fontSize: 32, color: '#94a3b8' }} />
+               </div>
+               <div>
+                 <p className="text-lg font-black text-gray-500 tracking-tight uppercase">MỜI CHỌN ẢNH SẢN PHẨM</p>
+                 <p className="text-xs text-gray-400 mt-1 max-w-[200px] mx-auto leading-relaxed">Studio sẽ tự động giúp bạn tạo ra ảnh quảng cáo chuyên nghiệp 1000x1000 px.</p>
+               </div>
+            </div>
+          )}
+        </div>
+
+        {/* CỘT PHẢI: THÊM NỘI DUNG VÀ CHỈNH SỬA CHI TIẾT */}
+        <div className="w-full lg:w-[320px] flex-shrink-0 space-y-4 overflow-y-auto pl-2 custom-scrollbar">
+          {/* 3. Thêm nội dung */}
+          <div className="bg-white p-4 rounded-xl border shadow-sm border-t-4 border-t-blue-500">
+            <h4 className="font-bold text-[11px] mb-4 text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              3. Thêm nội dung
+            </h4>
+
+            <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-2">
                     <Button icon={<FontSizeOutlined />} onClick={addText} block size="small">Chữ</Button>
                     <Button icon={<SmileOutlined />} onClick={() => addEmoji('🌾')} block size="small">Emoji</Button>
@@ -1465,12 +1785,65 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[9px] text-gray-500 block mb-1 uppercase">Màu sắc</label>
-                          <input 
-                            type="color" 
-                            className="w-full h-8 p-0 border-0 bg-transparent cursor-pointer"
-                            value={overlayItems.find(i => i.id === selectedItemId)?.color}
-                            onChange={(e) => updateItem(selectedItemId, { color: e.target.value })}
-                          />
+                          <div className="flex flex-col gap-2">
+                            <div className="flex gap-1">
+                              <input 
+                                type="color" 
+                                className="flex-1 h-8 p-0 border-0 bg-transparent cursor-pointer"
+                                value={overlayItems.find(i => i.id === selectedItemId)?.color}
+                                onChange={(e) => {
+                                  const color = e.target.value;
+                                  updateItem(selectedItemId, { color });
+                                  addRecentColor(color);
+                                }}
+                              />
+                              <Tooltip title="Lưu màu này">
+                                <Button 
+                                  size="small" 
+                                  icon={<HeartOutlined />} 
+                                  onClick={() => saveColor(overlayItems.find(i => i.id === selectedItemId)?.color || '#000000')}
+                                />
+                              </Tooltip>
+                            </div>
+
+                            {savedColors.length > 0 && (
+                              <div>
+                                <label className="text-[8px] text-gray-400 font-bold uppercase block mb-1">Màu yêu thích ❤️</label>
+                                <div className="flex flex-wrap gap-1">
+                                  {savedColors.map((c, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="w-4 h-4 rounded-full cursor-pointer border border-gray-200"
+                                      style={{ backgroundColor: c }}
+                                      onClick={() => {
+                                        updateItem(selectedItemId, { color: c });
+                                        addRecentColor(c);
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {recentColors.length > 0 && (
+                              <div>
+                                <label className="text-[8px] text-gray-400 font-bold uppercase block mb-1 text-[7px]">Vừa dùng</label>
+                                <div className="flex flex-wrap gap-1">
+                                  {recentColors.map((c, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="w-3.5 h-3.5 rounded-sm cursor-pointer border border-gray-100 opacity-70 hover:opacity-100"
+                                      style={{ backgroundColor: c }}
+                                      onClick={() => {
+                                        updateItem(selectedItemId, { color: c });
+                                        addRecentColor(c);
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <label className="text-[9px] text-gray-500 block mb-1 uppercase">
@@ -1507,6 +1880,17 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                                 <Select.Option value="Verdana">Verdana</Select.Option>
                                 <Select.Option value="Impact">Impact</Select.Option>
                               </Select>
+                              <Tooltip title="In đậm">
+                                <Button 
+                                  size="small"
+                                  type={overlayItems.find(i => i.id === selectedItemId)?.bold ? 'primary' : 'default'}
+                                  onClick={() => {
+                                    const item = overlayItems.find(i => i.id === selectedItemId);
+                                    updateItem(selectedItemId, { bold: !item?.bold });
+                                  }}
+                                  icon={<span className="font-bold">B</span>}
+                                />
+                              </Tooltip>
                               <Tooltip title="Chữ nghiêng">
                                 <Button 
                                   size="small"
@@ -1565,12 +1949,44 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                              {!overlayItems.find(i => i.id === selectedItemId)?.bgGradient ? (
                                 <div>
                                   <label className="text-[8px] text-gray-400 font-bold uppercase">Màu Nền Nhãn</label>
-                                  <input 
-                                    type="color" 
-                                    className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
-                                    value={overlayItems.find(i => i.id === selectedItemId)?.bgColor}
-                                    onChange={(e) => updateItem(selectedItemId, { bgColor: e.target.value })}
-                                  />
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex gap-1">
+                                      <input 
+                                        type="color" 
+                                        className="flex-1 h-8 p-0 border border-gray-200 rounded cursor-pointer"
+                                        value={overlayItems.find(i => i.id === selectedItemId)?.bgColor}
+                                        onChange={(e) => {
+                                          const color = e.target.value;
+                                          updateItem(selectedItemId, { bgColor: color });
+                                          addRecentColor(color);
+                                        }}
+                                      />
+                                      <Button 
+                                        size="small" 
+                                        icon={<HeartOutlined />} 
+                                        onClick={() => saveColor(overlayItems.find(i => i.id === selectedItemId)?.bgColor || '#000000')}
+                                      />
+                                    </div>
+                                    
+                                    {savedColors.length > 0 && (
+                                      <div>
+                                        <label className="text-[8px] text-gray-400 font-bold uppercase block mb-1">Màu yêu thích ❤️</label>
+                                        <div className="flex flex-wrap gap-1">
+                                          {savedColors.map((c, idx) => (
+                                            <div 
+                                              key={idx}
+                                              className="w-4 h-4 rounded-full cursor-pointer border border-gray-200"
+                                              style={{ backgroundColor: c }}
+                                              onClick={() => {
+                                                updateItem(selectedItemId, { bgColor: c });
+                                                addRecentColor(c);
+                                              }}
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                              ) : (
                                <div className="space-y-2">
@@ -1582,8 +1998,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                                         className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
                                         value={overlayItems.find(i => i.id === selectedItemId)?.bgGradient?.[0] || '#D4AF37'}
                                         onChange={(e) => {
+                                          const color = e.target.value;
                                           const current = overlayItems.find(i => i.id === selectedItemId)?.bgGradient || ['#D4AF37', '#FFD700'];
-                                          updateItem(selectedItemId, { bgGradient: [e.target.value, current[current.length - 1]] });
+                                          updateItem(selectedItemId, { bgGradient: [color, current[current.length - 1]] });
+                                          addRecentColor(color);
                                         }}
                                       />
                                     </div>
@@ -1594,8 +2012,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                                         className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
                                         value={overlayItems.find(i => i.id === selectedItemId)?.bgGradient?.slice(-1)[0] || '#FFD700'}
                                         onChange={(e) => {
+                                          const color = e.target.value;
                                           const current = overlayItems.find(i => i.id === selectedItemId)?.bgGradient || ['#D4AF37', '#FFD700'];
-                                          updateItem(selectedItemId, { bgGradient: [current[0], e.target.value] });
+                                          updateItem(selectedItemId, { bgGradient: [current[0], color] });
+                                          addRecentColor(color);
                                         }}
                                       />
                                     </div>
@@ -1626,12 +2046,41 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                              <div>
                                 <label className="text-[8px] text-gray-400 font-bold uppercase">Màu Chữ & Biểu Tượng</label>
-                                <input 
-                                  type="color" 
-                                  className="w-full h-8 p-0 border border-gray-200 rounded cursor-pointer"
-                                  value={overlayItems.find(i => i.id === selectedItemId)?.color}
-                                  onChange={(e) => updateItem(selectedItemId, { color: e.target.value })}
-                                />
+                                 <div className="flex flex-col gap-2">
+                                   <div className="flex gap-1">
+                                     <input 
+                                       type="color" 
+                                       className="flex-1 h-8 p-0 border border-gray-200 rounded cursor-pointer"
+                                       value={overlayItems.find(i => i.id === selectedItemId)?.color}
+                                       onChange={(e) => {
+                                         const color = e.target.value;
+                                         updateItem(selectedItemId, { color });
+                                         addRecentColor(color);
+                                       }}
+                                     />
+                                     <Button 
+                                       size="small" 
+                                       icon={<HeartOutlined />} 
+                                       onClick={() => saveColor(overlayItems.find(i => i.id === selectedItemId)?.color || '#000000')}
+                                     />
+                                   </div>
+                                   
+                                   {savedColors.length > 0 && (
+                                     <div className="flex flex-wrap gap-1">
+                                       {savedColors.slice(0, 12).map((c, idx) => (
+                                         <div 
+                                           key={idx}
+                                           className="w-3.5 h-3.5 rounded-full cursor-pointer border border-gray-200"
+                                           style={{ backgroundColor: c }}
+                                           onClick={() => {
+                                             updateItem(selectedItemId, { color: c });
+                                             addRecentColor(c);
+                                           }}
+                                         />
+                                       ))}
+                                     </div>
+                                   )}
+                                 </div>
                              </div>
                           </div>
                         )}
@@ -1715,357 +2164,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     💡 Chọn Chữ/Emoji rồi nhấn phím <b>Delete</b> hoặc <b>Backspace</b> để xóa nhanh!
                   </div>
                 </div>
-              </div>
-
             </div>
-          )}
-        </div>
-
-        <div className="lg:col-span-3 bg-gray-200/50 rounded-2xl flex items-center justify-center p-4 lg:p-8 relative overflow-hidden min-h-[400px] lg:min-h-[650px] border-2 border-dashed border-gray-300 shadow-inner">
-          {loading ? (
-             <div className="text-center z-10 bg-white/90 p-10 rounded-3xl shadow-2xl backdrop-blur-md border border-white">
-                <Spin size="large" />
-                <p className="mt-4 font-bold text-blue-600 text-lg animate-pulse">{loadingText}</p>
-             </div>
-          ) : (originalImage || processedImage) ? (
-            <div className="relative group">
-              <div className="shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] border-[16px] border-white bg-white rounded-sm overflow-hidden scale-100 transition-transform duration-500">
-                <canvas 
-                  ref={canvasRef} 
-                  width={canvasWidth} 
-                  height={canvasHeight} 
-                  style={{ 
-                    width: '100%',
-                    maxWidth: `${Math.min(canvasWidth / 2, 500)}px`, 
-                    height: 'auto',
-                    display: 'block',
-                    cursor: isEraserMode ? 'none' : (isDraggingLogo ? 'grabbing' : 'grab'),
-                    touchAction: 'none' // Prevent scrolling when interacting with canvas
-                  }}
-                  onMouseDown={(e) => {
-                    const rect = canvasRef.current!.getBoundingClientRect();
-                    const scaleX = canvasWidth / rect.width;
-                    const scaleY = canvasHeight / rect.height;
-                    const mouseX = (e.clientX - rect.left) * scaleX;
-                    const mouseY = (e.clientY - rect.top) * scaleY;
-                                       if (selectedItemId) {
-                      const item = overlayItems.find(i => i.id === selectedItemId);
-                      if (item && item.type === 'text') {
-                        const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
-                        const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
-                        if (distR < 25 || distL < 25) {
-                          setIsResizingItem(true);
-                          return;
-                        }
-                      }
-                    }
-                    
-                    const ctx = canvasRef.current!.getContext('2d')!;
-                    for (let i = overlayItems.length - 1; i >= 0; i--) {
-                      const item = overlayItems[i];
-                      let w = 0;
-                      let h = 0;
-
-                      if (item.type === 'text') {
-                        ctx.font = `${item.size}px ${item.font}`;
-                        const metrics = ctx.measureText(item.text);
-                        w = item.width || metrics.width + 20;
-                        h = item.size + 20;
-                      } else if (item.type === 'image') {
-                        w = item.width * (item.itemScale || 1);
-                        h = (item.size || item.width) * (item.itemScale || 1); 
-                      } else if (item.type === 'badge') {
-                        ctx.font = `bold ${item.size}px ${item.font}`;
-                        const metrics = ctx.measureText(item.text);
-                        const iconSize = item.size * 1.2;
-                        const padding = item.size * 0.8;
-                        h = item.size + padding * 2;
-                        w = metrics.width + iconSize + padding * 3;
-                      } else {
-                        w = item.size * 1.5;
-                        h = item.size * 1.5;
-                      }
-                      
-                      if (
-                        mouseX >= item.x - w / 2 &&
-                        mouseX <= item.x + w / 2 &&
-                        mouseY >= item.y - h / 2 &&
-                        mouseY <= item.y + h / 2
-                      ) {
-                        setIsDraggingItem(true);
-                        setSelectedItemId(item.id);
-                        setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
-                        return;
-                      }
-                    }
-                    setSelectedItemId(null);
-
-                    if (showLogo) {
-                      const lImg = logoImgRef.current;
-                      const baseSize = (lImg && lImg.width > 0) ? lImg.width : 500;
-                      const logoWidth = baseSize * logoScale;
-                      const logoHeight = baseSize * logoScale;
-                      const hitPadding = 60;
-                      if (
-                        mouseX >= logoX - logoWidth / 2 - hitPadding &&
-                        mouseX <= logoX + logoWidth / 2 + hitPadding &&
-                        mouseY >= logoY - logoHeight / 2 - hitPadding &&
-                        mouseY <= logoY + logoHeight / 2 + hitPadding
-                      ) {
-                        setIsDraggingLogo(true);
-                        setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
-                        return;
-                      }
-                    }
-                  }}
-                  onMouseMove={(e) => {
-                    const rect = canvasRef.current!.getBoundingClientRect();
-                    const scaleX = canvasWidth / rect.width;
-                    const scaleY = canvasHeight / rect.height;
-                    const mouseX = (e.clientX - rect.left) * scaleX;
-                    const mouseY = (e.clientY - rect.top) * scaleY;
-                    
-                    setMousePos({ x: mouseX, y: mouseY });
-
-                    if (isResizingItem && selectedItemId) {
-                      const item = overlayItems.find(i => i.id === selectedItemId);
-                      if (item) {
-                        const newWidth = Math.abs(mouseX - item.x) * 2;
-                        updateItem(selectedItemId, { width: Math.max(50, newWidth) });
-                      }
-                      return;
-                    }
-
-                    if (isErasing && isEraserMode && maskCanvasRef.current) {
-                      const ctx = maskCanvasRef.current.getContext('2d')!;
-                      const productImg = new window.Image();
-                      productImg.src = (processedImage || originalImage) as string;
-                      
-                      const pWidth = productImg.width;
-                      const pHeight = productImg.height;
-                      const displayWidth = pWidth * scale;
-                      const displayHeight = pHeight * scale;
-                      
-                      const originX = positionX - displayWidth / 2;
-                      const originY = positionY - displayHeight / 2;
-                      const relX = (mouseX - originX) / (displayWidth / pWidth);
-                      const relY = (mouseY - originY) / (displayHeight / pHeight);
-                      
-                      if (brushMode === 'erase') {
-                        ctx.globalCompositeOperation = 'source-over';
-                        ctx.fillStyle = 'black';
-                      } else {
-                        ctx.globalCompositeOperation = 'destination-out';
-                      }
-
-                      ctx.beginPath();
-                      ctx.arc(relX, relY, brushSize / scale, 0, Math.PI * 2);
-                      ctx.fill();
-                      setEraserTrigger(prev => prev + 1); 
-                      return;
-                    }
-
-                    if (isDraggingItem && selectedItemId) {
-                      updateItem(selectedItemId, { 
-                        x: mouseX - dragOffset.x, 
-                        y: mouseY - dragOffset.y 
-                      });
-                    } else if (isDraggingLogo && showLogo) {
-                      setLogoX(mouseX - dragOffset.x);
-                      setLogoY(mouseY - dragOffset.y);
-                    }
-                  }}
-                  onMouseUp={() => {
-                    setIsDraggingLogo(false);
-                    setIsDraggingItem(false);
-                    setIsResizingItem(false);
-                    setIsErasing(false);
-                    setMousePos({ x: -100, y: -100 });
-                  }}
-                  onMouseLeave={() => {
-                    setIsDraggingLogo(false);
-                    setIsDraggingItem(false);
-                    setIsResizingItem(false);
-                    setIsErasing(false);
-                    setMousePos({ x: -100, y: -100 });
-                  }}
-                  onMouseEnter={(e) => {
-                    const rect = canvasRef.current!.getBoundingClientRect();
-                    const scaleX = canvasWidth / rect.width;
-                    const scaleY = canvasHeight / rect.height;
-                    const mouseX = (e.clientX - rect.left) * scaleX;
-                    const mouseY = (e.clientY - rect.top) * scaleY;
-                    setMousePos({ x: mouseX, y: mouseY });
-                  }}
-                  onTouchStart={(e) => {
-                    const touch = e.touches[0];
-                    const rect = canvasRef.current!.getBoundingClientRect();
-                    const scaleX = canvasWidth / rect.width;
-                    const scaleY = canvasHeight / rect.height;
-                    const mouseX = (touch.clientX - rect.left) * scaleX;
-                    const mouseY = (touch.clientY - rect.top) * scaleY;
-
-                    // Chuyển đổi tọa độ chạm sang tọa độ canvas
-                    const adjX = mouseX; 
-                    const adjY = mouseY;
-                    
-                    if (selectedItemId) {
-                      const item = overlayItems.find(i => i.id === selectedItemId);
-                      if (item && item.type === 'text') {
-                        const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
-                        const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
-                        if (distR < 35 || distL < 35) { // Larger hit area for touch
-                          setIsResizingItem(true);
-                          return;
-                        }
-                      }
-                    }
-
-                    if (isEraserMode && processedImage && maskCanvasRef.current) {
-                      saveMaskState();
-                      setIsErasing(true);
-                      return;
-                    }
-
-                    const ctx = canvasRef.current!.getContext('2d')!;
-                    for (let i = overlayItems.length - 1; i >= 0; i--) {
-                      const item = overlayItems[i];
-                      let w = 0;
-                      let h = 0;
-
-                      if (item.type === 'text') {
-                        ctx.font = `${item.size}px ${item.font}`;
-                        const words = item.text.split(' ');
-                        const lineHeight = item.size * 1.2;
-                        let lineCount = 1;
-                        let line = '';
-                        for (let n = 0; n < words.length; n++) {
-                          const testLine = line + words[n] + ' ';
-                          if (ctx.measureText(testLine).width > item.width && n > 0) {
-                            lineCount++;
-                            line = words[n] + ' ';
-                          } else {
-                            line = testLine;
-                          }
-                        }
-                        w = item.width + 20;
-                        h = lineCount * lineHeight + 20;
-                      } else if (item.type === 'image') {
-                        w = item.width * (item.itemScale || 1) + 20;
-                        h = (item.size || item.width) * (item.itemScale || 1) + 20;
-                      } else if (item.type === 'badge') {
-                        ctx.font = `bold ${item.size}px ${item.font}`;
-                        const metrics = ctx.measureText(item.text);
-                        const iconSize = item.size * 1.2;
-                        const padding = item.size * 0.8;
-                        h = item.size + padding * 2 + 20;
-                        w = metrics.width + iconSize + padding * 3 + 20;
-                      } else {
-                        // Emoji
-                        ctx.font = `${item.size}px ${item.font}`;
-                        const metrics = ctx.measureText(item.text);
-                        w = metrics.width + 30;
-                        h = item.size + 30;
-                      }
-
-                      if (adjX >= item.x - w / 2 && adjX <= item.x + w / 2 && adjY >= item.y - h / 2 && adjY <= item.y + h / 2) {
-                        setIsDraggingItem(true);
-                        setSelectedItemId(item.id);
-                        setDragOffset({ x: mouseX - item.x, y: mouseY - item.y });
-                        return;
-                      }
-                    }
-                    setSelectedItemId(null);
-
-                    // Check if touch is on logo
-                    if (showLogo) {
-                      const lImg = logoImgRef.current;
-                      const baseSize = (lImg && lImg.width > 0) ? lImg.width : 500;
-                      const logoWidth = baseSize * logoScale;
-                      const logoHeight = baseSize * logoScale;
-                      const hitPadding = 70;
-                      if (
-                        mouseX >= logoX - logoWidth / 2 - hitPadding &&
-                        mouseX <= logoX + logoWidth / 2 + hitPadding &&
-                        mouseY >= logoY - logoHeight / 2 - hitPadding &&
-                        mouseY <= logoY + logoHeight / 2 + hitPadding
-                      ) {
-                        setIsDraggingLogo(true);
-                        setDragOffset({ x: mouseX - logoX, y: mouseY - logoY });
-                        return;
-                      }
-                    }
-                  }}
-                  onTouchMove={(e) => {
-                    const touch = e.touches[0];
-                    const rect = canvasRef.current!.getBoundingClientRect();
-                    const scaleX = canvasWidth / rect.width;
-                    const scaleY = canvasHeight / rect.height;
-                    const mouseX = (touch.clientX - rect.left) * scaleX;
-                    const mouseY = (touch.clientY - rect.top) * scaleY;
-
-                    const adjX = (mouseX - positionX) / scale;
-                    const adjY = (mouseY - positionY) / scale;
-
-                    if (isResizingItem && selectedItemId) {
-                      const item = overlayItems.find(i => i.id === selectedItemId);
-                      if (item) {
-                        const newWidth = Math.abs(mouseX - item.x) * 2;
-                        updateItem(selectedItemId, { width: Math.max(50, newWidth) });
-                      }
-                    } else if (isErasing && isEraserMode && maskCanvasRef.current) {
-                      // Eraser STILL NEEDS relative coordinates
-                      const ctx = maskCanvasRef.current.getContext('2d')!;
-                      const productImg = new window.Image();
-                      productImg.src = (processedImage || originalImage) as string;
-                      const displayWidth = productImg.width * scale;
-                      const displayHeight = productImg.height * scale;
-                      const originX = positionX - displayWidth / 2;
-                      const originY = positionY - displayHeight / 2;
-                      const relX = (mouseX - originX) / (displayWidth / productImg.width);
-                      const relY = (mouseY - originY) / (displayHeight / productImg.height);
-                      
-                      if (brushMode === 'erase') {
-                        ctx.globalCompositeOperation = 'source-over';
-                        ctx.fillStyle = 'black';
-                      } else {
-                        ctx.globalCompositeOperation = 'destination-out';
-                      }
-                      ctx.beginPath();
-                      ctx.arc(relX, relY, brushSize / scale, 0, Math.PI * 2);
-                      ctx.fill();
-                      setEraserTrigger(prev => prev + 1);
-                    } else if (isDraggingItem && selectedItemId) {
-                      updateItem(selectedItemId, { x: mouseX - dragOffset.x, y: mouseY - dragOffset.y });
-                    } else if (isDraggingLogo && showLogo) {
-                      setLogoX(mouseX - dragOffset.x);
-                      setLogoY(mouseY - dragOffset.y);
-                    }
-                  }}
-                  onTouchEnd={() => {
-                    setIsDraggingItem(false);
-                    setIsResizingItem(false);
-                    setIsErasing(false);
-                  }}
-                />
-              </div>
-              {/* {!processedImage && (
-                 <div className="absolute top-4 left-4 bg-orange-500 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-xl animate-bounce border-2 border-white">
-                    ĐANG XEM TRƯỚC - HÃY TÁCH NỀN!
-                 </div>
-              )} */}
-            </div>
-          ) : (
-            <div className="text-center text-gray-400 space-y-6">
-               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-gray-100">
-                  <CameraOutlined style={{ fontSize: 32, color: '#94a3b8' }} />
-               </div>
-               <div>
-                 <p className="text-lg font-black text-gray-500 tracking-tight uppercase">MỜI CHỌN ẢNH SẢN PHẨM</p>
-                 <p className="text-xs text-gray-400 mt-1 max-w-[200px] mx-auto leading-relaxed">Studio sẽ tự động giúp bạn tạo ra ảnh quảng cáo chuyên nghiệp 1000x1000 px.</p>
-               </div>
-            </div>
-          )}
         </div>
       </div>
     </Modal>
