@@ -888,24 +888,52 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             ctx.textAlign = 'left';
             ctx.fillText(item.text, bx + padding * 2 + iconSize, item.y);
           } else {
-            // Emojis
+            // Emojis và các loại khác
+            ctx.save();
+            ctx.font = `${item.size}px ${item.font || 'Arial'}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
             if (item.id === selectedItemId) {
               const metrics = ctx.measureText(item.text);
               const w = metrics.width + 10;
               const h = item.size + 10;
+              
+              ctx.save();
               ctx.strokeStyle = '#3b82f6';
               ctx.lineWidth = 2;
               ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
               
               // Dashed highlight
-              ctx.save();
               ctx.setLineDash([4, 4]);
               ctx.strokeStyle = '#ffffff';
               ctx.strokeRect(item.x - w / 2, item.y - h / 2, w, h);
+
+              // Vẽ tay nắm resize nếu không phải lúc xuất ảnh
+              if (!isExportingRef.current) {
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#3b82f6';
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                
+                // Tay nắm phải
+                ctx.beginPath();
+                ctx.arc(item.x + w / 2, item.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Tay nắm trái
+                ctx.beginPath();
+                ctx.arc(item.x - w / 2, item.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
               ctx.restore();
-            } // Added missing closing brace here
+            } 
+            
             ctx.fillStyle = item.color || '#000000';
             ctx.fillText(item.text, item.x, item.y);
+            ctx.restore();
           }
         });
 
@@ -1569,12 +1597,32 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     
                     if (selectedItemId) {
                       const item = overlayItems.find(i => i.id === selectedItemId);
-                      if (item && item.type === 'text') {
-                        const distR = Math.sqrt(Math.pow(mouseX - (item.x + item.width / 2 + 5), 2) + Math.pow(mouseY - item.y, 2));
-                        const distL = Math.sqrt(Math.pow(mouseX - (item.x - item.width / 2 - 5), 2) + Math.pow(mouseY - item.y, 2));
-                        if (distR < 25 || distL < 25) {
-                          setIsResizingItem(true);
-                          return;
+                      if (item) {
+                        let handleX = 0;
+                        if (item.type === 'text') {
+                          handleX = item.width / 2 + 5;
+                        } else if (item.type === 'emoji') {
+                          // Với emoji, ta tính handle dựa trên metrics
+                          const ctx = canvasRef.current!.getContext('2d')!;
+                          ctx.font = `${item.size}px ${item.font || 'Arial'}`;
+                          const metrics = ctx.measureText(item.text);
+                          handleX = (metrics.width + 10) / 2;
+                        } else if (item.type === 'badge') {
+                          const ctx = canvasRef.current!.getContext('2d')!;
+                          ctx.font = `bold ${item.size}px ${item.font || 'Arial'}`;
+                          const metrics = ctx.measureText(item.text);
+                          const iconSize = item.size * 1.2;
+                          const padding = item.size * 0.8;
+                          handleX = (metrics.width + iconSize + padding * 3) / 2;
+                        }
+                        
+                        if (handleX > 0) {
+                          const distR = Math.sqrt(Math.pow(mouseX - (item.x + handleX), 2) + Math.pow(mouseY - item.y, 2));
+                          const distL = Math.sqrt(Math.pow(mouseX - (item.x - handleX), 2) + Math.pow(mouseY - item.y, 2));
+                          if (distR < 25 || distL < 25) {
+                            setIsResizingItem(true);
+                            return;
+                          }
                         }
                       }
                     }
@@ -1667,8 +1715,16 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     if (isResizingItem && selectedItemId) {
                       const item = overlayItems.find(i => i.id === selectedItemId);
                       if (item) {
-                        const newWidth = Math.max(50, Math.abs(mouseX - item.x) * 2);
-                        updateItem(selectedItemId, { width: newWidth });
+                        const distFromCenter = Math.abs(mouseX - item.x);
+                        if (item.type === 'text') {
+                          updateItem(selectedItemId, { width: Math.max(50, distFromCenter * 2) });
+                        } else if (item.type === 'emoji') {
+                          // Emoji to đều theo drag
+                          updateItem(selectedItemId, { size: Math.max(10, Math.round(distFromCenter * 2)) });
+                        } else if (item.type === 'badge') {
+                          // Badge to đều theo drag, chia tỉ lệ ước lượng vì badge có text và icon
+                          updateItem(selectedItemId, { size: Math.max(10, Math.round(distFromCenter / 2.2)) });
+                        }
                       }
                     } else if (isErasing && maskCanvasRef.current) {
                       const ctx = maskCanvasRef.current.getContext('2d')!;
