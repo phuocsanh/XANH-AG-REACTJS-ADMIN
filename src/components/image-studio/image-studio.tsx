@@ -798,7 +798,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             }
           } else if (item.type === 'badge') {
             // Draw badge (rounded rect + icon + text)
-            ctx.font = `bold ${item.size}px ${item.font}`;
+            const bItalicPrefix = item.italic ? 'italic ' : '';
+            const bBoldPrefix = item.bold ? 'bold' : 'normal';
+            ctx.font = `${bItalicPrefix}${bBoldPrefix} ${item.size}px ${item.font || 'Arial'}`;
             const metrics = ctx.measureText(item.text);
             const textWidth = metrics.width;
             const iconSize = item.size * 1.2;
@@ -884,7 +886,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           }
 
             // Draw text
-            ctx.font = `bold ${item.size}px ${item.font}`;
+            const btItalicPrefix = item.italic ? 'italic ' : '';
+            const btBoldPrefix = item.bold ? 'bold' : 'normal';
+            ctx.font = `${btItalicPrefix}${btBoldPrefix} ${item.size}px ${item.font || 'Arial'}`;
             ctx.textAlign = 'left';
             ctx.fillText(item.text, bx + padding * 2 + iconSize, item.y);
           } else {
@@ -1082,7 +1086,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       y: canvasHeight / 2,
       size: 50,
       color: '#000000',
-      font: 'Arial',
+      font: 'Roboto',
+      bold: true,
       width: 300
     };
     setOverlayItems([...overlayItems, newItem]);
@@ -1099,7 +1104,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       y: canvasHeight / 2,
       size: 60,
       color: '#000000',
-      font: 'Arial',
+      font: 'Roboto',
+      bold: true,
       width: 150
     };
     setOverlayItems([...overlayItems, newItem]);
@@ -1164,10 +1170,12 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       y: canvasHeight / 2,
       size: 45,
       color: '#FFFFFF',
-      font: 'Arial',
+      font: 'Roboto',
       width: 400,
       type: 'badge',
-      bgColor: '#16a34a'
+      bgColor: '#16a34a',
+      bold: true,
+      italic: false
     };
     setOverlayItems([...overlayItems, newItem]);
     setSelectedItemId(newItem.id);
@@ -2001,7 +2009,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         </Space>
                       </div>
 
-                       {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                       {['text', 'badge'].includes(overlayItems.find(i => i.id === selectedItemId)?.type || '') && (
                         <Input.TextArea 
                           value={overlayItems.find(i => i.id === selectedItemId)?.text}
                           onChange={(e) => updateItem(selectedItemId, { text: e.target.value })}
@@ -2010,7 +2018,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         />
                       )}
 
-                      {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                      {['text', 'badge'].includes(overlayItems.find(i => i.id === selectedItemId)?.type || '') && (
                         <div>
                           <label className="text-[9px] text-gray-500 block mb-1 uppercase">Độ rộng vùng chữ</label>
                           <Slider 
@@ -2112,7 +2120,14 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                             <button 
                               key={emoji} 
                               className="text-2xl hover:scale-125 transition-transform p-1 bg-white rounded shadow-sm border border-gray-100 flex items-center justify-center w-10 h-10"
-                              onClick={() => addEmoji(emoji)}
+                              onClick={() => {
+                                const selectedItem = overlayItems.find(i => i.id === selectedItemId);
+                                if (selectedItem && selectedItem.type === 'badge') {
+                                  updateItem(selectedItemId, { icon: emoji, iconType: 'emoji' });
+                                } else {
+                                  addEmoji(emoji);
+                                }
+                              }}
                             >
                               {emoji}
                             </button>
@@ -2120,7 +2135,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         </div>
                       </div>
 
-                       {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                       {['text', 'badge'].includes(overlayItems.find(i => i.id === selectedItemId)?.type || '') && (
                         <div className="space-y-3">
                           <div>
                             <label className="text-[9px] text-gray-500 block mb-1 uppercase">Phông chữ</label>
