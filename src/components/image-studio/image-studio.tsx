@@ -707,8 +707,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           if (item.type === 'text') {
             ctx.save();
             const italicPrefix = item.italic ? 'italic ' : '';
-            const boldPrefix = item.bold ? 'bold ' : '';
-            ctx.font = `${italicPrefix}${boldPrefix}${item.size}px ${item.font}`;
+            const boldPrefix = item.bold !== false ? 'bold ' : '';
+            ctx.font = `${italicPrefix}${boldPrefix}${item.size}px ${item.font || 'Roboto'}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
@@ -799,8 +799,8 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           } else if (item.type === 'badge') {
             // Draw badge (rounded rect + icon + text)
             const bItalicPrefix = item.italic ? 'italic ' : '';
-            const bBoldPrefix = item.bold ? 'bold' : 'normal';
-            ctx.font = `${bItalicPrefix}${bBoldPrefix} ${item.size}px ${item.font || 'Arial'}`;
+            const bBoldPrefix = item.bold !== false ? 'bold' : 'normal'; // Mặc định in đậm
+            ctx.font = `${bItalicPrefix}${bBoldPrefix} ${item.size}px ${item.font || 'Roboto'}`;
             const metrics = ctx.measureText(item.text);
             const textWidth = metrics.width;
             const iconSize = item.size * 1.2;
@@ -887,10 +887,12 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
             // Draw text
             const btItalicPrefix = item.italic ? 'italic ' : '';
-            const btBoldPrefix = item.bold ? 'bold' : 'normal';
-            ctx.font = `${btItalicPrefix}${btBoldPrefix} ${item.size}px ${item.font || 'Arial'}`;
+            const btBoldPrefix = item.bold !== false ? 'bold' : 'normal'; // Mặc định in đậm
+            ctx.font = `${btItalicPrefix}${btBoldPrefix} ${item.size}px ${item.font || 'Roboto'}`;
             ctx.textAlign = 'left';
-            ctx.fillText(item.text, bx + padding * 2 + iconSize, item.y);
+            ctx.textBaseline = 'middle';
+            // Điều chỉnh nhẹ Y offset (khoảng 5-8% size) để căn giữa mắt thường tốt hơn cho Roboto/Arial
+            ctx.fillText(item.text, bx + padding * 2 + iconSize, item.y + (item.size * 0.05));
           } else {
             // Emojis và các loại khác
             ctx.save();
