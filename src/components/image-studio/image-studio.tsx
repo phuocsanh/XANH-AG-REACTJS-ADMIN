@@ -1488,7 +1488,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       <div className="flex justify-between text-[10px] font-bold mb-1">
                         <span className="text-gray-500 uppercase">Vị trí Kệ (Lên/Xuống)</span>
                       </div>
-                      <Slider min={400} max={1100} value={shelfY} onChange={setShelfY} />
+                      <Slider min={50} max={1100} value={shelfY} onChange={setShelfY} />
                       <div className="flex justify-between text-[10px] font-bold mb-1 mt-3">
                         <span className="text-gray-500 uppercase">Chiều cao kệ</span>
                         <span className="text-blue-600 font-mono">{shelfHeight}px</span>
