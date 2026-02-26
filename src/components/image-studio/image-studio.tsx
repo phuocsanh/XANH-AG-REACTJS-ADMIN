@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip } from 'antd';
+import { Modal, Button, Upload, message, Spin, Space, Slider, Alert, Input, Select, Tooltip, InputNumber } from 'antd';
 import { CameraOutlined, SaveOutlined, UndoOutlined, CopyOutlined, FontSizeOutlined, DeleteOutlined, SmileOutlined, PictureOutlined, PlusOutlined, HeartOutlined } from '@ant-design/icons';
 import { Sparkles, X, Eraser, ShieldCheck, Box, Truck, Award, PackageCheck } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
@@ -308,6 +308,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         removeItem(selectedItemId);
         message.info('Đã xóa đối tượng');
+      }
+
+      // Clone shortcut Ctrl/Cmd + D
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        cloneItem(selectedItemId);
+        message.success('Đã nhân bản đối tượng');
       }
     };
 
@@ -1087,6 +1094,21 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     if (selectedItemId === id) setSelectedItemId(null);
   };
 
+  const cloneItem = (id: string) => {
+    const item = overlayItems.find(i => i.id === id);
+    if (!item) return;
+
+    const newItem: OverlayItem = {
+      ...item,
+      id: Date.now().toString(),
+      x: item.x + 30, // Dịch chuyển một chút để thấy rõ đã nhân bản
+      y: item.y + 30
+    };
+
+    setOverlayItems([...overlayItems, newItem]);
+    setSelectedItemId(newItem.id);
+  };
+
   return (
     <Modal
       title={<div className="flex items-center gap-2 font-bold"><Sparkles className="w-5 h-5 text-green-600" /> AI IMAGE STUDIO</div>}
@@ -1753,20 +1775,33 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold text-blue-600 uppercase">Đang chỉnh sửa</span>
-                        <Button 
-                          type="text" 
-                          danger 
-                          icon={<DeleteOutlined />} 
-                          size="small" 
-                          onClick={() => removeItem(selectedItemId)} 
-                        />
+                        <Space>
+                          <Tooltip title="Nhân bản (Ctrl+D)">
+                            <Button 
+                              size="small" 
+                              type="text" 
+                              icon={<CopyOutlined className="text-blue-500" />} 
+                              onClick={() => cloneItem(selectedItemId!)}
+                            />
+                          </Tooltip>
+                          <Tooltip title="Xóa (Delete)">
+                            <Button 
+                              type="text" 
+                              danger 
+                              icon={<DeleteOutlined />} 
+                              size="small" 
+                              onClick={() => removeItem(selectedItemId!)} 
+                            />
+                          </Tooltip>
+                        </Space>
                       </div>
 
-                      {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
-                        <Input 
+                       {overlayItems.find(i => i.id === selectedItemId)?.type === 'text' && (
+                        <Input.TextArea 
                           value={overlayItems.find(i => i.id === selectedItemId)?.text}
                           onChange={(e) => updateItem(selectedItemId, { text: e.target.value })}
                           placeholder="Nhập nội dung..."
+                          autoSize={{ minRows: 1, maxRows: 6 }}
                         />
                       )}
 
@@ -1849,12 +1884,23 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           <label className="text-[9px] text-gray-500 block mb-1 uppercase">
                             {overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 'Kích thước Nhãn' : 'Cỡ chữ'}
                           </label>
-                          <Slider 
-                            min={10} 
-                            max={overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 150 : 200} 
-                            value={overlayItems.find(i => i.id === selectedItemId)?.size} 
-                            onChange={(val) => updateItem(selectedItemId, { size: val })}
-                          />
+                          <div className="flex items-center gap-2">
+                            <Slider 
+                              className="flex-1"
+                              min={10} 
+                              max={overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 150 : 200} 
+                              value={overlayItems.find(i => i.id === selectedItemId)?.size} 
+                              onChange={(val) => updateItem(selectedItemId, { size: val })}
+                            />
+                            <InputNumber
+                              size="small"
+                              min={10}
+                              max={overlayItems.find(i => i.id === selectedItemId)?.type === 'badge' ? 500 : 500} // Tăng max lên cho thoải mái
+                              value={overlayItems.find(i => i.id === selectedItemId)?.size}
+                              onChange={(val) => updateItem(selectedItemId, { size: val || 10 })}
+                              className="w-[60px]"
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -2125,7 +2171,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                                  <label className="text-[8px] text-gray-400">Nội dung chữ</label>
                                  <Input.TextArea 
                                    size="small" 
-                                   rows={1}
+                                   autoSize={{ minRows: 1, maxRows: 4 }}
                                    value={overlayItems.find(i => i.id === selectedItemId)?.text} 
                                    onChange={(e) => updateItem(selectedItemId, { text: e.target.value })}
                                  />
