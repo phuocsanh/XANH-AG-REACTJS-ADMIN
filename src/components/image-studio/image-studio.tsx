@@ -31,6 +31,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   const [scale, setScale] = useState(0.18);
   const [positionX, setPositionX] = useState(500); 
   const [positionY, setPositionY] = useState(550); 
+  const [rotation, setRotation] = useState(0); 
   
   // Canvas size states
   const [canvasWidth, setCanvasWidth] = useState(1000);
@@ -84,6 +85,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     scale: number;
     positionX: number;
     positionY: number;
+    rotation?: number;
     showLogo: boolean;
     logoScale: number;
     logoX: number;
@@ -386,6 +388,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       setScale(0.18);
       setPositionX(500);
       setPositionY(550);
+      setRotation(0);
       
       // Load templates from localStorage
       const savedTemplates = localStorage.getItem('image_studio_templates');
@@ -398,6 +401,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           scale: 0.18,
           positionX: 500,
           positionY: 550,
+          rotation: 0,
           showLogo: true,
           logoScale: 0.2,
           logoX: 930,
@@ -416,6 +420,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           scale: 0.15,
           positionX: 400,
           positionY: 700,
+          rotation: 0,
           showLogo: true,
           logoScale: 0.18,
           logoX: 740,
@@ -437,6 +442,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           scale: 0.15,
           positionX: 400,
           positionY: 850,
+          rotation: 0,
           showLogo: true,
           logoScale: 0.2,
           logoX: 740,
@@ -490,6 +496,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       scale,
       positionX,
       positionY,
+      rotation,
       showLogo,
       logoScale,
       logoX,
@@ -513,6 +520,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setScale(template.scale);
     setPositionX(template.positionX);
     setPositionY(template.positionY);
+    setRotation(template.rotation || 0);
     setShowLogo(template.showLogo);
     setLogoScale(template.logoScale);
     setLogoX(template.logoX);
@@ -531,6 +539,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setScale(0.18);
     setPositionX(500);
     setPositionY(550);
+    setRotation(0);
     setShowLogo(true);
     setLogoScale(0.2);
     setLogoX(930);
@@ -618,13 +627,17 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             tempCtx.globalCompositeOperation = 'source-over';
           }
 
+          ctx.save();
+          ctx.translate(positionX, positionY);
+          ctx.rotate((rotation * Math.PI) / 180);
           ctx.drawImage(
             tempCanvas,
-            positionX - displayWidth / 2,
-            positionY - displayHeight / 2,
+            -displayWidth / 2,
+            -displayHeight / 2,
             displayWidth,
             displayHeight
           );
+          ctx.restore();
         } else if (!hasProductImage && !loading && bgImg.complete) {
           // Show placeholder for layout designing
           const pWidth = 1000;
@@ -633,21 +646,22 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           const displayHeight = pHeight * scale;
 
           ctx.save();
+          ctx.translate(positionX, positionY);
+          ctx.rotate((rotation * Math.PI) / 180);
+          
           ctx.setLineDash([10, 10]);
           ctx.strokeStyle = 'rgba(156, 163, 175, 0.8)';
           ctx.lineWidth = 3;
-          const startX = positionX - displayWidth / 2;
-          const startY = positionY - displayHeight / 2;
           
-          ctx.strokeRect(startX, startY, displayWidth, displayHeight);
+          ctx.strokeRect(-displayWidth / 2, -displayHeight / 2, displayWidth, displayHeight);
           
           ctx.fillStyle = 'rgba(156, 163, 175, 0.5)';
-          ctx.fillRect(startX, startY, displayWidth, displayHeight);
+          ctx.fillRect(-displayWidth / 2, -displayHeight / 2, displayWidth, displayHeight);
           
           ctx.fillStyle = '#4b5563';
           ctx.font = `bold ${Math.max(12, 40 * scale)}px Arial`;
           ctx.textAlign = 'center';
-          ctx.fillText('VÙNG HIỂN THỊ SẢN PHẨM', positionX, positionY);
+          ctx.fillText('VÙNG HIỂN THỊ SẢN PHẨM', 0, 0);
           ctx.restore();
         }
 
@@ -921,7 +935,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     keImg.onload = draw;   // Khi ảnh kệ tải xong thì vẽ lại
     draw();
 
-  }, [visible, originalImage, processedImage, scale, positionX, positionY, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId, isErasing, isEraserMode, eraserTrigger, mousePos, brushMode, brushSize, showShelf, shelfY, shelfHeight]);
+  }, [visible, originalImage, processedImage, scale, positionX, positionY, rotation, canvasWidth, canvasHeight, showLogo, logoScale, logoX, logoY, overlayItems, selectedItemId, isErasing, isEraserMode, eraserTrigger, mousePos, brushMode, brushSize, showShelf, shelfY, shelfHeight]);
 
   // AI Background Removal
   const processAI = async () => {
@@ -1371,6 +1385,14 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     <span className="text-blue-600 font-mono">{Math.round(scale * 100)}%</span>
                   </div>
                   <Slider min={0.1} max={1.5} step={0.01} value={scale} onChange={setScale} />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-[11px] font-bold mb-2 uppercase text-gray-600">
+                    <span>Xoay ảnh sản phẩm</span>
+                    <span className="text-blue-600 font-mono">{rotation}°</span>
+                  </div>
+                  <Slider min={-180} max={180} step={1} value={rotation} onChange={setRotation} />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
