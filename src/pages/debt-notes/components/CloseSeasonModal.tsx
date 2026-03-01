@@ -15,7 +15,6 @@ import {
   Divider,
   Table,
   Tabs,
-  Typography,
 } from 'antd';
 import { GiftOutlined } from '@ant-design/icons';
 import NumberInput from '@/components/common/number-input';
@@ -27,6 +26,15 @@ interface CloseSeasonModalProps {
   open: boolean;
   debtNoteId: number | null;
   onClose: () => void;
+}
+
+interface AccumulationItem {
+  id: number;
+  season_name: string;
+  amount: number;
+  closed_at: string;
+  reward_given: boolean;
+  reward_count: number;
 }
 
 /**
@@ -116,7 +124,7 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
     {
       title: 'Quà tặng',
       key: 'reward',
-      render: (record: any) => record.reward_given ? <Tag color="gold">Đã nhận ({record.reward_count})</Tag> : <Tag>Chưa đạt mốc</Tag>
+      render: (record: AccumulationItem) => record.reward_given ? <Tag color="gold">Đã nhận ({record.reward_count})</Tag> : <Tag>Chưa đạt mốc</Tag>
     }
   ];
 
