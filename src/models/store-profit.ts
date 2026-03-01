@@ -59,6 +59,9 @@ export interface OperatingCostBreakdown {
   type: string;
   name: string;
   amount: number;
+  date?: string;
+  notes?: string;
+  source?: string;
 }
 
 /**

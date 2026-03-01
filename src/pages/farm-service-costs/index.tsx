@@ -1,24 +1,33 @@
-/**
- * Trang danh sách Chi phí Dịch vụ/Quà tặng
- * Quản lý tất cả chi phí dịch vụ với filter trong column headers
- */
-
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Tag, Popconfirm, Empty } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Popconfirm, Empty, Tabs, Row, Col, Statistic } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CarryOutOutlined, GiftOutlined } from '@ant-design/icons';
 import ComboBox from '@/components/common/combo-box';
 import FilterHeader from '@/components/common/filter-header';
 import dayjs from 'dayjs';
-import { useFarmServiceCostsQuery, useDeleteFarmServiceCostMutation } from '@/queries/farm-service-cost';
+import { 
+  useFarmServiceCostsQuery, 
+  useDeleteFarmServiceCostMutation,
+  useFarmGiftCostsQuery,
+  useDeleteFarmGiftCostMutation
+} from '@/queries/farm-service-cost';
 import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
 import { useRiceCrops } from '@/queries/rice-crop';
-import type { FarmServiceCost } from '@/models/farm-service-cost';
+import type { FarmServiceCost, FarmGiftCost } from '@/models/farm-service-cost';
 import { FarmServiceCostModal } from './FarmServiceCostModal';
 
+interface FilterState {
+  name?: string;
+  season_id?: number;
+  customer_id?: number;
+  rice_crop_id?: number;
+  source?: string;
+}
+
 const FarmServiceCostList: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('service');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingCost, setEditingCost] = useState<FarmServiceCost | null>(null);
+  const [editingCost, setEditingCost] = useState<any>(null);
   
   // Search states for ComboBox
   const [seasonSearch, setSeasonSearch] = useState('');
@@ -26,41 +35,38 @@ const FarmServiceCostList: React.FC = () => {
   const [riceCropSearch, setRiceCropSearch] = useState('');
   
   // Filters state
-  const [filters, setFilters] = useState<{
-    name?: string;
-    season_id?: number;
-    customer_id?: number;
-    rice_crop_id?: number;
-    source?: string;
-  }>({});
+  const [filters, setFilters] = useState<FilterState>({});
 
-  // Queries with search
+  // Queries
   const { data: seasons, isLoading: isSeasonsLoading } = useSeasonsQuery({
-    page: 1,
-    limit: 20,
-    keyword: seasonSearch,
+    page: 1, limit: 100, keyword: seasonSearch
   });
   
   const { data: customers, isLoading: isCustomersLoading } = useCustomersQuery({
-    page: 1,
-    limit: 20,
-    keyword: customerSearch,
+    page: 1, limit: 100, keyword: customerSearch
   });
   
   const { data: riceCrops, isLoading: isRiceCropsLoading } = useRiceCrops({
     season_id: filters.season_id,
     keyword: riceCropSearch,
-    limit: 20,
+    limit: 100,
   });
   
-  const { data, isLoading } = useFarmServiceCostsQuery({
+  // Data for Service Costs
+  const { data: serviceData, isLoading: isServiceLoading } = useFarmServiceCostsQuery({
     ...filters,
     limit: 1000,
   });
 
-  const deleteMutation = useDeleteFarmServiceCostMutation();
+  // Data for Gift Costs
+  const { data: giftData, isLoading: isGiftLoading } = useFarmGiftCostsQuery({
+    ...filters,
+    limit: 1000,
+  });
 
-  // Handle filter change
+  const deleteServiceMutation = useDeleteFarmServiceCostMutation();
+  const deleteGiftMutation = useDeleteFarmGiftCostMutation();
+
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({
       ...prev,
@@ -73,43 +79,39 @@ const FarmServiceCostList: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleEdit = (record: FarmServiceCost) => {
+  const handleEdit = (record: any) => {
     setEditingCost(record);
     setIsModalVisible(true);
   };
 
   const handleDelete = async (id: number) => {
-    await deleteMutation.mutateAsync(id);
-  };
-
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-    setEditingCost(null);
+    if (activeTab === 'service') {
+      await deleteServiceMutation.mutateAsync(id);
+    } else {
+      await deleteGiftMutation.mutateAsync(id);
+    }
   };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+      style: 'currency', currency: 'VND',
     }).format(value);
   };
 
-  const columns = [
+  const commonColumns = [
     {
       key: 'name',
       title: (
         <FilterHeader 
-          title="Tên chi phí/Quà tặng" 
+          title="Tên hạng mục" 
           dataIndex="name" 
           value={filters.name} 
           onChange={(val) => handleFilterChange('name', val)}
           inputType="text"
         />
       ),
-      width: 200,
-      render: (record: FarmServiceCost) => (
-        <div className="font-medium">{record.name}</div>
-      ),
+      width: 250,
+      render: (record: any) => <div className="font-medium">{record.name}</div>,
     },
     {
       key: 'amount',
@@ -121,233 +123,189 @@ const FarmServiceCostList: React.FC = () => {
       ),
     },
     {
-      key: 'season_id',
-      title: (
-        <div className="flex flex-col gap-2 py-1" onClick={(e) => e.stopPropagation()}>
-          <div className="font-semibold text-gray-700">Mùa vụ</div>
-          <ComboBox
-            placeholder="Chọn mùa vụ"
-            value={filters.season_id}
-            onChange={(val) => handleFilterChange('season_id', val)}
-            onSearch={setSeasonSearch}
-            options={(seasons?.data?.items || []).map((s: any) => ({
-              value: s.id,
-              label: `${s.name} (${s.year})`,
-            }))}
-            isLoading={isSeasonsLoading}
-            allowClear
-            showSearch
-            filterOption={false}
-            style={{ width: '100%', minWidth: 120 }}
-            size="small"
-          />
-        </div>
-      ),
+      key: 'season',
+      title: 'Mùa vụ',
       width: 150,
-      render: (record: FarmServiceCost) => (
-        <span>{record.season?.name} ({record.season?.year})</span>
-      ),
+      render: (record: any) => record.season ? `${record.season.name} (${record.season.year || ''})` : '-',
     },
     {
-      key: 'customer_id',
-      title: (
-        <div className="flex flex-col gap-2 py-1" onClick={(e) => e.stopPropagation()}>
-          <div className="font-semibold text-gray-700">Khách hàng</div>
-          <ComboBox
-            placeholder="Chọn khách hàng"
-            value={filters.customer_id}
-            onChange={(val) => handleFilterChange('customer_id', val)}
-            onSearch={setCustomerSearch}
-            options={(customers?.data?.items || []).map((c: any) => ({
-              value: c.id,
-              label: c.name,
-            }))}
-            isLoading={isCustomersLoading}
-            allowClear
-            showSearch
-            filterOption={false}
-            style={{ width: '100%', minWidth: 120 }}
-            size="small"
-          />
-        </div>
-      ),
+      key: 'customer',
+      title: 'Khách hàng',
       width: 150,
-      render: (record: FarmServiceCost) => (
-        <div>{record.customer?.name}</div>
-      ),
-    },
-    {
-      key: 'rice_crop_id',
-      title: (
-        <div className="flex flex-col gap-2 py-1" onClick={(e) => e.stopPropagation()}>
-          <div className="font-semibold text-gray-700">Ruộng lúa</div>
-          <ComboBox
-            placeholder="Chọn ruộng"
-            value={filters.rice_crop_id}
-            onChange={(val) => handleFilterChange('rice_crop_id', val)}
-            onSearch={setRiceCropSearch}
-            options={(riceCrops?.data || []).map((r: any) => ({
-              value: r.id,
-              label: r.field_name,
-            }))}
-            isLoading={isRiceCropsLoading}
-            allowClear
-            showSearch
-            filterOption={false}
-            style={{ width: '100%', minWidth: 120 }}
-            size="small"
-          />
-        </div>
-      ),
-      width: 150,
-      render: (record: FarmServiceCost) => (
-        <div>{record.rice_crop?.field_name || '-'}</div>
-      ),
-    },
-    {
-      key: 'expense_date',
-      dataIndex: 'expense_date',
-      title: 'Ngày phát sinh',
-      width: 120,
-      render: (date: string) => dayjs(date).format('DD/MM/YYYY'),
-    },
-    {
-      key: 'source',
-      title: (
-        <div className="flex flex-col gap-2 py-1" onClick={(e) => e.stopPropagation()}>
-          <div className="font-semibold text-gray-700">Nguồn</div>
-          <ComboBox
-            placeholder="Chọn nguồn"
-            value={filters.source}
-            onChange={(val) => handleFilterChange('source', val)}
-            options={[
-              { value: 'manual', label: 'Nhập tay' },
-              { value: 'gift_from_invoice', label: 'Quà tặng HĐ' },
-            ]}
-            allowClear
-            style={{ width: '100%', minWidth: 120 }}
-            size="small"
-          />
-        </div>
-      ),
-      width: 130,
-      render: (record: FarmServiceCost) => (
-        <Tag color={record.source === 'gift_from_invoice' ? 'green' : 'blue'}>
-          {record.source === 'gift_from_invoice' ? 'Quà tặng HĐ' : 'Nhập tay'}
-        </Tag>
-      ),
+      render: (record: any) => record.customer?.name || '-',
     },
     {
       key: 'notes',
       dataIndex: 'notes',
       title: 'Ghi chú',
-      width: 180,
-      render: (notes?: string) => notes || '-',
+      width: 200,
+      render: (notes?: string) => <div className="truncate max-w-[200px]">{notes || '-'}</div>,
+    }
+  ];
+
+  const serviceColumns = [
+    ...commonColumns,
+    {
+      key: 'date',
+      dataIndex: 'expense_date',
+      title: 'Ngày chi',
+      width: 120,
+      render: (date: string) => dayjs(date).format('DD/MM/YYYY'),
     },
     {
       key: 'actions',
       title: 'Thao tác',
       width: 100,
+      fixed: 'right' as const,
       render: (record: FarmServiceCost) => (
-        <Space size="small">
-          {record.source === 'manual' && (
+        <Space size="middle">
+          <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+          <Popconfirm title="Xóa chi phí?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    }
+  ];
+
+  const giftColumns = [
+    ...commonColumns,
+    {
+      key: 'date',
+      dataIndex: 'gift_date',
+      title: 'Ngày tặng',
+      width: 120,
+      render: (date: string) => dayjs(date).format('DD/MM/YYYY'),
+    },
+    {
+      key: 'source',
+      dataIndex: 'source',
+      title: 'Nguồn',
+      width: 150,
+      render: (source: string) => {
+        const labels: any = {
+          'manually_awarded': { text: 'Nhập tay', color: 'blue' },
+          'gift_from_invoice': { text: 'Từ Hóa đơn', color: 'green' },
+          'reward_from_debt_note': { text: 'Thưởng tích lũy', color: 'purple' },
+        };
+        const item = labels[source] || { text: source, color: 'default' };
+        return <Tag color={item.color}>{item.text}</Tag>;
+      }
+    },
+    {
+      key: 'actions',
+      title: 'Thao tác',
+      width: 100,
+      fixed: 'right' as const,
+      render: (record: FarmGiftCost) => (
+        <Space size="middle">
+          {record.source === 'manually_awarded' ? (
             <>
-              <Button
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => handleEdit(record)}
-              />
-              <Popconfirm
-                title="Xác nhận xóa"
-                description="Bạn có chắc muốn xóa chi phí này?"
-                onConfirm={() => handleDelete(record.id)}
-                okText="Xóa"
-                cancelText="Hủy"
-                okButtonProps={{ danger: true }}
-              >
-                <Button
-                  type="link"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  loading={deleteMutation.isPending}
-                />
+              <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+              <Popconfirm title="Xóa quà tặng?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy" okButtonProps={{ danger: true }}>
+                <Button type="text" danger icon={<DeleteOutlined />} />
               </Popconfirm>
             </>
-          )}
-          {record.source === 'gift_from_invoice' && (
-            <Tag color="gold">Tự động</Tag>
+          ) : (
+            <Tag color="orange">Tự động</Tag>
           )}
         </Space>
       ),
-    },
+    }
   ];
 
-  const totalAmount = data?.data?.reduce((sum: number, item: FarmServiceCost) => sum + Number(item.amount), 0) || 0;
+  const totalService = serviceData?.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+  const totalGift = giftData?.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
 
   return (
-    <div className="p-2 md:p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">🎁 Chi phí Dịch vụ/Quà tặng</h1>
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+            {activeTab === 'service' ? <CarryOutOutlined className="text-blue-600" /> : <GiftOutlined className="text-pink-600" />}
+            Quản lý Chi phí {activeTab === 'service' ? 'Dịch vụ' : 'Quà tặng'}
+          </h1>
+          <p className="text-gray-500 mt-1">Theo dõi các khoản chi phục vụ nông dân và khách hàng</p>
+        </div>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleAdd}
           size="large"
+          className={activeTab === 'service' ? 'bg-blue-600' : 'bg-pink-600'}
         >
-          Thêm chi phí
+          Thêm {activeTab === 'service' ? 'chi phí' : 'quà tặng'}
         </Button>
       </div>
 
-      {/* Summary */}
-      {data?.data && data.data.length > 0 && (
-        <Card className="mb-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-gray-600">Tổng số bản ghi: </span>
-              <span className="font-bold">{data.data.length}</span>
-            </div>
-            <div>
-              <span className="text-gray-600">Tổng chi phí: </span>
-              <span className="text-xl font-bold text-red-600">{formatCurrency(totalAmount)}</span>
-            </div>
-          </div>
-        </Card>
-      )}
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12}>
+          <Card bordered={false} className="shadow-sm rounded-xl">
+            <Statistic 
+              title="Tổng Chi phí Dịch vụ" 
+              value={totalService} 
+              suffix="đ" 
+              valueStyle={{ color: '#2563eb', fontWeight: 800 }} 
+              prefix={<CarryOutOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Card bordered={false} className="shadow-sm rounded-xl">
+            <Statistic 
+              title="Tổng Giá trị Quà tặng" 
+              value={totalGift} 
+              suffix="đ" 
+              valueStyle={{ color: '#db2777', fontWeight: 800 }} 
+              prefix={<GiftOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-      {/* Table */}
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={data?.data || []}
-          rowKey="id"
-          loading={isLoading}
-          pagination={{
-            pageSize: 50,
-            showSizeChanger: true,
-            showTotal: (total) => `Tổng ${total} bản ghi`,
-          }}
-          locale={{
-            emptyText: (
-              <Empty
-                description="Chưa có chi phí dịch vụ/quà tặng nào"
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              >
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                  Thêm chi phí đầu tiên
-                </Button>
-              </Empty>
-            ),
-          }}
-          scroll={{ x: 1400 }}
+      <Card bordered={false} className="shadow-md rounded-2xl overflow-hidden">
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          className="px-6 pt-2"
+          items={[
+            {
+              key: 'service',
+              label: <span className="flex items-center gap-2"><CarryOutOutlined /> Chi phí Dịch vụ</span>,
+              children: (
+                <Table
+                  columns={serviceColumns}
+                  dataSource={serviceData?.data || []}
+                  rowKey="id"
+                  loading={isServiceLoading}
+                  pagination={{ pageSize: 20 }}
+                  scroll={{ x: 1200 }}
+                />
+              )
+            },
+            {
+              key: 'gift',
+              label: <span className="flex items-center gap-2"><GiftOutlined /> Quà tặng</span>,
+              children: (
+                <Table
+                  columns={giftColumns}
+                  dataSource={giftData?.data || []}
+                  rowKey="id"
+                  loading={isGiftLoading}
+                  pagination={{ pageSize: 20 }}
+                  scroll={{ x: 1200 }}
+                />
+              )
+            }
+          ]}
         />
       </Card>
 
       <FarmServiceCostModal
         open={isModalVisible}
-        onCancel={handleModalClose}
+        onCancel={() => { setIsModalVisible(false); setEditingCost(null); }}
         editingCost={editingCost}
+        mode={activeTab as any}
       />
     </div>
   );

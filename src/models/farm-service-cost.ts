@@ -70,3 +70,47 @@ export interface SearchFarmServiceCostDto {
   sort_by?: string;
   sort_order?: 'ASC' | 'DESC';
 }
+
+/**
+ * TypeScript interfaces cho Farm Gift Cost (Quà tặng cho nông dân)
+ */
+export interface FarmGiftCost {
+  id: number;
+  name: string;
+  amount: number;
+  season_id: number;
+  customer_id: number;
+  rice_crop_id?: number;
+  notes?: string;
+  gift_date: string;
+  source: 'manually_awarded' | 'gift_from_invoice' | 'reward_from_debt_note';
+  invoice_id?: number;
+  created_at: string;
+  updated_at: string;
+  
+  // Relations
+  season?: { id: number; name: string };
+  customer?: { id: number; name: string; phone?: string };
+  rice_crop?: { id: number; field_name: string };
+}
+
+export interface CreateFarmGiftCostDto {
+  name: string;
+  amount: number;
+  season_id: number;
+  customer_id: number;
+  rice_crop_id?: number;
+  notes?: string;
+  gift_date: string;
+  source?: string;
+}
+
+export interface SearchFarmGiftCostDto {
+  season_id?: number;
+  customer_id?: number;
+  rice_crop_id?: number;
+  source?: string;
+  keyword?: string;
+  page?: number;
+  limit?: number;
+}

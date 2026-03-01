@@ -1,5 +1,5 @@
 /**
- * Modal form để thêm/sửa chi phí dịch vụ/quà tặng
+ * Modal form để thêm/sửa chi phí dịch vụ/quà tặng cho ruộng lúa
  */
 
 import React, { useEffect } from 'react';
@@ -9,14 +9,16 @@ import { useRiceCrop } from '@/queries/rice-crop';
 import {
   useCreateFarmServiceCostMutation,
   useUpdateFarmServiceCostMutation,
+  useCreateFarmGiftCostMutation,
+  useUpdateFarmGiftCostMutation,
 } from '@/queries/farm-service-cost';
-import type { FarmServiceCost } from '@/models/farm-service-cost';
 
 interface FarmServiceCostModalProps {
   open: boolean;
   onCancel: () => void;
   riceCropId: number;
-  editingCost: FarmServiceCost | null;
+  editingCost: any;
+  mode?: 'service' | 'gift';
 }
 
 export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
@@ -24,25 +26,28 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
   onCancel,
   riceCropId,
   editingCost,
+  mode = 'service',
 }) => {
   const [form] = Form.useForm();
   const { data: riceCrop } = useRiceCrop(riceCropId);
   
-  const createMutation = useCreateFarmServiceCostMutation();
-  const updateMutation = useUpdateFarmServiceCostMutation();
+  const createServiceMutation = useCreateFarmServiceCostMutation();
+  const updateServiceMutation = useUpdateFarmServiceCostMutation();
+  const createGiftMutation = useCreateFarmGiftCostMutation();
+  const updateGiftMutation = useUpdateFarmGiftCostMutation();
 
   useEffect(() => {
     if (open && editingCost) {
       form.setFieldsValue({
         name: editingCost.name,
         amount: editingCost.amount,
-        expense_date: dayjs(editingCost.expense_date),
+        date: dayjs(editingCost.expense_date || editingCost.gift_date),
         notes: editingCost.notes,
       });
     } else if (open) {
       form.resetFields();
       form.setFieldsValue({
-        expense_date: dayjs(),
+        date: dayjs(),
       });
     }
   }, [open, editingCost, form]);
@@ -55,24 +60,47 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
         return;
       }
 
-      const payload = {
-        name: values.name,
-        amount: values.amount,
-        season_id: riceCrop.season_id,
-        customer_id: riceCrop.customer_id,
-        rice_crop_id: riceCropId,
-        expense_date: values.expense_date.toISOString(),
-        notes: values.notes,
-        source: 'manual',
-      };
+      if (mode === 'service') {
+        const payload = {
+          name: values.name,
+          amount: values.amount,
+          season_id: riceCrop.season_id,
+          customer_id: riceCrop.customer_id,
+          rice_crop_id: riceCropId,
+          expense_date: values.date.toISOString(),
+          notes: values.notes,
+          source: 'manual',
+        };
 
-      if (editingCost) {
-        await updateMutation.mutateAsync({
-          id: editingCost.id,
-          data: payload,
-        });
+        if (editingCost) {
+          await updateServiceMutation.mutateAsync({
+            id: editingCost.id,
+            data: payload,
+          });
+        } else {
+          await createServiceMutation.mutateAsync(payload);
+        }
       } else {
-        await createMutation.mutateAsync(payload);
+        // Mode Gift
+        const payload = {
+          name: values.name,
+          amount: values.amount,
+          season_id: riceCrop.season_id,
+          customer_id: riceCrop.customer_id,
+          rice_crop_id: riceCropId,
+          gift_date: values.date.toISOString(),
+          notes: values.notes,
+          source: 'manually_awarded',
+        };
+
+        if (editingCost) {
+          await updateGiftMutation.mutateAsync({
+            id: editingCost.id,
+            data: payload,
+          });
+        } else {
+          await createGiftMutation.mutateAsync(payload);
+        }
       }
 
       onCancel();
@@ -81,9 +109,12 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
     }
   };
 
+  const isPending = createServiceMutation.isPending || updateServiceMutation.isPending || 
+                    createGiftMutation.isPending || updateGiftMutation.isPending;
+
   return (
     <Modal
-      title={editingCost ? 'Chỉnh sửa chi phí dịch vụ' : 'Thêm chi phí dịch vụ/quà tặng mới'}
+      title={editingCost ? `Chỉnh sửa ${mode === 'service' ? 'chi phí' : 'quà tặng'}` : `Thêm ${mode === 'service' ? 'chi phí' : 'quà tặng'} mới`}
       open={open}
       onCancel={onCancel}
       footer={[
@@ -93,7 +124,7 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
         <Button
           key="submit"
           type="primary"
-          loading={createMutation.isPending || updateMutation.isPending}
+          loading={isPending}
           onClick={handleSubmit}
         >
           {editingCost ? 'Lưu thay đổi' : 'Tạo mới'}
@@ -104,10 +135,10 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
       <Form form={form} layout="vertical" className="mt-4">
         <Form.Item
           name="name"
-          label="Tên chi phí/Quà tặng"
-          rules={[{ required: true, message: 'Vui lòng nhập tên chi phí' }]}
+          label={mode === 'service' ? "Tên chi phí" : "Tên quà tặng"}
+          rules={[{ required: true, message: `Vui lòng nhập tên ${mode === 'service' ? 'chi phí' : 'quà tặng'}` }]}
         >
-          <Input placeholder="VD: Tiền kỹ sư thăm ruộng, Quà tặng phân bón..." />
+          <Input placeholder={mode === 'service' ? "VD: Tiền kỹ sư thăm ruộng..." : "VD: Quà tặng tri ân..."} />
         </Form.Item>
 
         <Form.Item
@@ -128,15 +159,15 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          name="expense_date"
-          label="Ngày phát sinh"
-          rules={[{ required: true, message: 'Vui lòng chọn ngày phát sinh' }]}
+          name="date"
+          label={mode === 'service' ? "Ngày phát sinh" : "Ngày tặng"}
+          rules={[{ required: true, message: 'Vui lòng chọn ngày' }]}
         >
           <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
         </Form.Item>
 
         <Form.Item name="notes" label="Ghi chú">
-          <Input.TextArea rows={3} placeholder="Ghi chú thêm về chi phí này..." />
+          <Input.TextArea rows={3} placeholder="Ghi chú thêm..." />
         </Form.Item>
 
         {riceCrop && (

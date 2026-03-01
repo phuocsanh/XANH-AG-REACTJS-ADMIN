@@ -10,6 +10,9 @@ import type {
   CreateFarmServiceCostDto,
   UpdateFarmServiceCostDto,
   SearchFarmServiceCostDto,
+  FarmGiftCost,
+  CreateFarmGiftCostDto,
+  SearchFarmGiftCostDto,
 } from '@/models/farm-service-cost';
 
 // Query keys
@@ -113,6 +116,94 @@ export function useDeleteFarmServiceCostMutation() {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi xóa chi phí dịch vụ');
+    },
+  });
+}
+// Gift Query keys
+export const farmGiftCostKeys = {
+  all: ['farm-gift-costs'] as const,
+  lists: () => [...farmGiftCostKeys.all, 'list'] as const,
+  list: (filters: SearchFarmGiftCostDto) => [...farmGiftCostKeys.lists(), filters] as const,
+};
+
+/**
+ * Hook để tìm kiếm farm gift costs
+ */
+export function useFarmGiftCostsQuery(params: SearchFarmGiftCostDto = {}) {
+  return useQuery({
+    queryKey: farmGiftCostKeys.list(params),
+    queryFn: async () => {
+      return await api.get<{ data: FarmGiftCost[]; total: number }>(
+        '/farm-gift-costs',
+        { params }
+      );
+    },
+  });
+}
+
+/**
+ * Hook để tạo farm gift cost mới
+ */
+export function useCreateFarmGiftCostMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (createDto: CreateFarmGiftCostDto) => {
+      return await api.postRaw<FarmGiftCost>('/farm-gift-costs', createDto as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: farmGiftCostKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['store-profit-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-reports'] });
+      toast.success('Thêm quà tặng thành công');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi thêm quà tặng');
+    },
+  });
+}
+
+/**
+ * Hook để cập nhật farm gift cost
+ */
+export function useUpdateFarmGiftCostMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return await api.patchRaw<FarmGiftCost>(`/farm-gift-costs/${id}`, data as any);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: farmGiftCostKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['store-profit-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-reports'] });
+      toast.success('Cập nhật quà tặng thành công');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật quà tặng');
+    },
+  });
+}
+
+/**
+ * Hook để xóa farm gift cost
+ */
+export function useDeleteFarmGiftCostMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/farm-gift-costs/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: farmGiftCostKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['store-profit-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-reports'] });
+      toast.success('Xóa quà tặng thành công');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi xóa quà tặng');
     },
   });
 }

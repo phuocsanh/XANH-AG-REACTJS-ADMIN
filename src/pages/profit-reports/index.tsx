@@ -375,23 +375,12 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
             </Row>
-            {/* Bảng chi tiết chi phí */}
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} lg={12}>
-                <Card title="💸 Chi phí Dịch vụ & Quà tặng" size="small">
+              <Col xs={24} lg={8}>
+                <Card title="📋 Danh sách Chi phí Dịch vụ" size="small" bodyStyle={{ padding: 0 }}>
                   <Table
                     columns={[
-                      { title: 'Tên', dataIndex: 'name', key: 'name' },
-                      { 
-                        title: 'Loại', 
-                        dataIndex: 'type', 
-                        key: 'type',
-                        width: 100,
-                        render: (type) => {
-                          const isGift = type.includes('reward') || type === 'gift_from_invoice';
-                          return <Tag color={isGift ? 'red' : 'blue'}>{isGift ? 'Quà tặng' : 'Dịch vụ'}</Tag>
-                        }
-                      },
+                      { title: 'Tên chi phí', dataIndex: 'name', key: 'name' },
                       { 
                         title: 'Số tiền', 
                         dataIndex: 'amount', 
@@ -405,15 +394,40 @@ const ProfitReportsPage: React.FC = () => {
                         render: (date) => new Date(date).toLocaleDateString('vi-VN')
                       },
                     ]}
-                    dataSource={seasonProfit.farm_service_costs_breakdown || []}
+                    dataSource={(seasonProfit.farm_service_costs_breakdown || []).filter((c: any) => c.type === 'service')}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} lg={8}>
+                <Card title="🎁 Danh sách Quà tặng" size="small" bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={[
+                      { title: 'Quà tặng', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Giá trị', 
+                        dataIndex: 'amount', 
+                        key: 'amount',
+                        render: (val) => formatCurrency(val)
+                      },
+                      { 
+                        title: 'Ngày', 
+                        dataIndex: 'date', 
+                        key: 'date',
+                        render: (date) => new Date(date).toLocaleDateString('vi-VN')
+                      },
+                    ]}
+                    dataSource={(seasonProfit.farm_service_costs_breakdown || []).filter((c: any) => c.type !== 'service')}
                     pagination={{ pageSize: 5 }}
                     size="small"
                   />
                 </Card>
               </Col>
               
-              <Col xs={24} lg={12}>
-                <Card title="⚙️ Chi phí Vận hành Cửa hàng" size="small">
+              <Col xs={24} lg={8}>
+                <Card title="⚙️ Chi phí Vận hành Cửa hàng" size="small" bodyStyle={{ padding: 0 }}>
                   <Table
                     columns={[
                       { title: 'Tên', dataIndex: 'name', key: 'name' },
@@ -757,73 +771,85 @@ const ProfitReportsPage: React.FC = () => {
             </Row>
 
 
-            {/* Chi tiết chi phí dịch vụ/quà tặng */}
+            {/* Chi tiết chi phí */}
             <Row gutter={[16, 16]} className="mb-6">
-              {riceCropProfit.farm_service_costs_breakdown && riceCropProfit.farm_service_costs_breakdown.length > 0 && (
-                <Col xs={24} lg={12}>
-                  <Card title="💸 Chi phí Dịch vụ & Quà tặng" size="small">
-                    <Table
-                      columns={[
-                        { title: 'Tên', dataIndex: 'name', key: 'name' },
-                        { 
-                          title: 'Loại', 
-                          dataIndex: 'source', 
-                          key: 'source',
-                          width: 100,
-                          render: (source) => {
-                            const isGift = (source || '').includes('reward') || source === 'gift_from_invoice';
-                            return <Tag color={isGift ? 'red' : 'blue'}>{isGift ? 'Quà tặng' : 'Dịch vụ'}</Tag>
-                          }
-                        },
-                        { 
-                          title: 'Số tiền', 
-                          dataIndex: 'amount', 
-                          key: 'amount',
-                          render: (val) => formatCurrency(val)
-                        },
-                        { 
-                          title: 'Ngày', 
-                          dataIndex: 'date', 
-                          key: 'date',
-                          render: (date) => new Date(date!).toLocaleDateString('vi-VN')
-                        },
-                      ]}
-                      dataSource={riceCropProfit.farm_service_costs_breakdown || []}
-                      pagination={{ pageSize: 5 }}
-                      size="small"
-                      scroll={{ x: true }}
-                    />
-                  </Card>
-                </Col>
-              )}
+              <Col xs={24} lg={8}>
+                <Card title="📋 Chi phí Dịch vụ" size="small" bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={[
+                      { title: 'Tên', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Số tiền', 
+                        dataIndex: 'amount', 
+                        key: 'amount',
+                        render: (val) => formatCurrency(val)
+                      },
+                      { 
+                        title: 'Ngày', 
+                        dataIndex: 'date', 
+                        key: 'date',
+                        render: (date) => new Date(date!).toLocaleDateString('vi-VN')
+                      },
+                    ]}
+                    dataSource={(riceCropProfit.farm_service_costs_breakdown || []).filter((c: any) => c.type === 'service')}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    scroll={{ x: true }}
+                  />
+                </Card>
+              </Col>
 
-              {riceCropProfit.operating_costs_breakdown && riceCropProfit.operating_costs_breakdown.length > 0 && (
-                <Col xs={24} lg={12}>
-                  <Card title="⚙️ Chi phí Vận hành (Gán cho ruộng)" size="small">
-                    <Table
-                      columns={[
-                        { title: 'Tên', dataIndex: 'name', key: 'name' },
-                        { 
-                          title: 'Số tiền', 
-                          dataIndex: 'amount', 
-                          key: 'amount',
-                          render: (val) => formatCurrency(val)
-                        },
-                        { 
-                          title: 'Ngày', 
-                          dataIndex: 'date', 
-                          key: 'date',
-                          render: (date) => new Date(date!).toLocaleDateString('vi-VN')
-                        },
-                      ]}
-                      dataSource={riceCropProfit.operating_costs_breakdown || []}
-                      pagination={{ pageSize: 5 }}
-                      size="small"
-                      scroll={{ x: true }}
-                    />
-                  </Card>
-                </Col>
-              )}
+              <Col xs={24} lg={8}>
+                <Card title="🎁 Quà tặng" size="small" bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={[
+                      { title: 'Tên', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Số tiền', 
+                        dataIndex: 'amount', 
+                        key: 'amount',
+                        render: (val) => formatCurrency(val)
+                      },
+                      { 
+                        title: 'Ngày', 
+                        dataIndex: 'date', 
+                        key: 'date',
+                        render: (date) => new Date(date!).toLocaleDateString('vi-VN')
+                      },
+                    ]}
+                    dataSource={(riceCropProfit.farm_service_costs_breakdown || []).filter((c: any) => c.type !== 'service')}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    scroll={{ x: true }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} lg={8}>
+                <Card title="⚙️ Chi phí Vận hành (Ruộng)" size="small" bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={[
+                      { title: 'Tên', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Số tiền', 
+                        dataIndex: 'amount', 
+                        key: 'amount',
+                        render: (val) => formatCurrency(val)
+                      },
+                      { 
+                        title: 'Ngày', 
+                        dataIndex: 'date', 
+                        key: 'date',
+                        render: (date) => new Date(date!).toLocaleDateString('vi-VN')
+                      },
+                    ]}
+                    dataSource={riceCropProfit.operating_costs_breakdown || []}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    scroll={{ x: true }}
+                  />
+                </Card>
+              </Col>
             </Row>
 
             {/* Danh sách hóa đơn gắn với ruộng này */}
@@ -1287,43 +1313,59 @@ const ProfitReportsPage: React.FC = () => {
             )}
 
             {/* Bảng chi tiết chi phí */}
-            {customerProfit.farm_service_costs_breakdown && customerProfit.farm_service_costs_breakdown.length > 0 && (
-              <Card title="💸 Chi phí Dịch vụ & Quà tặng" className="mb-6" size="small">
-                <Table
-                  columns={[
-                    { title: 'Tên', dataIndex: 'name', key: 'name' },
-                    { 
-                      title: 'Loại', 
-                      dataIndex: 'type', 
-                      key: 'type',
-                      width: 120,
-                      render: (type) => {
-                        const isGift = (type || '').includes('reward') || type === 'gift_from_invoice';
-                        return <Tag color={isGift ? 'red' : 'blue'}>{isGift ? 'Quà tặng' : 'Dịch vụ'}</Tag>
-                      }
-                    },
-                    { 
-                      title: 'Số tiền', 
-                      dataIndex: 'amount', 
-                      key: 'amount',
-                      width: 160,
-                      render: (val) => formatCurrency(val)
-                    },
-                    { 
-                      title: 'Ngày', 
-                      dataIndex: 'date', 
-                      key: 'date',
-                      width: 130,
-                      render: (date) => new Date(date).toLocaleDateString('vi-VN')
-                    },
-                  ]}
-                  dataSource={customerProfit.farm_service_costs_breakdown}
-                  pagination={{ pageSize: 5 }}
-                  size="small"
-                  scroll={{ x: true }}
-                />
-              </Card>
-            )}
+            <Row gutter={[16, 16]} className="mb-6">
+              <Col xs={24} lg={12}>
+                <Card title="📋 Chi phí Dịch vụ" size="small" bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={[
+                      { title: 'Tên', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Số tiền', 
+                        dataIndex: 'amount', 
+                        key: 'amount',
+                        render: (val) => formatCurrency(val)
+                      },
+                      { 
+                        title: 'Ngày', 
+                        dataIndex: 'date', 
+                        key: 'date',
+                        render: (date) => new Date(date).toLocaleDateString('vi-VN')
+                      },
+                    ]}
+                    dataSource={(customerProfit.farm_service_costs_breakdown || []).filter((c: any) => c.type === 'service')}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    scroll={{ x: true }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} lg={12}>
+                <Card title="🎁 Quà tặng" size="small" bodyStyle={{ padding: 0 }}>
+                  <Table
+                    columns={[
+                      { title: 'Tên quà tặng', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Số tiền', 
+                        dataIndex: 'amount', 
+                        key: 'amount',
+                        render: (val) => formatCurrency(val)
+                      },
+                      { 
+                        title: 'Ngày', 
+                        dataIndex: 'date', 
+                        key: 'date',
+                        render: (date) => new Date(date).toLocaleDateString('vi-VN')
+                      },
+                    ]}
+                    dataSource={(customerProfit.farm_service_costs_breakdown || []).filter((c: any) => c.type !== 'service')}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    scroll={{ x: true }}
+                  />
+                </Card>
+              </Col>
+            </Row>
 
             {/* Bảng danh sách hóa đơn */}
             <Card title="📄 Danh sách Hóa đơn">

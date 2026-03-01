@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Tag, Popconfirm, message, DatePicker } from 'antd';
 import { EditOutlined, DeleteOutlined, SearchOutlined, GiftOutlined } from '@ant-design/icons';
-import { useFarmServiceCostsQuery, useDeleteFarmServiceCostMutation } from '@/queries/farm-service-cost';
-import { FarmServiceCost } from '@/models/farm-service-cost';
+import { 
+  useFarmGiftCostsQuery, 
+  useDeleteFarmGiftCostMutation 
+} from '@/queries/farm-service-cost';
+import { FarmGiftCost } from '@/models/farm-service-cost';
 import dayjs from 'dayjs';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import DataTable from "@/components/common/data-table";
@@ -18,7 +21,7 @@ const GiftCostsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState<FarmServiceCost | null>(null);
+  const [editingItem, setEditingItem] = useState<FarmGiftCost | null>(null);
 
   const { data: seasons } = useSeasonsQuery({ limit: 100 });
   const { data: activeSeason } = useActiveSeasonQuery();
@@ -45,13 +48,15 @@ const GiftCostsPage: React.FC = () => {
   }, [activeSeason]);
 
   // Query - Flatten filters to match backend expectation
-  const { data: costsData, isLoading } = useFarmServiceCostsQuery({
+  const { data: costsData, isLoading } = useFarmGiftCostsQuery({
     page: currentPage,
     limit: pageSize,
     ...filters,
+    // Ánh xạ các filter cũ sang keyword nếu cần, hoặc giả định backend đã hỗ trợ (cần kiểm tra)
+    keyword: filters.name || filters.keyword,
   });
 
-  const deleteMutation = useDeleteFarmServiceCostMutation();
+  const deleteMutation = useDeleteFarmGiftCostMutation();
 
   const handleDelete = async (id: number) => {
     try {
@@ -62,7 +67,7 @@ const GiftCostsPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (record: FarmServiceCost) => {
+  const handleEdit = (record: FarmGiftCost) => {
     setEditingItem(record);
     setIsModalVisible(true);
   };
@@ -178,8 +183,8 @@ const GiftCostsPage: React.FC = () => {
       dataIndex: 'amount',
       key: 'amount',
       width: 150,
-      render: (val: any) => <span className="text-red-600 font-bold">{Number(val).toLocaleString('vi-VN')} đ</span>,
-      sorter: (a: FarmServiceCost, b: FarmServiceCost) => Number(a.amount) - Number(b.amount),
+      render: (val: any) => <span className="text-pink-600 font-bold">{Number(val).toLocaleString('vi-VN')} đ</span>,
+      sorter: (a: FarmGiftCost, b: FarmGiftCost) => Number(a.amount) - Number(b.amount),
     },
     {
       title: (
@@ -197,7 +202,7 @@ const GiftCostsPage: React.FC = () => {
       ),
       key: 'season',
       width: 180,
-      render: (_: any, record: FarmServiceCost) => (
+      render: (_: any, record: FarmGiftCost) => (
           record.season ? <Tag color="blue">{record.season.name}</Tag> : '-'
       )
     },
@@ -213,7 +218,7 @@ const GiftCostsPage: React.FC = () => {
       ),
       key: 'customer',
       width: 180,
-      render: (_: any, record: FarmServiceCost) => (
+      render: (_: any, record: FarmGiftCost) => (
           record.customer ? <Tag color="green">{record.customer.name}</Tag> : '-'
       )
     },
@@ -229,7 +234,7 @@ const GiftCostsPage: React.FC = () => {
       ),
       key: 'rice_crop',
       width: 150,
-      render: (_: any, record: FarmServiceCost) => (
+      render: (_: any, record: FarmGiftCost) => (
           record.rice_crop ? <Tag color="cyan">{record.rice_crop.field_name}</Tag> : '-'
       )
     },
@@ -253,21 +258,20 @@ const GiftCostsPage: React.FC = () => {
       key: 'source',
       width: 150,
       render: (source: string) => {
-          let color = 'blue';
+          let color = 'default';
           let label = source;
+          if (source === 'manually_awarded') { color = 'blue'; label = 'Nhập tay'; }
           if (source === 'gift_from_invoice') { color = 'green'; label = 'Từ Hóa đơn'; }
-          if (source === 'reward_from_debt_note') { color = 'gold'; label = 'Từ Chốt sổ'; }
-          if (source === 'manual_gift') { color = 'purple'; label = 'Tặng thủ công'; }
+          if (source === 'reward_from_debt_note') { color = 'purple'; label = 'Từ Chốt sổ'; }
           return <Tag color={color}>{label}</Tag>
       }
     },
     {
-      title: 'Ngày chi',
-      dataIndex: 'expense_date',
-      key: 'expense_date',
+      title: 'Ngày tặng',
+      dataIndex: 'gift_date',
+      key: 'gift_date',
       width: 120,
-      ...getDateColumnSearchProps('expense_date'),
-      filteredValue: (filters.start_date && filters.end_date) ? [filters.start_date, filters.end_date] : null,
+      ...getDateColumnSearchProps('gift_date'),
       render: (date: string) => date ? dayjs(date).format('DD/MM/YYYY') : '-',
     },
     {
@@ -283,9 +287,9 @@ const GiftCostsPage: React.FC = () => {
       title: 'Hành động',
       key: 'action',
       width: 120,
-      render: (_: any, record: FarmServiceCost) => (
+      render: (_: any, record: FarmGiftCost) => (
         <Space>
-           {record.source === 'manual_gift' && (
+           {record.source === 'manually_awarded' && (
              <Button 
                icon={<EditOutlined />} 
                onClick={() => handleEdit(record)} 
@@ -328,7 +332,7 @@ const GiftCostsPage: React.FC = () => {
         open={isModalVisible}
         onCancel={handleCloseModal}
         editingCost={editingItem}
-        // Ta có thể thêm prop để ép source là manual_gift nếu muốn
+        mode="gift"
       />
     </div>
   );

@@ -12,13 +12,16 @@ import { useRiceCrops } from '@/queries/rice-crop';
 import {
   useCreateFarmServiceCostMutation,
   useUpdateFarmServiceCostMutation,
+  useCreateFarmGiftCostMutation,
+  useUpdateFarmGiftCostMutation,
 } from '@/queries/farm-service-cost';
 import type { FarmServiceCost } from '@/models/farm-service-cost';
 
 interface FarmServiceCostModalProps {
   open: boolean;
   onCancel: () => void;
-  editingCost: FarmServiceCost | null;
+  editingCost: any;
+  mode: 'service' | 'gift';
 }
 
 interface FarmServiceCostFormValues {
@@ -27,7 +30,7 @@ interface FarmServiceCostFormValues {
   rice_crop_id?: number | null;
   name: string;
   amount: number;
-  expense_date: string;
+  date: string; // Dùng chung cho cả expense_date và gift_date trong form
   notes?: string;
 }
 
@@ -35,12 +38,17 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
   open,
   onCancel,
   editingCost,
+  mode
 }) => {
   const { data: seasons } = useSeasonsQuery();
   const { data: customers } = useCustomersQuery();
   
-  const createMutation = useCreateFarmServiceCostMutation();
-  const updateMutation = useUpdateFarmServiceCostMutation();
+  const createServiceMutation = useCreateFarmServiceCostMutation();
+  const updateServiceMutation = useUpdateFarmServiceCostMutation();
+
+  const createGiftMutation = useCreateFarmGiftCostMutation();
+  const updateGiftMutation = useUpdateFarmGiftCostMutation();
+  // Quà tặng tự động từ hóa đơn/debt note không cho sửa ngày qua modal này (hoặc tạm thời chưa cần updateGiftMutation)
 
   const { control, handleSubmit, reset, watch } = useForm<FarmServiceCostFormValues>({
     defaultValues: {
@@ -49,7 +57,7 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
       rice_crop_id: undefined,
       name: '',
       amount: 0,
-      expense_date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0],
       notes: '',
     },
   });
@@ -66,7 +74,7 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
         rice_crop_id: editingCost.rice_crop_id,
         name: editingCost.name,
         amount: editingCost.amount,
-        expense_date: editingCost.expense_date.split('T')[0],
+        date: (editingCost.expense_date || editingCost.gift_date || '').split('T')[0],
         notes: editingCost.notes || '',
       });
     } else if (open) {
@@ -76,7 +84,7 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
         rice_crop_id: undefined,
         name: '',
         amount: 0,
-        expense_date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
         notes: '',
       });
     }
@@ -84,24 +92,47 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
 
   const onSubmit = async (data: FarmServiceCostFormValues) => {
     try {
-      const payload = {
-        name: data.name,
-        amount: data.amount,
-        season_id: data.season_id,
-        customer_id: data.customer_id,
-        rice_crop_id: data.rice_crop_id || undefined,
-        expense_date: new Date(data.expense_date).toISOString(),
-        notes: data.notes,
-        source: 'manual',
-      };
+      if (mode === 'service') {
+        const payload = {
+          name: data.name,
+          amount: data.amount,
+          season_id: data.season_id,
+          customer_id: data.customer_id,
+          rice_crop_id: data.rice_crop_id || undefined,
+          expense_date: new Date(data.date).toISOString(),
+          notes: data.notes,
+          source: 'manual',
+        };
 
-      if (editingCost) {
-        await updateMutation.mutateAsync({
-          id: editingCost.id,
-          data: payload,
-        });
+        if (editingCost) {
+          await updateServiceMutation.mutateAsync({
+            id: editingCost.id,
+            data: payload,
+          });
+        } else {
+          await createServiceMutation.mutateAsync(payload);
+        }
       } else {
-        await createMutation.mutateAsync(payload);
+        // Mode Gift
+        const payload = {
+          name: data.name,
+          amount: data.amount,
+          season_id: data.season_id,
+          customer_id: data.customer_id,
+          rice_crop_id: data.rice_crop_id || undefined,
+          gift_date: new Date(data.date).toISOString(),
+          notes: data.notes,
+          source: 'manually_awarded',
+        };
+
+        if (editingCost) {
+          await updateGiftMutation.mutateAsync({
+            id: editingCost.id,
+            data: payload,
+          });
+        } else {
+          await createGiftMutation.mutateAsync(payload);
+        }
       }
 
       onCancel();
@@ -128,13 +159,16 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
     label: `${r.field_name} - ${r.customer?.name}`,
   })) || [];
 
+  const isPending = createServiceMutation.isPending || updateServiceMutation.isPending || 
+                    createGiftMutation.isPending || updateGiftMutation.isPending;
+
   return (
     <Modal
-      title={editingCost ? 'Chỉnh sửa chi phí dịch vụ' : 'Thêm chi phí dịch vụ/quà tặng mới'}
+      title={editingCost ? `Chỉnh sửa ${mode === 'service' ? 'chi phí' : 'quà tặng'}` : `Thêm ${mode === 'service' ? 'chi phí' : 'quà tặng'} mới`}
       open={open}
       onCancel={onCancel}
       onOk={handleSubmit(onSubmit)}
-      confirmLoading={createMutation.isPending || updateMutation.isPending}
+      confirmLoading={isPending}
       width={700}
       okText={editingCost ? 'Lưu thay đổi' : 'Tạo mới'}
       cancelText="Hủy"
@@ -174,9 +208,9 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
         <FormField
           name="name"
           control={control}
-          label="Tên chi phí/Quà tặng"
+          label={mode === 'service' ? "Tên chi phí" : "Tên quà tặng"}
           required
-          placeholder="VD: Tiền kỹ sư thăm ruộng, Quà tặng phân bón..."
+          placeholder={mode === 'service' ? "VD: Tiền kỹ sư thăm ruộng..." : "VD: Quà tặng tri ân..."}
         />
 
         <div className="grid grid-cols-2 gap-x-4">
@@ -190,9 +224,9 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
           />
 
           <FormDatePicker
-            name="expense_date"
+            name="date"
             control={control}
-            label="Ngày phát sinh"
+            label={mode === 'service' ? "Ngày chi" : "Ngày tặng"}
             required
           />
         </div>
@@ -202,7 +236,7 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
           control={control}
           label="Ghi chú"
           type="textarea"
-          placeholder="Ghi chú thêm về chi phí này..."
+          placeholder="Ghi chú thêm..."
           rows={3}
         />
       </form>
