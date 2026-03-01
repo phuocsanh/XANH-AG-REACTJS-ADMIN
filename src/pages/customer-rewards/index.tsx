@@ -40,7 +40,7 @@ const CustomerRewardsPage: React.FC = () => {
     ...historyFilters
   })
 
-  const REWARD_THRESHOLD = 60000000 // 60 Triệu
+  const threshold = trackingData?.reward_threshold || 60000000 // Fallback 60 Triệu
 
   // Format currency
   const formatCurrency = (value: number) => {
@@ -75,12 +75,12 @@ const CustomerRewardsPage: React.FC = () => {
       )
     },
     {
-      title: "Tiến trình (mốc 60tr)",
+      title: `Tiến trình (mốc ${Math.round(threshold / 1000000)}tr)`,
       key: "progress",
       width: 300,
       render: (record: any) => {
         const pending = Number(record.pending_amount || 0)
-        const percent = Math.min(Math.round((pending / REWARD_THRESHOLD) * 100), 100)
+        const percent = Math.min(Math.round((pending / threshold) * 100), 100)
         return (
           <div className="w-full">
             <Progress 
@@ -90,7 +90,7 @@ const CustomerRewardsPage: React.FC = () => {
             />
             <div className="flex justify-between text-xs mt-1">
                 <span>{formatCurrency(pending)}</span>
-                <span className="text-gray-400">Thiếu {formatCurrency(Math.max(0, REWARD_THRESHOLD - pending))}</span>
+                <span className="text-gray-400">Thiếu {formatCurrency(Math.max(0, threshold - pending))}</span>
             </div>
           </div>
         )

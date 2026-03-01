@@ -262,6 +262,7 @@ export const useRewardTrackingQuery = (params?: Record<string, unknown>) => {
         total: number
         page: number
         limit: number
+        reward_threshold: number
       }>('/customer-rewards/tracking', params || {})
       return response
     },
