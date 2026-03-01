@@ -298,6 +298,8 @@ export const useCreateManualRewardMutation = () => {
       gift_value?: number;
       notes?: string;
       manual_deduct_amount?: number;
+      season_id?: number;
+      rice_crop_id?: number;
     }) => {
       const response = await api.postRaw<{ success: boolean; message: string }>('/customer-rewards', data);
       return response;

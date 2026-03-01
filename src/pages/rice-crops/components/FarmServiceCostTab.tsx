@@ -1,5 +1,5 @@
 /**
- * Tab quản lý chi phí dịch vụ/quà tặng của cửa hàng dành cho ruộng lúa
+ * Tab quản lý chi phí dịch vụ của cửa hàng dành cho ruộng lúa
  */
 
 import React, { useState } from 'react';
@@ -54,7 +54,7 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
 
   const columns = [
     {
-      title: 'Tên chi phí/Quà tặng',
+      title: 'Tên chi phí dịch vụ',
       dataIndex: 'name',
       key: 'name',
       width: '25%',
@@ -144,7 +144,7 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
       title={
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm sm:text-base">🎁 Chi phí DV/Quà tặng</span>
+            <span className="text-sm sm:text-base">💸 Chi phí dịch vụ</span>
             {data?.data && data.data.length > 0 && (
               <span className="text-base sm:text-lg font-bold text-red-600">
                 {formatCurrency(totalAmount)}
@@ -173,7 +173,7 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
           locale={{
             emptyText: (
               <Empty
-                description="Chưa có chi phí dịch vụ/quà tặng nào"
+                description="Chưa có chi phí dịch vụ nào"
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               >
                 <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>

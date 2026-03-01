@@ -210,7 +210,7 @@ const RiceCropDetail: React.FC = () => {
     // Chỉ hiển thị tab Chi phí Dịch vụ cho admin
     ...(hasPermission(userInfo, 'sales:manage') ? [{
       key: 'farm-service-costs',
-      label: '🎁 Chi phí Dịch vụ',
+      label: '💸 Chi phí Dịch vụ',
       children: <FarmServiceCostTab riceCropId={riceCrop.id} />,
     }] : []),
     {

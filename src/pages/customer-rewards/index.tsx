@@ -26,6 +26,9 @@ import {
     useRewardHistoryQuery,
     useCreateManualRewardMutation 
 } from "@/queries/debt-note"
+import { useSeasonsQuery } from "@/queries/season"
+import { useRiceCrops } from "@/queries/rice-crop"
+import { Select } from "antd"
 
 const { Title, Text } = Typography
 
@@ -56,6 +59,13 @@ const CustomerRewardsPage: React.FC = () => {
     ...historyFilters
   })
 
+  // Watch for seasonal data
+  const { data: seasonsData } = useSeasonsQuery({ limit: 100 })
+  const { data: riceCropsData } = useRiceCrops({ 
+    customer_id: selectedCustomer?.customer_id,
+    limit: 100 
+  }, { enabled: !!selectedCustomer?.customer_id })
+
   const createRewardMutation = useCreateManualRewardMutation()
 
   const threshold = trackingData?.reward_threshold || 60000000 // Fallback 60 Triệu
@@ -73,7 +83,9 @@ const CustomerRewardsPage: React.FC = () => {
     form.setFieldsValue({
         customer_name: record.customer?.name,
         gift_description: "Quà tặng tri ân",
-        manual_deduct: true
+        manual_deduct: true,
+        season_id: undefined,
+        rice_crop_id: undefined
     })
     setIsModalOpen(true)
   }
@@ -84,7 +96,9 @@ const CustomerRewardsPage: React.FC = () => {
         gift_description: values.gift_description,
         gift_value: values.gift_value,
         notes: values.notes,
-        manual_deduct_amount: values.manual_deduct ? threshold : 0
+        manual_deduct_amount: values.manual_deduct ? threshold : 0,
+        season_id: values.season_id,
+        rice_crop_id: values.rice_crop_id
     })
     setIsModalOpen(false)
     form.resetFields()
@@ -223,6 +237,12 @@ const CustomerRewardsPage: React.FC = () => {
         )
     },
     {
+        title: "Ruộng lúa",
+        key: "rice_crop",
+        width: 150,
+        render: (record: any) => record.contribution_details?.rice_crop_name ? <Tag color="green">{record.contribution_details.rice_crop_name}</Tag> : '-'
+    },
+    {
       title: "Trạng thái",
       dataIndex: "gift_status",
       key: "gift_status",
@@ -320,6 +340,28 @@ const CustomerRewardsPage: React.FC = () => {
             <Form.Item label="Khách hàng" name="customer_name">
                 <Input disabled />
             </Form.Item>
+
+            <div className="grid grid-cols-2 gap-4">
+                <Form.Item label="Mùa vụ" name="season_id">
+                    <Select placeholder="Chọn mùa vụ">
+                        {seasonsData?.data?.items?.map((season: any) => (
+                            <Select.Option key={season.id} value={season.id}>
+                                {season.name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Form.Item>
+
+                <Form.Item label="Ruộng lúa" name="rice_crop_id">
+                    <Select placeholder="Chọn ruộng lúa">
+                        {riceCropsData?.data?.map((crop: any) => (
+                            <Select.Option key={crop.id} value={crop.id}>
+                                {crop.field_name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Form.Item>
+            </div>
 
             <Form.Item 
                 label="Mô tả quà tặng" 
