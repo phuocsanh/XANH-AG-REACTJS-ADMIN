@@ -3,7 +3,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, DatePicker, Button } from 'antd';
+import { Modal, Form, Input, DatePicker, Button } from 'antd';
+import NumberInput from '@/components/common/number-input';
 import dayjs from 'dayjs';
 import { useRiceCrop } from '@/queries/rice-crop';
 import {
@@ -146,13 +147,9 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
           label="Số tiền"
           rules={[
             { required: true, message: 'Vui lòng nhập số tiền' },
-            { type: 'number', min: 0, message: 'Số tiền phải lớn hơn 0' },
           ]}
         >
-          <InputNumber
-            style={{ width: '100%' }}
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-            parser={(value) => value?.replace(/\$\s?|(\.*)/g, '') as unknown as number}
+          <NumberInput
             placeholder="0"
             addonAfter="đ"
           />

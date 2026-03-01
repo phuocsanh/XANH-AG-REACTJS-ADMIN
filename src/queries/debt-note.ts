@@ -314,3 +314,44 @@ export const useCreateManualRewardMutation = () => {
     },
   });
 }
+
+/**
+ * Hook cập nhật lịch sử quà tặng
+ */
+export const useUpdateRewardHistoryMutation = () => {
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await api.patchRaw<{ success: boolean; message: string }>(`/customer-rewards/history/${id}`, data);
+      return response;
+    },
+    onSuccess: () => {
+      invalidateResourceQueries('reward-history');
+      invalidateResourceQueries('farm-gift-costs'); // Cập nhật cả bảng chi phí nếu có
+      toast.success("Cập nhật quà tặng thành công!");
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật quà tặng");
+    },
+  });
+}
+
+/**
+ * Hook xóa lịch sử quà tặng
+ */
+export const useDeleteRewardHistoryMutation = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.delete(`/customer-rewards/history/${id}`);
+      return response;
+    },
+    onSuccess: () => {
+      invalidateResourceQueries('reward-tracking');
+      invalidateResourceQueries('reward-history');
+      invalidateResourceQueries('farm-gift-costs');
+      toast.success("Xóa lịch sử quà tặng thành công!");
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa lịch sử quà tặng");
+    },
+  });
+}

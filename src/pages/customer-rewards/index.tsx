@@ -18,17 +18,24 @@ import {
   HistoryOutlined,
   CheckCircleOutlined,
   PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons"
+import { Popconfirm, message } from "antd"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import { 
     useRewardTrackingQuery, 
     useRewardHistoryQuery,
-    useCreateManualRewardMutation 
+    useCreateManualRewardMutation,
+    useUpdateRewardHistoryMutation,
+    useDeleteRewardHistoryMutation
 } from "@/queries/debt-note"
 import { useSeasonsQuery } from "@/queries/season"
 import { useRiceCrops } from "@/queries/rice-crop"
 import { Select } from "antd"
+import { useForm, Controller } from "react-hook-form";
+import { FormField, FormFieldNumber, FormComboBox } from "@/components/form";
 
 const { Title, Text } = Typography
 
@@ -44,7 +51,20 @@ const CustomerRewardsPage: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [selectedCustomer, setSelectedCustomer] = React.useState<any>(null)
+  const [editingHistoryId, setEditingHistoryId] = React.useState<number | null>(null)
   const [form] = Form.useForm()
+  
+  // React Hook Form cho Modal tặng quà
+  const { control, handleSubmit, reset, setValue, watch } = useForm({
+    defaultValues: {
+      gift_description: "Quà tặng tri ân",
+      gift_value: 0,
+      notes: "",
+      manual_deduct: true,
+      season_id: undefined as number | undefined,
+      rice_crop_id: undefined as number | undefined,
+    }
+  });
 
   // Queries
   const { data: trackingData, isLoading: isTrackingLoading, refetch: refetchTracking } = useRewardTrackingQuery({
@@ -67,6 +87,8 @@ const CustomerRewardsPage: React.FC = () => {
   }, { enabled: !!selectedCustomer?.customer_id })
 
   const createRewardMutation = useCreateManualRewardMutation()
+  const updateRewardMutation = useUpdateRewardHistoryMutation()
+  const deleteRewardMutation = useDeleteRewardHistoryMutation()
 
   const threshold = trackingData?.reward_threshold || 60000000 // Fallback 60 Triệu
 
@@ -78,30 +100,61 @@ const CustomerRewardsPage: React.FC = () => {
     }).format(value)
   }
 
-  const handleOpenRewardModal = (record: any) => {
-    setSelectedCustomer(record)
-    form.setFieldsValue({
-        customer_name: record.customer?.name,
-        gift_description: "Quà tặng tri ân",
-        manual_deduct: true,
-        season_id: undefined,
-        rice_crop_id: undefined
-    })
+  const handleOpenRewardModal = (record: any, isEdit: boolean = false) => {
+    if (isEdit) {
+        setEditingHistoryId(record.id)
+        setSelectedCustomer({ customer_id: record.customer_id, customer: record.customer })
+        reset({
+            gift_description: record.gift_description,
+            gift_value: Number(record.gift_value || 0),
+            notes: record.notes,
+            manual_deduct: false, // Không khấu trừ khi sửa
+            season_id: record.season_ids?.[0],
+            rice_crop_id: record.contribution_details?.rice_crop_id
+        })
+    } else {
+        setEditingHistoryId(null)
+        setSelectedCustomer(record)
+        reset({
+            gift_description: "Quà tặng tri ân",
+            gift_value: 0,
+            notes: "",
+            manual_deduct: true,
+            season_id: undefined,
+            rice_crop_id: undefined
+        })
+    }
     setIsModalOpen(true)
   }
 
-  const handleCreateReward = async (values: any) => {
-    await createRewardMutation.mutateAsync({
-        customer_id: selectedCustomer.customer_id,
-        gift_description: values.gift_description,
-        gift_value: values.gift_value,
-        notes: values.notes,
-        manual_deduct_amount: values.manual_deduct ? threshold : 0,
-        season_id: values.season_id,
-        rice_crop_id: values.rice_crop_id
-    })
+  const handleSubmitForm = async (values: any) => {
+    if (editingHistoryId) {
+        await updateRewardMutation.mutateAsync({
+            id: editingHistoryId,
+            data: {
+                gift_description: values.gift_description,
+                gift_value: values.gift_value,
+                notes: values.notes,
+            }
+        })
+    } else {
+        await createRewardMutation.mutateAsync({
+            customer_id: selectedCustomer.customer_id,
+            gift_description: values.gift_description,
+            gift_value: values.gift_value,
+            notes: values.notes,
+            manual_deduct_amount: values.manual_deduct ? threshold : 0,
+            season_id: values.season_id,
+            rice_crop_id: values.rice_crop_id
+        })
+    }
     setIsModalOpen(false)
-    form.resetFields()
+    refetchTracking()
+    refetchHistory()
+  }
+
+  const handleDeleteHistory = async (id: number) => {
+    await deleteRewardMutation.mutateAsync(id)
     refetchTracking()
     refetchHistory()
   }
@@ -252,6 +305,30 @@ const CustomerRewardsPage: React.FC = () => {
           {status === 'delivered' ? 'Đã trao' : 'Chờ trao'}
         </Tag>
       )
+    },
+    {
+        title: "Hành động",
+        key: "actions",
+        width: 120,
+        render: (record: any) => (
+            <Space>
+                <Button 
+                    icon={<EditOutlined />} 
+                    size="small" 
+                    onClick={() => handleOpenRewardModal(record, true)}
+                />
+                <Popconfirm
+                    title="Xóa lịch sử quà tặng?"
+                    description="Thao tác này sẽ xóa cả chi phí quà tặng tương ứng."
+                    onConfirm={() => handleDeleteHistory(record.id)}
+                    okText="Xóa"
+                    cancelText="Hủy"
+                    okButtonProps={{ danger: true, loading: deleteRewardMutation.isPending }}
+                >
+                    <Button icon={<DeleteOutlined />} size="small" danger />
+                </Popconfirm>
+            </Space>
+        )
     }
   ]
 
@@ -323,84 +400,102 @@ const CustomerRewardsPage: React.FC = () => {
 
       {/* Manual Reward Modal */}
       <Modal
-        title="Tạo quà tặng thủ công"
+        title={editingHistoryId ? "Chỉnh sửa quà tặng" : "Tạo quà tặng thủ công"}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
+        width={600}
       >
-        <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleCreateReward}
-            initialValues={{
-                gift_description: "Quà tặng tri ân",
-                manual_deduct: true
-            }}
-        >
-            <Form.Item label="Khách hàng" name="customer_name">
-                <Input disabled />
-            </Form.Item>
-
-            <div className="grid grid-cols-2 gap-4">
-                <Form.Item label="Mùa vụ" name="season_id">
-                    <Select placeholder="Chọn mùa vụ">
-                        {seasonsData?.data?.items?.map((season: any) => (
-                            <Select.Option key={season.id} value={season.id}>
-                                {season.name}
-                            </Select.Option>
-                        ))}
-                    </Select>
-                </Form.Item>
-
-                <Form.Item label="Ruộng lúa" name="rice_crop_id">
-                    <Select placeholder="Chọn ruộng lúa">
-                        {riceCropsData?.data?.map((crop: any) => (
-                            <Select.Option key={crop.id} value={crop.id}>
-                                {crop.field_name}
-                            </Select.Option>
-                        ))}
-                    </Select>
-                </Form.Item>
+        <form onSubmit={handleSubmit(handleSubmitForm)}>
+            <div className="bg-gray-50 p-3 rounded mb-4">
+                <Text strong>Khách hàng: </Text> 
+                <Text>{selectedCustomer?.customer?.name || selectedCustomer?.customer_name}</Text>
             </div>
 
-            <Form.Item 
-                label="Mô tả quà tặng" 
+            {!editingHistoryId && (
+                <div className="grid grid-cols-2 gap-4">
+                    <FormComboBox
+                        name="season_id"
+                        control={control}
+                        label="Mùa vụ"
+                        placeholder="Chọn mùa vụ"
+                        options={seasonsData?.data?.items?.map((s: any) => ({
+                            label: s.name,
+                            value: s.id
+                        })) || []}
+                        allowClear
+                    />
+
+                    <FormComboBox
+                        name="rice_crop_id"
+                        control={control}
+                        label="Ruộng lúa"
+                        placeholder="Chọn ruộng lúa"
+                        options={riceCropsData?.data?.map((r: any) => ({
+                            label: r.field_name,
+                            value: r.id
+                        })) || []}
+                        allowClear
+                        disabled={!watch('season_id')}
+                    />
+                </div>
+            )}
+
+            <FormField
                 name="gift_description"
-                rules={[{ required: true, message: 'Vui lòng nhập mô tả quà tặng' }]}
-            >
-                <Input placeholder="Ví dụ: 1 bao phân DAP, Bộ ấm trà..." />
-            </Form.Item>
+                control={control}
+                label="Mô tả quà tặng"
+                placeholder="Ví dụ: 1 bao phân DAP, Bộ ấm trà..."
+                required
+            />
 
-            <Form.Item label="Giá trị quà tặng (đ)" name="gift_value">
-                <InputNumber 
-                    style={{ width: '100%' }} 
-                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => value!.replace(/\$\s?|(,*)/g, '')}
-                />
-            </Form.Item>
+            <FormFieldNumber
+                name="gift_value"
+                control={control}
+                label="Giá trị quà tặng (đ)"
+                placeholder="0"
+                decimalScale={0}
+                suffix=" đ"
+            />
 
-            <Form.Item label="Ghi chú" name="notes">
-                <Input.TextArea rows={3} placeholder="Nhập ghi chú chi tiết nếu có" />
-            </Form.Item>
+            <FormField
+                name="notes"
+                control={control}
+                label="Ghi chú"
+                type="textarea"
+                placeholder="Nhập ghi chú chi tiết nếu có"
+                rows={3}
+            />
 
-            <Form.Item name="manual_deduct" valuePropName="checked">
-                <Checkbox>
-                    Khấu trừ {formatCurrency(threshold)} từ số tiền tích lũy hiện tại
-                </Checkbox>
-            </Form.Item>
+            {!editingHistoryId && (
+                <div className="mb-4">
+                    <Controller
+                        name="manual_deduct"
+                        control={control}
+                        render={({ field }) => (
+                            <Checkbox 
+                                checked={field.value} 
+                                onChange={(e) => field.onChange(e.target.checked)}
+                            >
+                                Khấu trừ {formatCurrency(threshold)} từ số tiền tích lũy hiện tại
+                            </Checkbox>
+                        )}
+                    />
+                </div>
+            )}
 
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex justify-end gap-2 mt-6">
                 <Button onClick={() => setIsModalOpen(false)}>Hủy</Button>
                 <Button 
                     type="primary" 
                     htmlType="submit" 
-                    loading={createRewardMutation.isPending}
+                    loading={createRewardMutation.isPending || updateRewardMutation.isPending}
                     className="bg-amber-500 border-none"
                 >
-                    Xác nhận tặng quà
+                    {editingHistoryId ? 'Cập nhật' : 'Xác nhận tặng quà'}
                 </Button>
             </div>
-        </Form>
+        </form>
       </Modal>
     </div>
   )
