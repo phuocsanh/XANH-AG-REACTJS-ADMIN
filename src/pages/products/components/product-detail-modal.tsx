@@ -192,6 +192,11 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {product.ingredient.join(", ")}
               </Descriptions.Item>
             )}
+          {product.mechanism && (
+            <Descriptions.Item label='Cơ chế tác động'>
+              {product.mechanism}
+            </Descriptions.Item>
+          )}
           {(product.unit || product.unit_id) && (
             <Descriptions.Item label='Đơn vị tính'>
               {typeof product.unit === 'object' && product.unit !== null

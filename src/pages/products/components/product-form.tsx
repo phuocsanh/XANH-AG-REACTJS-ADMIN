@@ -295,6 +295,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           taxable_quantity_stock: Number(productItem.taxable_quantity_stock || 0), // Ép kiểu number để tránh lỗi string từ database "0.00"
           is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
           show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
+          mechanism: productItem.mechanism || "", // Cơ chế tác động
           
           unit_conversions: (productItem.unit_conversions || []).map((conv: ProductUnitConversion) => ({
             ...conv,
@@ -571,6 +572,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         taxable_quantity_stock: convertedValues.taxable_quantity_stock,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
+        mechanism: values.mechanism || "",
         unit_conversions: values.unit_conversions || [],
         components: values.components || [],
       }
@@ -1054,6 +1056,19 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     type="textarea"
                     rows={4}
                     rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
+                  />
+                </div>
+
+                {/* Thêm trường mechanism - Cơ chế tác động */}
+                <div className='w-full'>
+                  <FormField
+                    name='mechanism'
+                    control={control}
+                    label='Cơ chế tác động'
+                    placeholder='Nhập cơ chế tác động của thuốc'
+                    className='w-full'
+                    type="textarea"
+                    rows={3}
                   />
                 </div>
 
