@@ -275,7 +275,26 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
                 <Form.Item label="Số dư tích lũy chuyển sang vụ sau" name="manual_remaining_amount">
                   <NumberInput placeholder="Nhập số tiền chuyển sang" addonAfter="VND" />
                 </Form.Item>
-                <Form.Item label="Mô tả quà tặng" name="gift_description" rules={[{ required: summary?.will_receive_reward, message: 'Vui lòng nhập mô tả quà tặng' }]}>
+                <Form.Item 
+                  label="Mô tả quà tặng" 
+                  name="gift_description" 
+                  rules={[
+                    { 
+                      required: summary?.will_receive_reward, 
+                      message: 'Vui lòng nhập mô tả quà tặng' 
+                    },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const giftValue = getFieldValue('gift_value');
+                        if (giftValue > 0 && !value) {
+                          return Promise.reject(new Error('Vui lòng nhập mô tả cho quà tặng này'));
+                        }
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
+                  dependencies={['gift_value']}
+                >
                   <Input placeholder="VD: 1 bao phân DAP 50kg" />
                 </Form.Item>
                 <Form.Item label="Giá trị quà tặng" name="gift_value">
