@@ -60,7 +60,6 @@ const CustomerRewardsPage: React.FC = () => {
       gift_description: "Quà tặng tri ân",
       gift_value: 0,
       notes: "",
-      manual_deduct: true,
       season_id: undefined as number | undefined,
       rice_crop_id: undefined as number | undefined,
     }
@@ -108,7 +107,6 @@ const CustomerRewardsPage: React.FC = () => {
             gift_description: record.gift_description,
             gift_value: Number(record.gift_value || 0),
             notes: record.notes,
-            manual_deduct: false, // Không khấu trừ khi sửa
             season_id: record.season_ids?.[0],
             rice_crop_id: record.contribution_details?.rice_crop_id
         })
@@ -119,7 +117,6 @@ const CustomerRewardsPage: React.FC = () => {
             gift_description: "Quà tặng tri ân",
             gift_value: 0,
             notes: "",
-            manual_deduct: true,
             season_id: undefined,
             rice_crop_id: undefined
         })
@@ -143,7 +140,6 @@ const CustomerRewardsPage: React.FC = () => {
             gift_description: values.gift_description,
             gift_value: values.gift_value,
             notes: values.notes,
-            manual_deduct_amount: values.manual_deduct ? threshold : 0,
             season_id: values.season_id,
             rice_crop_id: values.rice_crop_id
         })
@@ -466,23 +462,6 @@ const CustomerRewardsPage: React.FC = () => {
                 placeholder="Nhập ghi chú chi tiết nếu có"
                 rows={3}
             />
-
-            {!editingHistoryId && (
-                <div className="mb-4">
-                    <Controller
-                        name="manual_deduct"
-                        control={control}
-                        render={({ field }) => (
-                            <Checkbox 
-                                checked={field.value} 
-                                onChange={(e) => field.onChange(e.target.checked)}
-                            >
-                                Khấu trừ {formatCurrency(threshold)} từ số tiền tích lũy hiện tại
-                            </Checkbox>
-                        )}
-                    />
-                </div>
-            )}
 
             <div className="flex justify-end gap-2 mt-6">
                 <Button onClick={() => setIsModalOpen(false)}>Hủy</Button>
