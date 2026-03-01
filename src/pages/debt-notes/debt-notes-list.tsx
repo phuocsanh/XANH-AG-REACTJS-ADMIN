@@ -391,7 +391,7 @@ const DebtNotesList: React.FC = () => {
               Thanh toán
             </Button>
           )}
-          {record.remaining_amount > 0 && record.status !== 'settled' && (
+          {record.status !== 'settled' && (
             <Button 
               type="default" 
               size="small"
