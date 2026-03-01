@@ -286,3 +286,29 @@ export const useRewardHistoryQuery = (params?: Record<string, unknown>) => {
     },
   })
 }
+
+/**
+ * Hook tạo quà tặng thủ công
+ */
+export const useCreateManualRewardMutation = () => {
+  return useMutation({
+    mutationFn: async (data: {
+      customer_id: number;
+      gift_description: string;
+      gift_value?: number;
+      notes?: string;
+      manual_deduct_amount?: number;
+    }) => {
+      const response = await api.postRaw<{ success: boolean; message: string }>('/customer-rewards', data);
+      return response;
+    },
+    onSuccess: () => {
+      invalidateResourceQueries('reward-tracking');
+      invalidateResourceQueries('reward-history');
+      toast.success("Tạo quà tặng thủ công thành công!");
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi tạo quà tặng");
+    },
+  });
+}

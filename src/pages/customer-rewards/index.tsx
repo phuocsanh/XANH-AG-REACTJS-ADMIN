@@ -6,15 +6,26 @@ import {
   Typography,
   Progress,
   Tooltip,
+  Button,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Checkbox,
 } from "antd"
 import {
   GiftOutlined,
   HistoryOutlined,
   CheckCircleOutlined,
+  PlusOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
-import { useRewardTrackingQuery, useRewardHistoryQuery } from "@/queries/debt-note"
+import { 
+    useRewardTrackingQuery, 
+    useRewardHistoryQuery,
+    useCreateManualRewardMutation 
+} from "@/queries/debt-note"
 
 const { Title, Text } = Typography
 
@@ -27,18 +38,25 @@ const CustomerRewardsPage: React.FC = () => {
   const [historyPage, setHistoryPage] = React.useState(1)
   const pageSize = 10
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [selectedCustomer, setSelectedCustomer] = React.useState<any>(null)
+  const [form] = Form.useForm()
+
   // Queries
-  const { data: trackingData, isLoading: isTrackingLoading } = useRewardTrackingQuery({
+  const { data: trackingData, isLoading: isTrackingLoading, refetch: refetchTracking } = useRewardTrackingQuery({
     page: trackingPage,
     limit: pageSize,
     ...trackingFilters
   })
 
-  const { data: historyData, isLoading: isHistoryLoading } = useRewardHistoryQuery({
+  const { data: historyData, isLoading: isHistoryLoading, refetch: refetchHistory } = useRewardHistoryQuery({
     page: historyPage,
     limit: pageSize,
     ...historyFilters
   })
+
+  const createRewardMutation = useCreateManualRewardMutation()
 
   const threshold = trackingData?.reward_threshold || 60000000 // Fallback 60 Triệu
 
@@ -48,6 +66,30 @@ const CustomerRewardsPage: React.FC = () => {
       style: "currency",
       currency: "VND",
     }).format(value)
+  }
+
+  const handleOpenRewardModal = (record: any) => {
+    setSelectedCustomer(record)
+    form.setFieldsValue({
+        customer_name: record.customer?.name,
+        gift_description: "Quà tặng tri ân",
+        manual_deduct: true
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleCreateReward = async (values: any) => {
+    await createRewardMutation.mutateAsync({
+        customer_id: selectedCustomer.customer_id,
+        gift_description: values.gift_description,
+        gift_value: values.gift_value,
+        notes: values.notes,
+        manual_deduct_amount: values.manual_deduct ? threshold : 0
+    })
+    setIsModalOpen(false)
+    form.resetFields()
+    refetchTracking()
+    refetchHistory()
   }
 
   // Tracking Columns
@@ -104,18 +146,27 @@ const CustomerRewardsPage: React.FC = () => {
       render: (val: number) => <Text strong className="text-blue-600">{formatCurrency(val)}</Text>
     },
     {
-      title: "Số lần nhận quà",
+      title: "Số lần đã nhận",
       dataIndex: "reward_count",
       key: "reward_count",
       width: 130,
       render: (val: number) => <Tag color="gold" icon={<GiftOutlined />}>{val} lần</Tag>
     },
     {
-      title: "Lần cuối",
-      dataIndex: "last_reward_date",
-      key: "last_reward_date",
-      width: 150,
-      render: (val: string) => val ? new Date(val).toLocaleDateString('vi-VN') : '-'
+      title: "Thao tác",
+      key: "actions",
+      width: 120,
+      render: (record: any) => (
+        <Button 
+            type="primary" 
+            size="small" 
+            icon={<PlusOutlined />}
+            onClick={() => handleOpenRewardModal(record)}
+            className="bg-amber-500 hover:bg-amber-600 border-none"
+        >
+            Tặng quà
+        </Button>
+      )
     }
   ]
 
@@ -249,8 +300,69 @@ const CustomerRewardsPage: React.FC = () => {
             ]}
         />
       </div>
+
+      {/* Manual Reward Modal */}
+      <Modal
+        title="Tạo quà tặng thủ công"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+      >
+        <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleCreateReward}
+            initialValues={{
+                gift_description: "Quà tặng tri ân",
+                manual_deduct: true
+            }}
+        >
+            <Form.Item label="Khách hàng" name="customer_name">
+                <Input disabled />
+            </Form.Item>
+
+            <Form.Item 
+                label="Mô tả quà tặng" 
+                name="gift_description"
+                rules={[{ required: true, message: 'Vui lòng nhập mô tả quà tặng' }]}
+            >
+                <Input placeholder="Ví dụ: 1 bao phân DAP, Bộ ấm trà..." />
+            </Form.Item>
+
+            <Form.Item label="Giá trị quà tặng (đ)" name="gift_value">
+                <InputNumber 
+                    style={{ width: '100%' }} 
+                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={value => value!.replace(/\$\s?|(,*)/g, '')}
+                />
+            </Form.Item>
+
+            <Form.Item label="Ghi chú" name="notes">
+                <Input.TextArea rows={3} placeholder="Nhập ghi chú chi tiết nếu có" />
+            </Form.Item>
+
+            <Form.Item name="manual_deduct" valuePropName="checked">
+                <Checkbox>
+                    Khấu trừ {formatCurrency(threshold)} từ số tiền tích lũy hiện tại
+                </Checkbox>
+            </Form.Item>
+
+            <div className="flex justify-end gap-2 mt-4">
+                <Button onClick={() => setIsModalOpen(false)}>Hủy</Button>
+                <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={createRewardMutation.isPending}
+                    className="bg-amber-500 border-none"
+                >
+                    Xác nhận tặng quà
+                </Button>
+            </div>
+        </Form>
+      </Modal>
     </div>
   )
 }
 
 export default CustomerRewardsPage
+
