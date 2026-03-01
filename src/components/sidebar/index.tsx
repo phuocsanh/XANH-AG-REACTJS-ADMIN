@@ -22,6 +22,7 @@ import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
 import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch, MdAutoAwesome } from "react-icons/md"
+import { GiftOutlined } from "@ant-design/icons"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
@@ -148,6 +149,11 @@ const Sidebar: React.FC = () => {
     // Công nợ
     else if (path.startsWith('/debt-notes')) {
       setActiveTab(21)
+      setIsToggleSubmenu(false)
+    }
+    // Chăm sóc khách hàng
+    else if (path.startsWith('/customer-rewards')) {
+      setActiveTab(43)
       setIsToggleSubmenu(false)
     }
     // Trả hàng
@@ -522,6 +528,23 @@ const Sidebar: React.FC = () => {
                         <RiFileListLine className='text-red-200' />
                       </span>
                       Công nợ
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {/* Chăm sóc khách hàng */}
+              {hasPermission(userInfo, "sales:read") && (
+                <li>
+                  <Link to='/customer-rewards'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 43 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(43)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <GiftOutlined className='text-gold-200' />
+                      </span>
+                      Chăm sóc khách hàng
                     </Button>
                   </Link>
                 </li>

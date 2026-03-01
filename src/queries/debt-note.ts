@@ -155,7 +155,7 @@ export const useDeleteDebtNoteMutation = () => {
  */
 export const useRewardPreviewQuery = (debtNoteId: number) => {
   return useQuery({
-    queryKey: [...debtNoteKeys.detail(debtNoteId), 'reward-preview'] as const,
+    queryKey: ['customer-reward-preview', debtNoteId],
     queryFn: async () => {
       const response = await api.get<{
         customer: {
@@ -169,8 +169,16 @@ export const useRewardPreviewQuery = (debtNoteId: number) => {
           debt_amount: number
           paid_amount: number
           remaining_amount: number
+          status: string
         }
-        accumulation_history: unknown[]
+        accumulation_history: Array<{
+          id: number
+          season_name: string
+          amount: number
+          closed_at: string
+          reward_given: boolean
+          reward_count: number
+        }>
         summary: {
           previous_pending: number
           current_debt: number
@@ -180,9 +188,17 @@ export const useRewardPreviewQuery = (debtNoteId: number) => {
           remaining_amount: number
           shortage_to_next: number
           will_receive_reward: boolean
+          current_status: string
         }
-        previous_rewards: unknown[]
-      }>(`/debt-notes/${debtNoteId}/reward-preview`)
+        previous_rewards: Array<{
+          id: number
+          reward_date: string
+          accumulated_amount: number
+          gift_description: string
+          gift_value: number
+          season_names: string[]
+        }>
+      }>(`/customer-rewards/preview/${debtNoteId}`)
       return response
     },
     enabled: !!debtNoteId && debtNoteId > 0,
@@ -230,6 +246,42 @@ export const useCloseSeasonDebtNoteMutation = () => {
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi chốt sổ công nợ")
+    },
+  })
+}
+
+/**
+ * Hook tìm kiếm thông tin tích lũy khách hàng
+ */
+export const useRewardTrackingQuery = (params?: Record<string, unknown>) => {
+  return useQuery({
+    queryKey: ['reward-tracking', params],
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        items: any[]
+        total: number
+        page: number
+        limit: number
+      }>('/customer-rewards/tracking', params || {})
+      return response
+    },
+  })
+}
+
+/**
+ * Hook tìm kiếm lịch sử quà tặng
+ */
+export const useRewardHistoryQuery = (params?: Record<string, unknown>) => {
+  return useQuery({
+    queryKey: ['reward-history', params],
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        items: any[]
+        total: number
+        page: number
+        limit: number
+      }>('/customer-rewards/history', params || {})
+      return response
     },
   })
 }

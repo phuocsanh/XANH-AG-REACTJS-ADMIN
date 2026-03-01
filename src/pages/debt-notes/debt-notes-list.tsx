@@ -391,7 +391,16 @@ const DebtNotesList: React.FC = () => {
               Thanh toán
             </Button>
           )}
-          {record.status !== 'settled' && (
+          {record.status === 'settled' ? (
+            <Button 
+              type="link" 
+              size="small"
+              icon={<GiftOutlined />}
+              onClick={() => handleOpenCloseSeasonModal(record)}
+            >
+              Xem chi tiết
+            </Button>
+          ) : (
             <Button 
               type="default" 
               size="small"

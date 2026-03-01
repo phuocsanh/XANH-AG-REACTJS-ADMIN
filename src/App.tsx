@@ -64,6 +64,7 @@ import CreateSalesInvoice from "./pages/sales-invoices/create"
 import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
+import CustomerRewardsPage from "./pages/customer-rewards"
 import CreateDeliveryLog from "./pages/delivery-logs/create"
 import DeliveryLogsList from "./pages/delivery-logs"
 import DeliveryLogDetail from "./pages/delivery-logs/detail"
@@ -628,6 +629,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="sales:read">
                           <DebtNotesList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/customer-rewards'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <CustomerRewardsPage />
                         </ProtectedRoute>
                       }
                     />

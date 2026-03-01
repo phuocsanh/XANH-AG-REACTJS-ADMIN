@@ -13,6 +13,9 @@ import {
   Spin,
   Alert,
   Divider,
+  Table,
+  Tabs,
+  Typography,
 } from 'antd';
 import { GiftOutlined } from '@ant-design/icons';
 import NumberInput from '@/components/common/number-input';
@@ -93,16 +96,62 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
   const summary = previewData?.summary;
   const customer = previewData?.customer;
   const currentSeason = previewData?.current_season;
+  const isSettled = currentSeason?.status === 'settled';
+
+  // Định nghĩa cột cho bảng lịch sử tích lũy
+  const accumulationColumns = [
+    { title: 'Vụ mùa', dataIndex: 'season_name', key: 'season_name' },
+    { 
+      title: 'Doanh số vụ', 
+      dataIndex: 'amount', 
+      key: 'amount',
+      render: (val: number) => formatCurrency(val)
+    },
+    { 
+      title: 'Ngày chốt', 
+      dataIndex: 'closed_at', 
+      key: 'closed_at',
+      render: (val: string) => val ? new Date(val).toLocaleDateString('vi-VN') : '-'
+    },
+    {
+      title: 'Quà tặng',
+      key: 'reward',
+      render: (record: any) => record.reward_given ? <Tag color="gold">Đã nhận ({record.reward_count})</Tag> : <Tag>Chưa đạt mốc</Tag>
+    }
+  ];
+
+  // Định nghĩa cột cho bảng lịch sử quà tặng
+  const rewardColumns = [
+    { 
+      title: 'Ngày nhận', 
+      dataIndex: 'reward_date', 
+      key: 'reward_date',
+      render: (val: string) => new Date(val).toLocaleDateString('vi-VN')
+    },
+    { title: 'Mô tả quà', dataIndex: 'gift_description', key: 'gift_description' },
+    { 
+      title: 'Giá trị', 
+      dataIndex: 'gift_value', 
+      key: 'gift_value',
+      render: (val: number) => val > 0 ? formatCurrency(val) : '-'
+    },
+    { 
+      title: 'Mốc tích lũy', 
+      dataIndex: 'accumulated_amount', 
+      key: 'accumulated_amount',
+      render: (val: number) => formatCurrency(val)
+    },
+  ];
 
   return (
     <Modal
-      title="Chốt sổ Công nợ cuối vụ"
+      title={isSettled ? "Chi tiết tích lũy & Quà tặng" : "Chốt sổ Công nợ cuối vụ"}
       open={open}
       onCancel={onClose}
-      onOk={handleSubmit}
-      okText="Xác nhận chốt sổ"
-      cancelText="Hủy"
-      width={700}
+      onOk={isSettled ? onClose : handleSubmit}
+      okText={isSettled ? "Đóng" : "Xác nhận chốt sổ"}
+      cancelButtonProps={{ style: { display: isSettled ? 'none' : 'inline-block' } }}
+      width={800}
       confirmLoading={closeSeasonMutation.isPending}
     >
       {isLoading ? (
@@ -142,126 +191,111 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
             </Descriptions.Item>
           </Descriptions>
 
-          <Divider orientation="left">📊 Thông tin tích lũy</Divider>
+          {/* Tabs Lịch sử */}
+          <Tabs defaultActiveKey="1" items={[
+            {
+              key: '1',
+              label: 'Vụ mùa hiện tại',
+              children: (
+                <Descriptions bordered size="small" column={1}>
+                  <Descriptions.Item label="Công nợ vụ này">
+                    <strong style={{ color: '#1890ff' }}>{formatCurrency(currentSeason?.debt_amount || 0)}</strong>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Khách đã trả">{formatCurrency(currentSeason?.paid_amount || 0)}</Descriptions.Item>
+                  <Descriptions.Item label="Còn nợ thực tế">{formatCurrency(currentSeason?.remaining_amount || 0)}</Descriptions.Item>
+                  <Descriptions.Item label="Đã tích lũy cũ">{formatCurrency(summary?.previous_pending || 0)}</Descriptions.Item>
+                  <Descriptions.Item label="Tổng tích lũy hiện tại">
+                    <strong style={{ fontSize: 16, color: '#1890ff' }}>{formatCurrency((summary?.previous_pending || 0) + (currentSeason?.debt_amount || 0))}</strong>
+                  </Descriptions.Item>
+                </Descriptions>
+              )
+            },
+            {
+              key: '2',
+              label: `Lịch sử các vụ (${previewData?.accumulation_history?.length || 0})`,
+              children: (
+                <Table 
+                  dataSource={previewData?.accumulation_history} 
+                  columns={accumulationColumns} 
+                  pagination={{ pageSize: 5 }} 
+                  size="small" 
+                  rowKey="id"
+                />
+              )
+            },
+            {
+              key: '3',
+              label: `Lịch sử quà tặng (${previewData?.previous_rewards?.length || 0})`,
+              children: (
+                <Table 
+                  dataSource={previewData?.previous_rewards} 
+                  columns={rewardColumns} 
+                  pagination={{ pageSize: 5 }} 
+                  size="small" 
+                  rowKey="id"
+                />
+              )
+            }
+          ]} />
 
-          {/* Thông tin tích lũy */}
-          <Descriptions bordered size="small" column={1}>
-            <Descriptions.Item label="Đã tích lũy trước đó">
-              {formatCurrency(summary?.previous_pending || 0)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Công nợ vụ này">
-              {formatCurrency(summary?.current_debt || 0)}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tổng tích lũy">
-              <strong style={{ fontSize: 16, color: '#1890ff' }}>
-                {formatCurrency(summary?.total_after_close || 0)}
-              </strong>
-            </Descriptions.Item>
-            <Descriptions.Item label="Mốc tặng quà">
-              {formatCurrency(summary?.reward_threshold || 60000000)}
-            </Descriptions.Item>
-          </Descriptions>
-
-          {/* Kết quả */}
-          {summary?.will_receive_reward ? (
-            <Alert
-              message={
-                summary?.reward_count && summary.reward_count > 1
-                  ? `🎉🎉 ĐẠT ${summary.reward_count} MỐC TẶNG QUÀ!`
-                  : '🎉 ĐẠT MỐC TẶNG QUÀ!'
-              }
-              description={
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div>
-                    <strong>Số lần tặng quà:</strong>{' '}
-                    <Tag color="success" style={{ fontSize: 14 }}>
-                      {summary?.reward_count} lần
-                      {summary?.reward_count && summary.reward_count > 1 && ' (gấp đôi!)'}
-                    </Tag>
-                  </div>
-                  <div>
-                    <strong>Số dư chuyển sang (Gợi ý):</strong>{' '}
-                    <span style={{ color: '#faad14' }}>
-                      {formatCurrency(summary?.remaining_amount || 0)}
-                    </span>
-                  </div>
-                  <div>
-                    <strong>Còn thiếu để đạt mốc tiếp:</strong>{' '}
-                    {formatCurrency(summary?.shortage_to_next || 0)}
-                  </div>
-                </Space>
-              }
-              type="success"
-              showIcon
-              icon={<GiftOutlined />}
-            />
-          ) : (
-            <Alert
-              message="Chưa đủ mốc tặng quà"
-              description={
-                <Space direction="vertical">
-                  <div>
-                    <strong>Số dư chuyển sang (Gợi ý):</strong>{' '}
-                    {formatCurrency(summary?.remaining_amount || 0)}
-                  </div>
-                  <div>
-                    <strong>Còn thiếu:</strong>{' '}
-                    <span style={{ color: '#ff4d4f' }}>
-                      {formatCurrency(summary?.shortage_to_next || 0)}
-                    </span>{' '}
-                    nữa để đạt mốc tặng quà
-                  </div>
-                </Space>
-              }
-              type="warning"
-              showIcon
-            />
+          {/* Kết quả Alert */}
+          {!isSettled && (
+            summary?.will_receive_reward ? (
+              <Alert
+                message={summary?.reward_count && summary.reward_count > 1 ? `🎉🎉 ĐẠT ${summary.reward_count} MỐC TẶNG QUÀ!` : '🎉 ĐẠT MỐC TẶNG QUÀ!'}
+                description={
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div>
+                      <strong>Số lần tặng quà:</strong> <Tag color="success">{summary?.reward_count} lần</Tag>
+                    </div>
+                    <div>
+                      <strong>Số dư chuyển sang (Gợi ý):</strong> <span style={{ color: '#faad14' }}>{formatCurrency(summary?.remaining_amount || 0)}</span>
+                    </div>
+                  </Space>
+                }
+                type="success"
+                showIcon
+                icon={<GiftOutlined />}
+              />
+            ) : (
+              <Alert
+                message="Chưa đủ mốc tặng quà"
+                description={`Còn thiếu ${formatCurrency(summary?.shortage_to_next || 0)} nữa để đạt mốc ${formatCurrency(summary?.reward_threshold || 60000000)}`}
+                type="warning"
+                showIcon
+              />
+            )
           )}
 
-          {/* Form quà tặng - Luôn hiển thị để cho phép tặng quà ngoại lệ */}
-          <Divider orientation="left">🎁 Thông tin chốt sổ & Quà tặng</Divider>
-          <Form form={form} layout="vertical">
-            {summary?.will_receive_reward && (
+          {/* Form tặng quà (Chỉ hiện khi chưa chốt) */}
+          {!isSettled ? (
+            <>
+              <Divider orientation="left">🎁 Thông tin chốt sổ & Quà tặng</Divider>
+              <Form form={form} layout="vertical">
+                <Form.Item label="Số dư tích lũy chuyển sang vụ sau" name="manual_remaining_amount">
+                  <NumberInput placeholder="Nhập số tiền chuyển sang" addonAfter="VND" />
+                </Form.Item>
+                <Form.Item label="Mô tả quà tặng" name="gift_description" rules={[{ required: summary?.will_receive_reward, message: 'Vui lòng nhập mô tả quà tặng' }]}>
+                  <Input placeholder="VD: 1 bao phân DAP 50kg" />
+                </Form.Item>
+                <Form.Item label="Giá trị quà tặng" name="gift_value">
+                  <NumberInput placeholder="Nhập giá trị quà tặng" addonAfter="VND" />
+                </Form.Item>
+                <Form.Item label="Ghi chú" name="notes">
+                  <TextArea rows={2} placeholder="Ghi chú thêm (nếu có)" />
+                </Form.Item>
+              </Form>
+            </>
+          ) : (
+            currentSeason?.status === 'settled' && (
               <Alert 
-                  message="Khách hàng đủ điều kiện nhận quà theo chính sách tích lũy" 
-                  type="info" 
-                  showIcon 
-                  style={{ marginBottom: 16 }} 
+                message="Phiếu này đã được chốt sổ" 
+                description="Bạn có thể xem lại lịch sử quà tặng và tích lũy ở các tab phía trên."
+                type="info"
+                showIcon
               />
-            )}
-            
-            <Form.Item
-              label="Số dư tích lũy chuyển sang vụ sau"
-              name="manual_remaining_amount"
-              tooltip="Số tiền này sẽ được dùng để cộng dồn vào doanh số của vụ tiếp theo."
-            >
-              <NumberInput
-                placeholder="Nhập số tiền chuyển sang"
-                addonAfter="VND"
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Mô tả quà tặng"
-              name="gift_description"
-              rules={[
-                { required: summary?.will_receive_reward, message: 'Vui lòng nhập mô tả quà tặng' },
-              ]}
-            >
-              <Input placeholder="VD: 1 bao phân DAP 50kg" />
-            </Form.Item>
-
-            <Form.Item label="Giá trị quà tặng" name="gift_value">
-              <NumberInput
-                placeholder="Nhập giá trị quà tặng"
-                addonAfter="VND"
-              />
-            </Form.Item>
-
-            <Form.Item label="Ghi chú" name="notes">
-              <TextArea rows={2} placeholder="Ghi chú thêm (nếu có)" />
-            </Form.Item>
-          </Form>
+            )
+          )}
         </Space>
       )}
     </Modal>
