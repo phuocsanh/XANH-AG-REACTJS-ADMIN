@@ -28,6 +28,7 @@ import {
   SearchOutlined,
   GiftOutlined,
   CarOutlined,
+  CarryOutOutlined,
   SettingOutlined,
   PieChartOutlined,
   DashboardOutlined,
@@ -304,7 +305,16 @@ const ProfitReportsPage: React.FC = () => {
               <Col xs={12} sm={12} md={8} lg={4}>
                 <ReportStatCard
                   title="Chi phí Dịch vụ"
-                  value={seasonProfit.summary?.farm_service_costs || 0}
+                  value={seasonProfit.summary?.service_costs || 0}
+                  icon={<CarryOutOutlined />}
+                  color="blue"
+                />
+              </Col>
+
+              <Col xs={12} sm={12} md={8} lg={4}>
+                <ReportStatCard
+                  title="Chi phí Quà tặng"
+                  value={seasonProfit.summary?.gift_costs || 0}
                   icon={<GiftOutlined />}
                   color="red"
                 />
@@ -368,10 +378,20 @@ const ProfitReportsPage: React.FC = () => {
             {/* Bảng chi tiết chi phí */}
             <Row gutter={[16, 16]} className="mb-6">
               <Col xs={24} lg={12}>
-                <Card title="🎁 Chi phí Dịch vụ/Quà tặng" size="small">
+                <Card title="💸 Chi phí Dịch vụ & Quà tặng" size="small">
                   <Table
                     columns={[
                       { title: 'Tên', dataIndex: 'name', key: 'name' },
+                      { 
+                        title: 'Loại', 
+                        dataIndex: 'type', 
+                        key: 'type',
+                        width: 100,
+                        render: (type) => {
+                          const isGift = type.includes('reward') || type === 'gift_from_invoice';
+                          return <Tag color={isGift ? 'red' : 'blue'}>{isGift ? 'Quà tặng' : 'Dịch vụ'}</Tag>
+                        }
+                      },
                       { 
                         title: 'Số tiền', 
                         dataIndex: 'amount', 
@@ -691,7 +711,16 @@ const ProfitReportsPage: React.FC = () => {
               <Col xs={12} sm={12} md={8} lg={4}>
                 <ReportStatCard
                   title="Chi phí Dịch vụ"
-                  value={riceCropProfit.summary?.farm_service_costs || 0}
+                  value={riceCropProfit.summary?.service_costs || 0}
+                  icon={<CarryOutOutlined />}
+                  color="blue"
+                />
+              </Col>
+
+              <Col xs={12} sm={12} md={8} lg={4}>
+                <ReportStatCard
+                  title="Chi phí Quà tặng"
+                  value={riceCropProfit.summary?.gift_costs || 0}
                   icon={<GiftOutlined />}
                   color="red"
                 />
@@ -732,10 +761,20 @@ const ProfitReportsPage: React.FC = () => {
             <Row gutter={[16, 16]} className="mb-6">
               {riceCropProfit.farm_service_costs_breakdown && riceCropProfit.farm_service_costs_breakdown.length > 0 && (
                 <Col xs={24} lg={12}>
-                  <Card title="🎁 Chi phí Dịch vụ/Quà tặng" size="small">
+                  <Card title="💸 Chi phí Dịch vụ & Quà tặng" size="small">
                     <Table
                       columns={[
                         { title: 'Tên', dataIndex: 'name', key: 'name' },
+                        { 
+                          title: 'Loại', 
+                          dataIndex: 'source', 
+                          key: 'source',
+                          width: 100,
+                          render: (source) => {
+                            const isGift = (source || '').includes('reward') || source === 'gift_from_invoice';
+                            return <Tag color={isGift ? 'red' : 'blue'}>{isGift ? 'Quà tặng' : 'Dịch vụ'}</Tag>
+                          }
+                        },
                         { 
                           title: 'Số tiền', 
                           dataIndex: 'amount', 
@@ -747,12 +786,6 @@ const ProfitReportsPage: React.FC = () => {
                           dataIndex: 'date', 
                           key: 'date',
                           render: (date) => new Date(date!).toLocaleDateString('vi-VN')
-                        },
-                        { 
-                          title: 'Nguồn', 
-                          dataIndex: 'source', 
-                          key: 'source',
-                          render: (source) => source === 'gift_from_invoice' ? 'Quà tặng HĐ' : 'Nhập tay'
                         },
                       ]}
                       dataSource={riceCropProfit.farm_service_costs_breakdown || []}
@@ -1130,31 +1163,39 @@ const ProfitReportsPage: React.FC = () => {
                       secondaryTitle="Tỷ suất TB"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6}>
+                  <Col xs={12} sm={12} md={6} lg={4}>
                     <ReportStatCard
-                      title="Giao hàng"
+                      title="Chi phí Giao hàng"
                       value={customerProfit.lifetime_summary.delivery_costs || 0}
                       icon={<CarOutlined />}
                       color="orange"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6}>
+                  <Col xs={12} sm={12} md={6} lg={4}>
                     <ReportStatCard
-                      title="Dịch vụ"
-                      value={customerProfit.lifetime_summary.farm_service_costs || 0}
+                      title="Chi phí Dịch vụ"
+                      value={customerProfit.lifetime_summary.service_costs || 0}
+                      icon={<CarryOutOutlined />}
+                      color="blue"
+                    />
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={4}>
+                    <ReportStatCard
+                      title="Chi phí Quà tặng"
+                      value={customerProfit.lifetime_summary.gift_costs || 0}
                       icon={<GiftOutlined />}
                       color="red"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6}>
+                  <Col xs={12} sm={12} md={6} lg={4}>
                     <ReportStatCard
-                      title="Vận hành"
+                      title="Chi phí Vận hành"
                       value={customerProfit.lifetime_summary.operating_costs || 0}
                       icon={<SettingOutlined />}
                       color="purple"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={12}>
+                  <Col xs={24} sm={24} md={12} lg={8}>
                     <ReportStatCard
                       title="LỢI NHUẬN RÒNG TRỌN ĐỜI"
                       value={customerProfit.lifetime_summary.net_profit || 0}
@@ -1200,7 +1241,7 @@ const ProfitReportsPage: React.FC = () => {
                       secondaryTitle="Tỷ suất"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6}>
+                  <Col xs={12} sm={12} md={6} lg={4}>
                     <ReportStatCard
                       title="Giao hàng"
                       value={customerProfit.current_season_summary.delivery_costs || 0}
@@ -1208,23 +1249,31 @@ const ProfitReportsPage: React.FC = () => {
                       color="orange"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6}>
+                  <Col xs={12} sm={12} md={6} lg={4}>
                     <ReportStatCard
-                      title="Dịch vụ"
-                      value={customerProfit.current_season_summary.farm_service_costs || 0}
+                      title="Chi phí Dịch vụ"
+                      value={customerProfit.current_season_summary.service_costs || 0}
+                      icon={<CarryOutOutlined />}
+                      color="blue"
+                    />
+                  </Col>
+                  <Col xs={12} sm={12} md={6} lg={4}>
+                    <ReportStatCard
+                      title="Chi phí Quà tặng"
+                      value={customerProfit.current_season_summary.gift_costs || 0}
                       icon={<GiftOutlined />}
                       color="red"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6}>
+                  <Col xs={12} sm={12} md={6} lg={4}>
                     <ReportStatCard
-                      title="Vận hành"
+                      title="Chi phí Vận hành"
                       value={customerProfit.current_season_summary.operating_costs || 0}
                       icon={<SettingOutlined />}
                       color="purple"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={12}>
+                  <Col xs={24} sm={24} md={12} lg={8}>
                     <ReportStatCard
                       title="LỢI NHUẬN RÒNG VỤ NÀY"
                       value={customerProfit.current_season_summary.net_profit || 0}
@@ -1237,8 +1286,47 @@ const ProfitReportsPage: React.FC = () => {
               </div>
             )}
 
+            {/* Bảng chi tiết chi phí */}
+            {customerProfit.farm_service_costs_breakdown && customerProfit.farm_service_costs_breakdown.length > 0 && (
+              <Card title="💸 Chi phí Dịch vụ & Quà tặng" className="mb-6" size="small">
+                <Table
+                  columns={[
+                    { title: 'Tên', dataIndex: 'name', key: 'name' },
+                    { 
+                      title: 'Loại', 
+                      dataIndex: 'type', 
+                      key: 'type',
+                      width: 120,
+                      render: (type) => {
+                        const isGift = (type || '').includes('reward') || type === 'gift_from_invoice';
+                        return <Tag color={isGift ? 'red' : 'blue'}>{isGift ? 'Quà tặng' : 'Dịch vụ'}</Tag>
+                      }
+                    },
+                    { 
+                      title: 'Số tiền', 
+                      dataIndex: 'amount', 
+                      key: 'amount',
+                      width: 160,
+                      render: (val) => formatCurrency(val)
+                    },
+                    { 
+                      title: 'Ngày', 
+                      dataIndex: 'date', 
+                      key: 'date',
+                      width: 130,
+                      render: (date) => new Date(date).toLocaleDateString('vi-VN')
+                    },
+                  ]}
+                  dataSource={customerProfit.farm_service_costs_breakdown}
+                  pagination={{ pageSize: 5 }}
+                  size="small"
+                  scroll={{ x: true }}
+                />
+              </Card>
+            )}
+
             {/* Bảng danh sách hóa đơn */}
-            <Card title="Danh sách Hóa đơn">
+            <Card title="📄 Danh sách Hóa đơn">
               <Table
                 columns={[
                   {

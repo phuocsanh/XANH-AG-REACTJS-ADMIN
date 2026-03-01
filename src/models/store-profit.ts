@@ -97,6 +97,8 @@ export interface ProfitSummary {
   gross_margin: number;
   delivery_costs: number;     // Tổng chi phí giao hàng
   farm_service_costs: number;  // Chi phí dịch vụ/quà tặng cho nông dân
+  service_costs: number;       // Chi phí dịch vụ
+  gift_costs: number;          // Chi phí quà tặng
   operating_costs: number;     // Chi phí vận hành cửa hàng (điện, nước, mặt bằng...)
   net_profit: number;          // Lợi nhuận ròng
   net_margin: number;
@@ -130,6 +132,8 @@ export interface CustomerSummaryStats {
   avg_margin: number;
   delivery_costs: number;
   farm_service_costs: number;
+  service_costs: number;
+  gift_costs: number;
   operating_costs: number;
   net_profit: number;
   season_name?: string;
@@ -182,6 +186,13 @@ export interface CustomerProfitReport {
 
   invoices: CustomerInvoice[];
   by_season: CustomerSeasonSummary[];
+  farm_service_costs_breakdown: {
+    name: string;
+    amount: number;
+    type?: string;
+    date?: string;
+    notes?: string;
+  }[];
 }
 
 // ==================== Lợi Nhuận Ruộng lúa (Rice Crop) ====================
@@ -200,6 +211,8 @@ export interface RiceCropProfit {
     
     // Chi phí dịch vụ/quà tặng của cửa hàng dành cho ruộng lúa
     farm_service_costs: number;
+    service_costs: number;
+    gift_costs: number;
     operating_costs: number; // Chi phí vận hành gán cho ruộng
     delivery_costs?: number; // Chi phí giao hàng cho ruộng (đã đổi tên)
     delivery_cost?: number;  // Legacy (bỏ qua nếu không dùng)
