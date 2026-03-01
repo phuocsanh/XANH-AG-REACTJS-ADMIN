@@ -194,7 +194,14 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             )}
           {product.mechanism && (
             <Descriptions.Item label='Cơ chế tác động'>
-              {product.mechanism}
+              <div 
+                dangerouslySetInnerHTML={{ __html: product.mechanism }}
+                style={{ 
+                  maxHeight: '200px', 
+                  overflowY: 'auto',
+                  wordBreak: 'break-word'
+                }}
+              />
             </Descriptions.Item>
           )}
           {(product.unit || product.unit_id) && (

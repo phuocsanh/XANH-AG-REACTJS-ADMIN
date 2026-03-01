@@ -182,6 +182,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   const [description, setDescription] = useState("")
   const [notes, setNotes] = useState("") // State cho Ghi chú (rich text)
+  const [mechanism, setMechanism] = useState("") // State cho Cơ chế tác động (rich text)
 
   // State cho tính năng kiểm tra trùng tên sản phẩm
   const [duplicateProducts, setDuplicateProducts] = useState<Product[]>([])
@@ -220,8 +221,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const productItemData = productData && 'data' in (productData as any) ? (productData as any).data : productData;
   const isFormDirty = isDirty || 
     (isEdit && productItemData ? 
-      (description !== (productItemData as any)?.description || notes !== (productItemData as any)?.notes) : 
-      (description !== "" || (notes !== "" && notes !== "<p></p>"))
+      (description !== (productItemData as any)?.description || notes !== (productItemData as any)?.notes || mechanism !== (productItemData as any)?.mechanism) : 
+      (description !== "" || (notes !== "" && notes !== "<p></p>") || (mechanism !== "" && mechanism !== "<p></p>"))
     );
 
   const { confirmExit } = useFormGuard(isFormDirty && !isSubmitSuccess);
@@ -296,7 +297,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
           show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
           mechanism: productItem.mechanism || "", // Cơ chế tác động
-          
           unit_conversions: (productItem.unit_conversions || []).map((conv: ProductUnitConversion) => ({
             ...conv,
             unit_id: conv.unit_id ? Number(conv.unit_id) : undefined,
@@ -316,11 +316,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           })),
         } as ProductFormValues)
 
-        // Product type will be watched through watchedType
-
-        // Đặt giá trị cho mô tả và ghi chú
+        // Đặt giá trị cho mô tả, ghi chú và cơ chế tác động
         setDescription(productItem.description || "")
         setNotes(productItem.notes || "")
+        setMechanism(productItem.mechanism || "")
       } catch (error) {
         console.error("Error fetching product:", error)
         message.error("Không thể tải thông tin sản phẩm")
@@ -336,6 +335,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       reset(defaultProductFormValues)
       setDescription("")
       setNotes("")
+      setMechanism("")
     }
   }, [isEdit, productLoading, reset])
 
@@ -572,7 +572,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         taxable_quantity_stock: convertedValues.taxable_quantity_stock,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
-        mechanism: values.mechanism || "",
+        mechanism: mechanism || "",
         unit_conversions: values.unit_conversions || [],
         components: values.components || [],
       }
@@ -1059,18 +1059,21 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                {/* Thêm trường mechanism - Cơ chế tác động */}
-                <div className='w-full'>
-                  <FormField
-                    name='mechanism'
-                    control={control}
-                    label='Cơ chế tác động'
-                    placeholder='Nhập cơ chế tác động của thuốc'
-                    className='w-full'
-                    type="textarea"
-                    rows={3}
-                  />
-                </div>
+                {/* Thêm trường mechanism - Cơ chế tác động (Rich Text) */}
+                <Form.Item
+                  label='Cơ chế tác động'
+                  className='w-full mb-4'
+                  layout='vertical'
+                >
+                  <div className='w-full'>
+                    <TiptapEditor
+                      content={mechanism}
+                      onChange={(content) => {
+                        setMechanism(content)
+                      }}
+                    />
+                  </div>
+                </Form.Item>
 
                 <div className='w-full'>
                   <FormComboBox
