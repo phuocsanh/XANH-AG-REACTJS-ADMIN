@@ -330,7 +330,7 @@ const CustomerRewardsPage: React.FC = () => {
 
   return (
     <div className='p-2 md:p-6'>
-      <div className='flex justify-between items-center mb-6'>
+      <div className='flex justify-start items-center mb-6'>
         <Title level={2}>
             <GiftOutlined className="mr-2" />
             Chăm sóc khách hàng & Quà tặng
