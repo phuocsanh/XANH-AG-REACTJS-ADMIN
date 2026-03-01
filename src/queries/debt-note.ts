@@ -167,6 +167,8 @@ export const useRewardPreviewQuery = (debtNoteId: number) => {
           id: number
           name: string
           debt_amount: number
+          paid_amount: number
+          remaining_amount: number
         }
         accumulation_history: unknown[]
         summary: {
@@ -202,6 +204,7 @@ export const useCloseSeasonDebtNoteMutation = () => {
         gift_description?: string
         gift_value?: number
         notes?: string
+        manual_remaining_amount?: number
       }
     }) => {
       const response = await api.postRaw<{

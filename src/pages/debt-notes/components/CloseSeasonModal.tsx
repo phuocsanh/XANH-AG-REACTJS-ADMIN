@@ -63,6 +63,7 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
           gift_description: values.gift_description,
           gift_value: values.gift_value,
           notes: values.notes,
+          manual_remaining_amount: values.manual_remaining_amount,
         },
       });
 
@@ -79,6 +80,15 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
       form.resetFields();
     }
   }, [open, form]);
+
+  // Set giá trị mặc định cho số dư chuyển sang từ preview
+  useEffect(() => {
+    if (open && previewData?.summary) {
+      form.setFieldsValue({
+        manual_remaining_amount: previewData.summary.remaining_amount,
+      });
+    }
+  }, [open, previewData, form]);
 
   const summary = previewData?.summary;
   const customer = previewData?.customer;
@@ -122,12 +132,12 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
             </Descriptions.Item>
             <Descriptions.Item label="Khách đã trả">
               <strong style={{ color: '#52c41a' }}>
-                {formatCurrency((currentSeason as any)?.paid_amount || 0)}
+                {formatCurrency(currentSeason?.paid_amount || 0)}
               </strong>
             </Descriptions.Item>
             <Descriptions.Item label="Còn nợ thực tế">
               <strong style={{ color: '#ff4d4f' }}>
-                {formatCurrency((currentSeason as any)?.remaining_amount || 0)}
+                {formatCurrency(currentSeason?.remaining_amount || 0)}
               </strong>
             </Descriptions.Item>
           </Descriptions>
@@ -156,7 +166,7 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
           {summary?.will_receive_reward ? (
             <Alert
               message={
-                summary.reward_count > 1
+                summary?.reward_count && summary.reward_count > 1
                   ? `🎉🎉 ĐẠT ${summary.reward_count} MỐC TẶNG QUÀ!`
                   : '🎉 ĐẠT MỐC TẶNG QUÀ!'
               }
@@ -165,19 +175,19 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
                   <div>
                     <strong>Số lần tặng quà:</strong>{' '}
                     <Tag color="success" style={{ fontSize: 14 }}>
-                      {summary.reward_count} lần
-                      {summary.reward_count > 1 && ' (gấp đôi!)'}
+                      {summary?.reward_count} lần
+                      {summary?.reward_count && summary.reward_count > 1 && ' (gấp đôi!)'}
                     </Tag>
                   </div>
                   <div>
-                    <strong>Số dư chuyển sang:</strong>{' '}
+                    <strong>Số dư chuyển sang (Gợi ý):</strong>{' '}
                     <span style={{ color: '#faad14' }}>
-                      {formatCurrency(summary.remaining_amount)}
+                      {formatCurrency(summary?.remaining_amount || 0)}
                     </span>
                   </div>
                   <div>
                     <strong>Còn thiếu để đạt mốc tiếp:</strong>{' '}
-                    {formatCurrency(summary.shortage_to_next)}
+                    {formatCurrency(summary?.shortage_to_next || 0)}
                   </div>
                 </Space>
               }
@@ -191,7 +201,7 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
               description={
                 <Space direction="vertical">
                   <div>
-                    <strong>Số dư chuyển sang:</strong>{' '}
+                    <strong>Số dư chuyển sang (Gợi ý):</strong>{' '}
                     {formatCurrency(summary?.remaining_amount || 0)}
                   </div>
                   <div>
@@ -209,7 +219,7 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
           )}
 
           {/* Form quà tặng - Luôn hiển thị để cho phép tặng quà ngoại lệ */}
-          <Divider orientation="left">🎁 Thông tin quà tặng</Divider>
+          <Divider orientation="left">🎁 Thông tin chốt sổ & Quà tặng</Divider>
           <Form form={form} layout="vertical">
             {summary?.will_receive_reward && (
               <Alert 
@@ -219,6 +229,18 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
                   style={{ marginBottom: 16 }} 
               />
             )}
+            
+            <Form.Item
+              label="Số dư tích lũy chuyển sang vụ sau"
+              name="manual_remaining_amount"
+              tooltip="Số tiền này sẽ được dùng để cộng dồn vào doanh số của vụ tiếp theo."
+            >
+              <NumberInput
+                placeholder="Nhập số tiền chuyển sang"
+                addonAfter="VND"
+              />
+            </Form.Item>
+
             <Form.Item
               label="Mô tả quà tặng"
               name="gift_description"
