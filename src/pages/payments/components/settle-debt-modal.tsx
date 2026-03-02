@@ -189,25 +189,35 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
     )
   }
   
-  // Effect để xóa dữ liệu form khi đóng modal, tránh tình trạng "nhớ" số tiền cũ của khách trước
+  // 🆕 Dùng ref để theo dõi đã auto-fill cho cặp (KH, Mùa vụ) nào chưa
+  const autoFilledKeyRef = React.useRef<string | null>(null);
+
+  // Khi modal đóng/mở, reset key để sẵn sàng auto-fill lại
+  React.useEffect(() => {
+    if (open) {
+      autoFilledKeyRef.current = null;
+    }
+  }, [open]);
+
+  // Effect để xóa dữ liệu form khi đóng modal
   React.useEffect(() => {
     if (!open) {
       form.setFieldValue('amount', 0);
     }
   }, [open, form]);
 
-  // Effect để auto-fill amount khi calculateDebtBySeason thay đổi
+  // Effect để auto-fill amount khi có dữ liệu nợ thực tế
   const debtAmount = calculateDebtBySeason()
   React.useEffect(() => {
-    // Chỉ tự động điền nếu modal đang mở và nợ > 0
-    if (open && debtAmount > 0) {
-      const currentAmount = form.getFieldValue('amount');
-      // Nếu chưa nhập (null/undefined) hoặc đang bằng 0 thì mới tự điền
-      if (currentAmount === undefined || currentAmount === null || currentAmount === 0) {
+    const currentKey = `${customerId}-${selectedSeason}`;
+    
+    // Chỉ tự động điền nếu modal đang mở, có nợ > 0 và CHƯA auto-fill cho Key hiện tại
+    if (open && debtAmount > 0 && autoFilledKeyRef.current !== currentKey) {
         form.setFieldValue('amount', debtAmount);
-      }
+        autoFilledKeyRef.current = currentKey;
+        console.log(`[Auto-fill] Set amount to ${debtAmount} for ${currentKey}`);
     }
-  }, [open, debtAmount, form])
+  }, [open, debtAmount, customerId, selectedSeason, form])
 
 
   const handleSubmit = async () => {
