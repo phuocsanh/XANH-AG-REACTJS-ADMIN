@@ -29,50 +29,37 @@ export const useDebtNotesQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: debtNoteKeys.list(params),
     queryFn: async () => {
-      // Build payload với flat params (không dùng filters array nữa)
-      const payload: Record<string, unknown> = {
-        page,
-        limit,
-      }
+      const payload: Record<string, unknown> = { page, limit }
 
-      // Thêm các flat params từ params (filters từ UI như customer_name, code, status...)
       Object.keys(params || {}).forEach(key => {
         if (!['page', 'limit', 'sort_by', 'sort_direction'].includes(key) && params?.[key] !== undefined && params?.[key] !== null && params?.[key] !== '') {
           payload[key] = params[key]
         }
       })
 
-      // Sort
       if (params?.sort_by) {
-        const field = String(params.sort_by)
-        const dir = String(params.sort_direction || 'DESC')
-        payload.sort = `${field}:${dir}`
+        payload.sort = `${params.sort_by}:${params.sort_direction || 'DESC'}`
       }
 
-      const response = await api.postRaw<{
-        data: DebtNote[]
-        total: number
-        page: number
-        limit: number
-        summary: {
-          total_debt: number
-          overdue_count: number
-          active_count: number
-          paid_count: number
-        }
-      }>('/debt-notes/search', payload)
+      // Interceptor của server sẽ wrap response thành: { success, data, pagination: { total, ... }, summary }
+      // Một số module cũ hoặc server cũ có thể trả total ở root. Ta lấy linh hoạt để luôn đúng.
+      const response = await api.postRaw<any>('/debt-notes/search', payload)
 
-      // Transform response để phù hợp với PaginationResponse format
+      const items = response.data || []
+      const total = response.pagination?.total ?? response.total ?? items.length
+      const currentPage = response.pagination?.page ?? response.page ?? page
+      const currentLimit = response.pagination?.limit ?? response.limit ?? limit
+
       return {
         data: {
-          items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
-          has_prev: response.page > 1,
-          summary: response.summary // Thêm summary vào response
+          items,
+          total,
+          page: currentPage,
+          limit: currentLimit,
+          total_pages: Math.ceil(total / currentLimit),
+          has_next: currentPage * currentLimit < total,
+          has_prev: currentPage > 1,
+          summary: response.summary
         },
         status: 200,
         message: 'Success',
