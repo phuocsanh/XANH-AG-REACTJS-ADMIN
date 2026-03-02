@@ -168,6 +168,7 @@ const CustomerRewardsPage: React.FC = () => {
                 setTrackingPage(1)
             }}
             inputType="text"
+            placeholder="Tìm tên / SĐT..."
         />
       ),
       key: "customer",
@@ -178,23 +179,6 @@ const CustomerRewardsPage: React.FC = () => {
             <Text type="secondary" style={{ fontSize: '12px' }}>{record.customer?.phone}</Text>
         </Space>
       )
-    },
-    {
-      title: (
-        <FilterHeader 
-            title="Số điện thoại" 
-            dataIndex="customer_phone" 
-            value={trackingFilters.customer_phone} 
-            onChange={(val) => {
-                setTrackingFilters(prev => ({ ...prev, customer_phone: val }))
-                setTrackingPage(1)
-            }}
-            inputType="text"
-        />
-      ),
-      key: "phone_filter",
-      width: 150,
-      hidden: true // Ẩn cột này vì đã hiển thị chung ở trên, chỉ dùng header để lọc
     },
     {
       title: `Tiến trình (mốc ${Math.round(threshold / 1000000)}tr)`,
@@ -263,6 +247,7 @@ const CustomerRewardsPage: React.FC = () => {
                   setHistoryPage(1)
               }}
               inputType="text"
+              placeholder="Tìm tên / SĐT..."
           />
         ),
         key: "customer",
@@ -273,23 +258,6 @@ const CustomerRewardsPage: React.FC = () => {
                 <Text type="secondary" style={{ fontSize: '12px' }}>{record.customer?.phone}</Text>
             </Space>
         )
-    },
-    {
-        title: (
-          <FilterHeader 
-              title="Số điện thoại" 
-              dataIndex="customer_phone" 
-              value={historyFilters.customer_phone} 
-              onChange={(val) => {
-                  setHistoryFilters(prev => ({ ...prev, customer_phone: val }))
-                  setHistoryPage(1)
-              }}
-              inputType="text"
-          />
-        ),
-        key: "phone_filter",
-        width: 150,
-        hidden: true
     },
     {
       title: "Ngày nhận",

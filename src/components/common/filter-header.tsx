@@ -11,6 +11,7 @@ interface FilterHeaderProps {
   inputType?: 'text' | 'select' | 'date' | 'combobox';
   options?: { label: string; value: any }[]; // For select input
   comboBoxProps?: Partial<ComboBoxProps>; // For combobox input
+  placeholder?: string; // Tùy chỉnh placeholder cho ô tìm kiếm
 }
 
 const FilterHeader: React.FC<FilterHeaderProps> = ({ 
@@ -19,7 +20,8 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
   onChange, 
   inputType = 'text',
   options,
-  comboBoxProps
+  comboBoxProps,
+  placeholder
 }) => {
   const [innerValue, setInnerValue] = React.useState(value);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -63,7 +65,7 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
       <div className="font-semibold text-gray-700">{title}</div>
       {inputType === 'text' && (
         <Input
-          placeholder={`Tìm ${title}...`}
+          placeholder={placeholder || `Tìm ${title}...`}
           size="small"
           value={innerValue}
           onChange={(e) => handleTextChange(e.target.value)}
