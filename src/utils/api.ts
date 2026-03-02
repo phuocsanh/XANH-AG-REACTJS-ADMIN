@@ -256,7 +256,7 @@ api.instance.interceptors.response.use(
 
     // Kiểm tra nếu response có dữ liệu
     if (!response || !response.data) {
-
+      return response;
     }
 
 

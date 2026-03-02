@@ -26,15 +26,19 @@ export const farmServiceCostKeys = {
 
 /**
  * Hook để tìm kiếm farm service costs
+ * Server trả về: { success, data: [...], pagination: { total, page, limit } }
  */
 export function useFarmServiceCostsQuery(params: SearchFarmServiceCostDto = {}) {
   return useQuery({
     queryKey: farmServiceCostKeys.list(params),
     queryFn: async () => {
-      return await api.postRaw<{ data: FarmServiceCost[]; total: number }>(
+      const res = await api.postRaw<any>(
         '/farm-service-costs/search',
         params as any
       );
+      // Server wrap total vào pagination object
+      const total = res.pagination?.total ?? res.total ?? 0;
+      return { data: res.data || [], total };
     },
   });
 }
@@ -128,15 +132,20 @@ export const farmGiftCostKeys = {
 
 /**
  * Hook để tìm kiếm farm gift costs
+ * Backend: GET /farm-gift-costs (dùng query params)
+ * Server trả về: { success, data: [...], total } hoặc { success, data: [...], pagination: { total } }
  */
 export function useFarmGiftCostsQuery(params: SearchFarmGiftCostDto = {}) {
   return useQuery({
     queryKey: farmGiftCostKeys.list(params),
     queryFn: async () => {
-      return await api.get<{ data: FarmGiftCost[]; total: number }>(
+      const res = await api.get<any>(
         '/farm-gift-costs',
         { params }
       );
+      // Xử lý total từ pagination hoặc root (tuỳ ResponseInterceptor)
+      const total = res?.pagination?.total ?? res?.total ?? 0;
+      return { data: (res?.data || res) as FarmGiftCost[], total };
     },
   });
 }

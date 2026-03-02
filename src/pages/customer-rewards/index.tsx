@@ -433,7 +433,7 @@ const CustomerRewardsPage: React.FC = () => {
                         control={control}
                         label="Ruộng lúa"
                         placeholder="Chọn ruộng lúa"
-                        options={riceCropsData?.data?.map((r: any) => ({
+                        options={riceCropsData?.data?.items?.map((r: any) => ({
                             label: r.field_name,
                             value: r.id
                         })) || []}

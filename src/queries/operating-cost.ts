@@ -17,18 +17,22 @@ export const operatingCostKeys = {
 
 // --- QUERIES ---
 
-// --- QUERIES ---
-
+/**
+ * Hook lấy danh sách chi phí vận hành
+ * Server trả về: { success, data: [...], pagination: { total, page, limit } }
+ * Hook trả về: { data: [...], total, page, limit } để component dùng trực tiếp
+ */
 export const useOperatingCosts = (params: SearchOperatingCostDto) => {
   return useQuery({
     queryKey: operatingCostKeys.list(JSON.stringify(params)),
     queryFn: async () => {
       try {
-          // Use POST search as requested, with plural endpoint
-          const res = await api.postRaw<{ data: OperatingCost[], total: number }>('/operating-costs/search', params as unknown as Record<string, unknown>);
-          return res;
+          const res = await api.postRaw<any>('/operating-costs/search', params as unknown as Record<string, unknown>);
+          // Server wrap total vào pagination, không phải root
+          const total = res.pagination?.total ?? res.total ?? 0;
+          return { data: res.data || [], total };
       } catch (e) {
-          console.error("Failed to fetch operating costs", e);
+          console.error('Failed to fetch operating costs', e);
           throw e;
       }
     },

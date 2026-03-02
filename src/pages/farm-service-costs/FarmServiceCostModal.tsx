@@ -154,7 +154,7 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
   })) || [];
 
   // Tạo options cho rice crops
-  const riceCropOptions = riceCrops?.data?.map((r: any) => ({
+  const riceCropOptions = riceCrops?.data?.items?.map((r: any) => ({
     value: r.id,
     label: `${r.field_name} - ${r.customer?.name}`,
   })) || [];

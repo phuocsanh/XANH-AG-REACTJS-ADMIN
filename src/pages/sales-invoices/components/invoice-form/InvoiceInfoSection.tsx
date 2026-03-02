@@ -15,7 +15,7 @@ interface InvoiceInfoSectionProps {
   setValue: UseFormSetValue<SalesInvoiceFormData>;
   selectedCustomer: any;
   seasons: { data?: { items?: Season[] } } | undefined;
-  customerRiceCrops: { data?: RiceCrop[] } | undefined;
+  customerRiceCrops: { data?: { items: RiceCrop[] } } | undefined;
   isLoadingRiceCrops: boolean;
   latestInvoice: SalesInvoice | null;
   conflictWarning: string | null;
@@ -70,14 +70,14 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
                   Đang tải Danh sách ruộng lúa...
                 </Typography>
               </Box>
-            ) : customerRiceCrops?.data && customerRiceCrops.data.length > 0 ? (
+            ) : customerRiceCrops?.data?.items && customerRiceCrops.data.items.length > 0 ? (
               <FormComboBox
                 name="rice_crop_id"
                 control={control}
                 label="Ruộng lúa"
                 placeholder="Chọn ruộng lúa"
                 required
-                options={customerRiceCrops.data.map((crop: RiceCrop) => ({
+                options={customerRiceCrops.data.items.map((crop: RiceCrop) => ({
                   value: crop.id,
                   label: `${crop.field_name} - ${crop.rice_variety} (${new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(crop.field_area))} m²)`
                 }))}

@@ -186,7 +186,7 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
           items={[
             {
               key: 'service',
-              label: `💸 Chi phí Dịch vụ (${formatCurrency(serviceData?.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0)})`,
+              label: `💸 Chi phí Dịch vụ (${formatCurrency(serviceData?.data?.reduce((sum: number, item: any) => sum + Number(item.amount), 0) || 0)})`,
               children: (
                 <Table
                   columns={columns}
@@ -200,7 +200,7 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
             },
             {
               key: 'gift',
-              label: `🎁 Quà tặng (${formatCurrency(giftData?.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0)})`,
+              label: `🎁 Quà tặng (${formatCurrency(giftData?.data?.reduce((sum: number, item: any) => sum + Number(item.amount), 0) || 0)})`,
               children: (
                 <Table
                   columns={columns}

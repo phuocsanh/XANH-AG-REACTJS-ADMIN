@@ -214,8 +214,8 @@ const FarmServiceCostList: React.FC = () => {
     }
   ];
 
-  const totalService = serviceData?.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-  const totalGift = giftData?.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+  const totalService = serviceData?.data?.reduce((sum: number, item: any) => sum + Number(item.amount), 0) || 0;
+  const totalGift = giftData?.data?.reduce((sum: number, item: any) => sum + Number(item.amount), 0) || 0;
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">

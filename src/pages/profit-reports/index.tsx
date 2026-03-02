@@ -574,7 +574,7 @@ const ProfitReportsPage: React.FC = () => {
   // ==================== TAB 2: THEO Ruộng lúa ====================
   const renderRiceCropReport = () => {
     // Dữ liệu đã được lọc từ Server thông qua useRiceCrops params
-    const filteredRiceCrops = riceCropsData?.data || [];
+    const filteredRiceCrops = riceCropsData?.data?.items || [];
 
     // Columns cho bảng invoices của rice crop
     const invoiceColumns: ColumnsType<any> = [

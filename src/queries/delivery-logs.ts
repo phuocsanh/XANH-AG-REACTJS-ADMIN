@@ -29,24 +29,24 @@ export const useDeliveryLogs = (params: {
   return useQuery<DeliveryLogListResponse>({
     queryKey: deliveryLogKeys.list(params),
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: DeliveryLog[];
-        total: number;
-        page: number;
-        limit: number;
-      }>('/delivery-logs/search', {
+      const response = await api.postRaw<any>('/delivery-logs/search', {
         page: params.page || 1,
         limit: params.limit || 10,
         ...(params.invoiceId && { invoice_id: params.invoiceId }),
         ...(params.status && { status: params.status }),
       });
       
+      // Server wrap total vào pagination object, không phải root
+      const total = response.pagination?.total ?? response.total ?? 0;
+      const page = response.pagination?.page ?? response.page ?? params.page ?? 1;
+      const limit = response.pagination?.limit ?? response.limit ?? params.limit ?? 10;
+      
       return {
-        data: response.data,
-        total: response.total,
-        page: response.page,
-        limit: response.limit,
-        totalPages: Math.ceil(response.total / response.limit),
+        data: response.data || [],
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       };
     },
   });
