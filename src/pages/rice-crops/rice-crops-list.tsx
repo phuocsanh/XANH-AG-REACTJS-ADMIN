@@ -244,11 +244,12 @@ const RiceCropsList: React.FC = () => {
   const isCustomer = userInfo?.role?.code === 'CUSTOMER';
 
   // Queries
-  const { data: cropsData, isLoading } = useRiceCrops({
+  const { data: cropsResponse, isLoading } = useRiceCrops({
       page: currentPage,
       limit: pageSize,
       ...filters
   });
+  const cropsData = cropsResponse?.data;
   // Hooks for customers and seasons are moved to the top
 
   const { data: areasData } = useAreasQuery({ limit: 100 }); // Load danh sách diện tích
@@ -304,9 +305,9 @@ const RiceCropsList: React.FC = () => {
 
   // Lấy  Danh sách ruộng lúa
   const getCropList = (): ExtendedRiceCrop[] => {
-    if (!cropsData?.data) return [];
+    if (!cropsData?.items) return [];
 
-    return cropsData.data.map((crop: RiceCrop) => ({
+    return cropsData.items.map((crop: RiceCrop) => ({
       ...crop,
       key: crop.id.toString(),
     }));

@@ -5,6 +5,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { handleApiError } from "@/utils/error-handler"
 import api from '@/utils/api';
+import { mapSearchResponse } from "@/utils/api-response-mapper";
 import type {
   RiceCrop,
   CreateRiceCropDto,
@@ -44,17 +45,9 @@ export const useRiceCrops = (params?: Record<string, unknown>, options?: { enabl
         ...params
       }
 
-      const response = await api.postRaw<{
-        data: RiceCrop[]
-        total: number
-        page: number
-        limit: number
-      }>('/rice-crops/search', searchBody)
+      const response = await api.postRaw<any>('/rice-crops/search', searchBody)
 
-      return {
-          data: response.data || [],
-          total: response.total || 0
-      }
+      return mapSearchResponse<RiceCrop>(response, page, limit)
     },
     enabled: options?.enabled,
   });
@@ -100,12 +93,7 @@ export const searchRiceCropsApi = async ({
       searchDto.keyword = search.trim()
     }
 
-    const response = await api.postRaw<{
-      data: RiceCrop[]
-      total: number
-      page: number
-      limit: number
-    }>('/rice-crops/search', searchDto)
+    const response = await api.postRaw<any>('/rice-crops/search', searchDto)
 
     // Chuyển đổi dữ liệu sang format của ComboBox
     const mappedData = (response.data || []).map((crop: RiceCrop) => ({
@@ -114,7 +102,7 @@ export const searchRiceCropsApi = async ({
       label: `${crop.field_name} - ${crop.customer?.name || 'N/A'}`,
     }))
 
-    const total = response.total || mappedData.length
+    const total = response.pagination?.total || response.total || mappedData.length
     const currentPage = response.page || page
     const currentLimit = response.limit || limit
     const hasMore = total > currentPage * currentLimit
