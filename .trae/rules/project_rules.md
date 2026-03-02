@@ -1,8 +1,11 @@
-- Luôn kiểm lỗi eslint và typescript sau khi code xong 1 file hoặc 1 chức năng.
+- Luôn kiểm lỗi typescript và eslint sau khi code xong 1 file hoặc 1 chức năng.
+- Luôn xem xét cấu trúc dự án có sẵn, không nên tạo file hoặc folder mới khi không có lý do cụ thể.
+- Luôn nói tiếng việt với tôi
+- Bám sát cấu trúc dự án, không nên thay đổi cấu trúc dự án khi không có lý do cụ thể.
 - Luôn tìm kiếm giải pháp tốt nhất trước khi thực hiện 1 chức năng theo yêu cầu.
 - Luôn comment code bằng tiếng việt chức năng của file, hàm, code hay biến.
-- Luôn xem xét cấu trúc dự án có sẵn, không nên tạo file hoặc folder mới khi không có lý do cụ thể.
-- Bám sát cấu trúc dự án, không nên thay đổi cấu trúc dự án khi không có lý do cụ thể.
 - Hàm, code, hay file nào sau khi thêm chức năng mới hoặc chỉnh sửa xong mà không dùng nữa xóa đi.
-- folder modules là code của backend copy qua đẻ tham khảo triển khai cho fontend, không nên chỉnh sửa code trong folder này.
-- Không sửa gì trong modules của back-end
+- Code có thể có component ở mobile nữa nên để ý code cả dạng desktop mobile luôn chỉ làm nếu code của font-end
+
+- Ưu tiên dùng các component viết sẵn trong /Users/phuocsanh/My-Document/My-Tech/Xanh-AG-Source/XANH-AG-REACTJS-ADMIN/src/components
+- Tôi đang dùng nvm
