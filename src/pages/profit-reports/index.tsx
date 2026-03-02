@@ -751,14 +751,6 @@ const ProfitReportsPage: React.FC = () => {
 
               <Col xs={12} sm={12} md={8} lg={4}>
                 <ReportStatCard
-                  title="Chi phí Vận hành"
-                  value={riceCropProfit.summary?.operating_costs || 0}
-                  icon={<SettingOutlined />}
-                  color="purple"
-                />
-              </Col>
-              <Col xs={12} sm={12} md={8} lg={4}>
-                <ReportStatCard
                   title="LỢI NHUẬN RÒNG"
                   value={riceCropProfit.summary?.net_profit || 0}
                   icon={<PieChartOutlined />}
@@ -773,7 +765,7 @@ const ProfitReportsPage: React.FC = () => {
 
             {/* Chi tiết chi phí */}
             <Row gutter={[16, 16]} className="mb-6">
-              <Col xs={24} lg={8}>
+              <Col xs={24} lg={12}>
                 <Card title="📋 Chi phí Dịch vụ" size="small" bodyStyle={{ padding: 0 }}>
                   <Table
                     columns={[
@@ -799,7 +791,7 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
 
-              <Col xs={24} lg={8}>
+              <Col xs={24} lg={12}>
                 <Card title="🎁 Quà tặng" size="small" bodyStyle={{ padding: 0 }}>
                   <Table
                     columns={[
@@ -825,31 +817,7 @@ const ProfitReportsPage: React.FC = () => {
                 </Card>
               </Col>
 
-              <Col xs={24} lg={8}>
-                <Card title="⚙️ Chi phí Vận hành (Ruộng)" size="small" bodyStyle={{ padding: 0 }}>
-                  <Table
-                    columns={[
-                      { title: 'Tên', dataIndex: 'name', key: 'name' },
-                      { 
-                        title: 'Số tiền', 
-                        dataIndex: 'amount', 
-                        key: 'amount',
-                        render: (val) => formatCurrency(val)
-                      },
-                      { 
-                        title: 'Ngày', 
-                        dataIndex: 'date', 
-                        key: 'date',
-                        render: (date) => new Date(date!).toLocaleDateString('vi-VN')
-                      },
-                    ]}
-                    dataSource={riceCropProfit.operating_costs_breakdown || []}
-                    pagination={{ pageSize: 5 }}
-                    size="small"
-                    scroll={{ x: true }}
-                  />
-                </Card>
-              </Col>
+
             </Row>
 
             {/* Danh sách hóa đơn gắn với ruộng này */}
@@ -1213,14 +1181,6 @@ const ProfitReportsPage: React.FC = () => {
                       color="red"
                     />
                   </Col>
-                  <Col xs={12} sm={12} md={6} lg={4}>
-                    <ReportStatCard
-                      title="Chi phí Vận hành"
-                      value={customerProfit.lifetime_summary.operating_costs || 0}
-                      icon={<SettingOutlined />}
-                      color="purple"
-                    />
-                  </Col>
                   <Col xs={24} sm={24} md={12} lg={8}>
                     <ReportStatCard
                       title="LỢI NHUẬN RÒNG TRỌN ĐỜI"
@@ -1289,14 +1249,6 @@ const ProfitReportsPage: React.FC = () => {
                       value={customerProfit.current_season_summary.gift_costs || 0}
                       icon={<GiftOutlined />}
                       color="red"
-                    />
-                  </Col>
-                  <Col xs={12} sm={12} md={6} lg={4}>
-                    <ReportStatCard
-                      title="Chi phí Vận hành"
-                      value={customerProfit.current_season_summary.operating_costs || 0}
-                      icon={<SettingOutlined />}
-                      color="purple"
                     />
                   </Col>
                   <Col xs={24} sm={24} md={12} lg={8}>

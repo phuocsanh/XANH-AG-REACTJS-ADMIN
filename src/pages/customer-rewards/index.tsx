@@ -171,13 +171,30 @@ const CustomerRewardsPage: React.FC = () => {
         />
       ),
       key: "customer",
-      width: 200,
+      width: 250,
       render: (record: any) => (
         <Space direction="vertical" size={0}>
             <Text strong>{record.customer?.name}</Text>
             <Text type="secondary" style={{ fontSize: '12px' }}>{record.customer?.phone}</Text>
         </Space>
       )
+    },
+    {
+      title: (
+        <FilterHeader 
+            title="Số điện thoại" 
+            dataIndex="customer_phone" 
+            value={trackingFilters.customer_phone} 
+            onChange={(val) => {
+                setTrackingFilters(prev => ({ ...prev, customer_phone: val }))
+                setTrackingPage(1)
+            }}
+            inputType="text"
+        />
+      ),
+      key: "phone_filter",
+      width: 150,
+      hidden: true // Ẩn cột này vì đã hiển thị chung ở trên, chỉ dùng header để lọc
     },
     {
       title: `Tiến trình (mốc ${Math.round(threshold / 1000000)}tr)`,
@@ -248,10 +265,31 @@ const CustomerRewardsPage: React.FC = () => {
               inputType="text"
           />
         ),
-        dataIndex: "customer_name",
-        key: "customer_name",
-        width: 200,
-        render: (text: string) => <Text strong>{text}</Text>
+        key: "customer",
+        width: 250,
+        render: (record: any) => (
+            <Space direction="vertical" size={0}>
+                <Text strong>{record.customer_name}</Text>
+                <Text type="secondary" style={{ fontSize: '12px' }}>{record.customer?.phone}</Text>
+            </Space>
+        )
+    },
+    {
+        title: (
+          <FilterHeader 
+              title="Số điện thoại" 
+              dataIndex="customer_phone" 
+              value={historyFilters.customer_phone} 
+              onChange={(val) => {
+                  setHistoryFilters(prev => ({ ...prev, customer_phone: val }))
+                  setHistoryPage(1)
+              }}
+              inputType="text"
+          />
+        ),
+        key: "phone_filter",
+        width: 150,
+        hidden: true
     },
     {
       title: "Ngày nhận",
@@ -481,4 +519,3 @@ const CustomerRewardsPage: React.FC = () => {
 }
 
 export default CustomerRewardsPage
-
