@@ -1,9 +1,12 @@
 // Component hiển thị tổng kết thanh toán
 import React from 'react';
-import { Box, Card, CardContent, Typography } from '@mui/material';
+import { Box, Card, CardContent, Typography, Grid } from '@mui/material';
 import { Control } from 'react-hook-form';
-import { FormFieldNumber } from '@/components/form';
+import { FormFieldNumber, FormField } from '@/components/form';
 import { SalesInvoiceFormData } from '../../form-config';
+import { useRewardPreviewBySeasonQuery } from '@/queries/debt-note';
+import { Divider, Tag, Space, Spin, Alert } from 'antd';
+import { GiftOutlined } from '@ant-design/icons';
 
 interface PaymentSummarySectionProps {
   control: Control<SalesInvoiceFormData>;
@@ -11,6 +14,8 @@ interface PaymentSummarySectionProps {
   finalAmount: number;
   partialPaymentAmount: number;
   formatCurrency: (value: number) => string;
+  customerId?: number;
+  seasonId?: number;
 }
 
 export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
@@ -19,8 +24,17 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
   finalAmount,
   partialPaymentAmount,
   formatCurrency,
+  customerId,
+  seasonId,
 }) => {
   const remainingAmount = finalAmount - partialPaymentAmount;
+
+  // Query xem trước phần thưởng
+  const { data: rewardPreview, isLoading: isLoadingReward } = useRewardPreviewBySeasonQuery(
+    customerId || 0,
+    seasonId || 0,
+    finalAmount // Doanh số cộng thêm chính là tổng tiền hóa đơn này
+  );
 
   return (
     <Card>
@@ -131,6 +145,84 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
             </Box>
           </Box>
         </Box>
+
+        {/* --- PHẦN THƯỞNG TÍCH LŨY --- */}
+        {customerId && seasonId && (
+          <Box mt={3}>
+            <Divider orientation="left" style={{ margin: '0 0 12px' }}>
+              <Space>
+                <GiftOutlined style={{ color: '#faad14' }} />
+                <span style={{ fontWeight: 500 }}>Tích lũy & Quà tặng</span>
+              </Space>
+            </Divider>
+
+            {isLoadingReward ? (
+              <Box py={2} textAlign="center">
+                <Spin size="small" tip="Đang tính toán tích lũy..." />
+              </Box>
+            ) : rewardPreview?.summary ? (
+              <Box 
+                sx={{ 
+                  bgcolor: 'orange.50', 
+                  p: 2, 
+                  borderRadius: 1, 
+                  border: '1px solid',
+                  borderColor: 'orange.100'
+                }}
+              >
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="body2" color="text.secondary">
+                    Tổng tích lũy (bao gồm đơn này):
+                  </Typography>
+                  <Typography variant="subtitle2" color="primary.main" fontWeight="bold">
+                    {formatCurrency(rewardPreview.summary.total_after_close || 0)}
+                  </Typography>
+                </Box>
+
+                {rewardPreview.summary.will_receive_reward ? (
+                  <Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        Số quà có thể tặng:
+                      </Typography>
+                      <Tag color="gold" style={{ margin: 0 }}>
+                        Đủ điều kiện tặng {rewardPreview.summary.reward_count} quà
+                      </Tag>
+                    </Box>
+
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <FormField
+                          name="gift_description"
+                          control={control}
+                          label="Mô tả quà tặng"
+                          placeholder="Phiếu quà tặng, hiện vật..."
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormFieldNumber
+                          name="gift_value"
+                          control={control}
+                          label="Giá trị quà (VND)"
+                          placeholder="0"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                ) : (
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" color="text.secondary">
+                      Trạng thái thưởng:
+                    </Typography>
+                    <Typography variant="caption" color="warning.main" sx={{ fontStyle: 'italic' }}>
+                      Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            ) : null}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

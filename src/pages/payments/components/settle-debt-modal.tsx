@@ -9,8 +9,14 @@ import {
   Card,
   Alert,
   Spin,
+  Divider,
+  Tag,
+  Space,
+  Checkbox,
 } from "antd"
+import { GiftOutlined } from '@ant-design/icons';
 import NumberInput from '@/components/common/number-input'
+import { useRewardPreviewQuery } from "@/queries/debt-note"
 import {
   useCustomerDebtsQuery,
   useCustomerDebtorsSearchQuery,
@@ -29,6 +35,7 @@ interface SettleDebtModalProps {
   initialValues?: {
     customer_id?: number
     season_id?: number
+    debt_note_id?: number
   }
   initialCustomer?: CustomerDebtor
 }
@@ -65,6 +72,10 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   
   // Lấy debt summary của khách hàng đã chọn
   const { data: debtSummary, isLoading: isLoadingDebtSummary } = useCustomerDebtSummaryQuery(customerId || 0)
+
+  // Lấy preview quà tặng nếu có debt_note_id
+  const debtNoteId = initialValues?.debt_note_id
+  const { data: rewardPreview, isLoading: isLoadingReward } = useRewardPreviewQuery(debtNoteId || 0)
 
   // Watch form values
   const settleAmount = Form.useWatch("amount", form) || 0
@@ -169,7 +180,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
     }
 
     const seasonDebts = customerDebts.filter(
-      (debt: any) => debt.season_id === selectedSeason && debt.status === 'active'
+      (debt: any) => debt.season_id === selectedSeason && ['active', 'overdue', 'settled'].includes(debt.status)
     )
     
     return seasonDebts.reduce(
@@ -201,6 +212,9 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
       amount: values.amount,
       payment_method: values.payment_method,
       notes: values.notes,
+      gift_description: values.gift_description,
+      gift_value: values.gift_value,
+      is_final: values.is_final,
     }
       
       await settleAndRolloverMutation.mutateAsync(submitData, {
@@ -471,7 +485,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
             type='warning'
             showIcon
             message={`⚠️ Còn thiếu: ${formatCurrency(debtAmount - settleAmount)}`}
-            description='Nợ này sẽ giữ nguyên ở mùa vụ hiện tại (phiếu nợ chuyển sang trạng thái "Đã chốt sổ")'
+            description='Nợ này sẽ tiếp tục được theo dõi ở mùa vụ hiện tại cho đến khi được thanh toán hết.'
             className='mb-4'
           />
         )}
@@ -480,6 +494,59 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         <Form.Item label='Ghi chú' name='notes'>
           <Input.TextArea rows={3} placeholder='Nhập ghi chú (tùy chọn)' />
         </Form.Item>
+
+        <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
+          <Space>
+            <GiftOutlined style={{ color: '#faad14' }} />
+            <span style={{ fontWeight: 500 }}>Tặng quà tích lũy (Nếu đạt mốc)</span>
+          </Space>
+        </Divider>
+
+        {isLoadingReward ? (
+          <div style={{ padding: '8px 0', textAlign: 'center' }}><Spin size="small" /></div>
+        ) : rewardPreview?.summary ? (
+          <div className="bg-orange-50 p-3 rounded-md mb-4 border border-orange-100">
+             <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">Tổng tích lũy hiện tại:</span>
+                <span className="font-semibold text-blue-600">{formatCurrency((rewardPreview.summary.total_after_close || 0))}</span>
+             </div>
+             
+             {rewardPreview.summary.will_receive_reward ? (
+               <div className="flex flex-col gap-1">
+                 <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Số quà có thể nhận:</span>
+                    <Tag color="gold" className="m-0">Đủ điều kiện tặng {rewardPreview.summary.reward_count} quà</Tag>
+                 </div>
+                 <div className="mt-2 grid grid-cols-2 gap-3">
+                    <Form.Item label="Mô tả quà" name="gift_description" className="mb-0">
+                      <Input placeholder="VD: 1 bao gạo..." />
+                    </Form.Item>
+                    <Form.Item label="Giá trị quà" name="gift_value" className="mb-0">
+                      <NumberInput placeholder="Giá trị VND" />
+                    </Form.Item>
+                 </div>
+               </div>
+             ) : (
+               <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Trạng thái thưởng:</span>
+                  <span className="text-xs text-orange-400 italic">
+                    Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
+                  </span>
+               </div>
+             )}
+             
+             <Divider style={{ margin: '12px 0' }} />
+             
+             <Form.Item name="is_final" valuePropName="checked" className="mb-0">
+               <Checkbox>
+                 <span className="text-sm font-medium text-red-600">Chốt sổ công nợ mùa vụ này</span>
+               </Checkbox>
+             </Form.Item>
+             <div className="text-[11px] text-gray-400 italic mt-1 pl-6">
+               * Khi chốt sổ, doanh số tích lũy dư (nếu có) sẽ được chuyển sang mùa vụ tiếp theo.
+             </div>
+          </div>
+        ) : null}
       </Form>
     </Modal>
 

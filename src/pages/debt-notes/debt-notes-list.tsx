@@ -45,7 +45,7 @@ const DebtNotesList: React.FC = () => {
 
   // State modal chốt sổ
   const [isSettleModalVisible, setIsSettleModalVisible] = React.useState(false)
-  const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number} | undefined>(undefined)
+  const [settleInitialValues, setSettleInitialValues] = React.useState<{customer_id?: number, season_id?: number, debt_note_id?: number} | undefined>(undefined)
   const [settleInitialCustomer, setSettleInitialCustomer] = React.useState<CustomerDebtor | undefined>(undefined)
 
   // State modal chốt sổ cuối vụ
@@ -182,7 +182,8 @@ const DebtNotesList: React.FC = () => {
   const handleOpenSettleModal = (record: ExtendedDebtNote) => {
     setSettleInitialValues({
         customer_id: record.customer_id,
-        season_id: record.season_id
+        season_id: record.season_id,
+        debt_note_id: record.id,
     })
     
     // Tạo object customer giả giả từ thông tin có sẵn để pass qua modal
@@ -386,7 +387,7 @@ const DebtNotesList: React.FC = () => {
       width: 120,
       render: (record: ExtendedDebtNote) => (
         <Space size="small">
-          {record.remaining_amount > 0 && record.status !== 'settled' && (
+          {record.remaining_amount > 0 && (
             <Button 
               type="primary" 
               size="small"
@@ -506,7 +507,7 @@ const DebtNotesList: React.FC = () => {
             total: debtNotesData?.data?.total || 0,
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50", "100"],
-            showTotal: (total: number) => `Tổng ${total} phiếu nợ`,
+            showTotal: (total: number) => `Tổng ${total} phiếu`,
           }}
           onChange={handleTableChange}
           showSearch={false}

@@ -140,55 +140,28 @@ export const useDeleteDebtNoteMutation = () => {
 /**
  * Hook xem preview thông tin tích lũy trước khi chốt sổ
  */
-export const useRewardPreviewQuery = (debtNoteId: number) => {
+export const useRewardPreviewQuery = (debtNoteId: number, additionalAmount: number = 0) => {
   return useQuery({
-    queryKey: ['customer-reward-preview', debtNoteId],
+    queryKey: ['customer-reward-preview', debtNoteId, additionalAmount],
     queryFn: async () => {
-      const response = await api.get<{
-        customer: {
-          id: number
-          name: string
-          phone: string
-        }
-        current_season: {
-          id: number
-          name: string
-          debt_amount: number
-          paid_amount: number
-          remaining_amount: number
-          status: string
-        }
-        accumulation_history: Array<{
-          id: number
-          season_name: string
-          amount: number
-          closed_at: string
-          reward_given: boolean
-          reward_count: number
-        }>
-        summary: {
-          previous_pending: number
-          current_debt: number
-          total_after_close: number
-          reward_threshold: number
-          reward_count: number
-          remaining_amount: number
-          shortage_to_next: number
-          will_receive_reward: boolean
-          current_status: string
-        }
-        previous_rewards: Array<{
-          id: number
-          reward_date: string
-          accumulated_amount: number
-          gift_description: string
-          gift_value: number
-          season_names: string[]
-        }>
-      }>(`/customer-rewards/preview/${debtNoteId}`)
+      const response = await api.get<any>(`/customer-rewards/preview/${debtNoteId}?additional_amount=${additionalAmount}`)
       return response
     },
     enabled: !!debtNoteId && debtNoteId > 0,
+  })
+}
+
+/**
+ * Hook xem preview thông tin tích lũy dựa trên Customer và Season
+ */
+export const useRewardPreviewBySeasonQuery = (customerId: number, seasonId: number, additionalAmount: number = 0) => {
+  return useQuery({
+    queryKey: ['customer-reward-preview-season', customerId, seasonId, additionalAmount],
+    queryFn: async () => {
+      const response = await api.get<any>(`/customer-rewards/preview-by-season?customer_id=${customerId}&season_id=${seasonId}&additional_amount=${additionalAmount}`)
+      return response
+    },
+    enabled: !!customerId && !!seasonId,
   })
 }
 
