@@ -189,18 +189,25 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
     )
   }
   
-  // Effect để auto-fill amount khi calculateDebtBySeason thay đổi và chưa có input
+  // Effect để xóa dữ liệu form khi đóng modal, tránh tình trạng "nhớ" số tiền cũ của khách trước
+  React.useEffect(() => {
+    if (!open) {
+      form.setFieldValue('amount', 0);
+    }
+  }, [open, form]);
+
+  // Effect để auto-fill amount khi calculateDebtBySeason thay đổi
   const debtAmount = calculateDebtBySeason()
   React.useEffect(() => {
-      // Chỉ auto fill khi mới mở modal hoặc đổi season và amount đang trống (hoặc bằng 0)
-      // Để tránh override input của user
-      if (debtAmount > 0) {
-           const currentAmount = form.getFieldValue('amount')
-           if (!currentAmount || currentAmount === 0 || (initialCustomer && currentAmount === initialCustomer.total_debt)) {
-               form.setFieldValue('amount', debtAmount)
-           }
+    // Chỉ tự động điền nếu modal đang mở và nợ > 0
+    if (open && debtAmount > 0) {
+      const currentAmount = form.getFieldValue('amount');
+      // Nếu chưa nhập (null/undefined) hoặc đang bằng 0 thì mới tự điền
+      if (currentAmount === undefined || currentAmount === null || currentAmount === 0) {
+        form.setFieldValue('amount', debtAmount);
       }
-  }, [debtAmount, form, initialCustomer])
+    }
+  }, [open, debtAmount, form])
 
 
   const handleSubmit = async () => {
