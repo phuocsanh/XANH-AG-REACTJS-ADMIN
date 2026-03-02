@@ -143,6 +143,9 @@ const DebtNotesList: React.FC = () => {
     // Status filter
     if (tableFilters.status && tableFilters.status.length > 0) {
         newFilters.status = tableFilters.status[0]
+    } else {
+        // Xóa filter khi người dùng reset
+        delete newFilters.status
     }
 
     // Due Date Range
@@ -363,6 +366,8 @@ const DebtNotesList: React.FC = () => {
           { text: "Đang nợ", value: "active" },
           { text: "Quá hạn", value: "overdue" },
           { text: "Đã trả", value: "paid" },
+          { text: "Đã chốt sổ", value: "settled" },
+          { text: "Đã hủy", value: "cancelled" },
       ],
       filteredValue: filters.status ? [filters.status as string] : undefined,
       filterMultiple: false,
