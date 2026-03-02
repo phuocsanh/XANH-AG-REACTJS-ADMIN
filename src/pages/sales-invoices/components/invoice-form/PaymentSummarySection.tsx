@@ -179,16 +179,25 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
                   </Typography>
                 </Box>
 
-                {rewardPreview.summary.will_receive_reward ? (
                   <Box>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                       <Typography variant="body2" color="text.secondary">
-                        Số quà có thể tặng:
+                        Trạng thái thưởng:
                       </Typography>
-                      <Tag color="gold" style={{ margin: 0 }}>
-                        Đủ điều kiện tặng {rewardPreview.summary.reward_count} quà
+                      <Tag color={rewardPreview.summary.will_receive_reward ? "gold" : "default"} style={{ margin: 0 }}>
+                        {rewardPreview.summary.will_receive_reward 
+                          ? `Đủ điều kiện tặng ${rewardPreview.summary.reward_count} quà` 
+                          : "Chưa đạt mốc nhận quà"}
                       </Tag>
                     </Box>
+
+                    {!rewardPreview.summary.will_receive_reward && (
+                      <Box display="flex" justifyContent="flex-end" mb={2}>
+                        <Typography variant="caption" color="warning.main" sx={{ fontStyle: 'italic' }}>
+                          Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
+                        </Typography>
+                      </Box>
+                    )}
 
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
@@ -209,16 +218,6 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
                       </Grid>
                     </Grid>
                   </Box>
-                ) : (
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2" color="text.secondary">
-                      Trạng thái thưởng:
-                    </Typography>
-                    <Typography variant="caption" color="warning.main" sx={{ fontStyle: 'italic' }}>
-                      Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
-                    </Typography>
-                  </Box>
-                )}
               </Box>
             ) : null}
           </Box>

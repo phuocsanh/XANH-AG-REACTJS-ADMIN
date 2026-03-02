@@ -511,39 +511,32 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
                 <span className="font-semibold text-blue-600">{formatCurrency((rewardPreview.summary.total_after_close || 0))}</span>
              </div>
              
-             {rewardPreview.summary.will_receive_reward ? (
-               <div className="flex flex-col gap-1">
-                 <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Số quà có thể nhận:</span>
-                    <Tag color="gold" className="m-0">Đủ điều kiện tặng {rewardPreview.summary.reward_count} quà</Tag>
-                 </div>
-                 <div className="mt-2 grid grid-cols-2 gap-3">
-                    <Form.Item label="Mô tả quà" name="gift_description" className="mb-0">
-                      <Input placeholder="VD: 1 bao gạo..." />
-                    </Form.Item>
-                    <Form.Item label="Giá trị quà" name="gift_value" className="mb-0">
-                      <NumberInput placeholder="Giá trị VND" />
-                    </Form.Item>
-                 </div>
-               </div>
-             ) : (
+             <div className="flex flex-col gap-1">
                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Trạng thái thưởng:</span>
-                  <span className="text-xs text-orange-400 italic">
-                    Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
-                  </span>
+                  <span className="text-sm text-gray-600">Số quà đủ điều kiện:</span>
+                  <Tag color={rewardPreview.summary.will_receive_reward ? "gold" : "default"} className="m-0">
+                    {rewardPreview.summary.will_receive_reward 
+                      ? `Đủ điều kiện tặng ${rewardPreview.summary.reward_count} quà` 
+                      : "Chưa đạt mốc nhận quà"}
+                  </Tag>
                </div>
-             )}
-             
-             <Divider style={{ margin: '12px 0' }} />
-             
-             <Form.Item name="is_final" valuePropName="checked" className="mb-0">
-               <Checkbox>
-                 <span className="text-sm font-medium text-red-600">Chốt sổ công nợ mùa vụ này</span>
-               </Checkbox>
-             </Form.Item>
-             <div className="text-[11px] text-gray-400 italic mt-1 pl-6">
-               * Khi chốt sổ, doanh số tích lũy dư (nếu có) sẽ được chuyển sang mùa vụ tiếp theo.
+               
+               {!rewardPreview.summary.will_receive_reward && (
+                 <div className="flex justify-end mt-1">
+                   <span className="text-xs text-orange-400 italic">
+                     Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
+                   </span>
+                 </div>
+               )}
+
+               <div className="mt-2 grid grid-cols-2 gap-3">
+                  <Form.Item label="Mô tả quà" name="gift_description" className="mb-0">
+                    <Input placeholder="VD: 1 bao gạo..." />
+                  </Form.Item>
+                  <Form.Item label="Giá trị quà" name="gift_value" className="mb-0">
+                    <NumberInput placeholder="Giá trị VND" />
+                  </Form.Item>
+               </div>
              </div>
           </div>
         ) : null}
