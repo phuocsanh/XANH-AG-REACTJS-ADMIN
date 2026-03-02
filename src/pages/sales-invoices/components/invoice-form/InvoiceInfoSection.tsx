@@ -193,34 +193,6 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
           className="mb-4"
         />
 
-        {/* Quà tặng khi bán hàng */}
-        <Box sx={{ mt: 2, p: 2, bgcolor: '#fff9e6', borderRadius: 1 }}>
-          <Typography variant="subtitle2" mb={2} color="text.secondary">
-            🎁 Quà tặng (tùy chọn)
-          </Typography>
-          
-          <FormField
-            name="gift_description"
-            control={control}
-            label="Mô tả quà tặng"
-            type="text"
-            placeholder="VD: 1 thùng nước ngọt Coca"
-            className="mb-3"
-          />
-
-          <FormFieldNumber
-            name="gift_value"
-            control={control}
-            label="Giá trị quà tặng"
-            min={0}
-            size="large"
-            placeholder="0"
-            className="mb-0"
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-            Giá trị quà tặng quy đổi ra tiền (VD: 200,000 đ)
-          </Typography>
-        </Box>
       </CardContent>
     </Card>
   );
