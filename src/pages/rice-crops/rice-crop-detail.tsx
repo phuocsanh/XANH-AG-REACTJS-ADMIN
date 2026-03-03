@@ -27,6 +27,7 @@ import { RiceCropModal } from './components/RiceCropModal';
 import FarmServiceCostTab from './components/FarmServiceCostTab';
 import { useAppStore } from '@/stores/store';
 import { hasPermission } from '@/utils/permission';
+import { calculateDaysDiff } from '@/utils/format';
 
 // Màu sắc cho giai đoạn sinh trưởng
 const growthStageColors: Record<GrowthStage, string> = {
@@ -135,9 +136,16 @@ const RiceCropDetail: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày gieo">
               <div className="flex flex-col">
-                <span style={{ color: '#000' }}>
-                  {riceCrop.sowing_date ? dayjs(riceCrop.sowing_date).format('DD/MM/YYYY') : '-'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: '#000' }}>
+                    {riceCrop.sowing_date ? dayjs(riceCrop.sowing_date).format('DD/MM/YYYY') : '-'}
+                  </span>
+                  {riceCrop.status === 'active' && riceCrop.sowing_date && (
+                    <Tag color="success" className="m-0 text-[10px] leading-4 h-4 px-1">
+                      {calculateDaysDiff(riceCrop.sowing_date)} ngày sau gieo
+                    </Tag>
+                  )}
+                </div>
                 {riceCrop.sowing_lunar_date && (
                   <span className="text-[11px] text-[#2c7a32] font-semibold">{riceCrop.sowing_lunar_date}</span>
                 )}
@@ -145,9 +153,16 @@ const RiceCropDetail: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày cấy">
               <div className="flex flex-col">
-                <span style={{ color: '#000' }}>
-                  {riceCrop.transplanting_date ? dayjs(riceCrop.transplanting_date).format('DD/MM/YYYY') : '-'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: '#000' }}>
+                    {riceCrop.transplanting_date ? dayjs(riceCrop.transplanting_date).format('DD/MM/YYYY') : '-'}
+                  </span>
+                  {riceCrop.status === 'active' && riceCrop.transplanting_date && (
+                    <Tag color="cyan" className="m-0 text-[10px] leading-4 h-4 px-1">
+                      {calculateDaysDiff(riceCrop.transplanting_date)} ngày sau cấy
+                    </Tag>
+                  )}
+                </div>
                 {riceCrop.transplanting_lunar_date && (
                   <span className="text-[11px] text-[#2c7a32] font-semibold">{riceCrop.transplanting_lunar_date}</span>
                 )}

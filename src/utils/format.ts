@@ -49,3 +49,14 @@ export const formatDate = (date: string | Date, format: 'short' | 'long' = 'shor
   
   return dateObj.toLocaleDateString('vi-VN');
 };
+import dayjs from "dayjs";
+
+/**
+ * Tính số ngày chênh lệch so với ngày hiện tại
+ */
+export const calculateDaysDiff = (date?: string | Date | null): number | null => {
+  if (!date) return null;
+  const start = dayjs(date).startOf('day');
+  const now = dayjs().startOf('day');
+  return now.diff(start, 'day');
+};
