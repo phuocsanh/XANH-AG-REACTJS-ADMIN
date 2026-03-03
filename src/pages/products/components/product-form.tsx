@@ -1059,21 +1059,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                {/* Thêm trường mechanism - Cơ chế tác động (Rich Text) */}
-                <Form.Item
-                  label='Cơ chế tác động'
-                  className='w-full mb-4'
-                  layout='vertical'
-                >
-                  <div className='w-full'>
-                    <TiptapEditor
-                      content={mechanism}
-                      onChange={(content) => {
-                        setMechanism(content)
-                      }}
-                    />
-                  </div>
-                </Form.Item>
 
                 <div className='w-full'>
                   <FormComboBox
@@ -1208,6 +1193,22 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       content={description}
                       onChange={(content) => {
                         setDescription(content)
+                      }}
+                    />
+                  </div>
+                </Form.Item>
+
+                {/* Thêm trường mechanism - Cơ chế tác động (Rich Text) */}
+                <Form.Item
+                  label='Cơ chế tác động'
+                  className='w-full mb-4'
+                  layout='vertical'
+                >
+                  <div className='w-full'>
+                    <TiptapEditor
+                      content={mechanism}
+                      onChange={(content) => {
+                        setMechanism(content)
                       }}
                     />
                   </div>
