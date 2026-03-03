@@ -64,3 +64,13 @@ export interface MergedPurchase {
   notes?: string | undefined;
   created_by?: number;
 }
+export interface MergedPurchasesResponse {
+  data: MergedPurchase[];
+  summary: {
+    total_amount: number;
+    paid_amount: number;
+    remaining_amount: number;
+    system_count: number;
+    external_count: number;
+  };
+}

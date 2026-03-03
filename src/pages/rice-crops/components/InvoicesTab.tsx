@@ -191,17 +191,23 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
   const updateExternalMutation = useUpdateExternalPurchase();
   const deleteExternalMutation = useDeleteExternalPurchase();
 
-  const purchases = allPurchases || [];
+  const purchases = allPurchases?.data || [];
+  const summary = allPurchases?.summary || {
+    total_amount: 0,
+    paid_amount: 0,
+    remaining_amount: 0,
+    system_count: 0,
+    external_count: 0
+  };
   const availableInvoices = (availableInvoicesResponse as any)?.data || [];
 
-  // Tính tổng tiền
-  const totalAmount = purchases.reduce((sum: number, inv: MergedPurchase) => sum + Number(inv.total_amount || 0), 0);
-  const totalPaid = purchases.reduce((sum: number, inv: MergedPurchase) => sum + Number(inv.paid_amount || 0), 0);
-  const totalRemaining = purchases.reduce((sum: number, inv: MergedPurchase) => sum + Number(inv.remaining_amount || 0), 0);
+  const totalAmount = summary.total_amount;
+  const totalPaid = summary.paid_amount;
+  const totalRemaining = summary.remaining_amount;
 
   // Tách riêng system và external
-  const systemCount = purchases.filter((p: MergedPurchase) => p.source === 'system').length;
-  const externalCount = purchases.filter((p: MergedPurchase) => p.source === 'external').length;
+  const systemCount = summary.system_count;
+  const externalCount = summary.external_count;
 
   const handleLinkInvoice = () => {
     if (!selectedInvoiceId) {
@@ -483,7 +489,7 @@ export const InvoicesTab: React.FC<InvoicesTabProps> = ({ riceCropId }) => {
           <Card bodyStyle={{ padding: '8px 10px' }} className="h-full shadow-none border-gray-100">
             <Statistic
               title={<span className="text-[10px] sm:text-xs text-gray-500 uppercase">Tổng hóa đơn</span>}
-              value={purchases.length}
+              value={summary.system_count + summary.external_count}
               suffix={<span className="text-[10px] ml-0.5 text-gray-400">HĐ</span>}
               valueStyle={{ color: '#1890ff', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.2' }}
             />

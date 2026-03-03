@@ -4,6 +4,7 @@ import type {
   ExternalPurchase,
   CreateExternalPurchaseDto,
   MergedPurchase,
+  MergedPurchasesResponse,
 } from '@/models/external-purchase.model';
 import { message } from 'antd';
 
@@ -36,7 +37,7 @@ export const useMergedPurchases = (riceCropId: number) => {
   return useQuery({
     queryKey: externalPurchaseKeys.merged(riceCropId),
     queryFn: async () => {
-      const response = await api.get<MergedPurchase[]>(`/rice-crops/${riceCropId}/all-purchases`);
+      const response = await api.get<MergedPurchasesResponse>(`/rice-crops/${riceCropId}/all-purchases`);
       return response;
     },
     enabled: !!riceCropId,
