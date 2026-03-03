@@ -140,8 +140,8 @@ const RiceCropDetail: React.FC = () => {
                   <span style={{ color: '#000' }}>
                     {riceCrop.sowing_date ? dayjs(riceCrop.sowing_date).format('DD/MM/YYYY') : '-'}
                   </span>
-                  {riceCrop.status === 'active' && riceCrop.sowing_date && (
-                    <Tag color="success" className="m-0 text-[10px] leading-4 h-4 px-1">
+                  {String(riceCrop.status).toLowerCase().includes('active') && riceCrop.sowing_date && (
+                    <Tag color="success" className="m-0 text-[11px] font-bold border-green-200">
                       {calculateDaysDiff(riceCrop.sowing_date)} ngày sau gieo
                     </Tag>
                   )}
@@ -157,8 +157,8 @@ const RiceCropDetail: React.FC = () => {
                   <span style={{ color: '#000' }}>
                     {riceCrop.transplanting_date ? dayjs(riceCrop.transplanting_date).format('DD/MM/YYYY') : '-'}
                   </span>
-                  {riceCrop.status === 'active' && riceCrop.transplanting_date && (
-                    <Tag color="cyan" className="m-0 text-[10px] leading-4 h-4 px-1">
+                  {String(riceCrop.status).toLowerCase().includes('active') && riceCrop.transplanting_date && (
+                    <Tag color="cyan" className="m-0 text-[11px] font-bold border-cyan-200">
                       {calculateDaysDiff(riceCrop.transplanting_date)} ngày sau cấy
                     </Tag>
                   )}
