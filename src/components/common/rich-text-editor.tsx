@@ -5,7 +5,7 @@ import Underline from '@tiptap/extension-underline';
 import Image from '@tiptap/extension-image';
 import { uploadService, UPLOAD_TYPES } from '@/services/upload.service';
 import { PictureOutlined, LoadingOutlined } from '@ant-design/icons';
-import { Spin } from 'antd';
+import { Spin, Modal, Radio, Space } from 'antd';
 
 interface RichTextEditorProps {
   content: string;
@@ -31,18 +31,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   uploadType = UPLOAD_TYPES.COMMON,
 }) => {
   const [isUploading, setIsUploading] = React.useState(false);
+  const [pendingImageUrl, setPendingImageUrl] = React.useState<string | null>(null);
+  const [selectedWidth, setSelectedWidth] = React.useState('100%');
+  const [showSizeModal, setShowSizeModal] = React.useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit, 
       Underline,
-      Image.configure({
-        allowBase64: true,
-        HTMLAttributes: {
-          class: 'editor-image',
-          style: 'max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block;',
+      StarterKit, 
+      Underline,
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            width: {
+              default: '100%',
+              renderHTML: attributes => ({
+                width: attributes.width,
+                style: `width: ${attributes.width}; max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block;`
+              }),
+            },
+          }
         },
+      }).configure({
+        allowBase64: true,
       }),
     ],
     content: content,
@@ -73,7 +87,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const response = await uploadService.uploadImage(file, uploadType as any);
       
       if (response && response.url) {
-        editor.chain().focus().setImage({ src: response.url }).run();
+        // Thay vì chèn ngay, mở modal chọn kích thước
+        setPendingImageUrl(response.url);
+        setShowSizeModal(true);
       }
     } catch (error) {
       console.error('Lỗi khi chèn ảnh vào editor:', error);
@@ -111,6 +127,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     color: isActive ? '#fff' : '#000',
     borderColor: isActive ? '#1890ff' : '#d9d9d9',
   });
+
+  const confirmInsertImage = () => {
+    if (pendingImageUrl && editor) {
+      editor.chain().focus().setImage({ 
+        src: pendingImageUrl,
+        // @ts-ignore - width is added via extend
+        width: selectedWidth 
+      }).run();
+    }
+    setShowSizeModal(false);
+    setPendingImageUrl(null);
+  };
 
   return (
     <div 
@@ -257,6 +285,50 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
         </div>
       )}
+
+      {/* Modal chọn kích thước ảnh */}
+      <Modal
+        title="Tùy chỉnh kích thước ảnh"
+        open={showSizeModal}
+        onOk={confirmInsertImage}
+        onCancel={() => setShowSizeModal(false)}
+        okText="Chèn ảnh"
+        cancelText="Hủy"
+        width={400}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <p>Chọn kích thước hiển thị trong bài viết:</p>
+          <Radio.Group 
+            value={selectedWidth} 
+            onChange={(e) => setSelectedWidth(e.target.value)}
+            buttonStyle="solid"
+          >
+            <Space direction="vertical" style={{ width: '100%', marginTop: 10 }}>
+              <Radio.Button value="25%" style={{ width: '100%', textAlign: 'center' }}>Nhỏ (25%)</Radio.Button>
+              <Radio.Button value="50%" style={{ width: '100%', textAlign: 'center' }}>Trung bình (50%)</Radio.Button>
+              <Radio.Button value="75%" style={{ width: '100%', textAlign: 'center' }}>Lớn (75%)</Radio.Button>
+              <Radio.Button value="100%" style={{ width: '100%', textAlign: 'center' }}>Gốc (100%)</Radio.Button>
+            </Space>
+          </Radio.Group>
+        </div>
+        {pendingImageUrl && (
+          <div style={{ 
+            marginTop: 15, 
+            border: '1px solid #f0f0f0', 
+            borderRadius: 8, 
+            padding: 8,
+            backgroundColor: '#f9f9f9',
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <img 
+              src={pendingImageUrl} 
+              alt="Preview" 
+              style={{ width: selectedWidth, maxHeight: 200, objectFit: 'contain', transition: 'width 0.3s ease' }} 
+            />
+          </div>
+        )}
+      </Modal>
       
       {/* Editor Content Area */}
       <div style={{ position: 'relative', flex: 1 }}>
