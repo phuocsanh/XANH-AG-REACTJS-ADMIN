@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import Image from '@tiptap/extension-image';
+import { uploadService, UPLOAD_TYPES } from '@/services/upload.service';
+import { PictureOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Spin } from 'antd';
 
 interface RichTextEditorProps {
   content: string;
@@ -10,23 +14,37 @@ interface RichTextEditorProps {
   disabled?: boolean;
   minHeight?: number;
   showToolbar?: boolean;
+  uploadType?: string;
 }
 
 /**
  * Component RichTextEditor tái sử dụng sử dụng TipTap
- * Cung cấp editor văn bản phong phú với toolbar formatting
- * Hỗ trợ Bold, Italic, Underline, Strikethrough
+ * Cung cấp editor văn bản phong phú với toolbar formatting và chèn ảnh
  */
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   content,
   onChange,
   placeholder = 'Nhập nội dung...',
   disabled = false,
-  minHeight = 200,
+  minHeight = 400,
   showToolbar = true,
+  uploadType = UPLOAD_TYPES.COMMON,
 }) => {
+  const [isUploading, setIsUploading] = React.useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [
+      StarterKit, 
+      Underline,
+      Image.configure({
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'editor-image',
+          style: 'max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block;',
+        },
+      }),
+    ],
     content: content,
     editable: !disabled,
     onUpdate: ({ editor }) => {
@@ -34,9 +52,39 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
   });
 
+  // Đồng bộ content khi props thay đổi từ bên ngoài (ví dụ: khi load dữ liệu chỉnh sửa)
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
   if (!editor) {
     return null;
   }
+
+  // Xử lý upload ảnh và chèn vào editor
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const response = await uploadService.uploadImage(file, uploadType as any);
+      
+      if (response && response.url) {
+        editor.chain().focus().setImage({ src: response.url }).run();
+      }
+    } catch (error) {
+      console.error('Lỗi khi chèn ảnh vào editor:', error);
+    } finally {
+      setIsUploading(false);
+      // Reset input để có thể chọn lại cùng 1 file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   // Các nút toolbar với styling nhất quán
   const toolbarButtonStyle = {
@@ -50,6 +98,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     fontWeight: '500',
     transition: 'all 0.2s ease',
     opacity: disabled ? 0.5 : 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '32px',
+    height: '32px',
   };
 
   const getActiveButtonStyle = (isActive: boolean) => ({
@@ -61,18 +114,61 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div 
+      className="rich-text-editor-wrapper"
       style={{ 
         border: '1px solid #d9d9d9', 
         borderRadius: '6px',
         opacity: disabled ? 0.6 : 1,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
+      {/* CSS cho editor để xử lý linh hoạt */}
+      <style>
+        {`
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror {
+            outline: none;
+            min-height: ${minHeight}px;
+            padding: 12px;
+            background-color: ${disabled ? '#f5f5f5' : '#fff'};
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+          }
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror p {
+            margin-bottom: 0.8em;
+          }
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 12px 0;
+            display: block;
+          }
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror ul, 
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror ol {
+            padding-left: 1.5em;
+            margin-bottom: 1em;
+          }
+        `}
+      </style>
+
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        onChange={handleImageUpload}
+        style={{ display: 'none' }}
+        accept="image/*"
+      />
+
       {/* Toolbar */}
       {showToolbar && (
         <div style={{ 
           borderBottom: '1px solid #d9d9d9', 
           padding: '8px 12px', 
           display: 'flex', 
+          flexWrap: 'wrap',
           gap: '6px',
           backgroundColor: '#fafafa',
           borderRadius: '6px 6px 0 0',
@@ -126,13 +222,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             S
           </button>
 
-          {/* Divider */}
-          <div style={{ 
-            width: '1px', 
-            height: '24px', 
-            backgroundColor: '#d9d9d9', 
-            margin: '0 4px' 
-          }} />
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
 
           <button
             type="button"
@@ -153,25 +243,48 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           >
             1.
           </button>
+
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
+
+          <button
+            type="button"
+            onClick={() => !disabled && fileInputRef.current?.click()}
+            style={toolbarButtonStyle}
+            disabled={disabled || isUploading}
+            title="Chèn ảnh vào vị trí con trỏ"
+          >
+            {isUploading ? <LoadingOutlined /> : <PictureOutlined style={{ fontSize: '16px' }} />}
+          </button>
         </div>
       )}
       
-      {/* Editor Content */}
-      <div style={{ 
-        minHeight: `${minHeight}px`, 
-        padding: '12px',
-        backgroundColor: disabled ? '#f5f5f5' : '#fff',
-      }}>
-        <EditorContent 
-          editor={editor} 
-          style={{
-            outline: 'none',
-          }}
-        />
-        {/* Placeholder khi editor trống */}
-        {editor.isEmpty && (
+      {/* Editor Content Area */}
+      <div style={{ position: 'relative', flex: 1 }}>
+        {isUploading && (
           <div style={{
             position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            zIndex: 10,
+          }}>
+            <Spin tip="Đang tải ảnh lên..." />
+          </div>
+        )}
+        
+        <EditorContent 
+          editor={editor} 
+          className="tiptap-editor-content"
+        />
+        
+        {/* Placeholder */}
+        {editor.isEmpty && !isUploading && (
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
             color: '#bfbfbf',
             pointerEvents: 'none',
             fontSize: '14px',

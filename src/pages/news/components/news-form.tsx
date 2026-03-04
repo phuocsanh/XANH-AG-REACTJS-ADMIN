@@ -107,7 +107,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                 label="Ảnh đại diện"
                 maxCount={1} 
                 multiple={false}
-                uploadType={UPLOAD_TYPES.COMMON}
+                uploadType={UPLOAD_TYPES.NEWS}
              />
           </div>
 
@@ -118,7 +118,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                 label="Bộ sưu tập ảnh (Nhiều ảnh)"
                 maxCount={10} 
                 multiple={true}
-                uploadType={UPLOAD_TYPES.COMMON}
+                uploadType={UPLOAD_TYPES.NEWS}
              />
           </div>
 
@@ -128,6 +128,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                 content={watch('content')} 
                 onChange={(content) => setValue('content', content)}
                 minHeight={400}
+                uploadType={UPLOAD_TYPES.NEWS}
               />
             </Form.Item>
           </div>

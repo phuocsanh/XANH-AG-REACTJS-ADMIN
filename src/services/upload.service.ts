@@ -9,6 +9,7 @@ export const UPLOAD_TYPES = {
   RICE_CROP: 'rice-crop',
   DOCUMENT: 'document',
   COMMON: 'common',
+  NEWS: 'news',
 } as const;
 
 export type UploadType = typeof UPLOAD_TYPES[keyof typeof UPLOAD_TYPES];
