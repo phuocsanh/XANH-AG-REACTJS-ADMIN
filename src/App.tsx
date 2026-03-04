@@ -90,6 +90,7 @@ import DosageCalculator from "./pages/calculator/dosage-calculator"
 import WeatherForecastPage from "./pages/weather-forecast"
 // Thêm import cho trang Lịch Vạn Niên
 import LunarCalendar from "./pages/lunar-calendar"
+import NewsPage from "./pages/news"
 import { fetchAndActivate, getValue } from "firebase/remote-config"
 import { remoteConfig, getAllRemoteValues } from "./lib/firebase"
 import { useConfigStore } from "./stores/config.store"
@@ -760,6 +761,15 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="COST_ITEM_MANAGE">
                           <CostItemCategoriesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path='/news'
+                      element={
+                        <ProtectedRoute requiredPermission="news:manage">
+                          <NewsPage />
                         </ProtectedRoute>
                       }
                     />

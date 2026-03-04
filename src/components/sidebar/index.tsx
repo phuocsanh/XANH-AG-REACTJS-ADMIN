@@ -206,6 +206,11 @@ const Sidebar: React.FC = () => {
       setActiveTab(25)
       setIsToggleSubmenu(true)
     }
+    // Tin tức
+    else if (path.startsWith('/news')) {
+      setActiveTab(44)
+      setIsToggleSubmenu(false)
+    }
   }, [location.pathname])
 
   const isOpenSubmenu = (index: number): void => {
@@ -1095,7 +1100,8 @@ const Sidebar: React.FC = () => {
             </li>
           )}
 
-          {isAdmin(userInfo) && (
+          {/* Quản lý người dùng */}
+          {hasPermission(userInfo, "user:read") && (
             <li>
               <Link to='/users'>
                 <Button
@@ -1106,6 +1112,22 @@ const Sidebar: React.FC = () => {
                     <FaUsers className='text-violet-200' />
                   </span>
                   Quản lý người dùng
+                </Button>
+              </Link>
+            </li>
+          )}
+
+          {hasPermission(userInfo, "news:manage") && (
+            <li>
+              <Link to='/news'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 44 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(44)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <RiFileListLine className='text-orange-300' />
+                  </span>
+                  Quản lý Tin tức
                 </Button>
               </Link>
             </li>
