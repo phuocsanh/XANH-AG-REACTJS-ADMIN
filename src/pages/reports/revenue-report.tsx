@@ -427,7 +427,19 @@ const RevenueReportPage: React.FC = () => {
                       Không có hóa đơn nào trong khoảng thời gian này
                     </div>
                   ) : (
-                    (report?.invoices || []).map((invoice: PeriodInvoice) => (
+                    (report?.invoices || []).map((invoice: PeriodInvoice) => {
+                      // Lọc items bên trong hóa đơn theo bộ lọc thuế
+                      const filteredItems = invoice.items.filter((item: PeriodInvoiceItem) => {
+                        const taxableQty = Number(item.taxable_quantity || 0);
+                        if (taxableFilter === 'yes') return taxableQty > 0;
+                        if (taxableFilter === 'no') return taxableQty === 0;
+                        return true; // 'all' - hiển thị tất cả
+                      });
+
+                      // Ẩn hóa đơn nếu sau khi lọc không còn item nào
+                      if (filteredItems.length === 0) return null;
+
+                      return (
                       <div
                         key={invoice.invoice_id}
                         className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
@@ -462,7 +474,7 @@ const RevenueReportPage: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {invoice.items.map((item: PeriodInvoiceItem, idx: number) => {
+                              {filteredItems.map((item: PeriodInvoiceItem, idx: number) => {
                                 const taxableQty = Number(item.taxable_quantity || 0);
                                 const totalQty = Number(item.quantity || 1);
                                 const isFullyTaxable = taxableQty >= totalQty;
@@ -509,7 +521,8 @@ const RevenueReportPage: React.FC = () => {
                           </table>
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </Card>
