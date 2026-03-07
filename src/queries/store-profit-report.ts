@@ -25,7 +25,7 @@ export const storeProfitReportKeys = {
     startDate?: string;
     endDate?: string;
   }) => [...storeProfitReportKeys.all, 'customer', customerId, filters] as const,
-  period: (startDate: string, endDate: string) => [...storeProfitReportKeys.all, 'period', startDate, endDate] as const,
+  period: (startDate: string, endDate: string, taxableFilter: string) => [...storeProfitReportKeys.all, 'period', startDate, endDate, taxableFilter] as const,
 };
 
 // ==================== QUERIES ====================
@@ -131,14 +131,16 @@ export const useRiceCropProfitQuery = (riceCropId: number) => {
  * Lấy báo cáo doanh thu và lợi nhuận theo khoảng thời gian
  * @param startDate - Từ ngày (YYYY-MM-DD)
  * @param endDate - Đến ngày (YYYY-MM-DD)
+ * @param taxableFilter - Lọc theo hóa đơn ('all', 'yes', 'no')
  */
-export const usePeriodStoreProfitReport = (startDate: string, endDate: string) => {
+export const usePeriodStoreProfitReport = (startDate: string, endDate: string, taxableFilter: string = 'all') => {
   return useQuery({
-    queryKey: storeProfitReportKeys.period(startDate, endDate),
+    queryKey: storeProfitReportKeys.period(startDate, endDate, taxableFilter),
     queryFn: async () => {
       const response = await api.get<PeriodReport>(`/store-profit-report/period`, {
         startDate, 
-        endDate 
+        endDate,
+        taxableFilter
       });
       return response;
     },

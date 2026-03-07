@@ -11,7 +11,8 @@ import {
   Spin,
   Table,
   Tag,
-  Button
+  Button,
+  Segmented
 } from 'antd';
 import { DatePicker } from '@/components/common';
 import { 
@@ -42,11 +43,12 @@ const RevenueReportPage: React.FC = () => {
     dayjs().startOf('month'),
     dayjs().endOf('month'),
   ]);
+  const [taxableFilter, setTaxableFilter] = useState<'all' | 'yes' | 'no'>('all');
 
   const startDate = dates[0]?.format('YYYY-MM-DD') || '';
   const endDate = dates[1]?.format('YYYY-MM-DD') || '';
 
-  const { data: report, isLoading, isError } = usePeriodStoreProfitReport(startDate, endDate);
+  const { data: report, isLoading, isError } = usePeriodStoreProfitReport(startDate, endDate, taxableFilter);
 
   const formatMoney = (amount: number = 0) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -344,7 +346,25 @@ const RevenueReportPage: React.FC = () => {
 
             <Col span={24}>
               <Card 
-                title={<Space><ShoppingOutlined className="text-emerald-600" /> Danh sách hóa đơn & Sản phẩm đã bán</Space>} 
+                title={
+                  <Space size="large">
+                    <Space><ShoppingOutlined className="text-emerald-600" /> Danh sách hóa đơn & Sản phẩm đã bán</Space>
+                  </Space>
+                } 
+                extra={
+                  <Space>
+                    <Text type="secondary" className="hidden md:inline">Lọc theo SP:</Text>
+                    <Segmented
+                      value={taxableFilter}
+                      onChange={(val) => setTaxableFilter(val as any)}
+                      options={[
+                        { label: 'Tất cả', value: 'all' },
+                        { label: 'Có hóa đơn', value: 'yes', icon: <FileProtectOutlined className="text-blue-500" /> },
+                        { label: 'Không hóa đơn', value: 'no', icon: <FileExcelOutlined className="text-gray-400" /> },
+                      ]}
+                    />
+                  </Space>
+                }
                 className="rounded-2xl shadow-sm border-none overflow-hidden"
                 bodyStyle={{ padding: 0 }}
               >
@@ -386,7 +406,8 @@ const RevenueReportPage: React.FC = () => {
                   expandable={{
                     defaultExpandAllRows: true,
                     expandedRowRender: (record: PeriodInvoice) => (
-                      <div className="p-4 bg-gray-50 rounded-lg m-2 border border-gray-100 shadow-inner">
+                      <div className="p-6 bg-emerald-50/30 rounded-2xl m-3 border border-emerald-100 shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500" />
                         <Title level={5} className="!mb-4 !mt-0 flex items-center gap-2">
                           <ShoppingOutlined className="text-emerald-600" /> Chi tiết sản phẩm trong hóa đơn {record.invoice_code}
                         </Title>
