@@ -40,8 +40,8 @@ const { Title, Text } = Typography;
 const RevenueReportPage: React.FC = () => {
   // Mặc định xem báo cáo tháng hiện tại
   const [dates, setDates] = useState<[Dayjs | null, Dayjs | null]>([
-    dayjs().startOf('month'),
-    dayjs().endOf('month'),
+    dayjs().startOf('year'),
+    dayjs(),
   ]);
   const [taxableFilter, setTaxableFilter] = useState<'all' | 'yes' | 'no'>('all');
 
