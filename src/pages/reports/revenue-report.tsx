@@ -119,6 +119,57 @@ const RevenueReportPage: React.FC = () => {
 
   return (
     <div className='p-6 md:p-10 bg-gray-50 min-h-screen'>
+      <style>{`
+        .revenue-invoices-table .ant-table {
+          background: transparent !important;
+        }
+        .revenue-invoices-table .ant-table-thead > tr > th {
+          background: transparent !important;
+          border-bottom: none !important;
+          font-weight: 600;
+          color: #6b7280;
+        }
+        .revenue-invoices-table .ant-table-tbody > tr.invoice-row {
+          background: #ffffff !important;
+        }
+        /* Tạo khoảng cách giữa các khối hóa đơn */
+        .revenue-invoices-table .ant-table-tbody > tr.invoice-row > td {
+          border-top: 1px solid #f3f4f6 !important;
+          border-bottom: 1px solid #f3f4f6 !important;
+          padding: 20px 16px !important;
+        }
+        .revenue-invoices-table .ant-table-tbody > tr.invoice-row > td:first-child {
+          border-left: 1px solid #f3f4f6 !important;
+          border-top-left-radius: 12px;
+          border-bottom-left-radius: 12px;
+        }
+        .revenue-invoices-table .ant-table-tbody > tr.invoice-row > td:last-child {
+          border-right: 1px solid #f3f4f6 !important;
+          border-top-right-radius: 12px;
+          border-bottom-right-radius: 12px;
+        }
+        /* Tạo khoảng trống phía dưới mỗi khối row + expanded row */
+        .revenue-invoices-table .ant-table-tbody > tr.ant-table-expanded-row > td {
+          background: #ffffff !important;
+          border-bottom: 1px solid #f3f4f6 !important;
+          border-bottom-left-radius: 12px;
+          border-bottom-right-radius: 12px;
+          padding-top: 0 !important;
+          padding-bottom: 24px !important;
+        }
+        /* Hack để tạo khoảng cách giữa các "card" */
+        .revenue-invoices-table .ant-table-tbody > tr.ant-table-expanded-row {
+          display: table-row;
+        }
+        .revenue-invoices-table .ant-table-row-indent + .ant-table-row {
+           border-top: 10px solid transparent;
+        }
+        .revenue-invoices-table .ant-table-tbody::after {
+          content: "";
+          display: block;
+          height: 16px;
+        }
+      `}</style>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div>
@@ -368,130 +419,99 @@ const RevenueReportPage: React.FC = () => {
                 className="rounded-2xl shadow-sm border-none overflow-hidden"
                 bodyStyle={{ padding: 0 }}
               >
-                <Table 
-                  key={`${startDate}-${endDate}-${report?.invoices?.length}`}
-                  dataSource={report?.invoices || []} 
-                  rowKey="invoice_id"
-                  pagination={{ pageSize: 50, showSizeChanger: true }}
-                  className="revenue-invoices-table"
-                  columns={[
-                    {
-                      title: 'Mã hóa đơn',
-                      dataIndex: 'invoice_code',
-                      key: 'invoice_code',
-                      width: 150,
-                      render: (code: string) => <Text strong className="text-emerald-700">{code}</Text>
-                    },
-                    {
-                      title: 'Khách hàng',
-                      dataIndex: 'customer_name',
-                      key: 'customer_name',
-                    },
-                    {
-                      title: 'Ngày bán',
-                      dataIndex: 'sale_date',
-                      key: 'sale_date',
-                      width: 180,
-                      render: (date: string) => dayjs(date).format('DD/MM/YYYY HH:mm')
-                    },
-                    {
-                      title: 'Tổng tiền',
-                      dataIndex: 'total_amount',
-                      key: 'total_amount',
-                      align: 'right' as const,
-                      width: 150,
-                      render: (amount: number) => <Text strong>{formatMoney(amount)}</Text>
-                    }
-                  ]}
-                  expandable={{
-                    defaultExpandAllRows: true,
-                    expandedRowRender: (record: PeriodInvoice) => (
-                      <div className="p-6 bg-emerald-50/30 rounded-2xl m-3 border border-emerald-100 shadow-sm relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500" />
-                        <Title level={5} className="!mb-4 !mt-0 flex items-center gap-2">
-                          <ShoppingOutlined className="text-emerald-600" /> Chi tiết sản phẩm trong hóa đơn {record.invoice_code}
-                        </Title>
-                        <Table
-                          dataSource={record.items}
-                          rowKey={(item: PeriodInvoiceItem, index?: number) => `${record.invoice_id}-${item.product_name}-${index}`}
-                          pagination={false}
-                          size="small"
-                          className="bg-white rounded-md overflow-hidden border border-gray-200"
-                          columns={[
-                            {
-                              title: 'Tên sản phẩm',
-                              dataIndex: 'product_name',
-                              key: 'product_name',
-                              render: (text: string) => <Text strong>{text}</Text>
-                            },
-                            {
-                              title: 'Số lượng',
-                              dataIndex: 'quantity',
-                              key: 'quantity',
-                              render: (qty: number, item: PeriodInvoiceItem) => (
-                                <Tag className="rounded-full">
-                                  {qty} {item.unit_name}
-                                </Tag>
-                              )
-                            },
-                            {
-                              title: 'Đơn giá',
-                              dataIndex: 'unit_price',
-                              key: 'unit_price',
-                              align: 'right' as const,
-                              render: (price: number) => formatMoney(price)
-                            },
-                            {
-                              title: 'Thành tiền',
-                              dataIndex: 'total_price',
-                              key: 'total_price',
-                              align: 'right' as const,
-                              render: (total: number) => <Text strong className="text-emerald-600">{formatMoney(total)}</Text>
-                            },
-                            {
-                              title: 'GBKT',
-                              dataIndex: 'tax_selling_price',
-                              key: 'tax_selling_price',
-                              align: 'right' as const,
-                              render: (price: number) => price > 0 ? formatMoney(price) : '-'
-                            },
-                            {
-                              title: 'TTKT',
-                              dataIndex: 'taxable_total_amount',
-                              key: 'taxable_total_amount',
-                              align: 'right' as const,
-                              render: (total: number) => total > 0 ? <Text strong className="text-blue-600">{formatMoney(total)}</Text> : '-'
-                            },
-                            {
-                              title: 'Hóa đơn đầu vào',
-                              dataIndex: 'has_input_invoice',
-                              key: 'has_input_invoice',
-                              align: 'center' as const,
-                              render: (has: boolean, item: PeriodInvoiceItem) => {
-                                if (!has) {
-                                  return (
-                                    <Tag color="default" icon={<FileExcelOutlined />} className="rounded-md border-gray-200">
-                                      Không
-                                    </Tag>
-                                  );
-                                }
-                                
-                                const isFullyTaxable = Number(item.taxable_quantity) >= Number(item.quantity);
+                {/* Danh sách hóa đơn - mỗi hóa đơn là một card riêng biệt */}
+                <div className="p-4 space-y-4">
+                  {(report?.invoices || []).length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">
+                      <ShoppingOutlined style={{ fontSize: 40 }} className="mb-3 block" />
+                      Không có hóa đơn nào trong khoảng thời gian này
+                    </div>
+                  ) : (
+                    (report?.invoices || []).map((invoice: PeriodInvoice) => (
+                      <div
+                        key={invoice.invoice_id}
+                        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                      >
+                        {/* Header hóa đơn */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100 gap-2">
+                          <div className="flex items-center gap-3">
+                            <Text strong className="text-emerald-700 text-base">{invoice.invoice_code}</Text>
+                            <Text type="secondary">·</Text>
+                            <Text type="secondary">{invoice.customer_name}</Text>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <Text type="secondary" className="text-sm">
+                              {dayjs(invoice.sale_date).format('DD/MM/YYYY HH:mm')}
+                            </Text>
+                            <Text strong className="text-base">{formatMoney(invoice.total_amount)}</Text>
+                          </div>
+                        </div>
+
+                        {/* Bảng chi tiết sản phẩm */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-gray-400 font-medium uppercase text-xs">
+                                <th className="px-5 py-3 text-left font-semibold">Tên sản phẩm</th>
+                                <th className="px-4 py-3 text-center font-semibold">Số lượng</th>
+                                <th className="px-4 py-3 text-right font-semibold">Đơn giá</th>
+                                <th className="px-4 py-3 text-right font-semibold">Thành tiền</th>
+                                <th className="px-4 py-3 text-right font-semibold">GBKT</th>
+                                <th className="px-4 py-3 text-right font-semibold">TTKT</th>
+                                <th className="px-4 py-3 text-center font-semibold">Hóa đơn đầu vào</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {invoice.items.map((item: PeriodInvoiceItem, idx: number) => {
+                                const taxableQty = Number(item.taxable_quantity || 0);
+                                const totalQty = Number(item.quantity || 1);
+                                const isFullyTaxable = taxableQty >= totalQty;
+                                const hasInvoice = taxableQty > 0;
                                 return (
-                                  <Tag color="blue" icon={<FileProtectOutlined />} className="rounded-md border-blue-200">
-                                    {isFullyTaxable ? 'Có' : `Có (${Number(item.taxable_quantity)}/${Number(item.quantity)})`}
-                                  </Tag>
+                                  <tr
+                                    key={`${invoice.invoice_id}-${idx}`}
+                                    className={`border-t border-gray-50 hover:bg-gray-50/60 transition-colors ${idx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
+                                  >
+                                    <td className="px-5 py-3 font-medium text-gray-800">{item.product_name}</td>
+                                    <td className="px-4 py-3 text-center">
+                                      <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-0.5 text-xs font-medium">
+                                        {item.quantity} {item.unit_name}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-gray-600">{formatMoney(item.unit_price)}</td>
+                                    <td className="px-4 py-3 text-right font-semibold text-emerald-600">{formatMoney(item.total_price)}</td>
+                                    <td className="px-4 py-3 text-right text-gray-500">
+                                      {Number(item.tax_selling_price) > 0 ? formatMoney(Number(item.tax_selling_price)) : <span className="text-gray-300">-</span>}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                      {Number(item.taxable_total_amount) > 0
+                                        ? <span className="font-semibold text-blue-600">{formatMoney(Number(item.taxable_total_amount))}</span>
+                                        : <span className="text-gray-300">-</span>
+                                      }
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      {hasInvoice ? (
+                                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md px-2.5 py-1 text-xs font-medium">
+                                          <FileProtectOutlined />
+                                          {isFullyTaxable ? 'Có' : `Có (${taxableQty}/${totalQty})`}
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-500 border border-gray-200 rounded-md px-2.5 py-1 text-xs">
+                                          <FileExcelOutlined />
+                                          Không
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
                                 );
-                              }
-                            }
-                          ]}
-                        />
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    ),
-                    columnTitle: 'Xem chi tiết',
-                    rowExpandable: (record: PeriodInvoice) => record.items.length > 0
-                  }}
-                />
+                    ))
+                  )}
+                </div>
               </Card>
             </Col>
           </Row>
