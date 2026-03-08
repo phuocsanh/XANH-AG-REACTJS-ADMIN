@@ -197,7 +197,7 @@ const SalesInvoicesList: React.FC = () => {
   const cancelInvoiceMutation = useCancelSalesInvoiceMutation()
   const refundInvoiceMutation = useRefundSalesInvoiceMutation()
   const updateInvoiceMutation = useUpdateSalesInvoiceMutation()
-  
+   
   // Load mùa vụ với search
   const { data: seasonsData } = useSeasonsQuery({ 
     page: 1, 
@@ -980,10 +980,18 @@ const SalesInvoicesList: React.FC = () => {
                       <div className='grid grid-cols-4 gap-4'>
                         <div className='col-span-2'>
                           <div className='font-medium'>{item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định'}</div>
+                          {/* Hiển thị số lượng đã trả hàng nếu có (lấy từ trường returned_quantity của backend) */}
+                          {(item.returned_quantity ?? 0) > 0 && (
+                            <div className='flex items-center gap-1 mt-1'>
+                              <span className='text-xs font-medium px-1.5 py-0.5 rounded bg-orange-50 border border-orange-200 text-orange-600'>
+                                ↩ Đã trả: {item.returned_quantity} / {item.quantity} {item.unit_name || item.product?.unit?.name || ''}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>
-                            SL: {item.quantity} {item.unit_name || (item as any).product?.unit?.name || (item as any).product?.unit_name}
+                            SL: {item.quantity} {item.unit_name || item.product?.unit?.name}
                           </div>
                           <div className='text-sm text-gray-500'>
                             Giá: {formatCurrency(item.unit_price)}

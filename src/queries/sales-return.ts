@@ -59,6 +59,31 @@ export const useSalesReturnsQuery = (params?: Record<string, unknown>) => {
 }
 
 /**
+ * Hook lấy tất cả phiếu trả hàng theo invoice_id
+ * Dùng để hiển thị thông tin trả hàng chi tiết trong modal chi tiết hóa đơn
+ */
+export const useSalesReturnsByInvoiceQuery = (invoiceId: number | null | undefined) => {
+  return useQuery({
+    queryKey: [...salesReturnKeys.all, 'by-invoice', invoiceId] as const,
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        data: SalesReturn[]
+        total: number
+        page: number
+        limit: number
+      }>('/sales-returns/search', {
+        page: 1,
+        limit: 100, // Lấy tất cả phiếu trả của hóa đơn
+        invoice_id: invoiceId,
+      })
+      return (response.data || []) as SalesReturn[]
+    },
+    enabled: !!invoiceId,
+    staleTime: 0,
+  })
+}
+
+/**
  * Hook lấy phiếu trả hàng theo ID
  */
 export const useSalesReturnQuery = (id: number) => {
