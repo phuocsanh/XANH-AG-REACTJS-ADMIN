@@ -493,17 +493,17 @@ const InventoryReceiptCreate: React.FC = () => {
         created_by: 1, // Fallback if needed
         
         // Phí vận chuyển chung
-        shared_shipping_cost: Math.round(data.hasSharedShipping ? data.sharedShippingCost : 0),
+        shared_shipping_cost: Number(data.sharedShippingCost || 0),
         shipping_allocation_method: data.allocationMethod,
         
         // Images
         ...(imageUrls.length > 0 && { images: imageUrls }),
         
         // Thanh toán
-        paid_amount: Math.round(paid_amount),
+        paid_amount: Number(paid_amount || 0),
         payment_status: payment_status,
         is_shipping_paid_to_supplier: false,
-        debt_amount: Math.round(totals.supplierAmount - paid_amount),
+        debt_amount: Math.round(Number(totals.supplierAmount || 0) - Number(paid_amount || 0)),
         payment_method: data.status === 'approved' && data.paymentType !== 'debt' ? data.paymentMethod : null,
         payment_due_date: data.status === 'approved' && data.paymentType !== 'full' ? 
           (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null) : null,
@@ -517,11 +517,11 @@ const InventoryReceiptCreate: React.FC = () => {
           base_quantity: item.base_quantity || item.quantity,
           quantity: item.quantity,
           taxable_quantity: item.taxable_quantity || 0, // Bổ sung trường này
-          unit_cost: item.netUnitCost,
-          total_price: item.netTotalValue,
+          unit_cost: Number(item.netUnitCost || 0),
+          total_price: Number(item.netTotalValue || 0),
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,
-          individual_shipping_cost: item.individual_shipping_cost || 0,
+          individual_shipping_cost: Number(item.individual_shipping_cost || 0),
           discount_amount: 0,
           discount_value: 0,
           discount_type: 'fixed_amount',

@@ -566,9 +566,9 @@ const InventoryReceiptDetail: React.FC = () => {
                           </Text>
                         </Descriptions.Item>
                       )}
-                      {receipt.supplier_amount !== undefined && receipt.supplier_amount !== receipt.total_amount && (
-                        <Descriptions.Item label="Nợ NCC gốc">
-                          <Tooltip title="Tổng số tiền phải trả cho NCC (Đã trừ các phí tự thanh toán ngoài)">
+                      {receipt.supplier_amount !== undefined && (
+                        <Descriptions.Item label="Số tiền nợ NCC">
+                          <Tooltip title="Tổng tiền hàng (đã trừ chiết khấu) phải trả cho nhà cung cấp. Tuyệt đối không bao gồm phí bốc vác/vận chuyển.">
                             <Text strong className="text-lg text-orange-600">
                               {(receipt.supplier_amount || 0).toLocaleString("vi-VN")} ₫
                               <InfoCircleOutlined className="ml-1 text-xs" />
