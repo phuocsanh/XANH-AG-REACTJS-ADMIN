@@ -363,12 +363,15 @@ const InventoryReceiptCreate: React.FC = () => {
       const netUnitCost = item.quantity > 0 
         ? Math.round((item.valueAfterItemDisc - allocatedGlobalDisc) / item.quantity)
         : item.unit_cost
+      const netTotalValue = Math.round(item.valueAfterItemDisc - allocatedGlobalDisc)
+      const totalPriceRaw = item.quantity * item.unit_cost
         
       return {
         ...item,
         totalDiscountForItem,
         netUnitCost,
-        netTotalValue: Math.round(item.valueAfterItemDisc - allocatedGlobalDisc)
+        netTotalValue,
+        totalPriceRaw
       }
     })
 
@@ -516,15 +519,15 @@ const InventoryReceiptCreate: React.FC = () => {
           conversion_factor: item.conversion_factor || 1,
           base_quantity: item.base_quantity || item.quantity,
           quantity: item.quantity,
-          taxable_quantity: item.taxable_quantity || 0, // Bổ sung trường này
-          unit_cost: Number(item.netUnitCost || 0),
-          total_price: Number(item.netTotalValue || 0),
+          taxable_quantity: item.taxable_quantity || 0,
+          unit_cost: Number(item.unit_cost || 0), // Lưu GIÁ MUA GỐC
+          total_price: Number(item.totalPriceRaw || 0), // Lưu THÀNH TIỀN GỐC (SL * Giá mua)
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,
           individual_shipping_cost: Number(item.individual_shipping_cost || 0),
-          discount_amount: 0,
-          discount_value: 0,
-          discount_type: 'fixed_amount',
+          discount_amount: Number(item.itemDiscount || 0), // Lưu chiết khấu dòng riêng
+          discount_value: Number(item.discountValue || 0),
+          discount_type: item.discountType || 'fixed_amount',
         })).reverse(),
 
         // Chiết khấu đơn hàng gửi 0 vì đã phân bổ vào từng item theo yêu cầu

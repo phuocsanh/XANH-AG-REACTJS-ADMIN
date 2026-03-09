@@ -277,179 +277,201 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
       okText={isEditMode ? 'Cập nhật' : 'Tạo mới'}
       cancelText="Hủy"
     >
-      <form className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-4">
-        <FormComboBox
-          label="Khách hàng"
-          name="customer_id"
-          control={control}
-          rules={{ required: 'Vui lòng chọn khách hàng' }}
-          data={customerOptions}
-          isLoading={isCustomerLoading}
-          isFetching={isCustomerFetching}
-          hasNextPage={customerHasNextPage}
-          isFetchingNextPage={isCustomerFetchingNextPage}
-          fetchNextPage={fetchNextCustomerPage}
-          onSearch={setCustomerSearch}
-          placeholder="Chọn khách hàng"
-          showSearch
-          disabled={isCustomer}
-        />
-
-        <FormComboBox
-          label="Mùa vụ"
-          name="season_id"
-          control={control}
-          rules={{ required: 'Vui lòng chọn mùa vụ' }}
-          data={seasonOptions}
-          isLoading={isSeasonLoading}
-          isFetching={isSeasonFetching}
-          hasNextPage={seasonHasNextPage}
-          isFetchingNextPage={isSeasonFetchingNextPage}
-          fetchNextPage={fetchNextSeasonPage}
-          onSearch={setSeasonSearch}
-          placeholder="Chọn mùa vụ"
-          showSearch
-        />
-
-        <FormField
-          label="Tên ruộng"
-          name="field_name"
-          control={control}
-          rules={{ required: 'Vui lòng nhập tên ruộng' }}
-          placeholder="VD: Ruộng sau nhà"
-        />
-
-        <FormFieldNumber
-          label="Số công đất"
-          name="amount_of_land"
-          control={control}
-          rules={{ required: 'Vui lòng nhập số công đất' }}
-          placeholder="VD: 10"
-          decimalScale={1}
-        />
-
-        <FormComboBox
-          label="Diện tích mỗi công"
-          name="area_of_each_plot_of_land_id"
-          control={control}
-          rules={{ required: 'Vui lòng chọn diện tích mỗi công' }}
-          options={areaOptions}
-          placeholder="Chọn diện tích"
-          allowClear
-          showSearch
-        />
-
-        <FormFieldNumber
-          label="Tổng diện tích (m²)"
-          name="field_area"
-          control={control}
-          rules={{ required: 'Vui lòng nhập diện tích' }}
-          placeholder="VD: 5000"
-          decimalScale={1}
-        />
-
-        {/* Hiển thị Trạng thái và Giai đoạn nếu là chế độ Sửa */}
-        {isEditMode && (
-          <>
-            <FormComboBox
-              label="Giai đoạn sinh trưởng"
-              name="growth_stage"
-              control={control}
-              options={growthStageOptions}
-              required
-            />
-            <FormComboBox
-              label="Trạng thái"
-              name="status"
-              control={control}
-              options={statusOptions}
-              required
-            />
-          </>
-        )}
-
-        <FormField
-          label="Giống lúa"
-          name="rice_variety"
-          control={control}
-          rules={{ required: 'Vui lòng nhập giống lúa' }}
-          placeholder="VD: OM 5451"
-        />
-
-        <FormField
-          label="Nguồn giống"
-          name="seed_source"
-          control={control}
-          placeholder="VD: Trung tâm giống An Giang"
-        />
-
-        <FormField
-          label="Vị trí"
-          name="location"
-          control={control}
-          placeholder="VD: Xã Tân Hiệp, An Giang"
-        />
-
-        <FormDatePicker
-          label="Ngày gieo mạ"
-          name="sowing_date"
-          control={control}
-        />
-
-        <FormField
-          label="Ngày gieo âm lịch"
-          name="sowing_lunar_date"
-          control={control}
-          placeholder="Tự động tính..."
-          disabled
-        />
-
-        <FormDatePicker
-          label="Ngày cấy"
-          name="transplanting_date"
-          control={control}
-        />
-
-        <FormField
-          label="Ngày cấy âm lịch"
-          name="transplanting_lunar_date"
-          control={control}
-          placeholder="Tự động tính..."
-          disabled
-        />
-
-        <FormDatePicker
-          label="Ngày thu hoạch dự kiến"
-          name="expected_harvest_date"
-          control={control}
-        />
-
-        <FormField
-          label="Ngày thu hoạch âm lịch"
-          name="expected_harvest_lunar_date"
-          control={control}
-          placeholder="Tự động tính..."
-          disabled
-        />
-
-        {isEditMode && (
-          <FormDatePicker
-            label="Ngày thu hoạch thực tế"
-            name="actual_harvest_date"
+      <div className="mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+          <FormComboBox
+            label="Khách hàng"
+            name="customer_id"
             control={control}
+            rules={{ required: 'Vui lòng chọn khách hàng' }}
+            data={customerOptions}
+            isLoading={isCustomerLoading}
+            isFetching={isCustomerFetching}
+            hasNextPage={customerHasNextPage}
+            isFetchingNextPage={isCustomerFetchingNextPage}
+            fetchNextPage={fetchNextCustomerPage}
+            onSearch={setCustomerSearch}
+            placeholder="Chọn khách hàng"
+            showSearch
+            disabled={isCustomer}
+            className="mb-4"
           />
-        )}
 
-        <FormField
-          label="Ghi chú"
-          name="notes"
-          control={control}
-          type="textarea"
-          rows={3}
-          placeholder="Ghi chú về Ruộng lúa..."
-          className="col-span-2"
-        />
-      </form>
+          <FormComboBox
+            label="Mùa vụ"
+            name="season_id"
+            control={control}
+            rules={{ required: 'Vui lòng chọn mùa vụ' }}
+            data={seasonOptions}
+            isLoading={isSeasonLoading}
+            isFetching={isSeasonFetching}
+            hasNextPage={seasonHasNextPage}
+            isFetchingNextPage={isSeasonFetchingNextPage}
+            fetchNextPage={fetchNextSeasonPage}
+            onSearch={setSeasonSearch}
+            placeholder="Chọn mùa vụ"
+            showSearch
+            className="mb-4"
+          />
+
+          <FormField
+            label="Tên ruộng"
+            name="field_name"
+            control={control}
+            rules={{ required: 'Vui lòng nhập tên ruộng' }}
+            placeholder="VD: Ruộng sau nhà"
+            className="mb-4"
+          />
+
+          <FormFieldNumber
+            label="Số công đất"
+            name="amount_of_land"
+            control={control}
+            rules={{ required: 'Vui lòng nhập số công đất' }}
+            placeholder="VD: 10"
+            decimalScale={1}
+            className="mb-4"
+          />
+
+          <FormComboBox
+            label="Diện tích mỗi công"
+            name="area_of_each_plot_of_land_id"
+            control={control}
+            rules={{ required: 'Vui lòng chọn diện tích mỗi công' }}
+            options={areaOptions}
+            placeholder="Chọn diện tích"
+            allowClear
+            showSearch
+            className="mb-4"
+          />
+
+          <FormFieldNumber
+            label="Tổng diện tích (m²)"
+            name="field_area"
+            control={control}
+            rules={{ required: 'Vui lòng nhập diện tích' }}
+            placeholder="VD: 5000"
+            decimalScale={1}
+            className="mb-4"
+          />
+
+          {/* Hiển thị Trạng thái và Giai đoạn nếu là chế độ Sửa */}
+          {isEditMode && (
+            <>
+              <FormComboBox
+                label="Giai đoạn sinh trưởng"
+                name="growth_stage"
+                control={control}
+                options={growthStageOptions}
+                required
+                className="mb-4"
+              />
+              <FormComboBox
+                label="Trạng thái"
+                name="status"
+                control={control}
+                options={statusOptions}
+                required
+                className="mb-4"
+              />
+            </>
+          )}
+
+          <FormField
+            label="Giống lúa"
+            name="rice_variety"
+            control={control}
+            rules={{ required: 'Vui lòng nhập giống lúa' }}
+            placeholder="VD: OM 5451"
+            className="mb-4"
+          />
+
+          <FormField
+            label="Nguồn giống"
+            name="seed_source"
+            control={control}
+            placeholder="VD: Trung tâm giống An Giang"
+            className="mb-4"
+          />
+
+          <FormField
+            label="Vị trí"
+            name="location"
+            control={control}
+            placeholder="VD: Xã Tân Hiệp, An Giang"
+            className="mb-4"
+          />
+
+          <FormDatePicker
+            label="Ngày gieo mạ"
+            name="sowing_date"
+            control={control}
+            className="mb-4"
+          />
+
+          <FormField
+            label="Ngày gieo âm lịch"
+            name="sowing_lunar_date"
+            control={control}
+            placeholder="Tự động tính..."
+            disabled
+            className="mb-4"
+          />
+
+          <FormDatePicker
+            label="Ngày cấy"
+            name="transplanting_date"
+            control={control}
+            className="mb-4"
+          />
+
+          <FormField
+            label="Ngày cấy âm lịch"
+            name="transplanting_lunar_date"
+            control={control}
+            placeholder="Tự động tính..."
+            disabled
+            className="mb-4"
+          />
+
+          <FormDatePicker
+            label="Ngày thu hoạch dự kiến"
+            name="expected_harvest_date"
+            control={control}
+            className="mb-4"
+          />
+
+          <FormField
+            label="Ngày thu hoạch âm lịch"
+            name="expected_harvest_lunar_date"
+            control={control}
+            placeholder="Tự động tính..."
+            disabled
+            className="mb-4"
+          />
+
+          {isEditMode && (
+            <FormDatePicker
+              label="Ngày thu hoạch thực tế"
+              name="actual_harvest_date"
+              control={control}
+              className="mb-4"
+            />
+          )}
+
+          <div className="md:col-span-2">
+            <FormField
+              label="Ghi chú"
+              name="notes"
+              control={control}
+              type="textarea"
+              rows={3}
+              placeholder="Ghi chú về Ruộng lúa..."
+              className="mb-4"
+            />
+          </div>
+        </div>
+      </div>
     </Modal>
   );
 };

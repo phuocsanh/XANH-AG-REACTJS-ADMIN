@@ -355,9 +355,9 @@ const InventoryReceiptDetail: React.FC = () => {
       key: "total_price",
       width: 140,
       align: "right",
-      render: (p) => (
+      render: (p, record) => (
         <Text strong className="text-green-600">
-          {(p || 0).toLocaleString("vi-VN")} ₫
+          {(Number(record.quantity || 0) * Number(record.unit_cost || 0)).toLocaleString("vi-VN")} ₫
         </Text>
       ),
     },
@@ -567,7 +567,7 @@ const InventoryReceiptDetail: React.FC = () => {
                         </Descriptions.Item>
                       )}
                       {receipt.supplier_amount !== undefined && (
-                        <Descriptions.Item label="Số tiền nợ NCC">
+                        <Descriptions.Item label="Tiền hàng phải trả NCC">
                           <Tooltip title="Tổng tiền hàng (đã trừ chiết khấu) phải trả cho nhà cung cấp. Tuyệt đối không bao gồm phí bốc vác/vận chuyển.">
                             <Text strong className="text-lg text-orange-600">
                               {(receipt.supplier_amount || 0).toLocaleString("vi-VN")} ₫
@@ -629,17 +629,18 @@ const InventoryReceiptDetail: React.FC = () => {
                 className="border border-gray-100 rounded"
                 summary={(pageData: readonly any[]) => {
                   const totalQ = pageData.reduce((s, i) => s + (Number(i.quantity) || 0), 0)
-                  const totalA = pageData.reduce((s, i) => s + (Number(i.total_price) || 0), 0)
+                  const totalA = pageData.reduce((s, i) => s + (Number(i.quantity || 0) * Number(i.unit_cost || 0)), 0)
                   return (
                     <Table.Summary fixed>
                       <Table.Summary.Row className="bg-gray-50">
                         <Table.Summary.Cell index={0} colSpan={3}><Text strong>Tổng cộng hàng hóa</Text></Table.Summary.Cell>
                         <Table.Summary.Cell index={3} align="right"><Text strong>{totalQ.toLocaleString("vi-VN")}</Text></Table.Summary.Cell>
                         <Table.Summary.Cell index={4} />
-                        <Table.Summary.Cell index={5} align="right">
+                        <Table.Summary.Cell index={5} /> 
+                        <Table.Summary.Cell index={6} align="right">
                           <Text strong className="text-green-600">{totalA.toLocaleString("vi-VN")} ₫</Text>
                         </Table.Summary.Cell>
-                        <Table.Summary.Cell index={6} colSpan={2} />
+                        <Table.Summary.Cell index={7} colSpan={2} />
                       </Table.Summary.Row>
                     </Table.Summary>
                   )
