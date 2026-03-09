@@ -154,12 +154,15 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card bordered={false} className="bg-orange-50 shadow-sm">
+          <Card bordered={false} className="bg-orange-50 shadow-sm p-2 md:p-4">
             <Statistic
-              title="Tiền hàng phải trả NCC"
+              title={<span className="text-gray-500 whitespace-nowrap">Phải trả NCC</span>}
               value={supplierAmount}
-              formatter={(value) => formatCurrency(Number(value))}
-              valueStyle={{ color: '#d46b08' }}
+              formatter={(value) => (
+                <span className="whitespace-nowrap font-bold text-orange-600">
+                  {formatCurrency(Number(value))}
+                </span>
+              )}
               suffix={supplierAmount !== grandTotal ? <Text type="secondary" style={{ fontSize: '10px', display: 'block' }}>*(Đã trừ phí trả ngoài)</Text> : null}
             />
           </Card>
