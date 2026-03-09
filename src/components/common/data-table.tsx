@@ -400,11 +400,16 @@ const DataTable = <T extends Record<string, unknown>>({
           locale={{ emptyText }}
           scroll={{ x: "max-content" }}
           pagination={tableProps.pagination === false ? false : {
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+            // Merge paginationConfig từ props - đây là nguồn sự thật chính
             ...paginationConfig,
-            ...(typeof tableProps.pagination === 'object' ? tableProps.pagination : {}),
-            total: (typeof tableProps.pagination === 'object' && typeof tableProps.pagination.total === 'number') 
-                ? tableProps.pagination.total 
-                : (typeof paginationConfig?.total === 'number' ? paginationConfig.total : filteredData.length),
+            // Đảm bảo total luôn đúng: ưu tiên paginationConfig.total (từ API)
+            // Chỉ dùng filteredData.length khi không có total từ bên ngoài
+            total: typeof paginationConfig?.total === 'number'
+              ? paginationConfig.total
+              : filteredData.length,
           }}
           onChange={handleTableChange}
           onRow={(record) => ({
