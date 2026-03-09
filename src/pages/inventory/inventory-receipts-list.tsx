@@ -693,6 +693,7 @@ const InventoryReceiptsList: React.FC = () => {
             columns={columns.filter(c => c.key !== 'stt') as any}
             rowKey='id'
             showActions={false}
+            onView={(record) => handleViewReceipt(record as any)}
             paginationConfig={{
               current: currentPage,
               pageSize: pageSize,

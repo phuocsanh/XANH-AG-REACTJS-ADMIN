@@ -420,22 +420,35 @@ const DataTable = <T extends Record<string, unknown>>({
             };
           })()}
           onChange={handleTableChange}
-          onRow={(record) => ({
-            onDoubleClick: (event) => {
-              // Nhấn đúp để xem chi tiết, tránh xung đột với việc bôi đen text để copy khi nhấn đơn
-              const target = event.target as HTMLElement;
-              const isFunctionalElement = target.closest('button') || 
-                                         target.closest('a') || 
-                                         target.closest('.ant-dropdown-trigger') || 
-                                         target.closest('.ant-select') ||
-                                         target.closest('.ant-checkbox-wrapper');
-              
-              if (onView && !isFunctionalElement) {
-                onView(record);
+          onRow={(record) => {
+            const externalProps = tableProps.onRow ? tableProps.onRow(record) : {};
+            
+            return {
+              ...externalProps,
+              onDoubleClick: (event) => {
+                // Gọi handler bên ngoài nếu có
+                if (externalProps.onDoubleClick) {
+                  externalProps.onDoubleClick(event);
+                }
+                
+                // Logic mặc định của DataTable: Nhấn đúp để xem chi tiết
+                const target = event.target as HTMLElement;
+                const isFunctionalElement = target.closest('button') || 
+                                           target.closest('a') || 
+                                           target.closest('.ant-dropdown-trigger') || 
+                                           target.closest('.ant-select') ||
+                                           target.closest('.ant-checkbox-wrapper');
+                
+                if (onView && !isFunctionalElement) {
+                  onView(record);
+                }
+              },
+              style: { 
+                cursor: onView ? 'pointer' : 'default',
+                ...externalProps.style 
               }
-            },
-            style: { cursor: onView ? 'pointer' : 'default' }
-          })}
+            };
+          }}
         />
       )}
     </div>

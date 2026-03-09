@@ -304,8 +304,8 @@ const ProductSearch: React.FC = () => {
               setPageSize(pagination.pageSize)
             }
           }}
-          onRow={(record) => ({
-            onDoubleClick: () => handleViewDetail(record as ExtendedProduct),
+          onView={(record) => handleViewDetail(record as ExtendedProduct)}
+          onRow={() => ({
             className: 'cursor-pointer hover:bg-emerald-50 transition-colors'
           })}
           searchableColumns={[]}

@@ -303,16 +303,22 @@ const InventoryReceiptDetail: React.FC = () => {
       title: "Tên sản phẩm",
       dataIndex: "product_name",
       key: "product_name",
-      render: (name, record) => (
-        <div className="flex flex-col">
-          <Text strong className="leading-tight">{name}</Text>
-          {(record.product?.trade_name || record.product?.brand_name) && (
-            <Text type="secondary" style={{ fontSize: '11px' }} className="mt-0.5 italic">
-              ({record.product?.trade_name || record.product?.brand_name})
-            </Text>
-          )}
-        </div>
-      ),
+      render: (name, record) => {
+        const productName = record.product?.name || name;
+        const tradeName = record.product?.trade_name;
+        const hasTradeName = tradeName && tradeName !== productName;
+        
+        return (
+          <div className="flex flex-col">
+            <Text strong className="leading-tight">{productName}</Text>
+            {hasTradeName && (
+              <Text type="secondary" style={{ fontSize: '11px' }} className="mt-0.5 italic">
+                ({tradeName})
+              </Text>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "ĐVT",
