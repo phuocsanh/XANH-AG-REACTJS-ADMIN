@@ -1,6 +1,7 @@
 // Danh sách phiếu điều chỉnh kho - Simplified version
 
 import React, { useState, useMemo } from "react"
+import DataTable from "@/components/common/data-table"
 import { useNavigate } from "react-router-dom"
 import {
   Card,
@@ -178,14 +179,10 @@ const AdjustmentsList: React.FC = () => {
       dataIndex: "code",
       key: "code",
       width: 180,
-      render: (code: string, record: InventoryAdjustment) => (
-        <Button
-          type='link'
-          onClick={() => navigate(`/inventory/adjustments/${record.id}`, { state: { adjustment: record } })}
-          style={{ padding: 0, height: "auto" }}
-        >
+      render: (code: string) => (
+        <div className='font-medium text-blue-600'>
           {code}
-        </Button>
+        </div>
       ),
     },
     {
@@ -279,22 +276,14 @@ const AdjustmentsList: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : (
-          <Table
-            columns={columns}
-            dataSource={filteredAdjustments}
+          <DataTable
+            data={filteredAdjustments as any}
+            columns={columns as any}
             rowKey='id'
-            pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
+            onView={(record: any) => navigate(`/inventory/adjustments/${record.id}`, { state: { adjustment: record } })}
+            paginationConfig={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
             scroll={{ x: 1000 }}
-            onRow={(record) => ({
-              onClick: (event) => {
-                const selection = window.getSelection();
-                if (selection && selection.toString().length > 0) return;
-                const target = event.target as HTMLElement;
-                if (target.closest('button') || target.closest('a')) return;
-                navigate(`/inventory/adjustments/${record.id}`, { state: { adjustment: record } });
-              },
-              style: { cursor: 'pointer' }
-            })}
+            showSTT={true}
           />
         )}
       </Card>

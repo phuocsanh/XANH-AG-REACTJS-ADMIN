@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Table, Tag, Space, Popconfirm, Card } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import DataTable from '@/components/common/data-table';
 import type { ColumnsType } from 'antd/es/table';
 import {
   useCostItemCategories,
@@ -114,14 +115,15 @@ const CostItemCategoriesPage: React.FC = () => {
           </Button>
         }
       >
-        <Table
-          columns={columns}
-          dataSource={categories}
+        <DataTable
+          columns={columns as any}
+          data={categories}
           rowKey="id"
           loading={isLoading}
-          pagination={{
+          onView={(record: any) => handleEdit(record as any)}
+          paginationConfig={{
             pageSize: 20,
-            showTotal: (total) => `Tổng ${total} loại`,
+            showTotal: (total: number) => `Tổng ${total} loại`,
           }}
           scroll={{ x: 1000 }}
         />

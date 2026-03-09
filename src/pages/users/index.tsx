@@ -12,6 +12,8 @@ import FilterHeader from '@/components/common/filter-header';
 const { TabPane } = Tabs;
 const { Option } = Select;
 
+import DataTable from '@/components/common/data-table';
+
 const UserManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('1');
 
@@ -163,12 +165,15 @@ const PendingUsersTab: React.FC = () => {
   ];
 
   return (
-    <Table
-      dataSource={users}
-      columns={columns}
-      rowKey={(record) => record.id || record.user_id}
+    <DataTable
+      data={users as any}
+      columns={columns as any}
+      rowKey={(record: any) => record.id || record.user_id}
       loading={isLoading}
-      pagination={{ pageSize: 10 }}
+      showSTT={true}
+      paginationConfig={{
+        pageSize: 10,
+      }}
       scroll={{ x: 800 }}
     />
   );
@@ -378,12 +383,15 @@ const AllUsersTab: React.FC = () => {
   ];
 
   return (
-    <Table
-      dataSource={users}
-      columns={columns}
-      rowKey={(record) => record.id || record.user_id}
+    <DataTable
+      data={users as any}
+      columns={columns as any}
+      rowKey={(record: any) => record.id || record.user_id}
       loading={isLoading}
-      pagination={{ pageSize: 10 }}
+      showSTT={false} // AllUsersTab đã có cột ID riêng
+      paginationConfig={{
+        pageSize: 10,
+      }}
       scroll={{ x: 1000 }}
     />
   );

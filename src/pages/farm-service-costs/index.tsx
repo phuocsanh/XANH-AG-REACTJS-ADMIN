@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Space, Tag, Popconfirm, Empty, Tabs, Row, Col, Statistic } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CarryOutOutlined, GiftOutlined } from '@ant-design/icons';
+import DataTable from '@/components/common/data-table';
 import ComboBox from '@/components/common/combo-box';
 import FilterHeader from '@/components/common/filter-header';
 import dayjs from 'dayjs';
@@ -273,13 +274,15 @@ const FarmServiceCostList: React.FC = () => {
               key: 'service',
               label: <span className="flex items-center gap-2"><CarryOutOutlined /> Chi phí Dịch vụ</span>,
               children: (
-                <Table
-                  columns={serviceColumns}
-                  dataSource={serviceData?.data || []}
+                <DataTable
+                  columns={serviceColumns as any}
+                  data={serviceData?.data || []}
                   rowKey="id"
                   loading={isServiceLoading}
-                  pagination={{ pageSize: 20 }}
+                  onView={(record) => handleEdit(record)}
+                  paginationConfig={{ pageSize: 20 }}
                   scroll={{ x: 1200 }}
+                  showSTT={true}
                 />
               )
             },
@@ -287,13 +290,15 @@ const FarmServiceCostList: React.FC = () => {
               key: 'gift',
               label: <span className="flex items-center gap-2"><GiftOutlined /> Quà tặng</span>,
               children: (
-                <Table
-                  columns={giftColumns}
-                  dataSource={giftData?.data || []}
+                <DataTable
+                  columns={giftColumns as any}
+                  data={giftData?.data || []}
                   rowKey="id"
                   loading={isGiftLoading}
-                  pagination={{ pageSize: 20 }}
+                  onView={(record: any) => record.source === 'manually_awarded' && handleEdit(record)}
+                  paginationConfig={{ pageSize: 20 }}
                   scroll={{ x: 1200 }}
+                  showSTT={true}
                 />
               )
             }

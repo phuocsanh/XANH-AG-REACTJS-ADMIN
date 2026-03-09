@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react"
+import DataTable from "@/components/common/data-table"
 import { useNavigate } from "react-router-dom"
 import {
   Card,
@@ -269,14 +270,10 @@ const ReturnsList: React.FC = () => {
       dataIndex: "code",
       key: "code",
       width: 180,
-      render: (code: string, record: InventoryReturn) => (
-        <Button
-          type='link'
-          onClick={() => handleViewReturn(record)}
-          style={{ padding: 0, height: "auto" }}
-        >
+      render: (code: string) => (
+        <div className='font-medium text-blue-600'>
           {code}
-        </Button>
+        </div>
       ),
     },
     {
@@ -405,32 +402,23 @@ const ReturnsList: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : (
-          <Table
-            columns={columns}
-            dataSource={paginatedReturns}
+          <DataTable
+            data={paginatedReturns as any}
+            columns={columns as any}
             rowKey='id'
-            pagination={{
+            onView={(record) => handleViewReturn(record as any)}
+            paginationConfig={{
               current: pagination.page,
               pageSize: pagination.limit,
               total: filteredReturns.length,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) =>
+              showTotal: (total: number, range: [number, number]) =>
                 `${range[0]}-${range[1]} của ${total} phiếu trả hàng`,
-              onChange: handleTableChange,
-              onShowSizeChange: handleTableChange,
             }}
+            onChange={(pag: any) => handleTableChange(pag.current, pag.pageSize)}
             scroll={{ x: 1200 }}
-            onRow={(record) => ({
-              onClick: (event) => {
-                const selection = window.getSelection();
-                if (selection && selection.toString().length > 0) return;
-                const target = event.target as HTMLElement;
-                if (target.closest('button') || target.closest('a')) return;
-                handleViewReturn(record);
-              },
-              style: { cursor: 'pointer' }
-            })}
+            showSTT={true}
           />
         )}
       </Card>

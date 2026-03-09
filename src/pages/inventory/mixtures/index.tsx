@@ -1,4 +1,5 @@
 import React, { useMemo } from "react"
+import DataTable from "@/components/common/data-table"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import {
   Card,
@@ -58,14 +59,10 @@ const InventoryMixturesList: React.FC = () => {
       dataIndex: "code",
       key: "code",
       width: 150,
-      render: (code: string, record: any) => (
-        <Button
-          type='link'
-          onClick={() => navigate(`/inventory/mixtures/${record.id}`)}
-          style={{ padding: 0 }}
-        >
+      render: (code: string) => (
+        <div className='font-medium text-blue-600'>
           {code}
-        </Button>
+        </div>
       ),
     },
     {
@@ -174,27 +171,19 @@ const InventoryMixturesList: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : (
-          <Table
-            columns={columns}
-            dataSource={mixtures}
+          <DataTable
+            data={mixtures as any}
+            columns={columns.filter(c => c.key !== 'stt') as any}
             rowKey='id'
-            pagination={{
+            onView={(record) => navigate(`/inventory/mixtures/${record.id}`)}
+            paginationConfig={{
               current: currentPage,
               pageSize: pageSize,
               showSizeChanger: true,
             }}
             onChange={handleTableChange}
             scroll={{ x: 1000 }}
-            onRow={(record) => ({
-              onClick: (event) => {
-                const selection = window.getSelection();
-                if (selection && selection.toString().length > 0) return;
-                const target = event.target as HTMLElement;
-                if (target.closest('button') || target.closest('a')) return;
-                navigate(`/inventory/mixtures/${record.id}`);
-              },
-              style: { cursor: 'pointer' }
-            })}
+            showSTT={true}
           />
         )}
       </Card>

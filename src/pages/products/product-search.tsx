@@ -305,7 +305,7 @@ const ProductSearch: React.FC = () => {
             }
           }}
           onRow={(record) => ({
-            onClick: () => handleViewDetail(record as ExtendedProduct),
+            onDoubleClick: () => handleViewDetail(record as ExtendedProduct),
             className: 'cursor-pointer hover:bg-emerald-50 transition-colors'
           })}
           searchableColumns={[]}

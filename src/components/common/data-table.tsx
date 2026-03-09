@@ -408,14 +408,8 @@ const DataTable = <T extends Record<string, unknown>>({
           }}
           onChange={handleTableChange}
           onRow={(record) => ({
-            onClick: (event) => {
-              // Nếu đang copy/select text thì không trigger detail
-              const selection = window.getSelection();
-              if (selection && selection.toString().length > 0) {
-                return;
-              }
-
-              // Nếu nhấn vào các element functional (button, link, các class của antd cho menu/dropdown) thì không trigger
+            onDoubleClick: (event) => {
+              // Nhấn đúp để xem chi tiết, tránh xung đột với việc bôi đen text để copy khi nhấn đơn
               const target = event.target as HTMLElement;
               const isFunctionalElement = target.closest('button') || 
                                          target.closest('a') || 

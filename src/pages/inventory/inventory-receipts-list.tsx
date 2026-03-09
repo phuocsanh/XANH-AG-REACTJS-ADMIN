@@ -39,6 +39,7 @@ import {
 } from "@/queries/inventory"
 import { useSupplierSearch } from "@/queries/supplier"
 import { LoadingSpinner, RangePicker } from "@/components/common"
+import DataTable from "@/components/common/data-table"
 import FilterHeader from '@/components/common/filter-header'
 
 const { Title, Text } = Typography
@@ -347,14 +348,10 @@ const InventoryReceiptsList: React.FC = () => {
       dataIndex: "code",
       key: "code",
       width: 180,
-      render: (code: string, record: InventoryReceipt) => (
-        <Button
-          type='link'
-          onClick={() => handleViewReceipt(record)}
-          style={{ padding: 0, height: "auto" }}
-        >
+      render: (code: string) => (
+        <div className='font-medium text-blue-600'>
           {code}
-        </Button>
+        </div>
       ),
     },
     {
@@ -691,31 +688,23 @@ const InventoryReceiptsList: React.FC = () => {
         {isLoadingReceipts || isLoadingStats ? (
           <LoadingSpinner />
         ) : (
-          <Table
-            columns={columns}
-            dataSource={mappedReceipts}
+          <DataTable
+            data={mappedReceipts as any}
+            columns={columns.filter(c => c.key !== 'stt') as any}
             rowKey='id'
-            pagination={{
+            onView={(record: any) => handleViewReceipt(record as any)}
+            paginationConfig={{
               current: currentPage,
               pageSize: pageSize,
               total,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) =>
+              showTotal: (total: number, range: [number, number]) =>
                 `${range[0]}-${range[1]} của ${total} phiếu nhập`,
             }}
-            onChange={handleTableChange}
+            onChange={(pagination: any) => handleTableChange(pagination, {})}
             scroll={{ x: 1200 }}
-            onRow={(record) => ({
-              onClick: (event) => {
-                const selection = window.getSelection();
-                if (selection && selection.toString().length > 0) return;
-                const target = event.target as HTMLElement;
-                if (target.closest('button') || target.closest('a') || target.closest('.ant-dropdown-trigger')) return;
-                handleViewReceipt(record);
-              },
-              style: { cursor: 'pointer' }
-            })}
+            showSTT={true}
           />
         )}
       </Card>

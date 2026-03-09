@@ -3,6 +3,7 @@ import { Card, Table, Tag, Button, Space, Popconfirm, Select, Tooltip } from 'an
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useNavigate } from 'react-router-dom';
+import DataTable from '@/components/common/data-table';
 import {
   useDeliveryLogs,
   useDeleteDeliveryLog,
@@ -257,20 +258,23 @@ const DeliveryLogsList: React.FC = () => {
       </div>
 
       <Card>
-        <Table
-          columns={columns}
-          dataSource={data?.data || []}
+        <DataTable
+          columns={columns.filter(c => c.key !== 'stt') as any}
+          data={data?.data || []}
           rowKey="id"
           loading={isLoading}
-          scroll={{ x: 1400 }}
-          pagination={{
+          onView={(record: any) => handleView(record.id!)}
+          showSTT={true}
+          paginationConfig={{
             current: page,
             pageSize: limit,
             total: data?.total || 0,
-            onChange: setPage,
-            showSizeChanger: false,
-            showTotal: (total) => `Tổng ${total} phiếu`,
+            showTotal: (total: number) => `Tổng ${total} phiếu`,
           }}
+          onChange={(pagination: any) => {
+            if (pagination.current) setPage(pagination.current);
+          }}
+          scroll={{ x: 1400 }}
         />
       </Card>
     </div>
