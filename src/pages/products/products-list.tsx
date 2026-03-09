@@ -524,10 +524,7 @@ const ProductsList: React.FC = () => {
           searchableColumns={[]} // Disable client-side search
           showSearch={false} // Disable client-side search UI
           showFilters={false} // Disable client-side filter UI
-          onRow={(record) => ({
-            onClick: () => handleEditProduct(record as Product),
-            className: 'cursor-pointer hover:bg-gray-50 transition-colors',
-          })}
+          onView={handleEditProduct}
         />
       </div>
 

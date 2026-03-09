@@ -407,6 +407,28 @@ const DataTable = <T extends Record<string, unknown>>({
                 : filteredData.length,
           }}
           onChange={handleTableChange}
+          onRow={(record) => ({
+            onClick: (event) => {
+              // Nếu đang copy/select text thì không trigger detail
+              const selection = window.getSelection();
+              if (selection && selection.toString().length > 0) {
+                return;
+              }
+
+              // Nếu nhấn vào các element functional (button, link, các class của antd cho menu/dropdown) thì không trigger
+              const target = event.target as HTMLElement;
+              const isFunctionalElement = target.closest('button') || 
+                                         target.closest('a') || 
+                                         target.closest('.ant-dropdown-trigger') || 
+                                         target.closest('.ant-select') ||
+                                         target.closest('.ant-checkbox-wrapper');
+              
+              if (onView && !isFunctionalElement) {
+                onView(record);
+              }
+            },
+            style: { cursor: onView ? 'pointer' : 'default' }
+          })}
         />
       )}
     </div>

@@ -495,6 +495,7 @@ const RiceCropsList: React.FC = () => {
             showTotal: (total: number) => `Tổng ${total} Ruộng lúa`,
           }}
           onChange={handleTableChange}
+          onView={(record) => handleViewCrop(record as RiceCrop)}
           showSearch={false}
           showFilters={false}
         />

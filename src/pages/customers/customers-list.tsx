@@ -648,6 +648,7 @@ const CustomersList: React.FC = () => {
             showTotal: (total: number) => `Tổng ${total} khách hàng`,
           }}
           onChange={handleTableChange}
+          onView={(record) => handleViewCustomer(record as Customer)}
           showSearch={false}
           showFilters={false}
         />

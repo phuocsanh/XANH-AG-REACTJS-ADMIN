@@ -60,6 +60,14 @@ const ResponsiveDataTable = <T extends { id?: number | string }>({
           <Card
             key={item.id || index}
             className='mb-4 p-4 w-full max-w-full overflow-hidden'
+            style={{ cursor: onView ? 'pointer' : 'default' }}
+            onClick={(event) => {
+              const selection = window.getSelection();
+              if (selection && selection.toString().length > 0) return;
+              const target = event.target as HTMLElement;
+              if (target.closest('button') || target.closest('a')) return;
+              if (onView) onView(item);
+            }}
           >
             <div className='flex justify-between items-start'>
               <div className='flex-1 min-w-0'>
