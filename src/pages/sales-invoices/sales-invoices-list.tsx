@@ -767,6 +767,7 @@ const SalesInvoicesList: React.FC = () => {
           }}
           onChange={handleTableChange}
           onView={(record) => handleViewInvoice(record as SalesInvoice)}
+          showActions={false}
           showSearch={false}
           showFilters={false}
         />

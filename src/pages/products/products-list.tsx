@@ -525,6 +525,7 @@ const ProductsList: React.FC = () => {
           showSearch={false} // Disable client-side search UI
           showFilters={false} // Disable client-side filter UI
           onView={handleEditProduct}
+          showActions={false}
         />
       </div>
 

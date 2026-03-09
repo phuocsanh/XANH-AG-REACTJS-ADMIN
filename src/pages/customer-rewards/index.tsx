@@ -370,6 +370,7 @@ const CustomerRewardsPage: React.FC = () => {
                             onView={(record) => handleOpenRewardModal(record)}
                             showSearch={false}
                             showFilters={false}
+                            showActions={false}
                         />
                     )
                 },
@@ -395,6 +396,7 @@ const CustomerRewardsPage: React.FC = () => {
                             onView={(record) => handleOpenRewardModal(record, true)}
                             showSearch={false}
                             showFilters={false}
+                            showActions={false}
                         />
                     )
                 }

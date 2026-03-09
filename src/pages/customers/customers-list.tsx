@@ -649,6 +649,7 @@ const CustomersList: React.FC = () => {
           }}
           onChange={handleTableChange}
           onView={(record) => handleViewCustomer(record as Customer)}
+          showActions={false}
           showSearch={false}
           showFilters={false}
         />

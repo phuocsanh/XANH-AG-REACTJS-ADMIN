@@ -304,6 +304,7 @@ const SalesReturnsList: React.FC = () => {
           }}
           onChange={handleTableChange}
           onView={(record) => handleViewReturn(record as SalesReturn)}
+          showActions={false}
           showSearch={false}
           showFilters={false}
         />

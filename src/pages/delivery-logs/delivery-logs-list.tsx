@@ -264,6 +264,7 @@ const DeliveryLogsList: React.FC = () => {
           rowKey="id"
           loading={isLoading}
           onView={(record: any) => handleView(record.id!)}
+          showActions={false}
           showSTT={true}
           paginationConfig={{
             current: page,

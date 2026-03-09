@@ -407,6 +407,7 @@ const ReturnsList: React.FC = () => {
             columns={columns as any}
             rowKey='id'
             onView={(record) => handleViewReturn(record as any)}
+            showActions={false}
             paginationConfig={{
               current: pagination.page,
               pageSize: pagination.limit,

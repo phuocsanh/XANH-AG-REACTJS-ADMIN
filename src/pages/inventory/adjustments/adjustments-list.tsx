@@ -281,6 +281,7 @@ const AdjustmentsList: React.FC = () => {
             columns={columns as any}
             rowKey='id'
             onView={(record: any) => navigate(`/inventory/adjustments/${record.id}`, { state: { adjustment: record } })}
+            showActions={false}
             paginationConfig={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
             scroll={{ x: 1000 }}
             showSTT={true}

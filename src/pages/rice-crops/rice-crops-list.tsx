@@ -498,6 +498,7 @@ const RiceCropsList: React.FC = () => {
           onView={(record) => handleViewCrop(record as RiceCrop)}
           showSearch={false}
           showFilters={false}
+          showActions={false}
         />
       </div>
 
