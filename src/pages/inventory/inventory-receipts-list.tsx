@@ -692,7 +692,7 @@ const InventoryReceiptsList: React.FC = () => {
             data={mappedReceipts as any}
             columns={columns.filter(c => c.key !== 'stt') as any}
             rowKey='id'
-            onView={(record: any) => handleViewReceipt(record as any)}
+            showActions={false}
             paginationConfig={{
               current: currentPage,
               pageSize: pageSize,
