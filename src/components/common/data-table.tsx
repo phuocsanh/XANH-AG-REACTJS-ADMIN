@@ -399,12 +399,12 @@ const DataTable = <T extends Record<string, unknown>>({
           dataSource={filteredData}
           locale={{ emptyText }}
           scroll={{ x: "max-content" }}
-          pagination={{
+          pagination={tableProps.pagination === false ? false : {
             ...paginationConfig,
-            ...(tableProps.pagination || {}),
-            total: (tableProps.pagination && typeof tableProps.pagination.total === 'number') 
+            ...(typeof tableProps.pagination === 'object' ? tableProps.pagination : {}),
+            total: (typeof tableProps.pagination === 'object' && typeof tableProps.pagination.total === 'number') 
                 ? tableProps.pagination.total 
-                : filteredData.length,
+                : (typeof paginationConfig?.total === 'number' ? paginationConfig.total : filteredData.length),
           }}
           onChange={handleTableChange}
           onRow={(record) => ({
