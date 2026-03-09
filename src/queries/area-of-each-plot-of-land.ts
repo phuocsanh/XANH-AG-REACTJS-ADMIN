@@ -54,7 +54,9 @@ export const useAreasQuery = (params?: { page?: number; limit?: number }) => {
   return useQuery({
     queryKey: areaKeys.list(params || {}),
     queryFn: async () => {
-      const response = await api.postRaw<{ data: AreaOfEachPlotOfLand[]; total: number }>(
+      const response = await api.postRaw<{data: AreaOfEachPlotOfLand[]; total: number
+        pagination?: any
+      }>(
         '/area-of-each-plot-of-land/search',
         {
           page: params?.page || 1,
@@ -66,7 +68,7 @@ export const useAreasQuery = (params?: { page?: number; limit?: number }) => {
       return {
         data: {
           items: response.data || [],
-          total: response.total || 0,
+          total: (response.pagination?.total ?? response.total) || 0,
           page: params?.page || 1,
           limit: params?.limit || 100,
         }

@@ -284,7 +284,7 @@ const ReturnsList: React.FC = () => {
         if (record.supplier_name) return record.supplier_name
         
         if (record.supplier_id && suppliersData?.data?.items) {
-          const supplier = suppliersData.data.items.find(s => s.id === record.supplier_id)
+          const supplier = suppliersData.data.items.find((s: any) => s.id === record.supplier_id)
           if (supplier) return supplier.name
         }
         

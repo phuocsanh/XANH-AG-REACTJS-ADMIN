@@ -94,12 +94,12 @@ export const searchCustomersApi = async ({
       searchDto.keyword = search.trim()
     }
 
-    const response = await api.postRaw<{
-      data: Customer[]
+    const response = await api.postRaw<{data: Customer[]
       total: number
       page: number
       limit: number
-    }>('/customers/search', searchDto)
+        pagination?: any
+      }>('/customers/search', searchDto)
 
     // Chuyển đổi dữ liệu sang format của ComboBox
     const mappedData = (response.data || []).map((customer: Customer) => ({
@@ -384,10 +384,10 @@ export const useDeleteCustomerMutation = () => {
 export const useCreateCustomerAccountMutation = () => {
   return useMutation({
     mutationFn: async (customerId: number) => {
-      const response = await api.postRaw<{ 
-        account: string; 
+      const response = await api.postRaw<{account: string; 
         temp_password: string; 
-        customer_name: string 
+        customer_name: string
+        pagination?: any
       }>('/users/customer/create-account', {
         customer_id: customerId,
       })

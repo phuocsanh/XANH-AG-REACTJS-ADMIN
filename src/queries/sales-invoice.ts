@@ -260,9 +260,9 @@ export const useCustomerSeasonStatsQuery = (customerId: number | undefined, seas
         return { totalPurchase: 0, totalDebt: 0 }
       }
 
-      const response = await api.postRaw<{
-        success: boolean
+      const response = await api.postRaw<{success: boolean
         data: SalesInvoice[]
+        pagination?: any
       }>('/sales/invoices/search', {
         customer_id: customerId,
         season_id: seasonId,

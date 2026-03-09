@@ -582,9 +582,9 @@ export const useCreateTransactionMutation = () => {
 export const useRecalculateWeightedAverageCostMutation = () => {
   return useMutation({
     mutationFn: async (productId: number) => {
-      const response = await api.postRaw<{
-        newAverageCost: number
+      const response = await api.postRaw<{newAverageCost: number
         success: boolean
+        pagination?: any
       }>(`/inventory/recalculate-weighted-average/${productId}`)
       return response
     },

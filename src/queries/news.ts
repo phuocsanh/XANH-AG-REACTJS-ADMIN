@@ -69,16 +69,16 @@ export const useNewsQuery = (params?: Record<string, unknown>) => {
         ...params
       };
 
-      const response = await api.postRaw<{
-        data: News[]
+      const response = await api.postRaw<{data: News[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/news/search', payload)
 
       return {
         items: response.data || [],
-        total: response.total || 0,
+        total: (response.pagination?.total ?? response.total) || 0,
         page: page,
         limit: limit,
         total_pages: Math.ceil((response.total || 0) / limit),

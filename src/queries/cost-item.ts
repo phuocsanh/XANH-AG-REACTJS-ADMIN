@@ -47,11 +47,11 @@ export const useCostItems = (filters?: CostItemFilters) => {
       if (filters?.rice_crop_id) searchBody.rice_crop_id = filters.rice_crop_id
       if (filters?.category) searchBody.category = filters.category
 
-      const response = await api.postRaw<{
-        data: CostItem[]
+      const response = await api.postRaw<{data: CostItem[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/cost-items/search', searchBody)
 
       return response.data || []

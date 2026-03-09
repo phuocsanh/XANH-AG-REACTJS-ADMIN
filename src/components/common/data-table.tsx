@@ -399,18 +399,26 @@ const DataTable = <T extends Record<string, unknown>>({
           dataSource={filteredData}
           locale={{ emptyText }}
           scroll={{ x: "max-content" }}
-          pagination={tableProps.pagination === false ? false : {
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
-            // Merge paginationConfig từ props - đây là nguồn sự thật chính
-            ...paginationConfig,
-            // Đảm bảo total luôn đúng: ưu tiên paginationConfig.total (từ API)
-            // Chỉ dùng filteredData.length khi không có total từ bên ngoài
-            total: typeof paginationConfig?.total === 'number'
-              ? paginationConfig.total
-              : filteredData.length,
-          }}
+          pagination={tableProps.pagination === false ? false : (() => {
+            // Hợp nhất pagination từ tableProps và paginationConfig riêng
+            const basePagination = typeof tableProps.pagination === 'object' ? tableProps.pagination : {};
+            const mergedConfig = {
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total: number, range: [number, number]) => `${range[0]}-${range[1]} của ${total} mục`,
+              ...basePagination,
+              ...paginationConfig,
+            };
+
+            return {
+              ...mergedConfig,
+              // Đảm bảo total luôn đúng: ưu tiên mergedConfig.total (từ API)
+              // Chỉ dùng filteredData.length khi không có total từ bên ngoài
+              total: typeof mergedConfig.total === 'number'
+                ? mergedConfig.total
+                : filteredData.length,
+            };
+          })()}
           onChange={handleTableChange}
           onRow={(record) => ({
             onDoubleClick: (event) => {

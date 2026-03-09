@@ -34,26 +34,27 @@ export const useSuppliersQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: supplierKeys.list(params),
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: Supplier[]
-        total: number
-        page: number
-        limit: number
-      }>('/suppliers/search', {
+      const response = await api.postRaw<any>('/suppliers/search', {
         page,
         limit,
         ...params,
       })
 
+      // Backend trả về { data: [], pagination: { total, page, limit } }
+      const items = response.data || []
+      const total = response.pagination?.total ?? response.total ?? items.length
+      const pageNum = response.pagination?.page ?? response.page ?? page
+      const limitNum = response.pagination?.limit ?? response.limit ?? limit
+
       return {
         data: {
-          items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
-          has_prev: response.page > 1,
+          items,
+          total,
+          page: pageNum,
+          limit: limitNum,
+          total_pages: Math.ceil(total / limitNum) || 1,
+          has_next: pageNum * limitNum < total,
+          has_prev: pageNum > 1,
         },
         status: 200,
         message: 'Success',

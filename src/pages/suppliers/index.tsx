@@ -135,33 +135,45 @@ export const Suppliers = () => {
     ),
   })
 
-  // Handle Table Change
+  // Handle Table Change - phân biệt 3 loại: paginate, sort, filter
   const handleTableChange = (
     pagination: TablePaginationConfig,
     tableFilters: Record<string, FilterValue | null>,
     sorter: SorterResult<ExtendedSupplier> | SorterResult<ExtendedSupplier>[]
   ) => {
-    setCurrentPage(pagination.current || 1)
-    setPageSize(pagination.pageSize || 10)
+    // Luôn cập nhật page và pageSize từ pagination event
+    const newPage = pagination.current || 1
+    const newPageSize = pagination.pageSize || 10
+    setCurrentPage(newPage)
+    setPageSize(newPageSize)
 
+    // Chỉ cập nhật filters khi có sự thay đổi thực sự về sort/filter
     const newFilters: Record<string, unknown> = { ...filters }
+    let filtersChanged = false
 
-    // Handle Sorting - chỉ xử lý single sorter
+    // Handle Sorting
     const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter
     if (singleSorter?.field && singleSorter?.order) {
       newFilters.sort_by = String(singleSorter.field)
       newFilters.sort_direction = singleSorter.order === 'ascend' ? 'ASC' : 'DESC'
-    } else {
+      filtersChanged = true
+    } else if (filters.sort_by) {
       delete newFilters.sort_by
       delete newFilters.sort_direction
+      filtersChanged = true
     }
     
     // Handle Native Filters (Status)
     const statusFilter = tableFilters.status
     if (statusFilter && statusFilter.length > 0) {
-       newFilters.status = String(statusFilter[0])
-    } else {
-       delete newFilters.status
+      const newStatus = String(statusFilter[0])
+      if (filters.status !== newStatus) {
+        newFilters.status = newStatus
+        filtersChanged = true
+      }
+    } else if (filters.status) {
+      delete newFilters.status
+      filtersChanged = true
     }
 
     // Handle Date Range (created_at)
@@ -169,12 +181,17 @@ export const Suppliers = () => {
     if (dateFilter && dateFilter.length === 2) {
       newFilters.start_date = String(dateFilter[0])
       newFilters.end_date = String(dateFilter[1])
-    } else {
-        delete newFilters.start_date
-        delete newFilters.end_date
+      filtersChanged = true
+    } else if (filters.start_date) {
+      delete newFilters.start_date
+      delete newFilters.end_date
+      filtersChanged = true
     }
 
-    setFilters(newFilters)
+    // Chỉ gọi setFilters khi có thay đổi thực sự để tránh re-render không cần thiết
+    if (filtersChanged) {
+      setFilters(newFilters)
+    }
   }
   
   // Handler update filter trực tiếp (Controlled mode)

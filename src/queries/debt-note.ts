@@ -183,8 +183,7 @@ export const useCloseSeasonDebtNoteMutation = () => {
         manual_remaining_amount?: number
       }
     }) => {
-      const response = await api.postRaw<{
-        success: boolean
+      const response = await api.postRaw<{success: boolean
         debt_note_id: number
         customer_name: string
         season_name: string
@@ -197,6 +196,7 @@ export const useCloseSeasonDebtNoteMutation = () => {
         remaining_amount: number
         shortage_to_next_reward: number
         message: string
+        pagination?: any
       }>(`/debt-notes/${id}/close-season`, data)
       return response
     },
@@ -217,12 +217,12 @@ export const useRewardTrackingQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ['reward-tracking', params],
     queryFn: async () => {
-      const response = await api.postRaw<{
-        items: any[]
+      const response = await api.postRaw<{items: any[]
         total: number
         page: number
         limit: number
         reward_threshold: number
+        pagination?: any
       }>('/customer-rewards/tracking', params || {})
       return response
     },
@@ -236,11 +236,11 @@ export const useRewardHistoryQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ['reward-history', params],
     queryFn: async () => {
-      const response = await api.postRaw<{
-        items: any[]
+      const response = await api.postRaw<{items: any[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/customer-rewards/history', params || {})
       return response
     },
@@ -261,7 +261,9 @@ export const useCreateManualRewardMutation = () => {
       season_id?: number;
       rice_crop_id?: number;
     }) => {
-      const response = await api.postRaw<{ success: boolean; message: string }>('/customer-rewards', data);
+      const response = await api.postRaw<{success: boolean; message: string
+        pagination?: any
+      }>('/customer-rewards', data);
       return response;
     },
     onSuccess: () => {
@@ -281,7 +283,9 @@ export const useCreateManualRewardMutation = () => {
 export const useUpdateRewardHistoryMutation = () => {
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await api.patchRaw<{ success: boolean; message: string }>(`/customer-rewards/history/${id}`, data);
+      const response = await api.patchRaw<{success: boolean; message: string
+        pagination?: any
+      }>(`/customer-rewards/history/${id}`, data);
       return response;
     },
     onSuccess: () => {

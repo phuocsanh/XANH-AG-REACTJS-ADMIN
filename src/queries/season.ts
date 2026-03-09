@@ -47,9 +47,9 @@ export const useSeasonsQuery = (params?: Record<string, unknown>) => {
       return {
         data: {
           items: response.data || [],
-          total: response.total || 0,
-          page: response.page || 1,
-          limit: response.limit || 100,
+          total: (response.pagination?.total ?? response.total) || 0,
+          page: (response.pagination?.page ?? response.page) || 1,
+          limit: (response.pagination?.limit ?? response.limit) || 100,
           total_pages: Math.ceil((response.total || 0) / (response.limit || 100)),
           has_next: (response.page || 1) * (response.limit || 100) < (response.total || 0),
           has_prev: (response.page || 1) > 1,
@@ -98,12 +98,12 @@ export const searchSeasonsApi = async ({
       searchDto.keyword = search.trim()
     }
 
-    const response = await api.postRaw<{
-      data: Season[]
+    const response = await api.postRaw<{data: Season[]
       total: number
       page: number
       limit: number
-    }>('/season/search', searchDto)
+        pagination?: any
+      }>('/season/search', searchDto)
 
     // Chuyển đổi dữ liệu sang format của ComboBox
     const mappedData = (response.data || []).map((season: Season) => ({
@@ -169,11 +169,11 @@ export const useActiveSeasonQuery = () => {
   return useQuery({
     queryKey: seasonKeys.active(),
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: Season[]
+      const response = await api.postRaw<{data: Season[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>("/season/search", {
         page: 1,
         limit: 20,

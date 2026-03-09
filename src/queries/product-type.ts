@@ -40,11 +40,11 @@ export const useProductTypesQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: productTypeKeys.list(params || {}),
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: ProductType[]
+      const response = await api.postRaw<{data: ProductType[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/product-types/search', {
         page,
         limit,
@@ -54,11 +54,11 @@ export const useProductTypesQuery = (params?: Record<string, unknown>) => {
       return {
         data: {
           items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
+          total: response.pagination?.total ?? response.total,
+          page: response.pagination?.page ?? response.page,
+          limit: response.pagination?.limit ?? response.limit,
+          total_pages: Math.ceil((response.pagination?.total ?? response.total ?? 0) / (response.pagination?.limit ?? response.limit ?? 10)),
+          has_next: (response.pagination?.page ?? response.page ?? 1) * (response.pagination?.limit ?? response.limit ?? 10) < (response.pagination?.total ?? response.total ?? 0),
           has_prev: response.page > 1,
         },
         status: 200,

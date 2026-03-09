@@ -68,11 +68,11 @@ export const useInvoicesQuery = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: salesKeys.invoicesList(),
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: SalesInvoice[]
+      const response = await api.postRaw<{data: SalesInvoice[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/sales/invoices/search', {
         page,
         limit,
@@ -81,11 +81,11 @@ export const useInvoicesQuery = (params?: Record<string, unknown>) => {
       return {
         data: {
           items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
+          total: response.pagination?.total ?? response.total,
+          page: response.pagination?.page ?? response.page,
+          limit: response.pagination?.limit ?? response.limit,
+          total_pages: Math.ceil((response.pagination?.total ?? response.total ?? 0) / (response.pagination?.limit ?? response.limit ?? 10)),
+          has_next: (response.pagination?.page ?? response.page ?? 1) * (response.pagination?.limit ?? response.limit ?? 10) < (response.pagination?.total ?? response.total ?? 0),
           has_prev: response.page > 1,
         },
         status: 200,
@@ -134,12 +134,12 @@ export const searchInvoicesApi = async ({
       searchDto.keyword = search.trim()
     }
 
-    const response = await api.postRaw<{
-      data: SalesInvoice[]
+    const response = await api.postRaw<{data: SalesInvoice[]
       total: number
       page: number
       limit: number
-    }>('/sales/invoices/search', searchDto)
+        pagination?: any
+      }>('/sales/invoices/search', searchDto)
 
     // Chuyển đổi dữ liệu sang format của ComboBox
     const mappedData = (response.data || []).map((invoice: SalesInvoice) => ({

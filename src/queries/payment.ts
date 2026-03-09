@@ -225,12 +225,12 @@ export const useRollbackPaymentMutation = () => {
       console.log('🔥 useRollbackPaymentMutation - mutationFn được gọi với ID:', id)
       console.log('🔥 Endpoint:', `/payments/${id}/rollback`)
       
-      const response = await api.postRaw<{
-        success: boolean;
+      const response = await api.postRaw<{success: boolean;
         message: string;
         payment: any;
         affected_invoices: number;
         affected_debt_note: any;
+        pagination?: any
       }>(`/payments/${id}/rollback`, {})
       
       console.log('✅ useRollbackPaymentMutation - Response:', response)

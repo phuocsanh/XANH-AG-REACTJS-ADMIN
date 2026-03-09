@@ -15,23 +15,30 @@ export function mapSearchResponse<T>(
   page: number,
   limit: number
 ) {
-  console.log('🔍 mapSearchResponse - Input:', { apiResponse, page, limit })
+  // console.log('🔍 mapSearchResponse - Input:', { apiResponse, page, limit })
   
+  // Bóc tách pagination linh hoạt
+  const apiPagination = (apiResponse as any).pagination;
+  const total = apiPagination?.total ?? (apiResponse as any).total ?? 0;
+  const apiPage = apiPagination?.page ?? (apiResponse as any).page ?? page;
+  const apiLimit = apiPagination?.limit ?? (apiResponse as any).limit ?? limit;
+  const totalPages = apiPagination?.totalPages ?? (apiResponse as any).totalPages ?? Math.ceil(total / apiLimit);
+
   const result = {
     data: {
       items: apiResponse.data || [],
-      total: apiResponse.pagination?.total || 0,
-      page: page,
-      limit: limit,
-      total_pages: apiResponse.pagination?.totalPages || Math.ceil((apiResponse.pagination?.total || 0) / limit),
-      has_next: page * limit < (apiResponse.pagination?.total || 0),
-      has_prev: page > 1,
+      total: total,
+      page: apiPage,
+      limit: apiLimit,
+      total_pages: totalPages,
+      has_next: apiPage * apiLimit < total,
+      has_prev: apiPage > 1,
     },
     status: 200,
     message: 'Success',
     success: true
   }
   
-  console.log('✅ mapSearchResponse - Output:', result)
-  return result
+  // console.log('✅ mapSearchResponse - Output:', result)
+  return result;
 }

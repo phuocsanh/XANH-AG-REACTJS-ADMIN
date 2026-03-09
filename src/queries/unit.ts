@@ -21,11 +21,11 @@ export const useUnitsQuery = () => {
   return useQuery({
     queryKey: unitKeys.all,
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: Unit[]
+      const response = await api.postRaw<{data: Unit[]
         total: number
         page: number
         limit: number
+        pagination?: any
       }>('/units/search', {
         page: 1,
         limit: 1000, // Lấy tất cả units
@@ -34,11 +34,11 @@ export const useUnitsQuery = () => {
       return {
         data: {
           items: response.data,
-          total: response.total,
-          page: response.page,
-          limit: response.limit,
-          total_pages: Math.ceil(response.total / response.limit),
-          has_next: response.page * response.limit < response.total,
+          total: response.pagination?.total ?? response.total,
+          page: response.pagination?.page ?? response.page,
+          limit: response.pagination?.limit ?? response.limit,
+          total_pages: Math.ceil((response.pagination?.total ?? response.total ?? 0) / (response.pagination?.limit ?? response.limit ?? 10)),
+          has_next: (response.pagination?.page ?? response.page ?? 1) * (response.pagination?.limit ?? response.limit ?? 10) < (response.pagination?.total ?? response.total ?? 0),
           has_prev: response.page > 1,
         },
         status: 200,
