@@ -209,6 +209,7 @@ const ListSymbols = () => {
             searchableColumns={["symbolCode", "symbolName", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onView={handleEdit}
             paginationConfig={{
               pageSize: 10,
               showSizeChanger: true,

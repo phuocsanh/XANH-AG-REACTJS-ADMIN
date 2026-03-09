@@ -367,6 +367,7 @@ const CustomerRewardsPage: React.FC = () => {
                                 total: trackingData?.total || 0,
                                 onChange: (page) => setTrackingPage(page)
                             }}
+                            onView={(record) => handleOpenRewardModal(record)}
                             showSearch={false}
                             showFilters={false}
                         />
@@ -391,6 +392,7 @@ const CustomerRewardsPage: React.FC = () => {
                                 total: historyData?.total || 0,
                                 onChange: (page) => setHistoryPage(page)
                             }}
+                            onView={(record) => handleOpenRewardModal(record, true)}
                             showSearch={false}
                             showFilters={false}
                         />

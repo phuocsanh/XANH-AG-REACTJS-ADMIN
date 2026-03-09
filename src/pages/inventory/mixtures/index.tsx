@@ -185,6 +185,16 @@ const InventoryMixturesList: React.FC = () => {
             }}
             onChange={handleTableChange}
             scroll={{ x: 1000 }}
+            onRow={(record) => ({
+              onClick: (event) => {
+                const selection = window.getSelection();
+                if (selection && selection.toString().length > 0) return;
+                const target = event.target as HTMLElement;
+                if (target.closest('button') || target.closest('a')) return;
+                navigate(`/inventory/mixtures/${record.id}`);
+              },
+              style: { cursor: 'pointer' }
+            })}
           />
         )}
       </Card>

@@ -295,6 +295,7 @@ const AreasList: React.FC = () => {
               setPageSize(size)
             },
           }}
+          onView={(record) => handleEditArea(record as AreaOfEachPlotOfLand)}
         />
       </div>
 

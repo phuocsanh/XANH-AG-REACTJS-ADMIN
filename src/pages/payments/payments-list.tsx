@@ -467,6 +467,7 @@ const PaymentsList: React.FC = () => {
               setPageSize(size)
             },
           }}
+          onView={(record) => handleViewPayment(record as Payment)}
         />
       </div>
 

@@ -188,6 +188,7 @@ const ListSubCategory = () => {
             scroll={{ x: "100%" }}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onView={handleEdit}
           />
         </div>
       </div>

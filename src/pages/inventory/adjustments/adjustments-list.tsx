@@ -285,6 +285,16 @@ const AdjustmentsList: React.FC = () => {
             rowKey='id'
             pagination={{ pageSize: 10, showSizeChanger: true, showQuickJumper: true }}
             scroll={{ x: 1000 }}
+            onRow={(record) => ({
+              onClick: (event) => {
+                const selection = window.getSelection();
+                if (selection && selection.toString().length > 0) return;
+                const target = event.target as HTMLElement;
+                if (target.closest('button') || target.closest('a')) return;
+                navigate(`/inventory/adjustments/${record.id}`, { state: { adjustment: record } });
+              },
+              style: { cursor: 'pointer' }
+            })}
           />
         )}
       </Card>

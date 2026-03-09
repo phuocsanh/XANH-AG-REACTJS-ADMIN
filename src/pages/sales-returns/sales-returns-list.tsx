@@ -303,6 +303,7 @@ const SalesReturnsList: React.FC = () => {
             showTotal: (total: number) => `Tổng ${total} phiếu trả`,
           }}
           onChange={handleTableChange}
+          onView={(record) => handleViewReturn(record as SalesReturn)}
           showSearch={false}
           showFilters={false}
         />

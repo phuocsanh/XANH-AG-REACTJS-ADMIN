@@ -706,6 +706,16 @@ const InventoryReceiptsList: React.FC = () => {
             }}
             onChange={handleTableChange}
             scroll={{ x: 1200 }}
+            onRow={(record) => ({
+              onClick: (event) => {
+                const selection = window.getSelection();
+                if (selection && selection.toString().length > 0) return;
+                const target = event.target as HTMLElement;
+                if (target.closest('button') || target.closest('a') || target.closest('.ant-dropdown-trigger')) return;
+                handleViewReceipt(record);
+              },
+              style: { cursor: 'pointer' }
+            })}
           />
         )}
       </Card>

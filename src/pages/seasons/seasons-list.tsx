@@ -429,6 +429,7 @@ const SeasonsList: React.FC = () => {
             showTotal: (total: number) => `Tổng ${total} mùa vụ`,
           }}
           onChange={handleTableChange}
+          onView={(record) => handleEditSeason(record as Season)}
           showSearch={false}
           showFilters={false}
         />

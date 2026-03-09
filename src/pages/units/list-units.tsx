@@ -207,6 +207,7 @@ const ListUnits = () => {
             searchableColumns={["name", "code", "description"]}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onView={handleEdit}
             paginationConfig={{
               pageSize: 10,
               showSizeChanger: true,

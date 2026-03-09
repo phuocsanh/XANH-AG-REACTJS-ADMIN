@@ -485,6 +485,7 @@ export const Suppliers = () => {
           searchableColumns={["name", "code", "phone", "email"]}
           onEdit={handleEditSupplier}
           onDelete={handleDeleteSupplier}
+          onView={handleEditSupplier}
           actionButtons={[
             {
               key: "stats",

@@ -225,6 +225,7 @@ const ListCategory = () => {
             scroll={{ x: 900 }}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onView={handleEdit}
           />
         </div>
       </div>
