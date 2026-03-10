@@ -38,10 +38,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const editor = useEditor({
     extensions: [
-      StarterKit, 
-      Underline,
-      StarterKit, 
-      Underline,
+      StarterKit.configure(), 
+      Underline.configure(),
       Image.extend({
         addAttributes() {
           return {

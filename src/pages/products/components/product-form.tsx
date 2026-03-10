@@ -59,7 +59,7 @@ const TiptapEditor: React.FC<{
   onChange: (content: string) => void
 }> = ({ content, onChange }) => {
   const editor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit.configure(), Underline.configure()],
     content: content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
