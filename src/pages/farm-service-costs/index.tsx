@@ -157,7 +157,6 @@ const FarmServiceCostList: React.FC = () => {
       key: 'actions',
       title: 'Thao tác',
       width: 100,
-      fixed: 'right' as const,
       render: (record: FarmServiceCost) => (
         <Space size="middle">
           <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
@@ -197,7 +196,6 @@ const FarmServiceCostList: React.FC = () => {
       key: 'actions',
       title: 'Thao tác',
       width: 100,
-      fixed: 'right' as const,
       render: (record: FarmGiftCost) => (
         <Space size="middle">
           {record.source === 'manually_awarded' ? (

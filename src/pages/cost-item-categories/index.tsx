@@ -70,7 +70,6 @@ const CostItemCategoriesPage: React.FC = () => {
       title: 'Hành động',
       key: 'action',
       width: 120,
-      fixed: 'right',
       render: (_: any, record: CostItemCategory) => (
         <Space size="small">
           <Button

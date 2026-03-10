@@ -1,14 +1,16 @@
 /**
  * Trang quản lý tin tức
  * Hiển thị danh sách bài viết, cho phép thêm/sửa/xóa và xem bài viết trên client
+ * Sử dụng DataTable để hỗ trợ scroll ngang trên mobile và ghim cột thao tác trên desktop
  */
 import React, { useState } from 'react'
-import { Table, Button, Space, Input, Tag, Modal, Card, Typography, Tooltip } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { Button, Input, Tag, Modal, Card, Typography, Space } from 'antd'
+import { PlusOutlined, EyeOutlined } from '@ant-design/icons'
 import { useNewsQuery, useDeleteNewsMutation, News, NewsSearchResponse } from '@/queries/news'
 import NewsForm from './components/news-form'
 import { format } from 'date-fns'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnType } from 'antd/es/table'
+import DataTable from '@/components/common/data-table'
 
 const { Title } = Typography
 
@@ -24,31 +26,20 @@ const NewsPage: React.FC = () => {
   const deleteMutation = useDeleteNewsMutation()
 
   const responseData = newsResponse as NewsSearchResponse | undefined
-  const newsList = responseData?.items || []
+  const newsList = (responseData?.items || []) as unknown as Record<string, unknown>[]
   const totalItems = responseData?.total || 0
 
-  // Định nghĩa các cột của bảng
-  const columns: ColumnsType<News> = [
-    {
-      title: 'STT',
-      key: 'stt',
-      width: 55,
-      align: 'center',
-      render: (_: unknown, __: News, index: number) => {
-        const stt = (params.page - 1) * params.limit + index + 1
-        return <span className="font-medium text-gray-600">{stt}</span>
-      }
-    },
+  // Định nghĩa các cột của bảng tin tức
+  const columns: ColumnType<Record<string, unknown>>[] = [
     {
       title: 'Tiêu đề',
       dataIndex: 'title',
       key: 'title',
       width: 240,
-      ellipsis: true,
-      render: (text: string, record: News) => (
+      render: (text: string, record) => (
         <Space direction="vertical" size={0}>
           <span style={{ fontWeight: 'bold' }}>{text}</span>
-          <small style={{ color: '#888' }}>{record.slug}</small>
+          <small style={{ color: '#888' }}>{record.slug as string}</small>
         </Space>
       )
     },
@@ -57,14 +48,15 @@ const NewsPage: React.FC = () => {
       dataIndex: 'category',
       key: 'category',
       width: 130,
-      render: (category: string) => <Tag color="blue">{category || 'Chưa phân loại'}</Tag>
+      render: (category: string) => (
+        <Tag color="blue">{category || 'Chưa phân loại'}</Tag>
+      )
     },
     {
       title: 'Tác giả',
       dataIndex: 'author',
       key: 'author',
-      width: 120,
-      ellipsis: true,
+      width: 130,
     },
     {
       title: 'Lượt xem',
@@ -80,60 +72,23 @@ const NewsPage: React.FC = () => {
       width: 140,
       render: (date: string) => format(new Date(date), 'dd/MM/yyyy HH:mm')
     },
-    {
-      title: 'Thao tác',
-      key: 'action',
-      fixed: 'right' as const,
-      width: 110,
-      render: (_: unknown, record: News) => (
-        <Space size="small">
-          {/* Nút chỉnh sửa */}
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => {
-                setEditingNews(record)
-                setIsModalOpen(true)
-              }}
-            />
-          </Tooltip>
-
-          {/* Nút xóa */}
-          <Tooltip title="Xóa">
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record.id)}
-            />
-          </Tooltip>
-
-          {/* Nút xem trên website */}
-          <Tooltip title="Xem trên website">
-            <Button
-              type="link"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => window.open(`https://xanh-ag-nextjs-client.vercel.app/news/${record.slug}`, '_blank')}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
   ]
 
-  /** Xử lý xóa bài viết */
-  const handleDelete = (id: number) => {
+  /** Xử lý xóa bài viết, nhận record từ DataTable */
+  const handleDelete = (record: Record<string, unknown>) => {
     Modal.confirm({
       title: 'Xác nhận xóa',
       content: 'Bạn có chắc chắn muốn xóa bài viết này?',
       okText: 'Xóa',
       cancelText: 'Hủy',
-      onOk: () => deleteMutation.mutate(id)
+      onOk: () => deleteMutation.mutate(record.id as number)
     })
+  }
+
+  /** Xử lý mở form chỉnh sửa */
+  const handleEdit = (record: Record<string, unknown>) => {
+    setEditingNews(record as unknown as News)
+    setIsModalOpen(true)
   }
 
   return (
@@ -163,21 +118,40 @@ const NewsPage: React.FC = () => {
           />
         </div>
 
-        {/* Bảng danh sách tin tức - scroll={{ x: 'max-content' }} để scroll ngang trên mobile */}
-        <Table
+        {/* DataTable - tự xử lý scroll ngang và fixed cột thao tác theo responsive */}
+        <DataTable
           columns={columns}
-          dataSource={newsList}
+          data={newsList}
           loading={isLoading}
           rowKey="id"
-          size="small"
-          scroll={{ x: 'max-content' }}
-          pagination={{
+          showSTT={true}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          // Nút xem bài viết trên website
+          actionButtons={[
+            {
+              key: 'view-web',
+              icon: <EyeOutlined />,
+              tooltip: 'Xem trên website',
+              onClick: (record) =>
+                window.open(
+                  `https://xanh-ag-nextjs-client.vercel.app/news/${record.slug as string}`,
+                  '_blank'
+                ),
+            }
+          ]}
+          paginationConfig={{
             current: params.page,
             pageSize: params.limit,
             total: totalItems,
-            showSizeChanger: true,
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} bài viết`,
-            onChange: (page, pageSize) => setParams({ ...params, page, limit: pageSize })
+          }}
+          onChange={(pagination) => {
+            setParams(prev => ({
+              ...prev,
+              page: pagination.current || 1,
+              limit: pagination.pageSize || 10,
+            }))
           }}
         />
       </Card>

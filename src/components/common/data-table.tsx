@@ -18,6 +18,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons"
 import LoadingSpinner from "./loading-spinner"
+import { useMobile } from "../../hooks/use-media-query"
 
 const { Search } = Input
 const { Option } = Select
@@ -117,6 +118,9 @@ const DataTable = <T extends Record<string, unknown>>({
   onChange,
   ...tableProps
 }: DataTableProps<T>) => {
+  // Kiểm tra đang ở mobile hay desktop để quyết định có ghim cột thao tác không
+  const isMobile = useMobile()
+
   // State cho search và filter
   const [searchText, setSearchText] = useState("")
   const [filterValues, setFilterValues] = useState<
@@ -190,11 +194,13 @@ const DataTable = <T extends Record<string, unknown>>({
   // Kết hợp default và custom action buttons
   const allActionButtons = [...defaultActionButtons, ...actionButtons]
 
-  // Tạo action column
+  // Tạo action column - chỉ fixed right trên desktop, mobile scroll tự do
   const actionColumn = {
     title: actionColumnTitle,
     key: "actions",
     width: actionColumnWidth,
+    // Ghim cột thao tác bên phải chỉ khi desktop
+    fixed: isMobile ? undefined : ('right' as const),
     render: (_: unknown, record: T) => (
       <Space size='small'>
         {allActionButtons.map((button) => {

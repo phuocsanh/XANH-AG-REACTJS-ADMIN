@@ -87,7 +87,6 @@ const PendingUsersTab: React.FC = () => {
     {
       title: 'Hành động',
       key: 'action',
-      fixed: 'right' as const,
       width: 120,
       render: (_: any, record: UserResponse) => {
         const canManage = canManageUser(currentUser, record);
@@ -309,7 +308,6 @@ const AllUsersTab: React.FC = () => {
     {
       title: 'Hành động',
       key: 'action',
-      fixed: 'right' as const,
       width: 150,
       render: (_: any, record: UserResponse) => {
         const canManage = canManageUser(currentUser, record);
