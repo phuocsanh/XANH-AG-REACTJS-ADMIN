@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
-import { Modal, Form, Button } from 'antd'
-import { useForm, FormProvider } from 'react-hook-form'
+import { Modal, Form, Button, Switch } from 'antd'
+import { useForm, FormProvider, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { newsSchema, NewsFormValues, defaultNewsValues } from './news-schema'
 import { FormField, FormImageUpload, FormComboBox } from '@/components/form'
@@ -8,6 +8,7 @@ import { useCreateNewsMutation, useUpdateNewsMutation, News } from '@/queries/ne
 import { useProductSearch } from '@/queries/product'
 import RichTextEditor from '@/components/common/rich-text-editor'
 import { UPLOAD_TYPES } from '@/services/upload.service'
+import { PushpinOutlined } from '@ant-design/icons'
 import SEOChecker from './seo-checker'
 
 interface NewsFormProps {
@@ -57,6 +58,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
           status: initialData.status,
           tags: initialData.tags || [],
           related_product_ids: initialData.related_product_ids || [],
+          is_pinned: initialData.is_pinned || false,
         })
       } else {
         reset(defaultNewsValues)
@@ -118,16 +120,36 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                 <FormField name="title" control={control} label="Tiêu đề bài viết" required />
                 <FormField name="category" control={control} label="Danh mục" />
                 <FormField name="author" control={control} label="Tác giả" />
-                <FormField 
-                  name="status" 
-                  control={control} 
-                  label="Trạng thái" 
-                  type="select"
-                  options={[
-                    { label: 'Hoạt động', value: 'active' },
-                    { label: 'Tạm dừng', value: 'inactive' }
-                  ]}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField 
+                    name="status" 
+                    control={control} 
+                    label="Trạng thái" 
+                    type="select"
+                    options={[
+                      { label: 'Hoạt động', value: 'active' },
+                      { label: 'Tạm dừng', value: 'inactive' }
+                    ]}
+                  />
+                  <div className="flex flex-col">
+                    <span className="mb-2 block text-sm font-medium text-gray-700">Ghim lên đầu trang</span>
+                    <div className="flex items-center gap-2 h-[32px]">
+                      <Controller
+                        name="is_pinned"
+                        control={control}
+                        render={({ field }) => (
+                          <Switch 
+                            checked={field.value} 
+                            onChange={field.onChange}
+                            checkedChildren={<PushpinOutlined />}
+                            unCheckedChildren={<PushpinOutlined />}
+                          />
+                        )}
+                      />
+                      <span className="text-xs text-gray-400">Ưu tiên bài viết này lên đầu danh sách</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4">

@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react'
 import { Button, Input, Tag, Modal, Card, Typography, Space } from 'antd'
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons'
+import { PlusOutlined, EyeOutlined, PushpinOutlined } from '@ant-design/icons'
 import { useNewsQuery, useDeleteNewsMutation, News, NewsSearchResponse } from '@/queries/news'
 import NewsForm from './components/news-form'
 import { format } from 'date-fns'
@@ -36,9 +36,12 @@ const NewsPage: React.FC = () => {
       dataIndex: 'title',
       key: 'title',
       width: 240,
-      render: (text: string, record) => (
+      render: (text: string, record: any) => (
         <Space direction="vertical" size={0}>
-          <span style={{ fontWeight: 'bold' }}>{text}</span>
+          <Space>
+            {record.is_pinned && <PushpinOutlined style={{ color: '#fa8c16' }} />}
+            <span style={{ fontWeight: 'bold' }}>{text}</span>
+          </Space>
           <small style={{ color: '#888' }}>{record.slug as string}</small>
         </Space>
       )

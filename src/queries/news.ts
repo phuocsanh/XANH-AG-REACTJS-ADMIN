@@ -20,6 +20,7 @@ export interface News {
   created_at: string
   updated_at: string
   related_product_ids?: number[]
+  is_pinned: boolean
 }
 
 export interface CreateNewsRequest {
@@ -32,6 +33,7 @@ export interface CreateNewsRequest {
   status?: string
   tags?: string[]
   related_product_ids?: number[]
+  is_pinned?: boolean
   [key: string]: unknown // Cho phép truyền vào AnyObject
 }
 
