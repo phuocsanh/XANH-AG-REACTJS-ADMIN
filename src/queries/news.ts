@@ -30,6 +30,7 @@ export interface CreateNewsRequest {
   author?: string
   status?: string
   tags?: string[]
+  [key: string]: unknown // Cho phép truyền vào AnyObject
 }
 
 export type UpdateNewsRequest = Partial<CreateNewsRequest>
