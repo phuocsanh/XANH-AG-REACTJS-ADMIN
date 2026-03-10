@@ -193,8 +193,20 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                  tags={watch('tags')}
                />
                
-               {/* Tags entry if needed - currently not in the main form but in schema */}
-               {/* You could add a simple tag input here if tags are used */}
+               <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                 <FormComboBox
+                   name="tags"
+                   control={control}
+                   label="Từ khóa (Tags)"
+                   placeholder="Nhập tag và nhấn Enter"
+                   mode="tags"
+                   options={[]} // Static tags if any, or empty for free input
+                   allowClear
+                 />
+                 <div className="text-[11px] text-gray-400 mt-1 italic">
+                   Gợi ý: Nhập từ khóa liên quan giúp bài viết dễ tìm thấy hơn trên Google.
+                 </div>
+               </div>
             </div>
           </div>
 

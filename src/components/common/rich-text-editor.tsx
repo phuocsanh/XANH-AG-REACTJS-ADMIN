@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import { uploadService, UPLOAD_TYPES } from '@/services/upload.service';
 import { PictureOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Spin, Modal, Radio, Space } from 'antd';
@@ -55,6 +56,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         },
       }).configure({
         allowBase64: true,
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-agri-600 underline hover:text-agri-700 transition-colors',
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
       }),
     ],
     content: content,
@@ -136,6 +145,26 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
     setShowSizeModal(false);
     setPendingImageUrl(null);
+  };
+
+  const setLink = () => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('Nhập địa chỉ liên kết (URL):', previousUrl);
+
+    // Cancelled
+    if (url === null) {
+      return;
+    }
+
+    // Empty
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+
+    // Update link
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
   return (
@@ -299,6 +328,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             title="Strikethrough"
           >
             S
+          </button>
+
+          <button
+            type="button"
+            onClick={() => !disabled && setLink()}
+            style={getActiveButtonStyle(editor.isActive('link'))}
+            disabled={disabled}
+            title="Chèn liên kết"
+          >
+            <span style={{ fontSize: '16px' }}>🔗</span>
           </button>
 
           <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
