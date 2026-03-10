@@ -19,6 +19,7 @@ export interface News {
   views: number
   created_at: string
   updated_at: string
+  related_product_ids?: number[]
 }
 
 export interface CreateNewsRequest {
@@ -30,6 +31,7 @@ export interface CreateNewsRequest {
   author?: string
   status?: string
   tags?: string[]
+  related_product_ids?: number[]
   [key: string]: unknown // Cho phép truyền vào AnyObject
 }
 

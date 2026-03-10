@@ -9,6 +9,7 @@ export const newsSchema = z.object({
   images: z.any().optional(),
   status: z.string().default("active"),
   tags: z.array(z.string()).optional(),
+  related_product_ids: z.array(z.number()).optional(),
 })
 
 export type NewsFormValues = z.infer<typeof newsSchema>
@@ -22,4 +23,5 @@ export const defaultNewsValues: NewsFormValues = {
   images: [],
   status: "active",
   tags: [],
+  related_product_ids: [],
 }

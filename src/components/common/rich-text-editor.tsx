@@ -161,8 +161,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             border-bottom-left-radius: 6px;
             border-bottom-right-radius: 6px;
           }
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+            line-height: 1.3;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 4px;
+          }
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: #333;
+            line-height: 1.4;
+          }
           .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror p {
             margin-bottom: 0.8em;
+            font-size: 14px;
+            color: #4b5563;
           }
           .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror img {
             max-width: 100%;
@@ -175,6 +195,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror ol {
             padding-left: 1.5em;
             margin-bottom: 1em;
+          }
+          /* Focus style for active heading */
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror h2.ProseMirror-focused,
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror h3.ProseMirror-focused {
+            outline: none;
           }
         `}
       </style>
@@ -199,6 +224,34 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           backgroundColor: '#fafafa',
           borderRadius: '6px 6px 0 0',
         }}>
+          <button
+            type="button"
+            onClick={() => !disabled && editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            style={{
+              ...getActiveButtonStyle(editor.isActive('heading', { level: 2 })),
+              fontWeight: 'bold',
+            }}
+            disabled={disabled}
+            title="Heading 2 (Tiêu đề chính)"
+          >
+            H2
+          </button>
+
+          <button
+            type="button"
+            onClick={() => !disabled && editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            style={{
+              ...getActiveButtonStyle(editor.isActive('heading', { level: 3 })),
+              fontWeight: 'bold',
+            }}
+            disabled={disabled}
+            title="Heading 3 (Tiêu đề phụ)"
+          >
+            H3
+          </button>
+
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
+
           <button
             type="button"
             onClick={() => !disabled && editor.chain().focus().toggleBold().run()}
