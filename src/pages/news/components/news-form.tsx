@@ -116,40 +116,55 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Column: Form Inputs */}
             <div className="flex-grow lg:w-2/3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField name="title" control={control} label="Tiêu đề bài viết" required />
-                <FormField name="category" control={control} label="Danh mục" />
-                <FormField name="author" control={control} label="Tác giả" />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField 
-                    name="status" 
-                    control={control} 
-                    label="Trạng thái" 
-                    type="select"
-                    options={[
-                      { label: 'Hoạt động', value: 'active' },
-                      { label: 'Tạm dừng', value: 'inactive' }
-                    ]}
-                  />
-                  <div className="flex flex-col">
-                    <span className="mb-2 block text-sm font-medium text-gray-700">Ghim lên đầu trang</span>
-                    <div className="flex items-center gap-2 h-[32px]">
-                      <Controller
-                        name="is_pinned"
-                        control={control}
-                        render={({ field }) => (
-                          <Switch 
-                            checked={field.value} 
-                            onChange={field.onChange}
-                            checkedChildren={<PushpinOutlined />}
-                            unCheckedChildren={<PushpinOutlined />}
-                          />
-                        )}
-                      />
-                      <span className="text-xs text-gray-400">Ưu tiên bài viết này lên đầu danh sách</span>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3">
+                  <FormField name="title" control={control} label="Tiêu đề bài viết" required />
                 </div>
+                <FormField 
+                  name="category" 
+                  control={control} 
+                  label="Danh mục" 
+                  type="select"
+                  options={[
+                    { label: 'Kỹ thuật canh tác', value: 'Kỹ thuật canh tác' },
+                    { label: 'Bảo vệ thực vật', value: 'Bảo vệ thực vật' },
+                    { label: 'Thị trường nông sản', value: 'Thị trường nông sản' },
+                    { label: 'Công nghệ xanh', value: 'Công nghệ xanh' },
+                    { label: 'Tin tức & Sự kiện', value: 'Tin tức & Sự kiện' },
+                  ]}
+                />
+                <FormField name="author" control={control} label="Tác giả" />
+                <FormField 
+                  name="status" 
+                  control={control} 
+                  label="Trạng thái" 
+                  type="select"
+                  options={[
+                    { label: 'Hoạt động', value: 'active' },
+                    { label: 'Tạm dừng', value: 'inactive' }
+                  ]}
+                />
+              </div>
+
+              <div className="mt-4 flex items-center gap-4 bg-orange-50 p-3 rounded-xl border border-orange-100">
+                <div className="flex items-center gap-2">
+                  <Controller
+                    name="is_pinned"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch 
+                        checked={field.value} 
+                        onChange={field.onChange}
+                        checkedChildren={<PushpinOutlined />}
+                        unCheckedChildren={<PushpinOutlined />}
+                      />
+                    )}
+                  />
+                  <span className="text-sm font-bold text-orange-800">Ghim bài viết này lên đầu trang</span>
+                </div>
+                <span className="text-xs text-orange-600 italic">
+                  * Bài viết được ghim sẽ luôn nằm trên cùng của danh sách tin tức.
+                </span>
               </div>
 
               <div className="mt-4">
