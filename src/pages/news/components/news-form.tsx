@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { newsSchema, NewsFormValues, defaultNewsValues } from './news-schema'
 import { FormField, FormImageUpload, FormComboBox } from '@/components/form'
 import { useCreateNewsMutation, useUpdateNewsMutation, News } from '@/queries/news'
-import { useProductSearch } from '@/queries/product'
+import { useProductSearch, useProductsByIdsQuery } from '@/queries/product'
 import RichTextEditor from '@/components/common/rich-text-editor'
 import { UPLOAD_TYPES } from '@/services/upload.service'
 import { PushpinOutlined } from '@ant-design/icons'
@@ -43,7 +43,27 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
     fetchNextPage
   } = useProductSearch(searchTerm)
 
-  const productOptions = productSearchData?.pages.flatMap(page => page.data) || []
+  const productOptionsFromSearch = productSearchData?.pages.flatMap(page => page.data) || []
+
+  // Lấy dữ liệu tên sản phẩm cho các ID đã chọn ban đầu (khi edit)
+  const initialProductIds = React.useMemo(() => initialData?.related_product_ids || [], [initialData])
+  const { data: initialProductsData } = useProductsByIdsQuery(initialProductIds)
+
+  // Gộp thông tin sản phẩm từ search và sản phẩm đã chọn ban đầu để hiển thị Label thay vì ID
+  const combinedProductOptions = React.useMemo(() => {
+    // Map initial products sang format label/value
+    const initialOptions = (initialProductsData || []).map(p => ({
+      ...p,
+      value: p.id,
+      label: p.trade_name?.trim() || p.name?.trim() || `Sản phẩm ${p.id}`
+    }))
+
+    // Merge và loại bỏ trùng lặp
+    const merged = [...initialOptions, ...productOptionsFromSearch]
+    const uniqueMap = new Map()
+    merged.forEach(opt => uniqueMap.set(opt.value, opt))
+    return Array.from(uniqueMap.values())
+  }, [initialProductsData, productOptionsFromSearch])
 
   useEffect(() => {
     if (visible) {
@@ -174,7 +194,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                   label="Sản phẩm liên quan"
                   placeholder="Chọn sản phẩm liên quan đến bài viết"
                   mode="multiple"
-                  data={productOptions}
+                  data={combinedProductOptions}
                   isLoading={isProductLoading}
                   hasNextPage={hasNextPage}
                   isFetchingNextPage={isFetchingNextPage}

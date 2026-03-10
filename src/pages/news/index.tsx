@@ -129,6 +129,7 @@ const NewsPage: React.FC = () => {
           rowKey="id"
           showSTT={true}
           onEdit={handleEdit}
+          onView={handleEdit}
           onDelete={handleDelete}
           // Nút xem bài viết trên website
           actionButtons={[
