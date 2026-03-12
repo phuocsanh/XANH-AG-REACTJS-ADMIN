@@ -28,6 +28,7 @@ import FarmServiceCostTab from './components/FarmServiceCostTab';
 import { useAppStore } from '@/stores/store';
 import { hasPermission } from '@/utils/permission';
 import { calculateDaysDiff } from '@/utils/format';
+import { useMobile } from '@/hooks/use-media-query';
 
 // Màu sắc cho giai đoạn sinh trưởng
 const growthStageColors: Record<GrowthStage, string> = {
@@ -75,6 +76,7 @@ const RiceCropDetail: React.FC = () => {
   const riceCropId = id ? parseInt(id, 10) : 0;
   const { data: riceCrop, isLoading } = useRiceCrop(riceCropId);
   const { userInfo } = useAppStore();
+  const isMobile = useMobile();
 
   if (isLoading) {
     return (
@@ -102,6 +104,7 @@ const RiceCropDetail: React.FC = () => {
           <Descriptions 
             column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} 
             bordered
+            layout={isMobile ? "vertical" : "horizontal"}
           >
             <Descriptions.Item label="Mùa vụ">
               <span style={{ color: '#000' }}>{riceCrop.season?.name || '-'} ({riceCrop.season?.year})</span>
@@ -139,12 +142,12 @@ const RiceCropDetail: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày gieo">
               <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span style={{ color: '#000' }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>
                     {riceCrop.sowing_date ? dayjs(riceCrop.sowing_date).format('DD/MM/YYYY') : '-'}
                   </span>
                   {String(riceCrop.status).toLowerCase().includes('active') && riceCrop.sowing_date && (
-                    <Tag color="success" className="m-0 text-[11px] font-bold border-green-200">
+                    <Tag color="success" className="m-0 text-[11px] font-bold border-green-200 whitespace-nowrap">
                       {calculateDaysDiff(riceCrop.sowing_date)} ngày sau gieo
                     </Tag>
                   )}
@@ -156,12 +159,12 @@ const RiceCropDetail: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày cấy">
               <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span style={{ color: '#000' }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>
                     {riceCrop.transplanting_date ? dayjs(riceCrop.transplanting_date).format('DD/MM/YYYY') : '-'}
                   </span>
                   {String(riceCrop.status).toLowerCase().includes('active') && riceCrop.transplanting_date && (
-                    <Tag color="cyan" className="m-0 text-[11px] font-bold border-cyan-200">
+                    <Tag color="cyan" className="m-0 text-[11px] font-bold border-cyan-200 whitespace-nowrap">
                       {calculateDaysDiff(riceCrop.transplanting_date)} ngày sau cấy
                     </Tag>
                   )}
