@@ -117,6 +117,18 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               "Không có mô tả"
             )}
           </Descriptions.Item>
+          {product.mechanism && (
+            <Descriptions.Item label='Cơ chế tác động'>
+              <div 
+                dangerouslySetInnerHTML={{ __html: product.mechanism }}
+                style={{ 
+                  maxHeight: '200px', 
+                  overflowY: 'auto',
+                  wordBreak: 'break-word'
+                }}
+              />
+            </Descriptions.Item>
+          )}
           <Descriptions.Item label='Giá bán (Tiền mặt)'>
             {formatCurrency(Number(product.price || 0))}
           </Descriptions.Item>
@@ -192,18 +204,6 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 {product.ingredient.join(", ")}
               </Descriptions.Item>
             )}
-          {product.mechanism && (
-            <Descriptions.Item label='Cơ chế tác động'>
-              <div 
-                dangerouslySetInnerHTML={{ __html: product.mechanism }}
-                style={{ 
-                  maxHeight: '200px', 
-                  overflowY: 'auto',
-                  wordBreak: 'break-word'
-                }}
-              />
-            </Descriptions.Item>
-          )}
           {(product.unit || product.unit_id) && (
             <Descriptions.Item label='Đơn vị tính'>
               {typeof product.unit === 'object' && product.unit !== null
