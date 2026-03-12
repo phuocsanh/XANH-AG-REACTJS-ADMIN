@@ -163,6 +163,26 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
       ),
     },
     {
+      title: 'Ghi chú',
+      dataIndex: 'notes',
+      key: 'notes',
+      width: 250,
+      render: (text: string) => (
+        <div 
+          className="text-xs text-gray-500 italic" 
+          style={{ 
+            maxWidth: '250px', 
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis', 
+            whiteSpace: 'nowrap' 
+          }}
+          title={text}
+        >
+          {text || '-'}
+        </div>
+      ),
+    },
+    {
       title: 'Hành động',
       key: 'action',
       render: (_: any, record: GrowthTracking) => (
@@ -279,7 +299,7 @@ const GrowthTrackingTab: React.FC<GrowthTrackingTabProps> = ({ riceCropId }) => 
           </Row>
 
           <Form.Item name="pest_status" label="Tình trạng sâu bệnh">
-            <Input placeholder="Mô tả sâu bệnh nếu có" />
+            <Input.TextArea rows={2} placeholder="Mô tả sâu bệnh nếu có" />
           </Form.Item>
 
           <Form.Item name="notes" label="Ghi chú/Đánh giá chung">
