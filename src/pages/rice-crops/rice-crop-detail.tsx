@@ -99,7 +99,10 @@ const RiceCropDetail: React.FC = () => {
       label: 'ℹ️ Thông tin chung',
       children: (
         <Card title="Thông tin chi tiết" bordered={false}>
-          <Descriptions column={2} bordered>
+          <Descriptions 
+            column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} 
+            bordered
+          >
             <Descriptions.Item label="Mùa vụ">
               <span style={{ color: '#000' }}>{riceCrop.season?.name || '-'} ({riceCrop.season?.year})</span>
             </Descriptions.Item>

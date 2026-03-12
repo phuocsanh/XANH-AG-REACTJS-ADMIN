@@ -126,6 +126,9 @@ const DataTable = <T extends Record<string, unknown>>({
   const [filterValues, setFilterValues] = useState<
     Record<string, string | number | undefined>
   >({})
+  
+  // Dùng để giả lập double click trên mobile
+  const lastClickRef = React.useRef<{ time: number; record: T } | null>(null)
 
   // Lọc dữ liệu dựa trên search text
   const filteredData = useMemo(() => {
@@ -431,19 +434,43 @@ const DataTable = <T extends Record<string, unknown>>({
             
             return {
               ...externalProps,
+              onClick: (event) => {
+                if (externalProps.onClick) externalProps.onClick(event);
+
+                // Giả lập double click cho mobile
+                if (isMobile && onView) {
+                  const now = Date.now();
+                  const isFunctionalElement = (event.target as HTMLElement).closest('button, a, .ant-dropdown-trigger, .ant-select, .ant-checkbox-wrapper');
+                  
+                  if (!isFunctionalElement) {
+                    if (lastClickRef.current && 
+                        lastClickRef.current.record === record && 
+                        (now - lastClickRef.current.time) < 300) {
+                      
+                      // Phát hiện double tap
+                      onView(record);
+                      lastClickRef.current = null;
+                    } else {
+                      lastClickRef.current = { time: now, record };
+                      // Tự động xóa sau 300ms
+                      setTimeout(() => {
+                        if (lastClickRef.current?.time === now) {
+                          lastClickRef.current = null;
+                        }
+                      }, 300);
+                    }
+                  }
+                }
+              },
               onDoubleClick: (event) => {
                 // Gọi handler bên ngoài nếu có
                 if (externalProps.onDoubleClick) {
                   externalProps.onDoubleClick(event);
                 }
                 
-                // Logic mặc định của DataTable: Nhấn đúp để xem chi tiết
+                // Logic mặc định: Nhấn đúp để xem chi tiết (chỉ dùng cho Desktop)
                 const target = event.target as HTMLElement;
-                const isFunctionalElement = target.closest('button') || 
-                                           target.closest('a') || 
-                                           target.closest('.ant-dropdown-trigger') || 
-                                           target.closest('.ant-select') ||
-                                           target.closest('.ant-checkbox-wrapper');
+                const isFunctionalElement = target.closest('button, a, .ant-dropdown-trigger, .ant-select, .ant-checkbox-wrapper');
                 
                 if (onView && !isFunctionalElement) {
                   onView(record);
