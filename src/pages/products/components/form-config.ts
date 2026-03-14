@@ -43,6 +43,7 @@ export const productFormSchema = z.object({
   taxable_quantity_stock: z.coerce.number().optional(), // Số lượng tồn khai thuế
   is_sold_on_web: z.boolean().default(false),
   show_price_on_web: z.boolean().default(true),
+  web_name: z.string().optional(),
   mechanism: z.string().optional(), // Cơ chế tác động
   // Trường cho danh sách thuộc tính động trên FE
   attribute_list: z.array(z.object({
@@ -116,6 +117,7 @@ export interface ProductFormValues {
   taxable_quantity_stock?: number // Số lượng tồn khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
+  web_name?: string
   mechanism?: string // Cơ chế tác động
   attribute_list?: { key: string; value: any }[]
   unit_conversions?: any[]
@@ -157,6 +159,7 @@ export interface ConvertedProductValues {
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
   taxable_quantity_stock?: number // Số lượng tồn khai thuế
+  web_name?: string
   suggested_price?: string
   unit_conversions?: any[]
   components?: any[]
@@ -184,6 +187,7 @@ export const defaultProductFormValues: ProductFormValues = {
   taxable_quantity_stock: 0, // Mặc định là 0
   is_sold_on_web: false,
   show_price_on_web: true,
+  web_name: "",
   mechanism: "", // Cơ chế tác động mặc định
   unit_conversions: [],
   components: [],

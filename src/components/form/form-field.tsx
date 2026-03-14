@@ -12,7 +12,7 @@ import {
 interface FormFieldProps<T extends FieldValues> {
   name: FieldPath<T>
   control: Control<T>
-  label: string
+  label: string | React.ReactNode
   type?: "text" | "email" | "password" | "select" | "textarea"
   placeholder?: string
   required?: boolean
@@ -31,6 +31,7 @@ interface FormFieldProps<T extends FieldValues> {
   rows?: number // Cho textarea
   prefix?: React.ReactNode
   suffix?: React.ReactNode
+  addonAfter?: React.ReactNode // Thêm addonAfter
   size?: "large" | "middle" | "small"
   allowClear?: boolean
   autoComplete?: string // Thêm prop autoComplete
@@ -56,6 +57,7 @@ function FormField<T extends FieldValues>({
   rows = 4,
   prefix,
   suffix,
+  addonAfter, // Thêm addonAfter
   size = "middle",
   allowClear = true,
   autoComplete, // Thêm autoComplete vào parameters
@@ -67,13 +69,13 @@ function FormField<T extends FieldValues>({
       required:
         typeof required === "string"
           ? required
-          : `Vui lòng nhập ${label.toLowerCase()}`,
+          : `Vui lòng nhập ${typeof label === 'string' ? label.toLowerCase() : 'thông tin'}`,
     }),
     ...(rules.required && {
       required:
         typeof rules.required === "string"
           ? rules.required
-          : `Vui lòng nhập ${label.toLowerCase()}`,
+          : `Vui lòng nhập ${typeof label === 'string' ? label.toLowerCase() : 'thông tin'}`,
     }),
     ...(rules.min && {
       min: { value: rules.min, message: `Giá trị tối thiểu là ${rules.min}` },
@@ -119,6 +121,7 @@ function FormField<T extends FieldValues>({
       size,
       status: error ? ("error" as const) : undefined,
       autoComplete, // Thêm autoComplete vào commonProps
+      addonAfter, // Thêm addonAfter vào commonProps
     }
 
     switch (type) {
@@ -137,10 +140,30 @@ function FormField<T extends FieldValues>({
           <Select {...commonProps} options={options} allowClear={allowClear} />
         )
 
-      case "textarea":
-        return <Input.TextArea {...commonProps} rows={autoSize ? undefined : rows} autoSize={autoSize} />
-
       default:
+        // Lọc addonAfter ra khỏi commonProps cho TextArea và các trường hợp khác không hỗ trợ
+        const { addonAfter: _, ...inputProps } = commonProps;
+
+        if (type === "textarea") {
+          const textAreaElement = (
+            <Input.TextArea
+              {...inputProps}
+              rows={autoSize ? undefined : rows}
+              autoSize={autoSize}
+            />
+          );
+
+          if (addonAfter) {
+            return (
+              <div className="flex gap-2 items-start">
+                <div className="flex-1">{textAreaElement}</div>
+                <div className="flex-shrink-0">{addonAfter}</div>
+              </div>
+            );
+          }
+          return textAreaElement;
+        }
+
         return (
           <Input
             {...commonProps}

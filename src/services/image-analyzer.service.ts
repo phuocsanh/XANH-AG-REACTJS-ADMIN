@@ -277,6 +277,73 @@ Chỉ trả về JSON.
       'Analyze Image'
     );
   },
+
+  /**
+   * Sử dụng AI Gemini để tạo tên Web tối ưu từ thông tin sản phẩm
+   */
+  generateWebName: async (data: {
+    type?: string;
+    trade_name?: string;
+    volume?: string;
+    description?: string;
+  }): Promise<string> => {
+    const prompt = `
+Hãy đóng vai một chuyên gia Marketing Nông nghiệp. Nhiệm vụ của bạn là tạo một "Tên hiển thị trên Web" (web_name) cho sản phẩm thuốc BVTV sao cho tối ưu SEO và dễ đọc cho nông dân.
+
+CẤU TRÚC BẮT BUỘC:
+[Loại sản phẩm] [Tên thương mại] [Dạng thuốc] ([Quy cách/Dung tích]) - [Điểm nổi bật nhất/Đặc trị]
+
+DỮ LIỆU ĐẦU VÀO:
+- Loại: ${data.type || 'Chưa xác định'}
+- Tên thương mại: ${data.trade_name || ''}
+- Dung tích: ${data.volume || ''}
+- Mô tả/Công dụng: ${data.description || ''}
+
+QUY TẮC:
+1. "Loại sản phẩm" phải là cụm từ phổ biến (VD: Thuốc trừ sâu, Thuốc trừ bệnh, Thuốc trừ cỏ, Phân bón lá, Kích thích sinh trưởng).
+2. "Điểm nổi bật" (Specialty/Feature) lấy từ phần mô tả/công dụng. Chỉ lấy 1 cụm từ ngắn gọn, súc tích nhất (VD: Đặc trị sâu cuốn lá, Sạch đạo ôn cổ bông, Kích rễ cực mạnh).
+3. "Dạng thuốc" (Dosage form) như 240SC, 50EC, 10WP... nết có trong tên thương mại thì lấy ra dùng.
+4. "Quy cách/Dung tích": Nếu là chai 450ml thì ghi (Chai 450ml), nếu là gói 100g thì ghi (Gói 100g).
+5. Tên cuối cùng phải viết hoa các từ quan trọng đúng cách.
+
+CHỈ TRẢ VỀ CHUỖI TÊN ĐÃ TẠO (KẾT QUẢ CUỐI CÙNG), KHÔNG TRẢ VỀ BẤT KỲ GIẢI THÍCH NÀO KHÁC.
+        `;
+
+    return tryAllGeminiKeys<string>(
+      async (apiKey, keyName) => {
+        console.log(`🔑 Đang tạo tên Web với key: ${keyName}`);
+        
+        const response = await fetch(
+          getGeminiApiUrl(apiKey),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: prompt }
+                ]
+              }]
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+        }
+
+        const resData = await response.json();
+        const text = resData.candidates[0].content.parts[0].text.trim();
+        
+        // Loại bỏ các ký tự Markdown nếu AI lỡ tay thêm vào
+        return text.replace(/[*#`]/g, '').trim();
+      },
+      'Generate Web Name'
+    );
+  },
 };
 
 /**

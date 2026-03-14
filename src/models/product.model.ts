@@ -73,6 +73,7 @@ export interface Product {
   taxable_quantity_stock: number // Số lượng tồn kho có hóa đơn (bể thuế)
   is_sold_on_web: boolean
   show_price_on_web: boolean
+  web_name?: string
   mechanism?: string // Cơ chế tác động
   unit_conversions?: ProductUnitConversion[]
   components?: ProductComponent[]
@@ -104,6 +105,7 @@ export interface ProductFormValues
   tax_selling_price: string // Giá bán khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
+  web_name?: string
   mechanism?: string // Cơ chế tác động
   unit_conversions?: ProductUnitConversion[]
 }
@@ -203,6 +205,7 @@ export interface ConvertedProductValues {
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
   mechanism?: string // Cơ chế tác động
+  web_name?: string
 }
 
 export interface ProductFormProps {

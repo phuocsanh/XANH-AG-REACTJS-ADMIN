@@ -51,6 +51,7 @@ import { UploadType } from "@/services/upload.service"
 import ProductUnitConversionTable from "./ProductUnitConversionTable"
 import ProductBOMTable from "./ProductBOMTable"
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { imageAnalyzerService } from "@/services/image-analyzer.service";
 
 const { Title } = Typography
 
@@ -300,6 +301,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const [studioVisible, setStudioVisible] = useState(false)
   const [adjustModalVisible, setAdjustModalVisible] = useState(false)
   const [isSubmitSuccess, setIsSubmitSuccess] = useState(false) // State để đánh dấu đã submit thành công
+  const [generatingWebName, setGeneratingWebName] = useState(false) // AI generate web name loading
   const uploadMutation = useUploadImageMutation()
 
   // Watch form values
@@ -404,6 +406,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           taxable_quantity_stock: Number(productItem.taxable_quantity_stock || 0), // Ép kiểu number để tránh lỗi string từ database "0.00"
           is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
           show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
+          web_name: (productItem as any).web_name || "",
           mechanism: productItem.mechanism || "", // Cơ chế tác động
           unit_conversions: (productItem.unit_conversions || []).map((conv: ProductUnitConversion) => ({
             ...conv,
@@ -630,6 +633,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         has_input_invoice: values.has_input_invoice,
         is_sold_on_web: values.is_sold_on_web,
         show_price_on_web: values.show_price_on_web,
+        web_name: values.web_name || "",
       }
 
       // Đảm bảo các trường bắt buộc có giá trị
@@ -680,6 +684,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         taxable_quantity_stock: convertedValues.taxable_quantity_stock,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
+        web_name: convertedValues.web_name,
         mechanism: mechanism || "",
         unit_conversions: values.unit_conversions || [],
         components: values.components || [],
@@ -814,6 +819,34 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     message.success('Đã điền thông tin tự động. Vui lòng kiểm tra và chỉnh sửa nếu cần.');
   }
 
+  /**
+   * Sử dụng AI để tạo Tên Web theo cấu trúc chuẩn
+   */
+  const handleGenerateWebName = async () => {
+    try {
+      setGeneratingWebName(true);
+      const currentValues = getValues();
+      const typeId = currentValues.type;
+      const typeOptions = productTypes && (productTypes as any).data ? (productTypes as any).data.items : [];
+      const typeName = typeOptions?.find((t: any) => t.id === typeId)?.name || "";
+      
+      const result = await imageAnalyzerService.generateWebName({
+        type: typeName,
+        trade_name: currentValues.trade_name,
+        volume: currentValues.volume,
+        description: description, // nội dung rich text
+      });
+      
+      setValue('web_name', result, { shouldDirty: true });
+      message.success("Đã tạo tên Web bằng AI!");
+    } catch (error) {
+      console.error("AI Generate Web Name error:", error);
+      message.error("Lỗi khi tạo tên Web bằng AI");
+    } finally {
+      setGeneratingWebName(false);
+    }
+  };
+
   return (
     <div className=''>
       {/* Header cho Form */}
@@ -911,6 +944,32 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
               <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0 px-3 md:px-6 pb-3 md:pb-6'>
                 <div className='w-full md:col-span-2'>
                   <FormField
+                    name='web_name'
+                    control={control}
+                    label="Tên hiển thị Web (SEO)"
+                    type="textarea"
+                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    addonAfter={
+                      <Button 
+                        type="primary" 
+                        size="middle" 
+                        icon={<Sparkles size={16} />}
+                        onClick={handleGenerateWebName}
+                        loading={generatingWebName}
+                        className="flex items-center gap-1 px-4 h-full font-medium"
+                        style={{ height: '100%', minHeight: '52px' }}
+                      >
+                        AI
+                      </Button>
+                    }
+                    placeholder='VD: Thuốc trừ sâu SÂU RẦY 999 260EW (Chai 450ml) - Đặc trị Sâu, rầy, rệp'
+                    className='w-full'
+                    autoComplete='off'
+                  />
+                </div>
+
+                <div className='w-full md:col-span-2'>
+                  <FormField
                     name='name'
                     control={control}
                     label='Tên sản phẩm'
@@ -1004,7 +1063,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     className='w-full'
                     autoComplete='off'
                   />
-                 
                 </div>
 
                 <div className='w-full'>
