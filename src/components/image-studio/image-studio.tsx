@@ -40,9 +40,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   
   // Logo watermark states
   const [showLogo, setShowLogo] = useState(true);
-  const [logoScale, setLogoScale] = useState(0.2); // To ra một chút theo yêu cầu
-  const [logoX, setLogoX] = useState(930); 
-  const [logoY, setLogoY] = useState(95);  
+  const [logoScale, setLogoScale] = useState(0.35); // Phóng to biểu tượng chất lượng
+  const [logoX, setLogoX] = useState(900); 
+  const [logoY, setLogoY] = useState(110);  
   const [isDraggingLogo, setIsDraggingLogo] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -404,9 +404,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 550,
           rotation: 0,
           showLogo: true,
-          logoScale: 0.2,
-          logoX: 930,
-          logoY: 70,
+          logoScale: 0.35,
+          logoX: 900,
+          logoY: 100,
           overlayItems: [],
           showShelf: true,
           shelfY: 440,
@@ -423,9 +423,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 700,
           rotation: 0,
           showLogo: true,
-          logoScale: 0.18,
-          logoX: 740,
-          logoY: 80,
+          logoScale: 0.3,
+          logoX: 720,
+          logoY: 100,
           overlayItems: [
             { id: 't1', type: 'text', text: 'NÔNG SẢN XANH', x: 400, y: 100, size: 60, color: '#16a34a', font: 'Impact', width: 600 },
             { id: 't2', type: 'text', text: 'CHẤT LƯỢNG THẬT - GIÁ TRỊ THẬT', x: 400, y: 150, size: 30, color: '#4b5563', font: 'Arial', width: 600 }
@@ -445,9 +445,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 850,
           rotation: 0,
           showLogo: true,
-          logoScale: 0.2,
-          logoX: 740,
-          logoY: 80,
+          logoScale: 0.35,
+          logoX: 720,
+          logoY: 100,
           overlayItems: [
             { id: 'x-1', type: 'text', text: 'XANH AG', x: 400, y: 280, size: 70, color: '#FFFFFF', font: 'Times New Roman', width: 700 },
             { id: 'x-2', type: 'text', text: 'bạn đồng hành của mọi nhà nông', x: 400, y: 360, size: 40, color: '#FFFFFF', font: 'Arial', width: 700 },
@@ -542,9 +542,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setPositionY(550);
     setRotation(0);
     setShowLogo(true);
-    setLogoScale(0.2);
-    setLogoX(930);
-    setLogoY(70);
+    setLogoScale(0.35);
+    setLogoX(900);
+    setLogoY(100);
     setShowShelf(true);
     setShelfY(440);
     setShelfHeight(655);
