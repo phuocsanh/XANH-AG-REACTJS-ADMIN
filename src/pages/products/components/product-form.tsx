@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Button, message, Form, Spin, Alert, Typography, Card } from "antd"
-import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons"
+import { Button, message, Form, Spin, Alert, Typography, Card, Popover } from "antd"
+import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined, SmileOutlined } from "@ant-design/icons"
 import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
 import { useForm, useFieldArray, useWatch, FormProvider } from "react-hook-form"
@@ -50,6 +50,7 @@ import { useUploadImageMutation } from "@/queries/upload"
 import { UploadType } from "@/services/upload.service"
 import ProductUnitConversionTable from "./ProductUnitConversionTable"
 import ProductBOMTable from "./ProductBOMTable"
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 
 const { Title } = Typography
 
@@ -59,7 +60,14 @@ const TiptapEditor: React.FC<{
   onChange: (content: string) => void
 }> = ({ content, onChange }) => {
   const editor = useEditor({
-    extensions: [StarterKit.configure(), Underline.configure()],
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [2, 3],
+        },
+      }),
+      Underline.configure(),
+    ],
     content: content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
@@ -77,87 +85,187 @@ const TiptapEditor: React.FC<{
     return null
   }
 
+  const commonEmojis = ["⚡", "⭐", "✅", "🌿", "🐛", "🌱", "💊", "🛡️", "🚀", "🌾", "🍎", "📌", "✨", "🔥"]
+
+  const ToolbarButton = React.forwardRef<HTMLButtonElement, { 
+    onClick?: () => void, 
+    isActive?: boolean, 
+    children: React.ReactNode,
+    title?: string,
+    [key: string]: any
+  }>(({ onClick, isActive = false, children, title, ...props }, ref) => (
+    <button
+      type='button'
+      ref={ref}
+      onClick={onClick}
+      title={title}
+      {...props}
+      style={{
+        padding: "4px 10px",
+        border: "1px solid #d9d9d9",
+        borderRadius: "4px",
+        backgroundColor: isActive ? "#10b981" : "#fff",
+        color: isActive ? "#fff" : "#374151",
+        cursor: "pointer",
+        fontSize: "13px",
+        fontWeight: "600",
+        transition: "all 0.2s",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: "32px",
+        height: "32px",
+        ...props.style
+      }}
+      onMouseOver={(e) => {
+        if (!isActive) e.currentTarget.style.backgroundColor = "#f3f4f6"
+        props.onMouseOver?.(e)
+      }}
+      onMouseOut={(e) => {
+        if (!isActive) e.currentTarget.style.backgroundColor = "#fff"
+        props.onMouseOut?.(e)
+      }}
+    >
+      {children}
+    </button>
+  ))
+
   return (
-    <div style={{ border: "1px solid #d9d9d9", borderRadius: "6px" }}>
+    <div style={{ border: "1px solid #d9d9d9", borderRadius: "8px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
       {/* Toolbar */}
       <div
         style={{
           borderBottom: "1px solid #d9d9d9",
-          padding: "8px 12px",
+          padding: "8px",
           display: "flex",
-          gap: "8px",
-          backgroundColor: "#fafafa",
+          flexWrap: "wrap",
+          gap: "6px",
+          backgroundColor: "#f9fafb",
         }}
       >
-        <button
-          type='button'
+        <ToolbarButton 
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          isActive={editor.isActive("heading", { level: 2 })}
+          title="Tiêu đề lớn (H2)"
+        >
+          H2
+        </ToolbarButton>
+        <ToolbarButton 
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          isActive={editor.isActive("heading", { level: 3 })}
+          title="Tiêu đề vừa (H3)"
+        >
+          H3
+        </ToolbarButton>
+        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
+        <ToolbarButton 
           onClick={() => editor.chain().focus().toggleBold().run()}
-          style={{
-            padding: "4px 8px",
-            border: "1px solid #d9d9d9",
-            borderRadius: "4px",
-            backgroundColor: editor.isActive("bold") ? "#1890ff" : "#fff",
-            color: editor.isActive("bold") ? "#fff" : "#000",
-            cursor: "pointer",
-            fontSize: "12px",
-            fontWeight: "bold",
-          }}
+          isActive={editor.isActive("bold")}
+          title="In đậm"
         >
           B
-        </button>
-        <button
-          type='button'
+        </ToolbarButton>
+        <ToolbarButton 
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          style={{
-            padding: "4px 8px",
-            border: "1px solid #d9d9d9",
-            borderRadius: "4px",
-            backgroundColor: editor.isActive("italic") ? "#1890ff" : "#fff",
-            color: editor.isActive("italic") ? "#fff" : "#000",
-            cursor: "pointer",
-            fontSize: "12px",
-            fontStyle: "italic",
-          }}
+          isActive={editor.isActive("italic")}
+          title="In nghiêng"
         >
           I
-        </button>
-        <button
-          type='button'
+        </ToolbarButton>
+        <ToolbarButton 
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          style={{
-            padding: "4px 8px",
-            border: "1px solid #d9d9d9",
-            borderRadius: "4px",
-            backgroundColor: editor.isActive("underline") ? "#1890ff" : "#fff",
-            color: editor.isActive("underline") ? "#fff" : "#000",
-            cursor: "pointer",
-            fontSize: "12px",
-            textDecoration: "underline",
-          }}
+          isActive={editor.isActive("underline")}
+          title="Gạch chân"
         >
           U
-        </button>
-        <button
-          type='button'
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          style={{
-            padding: "4px 8px",
-            border: "1px solid #d9d9d9",
-            borderRadius: "4px",
-            backgroundColor: editor.isActive("strike") ? "#1890ff" : "#fff",
-            color: editor.isActive("strike") ? "#fff" : "#000",
-            cursor: "pointer",
-            fontSize: "12px",
-            textDecoration: "line-through",
-          }}
+        </ToolbarButton>
+        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
+        <ToolbarButton 
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          isActive={editor.isActive("bulletList")}
+          title="Danh sách dấu chấm"
         >
-          S
-        </button>
+          • List
+        </ToolbarButton>
+        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
+        
+        {/* Emoji Picker Library */}
+        <Popover
+          content={
+            <EmojiPicker 
+              onEmojiClick={(emojiData: EmojiClickData) => {
+                editor.chain().focus().insertContent(emojiData.emoji).run()
+              }}
+              autoFocusSearch={false}
+              width={350}
+              height={400}
+            />
+          }
+          trigger="click"
+          placement="bottomLeft"
+          overlayInnerStyle={{ padding: 0 }}
+        >
+          <ToolbarButton onClick={() => {}} title="Tất cả Emoji">
+            <SmileOutlined style={{ fontSize: '18px' }} />
+          </ToolbarButton>
+        </Popover>
+
+        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
+        
+        {/* Emoji Quick Picker (Nông nghiệp) */}
+        <div style={{ display: "flex", gap: "4px", alignItems: "center", marginLeft: "4px" }}>
+          <span style={{ fontSize: '11px', color: '#9ca3af', marginRight: '4px' }}>Nhanh:</span>
+          {commonEmojis.map(emoji => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => editor.chain().focus().insertContent(emoji).run()}
+              style={{
+                padding: "2px",
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                fontSize: "18px",
+                borderRadius: "4px",
+                transition: "transform 0.1s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.2)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
       </div>
       {/* Editor Content */}
-      <div style={{ minHeight: "200px", padding: "12px" }}>
+      <div 
+        style={{ minHeight: "200px", padding: "16px", backgroundColor: "#fff" }}
+        className="tiptap-content"
+      >
         <EditorContent editor={editor} />
       </div>
+      <style>{`
+        .tiptap-content .ProseMirror:focus {
+          outline: none;
+        }
+        .tiptap-content .ProseMirror h2 {
+          font-size: 1.5rem;
+          font-weight: bold;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+        }
+        .tiptap-content .ProseMirror h3 {
+          font-size: 1.25rem;
+          font-weight: bold;
+          margin-top: 0.8rem;
+          margin-bottom: 0.4rem;
+        }
+        .tiptap-content .ProseMirror ul {
+          padding-left: 1.5rem;
+          list-style-type: disc;
+          margin: 0.5rem 0;
+        }
+      `}</style>
     </div>
   )
 }
