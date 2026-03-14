@@ -6,6 +6,7 @@ import { Sparkles, X, Eraser, ShieldCheck, Box, Truck, Award, PackageCheck } fro
 import { removeBackground } from '@imgly/background-removal';
 import heic2any from 'heic2any';
 import bgSanPham from '@/assets/images/bg-san-pham.png';
+import logoQuality from '@/assets/images/100-chat-luong.png';
 import logo3 from '@/assets/images/logo3.png';
 import leafDecor from '@/assets/images/leaf.png';
 import keDecor from '@/assets/images/ke-san-pham.png';
@@ -575,7 +576,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
     bgImg.src = bgSanPham;
     productImg.src = (processedImage || originalImage) ? (processedImage || originalImage) as string : '';
-    logoImg.src = logo3;
+    logoImg.src = logoQuality;
     leafImg.src = leafDecor;
     keImg.src = keDecor;
     logoImgRef.current = logoImg;
@@ -1698,7 +1699,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                     if (showLogo) {
                       const img = new window.Image();
-                      img.src = logo3;
+                      img.src = logoQuality;
                       const logoW = img.width * logoScale;
                       const logoH = img.height * logoScale;
                       if (mouseX >= logoX - logoW / 2 && mouseX <= logoX + logoW / 2 && mouseY >= logoY - logoH / 2 && mouseY <= logoY + logoH / 2) {
