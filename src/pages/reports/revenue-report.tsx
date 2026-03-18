@@ -14,7 +14,7 @@ import {
   Button,
   Segmented
 } from 'antd';
-import { DatePicker } from '@/components/common';
+import { DatePicker, ExportExcelButton } from '@/components/common';
 import { 
   DollarOutlined, 
   ShoppingOutlined, 
@@ -175,7 +175,7 @@ const RevenueReportPage: React.FC = () => {
         <div>
           <Title level={2} className="!mb-0 !text-emerald-800">Báo cáo doanh thu & Lợi nhuận</Title>
           <Text type="secondary">Thống kê chi tiết tình hình kinh doanh theo khoảng thời gian chọn lọc</Text>
-          <div className="mt-2">
+          <div className="mt-2 flex items-center gap-2">
             <Button 
               type="link" 
               icon={<SyncOutlined spin={isSyncing} />} 
@@ -185,6 +185,73 @@ const RevenueReportPage: React.FC = () => {
             >
               Đồng bộ dữ liệu thuế cũ
             </Button>
+            {report && (
+              <ExportExcelButton 
+                label="Xuất Excel Kê Thuế"
+                fileName={`Bao-cao-thue-${startDate}-den-${endDate}`}
+                data={[
+                  ...report.invoices.flatMap(invoice => 
+                    invoice.items
+                      .filter(item => {
+                        const taxableQty = Number(item.taxable_quantity || 0);
+                        if (taxableFilter === 'yes') return taxableQty > 0;
+                        if (taxableFilter === 'no') return taxableQty === 0;
+                        return true;
+                      })
+                      .map(item => ({
+                        ...item,
+                        invoice_code: invoice.invoice_code,
+                        sale_date: invoice.sale_date,
+                        customer_name: invoice.customer_name,
+                      }))
+                  ),
+                  // Thêm dòng tổng cộng ở cuối
+                  {
+                    is_summary: true,
+                    product_name: 'TỔNG CỘNG',
+                    taxable_total_amount: report.invoices.reduce((acc, inv) => {
+                      return acc + inv.items.reduce((itemAcc, item) => {
+                        const taxableQty = Number(item.taxable_quantity || 0);
+                        if (taxableFilter === 'yes' && taxableQty === 0) return itemAcc;
+                        if (taxableFilter === 'no' && taxableQty > 0) return itemAcc;
+                        return itemAcc + Number(item.taxable_total_amount || 0);
+                      }, 0);
+                    }, 0)
+                  }
+                ]}
+                columns={[
+                  { 
+                    key: 'sale_date', 
+                    header: 'Ngày bán', 
+                    format: (val, record) => record.is_summary ? '' : dayjs(val).format('DD/MM/YYYY') 
+                  },
+                  { 
+                    key: 'product_name', 
+                    header: 'Tên sản phẩm' 
+                  },
+                  {
+                    key: 'taxable_quantity',
+                    header: 'Số lượng',
+                    format: (val, record) => record.is_summary ? '' : val
+                  },
+                  {
+                    key: 'unit_name',
+                    header: 'Đơn vị',
+                    format: (val, record) => record.is_summary ? '' : val
+                  },
+                  { 
+                    key: 'tax_selling_price', 
+                    header: 'Đơn giá khai thuế (GBKT)',
+                    format: (val, record) => record.is_summary ? '' : Number(val || 0).toLocaleString('vi-VN')
+                  },
+                  { 
+                    key: 'taxable_total_amount', 
+                    header: 'Thành tiền khai thuế (TTKT)',
+                    format: (val) => Number(val || 0).toLocaleString('vi-VN')
+                  }
+                ]}
+              />
+            )}
           </div>
         </div>
         <Card className="shadow-sm border-emerald-100" bodyStyle={{ padding: '12px 24px' }}>
@@ -484,7 +551,10 @@ const RevenueReportPage: React.FC = () => {
                                     key={`${invoice.invoice_id}-${idx}`}
                                     className={`border-t border-gray-50 hover:bg-gray-50/60 transition-colors ${idx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
                                   >
-                                    <td className="px-5 py-3 font-medium text-gray-800">{item.product_name}</td>
+                                    <td className="px-5 py-3">
+                                      <div className="font-medium text-gray-800 leading-tight">{item.product_trade_name}</div>
+                                      <div className="text-[11px] text-gray-400 mt-0.5">{item.product_name}</div>
+                                    </td>
                                     <td className="px-4 py-3 text-center">
                                       <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-0.5 text-xs font-medium">
                                         {item.quantity} {item.unit_name}

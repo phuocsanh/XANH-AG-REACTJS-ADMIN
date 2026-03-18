@@ -264,6 +264,7 @@ export interface PeriodSummary {
 }
 
 export interface PeriodInvoiceItem {
+  product_trade_name: string;
   product_name: string;
   quantity: number;
   unit_name: string;

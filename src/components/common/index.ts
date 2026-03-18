@@ -12,6 +12,7 @@ export { default as NumberInput } from "./number-input"
 export { default as RichTextEditor } from "./rich-text-editor"
 export { default as SearchFilter } from "./search-filter"
 export { default as StatusBadge } from "./status-badge"
+export { default as ExportExcelButton } from "./export-excel-button"
 export { default as FormComboBox } from "../form/form-combo-box"
 
 // Export types
