@@ -530,14 +530,14 @@ const RevenueReportPage: React.FC = () => {
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead>
-                              <tr className="text-gray-400 font-medium uppercase text-xs">
-                                <th className="px-5 py-3 text-left font-semibold">Tên sản phẩm</th>
-                                <th className="px-4 py-3 text-center font-semibold">Số lượng</th>
-                                <th className="px-4 py-3 text-right font-semibold">Đơn giá</th>
-                                <th className="px-4 py-3 text-right font-semibold">Thành tiền</th>
-                                <th className="px-4 py-3 text-right font-semibold">GBKT</th>
-                                <th className="px-4 py-3 text-right font-semibold">TTKT</th>
-                                <th className="px-4 py-3 text-center font-semibold">Hóa đơn đầu vào</th>
+                              <tr className="text-gray-400 font-medium uppercase text-[11px] bg-gray-50/50">
+                                <th className="px-5 py-3 text-left font-semibold" style={{ width: 'auto', minWidth: '300px' }}>Tên sản phẩm</th>
+                                <th className="px-4 py-3 text-center font-semibold" style={{ width: '110px' }}>Số lượng</th>
+                                <th className="px-4 py-3 text-right font-semibold" style={{ width: '130px' }}>Đơn giá</th>
+                                <th className="px-4 py-3 text-right font-semibold" style={{ width: '140px' }}>Thành tiền</th>
+                                <th className="px-4 py-3 text-right font-semibold" style={{ width: '110px' }}>GBKT</th>
+                                <th className="px-4 py-3 text-right font-semibold" style={{ width: '130px' }}>TTKT</th>
+                                <th className="px-4 py-3 text-center font-semibold" style={{ width: '160px' }}>Hóa đơn đầu vào</th>
                               </tr>
                             </thead>
                             <tbody>
