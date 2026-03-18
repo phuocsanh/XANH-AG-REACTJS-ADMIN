@@ -39,7 +39,7 @@ import {
   useInventoryStatsQuery,
 } from "@/queries/inventory"
 import { useSupplierSearch } from "@/queries/supplier"
-import { LoadingSpinner, RangePicker, DatePicker } from "@/components/common"
+import { LoadingSpinner, RangePicker, DatePicker, ComboBox } from "@/components/common"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from '@/components/common/filter-header'
 import TaxableItemsModal from "./components/taxable-items-modal"
@@ -563,17 +563,17 @@ const InventoryReceiptsList: React.FC = () => {
               <Col xs={24} md={8}>
                 <Space direction="vertical" size={2} style={{ width: '100%' }}>
                   <Text strong style={{ fontSize: '12px' }}>📦 Lọc theo nhà cung cấp:</Text>
-                  <FilterHeader 
-                    title=""
+                  <ComboBox 
                     value={filters.supplier_id}
                     onChange={(val) => handleFilterChange('supplier_id', val)}
-                    inputType="combobox"
-                    comboBoxProps={{
-                      options: supplierOptions,
-                      onSearch: setSearchTermSupplier,
-                      placeholder: "Tất cả nhà cung cấp",
-                      loading: isLoadingSuppliers,
-                    }}
+                    options={supplierOptions}
+                    onSearch={setSearchTermSupplier}
+                    placeholder="Tất cả nhà cung cấp"
+                    loading={isLoadingSuppliers}
+                    allowClear
+                    showSearch
+                    filterOption={false}
+                    style={{ width: '100%' }}
                   />
                 </Space>
               </Col>
