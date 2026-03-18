@@ -599,6 +599,7 @@ const InventoryReceiptsList: React.FC = () => {
                     }}
                     placeholder={["Từ ngày", "Đến ngày"]}
                     format="DD/MM/YYYY"
+                    linkedPanels={false}
                   />
                 </Space>
               </Col>
