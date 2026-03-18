@@ -7,7 +7,6 @@ import {
   Button,
   Space,
   Typography,
-  DatePicker,
   Table,
   Tag,
   Tooltip,
@@ -40,7 +39,7 @@ import {
   useInventoryStatsQuery,
 } from "@/queries/inventory"
 import { useSupplierSearch } from "@/queries/supplier"
-import { LoadingSpinner, RangePicker } from "@/components/common"
+import { LoadingSpinner, RangePicker, DatePicker } from "@/components/common"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from '@/components/common/filter-header'
 import TaxableItemsModal from "./components/taxable-items-modal"
@@ -581,26 +580,22 @@ const InventoryReceiptsList: React.FC = () => {
               <Col xs={24} md={10}>
                 <Space direction="vertical" size={2} style={{ width: '100%' }}>
                   <Text strong style={{ fontSize: '12px' }}>📅 Khoảng thời gian nhập:</Text>
-                  <RangePicker
-                    style={{ width: '100%' }}
-                    value={
-                      filters.start_date && filters.end_date
-                        ? [dayjs(filters.start_date), dayjs(filters.end_date)]
-                        : undefined
-                    }
-                    onChange={(dates: any) => {
-                      if (dates) {
-                        handleFilterChange("start_date", dates[0]?.toISOString())
-                        handleFilterChange("end_date", dates[1]?.toISOString())
-                      } else {
-                        handleFilterChange("start_date", undefined)
-                        handleFilterChange("end_date", undefined)
-                      }
-                    }}
-                    placeholder={["Từ ngày", "Đến ngày"]}
-                    format="DD/MM/YYYY"
-                    linkedPanels={false}
-                  />
+                  <Space.Compact style={{ width: '100%' }}>
+                    <DatePicker 
+                      style={{ width: '50%' }}
+                      value={filters.start_date ? dayjs(filters.start_date) : undefined}
+                      onChange={(date: any) => handleFilterChange("start_date", date ? date.toISOString() : undefined)}
+                      placeholder="Từ ngày"
+                      format="DD/MM/YYYY"
+                    />
+                    <DatePicker 
+                      style={{ width: '50%' }}
+                      value={filters.end_date ? dayjs(filters.end_date) : undefined}
+                      onChange={(date: any) => handleFilterChange("end_date", date ? date.toISOString() : undefined)}
+                      placeholder="Đến ngày"
+                      format="DD/MM/YYYY"
+                    />
+                  </Space.Compact>
                 </Space>
               </Col>
               {(filters.supplier_id || (filters.start_date && filters.end_date)) && (
