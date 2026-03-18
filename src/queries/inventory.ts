@@ -666,13 +666,21 @@ export const useInventoryHistoryByProductQuery = (
  * Hook lấy thống kê tồn kho (Sử dụng endpoint stats mới từ server)
  * @param supplier_id - ID nhà cung cấp (tùy chọn). Nếu có, trả về thống kê riêng của NCC đó
  */
-export const useInventoryStatsQuery = (supplier_id?: number) => {
+export const useInventoryStatsQuery = (supplier_id?: number, startDate?: string, endDate?: string) => {
   return useQuery({
-    queryKey: supplier_id ? inventoryKeys.stats(supplier_id) : inventoryKeys.stats(),
+    queryKey: supplier_id || startDate || endDate 
+      ? [...inventoryKeys.all, "stats", supplier_id, startDate, endDate] 
+      : inventoryKeys.stats(),
     queryFn: async () => {
-      const url = supplier_id 
-        ? `/inventory/receipts/stats?supplier_id=${supplier_id}`
-        : "/inventory/receipts/stats"
+      let url = "/inventory/receipts/stats"
+      const params = new URLSearchParams()
+      if (supplier_id) params.append("supplier_id", String(supplier_id))
+      if (startDate) params.append("start_date", startDate)
+      if (endDate) params.append("end_date", endDate)
+      
+      const queryString = params.toString()
+      if (queryString) url += `?${queryString}`
+      
       const response = await api.get<InventoryReceiptStats>(url)
       return response
     },
@@ -1012,5 +1020,28 @@ export const useAddRefundMutation = () => {
     onError: (error: unknown) => {
       handleApiError(error, 'Lỗi khi thêm hoàn tiền')
     },
+  })
+}
+
+/**
+ * Hook lấy danh sách hàng hóa có hóa đơn (taxable_quantity > 0)
+ */
+export const useTaxableItemsQuery = (params: { supplier_id?: number; startDate?: string; endDate?: string }) => {
+  return useQuery({
+    queryKey: ["inventory", "receipt-items", "taxable", params],
+    queryFn: async () => {
+      let url = "/inventory/receipt-items/taxable"
+      const queryParams = new URLSearchParams()
+      if (params.supplier_id) queryParams.append("supplier_id", String(params.supplier_id))
+      if (params.startDate) queryParams.append("start_date", params.startDate)
+      if (params.endDate) queryParams.append("end_date", params.endDate)
+      
+      const queryString = queryParams.toString()
+      if (queryString) url += `?${queryString}`
+      
+      const response = await api.get<any[]>(url)
+      return response
+    },
+    enabled: true,
   })
 }

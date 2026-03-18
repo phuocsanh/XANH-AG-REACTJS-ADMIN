@@ -120,6 +120,7 @@ export interface InventoryReceiptStats {
   totalValue: string | number
   totalPaid: string | number
   totalDebt: string | number
+  totalTaxableValue?: string | number
 }
 
 // Interface cho chi tiết phiếu nhập hàng (items)

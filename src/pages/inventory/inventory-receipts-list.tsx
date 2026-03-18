@@ -12,6 +12,8 @@ import {
   Tag,
   Tooltip,
   Popconfirm,
+  Modal,
+  Statistic,
 } from "antd"
 import {
   EyeOutlined,
@@ -41,6 +43,7 @@ import { useSupplierSearch } from "@/queries/supplier"
 import { LoadingSpinner, RangePicker } from "@/components/common"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from '@/components/common/filter-header'
+import TaxableItemsModal from "./components/taxable-items-modal"
 
 const { Title, Text } = Typography
 
@@ -157,7 +160,13 @@ const InventoryReceiptsList: React.FC = () => {
   }, [receiptsData])
 
   const { data: statsData, isLoading: isLoadingStats, refetch: refetchStats } =
-    useInventoryStatsQuery(filters.supplier_id)
+    useInventoryStatsQuery(
+      filters.supplier_id ? Number(filters.supplier_id) : undefined,
+      filters.start_date,
+      filters.end_date
+    )
+
+  const [isTaxableModalVisible, setIsTaxableModalVisible] = useState(false)
 
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
@@ -551,8 +560,8 @@ const InventoryReceiptsList: React.FC = () => {
         {/* Filter Nhà cung cấp */}
         <Col span={24}>
           <Card size="small" bodyStyle={{ padding: '12px' }}>
-            <Row gutter={[8, 8]} align="middle">
-              <Col xs={24} sm={12} md={8} lg={6}>
+            <Row gutter={[12, 12]} align="middle">
+              <Col xs={24} md={8}>
                 <Space direction="vertical" size={2} style={{ width: '100%' }}>
                   <Text strong style={{ fontSize: '12px' }}>📦 Lọc theo nhà cung cấp:</Text>
                   <FilterHeader 
@@ -569,11 +578,43 @@ const InventoryReceiptsList: React.FC = () => {
                   />
                 </Space>
               </Col>
-              {filters.supplier_id && (
-                <Col xs={24} sm={12} md={16} lg={18}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    📊 Thống kê bên dưới là của <strong>{supplierOptions.find(s => s.value === filters.supplier_id)?.label}</strong>
-                  </Text>
+              <Col xs={24} md={10}>
+                <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                  <Text strong style={{ fontSize: '12px' }}>📅 Khoảng thời gian nhập:</Text>
+                  <RangePicker
+                    style={{ width: '100%' }}
+                    value={
+                      filters.start_date && filters.end_date
+                        ? [dayjs(filters.start_date), dayjs(filters.end_date)]
+                        : undefined
+                    }
+                    onChange={(dates: any) => {
+                      if (dates) {
+                        handleFilterChange("start_date", dates[0]?.toISOString())
+                        handleFilterChange("end_date", dates[1]?.toISOString())
+                      } else {
+                        handleFilterChange("start_date", undefined)
+                        handleFilterChange("end_date", undefined)
+                      }
+                    }}
+                    placeholder={["Từ ngày", "Đến ngày"]}
+                    format="DD/MM/YYYY"
+                  />
+                </Space>
+              </Col>
+              {(filters.supplier_id || (filters.start_date && filters.end_date)) && (
+                <Col xs={24} md={6}>
+                   <div className="mt-4 md:mt-0 text-right">
+                     <Button 
+                       type="primary" 
+                       size="small" 
+                       danger 
+                       onClick={() => setSearchParams({})}
+                       className="text-[11px]"
+                     >
+                       XÓA LỌC
+                     </Button>
+                   </div>
                 </Col>
               )}
             </Row>
@@ -585,60 +626,81 @@ const InventoryReceiptsList: React.FC = () => {
           <Col span={24}>
                 {/* Thống kê 8 tấm (Tối ưu sắp xếp và hiển thị) */}
                 <Row gutter={[4, 4]}>
-                  {/* Nhóm 1: Trạng thái phiếu (2 cột trên mobile) */}
-                  <Col xs={12} sm={12} md={3}>
+                  {/* Nhóm 1: Trạng thái phiếu (Cố định 2 cột mỗi dòng trên mobile) */}
+                  <Col xs={12} sm={8} md={2}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#1890ff' }}>{statsData.totalReceipts ?? 0}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1890ff' }}>{statsData.totalReceipts ?? 0}</div>
                       <Text className="text-[10px] block" type="secondary">Tổng phiếu</Text>
                     </Card>
                   </Col>
-                  <Col xs={12} sm={12} md={3}>
+                  <Col xs={12} sm={8} md={2}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#fa8c16' }}>{statsData.draftReceipts ?? 0}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#fa8c16' }}>{statsData.draftReceipts ?? 0}</div>
                       <Text className="text-[10px] block" type="secondary">Bản nháp</Text>
                     </Card>
                   </Col>
-                  <Col xs={12} sm={12} md={3}>
+                  <Col xs={12} sm={8} md={2}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#52c41a' }}>{statsData.approvedReceipts ?? 0}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#52c41a' }}>{statsData.approvedReceipts ?? 0}</div>
                       <Text className="text-[10px] block" type="secondary">Đã duyệt</Text>
                     </Card>
                   </Col>
-                  <Col xs={12} sm={12} md={3}>
+                  <Col xs={12} sm={8} md={2}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ff4d4f' }}>{statsData.cancelledReceipts ?? 0}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff4d4f' }}>{statsData.cancelledReceipts ?? 0}</div>
                       <Text className="text-[10px] block" type="secondary">Đã hủy</Text>
                     </Card>
                   </Col>
 
-                  {/* Nhóm 2: Tài chính & Công nợ (Full width trên mobile vì số tiền dài) */}
-                  <Col xs={24} sm={12} md={3}>
-                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#13c2c2' }}>
-                        {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalValue ?? "0")))} đ
+                  {/* Nhóm 2: Tài chính - HIỂN THỊ GIÁ TRỊ CÓ HÓA ĐƠN ĐẦU TIÊN */}
+                  <Col xs={24} sm={12} md={4}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }} className="!bg-blue-50">
+                      <div className="flex flex-col items-center">
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#096dd9' }}>
+                          {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalTaxableValue ?? "0")))} đ
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Text className="text-[10px]" type="secondary">Giá trị hàng có HĐ</Text>
+                          <Button 
+                            type="link" 
+                            size="small" 
+                            className="p-0 h-auto text-[10px] font-bold" 
+                            onClick={() => setIsTaxableModalVisible(true)}
+                          >
+                            XEM
+                          </Button>
+                        </div>
                       </div>
-                      <Text className="text-[10px] block" type="secondary">Tổng giá trị</Text>
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={3}>
+                  
+                  <Col xs={12} sm={12} md={3}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#52c41a' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#13c2c2' }}>
+                        {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalValue ?? "0")))} đ
+                      </div>
+                      <Text className="text-[10px] block" type="secondary">Tổng tiền hàng</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={12} md={3}>
+                    <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#52c41a' }}>
                         {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalPaid ?? "0")))} đ
                       </div>
                       <Text className="text-[10px] block" type="secondary">Đã thanh toán</Text>
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={3}>
+                  <Col xs={12} sm={12} md={3}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ff4d4f' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff4d4f' }}>
                         {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalDebt ?? "0")))} đ
                       </div>
                       <Text className="text-[10px] block" type="secondary">Còn nợ</Text>
                     </Card>
                   </Col>
-                  <Col xs={24} sm={12} md={3}>
+                  <Col xs={12} sm={12} md={3}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#722ed1' }}>{statsData.debtReceiptsCount ?? 0}</div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#722ed1' }}>{statsData.debtReceiptsCount ?? 0}</div>
                       <Text className="text-[10px] block" type="secondary">Phiếu còn nợ</Text>
                     </Card>
                   </Col>
@@ -709,6 +771,14 @@ const InventoryReceiptsList: React.FC = () => {
           />
         )}
       </Card>
+      <TaxableItemsModal 
+        open={isTaxableModalVisible}
+        onClose={() => setIsTaxableModalVisible(false)}
+        supplierId={filters.supplier_id ? Number(filters.supplier_id) : undefined}
+        startDate={filters.start_date}
+        endDate={filters.end_date}
+        supplierName={supplierOptions.find(s => s.value === filters.supplier_id)?.label}
+      />
     </div>
   )
 }
