@@ -127,8 +127,8 @@ const TaxableItemsModal: React.FC<TaxableItemsModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={null}
-      width={1300}
-      style={{ top: 20 }}
+      width="100%"
+      style={{ top: 10, maxWidth: '98vw' }}
       bodyStyle={{ padding: '0 24px 24px 24px' }}
     >
       {error && <Alert message="Lỗi" description={(error as any).message} type="error" showIcon style={{ marginBottom: 16 }} />}
@@ -140,7 +140,7 @@ const TaxableItemsModal: React.FC<TaxableItemsModalProps> = ({
         loading={isLoading}
         size="middle"
         pagination={{ pageSize: 15, showSizeChanger: true }}
-        scroll={{ y: 550, x: 1200 }}
+        scroll={{ y: 'calc(100vh - 350px)', x: 1500 }}
         summary={(pageData) => {
             const pageTotal = pageData.reduce((acc, curr) => acc + (Number(curr.taxable_quantity || 0) * Number(curr.unit_cost || 0)), 0)
             return (
