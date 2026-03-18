@@ -104,7 +104,7 @@ const TaxableItemsModal: React.FC<TaxableItemsModalProps> = ({
     {
       title: "Thành tiền",
       key: "subtotal",
-      width: 130,
+      width: 195,
       align: "right",
       render: (_, record) => {
         const subtotal = Number(record.taxable_quantity || 0) * Number(record.unit_cost || 0)
@@ -127,7 +127,7 @@ const TaxableItemsModal: React.FC<TaxableItemsModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={null}
-      width={1100}
+      width={1300}
       style={{ top: 20 }}
       bodyStyle={{ padding: '0 24px 24px 24px' }}
     >
@@ -140,7 +140,7 @@ const TaxableItemsModal: React.FC<TaxableItemsModalProps> = ({
         loading={isLoading}
         size="middle"
         pagination={{ pageSize: 15, showSizeChanger: true }}
-        scroll={{ y: 500, x: 1000 }}
+        scroll={{ y: 550, x: 1200 }}
         summary={(pageData) => {
             const pageTotal = pageData.reduce((acc, curr) => acc + (Number(curr.taxable_quantity || 0) * Number(curr.unit_cost || 0)), 0)
             return (
