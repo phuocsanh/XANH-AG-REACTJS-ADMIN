@@ -39,12 +39,21 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
   const [canvasHeight, setCanvasHeight] = useState(1000);
   
   // Logo watermark states
+  // Logo chính hãng (Authenticity Logo - 100% Chat luong)
   const [showLogo, setShowLogo] = useState(true);
-  const [logoScale, setLogoScale] = useState(0.35); // Phóng to biểu tượng chất lượng
-  const [logoX, setLogoX] = useState(900); 
-  const [logoY, setLogoY] = useState(110);  
+  const [logoScale, setLogoScale] = useState(0.28); // Mặc định 28% cho vừa vặn
+  const [logoX, setLogoX] = useState(910); // Lùi vào một chút tránh bị cắt
+  const [logoY, setLogoY] = useState(90);  // Đưa xuống một chút tránh bị cắt
   const [isDraggingLogo, setIsDraggingLogo] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Logo thương hiệu (Brand Logo - logo3)
+  const [showBrandLogo, setShowBrandLogo] = useState(false);
+  const [brandLogoScale, setBrandLogoScale] = useState(0.22);
+  const [brandLogoX, setBrandLogoX] = useState(100); 
+  const [brandLogoY, setBrandLogoY] = useState(100);
+  const [isDraggingBrandLogo, setIsDraggingBrandLogo] = useState(false);
+  const [brandLogoDragOffset, setBrandLogoDragOffset] = useState({ x: 0, y: 0 });
 
   // Shelf states
   const [showShelf, setShowShelf] = useState(true); 
@@ -91,6 +100,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     logoScale: number;
     logoX: number;
     logoY: number;
+    showBrandLogo?: boolean;
+    brandLogoScale?: number;
+    brandLogoX?: number;
+    brandLogoY?: number;
     overlayItems: OverlayItem[];
     showShelf?: boolean;
     shelfY?: number;
@@ -404,9 +417,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 550,
           rotation: 0,
           showLogo: true,
-          logoScale: 0.35,
-          logoX: 900,
+          logoScale: 0.28,
+          logoX: 880,
           logoY: 100,
+          showBrandLogo: false,
+          brandLogoScale: 0.22,
+          brandLogoX: 100,
+          brandLogoY: 100,
           overlayItems: [],
           showShelf: true,
           shelfY: 440,
@@ -423,9 +440,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 700,
           rotation: 0,
           showLogo: true,
-          logoScale: 0.3,
-          logoX: 720,
-          logoY: 100,
+          logoScale: 0.25,
+          logoX: 740,
+          logoY: 60,
+          showBrandLogo: true,
+          brandLogoScale: 0.2,
+          brandLogoX: 400,
+          brandLogoY: 1050,
           overlayItems: [
             { id: 't1', type: 'text', text: 'NÔNG SẢN XANH', x: 400, y: 100, size: 60, color: '#16a34a', font: 'Impact', width: 600 },
             { id: 't2', type: 'text', text: 'CHẤT LƯỢNG THẬT - GIÁ TRỊ THẬT', x: 400, y: 150, size: 30, color: '#4b5563', font: 'Arial', width: 600 }
@@ -445,9 +466,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
           positionY: 850,
           rotation: 0,
           showLogo: true,
-          logoScale: 0.35,
-          logoX: 720,
+          logoScale: 0.28,
+          logoX: 740, // Mẫu này canvas rộng 800 nên 740 là sát phải
           logoY: 100,
+          showBrandLogo: true,
+          brandLogoScale: 0.25,
+          brandLogoX: 400,
+          brandLogoY: 1000,
           overlayItems: [
             { id: 'x-1', type: 'text', text: 'XANH AG', x: 400, y: 280, size: 70, color: '#FFFFFF', font: 'Times New Roman', width: 700 },
             { id: 'x-2', type: 'text', text: 'bạn đồng hành của mọi nhà nông', x: 400, y: 360, size: 40, color: '#FFFFFF', font: 'Arial', width: 700 },
@@ -502,6 +527,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
       logoScale,
       logoX,
       logoY,
+      showBrandLogo,
+      brandLogoScale,
+      brandLogoX,
+      brandLogoY,
       overlayItems,
       showShelf,
       shelfY,
@@ -526,6 +555,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setLogoScale(template.logoScale);
     setLogoX(template.logoX);
     setLogoY(template.logoY);
+    setShowBrandLogo(template.showBrandLogo || false);
+    setBrandLogoScale(template.brandLogoScale || 0.22);
+    setBrandLogoX(template.brandLogoX || 100);
+    setBrandLogoY(template.brandLogoY || 100);
     setOverlayItems(template.overlayItems ? template.overlayItems.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)})) : []);
     if (template.showShelf !== undefined) setShowShelf(template.showShelf);
     if (template.shelfY !== undefined) setShelfY(template.shelfY);
@@ -542,9 +575,13 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     setPositionY(550);
     setRotation(0);
     setShowLogo(true);
-    setLogoScale(0.35);
-    setLogoX(900);
-    setLogoY(100);
+    setLogoScale(0.3);
+    setLogoX(940);
+    setLogoY(60);
+    setShowBrandLogo(false);
+    setBrandLogoScale(0.22);
+    setBrandLogoX(100);
+    setBrandLogoY(100);
     setShowShelf(true);
     setShelfY(440);
     setShelfHeight(655);
@@ -571,12 +608,14 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
     const bgImg = new window.Image();
     const productImg = new window.Image();
     const logoImg = new window.Image();
+    const brandLogoImg = new window.Image();
     const leafImg = new window.Image(); // Ảnh lá trang trí
     const keImg = new window.Image(); // Ảnh kệ trang trí
 
     bgImg.src = bgSanPham;
     productImg.src = (processedImage || originalImage) ? (processedImage || originalImage) as string : '';
     logoImg.src = logoQuality;
+    brandLogoImg.src = logo3;
     leafImg.src = leafDecor;
     keImg.src = keDecor;
     logoImgRef.current = logoImg;
@@ -700,6 +739,18 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             logoY - logoHeight / 2,
             logoWidth,
             logoHeight
+          );
+        }
+
+        if (bgImg.complete && showBrandLogo && brandLogoImg.complete) {
+          const bLogoWidth = brandLogoImg.width * brandLogoScale;
+          const bLogoHeight = brandLogoImg.height * brandLogoScale;
+          ctx.drawImage(
+            brandLogoImg,
+            brandLogoX - bLogoWidth / 2,
+            brandLogoY - bLogoHeight / 2,
+            bLogoWidth,
+            bLogoHeight
           );
         }
 
@@ -1450,7 +1501,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
 
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-bold text-gray-600 uppercase">Logo thương hiệu</span>
+                    <span className="text-[11px] font-bold text-gray-600 uppercase">Logo chính hãng (Chứng nhận)</span>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input 
                         type="checkbox" 
@@ -1463,12 +1514,71 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                   </div>
                   
                   {showLogo && (
-                    <div>
-                      <div className="flex justify-between text-[10px] font-bold mb-2">
-                        <span className="text-gray-500 uppercase">Tỉ lệ logo</span>
-                        <span className="text-blue-600 font-mono">{Math.round(logoScale * 100)}%</span>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                          <span className="text-gray-500 uppercase">Tỉ lệ logo</span>
+                          <span className="text-blue-600 font-mono">{Math.round(logoScale * 100)}%</span>
+                        </div>
+                        <Slider min={0.05} max={0.6} step={0.01} value={logoScale} onChange={setLogoScale} />
                       </div>
-                      <Slider min={0.05} max={0.5} step={0.01} value={logoScale} onChange={setLogoScale} />
+                      
+                      <div className="grid grid-cols-1 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span className="text-gray-400 font-normal uppercase italic">Lên / Xuống</span>
+                          </div>
+                          <Slider min={0} max={canvasHeight} value={logoY} onChange={setLogoY} />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span className="text-gray-400 font-normal uppercase italic">Trái / Phải</span>
+                          </div>
+                          <Slider min={0} max={canvasWidth} value={logoX} onChange={setLogoX} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-bold text-gray-600 uppercase">Logo Thương hiệu (XANH AG)</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={showBrandLogo}
+                        onChange={(e) => setShowBrandLogo(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600"
+                      />
+                      <span className="text-[10px] font-bold">Hiển thị</span>
+                    </label>
+                  </div>
+                  
+                  {showBrandLogo && (
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                          <span className="text-gray-500 uppercase">Tỉ lệ Logo</span>
+                          <span className="text-blue-600 font-mono">{Math.round(brandLogoScale * 100)}%</span>
+                        </div>
+                        <Slider min={0.05} max={0.6} step={0.01} value={brandLogoScale} onChange={setBrandLogoScale} />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2">
+                        <div>
+                          <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span className="text-gray-400 font-normal uppercase italic">Lên / Xuống</span>
+                          </div>
+                          <Slider min={0} max={canvasHeight} value={brandLogoY} onChange={setBrandLogoY} />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span className="text-gray-400 font-normal uppercase italic">Trái / Phải</span>
+                          </div>
+                          <Slider min={0} max={canvasWidth} value={brandLogoX} onChange={setBrandLogoX} />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1599,7 +1709,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     maxWidth: '100%',
                     maxHeight: 'calc(100vh - 250px)',
                     display: 'block',
-                    cursor: isEraserMode ? 'none' : (isDraggingLogo ? 'grabbing' : 'grab'),
+                    cursor: isEraserMode ? 'none' : (isDraggingLogo || isDraggingBrandLogo ? 'grabbing' : 'grab'),
                     touchAction: 'none'
                   }}
                   onMouseDown={(e) => {
@@ -1710,6 +1820,19 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                       }
                     }
 
+                    if (showBrandLogo) {
+                      const img = new window.Image();
+                      img.src = logo3;
+                      const logoW = img.width * brandLogoScale;
+                      const logoH = img.height * brandLogoScale;
+                      if (mouseX >= brandLogoX - logoW / 2 && mouseX <= brandLogoX + logoW / 2 && mouseY >= brandLogoY - logoH / 2 && mouseY <= brandLogoY + logoH / 2) {
+                        setIsDraggingBrandLogo(true);
+                        setDragOffset({ x: mouseX - brandLogoX, y: mouseY - brandLogoY });
+                        setSelectedItemId(null);
+                        return;
+                      }
+                    }
+
                     if (isEraserMode) {
                       setIsErasing(true);
                       saveMaskState();
@@ -1766,6 +1889,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     } else if (isDraggingLogo && showLogo) {
                       setLogoX(mouseX - dragOffset.x);
                       setLogoY(mouseY - dragOffset.y);
+                    } else if (isDraggingBrandLogo && showBrandLogo) {
+                      setBrandLogoX(mouseX - dragOffset.x);
+                      setBrandLogoY(mouseY - dragOffset.y);
                     }
                   }}
                   onMouseUp={() => {
@@ -1773,12 +1899,14 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                     setIsResizingItem(false);
                     setIsErasing(false);
                     setIsDraggingLogo(false);
+                    setIsDraggingBrandLogo(false);
                   }}
                   onMouseLeave={() => {
                     setIsDraggingItem(false);
                     setIsResizingItem(false);
                     setIsErasing(false);
                     setIsDraggingLogo(false);
+                    setIsDraggingBrandLogo(false);
                     setMousePos({ x: -1, y: -1 });
                   }}
                   // Thêm touch events cho mobile nếu cần
