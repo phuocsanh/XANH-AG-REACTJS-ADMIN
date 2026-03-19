@@ -2306,7 +2306,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                             // Nhóm trái cây
                             '🍎', '🍏', '🍐', '🍋', '🍊', '🍉', '🍇', '🍓', '🍑', '🍍', '🥭',
                             // Nhóm sâu bệnh/côn trùng (Đối tượng đặc trị)
-                            '🐛', '🐞', '🐜', '🕷️', ' Mosquito', '🐝', '🦗', '🦋',
+                            '🐛', '🐞', '🐜', '🕷️', '🦟', '🐝', '🦗', '🦋',
                             // Nhóm hiệu ứng/tác dụng
                             '💊', '🧪', '🛡️', '💧', '🔥', '⚡', '✨', '💯', '✅', '🆕', '💥', '💰', '🚀', '🎯'
                           ].map(emoji => (
