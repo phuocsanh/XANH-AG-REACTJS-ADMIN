@@ -849,21 +849,31 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               }
             }
           } else if (item.type === 'badge') {
-            // Draw badge (rounded rect + icon + text)
+            // Draw badge (rounded rect + icon + text) supporting multiple lines
+            const lines = (item.text || '').split('\n');
             const bItalicPrefix = item.italic ? 'italic ' : '';
             const bBoldPrefix = item.bold !== false ? 'bold' : 'normal'; // Mặc định in đậm
             ctx.font = `${bItalicPrefix}${bBoldPrefix} ${item.size}px ${item.font || 'Roboto'}`;
-            const metrics = ctx.measureText(item.text);
-            const textWidth = metrics.width;
+            
+            // Calculate max width and total height
+            let maxTextWidth = 0;
+            lines.forEach(l => {
+              const m = ctx.measureText(l);
+              if (m.width > maxTextWidth) maxTextWidth = m.width;
+            });
+
             const iconSize = item.size * 1.2;
             const padding = item.size * 0.8;
-            const badgeHeight = item.size + padding * 2;
-            const badgeWidth = textWidth + iconSize + padding * 3;
+            const lineHeight = item.size * 1.25;
+            const totalTextHeight = lines.length * lineHeight;
+            
+            const badgeHeight = Math.max(iconSize + padding * 2, totalTextHeight + padding * 2);
+            const badgeWidth = maxTextWidth + iconSize + padding * 3;
 
             // Draw rounded rect background
             const bx = item.x - badgeWidth / 2;
             const by = item.y - badgeHeight / 2;
-            const radius = badgeHeight / 2;
+            const radius = badgeHeight / 2; // Giữ nguyên cách tính radius cũ theo yêu cầu
 
             if (item.bgGradient && item.bgGradient.length >= 2) {
               const bgG = item.bgGradient;
@@ -895,16 +905,35 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
               ctx.lineWidth = 3;
               ctx.stroke();
               
-              // Thêm nét đứt trắng để nổi bật hơn (hiệu ứng đang chọn)
               ctx.save();
               ctx.setLineDash([5, 5]);
               ctx.strokeStyle = '#ffffff';
               ctx.lineWidth = 1.5;
               ctx.stroke();
               ctx.restore();
+
+              // Vẽ tay nắm resize nếu không phải lúc xuất ảnh
+              if (!isExportingRef.current) {
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#3b82f6';
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                
+                // Tay nắm phải
+                ctx.beginPath();
+                ctx.arc(bx + badgeWidth, item.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Tay nắm trái
+                ctx.beginPath();
+                ctx.arc(bx, item.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+              }
             }
 
-          // Draw icon (emoji or lucide)
+          // Draw icon (emoji or lucide) - Căn giữa theo chiều cao badge
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = item.color || '#FFFFFF';
@@ -913,7 +942,6 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             const isLucideIcon = item.iconType === 'lucide' || (!item.iconType && ['shield-check', 'box', 'truck', 'award', 'package-check'].includes(item.icon));
             
             if (isLucideIcon) {
-              // Create SVG string and draw to canvas
               const iconColor = item.color || '#FFFFFF';
               const svgMap: { [key: string]: string } = {
                 'shield-check': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
@@ -937,14 +965,17 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             }
           }
 
-            // Draw text
-            const btItalicPrefix = item.italic ? 'italic ' : '';
-            const btBoldPrefix = item.bold !== false ? 'bold' : 'normal'; // Mặc định in đậm
-            ctx.font = `${btItalicPrefix}${btBoldPrefix} ${item.size}px ${item.font || 'Roboto'}`;
+            // Draw multiple lines of text
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            // Điều chỉnh nhẹ Y offset (khoảng 5-8% size) để căn giữa mắt thường tốt hơn cho Roboto/Arial
-            ctx.fillText(item.text, bx + padding * 2 + iconSize, item.y + (item.size * 0.05));
+            ctx.fillStyle = item.color || '#FFFFFF';
+            // Reset font in case icon drawing changed it
+            ctx.font = `${bItalicPrefix}${bBoldPrefix} ${item.size}px ${item.font || 'Roboto'}`;
+            const startY = item.y - (totalTextHeight / 2) + (lineHeight / 2);
+            
+            lines.forEach((line, index) => {
+              ctx.fillText(line, bx + padding * 2 + iconSize, startY + (index * lineHeight));
+            });
           } else {
             // Emojis và các loại khác
             ctx.save();
@@ -1733,11 +1764,18 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           handleX = (metrics.width + 10) / 2;
                         } else if (item.type === 'badge') {
                           const ctx = canvasRef.current!.getContext('2d')!;
+                          const bLines = (item.text || '').split('\n');
                           ctx.font = `bold ${item.size}px ${item.font || 'Arial'}`;
-                          const metrics = ctx.measureText(item.text);
+                          
+                          let maxW = 0;
+                          bLines.forEach(l => {
+                            const m = ctx.measureText(l);
+                            if (m.width > maxW) maxW = m.width;
+                          });
+                          
                           const iconSize = item.size * 1.2;
                           const padding = item.size * 0.8;
-                          handleX = (metrics.width + iconSize + padding * 3) / 2;
+                          handleX = (maxW + iconSize + padding * 3) / 2;
                         }
                         
                         if (handleX > 0) {
@@ -1780,12 +1818,23 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                           return;
                         }
                       } else if (item.type === 'badge') {
+                        const bLines = (item.text || '').split('\n');
+                        const ctx = canvasRef.current!.getContext('2d')!;
                         ctx.font = `bold ${item.size}px ${item.font || 'Arial'}`;
-                        const metrics = ctx.measureText(item.text);
+                        
+                        let maxW = 0;
+                        bLines.forEach(l => {
+                          const m = ctx.measureText(l);
+                          if (m.width > maxW) maxW = m.width;
+                        });
+
                         const iconSize = item.size * 1.2;
                         const padding = item.size * 0.8;
-                        w = metrics.width + iconSize + padding * 3;
-                        h = item.size + padding * 2;
+                        const lineHeight = item.size * 1.25;
+                        
+                        w = maxW + iconSize + padding * 3;
+                        h = Math.max(iconSize + padding * 2, (bLines.length * lineHeight) + padding * 2);
+
                         if (mouseX >= item.x - w / 2 && mouseX <= item.x + w / 2 && mouseY >= item.y - h / 2 && mouseY <= item.y + h / 2) {
                           setSelectedItemId(item.id);
                           setIsDraggingItem(true);
@@ -1937,13 +1986,22 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
                         w = (item.width || 100) * (item.itemScale || 1);
                         h = (item.size || 100) * (item.itemScale || 1);
                       } else if (item.type === 'badge') {
+                        const bLines = (item.text || '').split('\n');
                         const ctx = canvasRef.current!.getContext('2d')!;
                         ctx.font = `bold ${item.size}px ${item.font || 'Arial'}`;
-                        const metrics = ctx.measureText(item.text);
+                        
+                        let maxW = 0;
+                        bLines.forEach(l => {
+                          const m = ctx.measureText(l);
+                          if (m.width > maxW) maxW = m.width;
+                        });
+
                         const iconSize = item.size * 1.2;
                         const padding = item.size * 0.8;
-                        w = metrics.width + iconSize + padding * 3;
-                        h = item.size + padding * 2;
+                        const lineHeight = item.size * 1.25;
+                        
+                        w = maxW + iconSize + padding * 3;
+                        h = Math.max(iconSize + padding * 2, (bLines.length * lineHeight) + padding * 2);
                       } else {
                         w = item.size;
                         h = item.size;
