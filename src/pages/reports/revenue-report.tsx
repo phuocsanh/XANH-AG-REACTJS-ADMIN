@@ -44,11 +44,13 @@ const RevenueReportPage: React.FC = () => {
     dayjs(),
   ]);
   const [taxableFilter, setTaxableFilter] = useState<'all' | 'yes' | 'no'>('all');
+  const [sortBy, setSortBy] = useState<string>('sale_date');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
   const startDate = dates[0]?.format('YYYY-MM-DD') || '';
   const endDate = dates[1]?.format('YYYY-MM-DD') || '';
 
-  const { data: report, isLoading, isError } = usePeriodStoreProfitReport(startDate, endDate, taxableFilter);
+  const { data: report, isLoading, isError } = usePeriodStoreProfitReport(startDate, endDate, taxableFilter, sortBy, sortOrder);
 
   const formatMoney = (amount: number = 0) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -481,6 +483,23 @@ const RevenueReportPage: React.FC = () => {
                         { label: 'Không hóa đơn', value: 'no', icon: <FileExcelOutlined className="text-gray-400" /> },
                       ]}
                     />
+                    <Divider type="vertical" className="h-8 mx-2" />
+                    <Text type="secondary" className="hidden lg:inline">Sắp xếp:</Text>
+                    <Space.Compact>
+                      <Segmented
+                        value={sortBy}
+                        onChange={(val) => setSortBy(val as string)}
+                        options={[
+                          { label: 'Ngày bán', value: 'sale_date', icon: <CalendarOutlined /> },
+                          { label: 'Thành tiền', value: 'total_amount', icon: <DollarOutlined /> },
+                        ]}
+                      />
+                      <Button 
+                        icon={sortOrder === 'DESC' ? <ArrowDownOutlined /> : <ArrowUpOutlined />} 
+                        onClick={() => setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC')}
+                        className="flex items-center justify-center border-l-0"
+                      />
+                    </Space.Compact>
                   </Space>
                 }
                 className="rounded-2xl shadow-sm border-none overflow-hidden"
