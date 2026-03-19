@@ -171,6 +171,13 @@ const RevenueReportPage: React.FC = () => {
           display: block;
           height: 16px;
         }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
@@ -466,27 +473,30 @@ const RevenueReportPage: React.FC = () => {
 
             <Col span={24}>
               <Card 
-                title={
-                  <Space size="large">
-                    <Space><ShoppingOutlined className="text-emerald-600" /> Danh sách hóa đơn & Sản phẩm đã bán</Space>
-                  </Space>
-                } 
-                extra={
-                  <Space>
-                    <Text type="secondary" className="hidden md:inline">Lọc theo SP:</Text>
+                title={<Space><ShoppingOutlined className="text-emerald-600" /> Danh sách hóa đơn & Sản phẩm đã bán</Space>} 
+                className="rounded-2xl shadow-sm border-none overflow-hidden"
+                bodyStyle={{ padding: 0 }}
+              >
+                {/* Bộ lọc và Sắp xếp - Linh hoạt trên mobile */}
+                <div className="px-4 py-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/30">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+                    <Text type="secondary" className="whitespace-nowrap">Lọc:</Text>
                     <Segmented
                       value={taxableFilter}
-                      onChange={(val) => setTaxableFilter(val as any)}
+                      onChange={(val) => setTaxableFilter(val as 'all' | 'yes' | 'no')}
                       options={[
                         { label: 'Tất cả', value: 'all' },
                         { label: 'Có hóa đơn', value: 'yes', icon: <FileProtectOutlined className="text-blue-500" /> },
                         { label: 'Không hóa đơn', value: 'no', icon: <FileExcelOutlined className="text-gray-400" /> },
                       ]}
                     />
-                    <Divider type="vertical" className="h-8 mx-2" />
-                    <Text type="secondary" className="hidden lg:inline">Sắp xếp:</Text>
-                    <Space.Compact>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+                    <Text type="secondary" className="whitespace-nowrap">Sắp xếp:</Text>
+                    <Space.Compact className="w-full sm:w-auto">
                       <Segmented
+                        className="flex-1 sm:flex-none"
                         value={sortBy}
                         onChange={(val) => setSortBy(val as string)}
                         options={[
@@ -500,11 +510,9 @@ const RevenueReportPage: React.FC = () => {
                         className="flex items-center justify-center border-l-0"
                       />
                     </Space.Compact>
-                  </Space>
-                }
-                className="rounded-2xl shadow-sm border-none overflow-hidden"
-                bodyStyle={{ padding: 0 }}
-              >
+                  </div>
+                </div>
+
                 {/* Danh sách hóa đơn - mỗi hóa đơn là một card riêng biệt */}
                 <div className="p-4 space-y-4">
                   {(report?.invoices || []).length === 0 ? (
