@@ -764,22 +764,26 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            const words = item.text.split(' ');
-            let line = '';
-            const lines = [];
+            const segments = (item.text || '').split('\n');
+            const lines: string[] = [];
             
-            for (let n = 0; n < words.length; n++) {
-              const testLine = line + words[n] + ' ';
-              const metrics = ctx.measureText(testLine);
-              const testWidth = metrics.width;
-              if (testWidth > item.width && n > 0) {
-                lines.push(line);
-                line = words[n] + ' ';
-              } else {
-                line = testLine;
+            segments.forEach(segment => {
+              const words = segment.split(' ');
+              let currentLine = '';
+              
+              for (let n = 0; n < words.length; n++) {
+                const testLine = currentLine + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > item.width && n > 0) {
+                  lines.push(currentLine);
+                  currentLine = words[n] + ' ';
+                } else {
+                  currentLine = testLine;
+                }
               }
-            }
-            lines.push(line);
+              lines.push(currentLine);
+            });
 
             const lineHeight = item.size * 1.2;
             const totalHeight = lines.length * lineHeight;
