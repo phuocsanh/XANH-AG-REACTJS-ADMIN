@@ -15,9 +15,10 @@ interface ImageStudioProps {
   visible: boolean;
   onCancel: () => void;
   onSave: (file: File) => void;
+  showSaveProductButton?: boolean;
 }
 
-const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) => {
+const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, showSaveProductButton = false }) => {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1122,7 +1123,6 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
         if (blob) {
           const file = new File([blob], 'product-ai.png', { type: 'image/png' });
           onSave(file);
-          onCancel();
         }
       }, 'image/png');
     });
@@ -1357,17 +1357,19 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave }) 
         >
           Tải xuống
         </Button>,
-        <Button 
-          key="save" 
-          type="primary" 
-          icon={<SaveOutlined />} 
-          disabled={!originalImage && !processedImage}
-          onClick={handleSave}
-          size="large"
-          className="bg-green-600 hover:bg-green-700 h-auto py-2 px-8 font-bold"
-        >
-          XONG & LƯU VÀO SẢN PHẨM
-        </Button>
+        showSaveProductButton && (
+          <Button 
+            key="save" 
+            type="primary" 
+            icon={<SaveOutlined />} 
+            disabled={!originalImage && !processedImage}
+            onClick={handleSave}
+            size="large"
+            className="bg-green-600 hover:bg-green-700 h-auto py-2 px-8 font-bold"
+          >
+            XONG & LƯU VÀO SẢN PHẨM
+          </Button>
+        )
       ]}
     >
       <div className="flex flex-col lg:flex-row h-full gap-5 overflow-hidden">

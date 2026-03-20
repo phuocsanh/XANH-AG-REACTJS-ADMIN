@@ -906,6 +906,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 
                 <ImageStudio 
                   visible={studioVisible}
+                  showSaveProductButton={true}
                   onCancel={() => setStudioVisible(false)}
                   onSave={async (file) => {
                     try {
