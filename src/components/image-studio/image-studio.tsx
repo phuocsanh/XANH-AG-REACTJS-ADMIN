@@ -49,10 +49,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // Logo thương hiệu (Brand Logo - logo3)
-  const [showBrandLogo, setShowBrandLogo] = useState(false);
-  const [brandLogoScale, setBrandLogoScale] = useState(0.22);
-  const [brandLogoX, setBrandLogoX] = useState(100); 
-  const [brandLogoY, setBrandLogoY] = useState(100);
+  const [showBrandLogo, setShowBrandLogo] = useState(true);
+  const [brandLogoScale, setBrandLogoScale] = useState(0.1);
+  const [brandLogoX, setBrandLogoX] = useState(500); 
+  const [brandLogoY, setBrandLogoY] = useState(500);
   const [isDraggingBrandLogo, setIsDraggingBrandLogo] = useState(false);
   const [brandLogoDragOffset, setBrandLogoDragOffset] = useState({ x: 0, y: 0 });
 
@@ -421,10 +421,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
           logoScale: 0.28,
           logoX: 880,
           logoY: 100,
-          showBrandLogo: false,
-          brandLogoScale: 0.22,
-          brandLogoX: 100,
-          brandLogoY: 100,
+          showBrandLogo: true,
+          brandLogoScale: 0.1,
+          brandLogoX: 500,
+          brandLogoY: 500,
           overlayItems: [],
           showShelf: true,
           shelfY: 440,
@@ -445,9 +445,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
           logoX: 740,
           logoY: 60,
           showBrandLogo: true,
-          brandLogoScale: 0.2,
+          brandLogoScale: 0.1,
           brandLogoX: 400,
-          brandLogoY: 1050,
+          brandLogoY: 600,
           overlayItems: [
             { id: 't1', type: 'text', text: 'NÔNG SẢN XANH', x: 400, y: 100, size: 60, color: '#16a34a', font: 'Impact', width: 600 },
             { id: 't2', type: 'text', text: 'CHẤT LƯỢNG THẬT - GIÁ TRỊ THẬT', x: 400, y: 150, size: 30, color: '#4b5563', font: 'Arial', width: 600 }
@@ -471,9 +471,9 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
           logoX: 740, // Mẫu này canvas rộng 800 nên 740 là sát phải
           logoY: 100,
           showBrandLogo: true,
-          brandLogoScale: 0.25,
+          brandLogoScale: 0.1,
           brandLogoX: 400,
-          brandLogoY: 1000,
+          brandLogoY: 600,
           overlayItems: [
             { id: 'x-1', type: 'text', text: 'XANH AG', x: 400, y: 280, size: 70, color: '#FFFFFF', font: 'Times New Roman', width: 700 },
             { id: 'x-2', type: 'text', text: 'bạn đồng hành của mọi nhà nông', x: 400, y: 360, size: 40, color: '#FFFFFF', font: 'Arial', width: 700 },
@@ -556,10 +556,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
     setLogoScale(template.logoScale);
     setLogoX(template.logoX);
     setLogoY(template.logoY);
-    setShowBrandLogo(template.showBrandLogo || false);
-    setBrandLogoScale(template.brandLogoScale || 0.22);
-    setBrandLogoX(template.brandLogoX || 100);
-    setBrandLogoY(template.brandLogoY || 100);
+    setShowBrandLogo(template.showBrandLogo !== undefined ? template.showBrandLogo : true);
+    setBrandLogoScale(template.brandLogoScale || 0.1);
+    setBrandLogoX(template.brandLogoX || 500);
+    setBrandLogoY(template.brandLogoY || 500);
     setOverlayItems(template.overlayItems ? template.overlayItems.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)})) : []);
     if (template.showShelf !== undefined) setShowShelf(template.showShelf);
     if (template.shelfY !== undefined) setShelfY(template.shelfY);
@@ -579,10 +579,10 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
     setLogoScale(0.3);
     setLogoX(940);
     setLogoY(60);
-    setShowBrandLogo(false);
-    setBrandLogoScale(0.22);
-    setBrandLogoX(100);
-    setBrandLogoY(100);
+    setShowBrandLogo(true);
+    setBrandLogoScale(0.1);
+    setBrandLogoX(500);
+    setBrandLogoY(500);
     setShowShelf(true);
     setShelfY(440);
     setShelfHeight(655);
