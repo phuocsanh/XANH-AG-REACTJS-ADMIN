@@ -786,23 +786,23 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       let htmlDescription = '';
       
       if (data.details.usage) {
-        htmlDescription += `<p><strong>Công dụng:</strong><br/>${formatText(data.details.usage)}</p>`;
+        htmlDescription += `<p><strong>Công dụng: 🛡️</strong><br/>${formatText(data.details.usage)}</p>`;
       }
       
       if (data.details.application_time) {
-        htmlDescription += `<p><strong>Thời điểm sử dụng:</strong><br/>${formatText(data.details.application_time)}</p>`;
+        htmlDescription += `<p><strong>Thời điểm sử dụng: ⏰</strong><br/>${formatText(data.details.application_time)}</p>`;
       }
 
       if (data.details.dosage) {
-        htmlDescription += `<p><strong>Liều lượng / Hướng dẫn sử dụng:</strong><br/>${formatText(data.details.dosage)}</p>`;
+        htmlDescription += `<p><strong>Liều lượng / Hướng dẫn sử dụng: 🧪</strong><br/>${formatText(data.details.dosage)}</p>`;
       }
       
       if (data.details.preharvest_interval) {
-        htmlDescription += `<p><strong>Thời gian cách ly:</strong><br/>${formatText(data.details.preharvest_interval)}</p>`;
+        htmlDescription += `<p><strong>Thời gian cách ly: 🗓️</strong><br/>${formatText(data.details.preharvest_interval)}</p>`;
       }
       
       if (data.details.notes) {
-        htmlDescription += `<p><strong>Lưu ý / Cảnh báo:</strong><br/>${formatText(data.details.notes)}</p>`;
+        htmlDescription += `<p><strong>Lưu ý / Cảnh báo: ⚠️</strong><br/>${formatText(data.details.notes)}</p>`;
       }
       
       // Nếu có dữ liệu chi tiết thì dùng, không thì fallback về description thường

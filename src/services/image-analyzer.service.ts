@@ -131,6 +131,17 @@ QUY TẮC QUAN TRỌNG ĐỂ TRÁNH LẶP TIÊU ĐỀ:
    
 2. Vẫn phải giữ nguyên vẹn nội dung chi tiết, các mốc thời gian, số liệu, không được tóm tắt sai lệch.
 
+QUY TẮC VỀ EMOJI:
+Khi viết mô tả và nội dung chi tiết (usage, details), hãy CHÈN THÊM các emoji phù hợp một cách tự nhiên để làm cho nội dung sinh động và dễ đọc hơn:
+- Sinh học/Cây trồng: 🌿, 🌱, 🌾, 🍃
+- Nấm/Vi khuẩn: 🍄, 👾, 🦠
+- Sâu hại/Côn trùng: 🐛, 🦟, 🦗
+- Hoạt động phun/tưới: 🚿, 💦, 🧴
+- Tác động nội hấp/Lưu dẫn: 🧬, 🧪
+- Hiệu quả/Bảo vệ: 🛡️, ⚡, ✅
+- Cảnh báo/Nguy hiểm: ⚠️, 🚫, 💀
+- Thời gian/Lịch trình: ⏰, 🗓️, ⏳
+
 QUY TẮC VỀ TÊN SẢN PHẨM VÀ DUNG TÍCH:
 **QUAN TRỌNG**: Phải tìm và thêm dung tích vào cả name và trade_name!
 
@@ -176,10 +187,10 @@ TÍNH TOÁN LIỀU LƯỢNG (GHI VÀO NOTES):
    - 1 công = 1296m²
 
 **FORMAT KẾT QUẢ (CHỈ 2 DÒNG)**:
-• Liều lượng: [X]ml/bình 25L
-• Phun được: ~[Y] công (1 chai [Z]ml)
+🧪 Liều lượng: [X]ml/bình 25L
+🚜 Phun được: ~[Y] công (1 chai [Z]ml)
 
-VD: "• Liều lượng: 30ml/bình 25L\\n• Phun được: ~2.31 công (1 chai 450ml)"
+VD: "🧪 Liều lượng: 30ml/bình 25L\n🚜 Phun được: ~2.31 công (1 chai 450ml)"
 Cấu trúc JSON trả về:
 {
   "name": "Tên sản phẩm (viết hoa) + (dung tích) - VD: BEAMMY KASU 300SC (450ml)",
@@ -189,13 +200,13 @@ Cấu trúc JSON trả về:
   "active_ingredient": "Hoạt chất VÀ Hàm lượng (BẮT BUỘC: Phải lấy cả tên hoạt chất và nồng độ/hàm lượng đi kèm. Ví dụ: 'Butachlor 150g/l' hoặc 'Mancozeb 20%'. Nếu có nhiều hoạt chất thì liệt kê đầy đủ, ngăn cách bằng dấu phẩy)",
   "concentration": "Hàm lượng (Nếu đã gộp vào active_ingredient thì trường này có thể để trống hoặc lặp lại)",
   "manufacturer": "Nhà sản xuất/đăng ký",
-  "usage": "Tóm tắt 1 câu ngắn gọn công dụng chính (VD: Thuốc trừ cỏ hậu nảy mầm)",
+  "usage": "Tóm tắt 1 câu ngắn gọn công dụng chính (VD: Thuốc trừ cỏ hậu nảy mầm 🌿)",
   "details": {
-    "usage": "Nội dung chi tiết mục CÔNG DỤNG (CHỈ LẤY NỘI DUNG, KHÔNG chép lại chữ 'CÔNG DỤNG')",
-    "dosage": "Nội dung mục LIỀU LƯỢNG/HƯỚNG DẪN SỬ DỤNG. Trình bày rõ ràng dạng list nếu có nhiều mốc thời gian (VD: - 4-6 ngày: ...). (KHÔNG chép lại chữ 'HƯỚNG DẪN SỬ DỤNG')",
-    "application_time": "Nội dung mục THỜI ĐIỂM SỬ DỤNG (KHÔNG chép lại tiêu đề)",
-    "preharvest_interval": "Nội dung mục THỜI GIAN CÁCH LY (KHÔNG chép lại tiêu đề)",
-    "notes": "Nội dung mục LƯU Ý/CẢNH BÁO. Bao gồm cả các dòng cảnh báo về thuốc gốc Carbamate/Lân hữu cơ nếu có. (KHÔNG chép lại chữ 'LƯU Ý')"
+    "usage": "Nội dung chi tiết mục CÔNG DỤNG (CHỈ LẤY NỘI DUNG, KHÔNG chép lại chữ 'CÔNG DỤNG'). CHÈN thêm emoji 🌿, 🛡️, 🍄 phù hợp.",
+    "dosage": "Nội dung mục LIỀU LƯỢNG/HƯỚNG DẪN SỬ DỤNG. Trình bày rõ ràng dạng list nếu có nhiều mốc thời gian (VD: - 4-6 ngày: ...). (KHÔNG chép lại chữ 'HƯỚNG DẪN SỬ DỤNG'). CHÈN thêm emoji 🧪, 🚿 phù hợp.",
+    "application_time": "Nội dung mục THỜI ĐIỂM SỬ DỤNG (KHÔNG chép lại tiêu đề). CHÈN thêm emoji ⏰, 🚿 phù hợp.",
+    "preharvest_interval": "Nội dung mục THỜI GIAN CÁCH LY (KHÔNG chép lại tiêu đề). CHÈN thêm emoji 🗓️ phù hợp.",
+    "notes": "Nội dung mục LƯU Ý/CẢNH BÁO. Bao gồm cả các dòng cảnh báo về thuốc gốc Carbamate/Lân hữu cơ nếu có. (KHÔNG chép lại chữ 'LƯU Ý'). CHÈN thêm emoji ⚠️, 🚫 phù hợp."
   }
 }
 
