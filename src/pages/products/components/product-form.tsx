@@ -949,7 +949,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     control={control}
                     label="Tên hiển thị Web (SEO)"
                     type="textarea"
-                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    autoSize={{ minRows: 3, maxRows: 6 }}
                     addonAfter={
                       <Button 
                         type="primary" 
