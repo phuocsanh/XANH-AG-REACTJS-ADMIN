@@ -88,11 +88,13 @@ export const uploadService = {
       formData.append('file', compressedFile);
       formData.append('type', uploadType);
 
-      // 5. Gọi API
-      const response = await api.postForm<any>('/upload/image', formData);
+      // 5. Gọi API - Dùng timeout riêng 120s cho upload (mặc định chỉ 30s, Render free tier có thể chậm)
+      const response = await api.instance.postForm<any>('/upload/image', formData, {
+        timeout: 120000, // 120 giây cho upload, tránh timeout trên Render free tier
+      });
       
       // Unwrap data từ response wrapper { success, data, meta }
-      const uploadData = response.data || response;
+      const uploadData = response.data?.data || response.data;
       
       return uploadData as UploadResponse;
     } catch (error) {
