@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Button, Card, Typography, Tabs } from 'antd';
-import { PictureOutlined, SwapOutlined } from '@ant-design/icons';
+import { PictureOutlined, SwapOutlined, EditOutlined } from '@ant-design/icons';
 import { Sparkles } from 'lucide-react';
 import ImageStudio from '@/components/image-studio/image-studio';
 import HeicConverter from '@/components/image-studio/heic-converter';
+import QuickLogoEditor from '@/components/image-studio/quick-logo-editor';
 import { uploadService } from '@/services/upload.service';
 import { message } from 'antd';
 
@@ -41,7 +42,7 @@ const ImageStudioPage: React.FC = () => {
             <ul className="space-y-2 text-sm">
               <li>✅ <strong>AI Remove Background</strong> - Tự động xóa nền bằng AI</li>
               <li>✅ <strong>HEIC Converter</strong> - Hỗ trợ ảnh iPhone</li>
-              <li>✅ <strong>Logo Watermark</strong> - Kéo thả logo thương hiệu</li>
+              <li>✅ <strong>Quick Logo Editor</strong> - Chèn logo nhanh vào ảnh gốc</li>
               <li>✅ <strong>Custom Size</strong> - Tùy chỉnh kích thước ảnh</li>
               <li>✅ <strong>Copy & Download</strong> - Xuất ảnh nhanh chóng</li>
             </ul>
@@ -100,6 +101,16 @@ const ImageStudioPage: React.FC = () => {
       children: studioTabContent,
     },
     {
+      key: 'quick-editor',
+      label: (
+        <span className="flex items-center gap-2">
+          <EditOutlined />
+          Quick Logo Editor
+        </span>
+      ),
+      children: <QuickLogoEditor onSave={handleSaveImage} />,
+    },
+    {
       key: 'heic-converter',
       label: (
         <span className="flex items-center gap-2">
@@ -120,11 +131,11 @@ const ImageStudioPage: React.FC = () => {
           AI Image Studio
         </Title>
         <Paragraph className="text-gray-600">
-          Tạo ảnh sản phẩm chuyên nghiệp với AI - Tự động xóa nền, thêm logo, điều chỉnh kích thước | Chuyển đổi ảnh HEIC
+          Tạo ảnh sản phẩm chuyên nghiệp với AI - Tự động xóa nền, thêm logo, điều chỉnh kích thước | Chèn logo nhanh
         </Paragraph>
       </div>
 
-      {/* Tabs: Studio & HEIC Converter */}
+      {/* Tabs: Studio, Quick Editor & HEIC Converter */}
       <Tabs
         defaultActiveKey="studio"
         items={tabItems}
