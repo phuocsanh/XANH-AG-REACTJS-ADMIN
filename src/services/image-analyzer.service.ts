@@ -294,7 +294,7 @@ Chỉ trả về JSON.
    */
   generateWebName: async (data: {
     type?: string;
-    trade_name?: string;
+    name?: string;
     volume?: string;
     description?: string;
   }): Promise<string> => {
@@ -306,7 +306,7 @@ CẤU TRÚC BẮT BUỘC:
 
 DỮ LIỆU ĐẦU VÀO:
 - Loại: ${data.type || 'Chưa xác định'}
-- Tên thương mại: ${data.trade_name || ''}
+- Tên sản phẩm: ${data.name || ''}
 - Dung tích: ${data.volume || ''}
 - Mô tả/Công dụng: ${data.description || ''}
 

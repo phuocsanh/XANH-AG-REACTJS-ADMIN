@@ -271,7 +271,7 @@ const ImageStudio: React.FC<ImageStudioProps> = ({ visible, onCancel, onSave, sh
           const blob = await heic2any({
             blob: fileToProcess,
             toType: 'image/jpeg',
-            quality: 0.8,
+            quality: 1.0, // Giữ nguyên chất lượng 100%
           });
           const convertedBlob = Array.isArray(blob) ? blob[0] : blob;
           fileToProcess = new File(

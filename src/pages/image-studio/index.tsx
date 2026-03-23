@@ -107,7 +107,7 @@ const ImageStudioPage: React.FC = () => {
           HEIC Converter
         </span>
       ),
-      children: <HeicConverter />,
+      children: <HeicConverter onSave={handleSaveImage} />,
     },
   ];
 

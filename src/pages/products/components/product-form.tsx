@@ -832,7 +832,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       
       const result = await imageAnalyzerService.generateWebName({
         type: typeName,
-        trade_name: currentValues.trade_name,
+        name: currentValues.name, // Dùng tên sản phẩm thay vì tên thương mại
         volume: currentValues.volume,
         description: description, // nội dung rich text
       });

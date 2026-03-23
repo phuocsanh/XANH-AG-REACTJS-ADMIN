@@ -9,6 +9,7 @@ import {
   LoadingOutlined,
   CloseCircleOutlined,
   ClearOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import heic2any from 'heic2any';
 
@@ -38,12 +39,16 @@ interface HeicFileItem {
   error: string | null;
 }
 
+interface HeicConverterProps {
+  onSave?: (file: File) => Promise<void>;
+}
+
 /**
  * Component chuyển đổi ảnh HEIC/HEIF sang PNG hoặc JPEG
  * Hỗ trợ upload nhiều ảnh cùng lúc, convert song song, tải về cùng lúc
  * Không giảm chất lượng ảnh (quality = 1.0)
  */
-const HeicConverter: React.FC = () => {
+const HeicConverter: React.FC<HeicConverterProps> = ({ onSave }) => {
   // Danh sách file HEIC đã upload
   const [files, setFiles] = useState<HeicFileItem[]>([]);
   // Định dạng output: JPEG hoặc PNG
@@ -240,6 +245,22 @@ const HeicConverter: React.FC = () => {
     });
 
     message.success(`Đang tải ${doneFiles.length} ảnh...`);
+  };
+
+  /**
+   * Lưu ảnh vào hệ thống (upload)
+   */
+  const handleSave = async (fileItem: HeicFileItem) => {
+    if (!fileItem.convertedBlob || !onSave) return;
+    
+    // Tạo File object từ Blob
+    const baseName = fileItem.originalName.replace(/\.(heic|heif)$/i, '');
+    const extension = getExtension(outputFormat);
+    const file = new File([fileItem.convertedBlob], baseName + extension, { 
+      type: outputFormat 
+    });
+    
+    await onSave(file);
   };
 
   /**
@@ -503,15 +524,28 @@ const HeicConverter: React.FC = () => {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {/* Tải về */}
                   {fileItem.status === 'done' && (
-                    <Tooltip title="Tải về">
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={<DownloadOutlined />}
-                        onClick={() => downloadSingle(fileItem)}
-                        className="bg-green-600 hover:bg-green-700"
-                      />
-                    </Tooltip>
+                    <>
+                      {onSave && (
+                        <Tooltip title="Lưu vào hệ thống">
+                          <Button
+                            size="small"
+                            type="dashed"
+                            icon={<CloudUploadOutlined className="text-blue-500" />}
+                            onClick={() => handleSave(fileItem)}
+                            className="hover:border-blue-500"
+                          />
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Tải về">
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<DownloadOutlined />}
+                          onClick={() => downloadSingle(fileItem)}
+                          className="bg-green-600 hover:bg-green-700"
+                        />
+                      </Tooltip>
+                    </>
                   )}
 
                   {/* Convert lại (cho file lỗi hoặc pending) */}
