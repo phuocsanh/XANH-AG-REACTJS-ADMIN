@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Button, Card, Typography } from 'antd';
-import { PictureOutlined } from '@ant-design/icons';
+import { Button, Card, Typography, Tabs } from 'antd';
+import { PictureOutlined, SwapOutlined } from '@ant-design/icons';
 import { Sparkles } from 'lucide-react';
 import ImageStudio from '@/components/image-studio/image-studio';
+import HeicConverter from '@/components/image-studio/heic-converter';
 import { uploadService } from '@/services/upload.service';
 import { message } from 'antd';
 
 const { Title, Paragraph } = Typography;
 
 /**
- * Trang AI Image Studio - Tạo ảnh sản phẩm chuyên nghiệp
+ * Trang AI Image Studio - Tạo ảnh sản phẩm chuyên nghiệp & công cụ convert ảnh
  */
 const ImageStudioPage: React.FC = () => {
   const [showStudio, setShowStudio] = useState(false);
@@ -29,19 +30,9 @@ const ImageStudioPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <Title level={2} className="flex items-center gap-3">
-          <Sparkles className="w-8 h-8 text-green-600" />
-          AI Image Studio
-        </Title>
-        <Paragraph className="text-gray-600">
-          Tạo ảnh sản phẩm chuyên nghiệp với AI - Tự động xóa nền, thêm logo, điều chỉnh kích thước
-        </Paragraph>
-      </div>
-
+  // Nội dung tab AI Image Studio
+  const studioTabContent = (
+    <>
       {/* Quick Start Card */}
       <Card className="mb-6">
         <div className="grid md:grid-cols-2 gap-6">
@@ -59,9 +50,9 @@ const ImageStudioPage: React.FC = () => {
           <div>
             <h3 className="text-lg font-bold mb-3">📸 Cách sử dụng</h3>
             <ol className="space-y-2 text-sm list-decimal list-inside">
-              <li>Nhấn nút "Mở Studio" bên dưới</li>
+              <li>Nhấn nút &ldquo;Mở Studio&rdquo; bên dưới</li>
               <li>Chọn/Chụp ảnh sản phẩm</li>
-              <li>Nhấn "Thêm nền cho ảnh" để AI xóa nền</li>
+              <li>Nhấn &ldquo;Thêm nền cho ảnh&rdquo; để AI xóa nền</li>
               <li>Điều chỉnh vị trí, kích thước, logo</li>
               <li>Copy/Download hoặc Lưu vào hệ thống</li>
             </ol>
@@ -93,6 +84,53 @@ const ImageStudioPage: React.FC = () => {
           </div>
         </Card>
       )}
+    </>
+  );
+
+  // Tab items cho Tabs component
+  const tabItems = [
+    {
+      key: 'studio',
+      label: (
+        <span className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          AI Image Studio
+        </span>
+      ),
+      children: studioTabContent,
+    },
+    {
+      key: 'heic-converter',
+      label: (
+        <span className="flex items-center gap-2">
+          <SwapOutlined />
+          HEIC Converter
+        </span>
+      ),
+      children: <HeicConverter />,
+    },
+  ];
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <Title level={2} className="flex items-center gap-3">
+          <Sparkles className="w-8 h-8 text-green-600" />
+          AI Image Studio
+        </Title>
+        <Paragraph className="text-gray-600">
+          Tạo ảnh sản phẩm chuyên nghiệp với AI - Tự động xóa nền, thêm logo, điều chỉnh kích thước | Chuyển đổi ảnh HEIC
+        </Paragraph>
+      </div>
+
+      {/* Tabs: Studio & HEIC Converter */}
+      <Tabs
+        defaultActiveKey="studio"
+        items={tabItems}
+        size="large"
+        className="image-studio-tabs"
+      />
 
       {/* Image Studio Modal */}
       <ImageStudio 
