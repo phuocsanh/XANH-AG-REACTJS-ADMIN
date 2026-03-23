@@ -35,6 +35,46 @@ const QuickLogoEditor: React.FC<QuickLogoEditorProps> = ({ onSave }) => {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const logoRef = useRef<HTMLImageElement | null>(null);
 
+  /**
+   * Xử lý ảnh (dùng chung cho upload, paste, drag & drop)
+   */
+  const processImageUrl = useCallback((url: string) => {
+    const img = new Image();
+    img.src = url;
+    img.onload = () => {
+      imageRef.current = img;
+      setOriginalImage(url);
+      setCanvasSize({ width: img.width, height: img.height });
+      
+      // Reset vị trí logo về góc dưới phải
+      setLogoX(img.width * 0.85);
+      setLogoY(img.height * 0.85);
+    };
+  }, []);
+
+  // Lắng nghe sự kiện dán ảnh (Paste)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const blob = (items[i] as DataTransferItem).getAsFile();
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            processImageUrl(url);
+            message.success('Đã dán ảnh từ clipboard!');
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [processImageUrl]);
+
   // Load logo once
   useEffect(() => {
     const img = new Image();
@@ -45,22 +85,12 @@ const QuickLogoEditor: React.FC<QuickLogoEditorProps> = ({ onSave }) => {
     };
   }, [originalImage]);
 
-  // Xử lý upload ảnh gốc
+  // Xử lý upload ảnh gốc qua input file
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        imageRef.current = img;
-        setOriginalImage(url);
-        setCanvasSize({ width: img.width, height: img.height });
-        
-        // Reset vị trí logo về góc dưới phải
-        setLogoX(img.width * 0.85);
-        setLogoY(img.height * 0.85);
-      };
+      processImageUrl(url);
     }
   };
 
