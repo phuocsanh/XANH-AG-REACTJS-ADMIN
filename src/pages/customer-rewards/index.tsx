@@ -271,11 +271,23 @@ const CustomerRewardsPage: React.FC = () => {
       render: (val: string) => new Date(val).toLocaleDateString('vi-VN')
     },
     {
+      title: "Loại quà",
+      dataIndex: "reward_type",
+      key: "reward_type",
+      width: 150,
+      render: (type: string) => {
+        if (type === 'APPRECIATION_GIFT') {
+          return <Tag color="blue">Quà tri ân</Tag>;
+        }
+        return <Tag color="gold">Quà tích lũy</Tag>;
+      }
+    },
+    {
       title: "Mô tả quà tặng",
       dataIndex: "gift_description",
       key: "gift_description",
       width: 250,
-      render: (text: string) => <Tag color="blue">{text || 'Quà tri ân'}</Tag>
+      render: (text: string) => <Text>{text || 'Quà tặng'}</Text>
     },
     {
       title: "Giá trị",
