@@ -317,8 +317,20 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
             currentSeason?.status === 'settled' && (
               <Alert 
                 message="Phiếu này đã được chốt sổ" 
-                description="Bạn có thể xem lại lịch sử quà tặng và tích lũy ở các tab phía trên."
-                type="info"
+                description={
+                  <div className="flex flex-col gap-1 mt-1">
+                    <div>Trạng thái: <strong>Đã hoàn thành chốt sổ</strong></div>
+                    {currentSeason.gift_description && (
+                      <div className="text-orange-600 font-medium">
+                        🎁 Quà tặng đã nhận: {currentSeason.gift_description} ({formatCurrency(currentSeason.gift_value || 0)})
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500 italic mt-1">
+                      (Bạn có thể xem lại lịch sử quà tặng và tích lũy chi tiết ở các tab phía trên)
+                    </div>
+                  </div>
+                }
+                type="success"
                 showIcon
               />
             )
