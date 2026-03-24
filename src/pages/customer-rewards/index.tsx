@@ -72,13 +72,21 @@ const CustomerRewardsPage: React.FC = () => {
     ...trackingFilters
   })
 
-  const { data: historyData, isLoading: isHistoryLoading, refetch: refetchHistory } = useRewardHistoryQuery({
+  // History queries for different types
+  const { data: accumulationHistoryData, isLoading: isAccumulationLoading, refetch: refetchAccumulation } = useRewardHistoryQuery({
     page: historyPage,
     limit: pageSize,
+    reward_type: 'ACCUMULATION_REWARD',
     ...historyFilters
   })
 
-  // Watch for seasonal data
+  const { data: appreciationHistoryData, isLoading: isAppreciationLoading, refetch: refetchAppreciation } = useRewardHistoryQuery({
+    page: historyPage,
+    limit: pageSize,
+    reward_type: 'APPRECIATION_GIFT',
+    ...historyFilters
+  })
+
   const { data: seasonsData } = useSeasonsQuery({ limit: 100 })
   const { data: riceCropsData } = useRiceCrops({ 
     customer_id: selectedCustomer?.customer_id,
@@ -97,6 +105,13 @@ const CustomerRewardsPage: React.FC = () => {
       style: "currency",
       currency: "VND",
     }).format(value)
+  }
+
+  // Helper to refetch everything
+  const refetchAll = () => {
+    refetchTracking()
+    refetchAccumulation()
+    refetchAppreciation()
   }
 
   const handleOpenRewardModal = (record: any, isEdit: boolean = false) => {
@@ -145,14 +160,12 @@ const CustomerRewardsPage: React.FC = () => {
         })
     }
     setIsModalOpen(false)
-    refetchTracking()
-    refetchHistory()
+    refetchAll() // Refetch all tabs
   }
 
   const handleDeleteHistory = async (id: number) => {
     await deleteRewardMutation.mutateAsync(id)
-    refetchTracking()
-    refetchHistory()
+    refetchAll() // Refetch all tabs
   }
 
   // Tracking Columns
@@ -362,7 +375,10 @@ const CustomerRewardsPage: React.FC = () => {
       <div className="bg-white p-4 rounded shadow">
         <Tabs 
             activeKey={activeTab} 
-            onChange={setActiveTab}
+            onChange={(val) => {
+                setActiveTab(val);
+                setHistoryPage(1); // Reset page when switching tabs
+            }}
             items={[
                 {
                     key: "tracking",
@@ -383,7 +399,6 @@ const CustomerRewardsPage: React.FC = () => {
                                 total: trackingData?.total || 0,
                                 onChange: (page) => setTrackingPage(page)
                             }}
-                            onView={(record) => handleOpenRewardModal(record)}
                             showSearch={false}
                             showFilters={false}
                             showActions={false}
@@ -391,25 +406,49 @@ const CustomerRewardsPage: React.FC = () => {
                     )
                 },
                 {
-                    key: "history",
+                    key: "history_accumulation",
                     label: (
                         <span>
-                            <HistoryOutlined />
-                            Lịch sử đã tặng
+                            <GiftOutlined />
+                            Lịch sử quà tích lũy (mốc 70tr)
                         </span>
                     ),
                     children: (
                         <DataTable 
-                            data={historyData?.items || []}
+                            data={accumulationHistoryData?.items || []}
                             columns={historyColumns}
-                            loading={isHistoryLoading}
+                            loading={isAccumulationLoading}
                             pagination={{
                                 current: historyPage,
                                 pageSize: pageSize,
-                                total: historyData?.total || 0,
+                                total: accumulationHistoryData?.total || 0,
                                 onChange: (page) => setHistoryPage(page)
                             }}
-                            onView={(record) => handleOpenRewardModal(record, true)}
+                            showSearch={false}
+                            showFilters={false}
+                            showActions={false}
+                        />
+                    )
+                },
+                {
+                    key: "history_appreciation",
+                    label: (
+                        <span>
+                            <HistoryOutlined />
+                            Lịch sử quà tri ân khác
+                        </span>
+                    ),
+                    children: (
+                        <DataTable 
+                            data={appreciationHistoryData?.items || []}
+                            columns={historyColumns}
+                            loading={isAppreciationLoading}
+                            pagination={{
+                                current: historyPage,
+                                pageSize: pageSize,
+                                total: appreciationHistoryData?.total || 0,
+                                onChange: (page) => setHistoryPage(page)
+                            }}
                             showSearch={false}
                             showFilters={false}
                             showActions={false}
