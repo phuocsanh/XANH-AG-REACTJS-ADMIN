@@ -220,17 +220,21 @@ const CustomerRewardsPage: React.FC = () => {
       title: "Thao tác",
       key: "actions",
       width: 120,
-      render: (record: any) => (
-        <Button 
-            type="primary" 
-            size="small" 
-            icon={<PlusOutlined />}
-            onClick={() => handleOpenRewardModal(record)}
-            className="bg-amber-500 hover:bg-amber-600 border-none"
-        >
-            Tặng quà
-        </Button>
-      )
+      render: (record: any) => {
+        const canReward = Number(record.pending_amount || 0) >= threshold;
+        if (!canReward) return null;
+        return (
+          <Button 
+              type="primary" 
+              size="small" 
+              icon={<PlusOutlined />}
+              onClick={() => handleOpenRewardModal(record)}
+              className="bg-amber-500 hover:bg-amber-600 border-none"
+          >
+              Tặng quà
+          </Button>
+        );
+      }
     }
   ]
 
