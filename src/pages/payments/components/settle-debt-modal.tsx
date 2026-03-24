@@ -13,7 +13,10 @@ import {
   Tag,
   Space,
   Checkbox,
+  Tabs,
+  Table,
 } from "antd"
+import { format } from "date-fns"
 import { GiftOutlined } from '@ant-design/icons';
 import NumberInput from '@/components/common/number-input'
 import { useRewardPreviewQuery, useDebtNoteQuery } from "@/queries/debt-note"
@@ -75,14 +78,12 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
 
   // Lấy preview quà tặng nếu có debt_note_id
   const debtNoteId = initialValues?.debt_note_id
-  const { data: rewardPreview, isLoading: isLoadingReward } = useRewardPreviewQuery(debtNoteId || 0)
+  const settleAmount = Form.useWatch("amount", form) || 0
+  const { data: rewardPreview, isLoading: isLoadingReward } = useRewardPreviewQuery(debtNoteId || 0, settleAmount)
   
   // Lấy chi tiết phiếu nợ để kiểm tra trạng thái (Tránh hiển thị tích lũy lần 2 khi đã chốt sổ)
   const { data: debtNote } = useDebtNoteQuery(debtNoteId || 0)
   const isAlreadySettled = debtNote?.status === 'settled'
-
-  // Watch form values
-  const settleAmount = Form.useWatch("amount", form) || 0
 
   // Mutation
   const settleAndRolloverMutation = useSettleAndRolloverMutation()
@@ -99,7 +100,8 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         form.setFieldsValue({
           customer_id: initialValues.customer_id,
           season_id: initialValues.season_id,
-          payment_method: 'cash'
+          payment_method: 'cash',
+          is_final: false
         })
         
         if (initialValues.season_id) {
@@ -227,16 +229,17 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-    const submitData = {
-      customer_id: values.customer_id,
-      season_id: values.season_id,
-      amount: values.amount,
-      payment_method: values.payment_method,
-      notes: values.notes,
-      gift_description: values.gift_description,
-      gift_value: values.gift_value,
-      is_final: values.is_final,
-    }
+      const submitData = {
+        customer_id: values.customer_id,
+        season_id: values.season_id,
+        amount: values.amount,
+        payment_method: values.payment_method,
+        notes: values.notes,
+        gift_description: values.gift_description,
+        gift_value: values.gift_value,
+        is_final: values.is_final,
+        manual_remaining_amount: values.manual_remaining_amount, // 🔥 Thêm field số dư chuyển vụ
+      }
       
       await settleAndRolloverMutation.mutateAsync(submitData, {
         onSuccess: (response) => {
@@ -516,56 +519,138 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           <Input.TextArea rows={3} placeholder='Nhập ghi chú (tùy chọn)' />
         </Form.Item>
 
-        {/* Chỉ hiển thị phần tích lũy & quà tặng nếu phiếu nợ CHƯA chốt sổ */}
+        {/* Checkbox Chốt sổ nhanh - Chỉ hiện nếu chưa chốt */}
         {!isAlreadySettled && (
-          <>
-            <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
-              <Space>
-                <GiftOutlined style={{ color: '#faad14' }} />
-                <span style={{ fontWeight: 500 }}>Tặng quà tích lũy (Nếu đạt mốc)</span>
-              </Space>
-            </Divider>
-
-            {isLoadingReward ? (
-              <div style={{ padding: '8px 0', textAlign: 'center' }}><Spin size="small" /></div>
-            ) : rewardPreview?.summary ? (
-              <div className="bg-orange-50 p-3 rounded-md mb-4 border border-orange-100">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-600">Tổng tích lũy hiện tại:</span>
-                    <span className="font-semibold text-blue-600">{formatCurrency((rewardPreview.summary.total_after_close || 0))}</span>
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Số quà đủ điều kiện:</span>
-                      <Tag color={rewardPreview.summary.will_receive_reward ? "gold" : "default"} className="m-0">
-                        {rewardPreview.summary.will_receive_reward 
-                          ? `Đủ điều kiện tặng ${rewardPreview.summary.reward_count} quà` 
-                          : "Chưa đạt mốc nhận quà"}
-                      </Tag>
-                  </div>
-                  
-                  {!rewardPreview.summary.will_receive_reward && (
-                    <div className="flex justify-end mt-1">
-                      <span className="text-xs text-orange-400 italic">
-                        Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="mt-2 grid grid-cols-2 gap-3">
-                      <Form.Item label="Mô tả quà" name="gift_description" className="mb-0">
-                        <Input placeholder="VD: 1 bao gạo..." />
-                      </Form.Item>
-                      <Form.Item label="Giá trị quà" name="gift_value" className="mb-0">
-                        <NumberInput placeholder="Giá trị VND" />
-                      </Form.Item>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </>
+          <Form.Item name="is_final" valuePropName="checked" className="mb-2">
+            <Checkbox>
+              <span className="font-medium text-blue-700">Chốt sổ vụ mùa này</span>
+              <span className="ml-2 text-xs text-gray-500">(Quyết toán doanh số để tính tích lũy/tặng quà)</span>
+            </Checkbox>
+          </Form.Item>
         )}
+
+         {/* Phần tích lũy & quà tặng - Giống CloseSeasonModal */}
+         <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
+                <Space>
+                  <GiftOutlined style={{ color: '#faad14' }} />
+                  <span style={{ fontWeight: 600, fontSize: '15px' }}>Quà tặng & Tích lũy điểm thưởng</span>
+                </Space>
+         </Divider>
+
+         {isLoadingReward ? (
+                <div style={{ padding: '20px 0', textAlign: 'center' }}><Spin tip="Đang tải dữ liệu tích lũy..." /></div>
+         ) : (
+                <div className="bg-gray-50 border rounded-lg overflow-hidden mb-4">
+                  <Tabs 
+                    type="card"
+                    size="small"
+                    className="p-1"
+                    items={[
+                      {
+                        key: 'current',
+                        label: 'Vụ này',
+                        children: (
+                          <div className="p-3 bg-white">
+                             <div className="flex justify-between items-center mb-3 p-2 bg-blue-50 rounded">
+                                <span className="text-gray-600 font-medium">Tổng tích lũy hiện tại:</span>
+                                <span className="text-lg font-bold text-blue-700">
+                                  {formatCurrency(rewardPreview?.summary?.total_after_close || 0)}
+                                </span>
+                             </div>
+
+                             {!isAlreadySettled ? (
+                               <>
+                                 <div className="grid grid-cols-2 gap-4 mb-4">
+                                     <div className="p-2 border rounded bg-white">
+                                        <div className="text-xs text-gray-500 uppercase mb-1">Đã có từ trước</div>
+                                        <div className="font-semibold">{formatCurrency(rewardPreview?.summary?.previous_pending || 0)}</div>
+                                     </div>
+                                     <div className="p-2 border rounded bg-green-50 border-green-100">
+                                        <div className="text-xs text-green-600 uppercase mb-1">Ghi nhận lần này</div>
+                                        <div className="font-semibold text-green-700">+{formatCurrency(settleAmount)}</div>
+                                     </div>
+                                 </div>
+
+                                 <Alert 
+                                    className="mb-4"
+                                    type={rewardPreview?.summary?.will_receive_reward ? "success" : "warning"}
+                                    showIcon
+                                    message={rewardPreview?.summary?.will_receive_reward 
+                                      ? `🎉 Đạt mốc tặng ${rewardPreview.summary.reward_count} quà!` 
+                                      : `Thiếu ${formatCurrency(rewardPreview?.summary?.shortage_to_next || 0)} để đạt mốc 60 triệu`}
+                                 />
+
+                                 <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <Form.Item label="Mô tả quà" name="gift_description" className="mb-2">
+                                      <Input placeholder="VD: 1 bao gạo..." />
+                                    </Form.Item>
+                                    <Form.Item label="Giá trị quà" name="gift_value" className="mb-2">
+                                      <NumberInput placeholder="Giá trị VND" />
+                                    </Form.Item>
+                                 </div>
+                                 
+                                 <Form.Item 
+                                    label="Số dư tích lũy muốn chuyển vụ (Nếu chốt)" 
+                                    name="manual_remaining_amount" 
+                                    className="mb-0"
+                                    tooltip="Mặc định hệ thống tự tính số dư sau khi trừ quà. Bạn có thể nhập lại nếu muốn."
+                                 >
+                                    <NumberInput placeholder="VD: 5.000.000" />
+                                 </Form.Item>
+                               </>
+                             ) : (
+                               <Alert
+                                  type="info"
+                                  showIcon
+                                  message="Phiếu nợ này đã được chốt sổ"
+                                  description={debtNote?.gift_description ? `Đã tặng quà: ${debtNote.gift_description} (${formatCurrency(Number(debtNote.gift_value || 0))})` : "Vụ mùa này đã chốt và ghi nhận thành công."}
+                               />
+                             )}
+                          </div>
+                        )
+                      },
+                      {
+                        key: 'accumulation',
+                        label: `Lịch sử vụ (${rewardPreview?.accumulation_history?.length || 0})`,
+                        children: (
+                          <div className="p-2 bg-white max-h-[250px] overflow-auto">
+                             <Table 
+                                size="small" 
+                                pagination={false}
+                                rowKey="id"
+                                dataSource={rewardPreview?.accumulation_history}
+                                columns={[
+                                  { title: 'Vụ mùa', dataIndex: 'season_name' },
+                                  { title: 'Tiền đã trả', dataIndex: 'amount', render: (val: number) => formatCurrency(val) },
+                                  { title: 'Quà', dataIndex: 'reward_given', render: (val: boolean, record: any) => val ? <Tag color="gold">🎁 {record.reward_count}</Tag> : '-' }
+                                ]}
+                             />
+                          </div>
+                        )
+                      },
+                      {
+                        key: 'rewards',
+                        label: `Lịch sử nhận quà (${rewardPreview?.previous_rewards?.length || 0})`,
+                        children: (
+                          <div className="p-2 bg-white max-h-[250px] overflow-auto">
+                              <Table 
+                                size="small" 
+                                pagination={false}
+                                rowKey="id"
+                                dataSource={rewardPreview?.previous_rewards}
+                                columns={[
+                                  { title: 'Ngày', dataIndex: 'reward_date', render: (val: string) => format(new Date(val), "dd/MM/yyyy") },
+                                  { title: 'Quà tặng', dataIndex: 'gift_description' },
+                                  { title: 'Giá trị', dataIndex: 'gift_value', render: (val: number) => formatCurrency(val) }
+                                ]}
+                             />
+                          </div>
+                        )
+                      }
+                    ]}
+                  />
+                </div>
+         )}
       </Form>
     </Modal>
 

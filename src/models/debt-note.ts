@@ -20,6 +20,9 @@ export interface DebtNote {
   created_by?: number;
   created_at: Date | string;
   updated_at: Date | string;
+  gift_description?: string;
+  gift_value?: number;
+  pending_accumulation?: number;
 }
 
 /**

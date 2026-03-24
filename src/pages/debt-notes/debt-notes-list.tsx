@@ -360,6 +360,18 @@ const DebtNotesList: React.FC = () => {
       ),
     },
     {
+      key: "pending_accumulation",
+      dataIndex: "pending_accumulation",
+      title: "Tích lũy",
+      width: 140,
+      render: (value: number) => (
+        <div style={{ color: '#d48806', fontWeight: 600 }}>
+          <GiftOutlined style={{ marginRight: 4 }} />
+          {formatCurrency(value || 0)}
+        </div>
+      ),
+    },
+    {
       key: "status",
       title: "Trạng thái",
       width: 120,
@@ -387,7 +399,7 @@ const DebtNotesList: React.FC = () => {
       width: 120,
       render: (record: ExtendedDebtNote) => (
         <Space size="small">
-          {record.remaining_amount > 0 && (
+          {Number(record.remaining_amount) > 0 && (
             <Button 
               type="primary" 
               size="small"
