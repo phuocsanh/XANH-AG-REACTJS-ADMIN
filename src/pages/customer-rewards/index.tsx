@@ -434,6 +434,7 @@ const CustomerRewardsPage: React.FC = () => {
                             value: s.id
                         })) || []}
                         allowClear
+                        required
                     />
 
                     <FormComboBox
