@@ -16,7 +16,7 @@ import {
 } from "antd"
 import { GiftOutlined } from '@ant-design/icons';
 import NumberInput from '@/components/common/number-input'
-import { useRewardPreviewQuery } from "@/queries/debt-note"
+import { useRewardPreviewQuery, useDebtNoteQuery } from "@/queries/debt-note"
 import {
   useCustomerDebtsQuery,
   useCustomerDebtorsSearchQuery,
@@ -76,6 +76,10 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   // Lấy preview quà tặng nếu có debt_note_id
   const debtNoteId = initialValues?.debt_note_id
   const { data: rewardPreview, isLoading: isLoadingReward } = useRewardPreviewQuery(debtNoteId || 0)
+  
+  // Lấy chi tiết phiếu nợ để kiểm tra trạng thái (Tránh hiển thị tích lũy lần 2 khi đã chốt sổ)
+  const { data: debtNote } = useDebtNoteQuery(debtNoteId || 0)
+  const isAlreadySettled = debtNote?.status === 'settled'
 
   // Watch form values
   const settleAmount = Form.useWatch("amount", form) || 0
@@ -512,51 +516,56 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           <Input.TextArea rows={3} placeholder='Nhập ghi chú (tùy chọn)' />
         </Form.Item>
 
-        <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
-          <Space>
-            <GiftOutlined style={{ color: '#faad14' }} />
-            <span style={{ fontWeight: 500 }}>Tặng quà tích lũy (Nếu đạt mốc)</span>
-          </Space>
-        </Divider>
+        {/* Chỉ hiển thị phần tích lũy & quà tặng nếu phiếu nợ CHƯA chốt sổ */}
+        {!isAlreadySettled && (
+          <>
+            <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
+              <Space>
+                <GiftOutlined style={{ color: '#faad14' }} />
+                <span style={{ fontWeight: 500 }}>Tặng quà tích lũy (Nếu đạt mốc)</span>
+              </Space>
+            </Divider>
 
-        {isLoadingReward ? (
-          <div style={{ padding: '8px 0', textAlign: 'center' }}><Spin size="small" /></div>
-        ) : rewardPreview?.summary ? (
-          <div className="bg-orange-50 p-3 rounded-md mb-4 border border-orange-100">
-             <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Tổng tích lũy hiện tại:</span>
-                <span className="font-semibold text-blue-600">{formatCurrency((rewardPreview.summary.total_after_close || 0))}</span>
-             </div>
-             
-             <div className="flex flex-col gap-1">
-               <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Số quà đủ điều kiện:</span>
-                  <Tag color={rewardPreview.summary.will_receive_reward ? "gold" : "default"} className="m-0">
-                    {rewardPreview.summary.will_receive_reward 
-                      ? `Đủ điều kiện tặng ${rewardPreview.summary.reward_count} quà` 
-                      : "Chưa đạt mốc nhận quà"}
-                  </Tag>
-               </div>
-               
-               {!rewardPreview.summary.will_receive_reward && (
-                 <div className="flex justify-end mt-1">
-                   <span className="text-xs text-orange-400 italic">
-                     Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
-                   </span>
-                 </div>
-               )}
+            {isLoadingReward ? (
+              <div style={{ padding: '8px 0', textAlign: 'center' }}><Spin size="small" /></div>
+            ) : rewardPreview?.summary ? (
+              <div className="bg-orange-50 p-3 rounded-md mb-4 border border-orange-100">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Tổng tích lũy hiện tại:</span>
+                    <span className="font-semibold text-blue-600">{formatCurrency((rewardPreview.summary.total_after_close || 0))}</span>
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Số quà đủ điều kiện:</span>
+                      <Tag color={rewardPreview.summary.will_receive_reward ? "gold" : "default"} className="m-0">
+                        {rewardPreview.summary.will_receive_reward 
+                          ? `Đủ điều kiện tặng ${rewardPreview.summary.reward_count} quà` 
+                          : "Chưa đạt mốc nhận quà"}
+                      </Tag>
+                  </div>
+                  
+                  {!rewardPreview.summary.will_receive_reward && (
+                    <div className="flex justify-end mt-1">
+                      <span className="text-xs text-orange-400 italic">
+                        Còn thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
+                      </span>
+                    </div>
+                  )}
 
-               <div className="mt-2 grid grid-cols-2 gap-3">
-                  <Form.Item label="Mô tả quà" name="gift_description" className="mb-0">
-                    <Input placeholder="VD: 1 bao gạo..." />
-                  </Form.Item>
-                  <Form.Item label="Giá trị quà" name="gift_value" className="mb-0">
-                    <NumberInput placeholder="Giá trị VND" />
-                  </Form.Item>
-               </div>
-             </div>
-          </div>
-        ) : null}
+                  <div className="mt-2 grid grid-cols-2 gap-3">
+                      <Form.Item label="Mô tả quà" name="gift_description" className="mb-0">
+                        <Input placeholder="VD: 1 bao gạo..." />
+                      </Form.Item>
+                      <Form.Item label="Giá trị quà" name="gift_value" className="mb-0">
+                        <NumberInput placeholder="Giá trị VND" />
+                      </Form.Item>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
       </Form>
     </Modal>
 
