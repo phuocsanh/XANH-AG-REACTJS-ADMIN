@@ -409,7 +409,7 @@ const DebtNotesList: React.FC = () => {
               Thanh toán
             </Button>
           )}
-          {record.status === 'settled' ? (
+          {(record.status === 'settled' || (record.status === 'paid' && record.gift_description)) ? (
             <Button 
               type="link" 
               size="small"

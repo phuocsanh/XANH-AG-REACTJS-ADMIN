@@ -186,8 +186,10 @@ export const useSettleAndRolloverMutation = () => {
       invalidateResourceQueries("/customers")
       // Invalidate customer search queries (key starts with "customers", not "/customers")
       queryClient.invalidateQueries({ queryKey: ["customers"] })
-      // Invalidate debt-notes queries specifically
+      // Invalidate debt-notes queries cụ thể
       queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
+      // 🔥 Invalidate preview tích lũy để cập nhật số tiền đã trả mới nhất
+      queryClient.invalidateQueries({ queryKey: ["customer-reward-preview"] })
       toast.success("Thanh toán công nợ thành công!")
     },
     onError: (error: unknown) => {
