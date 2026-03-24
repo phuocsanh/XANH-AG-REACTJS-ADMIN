@@ -522,9 +522,6 @@ const DebtNotesList: React.FC = () => {
             showTotal: (total: number) => `Tổng ${total} phiếu`,
           }}
           onChange={handleTableChange}
-          onView={(record) => handleOpenCloseSeasonModal(record as ExtendedDebtNote)}
-          showSearch={false}
-          showFilters={false}
         />
       </div>
 
