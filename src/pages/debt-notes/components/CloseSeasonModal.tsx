@@ -275,63 +275,25 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
             )
           )}
 
-          {/* Form tặng quà (Chỉ hiện khi chưa chốt) */}
-          {!isSettled ? (
+          {/* Form tặng quà tri ân */}
+          {!isSettled && (
             <>
-              <Divider orientation="left">🎁 Thông tin tất toán & Quà tặng</Divider>
+              <Divider orientation="left">🎁 Tặng quà tri ân (Không trừ tích lũy)</Divider>
               <Form form={form} layout="vertical">
-                {/* Tự động tính tích lũy, bỏ phần nhập thủ công số dư */}
                 <Form.Item 
-                  label="Mô tả quà tặng" 
+                  label="Mô tả quà tri ân" 
                   name="gift_description" 
-                  rules={[
-                    { 
-                      required: summary?.will_receive_reward, 
-                      message: 'Vui lòng nhập mô tả quà tặng' 
-                    },
-                    ({ getFieldValue }) => ({
-                      validator(_, value) {
-                        const giftValue = getFieldValue('gift_value');
-                        if (giftValue > 0 && !value) {
-                          return Promise.reject(new Error('Vui lòng nhập mô tả cho quà tặng này'));
-                        }
-                        return Promise.resolve();
-                      },
-                    }),
-                  ]}
-                  dependencies={['gift_value']}
                 >
-                  <Input placeholder="VD: 1 bao phân DAP 50kg" />
+                  <Input placeholder="VD: Bộ ấm trà, Nón bảo hiểm..." />
                 </Form.Item>
                 <Form.Item label="Giá trị quà tặng" name="gift_value">
                   <NumberInput placeholder="Nhập giá trị quà tặng" addonAfter="VND" />
                 </Form.Item>
                 <Form.Item label="Ghi chú" name="notes">
-                  <TextArea rows={2} placeholder="Ghi chú thêm (nếu có)" />
+                  <Input.TextArea rows={2} placeholder="Ghi chú thêm (nếu có)" />
                 </Form.Item>
               </Form>
             </>
-          ) : (
-            (currentSeason?.status === 'settled' || currentSeason?.status === 'paid') && (
-              <Alert 
-                message="Phiếu này đã hoàn thành thanh toán" 
-                description={
-                  <div className="flex flex-col gap-1 mt-1">
-                    <div>Trạng thái: <strong>Đã hoàn thành chốt sổ</strong></div>
-                    {currentSeason.gift_description && (
-                      <div className="text-orange-600 font-medium">
-                        🎁 Quà tặng đã nhận: {currentSeason.gift_description} ({formatCurrency(currentSeason.gift_value || 0)})
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500 italic mt-1">
-                      (Bạn có thể xem lại lịch sử quà tặng và tích lũy chi tiết ở các tab phía trên)
-                    </div>
-                  </div>
-                }
-                type="success"
-                showIcon
-              />
-            )
           )}
         </Space>
       )}

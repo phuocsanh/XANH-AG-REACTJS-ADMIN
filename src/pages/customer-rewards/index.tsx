@@ -130,7 +130,7 @@ const CustomerRewardsPage: React.FC = () => {
         setSelectedCustomer(record)
         reset({
             gift_description: "Quà tặng tri ân",
-            gift_value: 0,
+            gift_value: Math.floor((Number(record.pending_amount || 0) / threshold) * 1000000), // Gợi ý theo tỷ lệ 70tr/1tr
             notes: "",
             season_id: undefined,
             rice_crop_id: undefined
@@ -234,13 +234,11 @@ const CustomerRewardsPage: React.FC = () => {
       key: "actions",
       width: 120,
       render: (record: any) => {
-        const canReward = Number(record.pending_amount || 0) >= threshold;
-        if (!canReward) return null;
         return (
           <Button 
               type="primary" 
               size="small" 
-              icon={<PlusOutlined />}
+              icon={<GiftOutlined />}
               onClick={() => handleOpenRewardModal(record)}
               className="bg-amber-500 hover:bg-amber-600 border-none"
           >
@@ -471,6 +469,18 @@ const CustomerRewardsPage: React.FC = () => {
             <div className="bg-gray-50 p-3 rounded mb-4">
                 <Text strong>Khách hàng: </Text> 
                 <Text>{selectedCustomer?.customer?.name || selectedCustomer?.customer_name}</Text>
+                {!editingHistoryId && (
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <div className="flex justify-between">
+                      <Text type="secondary">Tích lũy hiện tại:</Text>
+                      <Text strong className="text-blue-600">{formatCurrency(Number(selectedCustomer?.pending_amount || 0))}</Text>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <Text type="secondary">Gợi ý quà tặng (tỷ lệ 70tr/1tr):</Text>
+                      <Text strong className="text-amber-600">{formatCurrency(Math.floor((Number(selectedCustomer?.pending_amount || 0) / threshold) * 1000000))}</Text>
+                    </div>
+                  </div>
+                )}
             </div>
 
             {!editingHistoryId && (

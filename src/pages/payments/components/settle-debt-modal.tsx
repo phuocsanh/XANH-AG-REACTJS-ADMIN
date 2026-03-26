@@ -521,121 +521,21 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
 
         {/* Checkbox Chốt sổ thủ công đã được ẩn đi vì hệ thống tự động chốt khi trả hết nợ */}
 
-         {/* Phần tích lũy & quà tặng - Giống CloseSeasonModal */}
-         <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
+        <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
                 <Space>
                   <GiftOutlined style={{ color: '#faad14' }} />
-                  <span style={{ fontWeight: 600, fontSize: '15px' }}>Quà tặng & Tích lũy điểm thưởng</span>
+                  <span style={{ fontWeight: 600, fontSize: '15px' }}>Quà tặng tri ân (Không trừ tích lũy)</span>
                 </Space>
-         </Divider>
+        </Divider>
 
-         {isLoadingReward ? (
-                <div style={{ padding: '20px 0', textAlign: 'center' }}><Spin tip="Đang tải dữ liệu tích lũy..." /></div>
-         ) : (
-                <div className="bg-gray-50 border rounded-lg overflow-hidden mb-4">
-                  <Tabs 
-                    type="card"
-                    size="small"
-                    className="p-1"
-                    items={[
-                      {
-                        key: 'current',
-                        label: 'Tích lũy & Quà tặng',
-                        children: (
-                          <div className="p-3 bg-white">
-                             <div className="flex justify-between items-center mb-3 p-2 bg-blue-50 rounded">
-                                <span className="text-gray-600 font-medium">Tổng tích lũy hiện tại:</span>
-                                <span className="text-lg font-bold text-blue-700">
-                                  {formatCurrency(rewardPreview?.summary?.total_after_close || 0)}
-                                </span>
-                             </div>
-
-                             {!isAlreadySettled ? (
-                               <>
-                                 <div className="grid grid-cols-2 gap-4 mb-4">
-                                     <div className="p-2 border rounded bg-white">
-                                        <div className="text-xs text-gray-500 uppercase mb-1">Đã có từ trước</div>
-                                        <div className="font-semibold">{formatCurrency(rewardPreview?.summary?.previous_pending || 0)}</div>
-                                     </div>
-                                     <div className="p-2 border rounded bg-green-50 border-green-100">
-                                        <div className="text-xs text-green-600 uppercase mb-1">Ghi nhận lần này</div>
-                                        <div className="font-semibold text-green-700">+{formatCurrency(settleAmount)}</div>
-                                     </div>
-                                 </div>
-
-                                 <Alert 
-                                    className="mb-4"
-                                    type={rewardPreview?.summary?.will_receive_reward ? "success" : "warning"}
-                                    showIcon
-                                    message={rewardPreview?.summary?.will_receive_reward 
-                                      ? `🎉 Đạt mốc tặng ${rewardPreview.summary.reward_count} quà!` 
-                                      : `Thiếu ${formatCurrency(rewardPreview?.summary?.shortage_to_next || 0)} để đạt mốc thưởng công nợ`}
-                                 />
-
-                                 <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <Form.Item label="Mô tả quà" name="gift_description" className="mb-2">
-                                      <Input placeholder="VD: 1 bao gạo..." />
-                                    </Form.Item>
-                                    <Form.Item label="Giá trị quà" name="gift_value" className="mb-2">
-                                      <NumberInput placeholder="Giá trị VND" />
-                                    </Form.Item>
-                                 </div>
-                                 
-                                 {/* Đã bỏ trường nhập thủ công Số dư tích lũy để hệ thống tự tính */}
-                               </>
-                             ) : (
-                               <Alert
-                                  type="info"
-                                  showIcon
-                                  message="Phiếu nợ này đã được chốt sổ"
-                                  description={debtNote?.gift_description ? `Đã tặng quà: ${debtNote.gift_description} (${formatCurrency(Number(debtNote.gift_value || 0))})` : "Vụ mùa này đã chốt và ghi nhận thành công."}
-                               />
-                             )}
-                          </div>
-                        )
-                      },
-                      {
-                        key: 'accumulation',
-                        label: `Lịch sử vụ (${rewardPreview?.accumulation_history?.length || 0})`,
-                        children: (
-                          <div className="p-2 bg-white max-h-[250px] overflow-auto">
-                             <Table 
-                                size="small" 
-                                pagination={false}
-                                rowKey="id"
-                                dataSource={rewardPreview?.accumulation_history}
-                                columns={[
-                                  { title: 'Vụ mùa', dataIndex: 'season_name' },
-                                  { title: 'Tiền đã trả', dataIndex: 'amount', render: (val: number) => formatCurrency(val) },
-                                  { title: 'Quà', dataIndex: 'reward_given', render: (val: boolean, record: any) => val ? <Tag color="gold">🎁 {record.reward_count}</Tag> : '-' }
-                                ]}
-                             />
-                          </div>
-                        )
-                      },
-                      {
-                        key: 'rewards',
-                        label: `Lịch sử nhận quà (${rewardPreview?.previous_rewards?.length || 0})`,
-                        children: (
-                          <div className="p-2 bg-white max-h-[250px] overflow-auto">
-                              <Table 
-                                size="small" 
-                                pagination={false}
-                                rowKey="id"
-                                dataSource={rewardPreview?.previous_rewards}
-                                columns={[
-                                  { title: 'Ngày', dataIndex: 'reward_date', render: (val: string) => format(new Date(val), "dd/MM/yyyy") },
-                                  { title: 'Quà tặng', dataIndex: 'gift_description' },
-                                  { title: 'Giá trị', dataIndex: 'gift_value', render: (val: number) => formatCurrency(val) }
-                                ]}
-                             />
-                          </div>
-                        )
-                      }
-                    ]}
-                  />
-                </div>
-         )}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <Form.Item label="Mô tả quà tri ân" name="gift_description" className="mb-2">
+            <Input placeholder="VD: Bộ ấm trà, Nón bảo hiểm..." />
+          </Form.Item>
+          <Form.Item label="Giá trị quà" name="gift_value" className="mb-2">
+            <NumberInput placeholder="Giá trị VND" />
+          </Form.Item>
+        </div>
       </Form>
     </Modal>
 

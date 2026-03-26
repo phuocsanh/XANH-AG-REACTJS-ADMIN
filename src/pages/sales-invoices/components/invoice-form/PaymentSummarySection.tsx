@@ -151,7 +151,7 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
           <Divider orientation="left" style={{ margin: '0 0 12px' }}>
             <Space>
               <GiftOutlined style={{ color: '#faad14' }} />
-              <span style={{ fontWeight: 500 }}>Quà tặng & Tích lũy</span>
+              <span style={{ fontWeight: 500 }}>Quà tặng tri ân (Không trừ tích lũy)</span>
             </Space>
           </Divider>
 
@@ -205,8 +205,8 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
               <FormField
                 name="gift_description"
                 control={control}
-                label="Mô tả quà tặng"
-                placeholder="Phiếu quà tặng, hiện vật..."
+                label="Mô tả quà tri ân"
+                placeholder="Ví dụ: Bộ ấm trà, Phiếu quà tặng..."
               />
             </Grid>
             <Grid item xs={12} sm={6}>
