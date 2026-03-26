@@ -379,7 +379,6 @@ const DebtNotesList: React.FC = () => {
           { text: "Đang nợ", value: "active" },
           { text: "Quá hạn", value: "overdue" },
           { text: "Đã trả", value: "paid" },
-          { text: "Đã chốt sổ", value: "settled" },
           { text: "Đã hủy", value: "cancelled" },
       ],
       filteredValue: filters.status ? [filters.status as string] : undefined,
@@ -409,23 +408,14 @@ const DebtNotesList: React.FC = () => {
               Thanh toán
             </Button>
           )}
-          {(record.status === 'settled' || (record.status === 'paid' && record.gift_description)) ? (
+          {(record.gift_description || record.reward_given) && (
             <Button 
               type="link" 
               size="small"
               icon={<GiftOutlined />}
               onClick={() => handleOpenCloseSeasonModal(record)}
             >
-              Xem chi tiết
-            </Button>
-          ) : (
-            <Button 
-              type="default" 
-              size="small"
-              icon={<GiftOutlined />}
-              onClick={() => handleOpenCloseSeasonModal(record)}
-            >
-              Chốt sổ cuối vụ
+              Chi tiết quà
             </Button>
           )}
         </Space>

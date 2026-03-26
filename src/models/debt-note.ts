@@ -23,6 +23,9 @@ export interface DebtNote {
   gift_description?: string;
   gift_value?: number;
   pending_accumulation?: number;
+  reward_given?: boolean;
+  reward_count?: number;
+  closed_at?: Date | string;
 }
 
 /**

@@ -519,15 +519,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
           <Input.TextArea rows={3} placeholder='Nhập ghi chú (tùy chọn)' />
         </Form.Item>
 
-        {/* Checkbox Chốt sổ nhanh - Chỉ hiện nếu chưa chốt */}
-        {!isAlreadySettled && (
-          <Form.Item name="is_final" valuePropName="checked" className="mb-2">
-            <Checkbox>
-              <span className="font-medium text-blue-700">Chốt sổ vụ mùa này</span>
-              <span className="ml-2 text-xs text-gray-500">(Quyết toán doanh số để tính tích lũy/tặng quà)</span>
-            </Checkbox>
-          </Form.Item>
-        )}
+        {/* Checkbox Chốt sổ thủ công đã được ẩn đi vì hệ thống tự động chốt khi trả hết nợ */}
 
          {/* Phần tích lũy & quà tặng - Giống CloseSeasonModal */}
          <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
@@ -548,7 +540,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
                     items={[
                       {
                         key: 'current',
-                        label: 'Vụ này',
+                        label: 'Tích lũy & Quà tặng',
                         children: (
                           <div className="p-3 bg-white">
                              <div className="flex justify-between items-center mb-3 p-2 bg-blue-50 rounded">
@@ -577,7 +569,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
                                     showIcon
                                     message={rewardPreview?.summary?.will_receive_reward 
                                       ? `🎉 Đạt mốc tặng ${rewardPreview.summary.reward_count} quà!` 
-                                      : `Thiếu ${formatCurrency(rewardPreview?.summary?.shortage_to_next || 0)} để đạt mốc 60 triệu`}
+                                      : `Thiếu ${formatCurrency(rewardPreview?.summary?.shortage_to_next || 0)} để đạt mốc thưởng công nợ`}
                                  />
 
                                  <div className="grid grid-cols-2 gap-3 mb-3">
@@ -589,14 +581,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
                                     </Form.Item>
                                  </div>
                                  
-                                 <Form.Item 
-                                    label="Số dư tích lũy muốn chuyển vụ (Nếu chốt)" 
-                                    name="manual_remaining_amount" 
-                                    className="mb-0"
-                                    tooltip="Mặc định hệ thống tự tính số dư sau khi trừ quà. Bạn có thể nhập lại nếu muốn."
-                                 >
-                                    <NumberInput placeholder="VD: 5.000.000" />
-                                 </Form.Item>
+                                 {/* Đã bỏ trường nhập thủ công Số dư tích lũy để hệ thống tự tính */}
                                </>
                              ) : (
                                <Alert
@@ -656,7 +641,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
 
     {/* Modal hiển thị kết quả chốt sổ */}
     <Modal
-      title="✅ Chốt sổ công nợ thành công"
+      title="✅ Thanh toán công nợ thành công"
       open={showResult}
       onCancel={() => setShowResult(false)}
       footer={[

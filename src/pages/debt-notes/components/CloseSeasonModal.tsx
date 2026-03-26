@@ -104,7 +104,7 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
   const summary = previewData?.summary;
   const customer = previewData?.customer;
   const currentSeason = previewData?.current_season;
-  const isSettled = currentSeason?.status === 'settled';
+  const isSettled = currentSeason?.status === 'settled' || currentSeason?.status === 'paid';
 
   // Định nghĩa cột cho bảng lịch sử tích lũy
   const accumulationColumns = [
@@ -153,11 +153,11 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
 
   return (
     <Modal
-      title={isSettled ? "Chi tiết tích lũy & Quà tặng" : "Chốt sổ Công nợ cuối vụ"}
+      title={isSettled ? "Chi tiết tích lũy & Quà tặng" : "Xử lý tích lũy & Tặng quà"}
       open={open}
       onCancel={onClose}
       onOk={isSettled ? onClose : handleSubmit}
-      okText={isSettled ? "Đóng" : "Xác nhận chốt sổ"}
+      okText={isSettled ? "Đóng" : "Xác nhận tất toán"}
       cancelButtonProps={{ style: { display: isSettled ? 'none' : 'inline-block' } }}
       width={800}
       confirmLoading={closeSeasonMutation.isPending}
@@ -278,11 +278,9 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
           {/* Form tặng quà (Chỉ hiện khi chưa chốt) */}
           {!isSettled ? (
             <>
-              <Divider orientation="left">🎁 Thông tin chốt sổ & Quà tặng</Divider>
+              <Divider orientation="left">🎁 Thông tin tất toán & Quà tặng</Divider>
               <Form form={form} layout="vertical">
-                <Form.Item label="Số dư tích lũy chuyển sang vụ sau" name="manual_remaining_amount">
-                  <NumberInput placeholder="Nhập số tiền chuyển sang" addonAfter="VND" />
-                </Form.Item>
+                {/* Tự động tính tích lũy, bỏ phần nhập thủ công số dư */}
                 <Form.Item 
                   label="Mô tả quà tặng" 
                   name="gift_description" 
@@ -314,9 +312,9 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
               </Form>
             </>
           ) : (
-            currentSeason?.status === 'settled' && (
+            (currentSeason?.status === 'settled' || currentSeason?.status === 'paid') && (
               <Alert 
-                message="Phiếu này đã được chốt sổ" 
+                message="Phiếu này đã hoàn thành thanh toán" 
                 description={
                   <div className="flex flex-col gap-1 mt-1">
                     <div>Trạng thái: <strong>Đã hoàn thành chốt sổ</strong></div>
