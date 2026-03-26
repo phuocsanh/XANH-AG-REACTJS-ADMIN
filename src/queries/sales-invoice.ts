@@ -266,6 +266,7 @@ export const useCustomerSeasonStatsQuery = (customerId: number | undefined, seas
       }>('/sales/invoices/search', {
         customer_id: customerId,
         season_id: seasonId,
+        status: ['confirmed', 'paid'], // Gửi mảng để Backend dùng toán tử IN
         limit: 1000, // Lấy tất cả
       })
 
