@@ -318,6 +318,22 @@ const PaymentsList: React.FC = () => {
       ),
     },
     {
+      key: "payment_type",
+      title: "Loại thu",
+      width: 140,
+      render: (record: ExtendedPayment) => {
+        const isDebt = !!record.debt_note_code;
+        return (
+          <Tag 
+            color={isDebt ? "processing" : "success"}
+            className="font-medium px-2 py-0.5"
+          >
+            {isDebt ? "Thu nợ lẻ" : "Hóa đơn bán lẻ"}
+          </Tag>
+        );
+      }
+    },
+    {
       key: "debt_note_code",
       title: (
         <FilterHeader 
