@@ -52,16 +52,18 @@ const CustomerRewardsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [selectedCustomer, setSelectedCustomer] = React.useState<any>(null)
   const [editingHistoryId, setEditingHistoryId] = React.useState<number | null>(null)
+  const [isAddingAppreciationGift, setIsAddingAppreciationGift] = React.useState(false) // Chế độ thêm quà tri ân mới
   const [form] = Form.useForm()
   
   // React Hook Form cho Modal tặng quà
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
-      gift_description: "Quà tích lũy",
+      gift_description: "",
       gift_value: 0,
       notes: "",
       season_id: undefined as number | undefined,
       rice_crop_id: undefined as number | undefined,
+      customer_id: undefined as number | undefined, // Dùng khi thêm quà tri ân mới
     }
   });
 
@@ -114,7 +116,9 @@ const CustomerRewardsPage: React.FC = () => {
     refetchAppreciation()
   }
 
+  // Mở modal từ tab tích lũy (chọn khách từ tracking)
   const handleOpenRewardModal = (record: any, isEdit: boolean = false) => {
+    setIsAddingAppreciationGift(false)
     if (isEdit) {
         setEditingHistoryId(record.id)
         setSelectedCustomer({ customer_id: record.customer_id, customer: record.customer })
@@ -123,24 +127,43 @@ const CustomerRewardsPage: React.FC = () => {
             gift_value: Number(record.gift_value || 0),
             notes: record.notes,
             season_id: record.season_ids?.[0],
-            rice_crop_id: record.contribution_details?.rice_crop_id
+            rice_crop_id: record.rice_crop_id,
+            customer_id: record.customer_id,
         })
     } else {
         setEditingHistoryId(null)
         setSelectedCustomer(record)
         reset({
             gift_description: "Quà tích lũy",
-            gift_value: Math.floor((Number(record.pending_amount || 0) / threshold) * 1000000), // Gợi ý theo tỷ lệ 70tr/1tr
+            gift_value: Math.floor((Number(record.pending_amount || 0) / threshold) * 1000000),
             notes: "",
             season_id: undefined,
-            rice_crop_id: undefined
+            rice_crop_id: undefined,
+            customer_id: record.customer_id,
         })
     }
     setIsModalOpen(true)
   }
 
+  // Mở modal thêm quà tri ân mới (chọn bất kỳ khách hàng)
+  const handleOpenAddAppreciationGift = () => {
+    setIsAddingAppreciationGift(true)
+    setEditingHistoryId(null)
+    setSelectedCustomer(null)
+    reset({
+        gift_description: "",
+        gift_value: 0,
+        notes: "",
+        season_id: undefined,
+        rice_crop_id: undefined,
+        customer_id: undefined,
+    })
+    setIsModalOpen(true)
+  }
+
   const handleSubmitForm = async (values: any) => {
     if (editingHistoryId) {
+        // Chỉnh sửa bản ghi cũ
         await updateRewardMutation.mutateAsync({
             id: editingHistoryId,
             data: {
@@ -149,18 +172,31 @@ const CustomerRewardsPage: React.FC = () => {
                 notes: values.notes,
             }
         })
+    } else if (isAddingAppreciationGift) {
+        // Thêm quà tri ân mới từ tab Tri ân
+        await createRewardMutation.mutateAsync({
+            customer_id: values.customer_id,
+            gift_description: values.gift_description,
+            gift_value: values.gift_value,
+            notes: values.notes,
+            season_id: values.season_id,
+            rice_crop_id: values.rice_crop_id,
+            reward_type: 'APPRECIATION_GIFT', // ✅ Mặc định là Quà tri ân, không trừ tích lũy
+        })
     } else {
+        // Thêm quà tích lũy từ tab Tích lũy
         await createRewardMutation.mutateAsync({
             customer_id: selectedCustomer.customer_id,
             gift_description: values.gift_description,
             gift_value: values.gift_value,
             notes: values.notes,
             season_id: values.season_id,
-            rice_crop_id: values.rice_crop_id
+            rice_crop_id: values.rice_crop_id,
+            reward_type: 'ACCUMULATION_REWARD',
         })
     }
     setIsModalOpen(false)
-    refetchAll() // Refetch all tabs
+    refetchAll()
   }
 
   const handleDeleteHistory = async (id: number) => {
@@ -269,7 +305,7 @@ const CustomerRewardsPage: React.FC = () => {
         width: 250,
         render: (record: any) => (
             <Space direction="vertical" size={0}>
-                <Text strong>{record.customer_name}</Text>
+                <Text strong>{record.customer?.name || record.customer_name}</Text>
                 <Text type="secondary" style={{ fontSize: '12px' }}>{record.customer?.phone}</Text>
             </Space>
         )
@@ -437,20 +473,33 @@ const CustomerRewardsPage: React.FC = () => {
                         </span>
                     ),
                     children: (
-                        <DataTable 
-                            data={appreciationHistoryData?.items || []}
-                            columns={historyColumns}
-                            loading={isAppreciationLoading}
-                            pagination={{
-                                current: historyPage,
-                                pageSize: pageSize,
-                                total: appreciationHistoryData?.total || 0,
-                                onChange: (page) => setHistoryPage(page)
-                            }}
-                            showSearch={false}
-                            showFilters={false}
-                            showActions={false}
-                        />
+                        <div>
+                            {/* Nút thêm quà tri ân - chỉ hiện ở tab này */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                                <Button 
+                                    type="primary" 
+                                    icon={<PlusOutlined />}
+                                    onClick={handleOpenAddAppreciationGift}
+                                    style={{ background: '#52c41a', border: 'none' }}
+                                >
+                                    Thêm quà tri ân
+                                </Button>
+                            </div>
+                            <DataTable 
+                                data={appreciationHistoryData?.items || []}
+                                columns={historyColumns}
+                                loading={isAppreciationLoading}
+                                pagination={{
+                                    current: historyPage,
+                                    pageSize: pageSize,
+                                    total: appreciationHistoryData?.total || 0,
+                                    onChange: (page) => setHistoryPage(page)
+                                }}
+                                showSearch={false}
+                                showFilters={false}
+                                showActions={false}
+                            />
+                        </div>
                     )
                 }
             ]}
@@ -459,14 +508,20 @@ const CustomerRewardsPage: React.FC = () => {
 
       {/* Manual Reward Modal */}
       <Modal
-        title={editingHistoryId ? "Chỉnh sửa quà tặng" : "Tạo quà tặng thủ công"}
+        title={
+          editingHistoryId ? "Chỉnh sửa quà tặng" 
+          : isAddingAppreciationGift ? "✨ Thêm quà tri ân" 
+          : "Tặng quà tích lũy"
+        }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={null}
         width={600}
       >
         <form onSubmit={handleSubmit(handleSubmitForm)}>
-            <div className="bg-gray-50 p-3 rounded mb-4">
+            {/* Hiện thông tin khách khi đã chọn và không phải chế độ appreciation mới */}
+            {!isAddingAppreciationGift && (
+              <div className="bg-gray-50 p-3 rounded mb-4">
                 <Text strong>Khách hàng: </Text> 
                 <Text>{selectedCustomer?.customer?.name || selectedCustomer?.customer_name}</Text>
                 {!editingHistoryId && (
@@ -481,7 +536,32 @@ const CustomerRewardsPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-            </div>
+              </div>
+            )}
+
+            {/* Chế độ thêm quà tri ân: Cho phép chọn bất kỳ khách hàng nào */}
+            {isAddingAppreciationGift && (
+              <div className="mb-4 p-3 rounded" style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  🎁 Quà tri ân sẽ được ghi nhận mà <strong>không trừ tích lũy</strong> của khách hàng.
+                </Text>
+              </div>
+            )}
+
+            {isAddingAppreciationGift && (
+              <FormComboBox
+                name="customer_id"
+                control={control}
+                label="Khách hàng"
+                placeholder="Tìm và chọn khách hàng..."
+                options={trackingData?.items?.map((t: any) => ({
+                  label: `${t.customer?.name} - ${t.customer?.phone || ''}`,
+                  value: t.customer_id
+                })) || []}
+                required
+                allowClear
+              />
+            )}
 
             {!editingHistoryId && (
                 <div className="grid grid-cols-2 gap-4">

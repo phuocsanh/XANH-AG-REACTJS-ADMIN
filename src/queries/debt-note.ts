@@ -260,6 +260,7 @@ export const useCreateManualRewardMutation = () => {
       manual_deduct_amount?: number;
       season_id?: number;
       rice_crop_id?: number;
+      reward_type?: string; // ACCUMULATION_REWARD | APPRECIATION_GIFT
     }) => {
       const response = await api.postRaw<{success: boolean; message: string
         pagination?: any
