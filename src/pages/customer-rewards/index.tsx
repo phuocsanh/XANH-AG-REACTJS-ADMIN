@@ -57,7 +57,7 @@ const CustomerRewardsPage: React.FC = () => {
   // React Hook Form cho Modal tặng quà
   const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: {
-      gift_description: "Quà tặng tri ân",
+      gift_description: "Quà tích lũy",
       gift_value: 0,
       notes: "",
       season_id: undefined as number | undefined,
@@ -129,7 +129,7 @@ const CustomerRewardsPage: React.FC = () => {
         setEditingHistoryId(null)
         setSelectedCustomer(record)
         reset({
-            gift_description: "Quà tặng tri ân",
+            gift_description: "Quà tích lũy",
             gift_value: Math.floor((Number(record.pending_amount || 0) / threshold) * 1000000), // Gợi ý theo tỷ lệ 70tr/1tr
             notes: "",
             season_id: undefined,
