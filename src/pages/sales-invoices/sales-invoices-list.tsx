@@ -44,7 +44,7 @@ import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
 import { useNavigate } from "react-router-dom"
-import { paymentMethodLabels, paymentStatusLabels } from "./form-config"
+import { paymentMethodLabels, paymentStatusLabels, invoiceStatusLabels } from "./form-config"
 import { TablePaginationConfig, TableProps } from "antd"
 import { FilterValue, SorterResult } from "antd/es/table/interface"
 
@@ -607,6 +607,26 @@ const SalesInvoicesList: React.FC = () => {
       },
     },
 
+    {
+      key: "status",
+      dataIndex: "status",
+      title: "Trạng thái",
+      width: 120,
+      filters: [
+        { text: "Nháp", value: "draft" },
+        { text: "Đã chốt", value: "confirmed" },
+        { text: "Đã thanh toán", value: "paid" },
+        { text: "Đã hủy", value: "cancelled" },
+        { text: "Đã hoàn tiền", value: "refunded" },
+      ],
+      filteredValue: filters.status ? [filters.status] : null,
+      filterMultiple: false,
+      render: (status: string) => (
+        <Tag color={getStatusColor(status || 'draft')}>
+          {(invoiceStatusLabels as any)[status as any] || status}
+        </Tag>
+      ),
+    },
     {
       key: "payment_status",
       dataIndex: "payment_status",
