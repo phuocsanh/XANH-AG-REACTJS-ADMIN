@@ -470,6 +470,7 @@ const PaymentsList: React.FC = () => {
           data={getPaymentList()}
           columns={columns}
           loading={loading}
+          showActions={false}
           onChange={handleTableChange}
           pagination={{
             current: currentPage,
