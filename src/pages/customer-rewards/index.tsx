@@ -90,10 +90,15 @@ const CustomerRewardsPage: React.FC = () => {
   })
 
   const { data: seasonsData } = useSeasonsQuery({ limit: 100 })
+  
+  // Lấy customer_id từ form (khi thêm quà tri ân mới) hoặc từ khách được chọn (khi tặng từ tab tích lũy)
+  const watchedCustomerId = watch('customer_id')
+  const effectiveCustomerId = watchedCustomerId || selectedCustomer?.customer_id
+  
   const { data: riceCropsData } = useRiceCrops({ 
-    customer_id: selectedCustomer?.customer_id,
+    customer_id: effectiveCustomerId,
     limit: 100 
-  }, { enabled: !!selectedCustomer?.customer_id })
+  }, { enabled: !!effectiveCustomerId })
 
   const createRewardMutation = useCreateManualRewardMutation()
   const updateRewardMutation = useUpdateRewardHistoryMutation()
