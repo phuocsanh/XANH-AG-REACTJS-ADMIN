@@ -410,7 +410,7 @@ export const useUpdateInventoryReceiptItemMutation = () => {
       // Invalidate cache để force refetch
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.receiptItems(variables.id) });
-      toast.success("Cập nhật số lượng thuế thành công!");
+      toast.success("Cập nhật dữ liệu thuế thành công!");
       return data;
     },
     onError: (error: unknown) => {

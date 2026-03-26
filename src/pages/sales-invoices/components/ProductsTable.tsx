@@ -72,6 +72,13 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
   productsData,
 }) => {
   const { message: antMessage } = AntApp.useApp();
+
+  const calculateTaxSellingPriceByFactor = (rawTaxSellingPrice: unknown, factor: number) => {
+    const baseTaxPrice = Number(rawTaxSellingPrice || 0);
+    const safeFactor = Number(factor || 1);
+    return String(baseTaxPrice * safeFactor);
+  };
+
   return (
     <>
       {/* Desktop: Table view */}
@@ -167,6 +174,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                     const isCash = watch(`items.${index}.price_type`) === 'cash';
                                     const basePrice = Number(isCash ? product?.price : (product?.credit_price || product?.price)) || 0;
                                     setValue(`items.${index}.unit_price`, basePrice * factor);
+                                    setValue(`items.${index}.tax_selling_price`, calculateTaxSellingPriceByFactor(product?.tax_selling_price, factor));
 
                                     // Cập nhật base_quantity
                                     const qty = Number(watch(`items.${index}.quantity`)) || 0;
@@ -438,6 +446,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 const isCash = watch(`items.${index}.price_type`) === 'cash';
                                 const basePrice = Number(isCash ? product?.price : (product?.credit_price || product?.price)) || 0;
                                 setValue(`items.${index}.unit_price`, basePrice * factor);
+                                setValue(`items.${index}.tax_selling_price`, calculateTaxSellingPriceByFactor(product?.tax_selling_price, factor));
 
                                 setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name);
                                 

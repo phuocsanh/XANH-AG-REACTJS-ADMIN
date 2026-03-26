@@ -250,6 +250,7 @@ const InventoryReceiptCreate: React.FC = () => {
         unit_name: item.product?.unit?.name || '',
         quantity: item.quantity,
         unit_cost: Number(item.unit_cost || item.unitPrice || 0),
+        vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? item.unitPrice ?? 0),
         total_price: Number(item.total_price || 0),
         individual_shipping_cost: Number(item.individual_shipping_cost || 0),
         expiry_date: item.expiry_date,
@@ -410,6 +411,7 @@ const InventoryReceiptCreate: React.FC = () => {
       product_name: "",
       quantity: 1,
       unit_cost: 0,
+      vat_unit_cost: 0,
       total_price: 0,
       individual_shipping_cost: 0,
       discountType: 'fixed_amount',
@@ -521,6 +523,7 @@ const InventoryReceiptCreate: React.FC = () => {
           quantity: item.quantity,
           taxable_quantity: item.taxable_quantity || 0,
           unit_cost: Number(item.unit_cost || 0), // Lưu GIÁ MUA GỐC
+          vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? 0),
           total_price: Number(item.totalPriceRaw || 0), // Lưu THÀNH TIỀN GỐC (SL * Giá mua)
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,

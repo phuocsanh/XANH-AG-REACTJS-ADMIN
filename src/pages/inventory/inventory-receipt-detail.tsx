@@ -297,6 +297,67 @@ const InventoryReceiptDetail: React.FC = () => {
     );
   };
 
+  const VatUnitCostEditor: React.FC<{
+    value?: number;
+    record: InventoryReceiptItem;
+    canEdit: boolean;
+  }> = ({ value, record, canEdit }) => {
+    const [editing, setEditing] = React.useState(false);
+    const [editValue, setEditValue] = React.useState(Number(value || 0));
+    const updateMutation = useUpdateInventoryReceiptItemMutation();
+
+    const handleSave = async () => {
+      try {
+        await updateMutation.mutateAsync({
+          id: record.id,
+          item: { vat_unit_cost: editValue }
+        });
+        setEditing(false);
+        refetchReceipt();
+      } catch (error) {
+        console.error("Error updating vat unit cost:", error);
+      }
+    };
+
+    if (editing && canEdit) {
+      return (
+        <Space.Compact>
+          <InputNumber
+            min={0}
+            value={editValue}
+            onChange={(val: number | null) => setEditValue(val || 0)}
+            onPressEnter={handleSave}
+            autoFocus
+            size="small"
+            style={{ width: 110 }}
+          />
+          <Button
+            type="primary"
+            size="small"
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+          >
+            Lưu
+          </Button>
+        </Space.Compact>
+      );
+    }
+
+    const displayValue = Number(value ?? record.unit_cost ?? 0);
+
+    return (
+      <Tooltip title={canEdit ? "Click để sửa đơn giá VAT" : "Đơn giá trên hóa đơn VAT"}>
+        <Tag
+          color={displayValue > 0 ? "purple" : "default"}
+          onClick={() => canEdit && setEditing(true)}
+          className={canEdit ? "cursor-pointer hover:opacity-80" : ""}
+        >
+          {displayValue.toLocaleString("vi-VN")} ₫
+        </Tag>
+      </Tooltip>
+    );
+  };
+
   // Cấu hình cột sản phẩm
   const itemColumns: ColumnsType<InventoryReceiptItem> = [
     {
@@ -355,6 +416,20 @@ const InventoryReceiptDetail: React.FC = () => {
       width: 120,
       align: "right",
       render: (p) => (p || 0).toLocaleString("vi-VN") + " ₫",
+    },
+    {
+      title: "Đơn giá VAT",
+      dataIndex: "vat_unit_cost",
+      key: "vat_unit_cost",
+      width: 140,
+      align: "right",
+      render: (value, record) => (
+        <VatUnitCostEditor
+          value={value}
+          record={record}
+          canEdit={normalizedStatus === InventoryReceiptStatus.APPROVED}
+        />
+      ),
     },
     {
       title: "Phí Bốc Vác",

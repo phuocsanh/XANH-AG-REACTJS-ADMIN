@@ -129,6 +129,8 @@ const useItemColumns = ({
                             if (selectedOpt.cost_price !== undefined) {
                               const cost = selectedOpt.cost_price
                               setValue(`items.${index}.unit_cost`, cost)
+                              const defaultVatCost = Number(selectedOpt.average_vat_input_cost || selectedOpt.cost_price || 0)
+                              setValue(`items.${index}.vat_unit_cost`, defaultVatCost)
                               
                               // Cập nhật thành tiền
                               setValue(`items.${index}.total_price`, qty * cost)
@@ -309,6 +311,31 @@ const useItemColumns = ({
                   // Cập nhật thành tiền
                   const qty = getValues(`items.${index}.quantity`) || 0
                   setValue(`items.${index}.total_price`, qty * cost)
+                }}
+              />
+            )}
+          />
+        )
+      },
+    },
+    {
+      title: "Đơn giá VAT",
+      dataIndex: "vat_unit_cost",
+      key: "vat_unit_cost",
+      width: 140,
+      align: "right",
+      render: (_: number, __: any, index: number) => {
+        return (
+          <Controller
+            name={`items.${index}.vat_unit_cost`}
+            control={control}
+            render={({ field }) => (
+              <NumberInput
+                {...field}
+                min={0}
+                placeholder='Giá VAT'
+                onChange={(value) => {
+                  field.onChange(value || 0)
                 }}
               />
             )}

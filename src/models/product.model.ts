@@ -69,6 +69,7 @@ export interface Product {
   notes?: string // Ghi chú về sản phẩm
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
+  average_vat_input_cost?: string
   unit_name?: string // Tên đơn vị tính (được map thêm)
   taxable_quantity_stock: number // Số lượng tồn kho có hóa đơn (bể thuế)
   is_sold_on_web: boolean

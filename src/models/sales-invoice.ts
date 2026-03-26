@@ -17,6 +17,10 @@ export interface SalesInvoiceItem {
   quantity: number;
   unit_price: number;
   discount_amount: number;
+  tax_selling_price?: string;
+  sale_unit_id?: number;
+  conversion_factor?: number;
+  base_quantity?: number;
   notes?: string;
   // ✅ Thêm mới: Hỗ trợ tính năng trả hàng
   returned_quantity?: number; // Tổng số lượng đã trả
@@ -80,6 +84,10 @@ export interface CreateSalesInvoiceDto {
     quantity: number;
     unit_price: number;
     discount_amount?: number;
+    tax_selling_price?: string;
+    sale_unit_id?: number;
+    conversion_factor?: number;
+    base_quantity?: number;
     notes?: string;
   }[];
   sale_date?: string;

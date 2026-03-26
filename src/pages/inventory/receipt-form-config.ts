@@ -9,6 +9,7 @@ export const receiptItemSchema = z.object({
   unit_name: z.string().optional(),
   quantity: z.number().min(1, 'Số lượng phải lớn hơn 0'),
   unit_cost: z.number().min(0, 'Đơn giá phải lớn hơn hoặc bằng 0'),
+  vat_unit_cost: z.number().min(0, 'Giá VAT phải lớn hơn hoặc bằng 0').optional(),
   total_price: z.number().min(0),
   expiry_date: z.any().optional(),
   batch_number: z.string().optional(),

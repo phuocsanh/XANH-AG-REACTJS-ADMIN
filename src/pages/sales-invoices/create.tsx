@@ -338,6 +338,10 @@ const CreateSalesInvoice = () => {
           quantity: item.quantity,
           unit_price: item.unit_price,
           discount_amount: item.discount_amount || 0,
+          tax_selling_price: item.tax_selling_price || '0',
+          sale_unit_id: item.sale_unit_id,
+          conversion_factor: Number(item.conversion_factor || 1),
+          base_quantity: Number(item.base_quantity || (Number(item.quantity || 0) * Number(item.conversion_factor || 1))),
           notes: item.notes || '',
           price_type: inferredPriceType as 'cash' | 'credit',
         })).reverse());
@@ -685,7 +689,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
             : Number(product.average_cost_price.replace(/[^0-9]/g, '')))
         : Number(product.average_cost_price || 0),
       stock_quantity: product.quantity || 0,
-      tax_selling_price: product.tax_selling_price || '0',
+      tax_selling_price: String((Number(product.tax_selling_price || 0) || 0) * factor),
       sale_unit_id: saleUnitId,
       conversion_factor: factor,
       base_quantity: factor,
@@ -1692,4 +1696,3 @@ ${productInfo}`;
 };
 
 export default CreateSalesInvoice;
-
