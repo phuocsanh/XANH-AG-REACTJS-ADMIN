@@ -155,49 +155,8 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
             </Space>
           </Divider>
 
-          {/* Nếu có khách và mùa, hiện xem trước tích lũy */}
-          {customerId && seasonId && (
-            <Box mb={2}>
-              {isLoadingReward ? (
-                <Box py={1} textAlign="center">
-                  <Spin size="small" tip="Đang tính tích lũy..." />
-                </Box>
-              ) : rewardPreview?.summary ? (
-                <Box 
-                  sx={{ 
-                    bgcolor: 'orange.50', 
-                    p: 1.5, 
-                    borderRadius: 1, 
-                    border: '1px solid',
-                    borderColor: 'orange.100',
-                    mb: 2
-                  }}
-                >
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography variant="body2" color="text.secondary">Tích lũy tới đơn này:</Typography>
-                    <Typography variant="subtitle2" color="primary.main" fontWeight="bold">
-                      {formatCurrency(rewardPreview.summary.total_after_close || 0)}
-                    </Typography>
-                  </Box>
+          {/* Đã xóa phần xem trước tích lũy theo yêu cầu */}
 
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="body2" color="text.secondary">Trạng thái:</Typography>
-                    <Tag color={rewardPreview.summary.will_receive_reward ? "gold" : "default"} style={{ margin: 0 }}>
-                      {rewardPreview.summary.will_receive_reward 
-                        ? `Đủ nhận ${rewardPreview.summary.reward_count} quà` 
-                        : "Chưa đạt mốc nhận quà"}
-                    </Tag>
-                  </Box>
-                  
-                  {!rewardPreview.summary.will_receive_reward && (
-                    <Typography variant="caption" color="warning.main" sx={{ fontStyle: 'italic', display: 'block', textAlign: 'right', mt: 0.5 }}>
-                      Thiếu {formatCurrency(rewardPreview.summary.shortage_to_next)} để nhận quà
-                    </Typography>
-                  )}
-                </Box>
-              ) : null}
-            </Box>
-          )}
 
           {/* Các trường nhập quà tặng luôn hiển thị */}
           <Grid container spacing={2}>
