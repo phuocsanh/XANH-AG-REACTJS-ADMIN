@@ -433,7 +433,7 @@ const PaymentsList: React.FC = () => {
   return (
     <div className='p-2 md:p-6'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
-        <h1 className='text-2xl font-bold'>Quản lý Thanh toán</h1>
+        <h1 className='text-2xl font-bold'>Lịch sử Thanh toán</h1>
         <div className="flex gap-2 w-full sm:w-auto">
           {Object.keys(filters).length > 0 && (
             <Button 

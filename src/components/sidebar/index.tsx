@@ -515,7 +515,7 @@ const Sidebar: React.FC = () => {
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                         <MdOutlineDashboard className='text-green-200' />
                       </span>
-                      Thanh toán
+                      Lịch sử Thanh toán
                     </Button>
                   </Link>
                 </li>
