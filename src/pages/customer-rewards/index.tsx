@@ -93,10 +93,13 @@ const CustomerRewardsPage: React.FC = () => {
   
   // Lấy customer_id từ form (khi thêm quà tri ân mới) hoặc từ khách được chọn (khi tặng từ tab tích lũy)
   const watchedCustomerId = watch('customer_id')
+  const watchedSeasonId = watch('season_id')
   const effectiveCustomerId = watchedCustomerId || selectedCustomer?.customer_id
   
+  // Load ruộng lúa theo KHÁCH HÀNG và MÙA VỤ (nếu có)
   const { data: riceCropsData } = useRiceCrops({ 
     customer_id: effectiveCustomerId,
+    season_id: watchedSeasonId, // ✅ Lọc theo mùa vụ bổ sung
     limit: 100 
   }, { enabled: !!effectiveCustomerId })
 
