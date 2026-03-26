@@ -88,6 +88,32 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   // Mutation
   const settleAndRolloverMutation = useSettleAndRolloverMutation()
 
+  // Group invoices theo rice_crop_id cho cả hiển thị và form
+  const breakdown = React.useMemo(() => {
+    if (!customerInvoices || customerInvoices.length === 0) return [];
+    
+    const invoicesByRiceCrop = new Map<number | null, any>();
+    customerInvoices.forEach((invoice: any) => {
+      const riceCropId = invoice.rice_crop_id || null;
+      const fieldName = invoice.rice_crop?.field_name || 'Không thuộc Ruộng lúa nào';
+      
+      if (!invoicesByRiceCrop.has(riceCropId)) {
+        invoicesByRiceCrop.set(riceCropId, {
+          rice_crop_id: riceCropId,
+          field_name: fieldName,
+          invoices: [],
+          total_debt: 0,
+        });
+      }
+      
+      const group = invoicesByRiceCrop.get(riceCropId)!;
+      group.invoices.push(invoice);
+      group.total_debt += Number(invoice.remaining_amount || 0);
+    });
+    
+    return Array.from(invoicesByRiceCrop.values());
+  }, [customerInvoices]);
+
   // Effects
   React.useEffect(() => {
     if (open) {
@@ -238,7 +264,8 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         gift_description: values.gift_description,
         gift_value: values.gift_value,
         is_final: values.is_final,
-        manual_remaining_amount: values.manual_remaining_amount, // 🔥 Thêm field số dư chuyển vụ
+        manual_remaining_amount: values.manual_remaining_amount,
+        rice_crop_id: values.rice_crop_id, // ✅ Gửi ID ruộng lúa lên backend
       }
       
       await settleAndRolloverMutation.mutateAsync(submitData, {
@@ -363,36 +390,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
             );
           }
 
-          // Group invoices theo rice_crop_id
-          const invoicesByRiceCrop = new Map<number | null, {
-            rice_crop_id: number | null;
-            field_name: string;
-            invoices: any[];
-            total_debt: number;
-          }>();
-
-          if (customerInvoices && customerInvoices.length > 0) {
-            customerInvoices.forEach((invoice: any) => {
-              const riceCropId = invoice.rice_crop_id || null;
-              const fieldName = invoice.rice_crop?.field_name || 'Không thuộc Ruộng lúa nào';
-              
-              if (!invoicesByRiceCrop.has(riceCropId)) {
-                invoicesByRiceCrop.set(riceCropId, {
-                  rice_crop_id: riceCropId,
-                  field_name: fieldName,
-                  invoices: [],
-                  total_debt: 0,
-                });
-              }
-              
-              const group = invoicesByRiceCrop.get(riceCropId)!;
-              group.invoices.push(invoice);
-              group.total_debt += Number(invoice.remaining_amount || 0);
-            });
-          }
-
-          const breakdown = Array.from(invoicesByRiceCrop.values());
-
+          // Group invoices theo rice_crop_id (Đã xử lý trong useMemo breakdown ở trên)
           return (
             <Card className='mb-4' style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
               <div className='text-gray-600 text-sm font-medium mb-2'>
@@ -413,7 +411,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
                   <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: 12, color: '#52c41a' }}>
                     📊 Chi tiết theo mảnh ruộng:
                   </div>
-                  {breakdown.map((crop, index) => (
+                  {breakdown.map((crop: any, index: number) => (
                     <div 
                       key={crop.rice_crop_id || `no-crop-${index}`}
                       style={{ 
@@ -524,9 +522,23 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         <Divider orientation="left" style={{ margin: '16px 0 12px' }}>
                 <Space>
                   <GiftOutlined style={{ color: '#faad14' }} />
-                  <span style={{ fontWeight: 600, fontSize: '15px' }}>Quà tặng tri ân (Không trừ tích lũy)</span>
+                  <span style={{ fontWeight: 600, fontSize: '15px' }}>Thông tin Quà tặng</span>
                 </Space>
         </Divider>
+
+        <Form.Item 
+          label="Ruộng lúa liên quan (để lưu lịch sử quà tặng)" 
+          name="rice_crop_id"
+          help="Nếu tặng quà, hãy chọn ruộng lúa tương ứng để dễ dàng quản lý"
+        >
+          <Select placeholder="Chọn ruộng lúa" allowClear>
+            {breakdown.map(crop => (
+              <Select.Option key={crop.rice_crop_id} value={crop.rice_crop_id}>
+                {crop.field_name} (Nợ: {formatCurrency(crop.total_debt)})
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <Form.Item label="Mô tả quà tri ân" name="gift_description" className="mb-2">

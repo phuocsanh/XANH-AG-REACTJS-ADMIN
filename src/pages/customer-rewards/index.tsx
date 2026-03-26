@@ -322,7 +322,7 @@ const CustomerRewardsPage: React.FC = () => {
         title: "Ruộng lúa",
         key: "rice_crop",
         width: 150,
-        render: (record: any) => record.contribution_details?.rice_crop_name ? <Tag color="green">{record.contribution_details.rice_crop_name}</Tag> : '-'
+        render: (record: any) => record.rice_crop_name ? <Tag color="green">{record.rice_crop_name}</Tag> : '-'
     },
     {
       title: "Trạng thái",
