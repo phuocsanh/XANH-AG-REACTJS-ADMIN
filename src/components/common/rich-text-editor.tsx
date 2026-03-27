@@ -283,27 +283,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
              {isUploading ? <LoadingOutlined /> : <PictureOutlined />}
            </button>
 
-           {/* Fallback cho Toolbar khi chọn ảnh */}
-           {editor.isActive('image') && !disabled && (
-             <div style={{ 
-                display: 'flex', 
-                gap: '4px', 
-                marginLeft: 'auto', 
-                backgroundColor: '#fffbe6', 
-                padding: '2px 8px', 
-                borderRadius: '6px', 
-                border: '1px solid #ffe58f',
-                boxShadow: '0 0 5px rgba(255, 229, 143, 0.5)'
-             }}>
-               <span style={{ fontSize: '11px', alignSelf: 'center', marginRight: 4, color: '#874d00', fontWeight: 'bold' }}>CÔNG CỤ ẢNH:</span>
-               <button type="button" onClick={() => updateImageWidth('25%')} style={toolbarButtonStyle}>25%</button>
-               <button type="button" onClick={() => updateImageWidth('50%')} style={toolbarButtonStyle}>50%</button>
-               <button type="button" onClick={() => updateImageWidth('75%')} style={toolbarButtonStyle}>75%</button>
-               <button type="button" onClick={() => updateImageWidth('100%')} style={toolbarButtonStyle}>100%</button>
-               <div style={{ width: '1px', height: '100%', backgroundColor: '#ffe58f', margin: '0 2px' }} />
-               <button type="button" onClick={deleteImage} style={{ ...toolbarButtonStyle, backgroundColor: '#ff4d4f', color: '#fff', borderColor: '#ff4d4f' }} title="Xóa ảnh">Xóa</button>
-             </div>
-           )}
+           {/* Đã chuyển công cụ ảnh trực tiếp vào NodeView của ảnh */}
         </div>
       )}
 
