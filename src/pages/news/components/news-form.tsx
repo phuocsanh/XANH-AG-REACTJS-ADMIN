@@ -175,13 +175,14 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
             <div className="flex-grow lg:w-2/3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-3">
-                  <FormField name="title" control={control} label="Tiêu đề bài viết" required />
+                  <FormField name="title" control={control} label="Tiêu đề bài viết" required size="large" />
                 </div>
                 <FormField 
                   name="category" 
                   control={control} 
                   label="Danh mục" 
                   type="select"
+                  size="large"
                   options={[
                     { label: 'Kỹ thuật canh tác', value: 'Kỹ thuật canh tác' },
                     { label: 'Bảo vệ thực vật', value: 'Bảo vệ thực vật' },
@@ -190,12 +191,13 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                     { label: 'Tin tức & Sự kiện', value: 'Tin tức & Sự kiện' },
                   ]}
                 />
-                <FormField name="author" control={control} label="Tác giả" />
+                <FormField name="author" control={control} label="Tác giả" size="large" />
                 <FormField 
                   name="status" 
                   control={control} 
                   label="Trạng thái" 
                   type="select"
+                  size="large"
                   options={[
                     { label: 'Hoạt động', value: 'active' },
                     { label: 'Tạm dừng', value: 'inactive' }
@@ -231,12 +233,14 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                   label="Sản phẩm liên quan"
                   placeholder="Chọn sản phẩm liên quan đến bài viết"
                   mode="multiple"
+                  size="large"
                   data={combinedProductOptions}
                   isLoading={isProductLoading}
                   hasNextPage={hasNextPage}
                   isFetchingNextPage={isFetchingNextPage}
                   fetchNextPage={fetchNextPage}
                   onSearch={setSearchTerm}
+                  onSelectionChange={() => setSearchTerm('')}
                 />
               </div>
 
@@ -329,7 +333,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
           </div>
 
           <div className="mt-6 flex justify-end gap-2 border-t pt-4">
-            <Button onClick={onCancel}>Hủy</Button>
+            <Button onClick={onCancel} size="large">Hủy</Button>
             <Button type="primary" htmlType="submit" loading={createMutation.isPending || updateMutation.isPending} size="large" className="px-8 font-bold">
               {initialData ? "Cập nhật bài viết" : "Lưu bài viết"}
             </Button>

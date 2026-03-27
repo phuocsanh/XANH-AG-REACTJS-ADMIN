@@ -282,6 +282,7 @@ function FormComboBox<T extends FieldValues>({
               }}
               onBlur={onBlur}
               onSearch={handleSearch}
+              autoClearSearchValue={true}
               onPopupScroll={isAsyncMode ? handlePopupScroll : undefined}
               placeholder={placeholder}
               allowClear={allowClear}
