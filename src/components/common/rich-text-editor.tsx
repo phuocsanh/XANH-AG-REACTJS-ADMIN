@@ -1,12 +1,13 @@
 import React, { useRef, useEffect } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import { NodeSelection } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { uploadService, UPLOAD_TYPES } from '@/services/upload.service';
-import { PictureOutlined, LoadingOutlined } from '@ant-design/icons';
-import { Spin, Modal, Radio, Space } from 'antd';
+import { PictureOutlined, LoadingOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Spin, Modal, Radio, Space, Button, Tooltip, Divider } from 'antd';
 
 interface RichTextEditorProps {
   content: string;
@@ -70,6 +71,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editable: !disabled,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+    },
+    editorProps: {
+      handleClickOn: (view, pos, node) => {
+        if (node.type.name === 'image') {
+          const selection = NodeSelection.create(view.state.doc, pos);
+          view.dispatch(view.state.tr.setSelection(selection));
+          return true;
+        }
+        return false;
+      },
     },
   });
 
@@ -230,6 +241,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             border-radius: 8px;
             margin: 12px 0;
             display: block;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror img.ProseMirror-selectednode {
+            outline: 3px solid #1890ff;
+            box-shadow: 0 0 10px rgba(24, 144, 255, 0.5);
           }
           .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror ul, 
           .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror ol {
@@ -385,7 +402,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {isUploading ? <LoadingOutlined /> : <PictureOutlined style={{ fontSize: '16px' }} />}
           </button>
 
-          {/* Công cụ cho ẢNH KHI ĐƯỢC CHỌN (Resizing & Deleting) */}
+          {/* Công cụ cho ẢNH KHI ĐƯỢC CHỌN (Resizing & Deleting) ở Toolbar */}
           {editor.isActive('image') && !disabled && (
             <>
               <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
@@ -395,7 +412,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   type="button"
                   onClick={() => updateImageWidth('25%')}
                   style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
-                  title="Đặt kích thước Nhỏ (25%)"
                 >
                   25%
                 </button>
@@ -403,7 +419,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   type="button"
                   onClick={() => updateImageWidth('50%')}
                   style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
-                  title="Đặt kích thước Vừa (50%)"
                 >
                   50%
                 </button>
@@ -411,7 +426,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   type="button"
                   onClick={() => updateImageWidth('75%')}
                   style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
-                  title="Đặt kích thước Lớn (75%)"
                 >
                   75%
                 </button>
@@ -419,7 +433,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   type="button"
                   onClick={() => updateImageWidth('100%')}
                   style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
-                  title="Đặt kích thước Đầy đủ (100%)"
                 >
                   100%
                 </button>
@@ -427,7 +440,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   type="button"
                   onClick={deleteImage}
                   style={{ ...toolbarButtonStyle, backgroundColor: '#fff1f0', color: '#f5222d', borderColor: '#ffa39e', height: '26px', minWidth: '40px' }}
-                  title="Xóa ảnh này"
                 >
                   Xóa
                 </button>
@@ -437,7 +449,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </div>
       )}
 
-      {/* Modal chọn kích thước ảnh */}
+      {/* Modal chọn kích thước ảnh (khi upload mới) */}
       <Modal
         title="Tùy chỉnh kích thước ảnh"
         open={showSizeModal}
@@ -495,6 +507,39 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           }}>
             <Spin tip="Đang tải ảnh lên..." />
           </div>
+        )}
+
+        {/* BUBBLE MENU CHO ẢNH - Hiện ngay trên tấm ảnh khi được chọn */}
+        {editor && (
+          <BubbleMenu 
+            editor={editor} 
+            shouldShow={({ editor }) => editor.isActive('image')}
+            tippyOptions={{ duration: 100, placement: 'top', offset: [0, 10] }}
+          >
+            <div className="bg-white p-1 rounded-lg shadow-xl border border-blue-200 flex items-center gap-1">
+              <Tooltip title="25%">
+                <Button size="small" onClick={() => updateImageWidth('25%')}>25%</Button>
+              </Tooltip>
+              <Tooltip title="50%">
+                <Button size="small" onClick={() => updateImageWidth('50%')}>50%</Button>
+              </Tooltip>
+              <Tooltip title="75%">
+                <Button size="small" onClick={() => updateImageWidth('75%')}>75%</Button>
+              </Tooltip>
+              <Tooltip title="100%">
+                <Button size="small" onClick={() => updateImageWidth('100%')}>100%</Button>
+              </Tooltip>
+              <Divider type="vertical" />
+              <Tooltip title="Xóa ảnh">
+                <Button 
+                  size="small" 
+                  danger 
+                  icon={<DeleteOutlined />} 
+                  onClick={deleteImage}
+                />
+              </Tooltip>
+            </div>
+          </BubbleMenu>
         )}
         
         <EditorContent 
