@@ -594,6 +594,112 @@ TRẢ VỀ KẾT QUẢ DƯỚI DẠNG JSON (KHÔNG THÊM MARKDOWN, KHÔNG THÊM 
       }
     }
   }
+  /**
+   * Gọi API Google AI để tối ưu nội dung bài viết chuẩn SEO
+   * @param content Nội dung HTML hiện tại
+   * @returns Promise với nội dung đã được tối ưu
+   */
+  async optimizeSeoContent(content: string): Promise<AiResponse> {
+    if (!content || content.trim().length === 0) {
+      return {
+        success: false,
+        error: "Vui lòng cung cấp nội dung để tối ưu.",
+      }
+    }
+
+    try {
+      // Đảm bảo rate limit
+      await this.ensureRateLimit()
+
+      const prompt = `
+        Bạn là một chuyên gia tối ưu nội dung SEO (Search Engine Optimization) cho website nông nghiệp Xanh AG.
+        Nhiệm vụ của bạn là chỉnh sửa nội dung bài viết dưới đây để chuẩn SEO và thu hút người đọc hơn.
+
+        YÊU CẦU:
+        1. Độ rõ ràng: Chia các đoạn văn dài thành các đoạn ngắn (tối đa 3-4 câu một đoạn).
+        2. Cấu trúc bài viết: Sử dụng thẻ Heading (H2, H3) hợp lý để phân chia các phần rõ ràng.
+        3. Chuyên nghiệp & Thân thiện: Giọng văn phải chuyên nghiệp nhưng gần gũi với bà con nông dân, dễ hiểu, tránh các từ ngữ quá học thuật mà không giải thích.
+        4. SEO: Tối ưu các từ khóa tự nhiên, viết tiêu đề các phần nổi bật.
+        5. Danh sách: Sử dụng gạch đầu dòng (bullet points) hoặc số (numbered lists) để liệt kê các bước/ý tưởng.
+        6. HÀNH ĐỘNG QUAN TRỌNG: 
+           - KHÔNG ĐƯỢC THAY ĐỔI HOẶC XÓA các thẻ <img> (ảnh). Giữ nguyên vị trí của chúng.
+           - Trả về CHỈ nội dung HTML đã chỉnh sửa. KHÔNG kèm bất kỳ lời giải thích nào khác ở đầu hoặc cuối.
+
+        NỘI DUNG CẦN TỐI ƯU:
+        ${content}
+      `.trim()
+
+      const apiKey = this.getApiKey1()
+
+      const response = await fetch(
+        getGeminiApiUrl(apiKey),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          error:
+            errorData.error?.message ||
+            `Lỗi khi gọi API AI. Status: ${response.status}`,
+        }
+      }
+
+      const data = await response.json()
+
+      if (
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0]
+      ) {
+        let answer = data.candidates[0].content.parts[0].text || ""
+        
+        // Làm sạch code block nếu AI lỡ thêm vào
+        if (answer.startsWith('```html')) {
+          answer = answer.replace(/^```html/, '').replace(/```$/, '').trim();
+        } else if (answer.startsWith('```')) {
+          answer = answer.replace(/^```/, '').replace(/```$/, '').trim();
+        }
+
+        return {
+          success: true,
+          answer: answer,
+        }
+      }
+
+      return {
+        success: false,
+        error: "Không tìm thấy câu trả lời trong phản hồi từ AI.",
+      }
+    } catch (error) {
+      console.error("Error calling Gemini SEO API:", error)
+      return {
+        success: false,
+        error:
+          (error as Error).message || "Lỗi khi gọi API AI để tối ưu SEO.",
+      }
+    }
+  }
 }
 
 // Export instance singleton

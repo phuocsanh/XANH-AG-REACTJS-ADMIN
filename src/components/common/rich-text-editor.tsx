@@ -6,8 +6,9 @@ import Underline from '@tiptap/extension-underline';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { uploadService, UPLOAD_TYPES } from '@/services/upload.service';
-import { PictureOutlined, LoadingOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Spin, Modal, Radio, Space, Button, Tooltip } from 'antd';
+import { PictureOutlined, LoadingOutlined, DeleteOutlined, RobotOutlined } from '@ant-design/icons';
+import { Spin, Modal, Radio, Space, Button, Tooltip, message } from 'antd';
+import { frontendAiService } from '@/services/ai.service';
 
 interface RichTextEditorProps {
   content: string;
@@ -91,6 +92,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [pendingImageUrl, setPendingImageUrl] = React.useState<string | null>(null);
   const [selectedWidth, setSelectedWidth] = React.useState('100%');
   const [showSizeModal, setShowSizeModal] = React.useState(false);
+  const [isAiProcessing, setIsAiProcessing] = React.useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -228,9 +230,39 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editor.chain().focus().updateAttributes('image', { width }).run();
   };
 
-  const deleteImage = () => {
-    if (!editor) return;
-    editor.chain().focus().deleteSelection().run(); // Sử dụng deleteSelection để xóa node đang chọn
+  const handleAiSeoOptimize = async () => {
+    if (!editor || isAiProcessing) return;
+
+    const currentContent = editor.getHTML();
+    if (!currentContent || currentContent === '<p></p>') {
+      message.warning('Vui lòng nhập nội dung trước khi tối ưu SEO.');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Tối ưu nội dung chuẩn SEO bằng AI',
+      content: 'Hệ thống AI sẽ sắp xếp lại bố cục, cải thiện câu văn và tối ưu từ khóa SEO cho bài viết. Bạn có muốn tiếp tục?',
+      okText: 'Đồng ý tối ưu',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          setIsAiProcessing(true);
+          const response = await frontendAiService.optimizeSeoContent(currentContent);
+          
+          if (response.success && response.answer) {
+            editor.commands.setContent(response.answer);
+            message.success('Đã tối ưu SEO thành công!');
+          } else {
+            message.error(response.error || 'Lỗi khi tối ưu nội dung bài viết.');
+          }
+        } catch (error) {
+          console.error('Lỗi AI SEO:', error);
+          message.error('Không thể kết nối với AI vào lúc này.');
+        } finally {
+          setIsAiProcessing(false);
+        }
+      }
+    });
   };
 
   return (
@@ -279,9 +311,30 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
            <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
 
-           <button type="button" onClick={() => !disabled && fileInputRef.current?.click()} style={toolbarButtonStyle} title="Chèn ảnh">
+            <button type="button" onClick={() => !disabled && fileInputRef.current?.click()} style={toolbarButtonStyle} title="Chèn ảnh">
              {isUploading ? <LoadingOutlined /> : <PictureOutlined />}
-           </button>
+            </button>
+
+            <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
+
+            <button 
+              type="button" 
+              onClick={handleAiSeoOptimize} 
+              disabled={disabled || isAiProcessing}
+              style={{ 
+                ...toolbarButtonStyle, 
+                backgroundColor: '#f0f5ff', 
+                color: '#1890ff', 
+                borderColor: '#adc6ff',
+                width: 'auto',
+                padding: '0 12px',
+                gap: '6px'
+              }} 
+              title="Tối ưu chuẩn SEO bằng AI"
+            >
+              {isAiProcessing ? <LoadingOutlined /> : <RobotOutlined />}
+              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>AI SEO</span>
+            </button>
 
            {/* Đã chuyển công cụ ảnh trực tiếp vào NodeView của ảnh */}
         </div>
