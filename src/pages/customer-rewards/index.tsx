@@ -108,7 +108,7 @@ const CustomerRewardsPage: React.FC = () => {
   const updateRewardMutation = useUpdateRewardHistoryMutation()
   const deleteRewardMutation = useDeleteRewardHistoryMutation()
 
-  const threshold = trackingData?.reward_threshold || 60000000 // Fallback 60 Triệu
+  const threshold = trackingData?.reward_threshold || 70000000 // Fallback 70 Triệu
 
   // Format currency
   const formatCurrency = (value: number) => {
@@ -178,34 +178,35 @@ const CustomerRewardsPage: React.FC = () => {
         await updateRewardMutation.mutateAsync({
             id: editingHistoryId,
             data: {
+                customer_id: Number(values.customer_id),
                 gift_description: values.gift_description,
                 gift_value: values.gift_value,
                 notes: values.notes,
                 gift_status: values.gift_status,
-                season_id: values.season_id,
-                rice_crop_id: values.rice_crop_id,
+                season_id: values.season_id ? Number(values.season_id) : undefined,
+                rice_crop_id: values.rice_crop_id ? Number(values.rice_crop_id) : undefined,
             }
         })
     } else if (isAddingAppreciationGift) {
         // Thêm quà tri ân mới từ tab Tri ân
         await createRewardMutation.mutateAsync({
-            customer_id: values.customer_id,
+            customer_id: Number(values.customer_id),
             gift_description: values.gift_description,
             gift_value: values.gift_value,
             notes: values.notes,
-            season_id: values.season_id,
-            rice_crop_id: values.rice_crop_id,
+            season_id: values.season_id ? Number(values.season_id) : undefined,
+            rice_crop_id: values.rice_crop_id ? Number(values.rice_crop_id) : undefined,
             reward_type: 'APPRECIATION_GIFT', // ✅ Mặc định là Quà tri ân, không trừ tích lũy
         })
     } else {
         // Thêm quà tích lũy từ tab Tích lũy
         await createRewardMutation.mutateAsync({
-            customer_id: selectedCustomer.customer_id,
+            customer_id: Number(selectedCustomer.customer_id),
             gift_description: values.gift_description,
             gift_value: values.gift_value,
             notes: values.notes,
-            season_id: values.season_id,
-            rice_crop_id: values.rice_crop_id,
+            season_id: values.season_id ? Number(values.season_id) : undefined,
+            rice_crop_id: values.rice_crop_id ? Number(values.rice_crop_id) : undefined,
             reward_type: 'ACCUMULATION_REWARD',
         })
     }
