@@ -8,8 +8,11 @@ import { useCreateNewsMutation, useUpdateNewsMutation, News } from '@/queries/ne
 import { useProductSearch, useProductsByIdsQuery } from '@/queries/product'
 import RichTextEditor from '@/components/common/rich-text-editor'
 import { UPLOAD_TYPES } from '@/services/upload.service'
-import { PushpinOutlined } from '@ant-design/icons'
+import { PushpinOutlined, RobotOutlined } from '@ant-design/icons'
 import SEOChecker from './seo-checker'
+import { frontendAiService } from '@/services/ai.service'
+import { message } from 'antd'
+import { Input } from 'antd'
 
 interface NewsFormProps {
   visible: boolean
@@ -32,6 +35,9 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
 
   const createMutation = useCreateNewsMutation()
   const updateMutation = useUpdateNewsMutation()
+
+  // AI Tags
+  const [isGeneratingTags, setIsGeneratingTags] = React.useState(false)
 
   // Search sản phẩm
   const [searchTerm, setSearchTerm] = React.useState('')
@@ -108,6 +114,37 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
       await createMutation.mutateAsync(payload)
     }
     onCancel()
+  }
+
+  const handleGenerateTags = async () => {
+    const title = watch('title')
+    const content = watch('content')
+    
+    if (!content || content === '<p></p>') {
+      message.warning('Vui lòng nhập nội dung bài viết trước khi tạo tag.')
+      return
+    }
+
+    try {
+      setIsGeneratingTags(true)
+      const response = await frontendAiService.generateSeoTags(title, content)
+      if (response.success && response.answer) {
+        // Lấy tags hiện tại để tránh ghi đè hoàn toàn nếu user đã nhập
+        const currentTags = watch('tags') || []
+        const aiTags = response.answer.split(',').map(t => t.trim()).filter(Boolean)
+        
+        // Trộn và loại bỏ trùng lặp
+        const uniqueTags = Array.from(new Set([...currentTags, ...aiTags]))
+        setValue('tags', uniqueTags)
+        message.success('Đã gợi ý thêm tag chuẩn SEO!')
+      } else {
+        message.error(response.error || 'Lỗi khi tạo tag.')
+      }
+    } catch (error) {
+       message.error('Không thể kết nối với AI vào lúc này.')
+    } finally {
+      setIsGeneratingTags(false)
+    }
   }
 
   return (
@@ -250,18 +287,42 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                  tags={watch('tags')}
                />
                
-               <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                 <FormComboBox
-                   name="tags"
-                   control={control}
-                   label="Từ khóa (Tags)"
-                   placeholder="Nhập tag và nhấn Enter"
-                   mode="tags"
-                   options={[]} // Static tags if any, or empty for free input
-                   allowClear
+               <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                 <div className="flex justify-between items-center mb-2">
+                    <span className="font-bold text-gray-700">Từ khóa (Tags)</span>
+                    <Button 
+                        type="link" 
+                        size="small" 
+                        icon={<RobotOutlined />} 
+                        onClick={handleGenerateTags}
+                        loading={isGeneratingTags}
+                        className="text-blue-600 font-medium"
+                    >
+                        Gợi ý bằng AI
+                    </Button>
+                 </div>
+                 
+                 <Controller
+                    name="tags"
+                    control={control}
+                    render={({ field }) => (
+                        <Input.TextArea
+                            placeholder="Nhập các tag, phân cách bằng dấu phẩy..."
+                            rows={4}
+                            className="rounded-lg text-sm border-gray-200 focus:border-blue-300"
+                            value={field.value?.join(', ')}
+                            onChange={(e) => {
+                                const val = e.target.value
+                                // Chuyển đổi chuỗi comma-separated về mảng cho schema
+                                field.onChange(val.split(',').map(t => t.trim()).filter(Boolean))
+                            }}
+                        />
+                    )}
                  />
-                 <div className="text-[11px] text-gray-400 mt-1 italic">
-                   Gợi ý: Nhập từ khóa liên quan giúp bài viết dễ tìm thấy hơn trên Google.
+
+                 <div className="text-[11px] text-gray-400 mt-2 italic flex items-start gap-1">
+                    <span>💡</span>
+                    <span>Gợi ý: Dùng dấu phẩy (,) để phân cách các từ khóa. AI sẽ dựa vào bài viết để đề xuất tag chuẩn SEO nhất.</span>
                  </div>
                </div>
             </div>

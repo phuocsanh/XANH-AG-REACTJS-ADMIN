@@ -700,6 +700,78 @@ TRẢ VỀ KẾT QUẢ DƯỚI DẠNG JSON (KHÔNG THÊM MARKDOWN, KHÔNG THÊM 
       }
     }
   }
+
+  /**
+   * Gọi API Google AI để tạo danh sách từ khóa SEO (tags) dựa trên nội dung
+   * @param title Tiêu đề bài viết
+   * @param content Nội dung bài viết
+   * @returns Promise với mảng các từ khóa
+   */
+  async generateSeoTags(title: string, content: string): Promise<AiResponse> {
+    if (!content || content.trim().length === 0) {
+      return {
+        success: false,
+        error: "Vui lòng cung cấp nội dung để tạo tag.",
+      }
+    }
+
+    try {
+      await this.ensureRateLimit()
+
+      const prompt = `
+        Dựa trên tiêu đề và nội dung bài viết dưới đây, hãy đề xuất 5-10 từ khóa SEO (tags) phù hợp nhất.
+        Các từ khóa này phải liên quan chặt chẽ đến nông nghiệp, kỹ thuật canh tác, hoặc sản phẩm được nhắc đến.
+
+        TIÊU ĐỀ: ${title}
+        NỘI DUNG: ${content.substring(0, 3000)} (rút gọn nếu quá dài)
+
+        YÊU CẦU:
+        - Chỉ trả về danh sách các từ khóa, phân cách bằng dấu phẩy.
+        - Không thêm bất kỳ lời dẫn hay đánh số nào.
+        - Mỗi từ khóa nên từ 2-4 từ, ví dụ: "kỹ thuật trồng lúa", "phân bón cây ăn trái".
+
+        VÍ DỤ TRẢ VỀ:
+        kỹ thuật trồng lúa, bón phân đón đồng, sâu bệnh hại lúa, nông nghiệp xanh
+      `.trim()
+
+      const apiKey = this.getApiKey1()
+
+      const response = await fetch(
+        getGeminiApiUrl(apiKey),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          success: false,
+          error: errorData.error?.message || `Lỗi API: ${response.status}`,
+        }
+      }
+
+      const data = await response.json()
+      const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+      
+      return {
+        success: true,
+        answer: answer.trim(),
+      }
+    } catch (error) {
+      console.error("Error generating SEO tags:", error)
+      return {
+        success: false,
+        error: (error as Error).message || "Lỗi khi tạo từ khóa SEO.",
+      }
+    }
+  }
 }
 
 // Export instance singleton
