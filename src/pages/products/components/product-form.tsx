@@ -398,6 +398,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           description: productItem.description || "", // Mô tả
           profit_margin_percent: String(productItem.profit_margin_percent || ""), // Chuyển sang string
           average_cost_price: String(productItem.average_cost_price || ""), // Chuyển sang string
+          average_vat_input_cost: String(productItem.average_vat_input_cost || ""), // Giá nhập TB VAT
           ingredient: Array.isArray(productItem.ingredient)
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
@@ -630,6 +631,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         sub_types: values.sub_types || [],
         profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
         average_cost_price: values.average_cost_price || "", // Thêm trường mới
+        average_vat_input_cost: values.average_vat_input_cost || "", // Giá nhập trung bình VAT
         has_input_invoice: values.has_input_invoice,
         is_sold_on_web: values.is_sold_on_web,
         show_price_on_web: values.show_price_on_web,
@@ -662,6 +664,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         discount: convertedValues.discount || "0",
         discounted_price: "0",
         average_cost_price: convertedValues.average_cost_price || "0",
+        average_vat_input_cost: convertedValues.average_vat_input_cost || "0",
         profit_margin_percent: convertedValues.profit_margin_percent || "0",
         suggested_price: "0",
         status: convertedValues.status,
@@ -1194,6 +1197,18 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
+                <div className='w-full'>
+                  <FormFieldNumber
+                    name='average_vat_input_cost'
+                    control={control}
+                    label='Giá nhập TB VAT (VNĐ)'
+                    placeholder='Tự động tính từ phiếu nhập đã duyệt'
+                    className='w-full'
+                    outputType="string"
+                    disabled
+                  />
+                </div>
+
                 {/* Thêm trường symbol */}
                 <div className='w-full'>
                   <FormComboBox
@@ -1472,4 +1487,3 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 }
 
 export default ProductForm
-
