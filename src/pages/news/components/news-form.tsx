@@ -51,25 +51,54 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
 
   const productOptionsFromSearch = productSearchData?.pages.flatMap(page => page.data) || []
 
-  // Lấy dữ liệu tên sản phẩm cho các ID đang được chọn để hiển thị Label thay vì ID
-  const currentProductIds = watch('related_product_ids') || []
-  const { data: currentProductsData } = useProductsByIdsQuery(currentProductIds)
-  
-  // Gộp thông tin sản phẩm từ search và sản phẩm đang chọn để hiển thị Label đúng
-  const combinedProductOptions = React.useMemo(() => {
-    // Map current products sang format label/value
-    const selectedOptions = (currentProductsData || []).map(p => ({
-      ...p,
-      value: p.id,
-      label: p.trade_name?.trim() || p.name?.trim() || `Sản phẩm ${p.id}`
-    }))
+  // Cache các labels sản phẩm đã chọn để tránh bị hiển thị ID khi search term thay đổi
+  const [selectedOptionsCache, setSelectedOptionsCache] = React.useState<any[]>([])
 
-    // Merge và loại bỏ trùng lặp (ưu tiên thông tin từ selectedOptions vì nó đầy đủ hơn từ search kết quả rút gọn)
-    const merged = [...selectedOptions, ...productOptionsFromSearch]
-    const uniqueMap = new Map()
-    merged.forEach(opt => uniqueMap.set(opt.value, opt))
-    return Array.from(uniqueMap.values())
-  }, [currentProductsData, productOptionsFromSearch])
+  // Cập nhật cache từ dữ liệu ban đầu
+  const initialProductIds = React.useMemo(() => initialData?.related_product_ids || [], [initialData])
+  const { data: initialProductsData } = useProductsByIdsQuery(initialProductIds)
+
+  useEffect(() => {
+    if (initialProductsData) {
+      setSelectedOptionsCache(prev => {
+        const next = [...prev]
+        initialProductsData.forEach(p => {
+          if (!next.find(o => o.value === p.id)) {
+            next.push({
+              value: p.id,
+              label: p.trade_name?.trim() || p.name?.trim() || `Sản phẩm ${p.id}`
+            })
+          }
+        })
+        return next
+      })
+    }
+  }, [initialProductsData])
+
+  // Gộp thông tin sản phẩm từ search và cache để hiển thị Label chính xác
+  const combinedProductOptions = React.useMemo(() => {
+    const mergedMap = new Map()
+    // Thứ tự quan trọng: đồ trong search có thể mới hơn, đồ trong cache đảm bảo luôn có label cho đồ đã chọn
+    selectedOptionsCache.forEach(opt => mergedMap.set(opt.value, opt))
+    productOptionsFromSearch.forEach(opt => mergedMap.set(opt.value, opt))
+    return Array.from(mergedMap.values())
+  }, [selectedOptionsCache, productOptionsFromSearch])
+
+  const handleProductSelection = (_: any, options: any) => {
+    setSearchTerm('')
+    // Lưu label của những cái vừa chọn vào cache
+    if (Array.isArray(options)) {
+      setSelectedOptionsCache(prev => {
+        const next = [...prev]
+        options.forEach(opt => {
+          if (opt && opt.value && !next.find(o => o.value === opt.value)) {
+            next.push(opt)
+          }
+        })
+        return next
+      })
+    }
+  }
 
   useEffect(() => {
     if (visible) {
@@ -240,7 +269,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
                   isFetchingNextPage={isFetchingNextPage}
                   fetchNextPage={fetchNextPage}
                   onSearch={setSearchTerm}
-                  onSelectionChange={() => setSearchTerm('')}
+                  onSelectionChange={handleProductSelection}
                 />
               </div>
 
