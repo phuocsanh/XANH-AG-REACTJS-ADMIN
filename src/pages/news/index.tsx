@@ -24,6 +24,7 @@ const NewsPage: React.FC = () => {
 
   const { data: newsResponse, isLoading } = useNewsQuery(params)
   const deleteMutation = useDeleteNewsMutation()
+  const [modal, contextHolder] = Modal.useModal()
 
   const responseData = newsResponse as NewsSearchResponse | undefined
   const newsList = (responseData?.items || []) as unknown as Record<string, unknown>[]
@@ -79,12 +80,19 @@ const NewsPage: React.FC = () => {
 
   /** Xử lý xóa bài viết, nhận record từ DataTable */
   const handleDelete = (record: Record<string, unknown>) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Xác nhận xóa',
       content: 'Bạn có chắc chắn muốn xóa bài viết này?',
       okText: 'Xóa',
       cancelText: 'Hủy',
-      onOk: () => deleteMutation.mutate(record.id as number)
+      onOk: async () => {
+        try {
+          await deleteMutation.mutateAsync(record.id as number)
+        } catch (error) {
+          console.error('Lỗi khi xóa bài viết:', error)
+          // Các lỗi khác đã được mutation tự xử lý (message)
+        }
+      }
     })
   }
 
@@ -129,7 +137,6 @@ const NewsPage: React.FC = () => {
           rowKey="id"
           showSTT={true}
           onEdit={handleEdit}
-          onView={handleEdit}
           onDelete={handleDelete}
           // Nút xem bài viết trên website
           actionButtons={[
@@ -166,6 +173,7 @@ const NewsPage: React.FC = () => {
         onCancel={() => setIsModalOpen(false)}
         initialData={editingNews}
       />
+      {contextHolder}
     </div>
   )
 }
