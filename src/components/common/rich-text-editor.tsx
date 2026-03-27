@@ -167,6 +167,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
+  const updateImageWidth = (width: string) => {
+    if (!editor) return;
+    editor.chain().focus().updateAttributes('image', { width }).run();
+  };
+
+  const deleteImage = () => {
+    if (!editor) return;
+    // Xóa node ảnh đang được chọn
+    editor.chain().focus().deleteNode('image').run();
+  };
+
   return (
     <div 
       className="rich-text-editor-wrapper"
@@ -373,6 +384,56 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           >
             {isUploading ? <LoadingOutlined /> : <PictureOutlined style={{ fontSize: '16px' }} />}
           </button>
+
+          {/* Công cụ cho ẢNH KHI ĐƯỢC CHỌN (Resizing & Deleting) */}
+          {editor.isActive('image') && !disabled && (
+            <>
+              <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
+              
+              <div style={{ display: 'flex', gap: '2px', backgroundColor: '#e6f7ff', padding: '2px', borderRadius: '4px', border: '1px solid #91d5ff' }}>
+                <button
+                  type="button"
+                  onClick={() => updateImageWidth('25%')}
+                  style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
+                  title="Đặt kích thước Nhỏ (25%)"
+                >
+                  25%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateImageWidth('50%')}
+                  style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
+                  title="Đặt kích thước Vừa (50%)"
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateImageWidth('75%')}
+                  style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
+                  title="Đặt kích thước Lớn (75%)"
+                >
+                  75%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateImageWidth('100%')}
+                  style={{ ...toolbarButtonStyle, fontSize: '10px', height: '26px', minWidth: '40px' }}
+                  title="Đặt kích thước Đầy đủ (100%)"
+                >
+                  100%
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteImage}
+                  style={{ ...toolbarButtonStyle, backgroundColor: '#fff1f0', color: '#f5222d', borderColor: '#ffa39e', height: '26px', minWidth: '40px' }}
+                  title="Xóa ảnh này"
+                >
+                  Xóa
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
