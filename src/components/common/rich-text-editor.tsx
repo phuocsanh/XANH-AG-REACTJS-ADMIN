@@ -231,10 +231,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const handleAiSeoOptimize = async () => {
-    if (!editor || isAiProcessing) return;
+    console.log('Top level handleAiSeoOptimize called');
+    if (!editor || isAiProcessing) {
+        console.log('Editor not ready or AI processing already', { editor: !!editor, isAiProcessing });
+        return;
+    }
 
     const currentContent = editor.getHTML();
-    if (!currentContent || currentContent === '<p></p>') {
+    console.log('Current content length:', currentContent?.length);
+    
+    if (!currentContent || currentContent === '<p></p>' || currentContent.trim() === '') {
       message.warning('Vui lòng nhập nội dung trước khi tối ưu SEO.');
       return;
     }
@@ -246,8 +252,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       cancelText: 'Hủy',
       onOk: async () => {
         try {
+          console.log('AI Optimization started...');
           setIsAiProcessing(true);
           const response = await frontendAiService.optimizeSeoContent(currentContent);
+          console.log('AI Response status:', response.success);
           
           if (response.success && response.answer) {
             editor.commands.setContent(response.answer);
@@ -260,6 +268,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           message.error('Không thể kết nối với AI vào lúc này.');
         } finally {
           setIsAiProcessing(false);
+          console.log('AI Optimization finished.');
         }
       }
     });
@@ -317,24 +326,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
             <div style={{ width: '1px', height: '24px', backgroundColor: '#d9d9d9', margin: '0 4px' }} />
 
-            <button 
-              type="button" 
-              onClick={handleAiSeoOptimize} 
+            <Button 
+              type="default"
+              size="small"
+              onClick={() => {
+                console.log('Button onClick fired');
+                handleAiSeoOptimize();
+              }} 
               disabled={disabled || isAiProcessing}
+              loading={isAiProcessing}
               style={{ 
-                ...toolbarButtonStyle, 
+                height: '32px',
                 backgroundColor: '#f0f5ff', 
                 color: '#1890ff', 
                 borderColor: '#adc6ff',
-                width: 'auto',
-                padding: '0 12px',
-                gap: '6px'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontWeight: 'bold',
+                fontSize: '11px',
+                padding: '0 8px'
               }} 
+              icon={!isAiProcessing && <RobotOutlined />}
               title="Tối ưu chuẩn SEO bằng AI"
             >
-              {isAiProcessing ? <LoadingOutlined /> : <RobotOutlined />}
-              <span style={{ fontSize: '11px', fontWeight: 'bold' }}>AI SEO</span>
-            </button>
+              AI SEO
+            </Button>
 
            {/* Đã chuyển công cụ ảnh trực tiếp vào NodeView của ảnh */}
         </div>
