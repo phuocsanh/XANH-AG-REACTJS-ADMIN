@@ -64,6 +64,7 @@ const CustomerRewardsPage: React.FC = () => {
       season_id: undefined as number | undefined,
       rice_crop_id: undefined as number | undefined,
       customer_id: undefined as number | undefined, // Dùng khi thêm quà tri ân mới
+      gift_status: "pending" as string,
     }
   });
 
@@ -137,6 +138,7 @@ const CustomerRewardsPage: React.FC = () => {
             season_id: record.season_ids?.[0],
             rice_crop_id: record.rice_crop_id,
             customer_id: record.customer_id,
+            gift_status: record.gift_status,
         })
     } else {
         setEditingHistoryId(null)
@@ -178,6 +180,9 @@ const CustomerRewardsPage: React.FC = () => {
                 gift_description: values.gift_description,
                 gift_value: values.gift_value,
                 notes: values.notes,
+                gift_status: values.gift_status,
+                season_id: values.season_id,
+                rice_crop_id: values.rice_crop_id,
             }
         })
     } else if (isAddingAppreciationGift) {
@@ -571,7 +576,6 @@ const CustomerRewardsPage: React.FC = () => {
               />
             )}
 
-            {!editingHistoryId && (
                 <div className="grid grid-cols-2 gap-4">
                     <FormComboBox
                         name="season_id"
@@ -599,7 +603,20 @@ const CustomerRewardsPage: React.FC = () => {
                         disabled={!watch('season_id')}
                     />
                 </div>
-            )}
+
+            <div className="grid grid-cols-2 gap-4">
+                <FormComboBox
+                    name="gift_status"
+                    control={control}
+                    label="Trạng thái"
+                    placeholder="Chọn trạng thái"
+                    options={[
+                        { label: 'Chờ trao', value: 'pending' },
+                        { label: 'Đã trao', value: 'delivered' },
+                        { label: 'Đã hủy', value: 'cancelled' },
+                    ]}
+                />
+            </div>
 
             <FormField
                 name="gift_description"

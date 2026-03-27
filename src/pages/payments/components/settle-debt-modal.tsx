@@ -266,6 +266,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         is_final: values.is_final,
         manual_remaining_amount: values.manual_remaining_amount,
         rice_crop_id: values.rice_crop_id, // ✅ Gửi ID ruộng lúa lên backend
+        gift_status: values.gift_status, // ✅ Gửi trạng thái quà tặng
       }
       
       await settleAndRolloverMutation.mutateAsync(submitData, {
@@ -548,6 +549,13 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
             <NumberInput placeholder="Giá trị VND" />
           </Form.Item>
         </div>
+
+        <Form.Item label="Trạng thái quà tặng" name="gift_status" initialValue="delivered">
+          <Select>
+            <Select.Option value="delivered">Đã trao ngay</Select.Option>
+            <Select.Option value="pending">Chờ trao sau</Select.Option>
+          </Select>
+        </Form.Item>
       </Form>
     </Modal>
 
