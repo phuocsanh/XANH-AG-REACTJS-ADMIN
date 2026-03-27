@@ -93,6 +93,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [selectedWidth, setSelectedWidth] = React.useState('100%');
   const [showSizeModal, setShowSizeModal] = React.useState(false);
   const [isAiProcessing, setIsAiProcessing] = React.useState(false);
+  const [showAiConfirmModal, setShowAiConfirmModal] = React.useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -245,33 +246,33 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       return;
     }
 
-    Modal.confirm({
-      title: 'Tối ưu nội dung chuẩn SEO bằng AI',
-      content: 'Hệ thống AI sẽ sắp xếp lại bố cục, cải thiện câu văn và tối ưu từ khóa SEO cho bài viết. Bạn có muốn tiếp tục?',
-      okText: 'Đồng ý tối ưu',
-      cancelText: 'Hủy',
-      onOk: async () => {
-        try {
-          console.log('AI Optimization started...');
-          setIsAiProcessing(true);
-          const response = await frontendAiService.optimizeSeoContent(currentContent);
-          console.log('AI Response status:', response.success);
-          
-          if (response.success && response.answer) {
-            editor.commands.setContent(response.answer);
-            message.success('Đã tối ưu SEO thành công!');
-          } else {
-            message.error(response.error || 'Lỗi khi tối ưu nội dung bài viết.');
-          }
-        } catch (error) {
-          console.error('Lỗi AI SEO:', error);
-          message.error('Không thể kết nối với AI vào lúc này.');
-        } finally {
-          setIsAiProcessing(false);
-          console.log('AI Optimization finished.');
+    setShowAiConfirmModal(true);
+  };
+
+  const executeAiSeoOptimize = async () => {
+    const currentContent = editor?.getHTML();
+    if (!currentContent) return;
+
+    try {
+        console.log('AI Optimization started...');
+        setIsAiProcessing(true);
+        setShowAiConfirmModal(false);
+        const response = await frontendAiService.optimizeSeoContent(currentContent);
+        console.log('AI Response status:', response.success);
+        
+        if (response.success && response.answer) {
+          editor.commands.setContent(response.answer);
+          message.success('Đã tối ưu SEO thành công!');
+        } else {
+          message.error(response.error || 'Lỗi khi tối ưu nội dung bài viết.');
         }
-      }
-    });
+    } catch (error) {
+        console.error('Lỗi AI SEO:', error);
+        message.error('Không thể kết nối với AI vào lúc này.');
+    } finally {
+        setIsAiProcessing(false);
+        console.log('AI Optimization finished.');
+    }
   };
 
   return (
@@ -381,6 +382,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Radio.Button value="100%" style={{ width: '100%', textAlign: 'center' }}>Gốc (100%)</Radio.Button>
             </Space>
          </Radio.Group>
+      </Modal>
+
+      <Modal 
+        title="Tối ưu nội dung chuẩn SEO bằng AI" 
+        open={showAiConfirmModal} 
+        onOk={executeAiSeoOptimize} 
+        onCancel={() => setShowAiConfirmModal(false)} 
+        okText="Đồng ý tối ưu" 
+        cancelText="Hủy"
+      >
+        <p>Hệ thống AI sẽ sắp xếp lại bố cục, cải thiện câu văn và tối ưu từ khóa SEO cho bài viết. Bạn có muốn tiếp tục?</p>
+        <p style={{ color: '#8c8c8c', fontSize: '12px' }}>* Lưu ý: Tiến trình này có thể mất vài giây và sẽ thay thế nội dung hiện tại.</p>
       </Modal>
     </div>
   );
