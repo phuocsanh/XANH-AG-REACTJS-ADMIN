@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, NodeViewWrapper, NodeViewProps, ReactNodeViewRenderer } from '@tiptap/react';
 import { NodeSelection, Plugin } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -20,8 +20,64 @@ interface RichTextEditorProps {
 }
 
 /**
- * Component RichTextEditor tái sử dụng sử dụng TipTap
+ * Component xử lý hiển thị ảnh riêng biệt có thanh công cụ ngay tại ảnh
  */
+const ImageNodeView: React.FC<NodeViewProps> = (props) => {
+    const { node, updateAttributes, deleteNode, selected } = props;
+    const { src, width } = node.attrs;
+
+    return (
+        <NodeViewWrapper className="image-node-view" style={{ display: 'inline-block', width: width || '100%', position: 'relative', margin: '12px 0' }}>
+            <img 
+                src={src} 
+                alt="" 
+                style={{ 
+                    width: '100%', 
+                    borderRadius: '8px', 
+                    display: 'block', 
+                    cursor: 'pointer',
+                    outline: selected ? '3px solid #1890ff' : 'none',
+                    boxShadow: selected ? '0 0 10px rgba(24, 144, 255, 0.5)' : 'none',
+                    transition: 'all 0.2s ease'
+                }} 
+            />
+            
+            {/* Thanh công cụ hiện ngay bên cạnh / trên ảnh khi được chọn */}
+            {selected && (
+                <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    padding: '4px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    gap: '4px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 20,
+                    border: '1px solid #1890ff'
+                }}>
+                    <Button.Group size="small">
+                        <Button onClick={() => updateAttributes({ width: '25%' })} type={width === '25%' ? 'primary' : 'default'} style={{ fontSize: '11px' }}>25%</Button>
+                        <Button onClick={() => updateAttributes({ width: '50%' })} type={width === '50%' ? 'primary' : 'default'} style={{ fontSize: '11px' }}>50%</Button>
+                        <Button onClick={() => updateAttributes({ width: '75%' })} type={width === '75%' ? 'primary' : 'default'} style={{ fontSize: '11px' }}>75%</Button>
+                        <Button onClick={() => updateAttributes({ width: '100%' })} type={width === '100%' ? 'primary' : 'default'} style={{ fontSize: '11px' }}>100%</Button>
+                    </Button.Group>
+                    <Tooltip title="Xóa ảnh">
+                        <Button 
+                            size="small" 
+                            danger 
+                            type="primary"
+                            icon={<DeleteOutlined />} 
+                            onClick={deleteNode}
+                        />
+                    </Tooltip>
+                </div>
+            )}
+        </NodeViewWrapper>
+    );
+};
+
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   content,
   onChange,
@@ -54,9 +110,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             },
           }
         },
-        // Đảm bảo có thể chọn ảnh bằng cách nhấn vào
         selectable: true,
         draggable: true,
+        // Sử dụng custom renderer để hiển thị thanh công cụ ngay tại ảnh
+        addNodeView() {
+            return ReactNodeViewRenderer(ImageNodeView);
+        },
         addProseMirrorPlugins() {
           return [
             new Plugin({
@@ -89,7 +148,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-    // Autofocus when image selected
     editorProps: {
         attributes: {
             class: 'focus:outline-none'
@@ -176,7 +234,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   return (
-    <div className="rich-text-editor-wrapper" style={{ border: '1px solid #d9d9d9', borderRadius: '6px', position: 'relative' }}>
+    <div className="rich-text-editor-wrapper" style={{ border: '1px solid #d9d9d9', borderRadius: '6px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
       <style>
         {`
           .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror {
@@ -185,28 +243,26 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             padding: 12px;
             background-color: ${disabled ? '#f5f5f5' : '#fff'};
           }
-          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 12px 0;
-            display: block;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-          .rich-text-editor-wrapper .tiptap-editor-content .ProseMirror img.ProseMirror-selectednode {
-            outline: 3px solid #1890ff;
-            box-shadow: 0 0 10px rgba(24, 144, 255, 0.5);
-          }
         `}
       </style>
 
       {/* Hidden File Input */}
       <input type="file" ref={fileInputRef} onChange={handleImageUpload} style={{ display: 'none' }} accept="image/*" />
 
-      {/* Toolbar */}
+      {/* Toolbar - STICKY at top */}
       {showToolbar && (
-        <div style={{ borderBottom: '1px solid #d9d9d9', padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: '6px', backgroundColor: '#fafafa' }}>
+        <div style={{ 
+          borderBottom: '1px solid #d9d9d9', 
+          padding: '8px 12px', 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '6px', 
+          backgroundColor: '#fafafa',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        }}>
            <button type="button" onClick={() => !disabled && editor.chain().focus().toggleHeading({ level: 2 }).run()} style={getActiveButtonStyle(editor.isActive('heading', { level: 2 }))}>H2</button>
            <button type="button" onClick={() => !disabled && editor.chain().focus().toggleHeading({ level: 3 }).run()} style={getActiveButtonStyle(editor.isActive('heading', { level: 3 }))}>H3</button>
            
@@ -227,15 +283,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
              {isUploading ? <LoadingOutlined /> : <PictureOutlined />}
            </button>
 
-           {/* CÔNG CỤ XỬ LÝ ẢNH - CHỈ HIỆN KHI CHỌN ẢNH */}
+           {/* Fallback cho Toolbar khi chọn ảnh */}
            {editor.isActive('image') && !disabled && (
-             <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto', backgroundColor: '#e6f7ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #91d5ff' }}>
-               <span style={{ fontSize: '11px', alignSelf: 'center', marginRight: 4 }}>Cỡ ảnh:</span>
+             <div style={{ 
+                display: 'flex', 
+                gap: '4px', 
+                marginLeft: 'auto', 
+                backgroundColor: '#fffbe6', 
+                padding: '2px 8px', 
+                borderRadius: '6px', 
+                border: '1px solid #ffe58f',
+                boxShadow: '0 0 5px rgba(255, 229, 143, 0.5)'
+             }}>
+               <span style={{ fontSize: '11px', alignSelf: 'center', marginRight: 4, color: '#874d00', fontWeight: 'bold' }}>CÔNG CỤ ẢNH:</span>
                <button type="button" onClick={() => updateImageWidth('25%')} style={toolbarButtonStyle}>25%</button>
                <button type="button" onClick={() => updateImageWidth('50%')} style={toolbarButtonStyle}>50%</button>
                <button type="button" onClick={() => updateImageWidth('75%')} style={toolbarButtonStyle}>75%</button>
                <button type="button" onClick={() => updateImageWidth('100%')} style={toolbarButtonStyle}>100%</button>
-               <button type="button" onClick={deleteImage} style={{ ...toolbarButtonStyle, backgroundColor: '#fff1f0', color: '#f5222d', borderColor: '#ffa39e' }} title="Xóa ảnh">Xóa</button>
+               <div style={{ width: '1px', height: '100%', backgroundColor: '#ffe58f', margin: '0 2px' }} />
+               <button type="button" onClick={deleteImage} style={{ ...toolbarButtonStyle, backgroundColor: '#ff4d4f', color: '#fff', borderColor: '#ff4d4f' }} title="Xóa ảnh">Xóa</button>
              </div>
            )}
         </div>
