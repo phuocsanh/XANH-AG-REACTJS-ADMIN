@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Card, CardContent, Typography, Grid } from '@mui/material';
 import { Control } from 'react-hook-form';
-import { FormFieldNumber, FormField } from '@/components/form';
+import { FormFieldNumber, FormField, FormComboBox } from '@/components/form';
 import { SalesInvoiceFormData } from '../../form-config';
 import { useRewardPreviewBySeasonQuery } from '@/queries/debt-note';
 import { Divider, Tag, Space, Spin, Alert } from 'antd';
@@ -174,6 +174,18 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
                 control={control}
                 label="Giá trị quà (VND)"
                 placeholder="0"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormComboBox
+                name="gift_status"
+                control={control}
+                label="Trạng thái quà"
+                placeholder="Chọn trạng thái"
+                options={[
+                  { label: 'Đã trao ngay', value: 'delivered' },
+                  { label: 'Chờ trao sau', value: 'pending' },
+                ]}
               />
             </Grid>
           </Grid>

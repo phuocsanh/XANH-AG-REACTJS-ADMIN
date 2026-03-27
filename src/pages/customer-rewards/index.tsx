@@ -150,6 +150,7 @@ const CustomerRewardsPage: React.FC = () => {
             season_id: undefined,
             rice_crop_id: undefined,
             customer_id: record.customer_id,
+            gift_status: 'pending',
         })
     }
     setIsModalOpen(true)
@@ -215,6 +216,24 @@ const CustomerRewardsPage: React.FC = () => {
   const handleDeleteHistory = async (id: number) => {
     await deleteRewardMutation.mutateAsync(id)
     refetchAll() // Refetch all tabs
+  }
+
+  const handleMarkAsDelivered = async (record: any) => {
+    try {
+        await updateRewardMutation.mutateAsync({
+            id: record.id,
+            data: {
+                gift_description: record.gift_description,
+                gift_value: record.gift_value,
+                notes: record.notes,
+                gift_status: 'delivered',
+            }
+        })
+        message.success("Đã đánh dấu đã trao quà!")
+        refetchAll()
+    } catch (error) {
+        console.error("Mark as delivered failed:", error)
+    }
   }
 
   // Tracking Columns
@@ -390,6 +409,16 @@ const CustomerRewardsPage: React.FC = () => {
         width: 120,
         render: (record: any) => (
             <Space>
+                {record.gift_status === 'pending' && (
+                  <Tooltip title="Đã trao quà">
+                    <Button 
+                        icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />} 
+                        size="small" 
+                        onClick={() => handleMarkAsDelivered(record)}
+                        loading={updateRewardMutation.isPending}
+                    />
+                  </Tooltip>
+                )}
                 <Button 
                     icon={<EditOutlined />} 
                     size="small" 
@@ -576,39 +605,47 @@ const CustomerRewardsPage: React.FC = () => {
               />
             )}
 
-                <div className="grid grid-cols-2 gap-4">
-                    <FormComboBox
-                        name="season_id"
-                        control={control}
-                        label="Mùa vụ"
-                        placeholder="Chọn mùa vụ"
-                        options={seasonsData?.data?.items?.map((s: any) => ({
-                            label: s.name,
-                            value: s.id
-                        })) || []}
-                        allowClear
-                        required
-                    />
+            <div className="grid grid-cols-2 gap-4">
+                <FormComboBox
+                    name="season_id"
+                    control={control}
+                    label="Mùa vụ"
+                    placeholder="Chọn mùa vụ hoặc các vụ tích lũy"
+                    options={seasonsData?.data?.items?.map((s: any) => ({
+                        label: s.name,
+                        value: s.id
+                    })) || []}
+                    allowClear
+                    required
+                />
 
-                    <FormComboBox
-                        name="rice_crop_id"
-                        control={control}
-                        label="Ruộng lúa"
-                        placeholder="Chọn ruộng lúa"
-                        options={riceCropsData?.data?.items?.map((r: any) => ({
-                            label: r.field_name,
-                            value: r.id
-                        })) || []}
-                        allowClear
-                        disabled={!watch('season_id')}
-                    />
-                </div>
+                <FormComboBox
+                    name="rice_crop_id"
+                    control={control}
+                    label="Ruộng lúa liên quan"
+                    placeholder="Chọn ruộng lúa của quà tặng"
+                    options={riceCropsData?.data?.items?.map((r: any) => ({
+                        label: r.field_name,
+                        value: r.id
+                    })) || []}
+                    allowClear
+                    disabled={!watch('season_id')}
+                />
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    name="gift_description"
+                    control={control}
+                    label="Mô tả quà tặng"
+                    placeholder="Ví dụ: 1 bao phân DAP, Bộ ấm trà..."
+                    required
+                />
+
                 <FormComboBox
                     name="gift_status"
                     control={control}
-                    label="Trạng thái"
+                    label="Trạng thái trao quà"
                     placeholder="Chọn trạng thái"
                     options={[
                         { label: 'Chờ trao', value: 'pending' },
@@ -617,14 +654,6 @@ const CustomerRewardsPage: React.FC = () => {
                     ]}
                 />
             </div>
-
-            <FormField
-                name="gift_description"
-                control={control}
-                label="Mô tả quà tặng"
-                placeholder="Ví dụ: 1 bao phân DAP, Bộ ấm trà..."
-                required
-            />
 
             <FormFieldNumber
                 name="gift_value"
