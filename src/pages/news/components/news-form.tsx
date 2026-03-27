@@ -51,25 +51,25 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
 
   const productOptionsFromSearch = productSearchData?.pages.flatMap(page => page.data) || []
 
-  // Lấy dữ liệu tên sản phẩm cho các ID đã chọn ban đầu (khi edit)
-  const initialProductIds = React.useMemo(() => initialData?.related_product_ids || [], [initialData])
-  const { data: initialProductsData } = useProductsByIdsQuery(initialProductIds)
-
-  // Gộp thông tin sản phẩm từ search và sản phẩm đã chọn ban đầu để hiển thị Label thay vì ID
+  // Lấy dữ liệu tên sản phẩm cho các ID đang được chọn để hiển thị Label thay vì ID
+  const currentProductIds = watch('related_product_ids') || []
+  const { data: currentProductsData } = useProductsByIdsQuery(currentProductIds)
+  
+  // Gộp thông tin sản phẩm từ search và sản phẩm đang chọn để hiển thị Label đúng
   const combinedProductOptions = React.useMemo(() => {
-    // Map initial products sang format label/value
-    const initialOptions = (initialProductsData || []).map(p => ({
+    // Map current products sang format label/value
+    const selectedOptions = (currentProductsData || []).map(p => ({
       ...p,
       value: p.id,
       label: p.trade_name?.trim() || p.name?.trim() || `Sản phẩm ${p.id}`
     }))
 
-    // Merge và loại bỏ trùng lặp
-    const merged = [...initialOptions, ...productOptionsFromSearch]
+    // Merge và loại bỏ trùng lặp (ưu tiên thông tin từ selectedOptions vì nó đầy đủ hơn từ search kết quả rút gọn)
+    const merged = [...selectedOptions, ...productOptionsFromSearch]
     const uniqueMap = new Map()
     merged.forEach(opt => uniqueMap.set(opt.value, opt))
     return Array.from(uniqueMap.values())
-  }, [initialProductsData, productOptionsFromSearch])
+  }, [currentProductsData, productOptionsFromSearch])
 
   useEffect(() => {
     if (visible) {
