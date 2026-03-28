@@ -238,7 +238,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             <Statistic
               title={
                 <div>
-                  <span className="text-xs uppercase font-bold text-purple-600 block">Tổng Chi Phí Canh Tác</span>
+                  <span className="text-xs uppercase font-bold text-purple-600 block">Tổng Chi Phí Vật Tư</span>
                   <span className="text-[10px] text-purple-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
                 </div>
               }
