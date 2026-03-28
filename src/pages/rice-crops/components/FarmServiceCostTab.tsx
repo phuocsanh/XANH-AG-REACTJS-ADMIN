@@ -168,14 +168,16 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId, cus
       title={
         <div className="flex justify-between items-center w-full">
            <span>💰 Chi phí cửa hàng</span>
-           <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            size="small"
-          >
-            Thêm {activeTab === 'service' ? 'chi phí' : 'quà tặng'}
-          </Button>
+           {activeTab === 'service' && (
+             <Button
+               type="primary"
+               icon={<PlusOutlined />}
+               onClick={handleAdd}
+               size="small"
+             >
+               Thêm chi phí
+             </Button>
+           )}
         </div>
       }
     >

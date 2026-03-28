@@ -139,13 +139,21 @@ export function useFarmGiftCostsQuery(params: SearchFarmGiftCostDto = {}) {
   return useQuery({
     queryKey: farmGiftCostKeys.list(params),
     queryFn: async () => {
-      const res = await api.postRaw<any>(
-        '/farm-gift-costs/search',
-        params as any
-      );
-      // Xử lý total từ pagination hoặc root (tuỳ ResponseInterceptor)
-      const total = res?.pagination?.total ?? res?.total ?? 0;
-      return { data: (res?.data || res) as FarmGiftCost[], total };
+      // api.get(url, params) → axios.get(url, { params: params })
+      // Interceptor có thể unwrap response.data.data → response.data
+      // nên res có thể là mảng hoặc { data: [], total, pagination }
+      const res = await api.get<any>('/farm-gift-costs', params);
+      let data: FarmGiftCost[] = [];
+      let total = 0;
+      if (Array.isArray(res)) {
+        // Interceptor đã unwrap: res chính là mảng
+        data = res;
+        total = res.length;
+      } else {
+        data = res?.data || [];
+        total = res?.pagination?.total ?? res?.total ?? data.length;
+      }
+      return { data, total };
     },
   });
 }
