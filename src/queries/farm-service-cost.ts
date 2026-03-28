@@ -139,9 +139,9 @@ export function useFarmGiftCostsQuery(params: SearchFarmGiftCostDto = {}) {
   return useQuery({
     queryKey: farmGiftCostKeys.list(params),
     queryFn: async () => {
-      const res = await api.get<any>(
-        '/farm-gift-costs',
-        { params }
+      const res = await api.postRaw<any>(
+        '/farm-gift-costs/search',
+        params as any
       );
       // Xử lý total từ pagination hoặc root (tuỳ ResponseInterceptor)
       const total = res?.pagination?.total ?? res?.total ?? 0;

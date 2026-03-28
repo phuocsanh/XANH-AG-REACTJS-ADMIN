@@ -203,13 +203,13 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId, cus
               label: `🎁 Quà tặng (${formatCurrency(giftData?.data?.reduce((sum: number, item: any) => sum + Number(item.amount), 0) || 0)})`,
               children: (
                 <Table
-                  columns={columns}
-                  dataSource={giftData?.data || []}
-                  rowKey="id"
-                  loading={isGiftLoading}
-                  pagination={false}
-                  scroll={{ x: 800 }}
-                />
+                   columns={columns}
+                   dataSource={giftData?.data || []}
+                   rowKey="id"
+                   loading={isGiftLoading}
+                   pagination={false}
+                   scroll={{ x: 800 }}
+                 />
               )
             }
           ]}
