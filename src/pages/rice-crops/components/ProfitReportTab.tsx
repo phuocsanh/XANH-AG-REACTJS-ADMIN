@@ -155,7 +155,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         </Col>
       </Row>
 
-      {/* HÀNG 3: TỔNG CHI PHÍ & CHI PHÍ / CÔNG */}
+      {/* HÀNG 3: TỔNG CHI PHÍ & Chi phí / Công */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12}>
           <Card bodyStyle={{ padding: '20px' }} className="border-rose-100 bg-rose-50/20">
@@ -193,14 +193,14 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         </Col>
       </Row>
 
-      {/* HÀNG 4: TỔNG CANH TÁC & CANH TÁC / CÔNG */}
+      {/* HÀNG 4: TỔNG CANH TÁC & chi phí canh tác / Công */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12}>
           <Card bodyStyle={{ padding: '20px' }} className="border-sky-100 bg-sky-50/20">
             <Statistic
               title={
                 <div>
-                  <span className="text-xs uppercase font-bold text-sky-600 block">Tổng CP Canh tác</span>
+                  <span className="text-xs uppercase font-bold text-sky-600 block">Tổng Chi Phí Canh tác</span>
                   <span className="text-[10px] text-sky-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
                 </div>
               }
@@ -217,7 +217,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             <Statistic
               title={
                 <div>
-                  <span className="text-xs uppercase font-bold text-indigo-600 block">Canh tác / Công</span>
+                  <span className="text-xs uppercase font-bold text-indigo-600 block">Chi phí canh tác / Công</span>
                   <span className="text-[10px] text-indigo-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
                 </div>
               }
@@ -231,14 +231,14 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         </Col>
       </Row>
 
-      {/* HÀNG 5: TỔNG VẬT TƯ & VẬT TƯ / CÔNG */}
+      {/* HÀNG 5: TỔNG VẬT TƯ & Chi Phí Vật tư / Công */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12}>
           <Card bodyStyle={{ padding: '20px' }} className="border-purple-100 bg-purple-50/20">
             <Statistic
               title={
                 <div>
-                  <span className="text-xs uppercase font-bold text-purple-600 block">Tổng CP Vật tư</span>
+                  <span className="text-xs uppercase font-bold text-purple-600 block">Tổng Chi Phí Canh Tác</span>
                   <span className="text-[10px] text-purple-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
                 </div>
               }
@@ -255,7 +255,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             <Statistic
               title={
                 <div>
-                  <span className="text-xs uppercase font-bold text-fuchsia-600 block">Vật tư / Công</span>
+                  <span className="text-xs uppercase font-bold text-fuchsia-600 block">Chi Phí Vật tư / Công</span>
                   <span className="text-[10px] text-fuchsia-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
                 </div>
               }
