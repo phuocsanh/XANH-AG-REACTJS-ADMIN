@@ -1057,8 +1057,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   
                 </div>
 
-                {/* Dung tích / Khối lượng */}
-                <div className='w-full md:col-span-2'>
+                {/* Dung tích / Khối lượng - nằm cạnh Loại sản phẩm */}
+                <div className='w-full'>
                   <FormField
                     name='volume'
                     control={control}
@@ -1084,6 +1084,25 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       })) || []
                     }
                     className='w-full'
+                  />
+                </div>
+
+                {/* Đơn vị tính - nằm dưới Loại sản phẩm cùng cột phải */}
+                <div className='w-full'>
+                  <FormComboBox
+                    name='unit_id'
+                    control={control}
+                    label='Đơn vị tính'
+                    placeholder='Chọn đơn vị tính'
+                    options={
+                      units?.data?.items?.map((unit: any) => ({
+                        label: unit.name,
+                        value: unit.id,
+                      })) || []
+                    }
+                    className='w-full'
+                    required
+                    rules={{ required: "Vui lòng chọn đơn vị tính" }}
                   />
                 </div>
 
@@ -1121,24 +1140,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     className='w-full'
                     fixedDecimalScale={false}
                     outputType="string"
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <FormComboBox
-                    name='unit_id'
-                    control={control}
-                    label='Đơn vị tính'
-                    placeholder='Chọn đơn vị tính'
-                    options={
-                      units?.data?.items?.map((unit: any) => ({
-                        label: unit.name,
-                        value: unit.id,
-                      })) || []
-                    }
-                    className='w-full'
-                    required
-                    rules={{ required: "Vui lòng chọn đơn vị tính" }}
                   />
                 </div>
 
@@ -1226,20 +1227,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                {/* Thêm trường ingredient với yêu cầu bắt buộc */}
-                <div className='w-full'>
-                  <FormField
-                    name='ingredient'
-                    control={control}
-                    label='Thành phần nguyên liệu'
-                    placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
-                    className='w-full'
-                    required
-                    type="textarea"
-                    rows={4}
-                    rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
-                  />
-                </div>
 
 
                 <div className='w-full'>
@@ -1319,6 +1306,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
+                {/* Bán trên Web và Hiển thị giá trên Web - nằm cạnh nhau (2 cột) */}
                 <div className='w-full'>
                   <FormComboBox
                     name='is_sold_on_web'
@@ -1344,6 +1332,21 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                       { label: "Giá liên hệ", value: false },
                     ]}
                     className='w-full'
+                  />
+                </div>
+
+                {/* Thành phần nguyên liệu - ở cuối, textarea chiếm full 2 cột */}
+                <div className='w-full md:col-span-2'>
+                  <FormField
+                    name='ingredient'
+                    control={control}
+                    label='Thành phần nguyên liệu'
+                    placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
+                    className='w-full'
+                    required
+                    type="textarea"
+                    autoSize={{ minRows: 4, maxRows: 10 }}
+                    rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
                   />
                 </div>
               </div>
