@@ -125,34 +125,29 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
       {/* HÀNG 2: LỢI NHUẬN RÒNG & LỢI NHUẬN / CÔNG */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12}>
-          <Card bodyStyle={{ padding: '24px' }} className={`h-full border-blue-100 ${net_profit >= 0 ? 'bg-blue-50/20' : 'bg-red-50/20 border-red-100'}`}>
+          <Card bodyStyle={{ padding: '24px' }} className={`h-full border-blue-100 ${total_revenue > 0 ? (net_profit >= 0 ? 'bg-blue-50/20' : 'bg-red-50/20 border-red-100') : 'bg-slate-50 border-slate-100'}`}>
             <Statistic
-              title={<span className="text-sm font-bold uppercase text-blue-700">Lợi nhuận ròng</span>}
-              value={net_profit}
+              title={<span className={`text-sm font-bold uppercase ${total_revenue > 0 ? 'text-blue-700' : 'text-slate-400'}`}>Lợi nhuận</span>}
+              value={total_revenue > 0 ? net_profit : 0}
               precision={0}
-              valueStyle={{ color: net_profit >= 0 ? '#096dd9' : '#cf1322', fontSize: '32px', fontWeight: '900' }}
+              valueStyle={{ color: total_revenue > 0 ? (net_profit >= 0 ? '#096dd9' : '#cf1322') : '#94a3b8', fontSize: '32px', fontWeight: '900' }}
               prefix={<DollarOutlined />}
               suffix="₫"
             />
-            <div className="mt-2 text-right">
-              <Tag color={roi >= 0 ? 'green' : 'red'} className="rounded-full px-3 font-bold border-none shadow-sm">
-                ROI: {roi.toFixed(1)}%
-              </Tag>
-            </div>
           </Card>
         </Col>
         <Col xs={24} sm={12}>
-           <Card bodyStyle={{ padding: '24px' }} className={`h-full ${net_profit >= 0 ? 'bg-indigo-50/30 border-indigo-100' : 'bg-orange-50/30 border-orange-100'}`}>
+           <Card bodyStyle={{ padding: '24px' }} className={`h-full ${total_revenue > 0 ? (net_profit >= 0 ? 'bg-indigo-50/30 border-indigo-100' : 'bg-orange-50/30 border-orange-100') : 'bg-slate-50 border-slate-100'}`}>
              <Statistic
                title={
                  <div>
-                   <span className={`text-sm font-bold uppercase block ${net_profit >= 0 ? 'text-indigo-700' : 'text-orange-700'}`}>Lợi nhuận / Công</span>
-                   <span className={`text-[10px] font-medium block mt-1 ${net_profit >= 0 ? 'text-indigo-600/70' : 'text-orange-600/70'}`}> (Bao gồm chi phí canh tác + vật tư)</span>
+                   <span className={`text-sm font-bold uppercase block ${total_revenue > 0 ? (net_profit >= 0 ? 'text-indigo-700' : 'text-orange-700') : 'text-slate-400'}`}>Lợi nhuận / Công</span>
+                   <span className={`text-[10px] font-medium block mt-1 ${total_revenue > 0 ? (net_profit >= 0 ? 'text-indigo-600/70' : 'text-orange-600/70') : 'text-slate-400/70'}`}> (Bao gồm chi phí canh tác + vật tư)</span>
                  </div>
                }
-               value={net_profit / (amountOfLand || 1)}
+               value={total_revenue > 0 ? (net_profit / (amountOfLand || 1)) : 0}
                precision={0}
-               valueStyle={{ color: net_profit >= 0 ? '#4338ca' : '#c2410c', fontSize: '32px', fontWeight: '900' }}
+               valueStyle={{ color: total_revenue > 0 ? (net_profit >= 0 ? '#4338ca' : '#c2410c') : '#94a3b8', fontSize: '32px', fontWeight: '900' }}
                prefix={<RiseOutlined />}
                suffix="₫"
              />
