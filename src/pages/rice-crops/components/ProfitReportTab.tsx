@@ -17,6 +17,7 @@ import {
   ThunderboltOutlined,
   ExperimentOutlined,
   PlusSquareOutlined,
+  AreaChartOutlined,
 } from '@ant-design/icons';
 import { useProfitReport } from '@/queries/profit-report';
 
@@ -93,27 +94,43 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
 
   return (
     <div className="space-y-4">
-      {/* HÀNG 1: DOANH THU & LỢI NHUẬN */}
+      {/* HÀNG 1: DOANH THU & DIỆN TÍCH */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12}>
-          <Card bodyStyle={{ padding: '20px' }} className="h-full border-green-100 bg-green-50/20">
+          <Card bodyStyle={{ padding: '24px' }} className="h-full border-green-100 bg-green-50/20">
             <Statistic
               title={<span className="text-sm font-bold uppercase text-green-700">Tổng doanh thu</span>}
               value={total_revenue}
               precision={0}
-              valueStyle={{ color: '#3f8600', fontSize: '28px', fontWeight: '900' }}
+              valueStyle={{ color: '#3f8600', fontSize: '32px', fontWeight: '900' }}
               prefix={<RiseOutlined />}
               suffix="₫"
             />
           </Card>
         </Col>
         <Col xs={24} sm={12}>
-          <Card bodyStyle={{ padding: '20px' }} className={`h-full border-blue-100 ${net_profit >= 0 ? 'bg-blue-50/20' : 'bg-red-50/20 border-red-100'}`}>
+          <Card bodyStyle={{ padding: '24px' }} className="h-full border-slate-100 bg-slate-50/20">
+            <Statistic
+              title={<span className="text-sm font-bold uppercase text-slate-700">Diện tích đất</span>}
+              value={amountOfLand}
+              precision={1}
+              valueStyle={{ color: '#475569', fontSize: '32px', fontWeight: '900' }}
+              prefix={<AreaChartOutlined />}
+              suffix=" Công"
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* HÀNG 2: LỢI NHUẬN RÒNG & LỢI NHUẬN / CÔNG */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '24px' }} className={`h-full border-blue-100 ${net_profit >= 0 ? 'bg-blue-50/20' : 'bg-red-50/20 border-red-100'}`}>
             <Statistic
               title={<span className="text-sm font-bold uppercase text-blue-700">Lợi nhuận ròng</span>}
               value={net_profit}
               precision={0}
-              valueStyle={{ color: net_profit >= 0 ? '#096dd9' : '#cf1322', fontSize: '28px', fontWeight: '900' }}
+              valueStyle={{ color: net_profit >= 0 ? '#096dd9' : '#cf1322', fontSize: '32px', fontWeight: '900' }}
               prefix={<DollarOutlined />}
               suffix="₫"
             />
@@ -124,109 +141,123 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             </div>
           </Card>
         </Col>
+        <Col xs={24} sm={12}>
+           <Card bodyStyle={{ padding: '24px' }} className={`h-full ${net_profit >= 0 ? 'bg-indigo-50/30 border-indigo-100' : 'bg-orange-50/30 border-orange-100'}`}>
+             <Statistic
+               title={
+                 <div>
+                   <span className={`text-sm font-bold uppercase block ${net_profit >= 0 ? 'text-indigo-700' : 'text-orange-700'}`}>Lợi nhuận / Công</span>
+                   <span className={`text-[10px] font-medium block mt-1 ${net_profit >= 0 ? 'text-indigo-600/70' : 'text-orange-600/70'}`}> (Bao gồm chi phí canh tác + vật tư)</span>
+                 </div>
+               }
+               value={net_profit / (amountOfLand || 1)}
+               precision={0}
+               valueStyle={{ color: net_profit >= 0 ? '#4338ca' : '#c2410c', fontSize: '32px', fontWeight: '900' }}
+               prefix={<RiseOutlined />}
+               suffix="₫"
+             />
+           </Card>
+        </Col>
       </Row>
 
-      {/* HÀNG 2: 6 THẺ CHI PHÍ CHI TIẾT */}
-      <Row gutter={[12, 12]}>
-        {/* 1. Tổng chi phí */}
-        <Col xs={12} md={8} lg={4}>
-          <Card bodyStyle={{ padding: '12px' }} className="border-rose-100 bg-rose-50/20">
+      {/* HÀNG 3: TỔNG CHI PHÍ & CHI PHÍ / CÔNG */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '20px' }} className="border-rose-100 bg-rose-50/20">
             <Statistic
-              title={<span className="text-[10px] uppercase font-bold text-rose-600">Tổng chi phí</span>}
+              title={<span className="text-xs uppercase font-bold text-rose-600">Tổng chi phí</span>}
               value={total_cost}
               precision={0}
-              valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#e11d48' }}
-              prefix={<FallOutlined style={{ fontSize: '12px' }} />}
+              valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#e11d48' }}
+              prefix={<FallOutlined />}
               suffix="₫"
             />
           </Card>
         </Col>
-
-        {/* 2. Chi phí mỗi công */}
-        <Col xs={12} md={8} lg={4}>
-          <Card bodyStyle={{ padding: '12px' }} className="border-amber-100 bg-amber-50/20">
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '20px' }} className="border-amber-100 bg-amber-50/20">
             <Statistic
-              title={<span className="text-[10px] uppercase font-bold text-amber-600">Chi phí / Công</span>}
+              title={<span className="text-xs uppercase font-bold text-amber-600">Chi phí / Công</span>}
               value={effectiveCostPerCong}
               precision={0}
-              valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#d97706' }}
-              prefix={<DollarOutlined style={{ fontSize: '12px' }} />}
+              valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#d97706' }}
+              prefix={<DollarOutlined />}
               suffix="₫"
             />
           </Card>
         </Col>
+      </Row>
 
-        {/* 3. Tổng chi phí canh tác */}
-        <Col xs={12} md={8} lg={4}>
-          <Card bodyStyle={{ padding: '12px' }} className="border-sky-100 bg-sky-50/20">
+      {/* HÀNG 4: TỔNG CANH TÁC & CANH TÁC / CÔNG */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '20px' }} className="border-sky-100 bg-sky-50/20">
             <Statistic
               title={
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-sky-600 block">Tổng CP Canh tác</span>
-                  <span className="text-[9px] text-sky-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
+                  <span className="text-xs uppercase font-bold text-sky-600 block">Tổng CP Canh tác</span>
+                  <span className="text-[10px] text-sky-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
                 </div>
               }
               value={total_cultivation_cost || 0}
               precision={0}
-              valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#0284c7' }}
-              prefix={<LineChartOutlined style={{ fontSize: '12px' }} />}
+              valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#0284c7' }}
+              prefix={<LineChartOutlined />}
               suffix="₫"
             />
           </Card>
         </Col>
-
-        {/* 4. Chi phí canh tác mỗi công */}
-        <Col xs={12} md={8} lg={4}>
-          <Card bodyStyle={{ padding: '12px' }} className="border-indigo-100 bg-indigo-50/20">
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '20px' }} className="border-indigo-100 bg-indigo-50/20">
             <Statistic
               title={
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-indigo-600 block">Canh tác / Công</span>
-                  <span className="text-[9px] text-indigo-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
+                  <span className="text-xs uppercase font-bold text-indigo-600 block">Canh tác / Công</span>
+                  <span className="text-[10px] text-indigo-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
                 </div>
               }
               value={cultivation_cost_per_cong || 0}
               precision={0}
-              valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#4f46e5' }}
-              prefix={<ThunderboltOutlined style={{ fontSize: '12px' }} />}
+              valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#4f46e5' }}
+              prefix={<ThunderboltOutlined />}
               suffix="₫"
             />
           </Card>
         </Col>
+      </Row>
 
-        {/* 5. Tổng chi phí vật tư */}
-        <Col xs={12} md={8} lg={4}>
-          <Card bodyStyle={{ padding: '12px' }} className="border-purple-100 bg-purple-50/20">
+      {/* HÀNG 5: TỔNG VẬT TƯ & VẬT TƯ / CÔNG */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '20px' }} className="border-purple-100 bg-purple-50/20">
             <Statistic
               title={
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-purple-600 block">Tổng CP Vật tư</span>
-                  <span className="text-[9px] text-purple-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
+                  <span className="text-xs uppercase font-bold text-purple-600 block">Tổng CP Vật tư</span>
+                  <span className="text-[10px] text-purple-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
                 </div>
               }
               value={total_input_cost || 0}
               precision={0}
-              valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#9333ea' }}
-              prefix={<ExperimentOutlined style={{ fontSize: '12px' }} />}
+              valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#9333ea' }}
+              prefix={<ExperimentOutlined />}
               suffix="₫"
             />
           </Card>
         </Col>
-
-        {/* 6. Chi phí vật tư mỗi công */}
-        <Col xs={12} md={8} lg={4}>
-          <Card bodyStyle={{ padding: '12px' }} className="border-fuchsia-100 bg-fuchsia-50/20">
+        <Col xs={24} sm={12}>
+          <Card bodyStyle={{ padding: '20px' }} className="border-fuchsia-100 bg-fuchsia-50/20">
             <Statistic
               title={
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-fuchsia-600 block">Vật tư / Công</span>
-                  <span className="text-[9px] text-fuchsia-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
+                  <span className="text-xs uppercase font-bold text-fuchsia-600 block">Vật tư / Công</span>
+                  <span className="text-[10px] text-fuchsia-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
                 </div>
               }
               value={input_cost_per_cong || 0}
               precision={0}
-              valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#c026d3' }}
-              prefix={<PlusSquareOutlined style={{ fontSize: '12px' }} />}
+              valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#c026d3' }}
+              prefix={<PlusSquareOutlined />}
               suffix="₫"
             />
           </Card>
