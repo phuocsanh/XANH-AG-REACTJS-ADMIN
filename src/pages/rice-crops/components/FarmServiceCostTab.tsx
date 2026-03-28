@@ -17,9 +17,10 @@ import { FarmServiceCostModal } from './FarmServiceCostModal';
 
 interface FarmServiceCostTabProps {
   riceCropId: number;
+  customerId: number;
 }
 
-const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) => {
+const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId, customerId }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCost, setEditingCost] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'service' | 'gift'>('service');
@@ -27,12 +28,14 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
   // Query để lấy danh sách chi phí dịch vụ
   const { data: serviceData, isLoading: isServiceLoading } = useFarmServiceCostsQuery({
     rice_crop_id: riceCropId,
+    customer_id: customerId,
     limit: 100,
   });
 
   // Query để lấy danh sách quà tặng
   const { data: giftData, isLoading: isGiftLoading } = useFarmGiftCostsQuery({
     rice_crop_id: riceCropId,
+    customer_id: customerId,
     limit: 100,
   });
 
@@ -63,10 +66,7 @@ const FarmServiceCostTab: React.FC<FarmServiceCostTabProps> = ({ riceCropId }) =
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(value);
+    return new Intl.NumberFormat("de-DE").format(value) + " ₫";
   };
 
   const columns = [

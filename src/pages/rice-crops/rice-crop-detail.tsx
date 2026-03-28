@@ -232,7 +232,7 @@ const RiceCropDetail: React.FC = () => {
     ...(hasPermission(userInfo, 'sales:manage') ? [{
       key: 'farm-service-costs',
       label: '💸 Chi phí Dịch vụ',
-      children: <FarmServiceCostTab riceCropId={riceCrop.id} />,
+      children: <FarmServiceCostTab riceCropId={riceCrop.id} customerId={riceCrop.customer_id} />,
     }] : []),
     {
       key: 'harvest',
