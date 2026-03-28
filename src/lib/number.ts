@@ -28,13 +28,17 @@ export const parseLocaleNumber = (stringNumber: string, locale = "vi-VN") => {
 export const formatLocaleNumber = (
   number: number,
   style: "decimal" | "currency" | "percent" = "decimal",
-  locale = "en-US",
+  locale = "de-DE",
   currency = "VND"
-) =>
-  new Intl.NumberFormat(locale, {
+) => {
+  if (style === "currency") {
+    return new Intl.NumberFormat(locale).format(number) + " ₫"
+  }
+  return new Intl.NumberFormat(locale, {
     style,
     currency,
   }).format(number)
+}
 
 /**
  * Removes non-numeric characters from a string and returns the resulting number string.
@@ -71,7 +75,7 @@ export const parseNumber = (string: string) => {
  * @returns The formatted numeric string with commas.
  */
 export const formatNumber = (string: string) => {
-  const formattedNumber = parseNumber(string).toLocaleString()
+  const formattedNumber = parseNumber(string).toLocaleString("de-DE")
 
   if (string.includes(".") && string.indexOf(".") === string.length - 1) {
     return formattedNumber + "."
@@ -106,7 +110,7 @@ export const realNumberDecimalFormat = (
 
   // If there is no decimal point in the input number, format the integer part only.
   if (dotIndex === -1) {
-    return numberStr.replace(commonMatch, ",")
+    return numberStr.replace(commonMatch, ".")
   }
 
   // Calculate the number of decimal places in the input number.
@@ -123,9 +127,9 @@ export const realNumberDecimalFormat = (
 
   // If no decimal places are required, return the integer part with thousands separators.
   if (decimalLim === 0) {
-    return numberPart.replace(commonMatch, ",")
+    return numberPart.replace(commonMatch, ".")
   }
 
   // Return the formatted number with thousands separators and the specified decimal precision.
-  return numberPart.replace(commonMatch, ",") + "." + decimalPart
+  return numberPart.replace(commonMatch, ".") + "," + decimalPart
 }

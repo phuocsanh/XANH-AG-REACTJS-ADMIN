@@ -76,7 +76,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
       dataIndex: 'amount',
       key: 'amount',
       align: 'right' as const,
-      render: (val: number) => <span className="font-bold">{val.toLocaleString('vi-VN')} ₫</span>,
+      render: (val: number) => <span className="font-bold">{val.toLocaleString('de-DE')} ₫</span>,
     },
     {
       title: 'Tỷ lệ',
@@ -101,6 +101,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             <Statistic
               title={<span className="text-sm font-bold uppercase text-green-700">Tổng doanh thu</span>}
               value={total_revenue}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ color: '#3f8600', fontSize: '32px', fontWeight: '900' }}
               prefix={<RiseOutlined />}
@@ -113,6 +114,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             <Statistic
               title={<span className="text-sm font-bold uppercase text-slate-700">Diện tích đất</span>}
               value={amountOfLand}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={1}
               valueStyle={{ color: '#475569', fontSize: '32px', fontWeight: '900' }}
               prefix={<AreaChartOutlined />}
@@ -129,6 +131,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
             <Statistic
               title={<span className={`text-sm font-bold uppercase ${total_revenue > 0 ? 'text-blue-700' : 'text-slate-400'}`}>Lợi nhuận</span>}
               value={total_revenue > 0 ? net_profit : 0}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ color: total_revenue > 0 ? (net_profit >= 0 ? '#096dd9' : '#cf1322') : '#94a3b8', fontSize: '32px', fontWeight: '900' }}
               prefix={<DollarOutlined />}
@@ -146,6 +149,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                  </div>
                }
                value={total_revenue > 0 ? (net_profit / (amountOfLand || 1)) : 0}
+               formatter={(val) => Number(val).toLocaleString('de-DE')}
                precision={0}
                valueStyle={{ color: total_revenue > 0 ? (net_profit >= 0 ? '#4338ca' : '#c2410c') : '#94a3b8', fontSize: '32px', fontWeight: '900' }}
                prefix={<RiseOutlined />}
@@ -167,6 +171,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                 </div>
               }
               value={total_cost}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#e11d48' }}
               prefix={<FallOutlined />}
@@ -184,6 +189,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                 </div>
               }
               value={effectiveCostPerCong}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#d97706' }}
               prefix={<DollarOutlined />}
@@ -205,6 +211,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                 </div>
               }
               value={total_cultivation_cost || 0}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#0284c7' }}
               prefix={<LineChartOutlined />}
@@ -222,6 +229,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                 </div>
               }
               value={cultivation_cost_per_cong || 0}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#4f46e5' }}
               prefix={<ThunderboltOutlined />}
@@ -243,6 +251,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                 </div>
               }
               value={total_input_cost || 0}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#9333ea' }}
               prefix={<ExperimentOutlined />}
@@ -260,6 +269,7 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
                 </div>
               }
               value={input_cost_per_cong || 0}
+              formatter={(val) => Number(val).toLocaleString('de-DE')}
               precision={0}
               valueStyle={{ fontSize: '24px', fontWeight: '800', color: '#c026d3' }}
               prefix={<PlusSquareOutlined />}

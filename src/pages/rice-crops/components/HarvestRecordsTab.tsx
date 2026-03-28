@@ -165,7 +165,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       key: 'yield_amount',
       render: (val: number, record: HarvestRecord) => {
         const unit = record.yield_unit === 'tan' ? 'Tấn' : 'kg';
-        return `${Number(val)?.toLocaleString('vi-VN')} ${unit}`;
+        return `${Number(val)?.toLocaleString('de-DE')} ${unit}`;
       },
     },
     {
@@ -183,7 +183,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       title: 'Giá bán (đ/kg)',
       dataIndex: 'selling_price_per_unit',
       key: 'selling_price_per_unit',
-      render: (val: number) => Number(val)?.toLocaleString('vi-VN'),
+      render: (val: number) => Number(val)?.toLocaleString('de-DE'),
     },
     {
       title: 'Thành tiền',
@@ -191,7 +191,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       key: 'total_revenue',
       render: (val: number) => (
         <span className="font-medium text-green-600">
-          {Number(val)?.toLocaleString('vi-VN')}
+          {Number(val)?.toLocaleString('de-DE')}
         </span>
       ),
     },
@@ -248,6 +248,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
               <Statistic
                 title={<span className="text-xs sm:text-base">Tổng sản lượng</span>}
                 value={totalYield}
+                formatter={(val) => Number(val).toLocaleString('de-DE')}
                 precision={0}
                 suffix={<span className="text-xs sm:text-base ml-0.5">kg</span>}
                 prefix={<GoldOutlined style={{ fontSize: '14px' }} />}
@@ -260,6 +261,7 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
               <Statistic
                 title={<span className="text-xs sm:text-base">Tổng doanh thu</span>}
                 value={totalRevenue}
+                formatter={(val) => Number(val).toLocaleString('de-DE')}
                 precision={0}
                 valueStyle={{ color: '#3f8600', fontSize: '18px', fontWeight: 'bold' }}
                 suffix={<span className="text-xs sm:text-base ml-0.5">₫</span>}
