@@ -160,7 +160,12 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         <Col xs={12} md={8} lg={4}>
           <Card bodyStyle={{ padding: '12px' }} className="border-sky-100 bg-sky-50/20">
             <Statistic
-              title={<span className="text-[10px] uppercase font-bold text-sky-600">Tổng CP Canh tác</span>}
+              title={
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-sky-600 block">Tổng CP Canh tác</span>
+                  <span className="text-[9px] text-sky-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
+                </div>
+              }
               value={total_cultivation_cost || 0}
               precision={0}
               valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#0284c7' }}
@@ -174,7 +179,12 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         <Col xs={12} md={8} lg={4}>
           <Card bodyStyle={{ padding: '12px' }} className="border-indigo-100 bg-indigo-50/20">
             <Statistic
-              title={<span className="text-[10px] uppercase font-bold text-indigo-600">Canh tác / Công</span>}
+              title={
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-indigo-600 block">Canh tác / Công</span>
+                  <span className="text-[9px] text-indigo-500/80 font-medium lowercase block mt-0.5">(cày, cắt, xịt, làm cỏ...)</span>
+                </div>
+              }
               value={cultivation_cost_per_cong || 0}
               precision={0}
               valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#4f46e5' }}
@@ -188,7 +198,12 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         <Col xs={12} md={8} lg={4}>
           <Card bodyStyle={{ padding: '12px' }} className="border-purple-100 bg-purple-50/20">
             <Statistic
-              title={<span className="text-[10px] uppercase font-bold text-purple-600">Tổng CP Vật tư</span>}
+              title={
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-purple-600 block">Tổng CP Vật tư</span>
+                  <span className="text-[9px] text-purple-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
+                </div>
+              }
               value={total_input_cost || 0}
               precision={0}
               valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#9333ea' }}
@@ -202,7 +217,12 @@ const ProfitReportTab: React.FC<ProfitReportTabProps> = ({ riceCropId, amountOfL
         <Col xs={12} md={8} lg={4}>
           <Card bodyStyle={{ padding: '12px' }} className="border-fuchsia-100 bg-fuchsia-50/20">
             <Statistic
-              title={<span className="text-[10px] uppercase font-bold text-fuchsia-600">Vật tư / Công</span>}
+              title={
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-fuchsia-600 block">Vật tư / Công</span>
+                  <span className="text-[9px] text-fuchsia-500/80 font-medium block mt-0.5 uppercase">(Phân, Thuốc, Giống)</span>
+                </div>
+              }
               value={input_cost_per_cong || 0}
               precision={0}
               valueStyle={{ fontSize: '15px', fontWeight: '800', color: '#c026d3' }}
