@@ -205,15 +205,35 @@ export interface GrowthTracking {
 
 /** Báo cáo lợi nhuận */
 export interface ProfitReport {
+  rice_crop_id: number;
+  field_name: string;
+  field_area: number;
+  amount_of_land: number;
+  rice_variety: string;
   total_revenue: number;
+  
+  // Chi phí
   total_cost: number;
+  cost_per_area: number;
+  cost_per_cong: number;
+  
+  total_cultivation_cost: number;
+  cultivation_cost_per_cong: number;
+  
+  total_input_cost: number;
+  input_cost_per_cong: number;
+
   net_profit: number;
   roi: number;
+  profit_per_m2: number;
   cost_breakdown: {
     category: string;
     amount: number;
     percentage: number;
   }[];
+  sowing_date?: string;
+  harvest_date?: string;
+  duration_days?: number;
 }
 
 /** Tổng hợp chi phí */
