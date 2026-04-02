@@ -127,7 +127,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                           if (selectedOpt.cost_price !== undefined) {
                             const cost = selectedOpt.cost_price
                             setValue(`items.${index}.unit_cost`, cost)
-                            const defaultVatCost = Number(selectedOpt.average_vat_input_cost || selectedOpt.cost_price || 0)
+                            const defaultVatCost = Number(selectedOpt.average_vat_input_cost || 0)
                             setValue(`items.${index}.vat_unit_cost`, defaultVatCost)
                             
                             // Cập nhật thành tiền

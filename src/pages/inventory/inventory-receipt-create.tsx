@@ -138,9 +138,28 @@ const InventoryReceiptCreate: React.FC = () => {
     return [...dedupedInitials, ...productOptionsFromSearch]
   }, [productOptionsFromSearch, initialProductOptions])
 
+  // Gộp sản phẩm hiện có và sản phẩm tìm kiếm để không bị mất text hiển thị khi search
+  const combinedProductOptions = useMemo(() => {
+    const searchOptions = productOptions || []
+    // Tạo Map để giữ unique by value (ID)
+    const optionsMap = new Map();
+    
+    // Ưu tiên sản phẩm tìm kiếm mới nhất
+    searchOptions.forEach(opt => optionsMap.set(opt.value, opt));
+    
+    // Bổ sung các sản phẩm ban đầu nếu chưa có trong kết quả tìm kiếm
+    initialProductOptions.forEach(opt => {
+      if (!optionsMap.has(opt.value)) {
+        optionsMap.set(opt.value, opt);
+      }
+    });
+    
+    return Array.from(optionsMap.values());
+  }, [productOptions, initialProductOptions])
+
   // Phụ thuộc của combo box
   const comboBoxProps = useMemo(() => ({
-    data: productOptions,
+    data: combinedProductOptions,
     isLoading,
     isFetching,
     hasNextPage,
@@ -148,7 +167,7 @@ const InventoryReceiptCreate: React.FC = () => {
     fetchNextPage,
     onSearch: setSearchTerm,
   }), [
-    productOptions,
+    combinedProductOptions,
     isLoading,
     isFetching,
     hasNextPage,
@@ -281,7 +300,7 @@ const InventoryReceiptCreate: React.FC = () => {
           unit_name: resolvedUnitName,
           quantity: item.quantity,
           unit_cost: Number(item.unit_cost || item.unitPrice || 0),
-          vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? item.unitPrice ?? 0),
+          vat_unit_cost: Number(item.vat_unit_cost ?? 0),
           total_price: Number(item.total_price || 0),
           individual_shipping_cost: Number(item.individual_shipping_cost || 0),
           expiry_date: item.expiry_date,
@@ -579,7 +598,7 @@ const InventoryReceiptCreate: React.FC = () => {
           quantity: item.quantity,
           taxable_quantity: item.taxable_quantity || 0,
           unit_cost: Number(item.unit_cost || 0),
-          vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? 0),
+          vat_unit_cost: Number(item.vat_unit_cost ?? 0),
           total_price: Number(item.totalPriceRaw || 0),
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,
