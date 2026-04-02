@@ -352,7 +352,7 @@ const InventoryReceiptDetail: React.FC = () => {
       );
     }
 
-    const displayValue = Number(value ?? record.unit_cost ?? 0);
+    const displayValue = Number(value ?? 0);
 
     return (
       <Tooltip title={canEdit ? "Click để sửa đơn giá VAT" : "Đơn giá trên hóa đơn VAT"}>

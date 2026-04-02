@@ -356,7 +356,7 @@ export function mapApiResponseToInventoryReceiptItem(
     vat_unit_cost:
       apiItem.vat_unit_cost !== undefined && apiItem.vat_unit_cost !== null
         ? parseFloat(apiItem.vat_unit_cost)
-        : parseFloat(apiItem.unit_cost || apiItem.unit_price || "0"),
+        : undefined,
     total_price: parseFloat(apiItem.total_price || "0"),
     expiry_date: apiItem.expiry_date, // Thêm expiry_date
     batch_number: apiItem.batch_number, // Thêm batch_number
