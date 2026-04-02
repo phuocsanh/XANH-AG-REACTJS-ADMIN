@@ -253,25 +253,46 @@ const InventoryReceiptCreate: React.FC = () => {
     if (isEditMode && existingReceipt && existingItems && !isLoadingReceipt && !isLoadingItems) {
       const receipt = existingReceipt as any
       
-      // Mapped items
-      const mappedItems = existingItems.map((item: any) => ({
-        product_id: item.product_id,
-        product_name: item.product_name || item.product?.trade_name || item.product?.name || '',
-        scientific_name: item.product?.name || '',
-        unit_name: item.product?.unit?.name || '',
-        quantity: item.quantity,
-        unit_cost: Number(item.unit_cost || item.unitPrice || 0),
-        vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? item.unitPrice ?? 0),
-        total_price: Number(item.total_price || 0),
-        individual_shipping_cost: Number(item.individual_shipping_cost || 0),
-        expiry_date: item.expiry_date,
-        notes: item.notes,
-        taxable_quantity: item.taxable_quantity || 0,
-        unit_id: item.unit_id,
-        conversion_factor: Number(item.conversion_factor || 1),
-        base_quantity: Number(item.base_quantity || item.quantity),
-        conversions: item.product?.unit_conversions || [],
-      })).reverse()
+      // Mapped items - resolve đúng đơn vị tính từ snapshot DB và conversions
+      const mappedItems = existingItems.map((item: any) => {
+        const conversions = item.product?.unit_conversions || [];
+
+        // Ưu tiên: unit_id lưu trong DB → nếu null thì tìm đơn vị cơ sở từ conversions
+        let resolvedUnitId = item.unit_id ?? undefined;
+        if (!resolvedUnitId && conversions.length > 0) {
+          const baseConv = conversions.find((c: any) => c.is_base_unit);
+          resolvedUnitId = baseConv?.unit_id ?? undefined;
+        }
+
+        // Ưu tiên: unit_name snapshot trong DB → tìm từ conversion khớp unit_id → fallback product.unit.name
+        let resolvedUnitName = item.unit_name || '';
+        if (!resolvedUnitName && resolvedUnitId) {
+          const matchConv = conversions.find((c: any) => c.unit_id === resolvedUnitId);
+          resolvedUnitName = matchConv?.unit?.name || matchConv?.unit_name || '';
+        }
+        if (!resolvedUnitName) {
+          resolvedUnitName = item.product?.unit?.name || '';
+        }
+
+        return {
+          product_id: item.product_id,
+          product_name: item.product_name || item.product?.trade_name || item.product?.name || '',
+          scientific_name: item.product?.name || '',
+          unit_name: resolvedUnitName,
+          quantity: item.quantity,
+          unit_cost: Number(item.unit_cost || item.unitPrice || 0),
+          vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? item.unitPrice ?? 0),
+          total_price: Number(item.total_price || 0),
+          individual_shipping_cost: Number(item.individual_shipping_cost || 0),
+          expiry_date: item.expiry_date,
+          notes: item.notes,
+          taxable_quantity: item.taxable_quantity || 0,
+          unit_id: resolvedUnitId,
+          conversion_factor: Number(item.conversion_factor || 1),
+          base_quantity: Number(item.base_quantity || item.quantity),
+          conversions,
+        };
+      }).reverse()
 
       // Tạo danh sách option sản phẩm từ existingItems để ComboBox hiển thị tên thay vì ID
       const initOpts = existingItems

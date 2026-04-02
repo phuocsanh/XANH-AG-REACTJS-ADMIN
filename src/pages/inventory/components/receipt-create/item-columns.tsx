@@ -158,19 +158,31 @@ const useItemColumns = ({
       align: "center",
       render: (_, __, index) => {
         const conversions = getValues(`items.${index}.conversions`) || []
-        const hasConversions = conversions.length > 0
+        // Chỉ hiện dropdown khi có NHIỀU HƠN 1 đơn vị để chọn
+        // (1 đơn vị = không cần dropdown, hiện text cho gọn)
+        const hasMultipleConversions = conversions.length > 1
+
+        // Luôn lấy unit_name tốt nhất có thể
+        const currentUnitId = getValues(`items.${index}.unit_id`)
+        const storedUnitName = getValues(`items.${index}.unit_name`) || ''
+        const matchedConv = conversions.find((c: any) => c.unit_id === currentUnitId)
+        const displayUnitName = storedUnitName
+          || matchedConv?.unit?.name
+          || matchedConv?.unit_name
+          || (conversions.find((c: any) => c.is_base_unit)?.unit?.name)
+          || (conversions.find((c: any) => c.is_base_unit)?.unit_name)
+          || '-'
 
         return (
           <div className="text-center">
-            {hasConversions ? (
+            {hasMultipleConversions ? (
               <Controller
                 name={`items.${index}.unit_id`}
                 control={control}
                 render={({ field }) => (
                   <Tooltip title={(() => {
                     const factor = Number(getValues(`items.${index}.conversion_factor`)) || 1;
-                    const unitName = getValues(`items.${index}.unit_name`) || '';
-                    const conversions = getValues(`items.${index}.conversions`) || [];
+                    const unitName = displayUnitName;
                     const baseUnit = conversions.find((c: any) => c.is_base_unit);
                     const baseUnitName = baseUnit?.unit?.name || baseUnit?.unit_name || 'đơn vị cơ sở';
                     if (factor === 1) return `Đơn vị cơ sở (${unitName})`;
@@ -184,9 +196,10 @@ const useItemColumns = ({
                         options={conversions.map((c: any) => {
                           const factorValue = Number(c.conversion_factor) || 1;
                           const isBase = c.is_base_unit;
-                          const label = isBase 
-                            ? (c.unit?.name || c.unit_name) 
-                            : `${c.unit?.name || c.unit_name} (${factorValue})`;
+                          const unitLabel = c.unit?.name || c.unit_name || '---';
+                          const label = isBase
+                            ? unitLabel
+                            : `${unitLabel} (${factorValue})`;
                           
                           return {
                             label: label || "---",
@@ -212,11 +225,8 @@ const useItemColumns = ({
                 )}
               />
             ) : (
-              <Controller
-                name={`items.${index}.unit_name`}
-                control={control}
-                render={({ field }) => <span>{field.value || "-"}</span>}
-              />
+              // Hiện text - luôn có giá trị nhờ displayUnitName
+              <span className="text-sm">{displayUnitName}</span>
             )}
           </div>
         )
