@@ -617,6 +617,53 @@ const InventoryReceiptCreate: React.FC = () => {
   // Sử dụng card layout cho cả mobile và tablet
   const useCardLayout = isMobile || isTablet
 
+  /**
+   * Xử lý cập nhật metadata cho phiếu đã duyệt - bypass hoàn toàn Zod validation
+   * vì phiếu đã duyệt không cho đổi items/payment, chỉ sửa NCC / ngày / ghi chú
+   */
+  const handleMetadataUpdate = async () => {
+    if (!receiptId) return;
+    try {
+      const data = getValues();
+
+      // Validate đơn giản: phải có nhà cung cấp
+      if (!data.supplierId) {
+        toast.error('Vui lòng chọn nhà cung cấp');
+        return;
+      }
+
+      // Xử lý upload ảnh nếu có
+      const imageUrls: string[] = [];
+      for (const file of fileList) {
+        if (file.url) {
+          imageUrls.push(file.url);
+        } else if (file.originFileObj) {
+          const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj);
+          imageUrls.push((uploadResult as any).data.url);
+        }
+      }
+
+      const metadataPayload: any = {
+        supplier_id: data.supplierId,
+        notes: data.description || undefined,
+        bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
+        payment_due_date: data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : undefined,
+        ...(imageUrls.length > 0 && { images: imageUrls }),
+      };
+
+      await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
+      navigate(`/inventory/receipts/${receiptId}`);
+    } catch (error) {
+      console.error('Error updating approved receipt metadata:', error);
+    }
+  };
+
+  // Callback khi validate form thất bại
+  const onFormError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast.error("Vui lòng kiểm tra lại các trường thông tin bắt buộc");
+  };
+
   // Loading state khi đang load dữ liệu trong edit mode
   if (isEditMode && (isLoadingReceipt || isLoadingItems)) {
     return (
@@ -643,7 +690,7 @@ const InventoryReceiptCreate: React.FC = () => {
         </Title>
       </div>
 
-      <form onSubmit={handleFormSubmit(onSubmit)}>
+      <form onSubmit={handleFormSubmit(onSubmit, onFormError)}>
         <Card className='mb-4'>
           <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
             <FormComboBox
@@ -769,6 +816,7 @@ const InventoryReceiptCreate: React.FC = () => {
                   control={control}
                   setValue={setValue}
                   getValues={getValues}
+                  isApproved={isApproved}
                 />
               ))}
             </div>
@@ -1046,15 +1094,29 @@ const InventoryReceiptCreate: React.FC = () => {
           </div>
 
           <div className='mt-6 flex justify-end'>
-            <Button
-              type='primary'
-              htmlType='submit'
-              icon={<SaveOutlined />}
-              loading={isEditMode ? updateReceiptMutation.isPending : createReceiptMutation.isPending}
-              size='large'
-            >
-              {isEditMode ? "Cập nhật phiếu nhập hàng" : "Tạo phiếu nhập hàng"}
-            </Button>
+            {isApproved ? (
+              // Phếu đã duyệt: bề qua Zod validation, chỉ gửi metadata
+              <Button
+                type='primary'
+                icon={<SaveOutlined />}
+                loading={updateReceiptMutation.isPending}
+                size='large'
+                onClick={handleMetadataUpdate}
+              >
+                Cập nhật thông tin phiếu
+              </Button>
+            ) : (
+              // Phếu nháp: submit form bình thường qua Zod
+              <Button
+                type='primary'
+                htmlType='submit'
+                icon={<SaveOutlined />}
+                loading={isEditMode ? updateReceiptMutation.isPending : createReceiptMutation.isPending}
+                size='large'
+              >
+                {isEditMode ? "Cập nhật phiếu nhập hàng" : "Tạo phiếu nhập hàng"}
+              </Button>
+            )}
           </div>
       </form>
     </div>

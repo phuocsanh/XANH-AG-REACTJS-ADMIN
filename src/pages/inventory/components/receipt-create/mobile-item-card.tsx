@@ -37,6 +37,7 @@ interface MobileItemCardProps {
   control: any
   setValue: any
   getValues: any
+  isApproved?: boolean // Phếu đã duyệt - disable các trường không được phép sửa
 }
 
 const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
@@ -47,6 +48,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
   control,
   setValue,
   getValues,
+  isApproved,
 }) => {
   return (
     <Card
@@ -60,8 +62,9 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
           okText='Xóa'
           cancelText='Đóng'
           placement='topRight'
+          disabled={isApproved}
         >
-          <Button type='text' icon={<DeleteOutlined />} danger />
+          <Button type='text' icon={<DeleteOutlined />} danger disabled={isApproved} />
         </Popconfirm>
       }
       className='mb-4'
@@ -93,6 +96,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                     title=""
                     placeholder='Chọn sản phẩm'
                     {...comboBoxProps}
+                    disabled={isApproved}
                     showSearch={true}
                     onChange={(value, option) => {
                       field.onChange(value)
@@ -154,19 +158,25 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
             <label className='block text-xs mb-1'>Đơn vị tính</label>
             {(() => {
               const conversions = getValues(`items.${index}.conversions`) || []
-              const hasConversions = conversions.length > 0
+              // Chỉ hiện dropdown khi có nhiều hơn 1 đơn vị để chọn
+              const hasMultipleConversions = conversions.length > 1
 
-              if (!hasConversions) {
+              // Luôn lấy unit_name tốt nhất có thể
+              const currentUnitId = getValues(`items.${index}.unit_id`)
+              const storedUnitName = getValues(`items.${index}.unit_name`) || ''
+              const matchedConv = conversions.find((c: any) => c.unit_id === currentUnitId)
+              const displayUnitName = storedUnitName
+                || matchedConv?.unit?.name
+                || matchedConv?.unit_name
+                || (conversions.find((c: any) => c.is_base_unit)?.unit?.name)
+                || (conversions.find((c: any) => c.is_base_unit)?.unit_name)
+                || '-'
+
+              if (!hasMultipleConversions) {
                 return (
-                  <Controller
-                    name={`items.${index}.unit_name`}
-                    control={control}
-                    render={({ field }) => (
-                      <div className="p-2 bg-gray-50 border rounded min-h-[32px] flex items-center text-gray-500 text-sm">
-                        {field.value || "-"}
-                      </div>
-                    )}
-                  />
+                  <div className="p-2 bg-gray-50 border rounded min-h-[32px] flex items-center text-gray-500 text-sm">
+                    {displayUnitName}
+                  </div>
                 )
               }
 
@@ -178,13 +188,12 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                     <ComboBox
                       {...field}
                       noFormItem
+                      disabled={isApproved}
                       options={conversions.map((c: any) => {
                         const factorValue = Number(c.conversion_factor) || 1;
                         const isBase = c.is_base_unit;
-                        const label = isBase 
-                          ? (c.unit?.name || c.unit_name) 
-                          : `${c.unit?.name || c.unit_name} (${factorValue})`;
-                        
+                        const unitLabel = c.unit?.name || c.unit_name || '---';
+                        const label = isBase ? unitLabel : `${unitLabel} (${factorValue})`;
                         return {
                           label: label || "---",
                           value: c.unit_id,
@@ -197,8 +206,6 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                           const factor = Number(selectedConv.conversion_factor) || 1
                           setValue(`items.${index}.conversion_factor`, factor)
                           setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name)
-                          
-                          // Cập nhật base_quantity
                           const qty = getValues(`items.${index}.quantity`) || 0
                           setValue(`items.${index}.base_quantity`, qty * factor)
                         }
@@ -219,6 +226,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 <NumberInput
                   {...field}
                   min={1}
+                  disabled={isApproved}
                   placeholder='Số lượng'
                   onChange={(value) => {
                     const qty = value || 1
@@ -241,6 +249,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 <NumberInput
                   {...field}
                   min={0}
+                  disabled={isApproved}
                   placeholder='Đơn giá'
                   onChange={(value) => {
                     const cost = value || 0
@@ -263,6 +272,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 <NumberInput
                   {...field}
                   min={0}
+                  disabled={isApproved}
                   placeholder='Giá VAT'
                 />
               )}
@@ -312,6 +322,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 value={field.value ? dayjs(field.value) : null}
                 placeholder='Hạn dùng'
                 format='DD/MM/YYYY'
+                disabled={isApproved}
                 onChange={(d) =>
                   field.onChange(d ? d.toISOString() : undefined)
                 }
