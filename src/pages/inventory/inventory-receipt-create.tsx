@@ -527,7 +527,7 @@ const InventoryReceiptCreate: React.FC = () => {
           ...(imageUrls.length > 0 && { images: imageUrls }),
         };
         await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
-        navigate(`/inventory/receipts/${receiptId}`);
+        navigate("/inventory/receipts");
         return;
       }
 
@@ -604,11 +604,7 @@ const InventoryReceiptCreate: React.FC = () => {
         ? receiptId
         : (createReceiptMutation.data as any)?.id || (createReceiptMutation.data as any)?.data?.id;
 
-      if (finalReceiptId) {
-        navigate(`/inventory/receipts/${finalReceiptId}`);
-      } else {
-        navigate("/inventory/receipts");
-      }
+      navigate("/inventory/receipts");
     } catch (error) {
       console.error("Error saving receipt:", error)
     }
@@ -652,7 +648,7 @@ const InventoryReceiptCreate: React.FC = () => {
       };
 
       await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
-      navigate(`/inventory/receipts/${receiptId}`);
+      navigate("/inventory/receipts");
     } catch (error) {
       console.error('Error updating approved receipt metadata:', error);
     }
