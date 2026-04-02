@@ -18,11 +18,13 @@ interface NumberInputProps {
   addonAfter?: React.ReactNode
   addonBefore?: React.ReactNode
   allowClear?: boolean
+  onPressEnter?: (e: any) => void
+  autoFocus?: boolean
 }
 
 const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
   (props, ref) => {
-    const { value, onChange, min, max, decimalScale, ...rest } = props
+    const { value, onChange, min, max, decimalScale, onPressEnter, ...rest } = props
 
     return (
       <NumericFormat
@@ -39,6 +41,8 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
         size={props.size}
         placeholder={props.placeholder}
         getInputRef={ref}
+        onPressEnter={onPressEnter}
+        autoFocus={props.autoFocus}
         isAllowed={(values) => {
           if (!values.value) return true
           const numericValue = parseFloat(values.value)

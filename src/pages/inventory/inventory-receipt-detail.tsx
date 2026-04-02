@@ -20,6 +20,7 @@ import {
   Avatar,
 } from "antd"
 import DataTable from "@/components/common/data-table"
+import NumberInput from "@/components/common/number-input"
 import {
   ArrowLeftOutlined,
   EditOutlined,
@@ -331,7 +332,7 @@ const InventoryReceiptDetail: React.FC = () => {
     if (editing && canEdit) {
       return (
         <Space.Compact>
-          <InputNumber
+          <NumberInput
             min={0}
             value={editValue}
             onChange={(val: number | null) => setEditValue(val || 0)}
@@ -392,7 +393,7 @@ const InventoryReceiptDetail: React.FC = () => {
     if (editing && canEdit) {
       return (
         <Space.Compact>
-          <InputNumber
+          <NumberInput
             min={0}
             value={editValue}
             onChange={(val: number | null) => setEditValue(val || 0)}
