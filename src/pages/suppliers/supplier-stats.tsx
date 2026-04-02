@@ -180,54 +180,67 @@ const SupplierStatsPage: React.FC = () => {
         <div>
           {/* Main Stats Cards */}
           <Row gutter={[20, 20]} className="mb-8">
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8} lg={4.8} xl={4.8} style={{ flex: '1 0 20%' }}>
+              <Card className="rounded-2xl border-none shadow-sm h-full bg-indigo-600">
+                <Statistic
+                  title={<Text className="text-indigo-100" strong>TỔNG TIỀN NHẬP HÀNG</Text>}
+                  value={summary.total_purchase_value}
+                  formatter={(value) => formatMoney(Number(value))}
+                  valueStyle={{ color: '#fff', fontSize: '20px', fontWeight: 'bold' }}
+                  prefix={<ProfileOutlined className="text-indigo-100" />}
+                />
+                <div className="mt-2 text-indigo-100 text-xs truncate">Giá trị hóa đơn nhập kho</div>
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={12} md={8} lg={4.8} xl={4.8} style={{ flex: '1 0 20%' }}>
               <Card className="rounded-2xl border-none shadow-sm hover:shadow-md transition-shadow h-full bg-blue-600">
                 <Statistic
                   title={<Text className="text-blue-100" strong>GIÁ TRỊ BÁN RA</Text>}
                   value={summary.total_revenue}
                   formatter={(value) => formatMoney(Number(value))}
-                  valueStyle={{ color: '#fff', fontSize: '22px', fontWeight: 'bold' }}
+                  valueStyle={{ color: '#fff', fontSize: '20px', fontWeight: 'bold' }}
                   prefix={<ShoppingOutlined className="text-blue-100" />}
                 />
-                <div className="mt-2 text-blue-100 text-xs truncate">Phát sinh từ {summary.product_count} sản phẩm</div>
+                <div className="mt-2 text-blue-100 text-xs truncate">Doanh thu từ {summary.product_count} sản phẩm</div>
               </Card>
             </Col>
             
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8} lg={4.8} xl={4.8} style={{ flex: '1 0 20%' }}>
               <Card className="rounded-2xl border-none shadow-sm h-full" bodyStyle={{ borderLeft: '4px solid #f97316' }}>
                 <Statistic
                   title={<Text type="secondary" strong>GIÁ TRỊ NHẬP VÀO</Text>}
                   value={summary.total_cost}
                   formatter={(value) => formatMoney(Number(value))}
-                  valueStyle={{ color: '#ea580c', fontSize: '20px' }}
+                  valueStyle={{ color: '#ea580c', fontSize: '18px' }}
                   prefix={<DollarOutlined />}
                 />
-                <div className="mt-2 text-xs text-gray-400">Giá vốn các sản phẩm đã bán</div>
+                <div className="mt-2 text-xs text-gray-400">Giá vốn lượng hàng đã bán</div>
               </Card>
             </Col>
             
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8} lg={4.8} xl={4.8} style={{ flex: '1 0 20%' }}>
               <Card className="rounded-2xl border-none shadow-sm h-full" bodyStyle={{ borderLeft: '4px solid #10b981' }}>
                 <Statistic
                   title={<Text type="secondary" strong>LỢI NHUẬN GỘP</Text>}
                   value={summary.gross_profit}
                   formatter={(value) => formatMoney(Number(value))}
-                  valueStyle={{ color: '#059669', fontSize: '22px', fontWeight: 'bold' }}
+                  valueStyle={{ color: '#059669', fontSize: '20px', fontWeight: 'bold' }}
                   prefix={<ArrowUpOutlined />}
                 />
                 <div className="mt-2 text-xs text-emerald-600 font-medium">Tỷ suất: {summary.gross_margin}%</div>
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} md={6}>
+            <Col xs={24} sm={12} md={8} lg={4.8} xl={4.8} style={{ flex: '1 0 20%' }}>
               <Card className="rounded-2xl border-none shadow-sm h-full" bodyStyle={{ borderLeft: '4px solid #3b82f6' }}>
                 <Statistic
                   title={<Text type="secondary" strong>CÁC ĐƠN HÀNG</Text>}
                   value={summary.invoice_count}
-                  valueStyle={{ color: '#2563eb', fontSize: '22px' }}
+                  valueStyle={{ color: '#2563eb', fontSize: '20px' }}
                   prefix={<ProfileOutlined />}
                 />
-                <div className="mt-2 text-xs text-gray-400">Số lượng hóa đơn có liên quan</div>
+                <div className="mt-2 text-xs text-gray-400">Số lượng hóa đơn bán hàng</div>
               </Card>
             </Col>
           </Row>
