@@ -89,6 +89,9 @@ const InventoryReceiptCreate: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [supplierSearchTerm, setSupplierSearchTerm] = useState("")
 
+  // State lưu sản phẩm ban đầu từ existingItems (để ComboBox hiển thị tên thay vì ID)
+  const [initialProductOptions, setInitialProductOptions] = useState<{ value: number; label: string; [key: string]: any }[]>([])
+
   const {
     control,
     handleSubmit: handleFormSubmit,
@@ -114,7 +117,7 @@ const InventoryReceiptCreate: React.FC = () => {
   } = useProductSearch(searchTerm, 20, true)
 
   // Flatten data từ tất cả pages
-  const productOptions = useMemo(() => {
+  const productOptionsFromSearch = useMemo(() => {
     if (!data?.pages) return []
     return data.pages.flatMap((page) => {
       if (!page || !page.data) return []
@@ -122,12 +125,18 @@ const InventoryReceiptCreate: React.FC = () => {
         ...product,
         label: product.trade_name || product.name,
         value: product.id,
-        // Bổ sung các trường cho Tooltip trong ComboBox
         scientific_name: product.name,
         unit_name: product.unit?.name || product.unit_name || "",
       }))
     })
   }, [data?.pages])
+
+  // Merge sản phẩm ban đầu (từ existingItems) với kết quả tìm kiếm, tránh trùng lặp
+  const productOptions = useMemo(() => {
+    const searchIds = new Set(productOptionsFromSearch.map((p) => p.value))
+    const dedupedInitials = initialProductOptions.filter((p) => !searchIds.has(p.value))
+    return [...dedupedInitials, ...productOptionsFromSearch]
+  }, [productOptionsFromSearch, initialProductOptions])
 
   // Phụ thuộc của combo box
   const comboBoxProps = useMemo(() => ({
@@ -263,6 +272,22 @@ const InventoryReceiptCreate: React.FC = () => {
         base_quantity: Number(item.base_quantity || item.quantity),
         conversions: item.product?.unit_conversions || [],
       })).reverse()
+
+      // Tạo danh sách option sản phẩm từ existingItems để ComboBox hiển thị tên thay vì ID
+      const initOpts = existingItems
+        .filter((item: any) => item.product_id)
+        .map((item: any) => ({
+          value: item.product_id,
+          label: item.product?.trade_name || item.product?.name || item.product_name || String(item.product_id),
+          name: item.product?.name || '',
+          trade_name: item.product?.trade_name || item.product?.name || item.product_name || '',
+          unit_id: item.unit_id,
+          unit_name: item.product?.unit?.name || item.unit_name || '',
+          unit_conversions: item.product?.unit_conversions || [],
+          cost_price: item.unit_cost,
+          average_vat_input_cost: item.vat_unit_cost,
+        }))
+      setInitialProductOptions(initOpts)
 
       // Reset toàn bộ form với dữ liệu mới
       reset({
@@ -447,15 +472,12 @@ const InventoryReceiptCreate: React.FC = () => {
     console.log("Submitting form with data:", data);
 
     try {
-      const { grandTotal } = calculateTotals();
-
-      // 1. Xử lý upload ảnh
+      // 1. Xử lý upload ảnh (dùng chung cho cả 2 luồng)
       const imageUrls: string[] = [];
       if (fileList.length > 0) {
         try {
           const needsUpload = fileList.some(f => f.originFileObj);
           if (needsUpload) toast.info("Đang xử lý hình ảnh...");
-
           for (const file of fileList) {
             if (file.url) {
               imageUrls.push(file.url);
@@ -471,19 +493,36 @@ const InventoryReceiptCreate: React.FC = () => {
         }
       }
 
+      // ========================================================
+      // 2A. NẾU PHIẾU ĐÃ DUYỆT: chỉ gửi các trường metadata được phép
+      //      (server sẽ từ chối nếu gửi items, status, total_amount...)
+      // ========================================================
+      if (isApproved && isEditMode && receiptId) {
+        const metadataPayload: any = {
+          supplier_id: data.supplierId,
+          notes: data.description || undefined,
+          bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
+          payment_due_date: data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : undefined,
+          ...(imageUrls.length > 0 && { images: imageUrls }),
+        };
+        await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
+        navigate(`/inventory/receipts/${receiptId}`);
+        return;
+      }
+
+      // ========================================================
+      // 2B. PHIẾU NHÁP: gửi toàn bộ dữ liệu bình thường
+      // ========================================================
       const totals = calculateTotals()
       
-      // 2. Chuẩn bị dữ liệu gửi lên server
-      // Tính toán thông tin thanh toán dựa trên paymentType nếu duyệt luôn
       let paid_amount = 0;
       let payment_status = 'unpaid' as any;
-      
       if (data.status === 'approved') {
         if (data.paymentType === 'full') {
           paid_amount = totals.supplierAmount;
           payment_status = 'paid';
         } else if (data.paymentType === 'partial') {
-          paid_amount = Math.round(data.paidAmount || 0); // Đảm bảo làm tròn
+          paid_amount = Math.round(data.paidAmount || 0);
           payment_status = 'partial';
         } else {
           paid_amount = 0;
@@ -493,30 +532,23 @@ const InventoryReceiptCreate: React.FC = () => {
 
       const submissionData: any = {
         supplier_id: data.supplierId,
-        total_amount: Math.round(totals.grandTotal), // Ép làm tròn lần cuối
+        total_amount: Math.round(totals.grandTotal),
         notes: data.description,
         bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
         status: data.status || "draft",
         is_taxable: !!data.is_taxable,
-        created_by: 1, // Fallback if needed
-        
-        // Phí vận chuyển chung
+        created_by: 1,
         shared_shipping_cost: Number(data.sharedShippingCost || 0),
         shipping_allocation_method: data.allocationMethod,
-        
-        // Images
         ...(imageUrls.length > 0 && { images: imageUrls }),
-        
-        // Thanh toán
         paid_amount: Number(paid_amount || 0),
         payment_status: payment_status,
         is_shipping_paid_to_supplier: false,
         debt_amount: Math.round(Number(totals.supplierAmount || 0) - Number(paid_amount || 0)),
         payment_method: data.status === 'approved' && data.paymentType !== 'debt' ? data.paymentMethod : null,
-        payment_due_date: data.status === 'approved' && data.paymentType !== 'full' ? 
-          (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null) : null,
-        
-        // Items - Sử dụng giá đã chiết khấu làm giá nhập chính thức
+        payment_due_date: data.status === 'approved' && data.paymentType !== 'full'
+          ? (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null)
+          : null,
         items: totals.finalItems.map((item: any) => ({
           product_id: item.product_id,
           unit_id: item.unit_id,
@@ -525,33 +557,32 @@ const InventoryReceiptCreate: React.FC = () => {
           base_quantity: item.base_quantity || item.quantity,
           quantity: item.quantity,
           taxable_quantity: item.taxable_quantity || 0,
-          unit_cost: Number(item.unit_cost || 0), // Lưu GIÁ MUA GỐC
+          unit_cost: Number(item.unit_cost || 0),
           vat_unit_cost: Number(item.vat_unit_cost ?? item.unit_cost ?? 0),
-          total_price: Number(item.totalPriceRaw || 0), // Lưu THÀNH TIỀN GỐC (SL * Giá mua)
+          total_price: Number(item.totalPriceRaw || 0),
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,
           individual_shipping_cost: Number(item.individual_shipping_cost || 0),
-          discount_amount: Number(item.itemDiscount || 0), // Lưu chiết khấu dòng riêng
+          discount_amount: Number(item.itemDiscount || 0),
           discount_value: Number(item.discountValue || 0),
           discount_type: item.discountType || 'fixed_amount',
         })).reverse(),
-
-        // Chiết khấu đơn hàng gửi 0 vì đã phân bổ vào từng item theo yêu cầu
         discount_amount: 0,
         discount_value: 0,
         discount_type: 'fixed_amount',
       };
 
-      // 3. Gọi API Create hoặc Update
+      // 3. Gọi API
       if (isEditMode && receiptId) {
         await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: submissionData as any })
       } else {
         await createReceiptMutation.mutateAsync(submissionData as CreateInventoryReceiptRequest)
       }
-      
-      // Chuyển hướng sang trang chi tiết để theo dõi tiếp (Duyệt/Thanh toán)
-      const finalReceiptId = isEditMode ? receiptId : (createReceiptMutation.data as any)?.id || (createReceiptMutation.data as any)?.data?.id;
-      
+
+      const finalReceiptId = isEditMode
+        ? receiptId
+        : (createReceiptMutation.data as any)?.id || (createReceiptMutation.data as any)?.data?.id;
+
       if (finalReceiptId) {
         navigate(`/inventory/receipts/${finalReceiptId}`);
       } else {
@@ -559,7 +590,6 @@ const InventoryReceiptCreate: React.FC = () => {
       }
     } catch (error) {
       console.error("Error saving receipt:", error)
-      // Toast lỗi đã được xử lý trong mutation hook (handleApiError)
     }
   }
 
