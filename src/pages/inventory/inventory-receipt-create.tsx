@@ -809,7 +809,6 @@ const InventoryReceiptCreate: React.FC = () => {
               {itemFields.map((item, index) => (
                 <MobileItemCard
                   key={item.id}
-                  item={item}
                   index={index}
                   handleDeleteItem={handleDeleteItem}
                   comboBoxProps={comboBoxProps}

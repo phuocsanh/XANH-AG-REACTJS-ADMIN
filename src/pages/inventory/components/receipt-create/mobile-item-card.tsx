@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { Card, Button, Typography, Popconfirm, Tooltip } from "antd"
 
 import { Controller } from "react-hook-form"
@@ -10,20 +10,12 @@ import DatePicker from "@/components/common/DatePicker"
 import Field from "@/components/common/field"
 
 import ComboBox from "@/components/common/combo-box"
-import { InventoryReceiptItemForm } from "@/models/inventory.model"
 import dayjs from "dayjs"
 const { Text } = Typography
 
-// Hàm validate ghi chú
-const validateNotes = (value: string): string => {
-  if (value && value.length > 255) {
-    return "Ghi chú không được vượt quá 255 ký tự"
-  }
-  return ""
-}
+
 
 interface MobileItemCardProps {
-  item: any
   index: number
   handleDeleteItem: (index: number) => void
   comboBoxProps: {
@@ -41,7 +33,6 @@ interface MobileItemCardProps {
 }
 
 const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
-  item,
   index,
   handleDeleteItem,
   comboBoxProps,
@@ -93,23 +84,9 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 <div className="w-full">
                   <ComboBox
                     {...field}
-                    title=""
+                    {...comboBoxProps}
+                    noFormItem
                     placeholder='Chọn sản phẩm'
-                    isLoading={comboBoxProps.isLoading}
-                    isFetching={comboBoxProps.isFetching}
-                    hasNextPage={comboBoxProps.hasNextPage}
-                    isFetchingNextPage={comboBoxProps.isFetchingNextPage}
-                    fetchNextPage={comboBoxProps.fetchNextPage}
-                    // Gộp dữ liệu tìm kiếm + Sản phẩm hiện tại để chắc chắn hiện được tên
-                    options={(() => {
-                      const currentId = field.value
-                      const currentName = getValues(`items.${index}.product_name`)
-                      const searchData = comboBoxProps.data || []
-                      if (currentId && currentName && !searchData.find(d => String(d.value) === String(currentId))) {
-                        return [{ value: currentId, label: currentName }, ...searchData]
-                      }
-                      return searchData
-                    })()}
                     disabled={isApproved}
                     showSearch={true}
                     onChange={(value, option) => {
@@ -363,5 +340,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
     </Card>
   )
 })
+
+MobileItemCard.displayName = "MobileItemCard"
 
 export default MobileItemCard
