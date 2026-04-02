@@ -251,7 +251,7 @@ const InventoryReceiptsList: React.FC = () => {
 
   // Action handlers
   const handleViewReceipt = (receipt: InventoryReceipt) => {
-    navigate(`/inventory/receipt/${receipt.id}${location.search}`)
+    navigate(`/inventory/receipts/${receipt.id}${location.search}`)
   }
 
   const handleDeleteReceipt = async (id: number) => {

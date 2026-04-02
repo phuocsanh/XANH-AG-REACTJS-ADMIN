@@ -522,7 +522,7 @@ function AppContent({
                       }
                     />
                     <Route
-                      path='/inventory/receipt/:id'
+                      path='/inventory/receipts/:id'
                       element={
                         <ProtectedRoute requiredPermission="inventory:read">
                           <InventoryReceiptDetail />
