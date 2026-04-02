@@ -17,6 +17,7 @@ import {
   Badge,
   Tooltip,
   InputNumber,
+  Avatar,
 } from "antd"
 import DataTable from "@/components/common/data-table"
 import {
@@ -32,6 +33,8 @@ import {
   ShoppingOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  UserOutlined,
+  ArrowRightOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
@@ -41,11 +44,13 @@ import {
   InventoryReceiptStatus,
   normalizeReceiptStatus,
   getInventoryReceiptStatusText,
+  InventoryReceiptLog,
 } from "@/models/inventory.model"
 import {
   useInventoryReceiptQuery,
   useApproveInventoryReceiptMutation,
   useCancelInventoryReceiptMutation,
+  useInventoryReceiptLogsQuery,
   useDeleteInventoryReceiptMutation,
   useInventoryReceiptHistoryQuery,
   useUpdateInventoryReceiptItemMutation,
@@ -75,7 +80,8 @@ const InventoryReceiptDetail: React.FC = () => {
     refetch: refetchReceipt,
   } = useInventoryReceiptQuery(receiptId)
 
-  const { data: historyData, isLoading: isLoadingHistory } = useInventoryReceiptHistoryQuery(receiptId)
+  const { data: historyData, isLoading: isLoadingHistory } = useInventoryReceiptHistoryQuery(receiptId);
+  const { data: auditLogs, isLoading: isLoadingAudit } = useInventoryReceiptLogsQuery(receiptId);
 
   // Chuẩn hóa trạng thái
   const normalizedStatus = receipt 
@@ -361,6 +367,64 @@ const InventoryReceiptDetail: React.FC = () => {
     );
   };
 
+  const UnitCostEditor: React.FC<{
+    value: number;
+    record: InventoryReceiptItem;
+    canEdit: boolean;
+  }> = ({ value, record, canEdit }) => {
+    const [editing, setEditing] = React.useState(false);
+    const [editValue, setEditValue] = React.useState(Number(value || 0));
+    const updateMutation = useUpdateInventoryReceiptItemMutation();
+
+    const handleSave = async () => {
+      try {
+        await updateMutation.mutateAsync({
+          id: record.id,
+          item: { unit_cost: editValue }
+        });
+        setEditing(false);
+        refetchReceipt();
+      } catch (error) {
+        console.error("Error updating unit cost:", error);
+      }
+    };
+
+    if (editing && canEdit) {
+      return (
+        <Space.Compact>
+          <InputNumber
+            min={0}
+            value={editValue}
+            onChange={(val: number | null) => setEditValue(val || 0)}
+            onPressEnter={handleSave}
+            autoFocus
+            size="small"
+            style={{ width: 110 }}
+          />
+          <Button
+            type="primary"
+            size="small"
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+          >
+            Lưu
+          </Button>
+        </Space.Compact>
+      );
+    }
+
+    return (
+      <Tooltip title={canEdit ? "Click để sửa đơn giá mua" : ""}>
+        <div 
+          onClick={() => canEdit && setEditing(true)}
+          className={canEdit ? "cursor-pointer hover:text-blue-600 font-medium" : ""}
+        >
+          {value.toLocaleString("vi-VN")} ₫
+        </div>
+      </Tooltip>
+    );
+  };
+
   // Cấu hình cột sản phẩm
   const itemColumns: ColumnsType<InventoryReceiptItem> = [
     {
@@ -412,13 +476,19 @@ const InventoryReceiptDetail: React.FC = () => {
         />
       ),
     },
-    {
+     {
       title: "Đơn giá",
       dataIndex: "unit_cost",
       key: "unit_cost",
       width: 120,
       align: "right",
-      render: (p) => (p || 0).toLocaleString("vi-VN") + " ₫",
+      render: (p, record) => (
+        <UnitCostEditor 
+          value={Number(p || 0)}
+          record={record}
+          canEdit={normalizedStatus === InventoryReceiptStatus.APPROVED}
+        />
+      ),
     },
     {
       title: "Đơn giá VAT",
@@ -550,6 +620,90 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (notes: string) => notes || <Text type="secondary" italic>-</Text>
     },
   ]
+
+  // Cột cho bảng Lịch sử chỉnh sửa (Audit Log)
+  const auditColumns: ColumnsType<InventoryReceiptLog> = [
+    {
+      title: "Thời gian",
+      dataIndex: "created_at",
+      key: "created_at",
+      width: 160,
+      render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm:ss"),
+    },
+    {
+      title: "Người thực hiện",
+      key: "user",
+      width: 180,
+      render: (_, record) => (
+        <Space>
+          <Avatar size="small" icon={<UserOutlined />} />
+          <Text>{record.user?.user_profile?.nickname || record.user?.full_name || record.user?.username || `ID: ${record.created_by}`}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: "Hành động",
+      dataIndex: "action",
+      key: "action",
+      width: 150,
+      render: (action) => {
+        if (action === "UPDATE_METADATA") return <Tag color="blue">Sửa thông tin phiếu</Tag>;
+        if (action === "UPDATE_ITEM") return <Tag color="purple">Sửa giá/thuế sản phẩm</Tag>;
+        return <Tag>{action}</Tag>;
+      },
+    },
+    {
+      title: "Chi tiết thay đổi",
+      dataIndex: "details",
+      key: "details",
+      render: (details) => {
+        try {
+          const changes = JSON.parse(details);
+          if (!Array.isArray(changes)) return details;
+
+          return (
+            <div className="flex flex-col gap-1">
+              {changes.map((change, index) => {
+                const fieldNameMap: any = {
+                  supplier_id: "Nhà cung cấp",
+                  notes: "Ghi chú",
+                  bill_date: "Ngày hóa đơn",
+                  payment_due_date: "Hạn thanh toán",
+                  unit_cost: "Đơn giá mua",
+                  taxable_quantity: "SL Thuế",
+                  vat_unit_cost: "Đơn giá VAT",
+                  status: "Trạng thái",
+                };
+
+                const fieldName = fieldNameMap[change.field] || change.field;
+                
+                // Format giá trị hiển thị (nếu là số tiền thì toLocaleString)
+                const formatVal = (val: any) => {
+                  if (val === null || val === undefined) return "Trống";
+                  if (typeof val === "number" && (change.field.includes("cost") || change.field.includes("price") || change.field.includes("amount"))) {
+                    return val.toLocaleString("vi-VN") + " ₫";
+                  }
+                  return String(val);
+                };
+
+                return (
+                  <div key={index} className="text-xs">
+                    <Text strong>{fieldName}:</Text>{" "}
+                    <Text delete type="secondary">{formatVal(change.old)}</Text>
+                    <ArrowRightOutlined className="mx-2 text-[10px]" />
+                    <Text strong type="success">{formatVal(change.new)}</Text>
+                    {change.item_id && <Text type="secondary" className="ml-2 italic">(Item #{change.item_id})</Text>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        } catch (e) {
+          return details;
+        }
+      },
+    },
+  ];
 
   // Loading & Error States
   if (isLoadingReceipt) {
@@ -775,10 +929,10 @@ const InventoryReceiptDetail: React.FC = () => {
             </div>
           </TabPane>
 
-          {/* TAB 4: LỊCH SỬ GIAO DỊCH */}
+          {/* TAB 4: GIAO DỊCH KHO */}
           <TabPane 
-            tab={<Space><span>🕰️ Lịch sử</span></Space>} 
-            key="history"
+            tab={<Space><span>📦 Giao dịch kho</span></Space>} 
+            key="transactions"
           >
             <div className="p-0 md:p-6 data-table-mobile-scroll">
               <DataTable
@@ -796,8 +950,36 @@ const InventoryReceiptDetail: React.FC = () => {
                 <Alert 
                   type="info" 
                   showIcon 
-                  message="Ghi chú về lịch sử" 
-                  description="Các giao dịch kho thể hiện quá trình nhập hàng và các biến động tồn kho liên quan trực tiếp đến các mặt hàng trong phiếu này."
+                  message="Ghi chú về giao dịch kho" 
+                  description="Các giao dịch kho thể hiện quá trình nhập hàng và các biến động tồn kho thực tế của các mặt hàng trong phiếu này."
+                />
+              </div>
+            </div>
+          </TabPane>
+
+          {/* TAB 5: LỊCH SỬ CHỈNH SỬA (Audit Log) */}
+          <TabPane 
+            tab={<Space><span>🕰️ Lịch sử sửa</span></Space>} 
+            key="audit"
+          >
+            <div className="p-0 md:p-6 data-table-mobile-scroll">
+              <DataTable
+                columns={auditColumns as any}
+                data={(auditLogs || []) as any}
+                rowKey="id"
+                pagination={{ pageSize: 15 }}
+                size="middle"
+                loading={isLoadingAudit}
+                showActions={false}
+                showSTT={true}
+                className="border border-gray-100 rounded"
+              />
+              <div className="mt-4">
+                <Alert 
+                  type="warning" 
+                  showIcon 
+                  message="Ghi chú về lịch sử chỉnh sửa" 
+                  description="Đây là nhật ký theo dõi tất cả các hành động sửa đổi thông tin sau khi phiếu đã được tạo. Dùng để đối soát và đảm bảo tính minh bạch."
                 />
               </div>
             </div>

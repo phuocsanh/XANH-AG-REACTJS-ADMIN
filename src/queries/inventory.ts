@@ -15,6 +15,7 @@ import {
   InventoryReceiptItemApiResponse,
   InventoryHistoryApiResponse,
   InventoryReceiptPayment,
+  InventoryReceiptLog,
   // Thêm các interface mới từ backend NestJS
   InventoryBatch,
   InventoryTransaction,
@@ -180,6 +181,22 @@ export const useInventoryReceiptHistoryQuery = (receiptId: number) => {
         `/inventory/receipt/${receiptId}/transactions`
       )
       return response.data || response
+    },
+    enabled: !!receiptId,
+  })
+}
+
+/**
+ * Hook lấy lịch sử chỉnh sửa phiếu nhập kho (Audit Log)
+ */
+export const useInventoryReceiptLogsQuery = (receiptId: number) => {
+  return useQuery({
+    queryKey: ["inventory", "receipt", receiptId, "logs"],
+    queryFn: async () => {
+      const response = await api.get<InventoryReceiptLog[]>(
+        `/inventory/receipt/${receiptId}/logs`
+      )
+      return response
     },
     enabled: !!receiptId,
   })

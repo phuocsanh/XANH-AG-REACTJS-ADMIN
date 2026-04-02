@@ -154,6 +154,26 @@ export interface InventoryReceiptItem {
   base_quantity?: number
 }
 
+/**
+ * Interface cho Log lịch sử chỉnh sửa phiếu nhập kho
+ */
+export interface InventoryReceiptLog {
+  id: number
+  receipt_id: number
+  action: string
+  details: string // JSON string chứa mảng các thay đổi
+  created_by?: number
+  created_at: string
+  user?: {
+    id: number
+    username: string
+    full_name?: string
+    user_profile?: {
+      nickname?: string
+    }
+  }
+}
+
 // Giữ lại các interface ApiResponse để tương thích với backend (nếu cần)
 export interface InventoryReceiptApiResponse {
   id: number

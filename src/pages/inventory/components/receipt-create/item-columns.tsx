@@ -279,7 +279,6 @@ const useItemColumns = ({
                 <NumberInput
                   {...field}
                   min={0}
-                  disabled={isApproved}
                   max={getValues(`items.${index}.quantity`) || 0}
                   placeholder='SL thuế'
                   onChange={(value) => {
@@ -309,7 +308,6 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
-                disabled={isApproved}
                 placeholder='Đơn giá'
                 onChange={(value) => {
                   const cost = value || 0
@@ -340,7 +338,6 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
-                disabled={isApproved}
                 placeholder='Giá VAT'
                 onChange={(value) => {
                   field.onChange(value || 0)
