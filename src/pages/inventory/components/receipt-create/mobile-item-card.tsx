@@ -96,6 +96,8 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                     title=""
                     placeholder='Chọn sản phẩm'
                     {...comboBoxProps}
+                    // Ép hiển thị tên đã lưu nếu options chưa load kịp
+                    label={getValues(`items.${index}.product_name`)}
                     disabled={isApproved}
                     showSearch={true}
                     onChange={(value, option) => {
