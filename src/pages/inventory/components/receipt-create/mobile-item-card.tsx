@@ -95,9 +95,21 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                     {...field}
                     title=""
                     placeholder='Chọn sản phẩm'
-                    {...comboBoxProps}
-                    // Ép hiển thị tên đã lưu nếu options chưa load kịp
-                    label={getValues(`items.${index}.product_name`)}
+                    isLoading={comboBoxProps.isLoading}
+                    isFetching={comboBoxProps.isFetching}
+                    hasNextPage={comboBoxProps.hasNextPage}
+                    isFetchingNextPage={comboBoxProps.isFetchingNextPage}
+                    fetchNextPage={comboBoxProps.fetchNextPage}
+                    // Gộp dữ liệu tìm kiếm + Sản phẩm hiện tại để chắc chắn hiện được tên
+                    options={(() => {
+                      const currentId = field.value
+                      const currentName = getValues(`items.${index}.product_name`)
+                      const searchData = comboBoxProps.data || []
+                      if (currentId && currentName && !searchData.find(d => String(d.value) === String(currentId))) {
+                        return [{ value: currentId, label: currentName }, ...searchData]
+                      }
+                      return searchData
+                    })()}
                     disabled={isApproved}
                     showSearch={true}
                     onChange={(value, option) => {
