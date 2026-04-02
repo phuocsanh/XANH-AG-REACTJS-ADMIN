@@ -35,6 +35,7 @@ interface ItemColumnsProps {
   getValues: any // Hàm getValues từ react-hook-form
   calculateTotals: () => any
   discountMethod: 'none' | 'per_item' | 'global'
+  isApproved?: boolean
 }
 
 /**
@@ -48,6 +49,7 @@ const useItemColumns = ({
   getValues,
   calculateTotals,
   discountMethod,
+  isApproved,
 }: ItemColumnsProps): ColumnsType<any> => {
   const columns: ColumnsType<any> = [
     {
@@ -88,6 +90,7 @@ const useItemColumns = ({
                         {...field}
                         noFormItem
                         placeholder='Chọn sản phẩm'
+                        disabled={isApproved}
                       {...comboBoxProps}
                       showSearch={true}
                       onChange={(value, option) => {
@@ -177,6 +180,7 @@ const useItemColumns = ({
                       <ComboBox
                         {...field}
                         noFormItem
+                        disabled={isApproved}
                         options={conversions.map((c: any) => {
                           const factorValue = Number(c.conversion_factor) || 1;
                           const isBase = c.is_base_unit;
@@ -233,6 +237,7 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={1}
+                disabled={isApproved}
                 placeholder='Số lượng'
                 onChange={(value) => {
                   const qty = value || 1
@@ -274,6 +279,7 @@ const useItemColumns = ({
                 <NumberInput
                   {...field}
                   min={0}
+                  disabled={isApproved}
                   max={getValues(`items.${index}.quantity`) || 0}
                   placeholder='SL thuế'
                   onChange={(value) => {
@@ -303,6 +309,7 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
+                disabled={isApproved}
                 placeholder='Đơn giá'
                 onChange={(value) => {
                   const cost = value || 0
@@ -333,6 +340,7 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
+                disabled={isApproved}
                 placeholder='Giá VAT'
                 onChange={(value) => {
                   field.onChange(value || 0)
@@ -359,6 +367,7 @@ const useItemColumns = ({
                 <Radio.Group 
                   size="small" 
                   value={field.value} 
+                  disabled={isApproved}
                   onChange={(e: any) => {
                     field.onChange(e.target.value)
                     setValue(`items.${index}.discountValue`, 0) // Reset value khi đổi loại
@@ -377,6 +386,7 @@ const useItemColumns = ({
                 <NumberInput
                   {...field}
                   min={0}
+                  disabled={isApproved}
                   placeholder='0'
                   addonAfter={getValues(`items.${index}.discountType`) === 'percentage' ? "%" : "đ"}
                   onChange={(value) => {
@@ -421,6 +431,7 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
+                disabled={isApproved}
                 placeholder='0'
               />
             )}
@@ -471,6 +482,7 @@ const useItemColumns = ({
                   field.onChange(d ? d.toISOString() : undefined)
                 }
                 style={{ width: "100%" }}
+                disabled={isApproved}
                 disabledDate={(current) => current && current < dayjs().startOf('day')}
               />
             )}
@@ -520,6 +532,7 @@ const useItemColumns = ({
                 type='text'
                 icon={<DeleteOutlined />}
                 danger
+                disabled={isApproved}
                 size='small'
               />
             </Popconfirm>

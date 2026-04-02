@@ -163,6 +163,8 @@ const InventoryReceiptCreate: React.FC = () => {
   const watchedDiscountValue = watch("discountValue") || 0
   const watchedDiscountMethod = watch("discountMethod")
   
+  const isApproved = isEditMode && watchedStatus === 'approved'
+  
   // State và hooks tìm kiếm nhà cung cấp
   const {
     data: supplierData,
@@ -438,6 +440,7 @@ const InventoryReceiptCreate: React.FC = () => {
     getValues,
     calculateTotals,
     discountMethod: watchedDiscountMethod,
+    isApproved,
   })
 
   const onSubmit = async (data: ReceiptFormData) => {
@@ -613,6 +616,7 @@ const InventoryReceiptCreate: React.FC = () => {
               name='status'
               control={control}
               required
+              disabled={isApproved}
               placeholder='Chọn trạng thái'
               options={Object.values(InventoryReceiptStatus).map(status => ({
                 value: status,
@@ -646,6 +650,7 @@ const InventoryReceiptCreate: React.FC = () => {
                 render={({ field }) => (
                   <Checkbox 
                     checked={field.value}
+                    disabled={isApproved}
                     onChange={(e) => field.onChange(e.target.checked)}
                     className="text-blue-700 font-medium"
                   >
@@ -672,6 +677,7 @@ const InventoryReceiptCreate: React.FC = () => {
                 render={({ field }) => (
                   <Radio.Group 
                     size="small"
+                    disabled={isApproved}
                     value={field.value} 
                     onChange={(e) => field.onChange(e.target.value)}
                   >
@@ -686,6 +692,7 @@ const InventoryReceiptCreate: React.FC = () => {
               type='primary'
               icon={<PlusOutlined />}
               onClick={handleAddItem}
+              disabled={isApproved}
             >
               Thêm sản phẩm
             </Button>

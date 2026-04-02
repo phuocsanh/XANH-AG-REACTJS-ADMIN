@@ -152,12 +152,15 @@ const InventoryReceiptDetail: React.FC = () => {
 
     const buttons = []
 
-    // 1. Nút Sửa - Chỉ cho Nháp
-    if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
+    // 1. Nút Sửa - Cho Nháp hoặc Đã Duyệt (Sửa thông tin cơ bản)
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT || normalizedStatus === InventoryReceiptStatus.APPROVED) {
+      const isApproved = normalizedStatus === InventoryReceiptStatus.APPROVED
       buttons.push(
-        <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
-          Sửa
-        </Button>
+        <Tooltip key='edit-tip' title={isApproved ? "Sửa thông tin cơ bản (Nhà cung cấp, ngày hóa đơn, ghi chú...)" : ""}>
+          <Button key='edit' icon={<EditOutlined />} onClick={handleEdit}>
+            Sửa {isApproved ? "thông tin" : ""}
+          </Button>
+        </Tooltip>
       )
     }
 
