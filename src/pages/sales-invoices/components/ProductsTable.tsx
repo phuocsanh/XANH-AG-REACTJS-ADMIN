@@ -83,10 +83,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
     <>
       {/* Desktop: Table view */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-        <TableContainer component={Paper} variant="outlined">
+        <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
           <Table 
             size="small" 
             sx={{ 
+              minWidth: 1480,
+              tableLayout: 'fixed',
               borderSpacing: 0,
               borderCollapse: 'collapse',
               '& .MuiTableCell-root': { 
@@ -105,16 +107,16 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           >
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: 40 }}>STT</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>Sản phẩm</TableCell>
-                <TableCell align="center" sx={{ width: 60 }}>ĐVT</TableCell>
-                <TableCell align="center" sx={{ width: 100 }}>Tồn kho</TableCell>
-                <TableCell align="center" sx={{ width: 150 }}>Loại giá</TableCell>
-                <TableCell align="right" sx={{ width: 100 }}>Số lượng</TableCell>
-                <TableCell align="right" sx={{ width: 160 }}>Đơn giá</TableCell>
-                <TableCell align="right" sx={{ width: 140 }}>Giảm giá</TableCell>
-                <TableCell align="center" sx={{ width: 160 }}>Thành tiền</TableCell>
-                <TableCell align="center" sx={{ width: 50 }}>Xóa</TableCell>
+                <TableCell align="center" sx={{ width: 40, minWidth: 40 }}>STT</TableCell>
+                <TableCell sx={{ width: 300, minWidth: 300 }}>Sản phẩm</TableCell>
+                <TableCell align="center" sx={{ width: 110, minWidth: 110 }}>ĐVT</TableCell>
+                <TableCell align="center" sx={{ width: 160, minWidth: 160 }}>Tồn kho</TableCell>
+                <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Loại giá</TableCell>
+                <TableCell align="right" sx={{ width: 160, minWidth: 160 }}>Số lượng</TableCell>
+                <TableCell align="right" sx={{ width: 220, minWidth: 220 }}>Đơn giá</TableCell>
+                <TableCell align="right" sx={{ width: 130, minWidth: 130 }}>Giảm giá</TableCell>
+                <TableCell align="center" sx={{ width: 160, minWidth: 160 }}>Thành tiền</TableCell>
+                <TableCell align="center" sx={{ width: 50, minWidth: 50 }}>Xóa</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -209,6 +211,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 size="small"
                                 style={{ width: 100 }}
                                 showSearch={false}
+                                allowClear={false}
                               />
                             )}
                           />
@@ -226,16 +229,45 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         // Tính tồn kho theo đơn vị đã chọn (ví dụ: KG quy đổi ra BAO)
                         const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
                         
+                        // Tìm đơn vị quy đổi khác (ví dụ nếu đang Kg thì tìm Bao)
+                        const conversions = watch(`items.${index}.conversions`) || [];
+                        const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
+                        const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
+                        const otherFactor = Number(otherConv?.conversion_factor || 1);
+                        
+                        let conversionText = '';
+                        if (otherConv) {
+                           // Nếu đang dùng đơn vị cơ sở (Kg), quy đổi ra đơn vị khác (Bao)
+                           if (factor === 1) {
+                              const convertedStock = otherFactor > 0 ? (stock / otherFactor) : 0;
+                              conversionText = `${convertedStock.toLocaleString('vi-VN')} ${otherUnitName}`;
+                           } else {
+                              // Nếu đang dùng đơn vị quy đổi (Bao), quy đổi ra Kg
+                              conversionText = `${stock.toLocaleString('vi-VN')} Kg`;
+                           }
+                        }
+
                         return (
-                          <Tooltip title={`Tồn thực tế: ${stock} (Đơn vị cơ sở)`} arrow>
-                            <div style={{ minWidth: '70px' }}>
-                              <Field 
-                                value={`${displayStock}`}
-                                disabled
-                                className="w-full text-center"
-                                status={isOver ? 'error' : undefined}
-                                size="small"
-                              />
+                          <Tooltip title={`Tồn thực tế: ${stock} Khối lượng (Kg)`} arrow>
+                            <div style={{ minWidth: '100px' }}>
+                              <Typography variant="body2" sx={{ 
+                                display: 'block', 
+                                textAlign: 'center',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: isOver ? '#fff1f0' : '#f8fafc',
+                                border: `1px solid ${isOver ? '#ffa39e' : '#eef2f6'}`,
+                                color: isOver ? '#cf1322' : 'inherit',
+                                fontSize: '0.85rem',
+                                fontWeight: 500
+                              }}>
+                                {conversionText && (
+                                  <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 400, marginRight: '4px' }}>
+                                    ({conversionText})
+                                  </span>
+                                )}
+                                {displayStock.toLocaleString('vi-VN')}
+                              </Typography>
                             </div>
                           </Tooltip>
                         );
@@ -270,7 +302,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                             size="small"
                             style={{ width: 140 }}
                             showSearch={false}
-                            allowClear={true}
+                            allowClear={false}
                           />
                         )}
                       />
@@ -280,36 +312,63 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         name={`items.${index}.quantity`}
                         control={control}
                         render={({ field }) => (
-                          <NumberInput
-                            value={field.value}
-                            onChange={(val) => {
-                              field.onChange(val);
-                              if (val !== null) {
-                                const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                                const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                                const baseQty = Number(val) * factor;
-                                
-                                if (baseQty > stock) {
-                                  const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
-                                  const unitName = watch(`items.${index}.unit_name`) || '';
-                                  antMessage.warning(`Số lượng nhập (${val} ${unitName}) vượt quá tồn kho (${displayStock} ${unitName})!`);
-                                }
-                                
-                                // Cập nhật base_quantity
-                                setValue(`items.${index}.base_quantity`, baseQty);
-                              }
-                            }}
-                            min={1}
-                            status={(() => {
-                              const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                            {(() => {
+                              const qty = Number(field.value) || 0;
                               const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                              const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                              return (qty * factor > stock) ? 'error' : undefined;
+                              const conversions = watch(`items.${index}.conversions`) || [];
+                              const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
+                              const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
+                              const otherFactor = Number(otherConv?.conversion_factor || 1);
+                              
+                              if (!otherConv || qty === 0) return null;
+                              
+                              let conversionLabel = '';
+                              if (factor === 1) { // Đang là Kg
+                                const val = otherFactor > 0 ? (qty / otherFactor) : 0;
+                                conversionLabel = `${val.toLocaleString('vi-VN')} ${otherUnitName}`;
+                              } else { // Đang là Bao
+                                const val = qty * factor;
+                                conversionLabel = `${val.toLocaleString('vi-VN')} Kg`;
+                              }
+                              
+                              return (
+                                <Typography variant="caption" sx={{ color: '#64748b', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
+                                  ({conversionLabel})
+                                </Typography>
+                              );
                             })()}
-                            allowClear
-                            size="small"
-                            style={{ width: 90 }}
-                          />
+                            <NumberInput
+                              value={field.value}
+                              onChange={(val) => {
+                                field.onChange(val);
+                                if (val !== null) {
+                                  const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                                  const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                                  const baseQty = Number(val) * factor;
+                                  
+                                  if (baseQty > stock) {
+                                    const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
+                                    const unitName = watch(`items.${index}.unit_name`) || '';
+                                    antMessage.warning(`Số lượng nhập (${val} ${unitName}) vượt quá tồn kho (${displayStock} ${unitName})!`);
+                                  }
+                                  
+                                  // Cập nhật base_quantity
+                                  setValue(`items.${index}.base_quantity`, baseQty);
+                                }
+                              }}
+                              min={1}
+                              status={(() => {
+                                const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                                const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                                const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                                return (qty * factor > stock) ? 'error' : undefined;
+                              })()}
+                              allowClear
+                              size="small"
+                              style={{ width: 85 }}
+                            />
+                          </Box>
                         )}
                       />
                     </TableCell>
@@ -318,14 +377,41 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         name={`items.${index}.unit_price`}
                         control={control}
                         render={({ field }) => (
-                          <NumberInput
-                            value={field.value}
-                            onChange={(val) => field.onChange(val)}
-                            min={0}
-                            allowClear
-                            size="small"
-                            style={{ width: 150 }}
-                          />
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                            {(() => {
+                              const price = Number(field.value) || 0;
+                              const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                              const conversions = watch(`items.${index}.conversions`) || [];
+                              const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
+                              const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
+                              const otherFactor = Number(otherConv?.conversion_factor || 1);
+                              
+                              if (!otherConv || price === 0) return null;
+                              
+                              let conversionLabel = '';
+                              if (factor === 1) { // Đang là Giá/Kg -> chuyển sang Giá/Bao
+                                const val = price * otherFactor;
+                                conversionLabel = `${val.toLocaleString('vi-VN')}/${otherUnitName}`;
+                              } else { // Đang là Giá/Bao -> chuyển sang Giá/Kg
+                                const val = factor > 0 ? (price / factor) : 0;
+                                conversionLabel = `${val.toLocaleString('vi-VN')}/Kg`;
+                              }
+                              
+                              return (
+                                <Typography variant="caption" sx={{ color: '#64748b', whiteSpace: 'nowrap', fontSize: '0.75rem' }}>
+                                  ({conversionLabel})
+                                </Typography>
+                              );
+                            })()}
+                            <NumberInput
+                              value={field.value}
+                              onChange={(val) => field.onChange(val)}
+                              min={0}
+                              allowClear
+                              size="small"
+                              style={{ width: 120 }}
+                            />
+                          </Box>
                         )}
                       />
                     </TableCell>
@@ -340,7 +426,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                             min={0}
                             allowClear
                             size="small"
-                            style={{ width: 130 }}
+                            style={{ width: 120 }}
                           />
                         )}
                       />
@@ -494,13 +580,36 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     const sellQty = Number(watch(`items.${index}.quantity`)) || 0;
                     const isOver = (sellQty * factor) > stock;
 
+                    // Tìm đơn vị quy đổi khác cho Mobile
+                    const conversions = watch(`items.${index}.conversions`) || [];
+                    const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
+                    const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
+                    const otherFactor = Number(otherConv?.conversion_factor || 1);
+                    
+                    let conversionText = '';
+                    if (otherConv) {
+                        if (factor === 1) {
+                            const val = otherFactor > 0 ? (stock / otherFactor) : 0;
+                            conversionText = ` (${val.toLocaleString('vi-VN')} ${otherUnitName})`;
+                        } else {
+                            conversionText = ` (${stock.toLocaleString('vi-VN')} Kg)`;
+                        }
+                    }
+
                     return (
-                      <Field 
-                        value={`${displayStock}`}
-                        disabled
-                        className="w-full"
-                        status={isOver ? 'error' : undefined}
-                      />
+                      <Box>
+                        <Field 
+                          value={`${displayStock.toLocaleString('vi-VN')}`}
+                          disabled
+                          className="w-full"
+                          status={isOver ? 'error' : undefined}
+                        />
+                        {conversionText && (
+                          <Typography variant="caption" sx={{ color: '#64748b', mt: 0.25, display: 'block' }}>
+                            {conversionText}
+                          </Typography>
+                        )}
+                      </Box>
                     );
                   })()}
                 </Box>
@@ -551,34 +660,62 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     name={`items.${index}.quantity`}
                     control={control}
                     render={({ field }) => (
-                      <NumberInput
-                        value={field.value}
-                        onChange={(val) => {
-                          field.onChange(val);
-                            if (val !== null) {
-                              const stockQty = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                              const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                              const baseQty = Number(val) * factor;
+                      <Box>
+                        <NumberInput
+                          value={field.value}
+                          onChange={(val) => {
+                            field.onChange(val);
+                              if (val !== null) {
+                                const stockQty = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                                const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                                const baseQty = Number(val) * factor;
 
-                              if (baseQty > stockQty) {
-                                const displayStock = factor > 0 ? (stockQty / factor).toFixed(2) : stockQty;
-                                antMessage.warning(`Số lượng vượt quá tồn kho (${displayStock})!`);
+                                if (baseQty > stockQty) {
+                                  const displayStock = factor > 0 ? (stockQty / factor).toFixed(2) : stockQty;
+                                  antMessage.warning(`Số lượng vượt quá tồn kho (${displayStock})!`);
+                                }
+                                
+                                // Cập nhật base_quantity
+                                setValue(`items.${index}.base_quantity`, baseQty);
                               }
-                              
-                              // Cập nhật base_quantity
-                              setValue(`items.${index}.base_quantity`, baseQty);
-                            }
-                          }}
-                        min={1}
-                        status={(() => {
-                          const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                            }}
+                          min={1}
+                          status={(() => {
+                            const qty = Number(watch(`items.${index}.quantity`)) || 0;
+                            const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                            const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                            return (qty * factor > stock) ? 'error' : undefined;
+                          })()}
+                          allowClear
+                          style={{ width: '100%' }}
+                        />
+                        {(() => {
+                          const qty = Number(field.value) || 0;
                           const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                          const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                          return (qty * factor > stock) ? 'error' : undefined;
+                          const conversions = watch(`items.${index}.conversions`) || [];
+                          const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
+                          
+                          if (!otherConv || qty === 0) return null;
+                          
+                          const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
+                          const otherFactor = Number(otherConv?.conversion_factor || 1);
+                          
+                          let label = '';
+                          if (factor === 1) {
+                            const val = otherFactor > 0 ? (qty / otherFactor) : 0;
+                            label = `${val.toLocaleString('vi-VN')} ${otherUnitName}`;
+                          } else {
+                            const val = qty * factor;
+                            label = `${val.toLocaleString('vi-VN')} Kg`;
+                          }
+                          
+                          return (
+                            <Typography variant="caption" sx={{ color: '#64748b', mt: 0.25, display: 'block' }}>
+                              ({label})
+                            </Typography>
+                          );
                         })()}
-                        allowClear
-                        style={{ width: '100%' }}
-                      />
+                      </Box>
                     )}
                   />
                 </Box>
@@ -592,13 +729,41 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     name={`items.${index}.unit_price`}
                     control={control}
                     render={({ field }) => (
-                      <NumberInput
-                        value={field.value}
-                        onChange={(val) => field.onChange(val)}
-                        min={0}
-                        allowClear
-                        style={{ width: '100%' }}
-                      />
+                      <Box>
+                        <NumberInput
+                          value={field.value}
+                          onChange={(val) => field.onChange(val)}
+                          min={0}
+                          allowClear
+                          style={{ width: '100%' }}
+                        />
+                        {(() => {
+                           const price = Number(field.value) || 0;
+                           const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                           const conversions = watch(`items.${index}.conversions`) || [];
+                           const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
+                           
+                           if (!otherConv || price === 0) return null;
+                           
+                           const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
+                           const otherFactor = Number(otherConv?.conversion_factor || 1);
+                           
+                           let label = '';
+                           if (factor === 1) {
+                             const val = price * otherFactor;
+                             label = `${val.toLocaleString('vi-VN')}/${otherUnitName}`;
+                           } else {
+                             const val = factor > 0 ? (price / factor) : 0;
+                             label = `${val.toLocaleString('vi-VN')}/Kg`;
+                           }
+                           
+                           return (
+                             <Typography variant="caption" sx={{ color: '#64748b', mt: 0.25, display: 'block' }}>
+                               ({label})
+                             </Typography>
+                           );
+                        })()}
+                      </Box>
                     )}
                   />
                 </Box>

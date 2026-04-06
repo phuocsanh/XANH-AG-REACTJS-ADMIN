@@ -18,6 +18,7 @@ import {
   Input,
   Tooltip,
 } from 'antd';
+import { Box, Typography } from '@mui/material';
 import dayjs from 'dayjs';
 import ComboBox from '@/components/common/combo-box';
 import {
@@ -462,10 +463,10 @@ const ProfitReportsPage: React.FC = () => {
                         title: 'Khách hàng', 
                         dataIndex: 'customer_name', 
                         key: 'customer_name', 
-                        width: 180, 
+                        width: 130, 
                         render: (text, record: any) => (
                           <div 
-                            style={{ minWidth: 160, fontWeight: 500, whiteSpace: 'normal', color: '#1890ff', cursor: 'pointer' }}
+                            style={{ minWidth: 110, fontWeight: 500, whiteSpace: 'normal', color: '#1890ff', cursor: 'pointer', fontSize: '0.8rem' }}
                             onClick={() => {
                               setActiveTab('customer');
                               if (record.customer_id) {
@@ -481,30 +482,30 @@ const ProfitReportsPage: React.FC = () => {
                           </div>
                         )
                       },
-                      { title: 'Số HĐ', dataIndex: 'total_invoices', key: 'total_invoices', width: 100 },
+                      { title: 'Số HĐ', dataIndex: 'total_invoices', key: 'total_invoices', width: 70 },
                       { 
                         title: 'Doanh thu', 
                         dataIndex: 'total_revenue', 
                         key: 'total_revenue',
-                        width: 160,
-                        render: (val) => formatCurrency(val)
+                        width: 130,
+                        render: (val) => <div style={{ textAlign: 'right' }}>{formatCurrency(val)}</div>
                       },
                       { 
                         title: 'Lợi nhuận', 
                         dataIndex: 'total_profit', 
                         key: 'total_profit',
-                        width: 160,
+                        width: 140,
                         render: (val) => (
-                          <span style={{ color: getProfitColor(val), fontWeight: 'bold' }}>
+                          <div style={{ textAlign: 'right', color: getProfitColor(val), fontWeight: 'bold' }}>
                             {formatCurrency(val)}
-                          </span>
+                          </div>
                         )
                       },
                       { 
                         title: 'Tỷ suất (%)', 
                         dataIndex: 'avg_margin', 
                         key: 'avg_margin',
-                        width: 120,
+                        width: 100,
                         render: (val) => <Tag color={getMarginColor(val)}>{val}%</Tag>
                       },
                     ]}
@@ -527,33 +528,48 @@ const ProfitReportsPage: React.FC = () => {
                         title: 'Sản phẩm', 
                         dataIndex: 'product_name', 
                         key: 'product_name', 
-                        width: 250, 
-                        render: (text) => <div style={{ minWidth: 220, fontWeight: 500, whiteSpace: 'normal' }}>{text}</div>
+                        width: 80, 
+                        render: (text) => <div style={{ minWidth: 70, fontWeight: 500, whiteSpace: 'normal', fontSize: '0.75rem' }}>{text}</div>
                       },
-                      { title: 'Số lượng bán', dataIndex: 'quantity_sold', key: 'quantity_sold', width: 120 },
+                      { 
+                        title: 'Số lượng bán', 
+                        dataIndex: 'quantity_sold', 
+                        key: 'quantity_sold', 
+                        width: 200,
+                        render: (val, record: any) => {
+                          const factor = Number(record.conversion_factor || 50); // Mặc định 50 nếu không có
+                          const bags = factor > 0 ? (val / factor).toLocaleString('vi-VN') : 0;
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                              <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.75rem' }}>({bags} Bao)</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{val.toLocaleString('vi-VN')} Kg</Typography>
+                            </Box>
+                          );
+                        }
+                      },
                       { 
                         title: 'Doanh thu', 
                         dataIndex: 'total_revenue', 
                         key: 'total_revenue',
                         width: 160,
-                        render: (val) => formatCurrency(val)
+                        render: (val) => <div style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(val)}</div>
                       },
                       { 
                         title: 'Lợi nhuận', 
                         dataIndex: 'total_profit', 
                         key: 'total_profit',
-                        width: 160,
+                        width: 180,
                         render: (val) => (
-                          <span style={{ color: getProfitColor(val), fontWeight: 'bold' }}>
+                          <div style={{ textAlign: 'right', color: getProfitColor(val), fontWeight: 'bold' }}>
                             {formatCurrency(val)}
-                          </span>
+                          </div>
                         )
                       },
                       { 
                         title: 'Tỷ suất (%)', 
                         dataIndex: 'margin', 
                         key: 'margin',
-                        width: 120,
+                        width: 100,
                         render: (val) => <Tag color={getMarginColor(val)}>{val}%</Tag>
                       },
                     ]}
@@ -582,39 +598,45 @@ const ProfitReportsPage: React.FC = () => {
         title: 'Mã HĐ',
         dataIndex: 'invoice_code',
         key: 'invoice_code',
+        width: 120,
       },
       {
         title: 'Ngày',
         dataIndex: 'date',
         key: 'date',
+        width: 110,
         render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
       },
       {
         title: 'Doanh thu',
         dataIndex: 'revenue',
         key: 'revenue',
-        render: (value: number) => formatCurrency(value),
+        width: 130,
+        render: (value: number) => <div style={{ textAlign: 'right' }}>{formatCurrency(value)}</div>,
       },
       {
         title: 'Giá vốn',
         dataIndex: 'cost',
         key: 'cost',
-        render: (value: number) => formatCurrency(value),
+        width: 130,
+        render: (value: number) => <div style={{ textAlign: 'right' }}>{formatCurrency(value)}</div>,
       },
       {
         title: 'Lợi nhuận',
         dataIndex: 'profit',
         key: 'profit',
+        width: 140,
         render: (value: number) => (
-          <span style={{ color: getProfitColor(value) }}>
+          <div style={{ textAlign: 'right', color: getProfitColor(value), fontWeight: 'bold' }}>
             {formatCurrency(value)}
-          </span>
+          </div>
         ),
       },
       {
         title: 'Tỷ suất (%)',
         dataIndex: 'margin',
         key: 'margin',
+        width: 100,
         render: (value: number) => (
           <Tag color={getMarginColor(value)}>{formatPercent(value)}</Tag>
         ),
@@ -878,35 +900,54 @@ const ProfitReportsPage: React.FC = () => {
         title: 'Sản phẩm',
         dataIndex: 'product_name',
         key: 'product_name',
-        width: 250,
-        render: (text: string) => <div style={{ minWidth: 220, fontWeight: 500, whiteSpace: 'normal' }}>{text}</div>
+        width: 80,
+        render: (text: string) => <div style={{ minWidth: 70, fontWeight: 500, whiteSpace: 'normal', fontSize: '0.75rem' }}>{text}</div>
       },
       {
-        title: 'SL',
+        title: 'Số lượng',
         dataIndex: 'quantity',
         key: 'quantity',
-        width: 80,
+        width: 180,
+        render: (val, record: any) => {
+          const factor = Number(record.conversion_factor || 50);
+          const bags = factor > 0 ? (val / factor).toLocaleString('vi-VN') : 0;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>({bags} Bao)</div>
+              <div style={{ fontWeight: 600 }}>{val.toLocaleString('vi-VN')} {record.unit_name || 'Kg'}</div>
+            </div>
+          );
+        }
       },
       {
         title: 'Giá bán',
         dataIndex: 'unit_price',
         key: 'unit_price',
-        width: 140,
-        render: (value: number) => formatCurrency(value),
+        width: 200,
+        render: (val, record: any) => {
+          const factor = Number(record.conversion_factor || 50);
+          const pricePerBao = val * factor;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>({formatCurrency(pricePerBao)}/Bao)</div>
+              <div style={{ fontWeight: 600 }}>{formatCurrency(val)}</div>
+            </div>
+          );
+        },
       },
       {
-        title: 'Giá vốn',
+        title: 'Giá vốn/Kg',
         dataIndex: 'avg_cost',
         key: 'avg_cost',
         width: 140,
-        render: (value: number) => formatCurrency(value),
+        render: (value: number) => <div style={{ textAlign: 'right' }}>{formatCurrency(value)}</div>,
       },
       {
         title: 'Tổng giá vốn',
         dataIndex: 'cogs',
         key: 'cogs',
         width: 160,
-        render: (value: number) => formatCurrency(value),
+        render: (value: number) => <div style={{ textAlign: 'right' }}>{formatCurrency(value)}</div>,
       },
       {
         title: 'Lợi nhuận',
@@ -914,16 +955,16 @@ const ProfitReportsPage: React.FC = () => {
         key: 'profit',
         width: 160,
         render: (value: number) => (
-          <span style={{ color: getProfitColor(value), fontWeight: 'bold' }}>
+          <div style={{ textAlign: 'right', color: getProfitColor(value), fontWeight: 'bold' }}>
             {formatCurrency(value)}
-          </span>
+          </div>
         ),
       },
       {
         title: 'Tỷ suất (%)',
         dataIndex: 'margin',
         key: 'margin',
-        width: 120,
+        width: 100,
         render: (value: number) => (
           <Tag color={getMarginColor(value)}>{formatPercent(value)}</Tag>
         ),
@@ -1327,20 +1368,20 @@ const ProfitReportsPage: React.FC = () => {
                     title: 'Mã HĐ',
                     dataIndex: 'invoice_code',
                     key: 'invoice_code',
-                    width: 200,
+                    width: 130,
                   },
                   {
                     title: 'Ngày',
                     dataIndex: 'date',
                     key: 'date',
-                    width: 130,
+                    width: 110,
                     render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
                   },
                   {
                     title: 'Mùa vụ',
                     dataIndex: 'season_name',
                     key: 'season_name',
-                    width: 300,
+                    width: 160,
                     render: (name: string) => name || '-',
                   },
                   {
