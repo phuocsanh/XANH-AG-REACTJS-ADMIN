@@ -99,12 +99,42 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
 
   // Chuyển đổi dữ liệu sang options
   const customerOptions = useMemo(() => {
-    return customerSearchData?.pages.flatMap(page => page.data) || [];
-  }, [customerSearchData]);
+    const options = customerSearchData?.pages.flatMap(page => page.data) || [];
+    
+    // Đảm bảo khách hàng hiện tại luôn có trong danh sách khi ở chế độ Edit
+    if (isEditMode && editingCrop?.customer) {
+      const exists = options.some(c => c.value === editingCrop.customer_id);
+      if (!exists) {
+        const currentCustomerOption = {
+          ...editingCrop.customer,
+          value: editingCrop.customer.id,
+          label: `${editingCrop.customer.name} - ${editingCrop.customer.phone || 'N/A'}`,
+        };
+        return [currentCustomerOption, ...options];
+      }
+    }
+    
+    return options;
+  }, [customerSearchData, isEditMode, editingCrop]);
 
   const seasonOptions = useMemo(() => {
-    return seasonSearchData?.pages.flatMap(page => page.data) || [];
-  }, [seasonSearchData]);
+    const options = seasonSearchData?.pages.flatMap(page => page.data) || [];
+
+    // Đảm bảo mùa vụ hiện tại luôn có trong danh sách khi ở chế độ Edit
+    if (isEditMode && editingCrop?.season) {
+      const exists = options.some(s => s.value === editingCrop.season_id);
+      if (!exists) {
+        const currentSeasonOption = {
+          ...editingCrop.season,
+          value: editingCrop.season.id,
+          label: `${editingCrop.season.name} (${editingCrop.season.year})`,
+        };
+        return [currentSeasonOption, ...options];
+      }
+    }
+
+    return options;
+  }, [seasonSearchData, isEditMode, editingCrop]);
 
   const areaOptions = useMemo(() => {
     return areasData?.data?.items?.map((a: any) => ({
