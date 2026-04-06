@@ -1015,6 +1015,20 @@ const SalesInvoicesList: React.FC = () => {
                           <div className='text-sm text-gray-500'>
                             SL: {item.quantity} {item.unit_name || item.product?.unit?.name}
                           </div>
+                          {item.other_unit_name && Number(item.other_unit_factor) > 0 && (
+                            <div className='text-xs text-gray-400 italic'>
+                              {(() => {
+                                const isBase = Number(item.conversion_factor || 1) === 1;
+                                const otherFactor = Number(item.other_unit_factor);
+                                const factor = Number(item.conversion_factor || 1);
+                                
+                                const otherQty = isBase ? (item.quantity / otherFactor) : (item.base_quantity || (item.quantity * factor));
+                                const otherPrice = isBase ? (item.unit_price * otherFactor) : (item.unit_price / factor);
+                                
+                                return `(${otherQty.toLocaleString('vi-VN')} ${item.other_unit_name} - ${formatCurrency(otherPrice)}/${item.other_unit_name})`;
+                              })()}
+                            </div>
+                          )}
                           <div className='text-sm text-gray-500'>
                             Giá: {formatCurrency(item.unit_price)}
                           </div>

@@ -22,6 +22,9 @@ export interface SalesInvoiceItem {
   conversion_factor?: number;
   base_quantity?: number;
   notes?: string;
+  // ✅ Quy đổi đơn vị đối ứng (Snapshot từ Backend)
+  other_unit_name?: string;
+  other_unit_factor?: number;
   // ✅ Thêm mới: Hỗ trợ tính năng trả hàng
   returned_quantity?: number; // Tổng số lượng đã trả
   returnable_quantity?: number; // Số lượng còn có thể trả
