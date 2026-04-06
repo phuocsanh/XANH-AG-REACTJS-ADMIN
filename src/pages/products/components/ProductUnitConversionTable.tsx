@@ -39,10 +39,11 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
     }
   }, [watchedConversions, hasInit]);
 
-  // Đồng bộ đơn vị gốc
+  // Đồng bộ đơn vị gốc: đảm bảo [0] luôn là đơn vị cơ sở, xóa các dòng trùng ở vị trí >= 1
   useEffect(() => {
     if (mainUnitId && units.length > 0) {
       if (fields.length === 0) {
+        // Chưa có gì → thêm đơn vị cơ sở vào [0]
         append({
           unit_id: mainUnitId,
           conversion_factor: 1,
@@ -50,11 +51,20 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
           is_purchase_unit: true,
           is_sales_unit: true,
         })
-      } else if (fields[0]?.unit_id !== mainUnitId) {
+      } else {
+        // Đảm bảo [0] là đơn vị cơ sở
+        if (fields[0]?.unit_id !== mainUnitId) {
           update(0, { ...fields[0], unit_id: mainUnitId, conversion_factor: 1, is_base_unit: true });
+        }
+        // Xóa các dòng trùng với đơn vị cơ sở ở các vị trí >= 1 (tránh hiển thị "9 = 1 Kg")
+        for (let i = fields.length - 1; i >= 1; i--) {
+          if (Number(fields[i]?.unit_id) === Number(mainUnitId)) {
+            remove(i);
+          }
+        }
       }
     }
-  }, [mainUnitId, units.length, append, fields, update])
+  }, [mainUnitId, units.length, append, fields, update, remove])
 
   // Chặn chọn đơn vị trùng nhau
   useEffect(() => {
