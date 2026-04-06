@@ -258,11 +258,18 @@ const CreateSalesInvoice = () => {
   const selectedSeasonId = watch('season_id');
   
   // Lấy Ruộng lúa của khách hàng đã chọn VÀ theo mùa vụ đã chọn
-  const { data: customerRiceCrops, isLoading: isLoadingRiceCrops } = useRiceCrops({ 
-    customer_id: selectedCustomer?.id, 
-    season_id: selectedSeasonId,
-    status: CropStatus.ACTIVE 
-  });
+  const { data: customerRiceCrops, isLoading: isLoadingRiceCrops } = useRiceCrops(
+    { 
+      customer_id: selectedCustomer?.id ? Number(selectedCustomer.id) : undefined, 
+      season_id: selectedSeasonId ? Number(selectedSeasonId) : undefined,
+      status: CropStatus.ACTIVE 
+    }, 
+    { 
+      enabled: !!selectedCustomer?.id && !!selectedSeasonId,
+      staleTime: 0,
+      refetchOnMount: true,
+    }
+  );
   
   
   const createMutation = useCreateSalesInvoiceMutation();

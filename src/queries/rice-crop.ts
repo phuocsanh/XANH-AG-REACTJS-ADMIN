@@ -30,13 +30,13 @@ export const riceCropKeys = {
 // ==================== QUERIES ====================
 
 /**
- * Lấy  Danh sách ruộng lúa (POST /rice-crops/search)
+ * Lấy Danh sách ruộng lúa (POST /rice-crops/search)
  */
-export const useRiceCrops = (params?: Record<string, unknown>, options?: { enabled?: boolean }) => {
+export const useRiceCrops = (params?: Record<string, unknown>, options?: any) => {
   const page = (params?.page as number) || 1
-  const limit = (params?.limit as number) || 10
+  const limit = (params?.limit as number) || 100
 
-  return useQuery({
+  return useQuery<{ data: { items: RiceCrop[]; total: number; page: number; limit: number; total_pages: number; has_next: boolean; has_prev: boolean }; status: number; message: string; success: boolean }, Error>({
     queryKey: riceCropKeys.list(params as any),
     queryFn: async () => {
       const searchBody = {
@@ -47,9 +47,9 @@ export const useRiceCrops = (params?: Record<string, unknown>, options?: { enabl
 
       const response = await api.postRaw<any>('/rice-crops/search', searchBody)
 
-      return mapSearchResponse<RiceCrop>(response, page, limit)
+      return mapSearchResponse<RiceCrop>(response, page, limit) as any
     },
-    enabled: options?.enabled,
+    ...options,
   });
 };
 
