@@ -137,6 +137,19 @@ const ProductSearch: React.FC = () => {
       .join('');
   }
 
+  // ✅ Helper để lấy hệ số quy đổi Bao của sản phẩm
+  const getBaoConversion = (product: ExtendedProduct) => {
+    const conversions = product.unit_conversions || [];
+    const baoConv = conversions.find((c: any) => 
+      (c.unit_name || c.unit?.name || '').toLowerCase().includes('bao')
+    );
+    if (!baoConv) return null;
+    return {
+      factor: Number(baoConv.conversion_factor),
+      unitName: baoConv.unit_name || baoConv.unit?.name || 'Bao'
+    };
+  };
+
   // Cấu hình columns cho DataTable
   const columns = [
     {
@@ -189,44 +202,77 @@ const ProductSearch: React.FC = () => {
         );
       },
     },
-    {
+     {
       key: "price",
       title: "Giá tiền mặt",
       width: 140,
-      render: (value: string, record: ExtendedProduct) => (
-        <div className='font-bold text-emerald-600'>
-          {new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(Number(record.price || 0))}
-        </div>
-      ),
+      render: (value: string, record: ExtendedProduct) => {
+        const bao = getBaoConversion(record);
+        return (
+          <div>
+            <div className='font-bold text-emerald-600'>
+              {new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(record.price || 0))}
+            </div>
+            {bao && Number(record.price) > 0 && (
+              <div className="text-[11px] font-bold text-emerald-500 bg-emerald-50 px-1 rounded border border-emerald-100 w-fit">
+                {Number(record.price) * bao.factor >= 1000 
+                  ? `${(Number(record.price) * bao.factor).toLocaleString('vi-VN')} đ/${bao.unitName}`
+                  : `${(Number(record.price) * bao.factor).toLocaleString('vi-VN')} đ/${bao.unitName}`
+                }
+              </div>
+            )}
+          </div>
+        );
+      },
     },
-    {
+     {
       key: "credit_price",
       title: "Giá nợ",
       width: 140,
-      render: (value: string, record: ExtendedProduct) => (
-        <div className='font-bold text-blue-600'>
-          {record.credit_price ? new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(Number(record.credit_price)) : "---"}
-        </div>
-      ),
+      render: (value: string, record: ExtendedProduct) => {
+        const bao = getBaoConversion(record);
+        return (
+          <div>
+            <div className='font-bold text-blue-600'>
+              {record.credit_price ? new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(record.credit_price)) : "---"}
+            </div>
+            {bao && record.credit_price && Number(record.credit_price) > 0 && (
+              <div className="text-[11px] font-bold text-blue-500 bg-blue-50 px-1 rounded border border-blue-100 w-fit">
+                {(Number(record.credit_price) * bao.factor).toLocaleString('vi-VN')} đ/{bao.unitName}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
-    {
+     {
       key: "tax_selling_price",
       title: "GBKT",
       width: 140,
-      render: (value: string, record: ExtendedProduct) => (
-        <div className='font-bold text-pink-600'>
-          {record.tax_selling_price ? new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          }).format(Number(record.tax_selling_price)) : "---"}
-        </div>
-      ),
+      render: (value: string, record: ExtendedProduct) => {
+        const bao = getBaoConversion(record);
+        return (
+          <div>
+            <div className='font-bold text-pink-600'>
+              {record.tax_selling_price ? new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(record.tax_selling_price)) : "---"}
+            </div>
+            {bao && record.tax_selling_price && Number(record.tax_selling_price) > 0 && (
+              <div className="text-[11px] font-bold text-pink-500 bg-pink-50 px-1 rounded border border-pink-100 w-fit">
+                {(Number(record.tax_selling_price) * bao.factor).toLocaleString('vi-VN')} đ/{bao.unitName}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "has_input_invoice",
@@ -238,16 +284,27 @@ const ProductSearch: React.FC = () => {
         </Tag>
       ),
     },
-    {
+     {
       key: "quantity",
       title: "Tồn kho",
-      width: 90,
+      width: 100,
       align: 'center' as const,
-      render: (value: number, record: ExtendedProduct) => (
-        <Tag color={(record.quantity || 0) > 0 ? 'green' : 'red'}>
-            {record.quantity || 0}
-        </Tag>
-      ),
+      render: (value: number, record: ExtendedProduct) => {
+        const bao = getBaoConversion(record);
+        const qty = record.quantity || 0;
+        return (
+          <div className="flex flex-col items-center">
+            <Tag color={qty > 0 ? 'green' : 'red'} className="m-0">
+                {qty}
+            </Tag>
+            {bao && qty > 0 && (
+              <div className="text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap">
+                {new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(qty / bao.factor)} {bao.unitName}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
   ]
 

@@ -29,6 +29,40 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     }).format(value)
   }
 
+  // ✅ Helper để lấy hệ số quy đổi Bao
+  const getBaoConversion = (product: Product) => {
+    const conversions = product.unit_conversions || [];
+    const baoConv = conversions.find((c: any) => 
+      (c.unit_name || c.unit?.name || '').toLowerCase().includes('bao')
+    );
+    if (!baoConv) return null;
+    return {
+      factor: Number(baoConv.conversion_factor),
+      unitName: baoConv.unit_name || baoConv.unit?.name || 'Bao'
+    };
+  };
+
+  const renderValueWithBao = (value: number, product: Product, isPrice: boolean = true) => {
+    const bao = getBaoConversion(product);
+    const mainValue = isPrice ? formatCurrency(value) : value;
+    
+    if (!bao || value <= 0) return mainValue;
+    
+    const converted = isPrice ? value * bao.factor : value / bao.factor;
+    const convertedStr = isPrice 
+      ? formatCurrency(converted).replace('₫', `đ/${bao.unitName}`)
+      : `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(converted)} ${bao.unitName}`;
+      
+    return (
+      <div className="flex flex-col">
+        <span>{mainValue}</span>
+        <span className="text-[12px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 w-fit mt-1">
+          {convertedStr}
+        </span>
+      </div>
+    );
+  };
+
   // Helper function để format plain text notes thành HTML
   const formatPlainTextNotes = (text: string): string => {
     return text
@@ -130,22 +164,22 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </Descriptions.Item>
           )}
           <Descriptions.Item label='Giá bán (Tiền mặt)'>
-            {formatCurrency(Number(product.price || 0))}
+            {renderValueWithBao(Number(product.price || 0), product)}
           </Descriptions.Item>
           <Descriptions.Item label='Giá bán (Nợ)'>
-            {product.credit_price ? formatCurrency(Number(product.credit_price)) : "Chưa thiết lập"}
+            {product.credit_price ? renderValueWithBao(Number(product.credit_price), product) : "Chưa thiết lập"}
           </Descriptions.Item>
           <Descriptions.Item label='Giá vốn trung bình'>
-            {formatCurrency(Number(product.average_cost_price || 0))}
+            {renderValueWithBao(Number(product.average_cost_price || 0), product)}
           </Descriptions.Item>
           <Descriptions.Item label='GBKT'>
-            {product.tax_selling_price ? formatCurrency(Number(product.tax_selling_price)) : "Chưa thiết lập"}
+            {product.tax_selling_price ? renderValueWithBao(Number(product.tax_selling_price), product) : "Chưa thiết lập"}
           </Descriptions.Item>
           <Descriptions.Item label='Giá sau giảm'>
             {formatCurrency(Number(product.discounted_price || 0))}
           </Descriptions.Item>
           <Descriptions.Item label='Số lượng'>
-            {product.quantity || 0}
+            {renderValueWithBao(Number(product.quantity || 0), product, false)}
           </Descriptions.Item>
           <Descriptions.Item label='Đã bán'>
             {product.selled || 0}
@@ -180,7 +214,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </Descriptions.Item>
           <Descriptions.Item label='Giá nhập mới nhất'>
             {product.latest_purchase_price
-              ? formatCurrency(Number(product.latest_purchase_price || 0))
+              ? renderValueWithBao(Number(product.latest_purchase_price || 0), product)
               : "Chưa có"}
           </Descriptions.Item>
           <Descriptions.Item label='Ngày tạo'>

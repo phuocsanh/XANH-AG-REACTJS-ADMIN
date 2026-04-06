@@ -345,6 +345,49 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const unitsList = (units as any)?.data?.items || [];
   const mainUnitName = unitsList.find((u: any) => u.id === watchedUnitId)?.name || '';
 
+  // ✅ THEO DÕI GIÁ TRỊ ĐỂ TÍNH QUY ĐỔI SANG BAO
+  const watchedConversions = useWatch({ control, name: 'unit_conversions' }) || [];
+  const watchedPrice = useWatch({ control, name: 'price' });
+  const watchedCreditPrice = useWatch({ control, name: 'credit_price' });
+  const watchedTaxPrice = useWatch({ control, name: 'tax_selling_price' });
+  const watchedQty = useWatch({ control, name: 'quantity' });
+  const watchedTaxQty = useWatch({ control, name: 'taxable_quantity_stock' });
+
+  // Tìm hệ số quy đổi của Bao (quét kỹ tên đơn vị)
+  const baoConversion = watchedConversions.find((c: any) => {
+    // Ưu tiên tìm trong snapshot hoặc bảng unitsList hệ thống
+    const uName = c.unit_name || unitsList.find((u: any) => u.id === c.unit_id)?.name || '';
+    return uName.toLowerCase().includes('bao');
+  });
+  
+  const baoFactor = baoConversion ? Number(baoConversion.conversion_factor) : null;
+  const baoName = baoConversion?.unit_name || unitsList.find((u: any) => u.id === baoConversion?.unit_id)?.name || 'Bao';
+
+  // Hàm helper để render nhãn quy đổi chính xác
+  const renderConversionHint = (value: any, isPrice: boolean = true) => {
+    if (!baoFactor || !value || value === "0") return null;
+    const rawValue = String(value).replace(/[^0-9.]/g, '');
+    const numValue = parseFloat(rawValue);
+    
+    if (isNaN(numValue) || numValue === 0) return null;
+
+    if (isPrice) {
+      const total = numValue * baoFactor;
+      return (
+        <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', marginLeft: '8px', backgroundColor: '#ecfdf5', padding: '1px 8px', borderRadius: '4px', border: '1px solid #d1fae5', whiteSpace: 'nowrap' }}>
+          {total.toLocaleString('vi-VN')} đ/{baoName}
+        </span>
+      );
+    } else {
+      const total = numValue / baoFactor;
+      return (
+        <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', marginLeft: '8px', backgroundColor: '#ecfdf5', padding: '1px 8px', borderRadius: '4px', border: '1px solid #d1fae5', whiteSpace: 'nowrap' }}>
+          {new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(total)} {baoName}
+        </span>
+      );
+    }
+  };
+
   useEffect(() => {
     if (isEdit && productData && !productLoading) {
       try {
@@ -1106,11 +1149,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                <div className='col-span-1'>
+                 <div className='col-span-1'>
                   <FormFieldNumber
                     name='price'
                     control={control}
-                    label={`Giá bán tiền mặt (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}
+                    label={
+                      <div className="flex justify-between items-center w-full">
+                        <span>{`Giá bán tiền mặt (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}</span>
+                        {renderConversionHint(watchedPrice)}
+                      </div>
+                    }
                     placeholder='150.000'
                     className='w-full'
                     fixedDecimalScale={false}
@@ -1123,7 +1171,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   <FormFieldNumber
                     name='credit_price'
                     control={control}
-                    label={`Giá bán nợ (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}
+                    label={
+                      <div className="flex justify-between items-center w-full">
+                        <span>{`Giá bán nợ (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}</span>
+                        {renderConversionHint(watchedCreditPrice)}
+                      </div>
+                    }
                     placeholder='160.000'
                     className='w-full'
                     fixedDecimalScale={false}
@@ -1135,7 +1188,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   <FormFieldNumber
                     name='tax_selling_price'
                     control={control}
-                    label={`GBKT (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}
+                    label={
+                      <div className="flex justify-between items-center w-full">
+                        <span>{`GBKT (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}</span>
+                        {renderConversionHint(watchedTaxPrice)}
+                      </div>
+                    }
                     placeholder='140.000'
                     className='w-full'
                     fixedDecimalScale={false}
@@ -1148,14 +1206,17 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 </div>
 
 
-                <div className='w-full'>
+                 <div className='w-full'>
                   <FormFieldNumber
                     name='quantity'
                     control={control}
                     label={
-                      <span>
-                        Số lượng <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
-                      </span>
+                      <div className="flex justify-between items-center w-full">
+                        <span>
+                          Số lượng <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
+                        </span>
+                        {renderConversionHint(watchedQty, false)}
+                      </div>
                     }
                     placeholder='Số lượng sẽ tự tăng khi nhập hàng'
                     className='w-full'
@@ -1163,11 +1224,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                     {...(isEdit && {
                       addonAfter: (
                         <div 
-                          className="cursor-pointer px-2 hover:text-blue-500 transition-colors"
-                          onClick={() => setAdjustModalVisible(true)}
-                          title="Điều chỉnh tồn kho"
-                        >
-                          ✏️
+                           className="cursor-pointer px-2 hover:text-blue-500 transition-colors"
+                           onClick={() => setAdjustModalVisible(true)}
+                           title="Điều chỉnh tồn kho"
+                         >
+                           ✏️
                         </div>
                       )
                     })}
@@ -1291,14 +1352,17 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                   />
                 </div>
 
-                <div className='w-full'>
+                 <div className='w-full'>
                   <FormFieldNumber
                     name='taxable_quantity_stock'
                     control={control}
                     label={
-                      <span>
-                        SL tồn khai thuế <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
-                      </span>
+                      <div className="flex justify-between items-center w-full">
+                        <span>
+                          SL tồn khai thuế <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
+                        </span>
+                        {renderConversionHint(watchedTaxQty, false)}
+                      </div>
                     }
                     placeholder='Số lượng thuế sẽ tự tăng khi nhập hàng'
                     className='w-full'
