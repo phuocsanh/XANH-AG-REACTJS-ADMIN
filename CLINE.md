@@ -748,6 +748,33 @@ Thường tạo reusable components cho:
 10. **Follow existing patterns** - Tuân thủ pattern có sẵn
 11. **Error messages** - Tiếng Việt
 
+## Number Formatting Rules (QUAN TRỌNG)
+
+**Định dạng số theo kiểu Việt Nam:**
+
+- Dấu `.` ngăn cách hàng nghìn (thousands separator)
+- Dấu `,` cho phần thập phân (decimal separator)
+- Ví dụ: `1000` → `"1.000"`, `1000.5` → `"1.000,50"`
+
+**Cách sử dụng:**
+
+```tsx
+// ✅ ĐÚNG - Sử dụng Intl.NumberFormat với locale "vi-VN"
+new Intl.NumberFormat("vi-VN", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+}).format(value)
+
+// ❌ SAI - Không dùng toLocaleString() mặc định hoặc format kiểu Mỹ
+value.toLocaleString() // Có thể ra "1,000" (kiểu Mỹ)
+```
+
+**Áp dụng cho:**
+
+- Tồn kho, tồn thuế, số lượng
+- Giá tiền (khi không dùng currency format)
+- Mọi số liệu hiển thị trong bảng
+
 ## Prohibited Actions
 
 - ❌ Không dùng `any` type

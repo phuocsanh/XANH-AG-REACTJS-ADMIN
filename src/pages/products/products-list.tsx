@@ -81,7 +81,12 @@ const TaxableStockEditor: React.FC<TaxableStockEditorProps> = ({
         color={value > 0 ? "blue" : "default"}
         className='cursor-pointer hover:opacity-80'
       >
-        {value || 0}
+        {/* ✅ ĐỊNH DẠNG SỐ KIỂU VIỆT NAM: dấu . ngăn cách hàng nghìn, dấu , cho thập phân */}
+        {/* Ví dụ: 1000 → "1.000", 1000.5 → "1.000,50" */}
+        {new Intl.NumberFormat("vi-VN", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }).format(value || 0)}
       </Tag>
     </Popover>
   )
