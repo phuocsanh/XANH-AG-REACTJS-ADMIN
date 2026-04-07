@@ -31,53 +31,73 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   // ✅ Helper để lấy hệ số quy đổi Bao
   const getBaoConversion = (product: Product) => {
-    const conversions = product.unit_conversions || [];
-    const baoConv = conversions.find((c: any) => 
-      (c.unit_name || c.unit?.name || '').toLowerCase().includes('bao')
-    );
-    if (!baoConv) return null;
+    const conversions = product.unit_conversions || []
+    const baoConv = conversions.find((c: any) =>
+      (c.unit_name || c.unit?.name || "").toLowerCase().includes("bao"),
+    )
+    if (!baoConv) return null
     return {
       factor: Number(baoConv.conversion_factor),
-      unitName: baoConv.unit_name || baoConv.unit?.name || 'Bao'
-    };
-  };
+      unitName: baoConv.unit_name || baoConv.unit?.name || "Bao",
+    }
+  }
 
-  const renderValueWithBao = (value: number, product: Product, isPrice: boolean = true) => {
-    const bao = getBaoConversion(product);
-    const mainValue = isPrice ? formatCurrency(value) : value;
-    
-    if (!bao || value <= 0) return mainValue;
-    
-    const converted = isPrice ? value * bao.factor : value / bao.factor;
-    const convertedStr = isPrice 
-      ? formatCurrency(converted).replace('₫', `đ/${bao.unitName}`)
-      : `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(converted)} ${bao.unitName}`;
-      
+  const renderValueWithBao = (
+    value: number,
+    product: Product,
+    isPrice: boolean = true,
+  ) => {
+    const bao = getBaoConversion(product)
+    // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
+    const defaultUnit =
+      product.unit_name ||
+      (typeof product.unit === "object" && product.unit
+        ? product.unit.name
+        : "kg")
+    const mainValue = isPrice ? (
+      formatCurrency(value)
+    ) : (
+      <span>
+        {new Intl.NumberFormat("vi-VN", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }).format(value)}{" "}
+        {defaultUnit}
+      </span>
+    )
+
+    if (!bao || value <= 0) return mainValue
+
+    const converted = isPrice ? value * bao.factor : value / bao.factor
+    const convertedStr = isPrice
+      ? formatCurrency(converted).replace("₫", `đ/${bao.unitName}`)
+      : `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(converted)} ${bao.unitName}`
+
     return (
-      <div className="flex flex-col">
+      <div className='flex flex-col'>
         <span>{mainValue}</span>
-        <span className="text-[12px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 w-fit mt-1">
+        <span className='text-[12px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 w-fit mt-1'>
           {convertedStr}
         </span>
       </div>
-    );
-  };
+    )
+  }
 
   // Helper function để format plain text notes thành HTML
   const formatPlainTextNotes = (text: string): string => {
     return text
-      .split('\n')
-      .map(line => {
-        if (line.trim().startsWith('•')) {
-          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`;
+      .split("\n")
+      .map((line) => {
+        if (line.trim().startsWith("•")) {
+          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`
         }
-        if (line.trim().startsWith('+')) {
-          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`;
+        if (line.trim().startsWith("+")) {
+          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`
         }
-        return line.trim() ? `<div>${line.trim()}</div>` : '';
+        return line.trim() ? `<div>${line.trim()}</div>` : ""
       })
-      .filter(line => line)
-      .join('');
+      .filter((line) => line)
+      .join("")
   }
 
   return (
@@ -94,15 +114,15 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     >
       {product && (
         <Descriptions bordered column={1}>
-          {(product.thumb || (product.pictures && product.pictures.length > 0)) && (
+          {(product.thumb ||
+            (product.pictures && product.pictures.length > 0)) && (
             <Descriptions.Item label='Hình ảnh'>
               <Image
                 src={getImageUrl(
                   product.thumb ||
-                    (product.pictures &&
-                    product.pictures.length > 0
+                    (product.pictures && product.pictures.length > 0
                       ? product.pictures[0]
-                      : undefined)
+                      : undefined),
                 )}
                 width={80}
                 height={80}
@@ -117,21 +137,23 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {product.notes && (
             <Descriptions.Item label='Ghi chú'>
               {/<[^>]+>/.test(product.notes) ? (
-                <div 
+                <div
                   dangerouslySetInnerHTML={{ __html: product.notes }}
-                  style={{ 
-                    maxHeight: '200px', 
-                    overflowY: 'auto',
-                    wordBreak: 'break-word'
+                  style={{
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    wordBreak: "break-word",
                   }}
                 />
               ) : (
-                <div 
-                  dangerouslySetInnerHTML={{ __html: formatPlainTextNotes(product.notes) }}
-                  style={{ 
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    wordBreak: 'break-word'
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: formatPlainTextNotes(product.notes),
+                  }}
+                  style={{
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    wordBreak: "break-word",
                   }}
                 />
               )}
@@ -139,12 +161,12 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           )}
           <Descriptions.Item label='Mô tả'>
             {product.description ? (
-              <div 
+              <div
                 dangerouslySetInnerHTML={{ __html: product.description }}
-                style={{ 
-                  maxHeight: '300px', 
-                  overflowY: 'auto',
-                  wordBreak: 'break-word'
+                style={{
+                  maxHeight: "300px",
+                  overflowY: "auto",
+                  wordBreak: "break-word",
                 }}
               />
             ) : (
@@ -153,12 +175,12 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </Descriptions.Item>
           {product.mechanism && (
             <Descriptions.Item label='Cơ chế tác động'>
-              <div 
+              <div
                 dangerouslySetInnerHTML={{ __html: product.mechanism }}
-                style={{ 
-                  maxHeight: '200px', 
-                  overflowY: 'auto',
-                  wordBreak: 'break-word'
+                style={{
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  wordBreak: "break-word",
                 }}
               />
             </Descriptions.Item>
@@ -167,13 +189,20 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {renderValueWithBao(Number(product.price || 0), product)}
           </Descriptions.Item>
           <Descriptions.Item label='Giá bán (Nợ)'>
-            {product.credit_price ? renderValueWithBao(Number(product.credit_price), product) : "Chưa thiết lập"}
+            {product.credit_price
+              ? renderValueWithBao(Number(product.credit_price), product)
+              : "Chưa thiết lập"}
           </Descriptions.Item>
           <Descriptions.Item label='Giá vốn trung bình'>
-            {renderValueWithBao(Number(product.average_cost_price || 0), product)}
+            {renderValueWithBao(
+              Number(product.average_cost_price || 0),
+              product,
+            )}
           </Descriptions.Item>
           <Descriptions.Item label='GBKT'>
-            {product.tax_selling_price ? renderValueWithBao(Number(product.tax_selling_price), product) : "Chưa thiết lập"}
+            {product.tax_selling_price
+              ? renderValueWithBao(Number(product.tax_selling_price), product)
+              : "Chưa thiết lập"}
           </Descriptions.Item>
           <Descriptions.Item label='Giá sau giảm'>
             {formatCurrency(Number(product.discounted_price || 0))}
@@ -188,9 +217,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {product.ratings_average || "Chưa có đánh giá"}
           </Descriptions.Item>
           <Descriptions.Item label='Trạng thái'>
-            <Tag
-              color={product.status === "active" ? "green" : "default"}
-            >
+            <Tag color={product.status === "active" ? "green" : "default"}>
               {product.status === "active" ? "Đang bán" : "Bản nháp"}
             </Tag>
           </Descriptions.Item>
@@ -214,7 +241,10 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </Descriptions.Item>
           <Descriptions.Item label='Giá nhập mới nhất'>
             {product.latest_purchase_price
-              ? renderValueWithBao(Number(product.latest_purchase_price || 0), product)
+              ? renderValueWithBao(
+                  Number(product.latest_purchase_price || 0),
+                  product,
+                )
               : "Chưa có"}
           </Descriptions.Item>
           <Descriptions.Item label='Ngày tạo'>
@@ -232,15 +262,14 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {product.symbol?.name || product.symbol_id}
             </Descriptions.Item>
           )}
-          {product.ingredient &&
-            product.ingredient.length > 0 && (
-              <Descriptions.Item label='Thành phần'>
-                {product.ingredient.join(", ")}
-              </Descriptions.Item>
-            )}
+          {product.ingredient && product.ingredient.length > 0 && (
+            <Descriptions.Item label='Thành phần'>
+              {product.ingredient.join(", ")}
+            </Descriptions.Item>
+          )}
           {(product.unit || product.unit_id) && (
             <Descriptions.Item label='Đơn vị tính'>
-              {typeof product.unit === 'object' && product.unit !== null
+              {typeof product.unit === "object" && product.unit !== null
                 ? product.unit.name
                 : product.unit || product.unit_id}
             </Descriptions.Item>
@@ -248,19 +277,20 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {product.attributes && (
             <Descriptions.Item label='Thuộc tính'>
               <div className='grid grid-cols-2 gap-2'>
-                {typeof product.attributes === 'object' && product.attributes !== null &&
+                {typeof product.attributes === "object" &&
+                  product.attributes !== null &&
                   Object.entries(product.attributes as Record<string, unknown>)
-                    .filter(([key]) => key !== 'unit')
+                    .filter(([key]) => key !== "unit")
                     .map(([key, value]) => (
-                    <div key={key} className='flex'>
-                      <span className='font-medium mr-2'>{key}:</span>
-                      <span>
-                        {typeof value === "object"
-                          ? JSON.stringify(value)
-                          : String(value)}
-                      </span>
-                    </div>
-                  ))}
+                      <div key={key} className='flex'>
+                        <span className='font-medium mr-2'>{key}:</span>
+                        <span>
+                          {typeof value === "object"
+                            ? JSON.stringify(value)
+                            : String(value)}
+                        </span>
+                      </div>
+                    ))}
               </div>
             </Descriptions.Item>
           )}

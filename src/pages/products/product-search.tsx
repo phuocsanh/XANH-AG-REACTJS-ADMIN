@@ -1,13 +1,7 @@
 import * as React from "react"
 import { ExtendedProduct } from "../../models/product.model"
 import { useProductsQuery } from "../../queries/product"
-import {
-  Tag,
-  Input,
-  Card,
-  Typography,
-  message,
-} from "antd"
+import { Tag, Input, Card, Typography, message } from "antd"
 import { SearchOutlined } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
 import ProductDetailModal from "./components/product-detail-modal"
@@ -28,7 +22,7 @@ const ProductSearch: React.FC = () => {
   const [searchTerm, setSearchTerm] = React.useState("")
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
-  
+
   // Voice Search Hook
   const {
     isListening,
@@ -38,7 +32,7 @@ const ProductSearch: React.FC = () => {
     startListening,
     stopListening,
   } = useVoiceSearch({
-    lang: 'vi-VN',
+    lang: "vi-VN",
     continuous: true, // Cho phép ghi âm liên tục, không tự động dừng
     interimResults: true,
     onTranscript: (text) => {
@@ -51,7 +45,7 @@ const ProductSearch: React.FC = () => {
       message.error(errorMsg)
     },
   })
-  
+
   // Debounce logic: Đợi 1.5 giây sau khi ngừng gõ mới tìm kiếm
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,23 +64,28 @@ const ProductSearch: React.FC = () => {
 
   // State cho Modal chi tiết
   const [isDetailModalVisible, setIsDetailModalVisible] = React.useState(false)
-  const [selectedProduct, setSelectedProduct] = React.useState<ExtendedProduct | null>(null)
+  const [selectedProduct, setSelectedProduct] =
+    React.useState<ExtendedProduct | null>(null)
 
   // Build Params cho Query - Sử dụng query 'keyword' để tìm kiếm tổng quát
-  const queryParams = React.useMemo(() => ({
+  const queryParams = React.useMemo(
+    () => ({
       page: currentPage,
       limit: pageSize,
       keyword: searchTerm,
-      status: 'active' // Chỉ tìm sản phẩm đang bán
-  }), [currentPage, pageSize, searchTerm])
+      status: "active", // Chỉ tìm sản phẩm đang bán
+    }),
+    [currentPage, pageSize, searchTerm],
+  )
 
   // Sử dụng Server-side Query
-  const { data: productsData, isLoading: isQueryLoading } = useProductsQuery(queryParams)
-  
-  // Hiển thị loading khi đang đợi debounce HOẶC đang gọi API
-  const isLoading = isQueryLoading || (inputValue !== searchTerm)
+  const { data: productsData, isLoading: isQueryLoading } =
+    useProductsQuery(queryParams)
 
-  const products = productsData?.data?.items || [] 
+  // Hiển thị loading khi đang đợi debounce HOẶC đang gọi API
+  const isLoading = isQueryLoading || inputValue !== searchTerm
+
+  const products = productsData?.data?.items || []
   const totalProducts = productsData?.data?.total || 0
 
   // Hàm mở modal chi tiết
@@ -97,19 +96,19 @@ const ProductSearch: React.FC = () => {
 
   // Hook để detect screen size
   const [windowWidth, setWindowWidth] = React.useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1024
+    typeof window !== "undefined" ? window.innerWidth : 1024,
   )
 
   React.useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   // Responsive widths
   const isMobile = windowWidth < 768
   const isTablet = windowWidth >= 768 && windowWidth < 1024
-  
+
   const getColumnWidth = (mobile: number, tablet: number, desktop: number) => {
     if (isMobile) return mobile
     if (isTablet) return tablet
@@ -120,35 +119,35 @@ const ProductSearch: React.FC = () => {
   const formatPlainTextNotes = (text: string): string => {
     // Thay thế • và + bằng xuống dòng + ký tự gốc
     return text
-      .split('\n')
-      .map(line => {
+      .split("\n")
+      .map((line) => {
         // Xử lý dòng bắt đầu bằng •
-        if (line.trim().startsWith('•')) {
-          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`;
+        if (line.trim().startsWith("•")) {
+          return `<div style="margin-top: 8px; margin-bottom: 4px;"><strong>${line.trim()}</strong></div>`
         }
         // Xử lý dòng bắt đầu bằng +
-        if (line.trim().startsWith('+')) {
-          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`;
+        if (line.trim().startsWith("+")) {
+          return `<div style="margin-left: 16px; margin-bottom: 2px;">${line.trim()}</div>`
         }
         // Dòng thường
-        return line.trim() ? `<div>${line.trim()}</div>` : '';
+        return line.trim() ? `<div>${line.trim()}</div>` : ""
       })
-      .filter(line => line) // Loại bỏ dòng trống
-      .join('');
+      .filter((line) => line) // Loại bỏ dòng trống
+      .join("")
   }
 
   // ✅ Helper để lấy hệ số quy đổi Bao của sản phẩm
   const getBaoConversion = (product: ExtendedProduct) => {
-    const conversions = product.unit_conversions || [];
-    const baoConv = conversions.find((c: any) => 
-      (c.unit_name || c.unit?.name || '').toLowerCase().includes('bao')
-    );
-    if (!baoConv) return null;
+    const conversions = product.unit_conversions || []
+    const baoConv = conversions.find((c: any) =>
+      (c.unit_name || c.unit?.name || "").toLowerCase().includes("bao"),
+    )
+    if (!baoConv) return null
     return {
       factor: Number(baoConv.conversion_factor),
-      unitName: baoConv.unit_name || baoConv.unit?.name || 'Bao'
-    };
-  };
+      unitName: baoConv.unit_name || baoConv.unit?.name || "Bao",
+    }
+  }
 
   // Cấu hình columns cho DataTable
   const columns = [
@@ -156,9 +155,11 @@ const ProductSearch: React.FC = () => {
       key: "trade_name",
       title: "Tên thương mại",
       width: getColumnWidth(150, 200, 250), // Mobile: 150, Tablet: 200, Desktop: 250
-      fixed: 'left' as const, // Cố định cột bên trái
+      fixed: "left" as const, // Cố định cột bên trái
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-900 whitespace-normal break-words'>{record.trade_name || '---'}</div>
+        <div className='font-medium text-gray-900 whitespace-normal break-words'>
+          {record.trade_name || "---"}
+        </div>
       ),
     },
     {
@@ -166,8 +167,12 @@ const ProductSearch: React.FC = () => {
       title: "Đơn vị",
       width: getColumnWidth(80, 100, 100),
       render: (_: unknown, record: ExtendedProduct) => {
-          const unitName = record.unit_name || (typeof record.unit === 'object' && record.unit ? record.unit.name : '---');
-          return <div className='text-gray-600'>{unitName}</div>
+        const unitName =
+          record.unit_name ||
+          (typeof record.unit === "object" && record.unit
+            ? record.unit.name
+            : "---")
+        return <div className='text-gray-600'>{unitName}</div>
       },
     },
     {
@@ -175,7 +180,9 @@ const ProductSearch: React.FC = () => {
       title: "Tên sản phẩm",
       width: getColumnWidth(150, 180, 220), // Mobile: 150, Tablet: 180, Desktop: 220
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-700 whitespace-normal break-words'>{record.name}</div>
+        <div className='font-medium text-gray-700 whitespace-normal break-words'>
+          {record.name}
+        </div>
       ),
     },
     {
@@ -183,31 +190,33 @@ const ProductSearch: React.FC = () => {
       title: "Ghi chú",
       width: getColumnWidth(210, 250, 350), // Mobile: 210, Tablet: 250, Desktop: 350
       render: (_: unknown, record: ExtendedProduct) => {
-        const isHTML = record.notes && /<[^>]+>/.test(record.notes);
-        
+        const isHTML = record.notes && /<[^>]+>/.test(record.notes)
+
         return (
-          <div 
-            className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'
-          >
+          <div className='text-gray-600 bg-gray-50 p-2 rounded border border-gray-100 italic whitespace-normal break-words'>
             {record.notes ? (
               isHTML ? (
                 <div dangerouslySetInnerHTML={{ __html: record.notes }} />
               ) : (
-                <div dangerouslySetInnerHTML={{ __html: formatPlainTextNotes(record.notes) }} />
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: formatPlainTextNotes(record.notes),
+                  }}
+                />
               )
             ) : (
-              <span className="text-gray-300">Không có ghi chú</span>
+              <span className='text-gray-300'>Không có ghi chú</span>
             )}
           </div>
-        );
+        )
       },
     },
-     {
+    {
       key: "price",
       title: "Giá tiền mặt",
       width: 140,
       render: (value: string, record: ExtendedProduct) => {
-        const bao = getBaoConversion(record);
+        const bao = getBaoConversion(record)
         return (
           <div>
             <div className='font-bold text-emerald-600'>
@@ -217,61 +226,72 @@ const ProductSearch: React.FC = () => {
               }).format(Number(record.price || 0))}
             </div>
             {bao && Number(record.price) > 0 && (
-              <div className="text-[11px] font-bold text-emerald-500 bg-emerald-50 px-1 rounded border border-emerald-100 w-fit">
-                {Number(record.price) * bao.factor >= 1000 
-                  ? `${(Number(record.price) * bao.factor).toLocaleString('vi-VN')} đ/${bao.unitName}`
-                  : `${(Number(record.price) * bao.factor).toLocaleString('vi-VN')} đ/${bao.unitName}`
-                }
+              <div className='text-[11px] font-bold text-emerald-500 bg-emerald-50 px-1 rounded border border-emerald-100 w-fit'>
+                {Number(record.price) * bao.factor >= 1000
+                  ? `${(Number(record.price) * bao.factor).toLocaleString("vi-VN")} đ/${bao.unitName}`
+                  : `${(Number(record.price) * bao.factor).toLocaleString("vi-VN")} đ/${bao.unitName}`}
               </div>
             )}
           </div>
-        );
+        )
       },
     },
-     {
+    {
       key: "credit_price",
       title: "Giá nợ",
       width: 140,
       render: (value: string, record: ExtendedProduct) => {
-        const bao = getBaoConversion(record);
+        const bao = getBaoConversion(record)
         return (
           <div>
             <div className='font-bold text-blue-600'>
-              {record.credit_price ? new Intl.NumberFormat("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              }).format(Number(record.credit_price)) : "---"}
+              {record.credit_price
+                ? new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(Number(record.credit_price))
+                : "---"}
             </div>
             {bao && record.credit_price && Number(record.credit_price) > 0 && (
-              <div className="text-[11px] font-bold text-blue-500 bg-blue-50 px-1 rounded border border-blue-100 w-fit">
-                {(Number(record.credit_price) * bao.factor).toLocaleString('vi-VN')} đ/{bao.unitName}
+              <div className='text-[11px] font-bold text-blue-500 bg-blue-50 px-1 rounded border border-blue-100 w-fit'>
+                {(Number(record.credit_price) * bao.factor).toLocaleString(
+                  "vi-VN",
+                )}{" "}
+                đ/{bao.unitName}
               </div>
             )}
           </div>
-        );
+        )
       },
     },
-     {
+    {
       key: "tax_selling_price",
       title: "GBKT",
       width: 140,
       render: (value: string, record: ExtendedProduct) => {
-        const bao = getBaoConversion(record);
+        const bao = getBaoConversion(record)
         return (
           <div>
             <div className='font-bold text-pink-600'>
-              {record.tax_selling_price ? new Intl.NumberFormat("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              }).format(Number(record.tax_selling_price)) : "---"}
+              {record.tax_selling_price
+                ? new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(Number(record.tax_selling_price))
+                : "---"}
             </div>
-            {bao && record.tax_selling_price && Number(record.tax_selling_price) > 0 && (
-              <div className="text-[11px] font-bold text-pink-500 bg-pink-50 px-1 rounded border border-pink-100 w-fit">
-                {(Number(record.tax_selling_price) * bao.factor).toLocaleString('vi-VN')} đ/{bao.unitName}
-              </div>
-            )}
+            {bao &&
+              record.tax_selling_price &&
+              Number(record.tax_selling_price) > 0 && (
+                <div className='text-[11px] font-bold text-pink-500 bg-pink-50 px-1 rounded border border-pink-100 w-fit'>
+                  {(
+                    Number(record.tax_selling_price) * bao.factor
+                  ).toLocaleString("vi-VN")}{" "}
+                  đ/{bao.unitName}
+                </div>
+              )}
           </div>
-        );
+        )
       },
     },
     {
@@ -284,41 +304,54 @@ const ProductSearch: React.FC = () => {
         </Tag>
       ),
     },
-     {
+    {
       key: "quantity",
       title: "Tồn kho",
-      width: 100,
-      align: 'center' as const,
+      width: 120,
+      align: "center" as const,
       render: (value: number, record: ExtendedProduct) => {
-        const bao = getBaoConversion(record);
-        const qty = record.quantity || 0;
+        const bao = getBaoConversion(record)
+        const qty = record.quantity || 0
+        // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
+        const defaultUnit = record.unit_name || "kg"
         return (
-          <div className="flex flex-col items-center">
-            <Tag color={qty > 0 ? 'green' : 'red'} className="m-0">
-                {qty}
+          <div className='flex flex-col items-center'>
+            <Tag color={qty > 0 ? "green" : "red"} className='m-0'>
+              {new Intl.NumberFormat("vi-VN", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              }).format(qty)}{" "}
+              {defaultUnit}
             </Tag>
             {bao && qty > 0 && (
-              <div className="text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap">
-                {new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(qty / bao.factor)} {bao.unitName}
+              <div className='text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap'>
+                {new Intl.NumberFormat("vi-VN", {
+                  maximumFractionDigits: 2,
+                }).format(qty / bao.factor)}{" "}
+                {bao.unitName}
               </div>
             )}
           </div>
-        );
+        )
       },
     },
   ]
 
   return (
     <div className='p-4 md:p-8 bg-gray-50 min-h-screen'>
-      <Card className="shadow-lg border-emerald-100 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <Card className='shadow-lg border-emerald-100 mb-6'>
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
           <div>
-            <Title level={2} className="!mb-0 !text-emerald-800">Tìm sản phẩm</Title>
-            <Typography.Text type="secondary">Tìm nhanh theo tên sản phẩm, tên thương mại hoặc ghi chú kỹ thuật</Typography.Text>
+            <Title level={2} className='!mb-0 !text-emerald-800'>
+              Tìm sản phẩm
+            </Title>
+            <Typography.Text type='secondary'>
+              Tìm nhanh theo tên sản phẩm, tên thương mại hoặc ghi chú kỹ thuật
+            </Typography.Text>
           </div>
-          <div className="w-full md:w-96">
+          <div className='w-full md:w-96'>
             <Input
-              prefix={<SearchOutlined className="text-emerald-500" />}
+              prefix={<SearchOutlined className='text-emerald-500' />}
               suffix={
                 <VoiceSearchButton
                   isListening={isListening}
@@ -329,10 +362,10 @@ const ProductSearch: React.FC = () => {
                   onStop={stopListening}
                 />
               }
-              placeholder="Nhập tên, hiệu thuốc hoặc ghi chú..."
-              size="large"
+              placeholder='Nhập tên, hiệu thuốc hoặc ghi chú...'
+              size='large'
               allowClear
-              className="rounded-full border-emerald-200"
+              className='rounded-full border-emerald-200'
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onPressEnter={handleSearchNow}
@@ -363,7 +396,7 @@ const ProductSearch: React.FC = () => {
           }}
           onView={(record) => handleViewDetail(record as ExtendedProduct)}
           onRow={() => ({
-            className: 'cursor-pointer hover:bg-emerald-50 transition-colors'
+            className: "cursor-pointer hover:bg-emerald-50 transition-colors",
           })}
           searchableColumns={[]}
           showSearch={false}
@@ -372,7 +405,7 @@ const ProductSearch: React.FC = () => {
         />
       </div>
 
-      <ProductDetailModal 
+      <ProductDetailModal
         visible={isDetailModalVisible}
         onCancel={() => setIsDetailModalVisible(false)}
         product={selectedProduct}

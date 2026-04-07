@@ -446,10 +446,16 @@ const ProductsList: React.FC = () => {
         render: (value: number, record: ExtendedProduct) => {
           const bao = getBaoConversion(record)
           const qty = record.quantity || 0
+          // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
+          const defaultUnit = record.unit_name || "kg"
           return (
             <div className='flex flex-col items-center'>
               <Tag color={qty > 0 ? "green" : "red"} className='m-0'>
-                {qty}
+                {new Intl.NumberFormat("vi-VN", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 2,
+                }).format(qty)}{" "}
+                {defaultUnit}
               </Tag>
               {bao && qty > 0 && (
                 <div className='text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap'>
@@ -511,6 +517,8 @@ const ProductsList: React.FC = () => {
         render: (value: number, record: ExtendedProduct) => {
           const bao = getBaoConversion(record)
           const qty = record.taxable_quantity_stock || 0
+          // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
+          const defaultUnit = record.unit_name || "kg"
           return (
             <div className='flex flex-col items-center'>
               <TaxableStockEditor
@@ -532,8 +540,16 @@ const ProductsList: React.FC = () => {
                   }
                 }}
               />
-              {bao && qty > 0 && (
+              {qty > 0 && (
                 <div className='text-[11px] font-bold text-blue-600 mt-1 whitespace-nowrap'>
+                  {new Intl.NumberFormat("vi-VN", {
+                    maximumFractionDigits: 2,
+                  }).format(qty)}{" "}
+                  {defaultUnit}
+                </div>
+              )}
+              {bao && qty > 0 && (
+                <div className='text-[11px] font-bold text-blue-500 whitespace-nowrap'>
                   {new Intl.NumberFormat("vi-VN", {
                     maximumFractionDigits: 2,
                   }).format(qty / bao.factor)}{" "}
