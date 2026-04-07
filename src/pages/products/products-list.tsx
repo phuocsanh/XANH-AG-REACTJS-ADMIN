@@ -426,31 +426,20 @@ const ProductsList: React.FC = () => {
         },
       },
       {
-        key: "has_input_invoice",
-        dataIndex: "has_input_invoice",
-        title: "Hóa đơn",
-        width: 110,
-        render: (value: boolean) => (
-          <Tag color={value ? "blue" : "default"}>
-            {value ? "Có hóa đơn" : "Không hóa đơn"}
-          </Tag>
-        ),
-      },
-      {
-        key: "quantity",
-        dataIndex: "quantity", // Needed for sorter to identify field
-        title: "Tồn kho",
+        key: "taxable_quantity_stock",
+        dataIndex: "taxable_quantity_stock",
+        title: "Tồn thuế",
         width: 120,
         align: "center" as const,
-        sorter: true, // Enable sorting
+        sorter: true,
         render: (value: number, record: ExtendedProduct) => {
           const bao = getBaoConversion(record)
-          const qty = record.quantity || 0
+          const qty = record.taxable_quantity_stock || 0
           // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
           const defaultUnit = record.unit_name || "kg"
           return (
             <div className='flex flex-col items-center'>
-              <Tag color={qty > 0 ? "green" : "red"} className='m-0'>
+              <Tag color={qty > 0 ? "blue" : "default"} className='m-0'>
                 {new Intl.NumberFormat("vi-VN", {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 2,
@@ -458,7 +447,7 @@ const ProductsList: React.FC = () => {
                 {defaultUnit}
               </Tag>
               {bao && qty > 0 && (
-                <div className='text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap'>
+                <div className='text-[11px] font-bold text-blue-500 whitespace-nowrap'>
                   {new Intl.NumberFormat("vi-VN", {
                     maximumFractionDigits: 2,
                   }).format(qty / bao.factor)}{" "}
@@ -505,59 +494,6 @@ const ProductsList: React.FC = () => {
               text = record.status
           }
           return <Tag color={color}>{text}</Tag>
-        },
-      },
-      {
-        key: "taxable_quantity_stock",
-        dataIndex: "taxable_quantity_stock",
-        title: "Tồn thuế",
-        width: 120,
-        align: "center" as const,
-        sorter: true,
-        render: (value: number, record: ExtendedProduct) => {
-          const bao = getBaoConversion(record)
-          const qty = record.taxable_quantity_stock || 0
-          // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
-          const defaultUnit = record.unit_name || "kg"
-          return (
-            <div className='flex flex-col items-center'>
-              <TaxableStockEditor
-                value={value}
-                record={record}
-                isPending={updateProductMutation.isPending}
-                onUpdate={async (id, newValue) => {
-                  try {
-                    await updateProductMutation.mutateAsync({
-                      id,
-                      productData: {
-                        id,
-                        taxable_quantity_stock: newValue,
-                      },
-                    })
-                    message.success("Cập nhật tồn thuế thành công!")
-                  } catch (error) {
-                    console.error("Error updating taxable stock:", error)
-                  }
-                }}
-              />
-              {qty > 0 && (
-                <div className='text-[11px] font-bold text-blue-600 mt-1 whitespace-nowrap'>
-                  {new Intl.NumberFormat("vi-VN", {
-                    maximumFractionDigits: 2,
-                  }).format(qty)}{" "}
-                  {defaultUnit}
-                </div>
-              )}
-              {bao && qty > 0 && (
-                <div className='text-[11px] font-bold text-blue-500 whitespace-nowrap'>
-                  {new Intl.NumberFormat("vi-VN", {
-                    maximumFractionDigits: 2,
-                  }).format(qty / bao.factor)}{" "}
-                  {bao.unitName}
-                </div>
-              )}
-            </div>
-          )
         },
       },
       {
