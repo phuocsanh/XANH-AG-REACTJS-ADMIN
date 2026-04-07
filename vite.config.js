@@ -8,20 +8,24 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "icons/apple-touch-icon.png", "offline.html"],
+      includeAssets: [
+        "favicon.ico",
+        "icons/apple-touch-icon.png",
+        "offline.html",
+      ],
       workbox: {
         maximumFileSizeToCacheInBytes: 30 * 1024 * 1024, // 30MB - Cho phép cache file WASM lớn
         cleanupOutdatedCaches: true, // Tự động xóa cache cũ
         skipWaiting: true, // Kích hoạt service worker mới ngay lập tức
         clientsClaim: true, // Kiểm soát tất cả clients ngay lập tức
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
             // Cache navigation requests (HTML pages)
-            urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
             options: {
-              cacheName: 'pages-cache',
+              cacheName: "pages-cache",
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 24 * 60 * 60, // 24 hours
@@ -30,10 +34,10 @@ export default defineConfig({
           },
           {
             // Cache API responses với TTL ngắn
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
+            handler: "NetworkFirst",
             options: {
-              cacheName: 'api-cache',
+              cacheName: "api-cache",
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 5 * 60, // 5 minutes
@@ -43,10 +47,10 @@ export default defineConfig({
           },
           {
             // Cache images
-            urlPattern: ({ request }) => request.destination === 'image',
-            handler: 'CacheFirst',
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "CacheFirst",
             options: {
-              cacheName: 'images-cache',
+              cacheName: "images-cache",
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
@@ -69,31 +73,31 @@ export default defineConfig({
         icons: [
           // Icon 'any' - hiển thị bình thường
           {
-            src: '/icons/pwa-icon-192-v5.png?v=20260106',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
+            src: "/icons/pwa-icon-192-v5.png?v=20260106",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any",
           },
           {
-            src: '/icons/pwa-icon-512-v5.png?v=20260106',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
+            src: "/icons/pwa-icon-512-v5.png?v=20260106",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
           },
           // Icon 'maskable' - cho phép OS crop (có safe zone)
           {
-            src: '/icons/pwa-maskable-192-v5.png?v=20260106',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
+            src: "/icons/pwa-maskable-192-v5.png?v=20260106",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
           },
           {
-            src: '/icons/pwa-maskable-512-v5.png?v=20260106',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
+            src: "/icons/pwa-maskable-512-v5.png?v=20260106",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
       },
 
       devOptions: {
@@ -111,16 +115,24 @@ export default defineConfig({
     port: 5173,
   },
   build: {
-    chunkSizeWarningLimit: 10000, // 10MB - Tăng giới hạn warning cho chunk size
+    chunkSizeWarningLimit: 10000,
+    // ✅ Tăng parallelism để build nhanh hơn
+    minify: "esbuild", // esbuild nhanh hơn terser
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Tách vendor chunks để giảm kích thước file chính
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'antd-vendor': ['antd'],
-          'chart-vendor': ['recharts'],
-        }
-      }
-    }
-  }
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "antd-vendor": ["antd"],
+          "chart-vendor": ["recharts"],
+        },
+        // ✅ Giảm số lượng file output để tăng tốc deploy
+        chunkFileNames: "assets/[name]-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
+      },
+    },
+    // ✅ Tăng giới hạn warning
+    reportCompressedSize: false, // Tắt báo cáo compressed size để build nhanh hơn
+  },
 })
