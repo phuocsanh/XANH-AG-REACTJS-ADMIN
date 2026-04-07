@@ -42,6 +42,7 @@ interface ProductField {
   notes?: string;
   price_type: 'cash' | 'credit';
   stock_quantity?: number;
+  taxable_quantity_stock?: number;
   sale_unit_id?: number;
   conversion_factor?: number;
   base_quantity?: number;
@@ -87,7 +88,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           <Table 
             size="small" 
             sx={{ 
-              minWidth: 1480,
+              minWidth: 1600,
               tableLayout: 'fixed',
               borderSpacing: 0,
               borderCollapse: 'collapse',
@@ -110,8 +111,9 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 <TableCell align="center" sx={{ width: 40, minWidth: 40 }}>STT</TableCell>
                 <TableCell sx={{ width: 300, minWidth: 300 }}>Sản phẩm</TableCell>
                 <TableCell align="center" sx={{ width: 110, minWidth: 110 }}>ĐVT</TableCell>
-                <TableCell align="center" sx={{ width: 160, minWidth: 160 }}>Tồn kho</TableCell>
-                <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Loại giá</TableCell>
+                <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Tồn kho</TableCell>
+                <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Tồn thuế</TableCell>
+                <TableCell align="center" sx={{ width: 130, minWidth: 130 }}>Loại giá</TableCell>
                 <TableCell align="right" sx={{ width: 160, minWidth: 160 }}>Số lượng</TableCell>
                 <TableCell align="right" sx={{ width: 220, minWidth: 220 }}>Đơn giá</TableCell>
                 <TableCell align="right" sx={{ width: 130, minWidth: 130 }}>Giảm giá</TableCell>
@@ -223,53 +225,65 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
                         const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
                         const sellQty = Number(watch(`items.${index}.quantity`)) || 0;
-                        const baseQty = sellQty * factor;
-                        const isOver = baseQty > stock;
+                        const isOver = (sellQty * factor) > stock;
                         
-                        // Tính tồn kho theo đơn vị đã chọn (ví dụ: KG quy đổi ra BAO)
                         const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
+                        const unitName = watch(`items.${index}.unit_name`) || '';
                         
-                        // Tìm đơn vị quy đổi khác (ví dụ nếu đang Kg thì tìm Bao)
+                        // Quy đổi bao (nếu có)
                         const conversions = watch(`items.${index}.conversions`) || [];
-                        const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
-                        const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
-                        const otherFactor = Number(otherConv?.conversion_factor || 1);
+                        const baoConv = conversions.find((c: any) => 
+                          (c.unit?.name || c.unit_name || '').toLowerCase().includes('bao')
+                        );
+                        const baoFactor = Number(baoConv?.conversion_factor || 0);
+                        const baoUnitName = baoConv?.unit?.name || baoConv?.unit_name || 'Bao';
                         
-                        let conversionText = '';
-                        if (otherConv) {
-                           // Nếu đang dùng đơn vị cơ sở (Kg), quy đổi ra đơn vị khác (Bao)
-                           if (factor === 1) {
-                              const convertedStock = otherFactor > 0 ? (stock / otherFactor) : 0;
-                              conversionText = `${convertedStock.toLocaleString('vi-VN')} ${otherUnitName}`;
-                           } else {
-                              // Nếu đang dùng đơn vị quy đổi (Bao), quy đổi ra Kg
-                              conversionText = `${stock.toLocaleString('vi-VN')} Kg`;
-                           }
-                        }
+                        const showBao = baoFactor > 0 && Math.abs(stock) >= baoFactor;
 
                         return (
-                          <Tooltip title={`Tồn thực tế: ${stock} Khối lượng (Kg)`} arrow>
-                            <div style={{ minWidth: '100px' }}>
-                              <Typography variant="body2" sx={{ 
-                                display: 'block', 
-                                textAlign: 'center',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: isOver ? '#fff1f0' : '#f8fafc',
-                                border: `1px solid ${isOver ? '#ffa39e' : '#eef2f6'}`,
-                                color: isOver ? '#cf1322' : 'inherit',
-                                fontSize: '0.85rem',
-                                fontWeight: 500
-                              }}>
-                                {conversionText && (
-                                  <span style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 400, marginRight: '4px' }}>
-                                    ({conversionText})
-                                  </span>
-                                )}
-                                {displayStock.toLocaleString('vi-VN')}
+                          <Tooltip title={`Tồn thực tế: ${stock.toLocaleString('vi-VN')} đơn vị gốc`} arrow>
+                            <Box sx={{ 
+                              p: '4px 8px',
+                              borderRadius: '4px',
+                              backgroundColor: isOver ? '#fff1f0' : '#f8fafc',
+                              border: `1px solid ${isOver ? '#ffa39e' : '#eef2f6'}`,
+                              color: isOver ? '#cf1322' : 'inherit',
+                              minWidth: '80px'
+                            }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center' }}>
+                                {displayStock.toLocaleString('vi-VN')} {unitName}
                               </Typography>
-                            </div>
+                              {showBao && (
+                                <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: isOver ? '#cf1322' : '#64748b', fontSize: '0.7rem' }}>
+                                  ≈ {Math.floor(stock / baoFactor)} {baoUnitName}
+                                </Typography>
+                              )}
+                            </Box>
                           </Tooltip>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell align="center">
+                      {(() => {
+                        const taxStock = Number(watch(`items.${index}.taxable_quantity_stock`)) || 0;
+                        const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                        
+                        const displayTaxStock = factor > 0 ? Math.floor((taxStock / factor) * 100) / 100 : taxStock;
+                        const unitName = watch(`items.${index}.unit_name`) || '';
+
+                        return (
+                          <Box sx={{ 
+                            p: '4px 8px',
+                            borderRadius: '4px',
+                            backgroundColor: '#f0f7ff',
+                            border: '1px solid #bae0ff',
+                            color: '#0958d9',
+                            minWidth: '80px'
+                          }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center' }}>
+                              {displayTaxStock.toLocaleString('vi-VN')} {unitName}
+                            </Typography>
+                          </Box>
                         );
                       })()}
                     </TableCell>
@@ -571,44 +585,35 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
-                    Tồn kho
+                    Tồn (Kho / Thuế)
                   </Typography>
                   {(() => {
                     const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                    const taxStock = Number(watch(`items.${index}.taxable_quantity_stock`)) || 0;
                     const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                    const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
+                    const unitName = watch(`items.${index}.unit_name`) || '';
                     const sellQty = Number(watch(`items.${index}.quantity`)) || 0;
+                    
+                    const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
+                    const displayTax = factor > 0 ? Math.floor((taxStock / factor) * 100) / 100 : taxStock;
                     const isOver = (sellQty * factor) > stock;
 
-                    // Tìm đơn vị quy đổi khác cho Mobile
-                    const conversions = watch(`items.${index}.conversions`) || [];
-                    const otherConv = conversions.find((c: any) => c.unit_id !== watch(`items.${index}.sale_unit_id`));
-                    const otherUnitName = otherConv?.unit?.name || otherConv?.unit_name;
-                    const otherFactor = Number(otherConv?.conversion_factor || 1);
-                    
-                    let conversionText = '';
-                    if (otherConv) {
-                        if (factor === 1) {
-                            const val = otherFactor > 0 ? (stock / otherFactor) : 0;
-                            conversionText = ` (${val.toLocaleString('vi-VN')} ${otherUnitName})`;
-                        } else {
-                            conversionText = ` (${stock.toLocaleString('vi-VN')} Kg)`;
-                        }
-                    }
-
                     return (
-                      <Box>
-                        <Field 
-                          value={`${displayStock.toLocaleString('vi-VN')}`}
-                          disabled
-                          className="w-full"
-                          status={isOver ? 'error' : undefined}
-                        />
-                        {conversionText && (
-                          <Typography variant="caption" sx={{ color: '#64748b', mt: 0.25, display: 'block' }}>
-                            {conversionText}
-                          </Typography>
-                        )}
+                      <Box sx={{ 
+                        p: 1, 
+                        borderRadius: 1, 
+                        bgcolor: isOver ? '#fff1f0' : '#f8fafc',
+                        border: `1px solid ${isOver ? '#ffa39e' : '#e2e8f0'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.5
+                      }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: isOver ? '#cf1322' : '#1e293b' }}>
+                          KH: {displayStock.toLocaleString('vi-VN')} {unitName}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0958d9' }}>
+                          TH: {displayTax.toLocaleString('vi-VN')} {unitName}
+                        </Typography>
                       </Box>
                     );
                   })()}

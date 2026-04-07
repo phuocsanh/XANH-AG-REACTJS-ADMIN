@@ -12,6 +12,7 @@ export const salesInvoiceItemSchema = z.object({
   price_type: z.enum(['cash', 'credit']).default('cash'), // Loại giá: tiền mặt hoặc nợ
   average_cost_price: z.number().min(0).optional(), // ✅ Giá vốn để tính lợi nhuận
   stock_quantity: z.number().optional(), // ✅ Số lượng tồn kho hiện tại
+  taxable_quantity_stock: z.number().optional(), // ✅ Số lượng tồn kho có hóa đơn
   tax_selling_price: z.string().optional(), // ✅ Giá bán khai thuế
   sale_unit_id: z.number().optional(), // Đã thêm
   conversion_factor: z.number().optional().default(1), // Đã thêm
@@ -87,6 +88,8 @@ export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {
   discount_amount: 0,
   notes: '',
   price_type: 'credit', // Mặc định là giá bán nợ
+  stock_quantity: 0,
+  taxable_quantity_stock: 0,
   sale_unit_id: undefined,
   conversion_factor: 1,
   base_quantity: 1,

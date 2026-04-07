@@ -309,27 +309,26 @@ const ProductSearch: React.FC = () => {
       title: "Tồn kho",
       width: 120,
       align: "center" as const,
-      render: (value: number, record: ExtendedProduct) => {
+      render: (_: number, record: ExtendedProduct) => {
         const bao = getBaoConversion(record)
         const qty = record.quantity || 0
         const roundedQty = Math.round(qty)
-        if (bao) {
-          // Sản phẩm có quy đổi Bao: hiển thị kg + Bao
-          const roundedBao = Math.round(qty / bao.factor)
+        const unitName = record.unit?.name || record.unit_name || ""
+
+        if (bao && Math.abs(qty) >= bao.factor) {
+          const baoQty = Math.floor(qty / bao.factor)
           return (
             <div className='flex flex-col items-center'>
               <Tag color={roundedQty > 0 ? "green" : "default"} className='m-0'>
-                {new Intl.NumberFormat("vi-VN").format(roundedQty)} kg
+                {new Intl.NumberFormat("vi-VN").format(roundedQty)} {unitName}
               </Tag>
-              <div className='text-[11px] font-bold text-green-500 whitespace-nowrap'>
-                {new Intl.NumberFormat("vi-VN").format(roundedBao)}{" "}
-                {bao.unitName}
+              <div className='text-[10px] font-bold text-green-600 whitespace-nowrap mt-1'>
+                ≈ {new Intl.NumberFormat("vi-VN").format(baoQty)} {bao.unitName}
               </div>
             </div>
           )
         }
-        // Sản phẩm không quy đổi: chỉ hiện số lượng + đơn vị
-        const unitName = record.unit?.name || record.unit_name || ""
+
         return (
           <Tag color={roundedQty > 0 ? "green" : "default"} className='m-0'>
             {new Intl.NumberFormat("vi-VN").format(roundedQty)} {unitName}
