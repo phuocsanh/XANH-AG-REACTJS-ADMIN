@@ -266,6 +266,19 @@ const ProductsList: React.FC = () => {
     updateUrlParams(newParams)
   }
 
+  // ✅ Helper để lấy hệ số quy đổi Bao của sản phẩm (moved outside columns)
+  const getBaoConversion = (product: ExtendedProduct) => {
+    const conversions = product.unit_conversions || []
+    const baoConv = conversions.find((c: any) =>
+      (c.unit_name || c.unit?.name || "").toLowerCase().includes("bao"),
+    )
+    if (!baoConv) return null
+    return {
+      factor: Number(baoConv.conversion_factor),
+      unitName: baoConv.unit_name || baoConv.unit?.name || "Bao",
+    }
+  }
+
   // Cấu hình columns cho DataTable
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns = React.useMemo(() => {
@@ -341,11 +354,23 @@ const ProductsList: React.FC = () => {
         title: "Giá tiền mặt",
         width: 150,
         sorter: true, // Enable sorting
-        render: (value: string) => (
-          <div className='font-medium text-emerald-600'>
-            {formatCurrency(Number(value))}
-          </div>
-        ),
+        render: (value: string, record: ExtendedProduct) => {
+          const bao = getBaoConversion(record)
+          const price = Number(value || 0)
+          return (
+            <div className='flex flex-col items-start'>
+              <div className='font-medium text-emerald-600'>
+                {formatCurrency(price)}
+              </div>
+              {bao && price > 0 && (
+                <div className='text-[10px] font-medium text-emerald-500 bg-emerald-50 px-1 rounded'>
+                  {(price * bao.factor).toLocaleString("vi-VN")} đ/
+                  {bao.unitName}
+                </div>
+              )}
+            </div>
+          )
+        },
       },
       {
         key: "credit_price",
@@ -353,11 +378,23 @@ const ProductsList: React.FC = () => {
         title: "Giá nợ",
         width: 150,
         sorter: true, // Enable sorting
-        render: (value: string) => (
-          <div className='font-medium text-blue-600'>
-            {value ? formatCurrency(Number(value)) : "---"}
-          </div>
-        ),
+        render: (value: string, record: ExtendedProduct) => {
+          const bao = getBaoConversion(record)
+          const price = Number(value || 0)
+          return (
+            <div className='flex flex-col items-start'>
+              <div className='font-medium text-blue-600'>
+                {price ? formatCurrency(price) : "---"}
+              </div>
+              {bao && price > 0 && (
+                <div className='text-[10px] font-medium text-blue-500 bg-blue-50 px-1 rounded'>
+                  {(price * bao.factor).toLocaleString("vi-VN")} đ/
+                  {bao.unitName}
+                </div>
+              )}
+            </div>
+          )
+        },
       },
       {
         key: "tax_selling_price",
@@ -365,11 +402,23 @@ const ProductsList: React.FC = () => {
         title: "GBKT",
         width: 120,
         sorter: true,
-        render: (value: string) => (
-          <div className='font-medium text-pink-600'>
-            {value ? formatCurrency(Number(value)) : "---"}
-          </div>
-        ),
+        render: (value: string, record: ExtendedProduct) => {
+          const bao = getBaoConversion(record)
+          const price = Number(value || 0)
+          return (
+            <div className='flex flex-col items-start'>
+              <div className='font-medium text-pink-600'>
+                {price ? formatCurrency(price) : "---"}
+              </div>
+              {bao && price > 0 && (
+                <div className='text-[10px] font-medium text-pink-500 bg-pink-50 px-1 rounded'>
+                  {(price * bao.factor).toLocaleString("vi-VN")} đ/
+                  {bao.unitName}
+                </div>
+              )}
+            </div>
+          )
+        },
       },
       {
         key: "has_input_invoice",
@@ -390,19 +439,6 @@ const ProductsList: React.FC = () => {
         align: "center" as const,
         sorter: true, // Enable sorting
         render: (value: number, record: ExtendedProduct) => {
-          // ✅ Helper để lấy hệ số quy đổi Bao của sản phẩm
-          const getBaoConversion = (product: ExtendedProduct) => {
-            const conversions = product.unit_conversions || []
-            const baoConv = conversions.find((c: any) =>
-              (c.unit_name || c.unit?.name || "").toLowerCase().includes("bao"),
-            )
-            if (!baoConv) return null
-            return {
-              factor: Number(baoConv.conversion_factor),
-              unitName: baoConv.unit_name || baoConv.unit?.name || "Bao",
-            }
-          }
-
           const bao = getBaoConversion(record)
           const qty = record.quantity || 0
           return (
@@ -467,27 +503,41 @@ const ProductsList: React.FC = () => {
         width: 120,
         align: "center" as const,
         sorter: true,
-        render: (value: number, record: ExtendedProduct) => (
-          <TaxableStockEditor
-            value={value}
-            record={record}
-            isPending={updateProductMutation.isPending}
-            onUpdate={async (id, newValue) => {
-              try {
-                await updateProductMutation.mutateAsync({
-                  id,
-                  productData: {
-                    id,
-                    taxable_quantity_stock: newValue,
-                  },
-                })
-                message.success("Cập nhật tồn thuế thành công!")
-              } catch (error) {
-                console.error("Error updating taxable stock:", error)
-              }
-            }}
-          />
-        ),
+        render: (value: number, record: ExtendedProduct) => {
+          const bao = getBaoConversion(record)
+          const qty = record.taxable_quantity_stock || 0
+          return (
+            <div className='flex flex-col items-center'>
+              <TaxableStockEditor
+                value={value}
+                record={record}
+                isPending={updateProductMutation.isPending}
+                onUpdate={async (id, newValue) => {
+                  try {
+                    await updateProductMutation.mutateAsync({
+                      id,
+                      productData: {
+                        id,
+                        taxable_quantity_stock: newValue,
+                      },
+                    })
+                    message.success("Cập nhật tồn thuế thành công!")
+                  } catch (error) {
+                    console.error("Error updating taxable stock:", error)
+                  }
+                }}
+              />
+              {bao && qty > 0 && (
+                <div className='text-[11px] font-bold text-blue-600 mt-1 whitespace-nowrap'>
+                  {new Intl.NumberFormat("vi-VN", {
+                    maximumFractionDigits: 2,
+                  }).format(qty / bao.factor)}{" "}
+                  {bao.unitName}
+                </div>
+              )}
+            </div>
+          )
+        },
       },
       {
         key: "action",
