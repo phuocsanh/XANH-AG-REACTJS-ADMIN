@@ -435,15 +435,14 @@ const ProductsList: React.FC = () => {
         render: (value: number, record: ExtendedProduct) => {
           const bao = getBaoConversion(record)
           const qty = record.quantity || 0
-          const defaultUnit = record.unit_name || "kg"
-          // Làm tròn số để không hiển thị số lẻ
+          // Lấy đơn vị tính thực tế từ unit relation (Gói/Chai/kg...)
+          const unitName = record.unit?.name || record.unit_name || "kg"
           const roundedQty = Math.round(qty)
           const roundedBao = bao ? Math.round(qty / bao.factor) : 0
           return (
             <div className='flex flex-col items-center'>
               <Tag color={roundedQty > 0 ? "green" : "default"} className='m-0'>
-                {new Intl.NumberFormat("vi-VN").format(roundedQty)}{" "}
-                {defaultUnit}
+                {new Intl.NumberFormat("vi-VN").format(roundedQty)} {unitName}
               </Tag>
               {bao && roundedBao > 0 && (
                 <div className='text-[11px] font-bold text-green-500 whitespace-nowrap'>
