@@ -426,6 +426,36 @@ const ProductsList: React.FC = () => {
         },
       },
       {
+        key: "quantity",
+        dataIndex: "quantity",
+        title: "Tồn kho",
+        width: 120,
+        align: "center" as const,
+        sorter: true,
+        render: (value: number, record: ExtendedProduct) => {
+          const bao = getBaoConversion(record)
+          const qty = record.quantity || 0
+          const defaultUnit = record.unit_name || "kg"
+          // Làm tròn số để không hiển thị số lẻ
+          const roundedQty = Math.round(qty)
+          const roundedBao = bao ? Math.round(qty / bao.factor) : 0
+          return (
+            <div className='flex flex-col items-center'>
+              <Tag color={roundedQty > 0 ? "green" : "default"} className='m-0'>
+                {new Intl.NumberFormat("vi-VN").format(roundedQty)}{" "}
+                {defaultUnit}
+              </Tag>
+              {bao && roundedBao > 0 && (
+                <div className='text-[11px] font-bold text-green-500 whitespace-nowrap'>
+                  {new Intl.NumberFormat("vi-VN").format(roundedBao)}{" "}
+                  {bao.unitName}
+                </div>
+              )}
+            </div>
+          )
+        },
+      },
+      {
         key: "taxable_quantity_stock",
         dataIndex: "taxable_quantity_stock",
         title: "Tồn thuế",
