@@ -437,20 +437,18 @@ const ProductsList: React.FC = () => {
           const qty = record.taxable_quantity_stock || 0
           // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
           const defaultUnit = record.unit_name || "kg"
+          // ✅ Làm tròn số để không hiển thị số lẻ
+          const roundedQty = Math.round(qty)
+          const roundedBao = bao ? Math.round(qty / bao.factor) : 0
           return (
             <div className='flex flex-col items-center'>
-              <Tag color={qty > 0 ? "blue" : "default"} className='m-0'>
-                {new Intl.NumberFormat("vi-VN", {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 2,
-                }).format(qty)}{" "}
+              <Tag color={roundedQty > 0 ? "blue" : "default"} className='m-0'>
+                {new Intl.NumberFormat("vi-VN").format(roundedQty)}{" "}
                 {defaultUnit}
               </Tag>
-              {bao && qty > 0 && (
+              {bao && roundedBao > 0 && (
                 <div className='text-[11px] font-bold text-blue-500 whitespace-nowrap'>
-                  {new Intl.NumberFormat("vi-VN", {
-                    maximumFractionDigits: 2,
-                  }).format(qty / bao.factor)}{" "}
+                  {new Intl.NumberFormat("vi-VN").format(roundedBao)}{" "}
                   {bao.unitName}
                 </div>
               )}
