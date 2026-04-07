@@ -312,26 +312,28 @@ const ProductSearch: React.FC = () => {
       render: (value: number, record: ExtendedProduct) => {
         const bao = getBaoConversion(record)
         const qty = record.quantity || 0
-        // ✅ Lấy đơn vị tính mặc định của sản phẩm (kg, chai, gói, etc.)
-        const defaultUnit = record.unit_name || "kg"
-        return (
-          <div className='flex flex-col items-center'>
-            <Tag color={qty > 0 ? "green" : "red"} className='m-0'>
-              {new Intl.NumberFormat("vi-VN", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 2,
-              }).format(qty)}{" "}
-              {defaultUnit}
-            </Tag>
-            {bao && qty > 0 && (
-              <div className='text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap'>
-                {new Intl.NumberFormat("vi-VN", {
-                  maximumFractionDigits: 2,
-                }).format(qty / bao.factor)}{" "}
+        const roundedQty = Math.round(qty)
+        if (bao) {
+          // Sản phẩm có quy đổi Bao: hiển thị kg + Bao
+          const roundedBao = Math.round(qty / bao.factor)
+          return (
+            <div className='flex flex-col items-center'>
+              <Tag color={roundedQty > 0 ? "green" : "default"} className='m-0'>
+                {new Intl.NumberFormat("vi-VN").format(roundedQty)} kg
+              </Tag>
+              <div className='text-[11px] font-bold text-green-500 whitespace-nowrap'>
+                {new Intl.NumberFormat("vi-VN").format(roundedBao)}{" "}
                 {bao.unitName}
               </div>
-            )}
-          </div>
+            </div>
+          )
+        }
+        // Sản phẩm không quy đổi: chỉ hiện số lượng + đơn vị
+        const unitName = record.unit?.name || record.unit_name || ""
+        return (
+          <Tag color={roundedQty > 0 ? "green" : "default"} className='m-0'>
+            {new Intl.NumberFormat("vi-VN").format(roundedQty)} {unitName}
+          </Tag>
         )
       },
     },
