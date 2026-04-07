@@ -5,14 +5,7 @@ import { Product, ExtendedProduct } from "../../models/product.model"
 import { useProductsQuery } from "../../queries/product"
 import { useProductTypesQuery } from "@/queries/product-type"
 import { ProductType } from "../../models/product-type.model"
-import {
-  Button,
-  Tag,
-  Popover,
-  InputNumber,
-  message,
-  Space,
-} from "antd"
+import { Button, Tag, Popover, InputNumber, message, Space } from "antd"
 import { TableProps } from "antd"
 import {
   PlusOutlined,
@@ -24,31 +17,39 @@ import {
 } from "@ant-design/icons"
 import DataTable from "../../components/common/data-table"
 import { ConfirmModal } from "../../components/common"
-import { useDeleteProductMutation, useUpdateProductMutation } from "@/queries/product"
+import {
+  useDeleteProductMutation,
+  useUpdateProductMutation,
+} from "@/queries/product"
 import FilterHeader from "@/components/common/filter-header"
 import BatchExpiryModal from "./components/batch-expiry-modal"
 import ProductDetailModal from "./components/product-detail-modal"
 
 interface TaxableStockEditorProps {
-  value: number;
-  record: ExtendedProduct;
-  onUpdate: (id: number, newValue: number) => Promise<void>;
-  isPending: boolean;
+  value: number
+  record: ExtendedProduct
+  onUpdate: (id: number, newValue: number) => Promise<void>
+  isPending: boolean
 }
 
-const TaxableStockEditor: React.FC<TaxableStockEditorProps> = ({ value, record, onUpdate, isPending }) => {
-  const [editingValue, setEditingValue] = React.useState<number>(value || 0);
-  const [isPopoverVisible, setIsPopoverVisible] = React.useState(false);
+const TaxableStockEditor: React.FC<TaxableStockEditorProps> = ({
+  value,
+  record,
+  onUpdate,
+  isPending,
+}) => {
+  const [editingValue, setEditingValue] = React.useState<number>(value || 0)
+  const [isPopoverVisible, setIsPopoverVisible] = React.useState(false)
 
   // Cập nhật editingValue khi value từ props thay đổi (ví dụ sau khi update thành công)
   React.useEffect(() => {
-    setEditingValue(value || 0);
-  }, [value]);
+    setEditingValue(value || 0)
+  }, [value])
 
   const handleUpdate = async () => {
-    await onUpdate(record.id, editingValue);
-    setIsPopoverVisible(false);
-  };
+    await onUpdate(record.id, editingValue)
+    setIsPopoverVisible(false)
+  }
 
   return (
     <Popover
@@ -61,28 +62,30 @@ const TaxableStockEditor: React.FC<TaxableStockEditorProps> = ({ value, record, 
             onPressEnter={handleUpdate}
             autoFocus
           />
-          <Button 
-              type="primary" 
-              size="small" 
-              onClick={handleUpdate}
-              loading={isPending}
+          <Button
+            type='primary'
+            size='small'
+            onClick={handleUpdate}
+            loading={isPending}
           >
             Lưu
           </Button>
         </Space>
       }
-      title="Sửa tồn thuế"
-      trigger="click"
+      title='Sửa tồn thuế'
+      trigger='click'
       open={isPopoverVisible}
       onOpenChange={setIsPopoverVisible}
     >
-      <Tag color={value > 0 ? 'blue' : 'default'} className="cursor-pointer hover:opacity-80">
+      <Tag
+        color={value > 0 ? "blue" : "default"}
+        className='cursor-pointer hover:opacity-80'
+      >
         {value || 0}
       </Tag>
     </Popover>
-  );
-};
-
+  )
+}
 
 const ProductsList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -105,66 +108,87 @@ const ProductsList: React.FC = () => {
   }, [searchParams])
 
   // Hàm cập nhật URL search params
-  const updateUrlParams = React.useCallback((newParams: Record<string, any>, resetPage = false) => {
-    const params = new URLSearchParams(searchParams)
-    
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === "") {
-        params.delete(key)
-      } else {
-        params.set(key, String(value))
+  const updateUrlParams = React.useCallback(
+    (newParams: Record<string, any>, resetPage = false) => {
+      const params = new URLSearchParams(searchParams)
+
+      Object.entries(newParams).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") {
+          params.delete(key)
+        } else {
+          params.set(key, String(value))
+        }
+      })
+
+      if (resetPage) {
+        params.set("page", "1")
       }
-    })
 
-    if (resetPage) {
-      params.set("page", "1")
-    }
-
-    setSearchParams(params)
-  }, [searchParams, setSearchParams])
+      setSearchParams(params)
+    },
+    [searchParams, setSearchParams],
+  )
 
   // State modals
-  const [isViewModalVisible, setIsViewModalVisible] = React.useState<boolean>(false)
-  const [deleteConfirmVisible, setDeleteConfirmVisible] = React.useState<boolean>(false)
-  const [isExpiryModalVisible, setIsExpiryModalVisible] = React.useState<boolean>(false)
-  const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(null)
-  const [currentProduct, setCurrentProduct] = React.useState<Product | null>(null)
+  const [isViewModalVisible, setIsViewModalVisible] =
+    React.useState<boolean>(false)
+  const [deleteConfirmVisible, setDeleteConfirmVisible] =
+    React.useState<boolean>(false)
+  const [isExpiryModalVisible, setIsExpiryModalVisible] =
+    React.useState<boolean>(false)
+  const [deletingProduct, setDeletingProduct] = React.useState<Product | null>(
+    null,
+  )
+  const [currentProduct, setCurrentProduct] = React.useState<Product | null>(
+    null,
+  )
 
   const deleteProductMutation = useDeleteProductMutation()
   const updateProductMutation = useUpdateProductMutation()
 
   // Build Params cho Query
-  const queryParams = React.useMemo(() => ({
+  const queryParams = React.useMemo(
+    () => ({
       page: currentPage,
       limit: pageSize,
-      ...filters
-  }), [currentPage, pageSize, filters])
+      ...filters,
+    }),
+    [currentPage, pageSize, filters],
+  )
 
   // Sử dụng Server-side Query
-  const { data: productsData, isLoading: isLoadingProducts } = useProductsQuery(queryParams)
-  
+  const { data: productsData, isLoading: isLoadingProducts } =
+    useProductsQuery(queryParams)
+
   // Data access path based on API response structure
-  const products = productsData?.data?.items || [] 
+  const products = productsData?.data?.items || []
   const totalProducts = productsData?.data?.total || 0
 
-  const handleEditProduct = React.useCallback((product: Product) => {
-    if (!product) return
-    // Lưu lại search hiện tại để quay lại đúng trang
-    navigate(`/products/edit/${product.id}${location.search}`)
-  }, [navigate, location.search])
+  const handleEditProduct = React.useCallback(
+    (product: Product) => {
+      if (!product) return
+      // Lưu lại search hiện tại để quay lại đúng trang
+      navigate(`/products/edit/${product.id}${location.search}`)
+    },
+    [navigate, location.search],
+  )
 
-  const { data: productTypesData, isLoading: isLoadingTypes } = useProductTypesQuery()
+  const { data: productTypesData, isLoading: isLoadingTypes } =
+    useProductTypesQuery()
   const productTypes: ProductType[] = productTypesData?.data?.items || []
 
   // Xóa bộ lọc
   const handleClearFilters = () => {
-      setSearchParams({})
+    setSearchParams({})
   }
 
   // Update Filter trực tiếp từ Header Input
-  const handleFilterChange = React.useCallback((key: string, value: any) => {
+  const handleFilterChange = React.useCallback(
+    (key: string, value: any) => {
       updateUrlParams({ [key]: value }, true)
-  }, [updateUrlParams])
+    },
+    [updateUrlParams],
+  )
 
   // Xử lý xóa sản phẩm - cập nhật để set state cho modal
   const handleDelete = React.useCallback((product: Product) => {
@@ -198,122 +222,132 @@ const ProductsList: React.FC = () => {
 
   const loading = isLoadingProducts || isLoadingTypes
 
-
   // Helper function for currency formatting
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-    }).format(value);
-  };
+    }).format(value)
+  }
 
   // Handle Table Change (Pagination, Filters, Sorter)
-  const handleTableChange: TableProps<ExtendedProduct>['onChange'] = (
+  const handleTableChange: TableProps<ExtendedProduct>["onChange"] = (
     pagination,
     tableFilters,
     sorter: any,
   ) => {
     const newParams: Record<string, any> = {
       page: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     }
 
     // 2. Native Filters (Category, Status)
     if (tableFilters.category) {
-       newParams.type_id = (tableFilters.category as string[])[0]
+      newParams.type_id = (tableFilters.category as string[])[0]
     } else {
-       newParams.type_id = ""
+      newParams.type_id = ""
     }
 
     if (tableFilters.status) {
-       newParams.status = (tableFilters.status as string[])[0]
+      newParams.status = (tableFilters.status as string[])[0]
     } else {
-       newParams.status = ""
+      newParams.status = ""
     }
 
     // 3. Sorter
     if (sorter && sorter.order) {
-        newParams.sort_by = sorter.field
-        newParams.sort_direction = sorter.order === 'ascend' ? 'ASC' : 'DESC'
+      newParams.sort_by = sorter.field
+      newParams.sort_direction = sorter.order === "ascend" ? "ASC" : "DESC"
     } else {
-        newParams.sort_by = ""
-        newParams.sort_direction = ""
+      newParams.sort_by = ""
+      newParams.sort_direction = ""
     }
 
     updateUrlParams(newParams)
   }
 
   // Cấu hình columns cho DataTable
-  const columns = React.useMemo(() => [
-    {
-      key: "trade_name",
-      title: (
-        <FilterHeader 
-            title="Tên thương mại" 
-            dataIndex="trade_name" 
-            value={filters.trade_name} 
-            onChange={(val) => handleFilterChange('trade_name', val)}
-            inputType="text"
-        />
-      ),
-      width: 150,
-      fixed: 'left' as const, // Cố định cột bên trái
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-900 whitespace-normal break-words'>{record.trade_name || '---'}</div>
-      ),
-    },
-    {
-      key: "unit",
-      title: "Đơn vị",
-      width: 100,
-      render: (_: unknown, record: ExtendedProduct) => {
-          const unitName = record.unit_name || (typeof record.unit === 'object' && record.unit ? record.unit.name : '---');
-          return <div className='text-gray-600'>{unitName}</div>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const columns = React.useMemo(() => {
+    const cols: any[] = [
+      {
+        key: "trade_name",
+        title: (
+          <FilterHeader
+            title='Tên thương mại'
+            dataIndex='trade_name'
+            value={filters.trade_name}
+            onChange={(val) => handleFilterChange("trade_name", val)}
+            inputType='text'
+          />
+        ),
+        width: 150,
+        fixed: "left" as const, // Cố định cột bên trái
+        render: (_: unknown, record: ExtendedProduct) => (
+          <div className='font-medium text-gray-900 whitespace-normal break-words'>
+            {record.trade_name || "---"}
+          </div>
+        ),
       },
-    },
-    {
-      key: "name",
-      title: (
-        <FilterHeader 
-            title="Tên sản phẩm" 
-            dataIndex="name" 
-            value={filters.name} 
-            onChange={(val) => handleFilterChange('name', val)}
-            inputType="text"
-        />
-      ),
-      width: 180,
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-700 whitespace-normal break-words'>{record.name}</div>
-      ),
-    },
-    {
+      {
+        key: "unit",
+        title: "Đơn vị",
+        width: 100,
+        render: (_: unknown, record: ExtendedProduct) => {
+          const unitName =
+            record.unit_name ||
+            (typeof record.unit === "object" && record.unit
+              ? record.unit.name
+              : "---")
+          return <div className='text-gray-600'>{unitName}</div>
+        },
+      },
+      {
+        key: "name",
+        title: (
+          <FilterHeader
+            title='Tên sản phẩm'
+            dataIndex='name'
+            value={filters.name}
+            onChange={(val) => handleFilterChange("name", val)}
+            inputType='text'
+          />
+        ),
+        width: 180,
+        render: (_: unknown, record: ExtendedProduct) => (
+          <div className='font-medium text-gray-700 whitespace-normal break-words'>
+            {record.name}
+          </div>
+        ),
+      },
+      {
         key: "category",
         title: "Danh mục",
         width: 150,
-        filters: productTypes.map(t => ({ text: t.name, value: t.id })),
+        filters: productTypes.map((t) => ({ text: t.name, value: t.id })),
         filteredValue: filters.type_id ? [filters.type_id] : null, // Controlled filter state
         filterMultiple: false,
         render: (_: unknown, record: ExtendedProduct) => {
-            const typeName = typeof record.type === 'object' && record.type 
-                ? record.type.name 
-                : productTypes.find(t => t.id === record.type)?.name;
-            return <div className='text-gray-600'>{typeName || '---'}</div>
+          const typeName =
+            typeof record.type === "object" && record.type
+              ? record.type.name
+              : productTypes.find((t) => t.id === record.type)?.name
+          return <div className='text-gray-600'>{typeName || "---"}</div>
         },
-    },
-    {
-      key: "price",
-      dataIndex: "price", // Needed for sorter to identify field
-      title: "Giá tiền mặt",
-      width: 150,
-      sorter: true, // Enable sorting
-      render: (value: string) => (
-        <div className='font-medium text-emerald-600'>
-          {formatCurrency(Number(value))}
-        </div>
-      ),
-    },
-    {
+      },
+      {
+        key: "price",
+        dataIndex: "price", // Needed for sorter to identify field
+        title: "Giá tiền mặt",
+        width: 150,
+        sorter: true, // Enable sorting
+        render: (value: string) => (
+          <div className='font-medium text-emerald-600'>
+            {formatCurrency(Number(value))}
+          </div>
+        ),
+      },
+      {
         key: "credit_price",
         dataIndex: "credit_price", // Needed for sorter to identify field
         title: "Giá nợ",
@@ -321,11 +355,11 @@ const ProductsList: React.FC = () => {
         sorter: true, // Enable sorting
         render: (value: string) => (
           <div className='font-medium text-blue-600'>
-            {value ? formatCurrency(Number(value)) : '---'}
+            {value ? formatCurrency(Number(value)) : "---"}
           </div>
         ),
-    },
-    {
+      },
+      {
         key: "tax_selling_price",
         dataIndex: "tax_selling_price",
         title: "GBKT",
@@ -333,177 +367,212 @@ const ProductsList: React.FC = () => {
         sorter: true,
         render: (value: string) => (
           <div className='font-medium text-pink-600'>
-            {value ? formatCurrency(Number(value)) : '---'}
+            {value ? formatCurrency(Number(value)) : "---"}
           </div>
         ),
-    },
-    {
-      key: "has_input_invoice",
-      dataIndex: "has_input_invoice",
-      title: "Hóa đơn",
-      width: 110,
-      render: (value: boolean) => (
-        <Tag color={value ? "blue" : "default"}>
-          {value ? "Có hóa đơn" : "Không hóa đơn"}
-        </Tag>
-      ),
-    },
-    {
-      key: "quantity",
-      dataIndex: "quantity", // Needed for sorter to identify field
-      title: "Số lượng",
-      width: 120,
-      align: 'center' as const,
-      sorter: true, // Enable sorting
-      render: (value: number) => (
-        <Tag color={value > 0 ? 'green' : 'red'}>
-            {value}
-        </Tag>
-      ),
-    },
-    {
-      key: "status",
-      title: "Trạng thái",
-      width: 150,
-      filters: [
+      },
+      {
+        key: "has_input_invoice",
+        dataIndex: "has_input_invoice",
+        title: "Hóa đơn",
+        width: 110,
+        render: (value: boolean) => (
+          <Tag color={value ? "blue" : "default"}>
+            {value ? "Có hóa đơn" : "Không hóa đơn"}
+          </Tag>
+        ),
+      },
+      {
+        key: "quantity",
+        dataIndex: "quantity", // Needed for sorter to identify field
+        title: "Tồn kho",
+        width: 120,
+        align: "center" as const,
+        sorter: true, // Enable sorting
+        render: (value: number, record: ExtendedProduct) => {
+          // ✅ Helper để lấy hệ số quy đổi Bao của sản phẩm
+          const getBaoConversion = (product: ExtendedProduct) => {
+            const conversions = product.unit_conversions || []
+            const baoConv = conversions.find((c: any) =>
+              (c.unit_name || c.unit?.name || "").toLowerCase().includes("bao"),
+            )
+            if (!baoConv) return null
+            return {
+              factor: Number(baoConv.conversion_factor),
+              unitName: baoConv.unit_name || baoConv.unit?.name || "Bao",
+            }
+          }
+
+          const bao = getBaoConversion(record)
+          const qty = record.quantity || 0
+          return (
+            <div className='flex flex-col items-center'>
+              <Tag color={qty > 0 ? "green" : "red"} className='m-0'>
+                {qty}
+              </Tag>
+              {bao && qty > 0 && (
+                <div className='text-[11px] font-bold text-green-600 mt-1 whitespace-nowrap'>
+                  {new Intl.NumberFormat("vi-VN", {
+                    maximumFractionDigits: 2,
+                  }).format(qty / bao.factor)}{" "}
+                  {bao.unitName}
+                </div>
+              )}
+            </div>
+          )
+        },
+      },
+      {
+        key: "status",
+        title: "Trạng thái",
+        width: 150,
+        filters: [
           { text: "Đang bán", value: "active" },
           { text: "Ngừng bán", value: "inactive" },
           { text: "Chờ duyệt", value: "pending" },
-          { text: "Đã lưu trữ", value: "archived" }
-      ],
-      filteredValue: filters.status ? [filters.status] : null, // Controlled filter state
-      filterMultiple: false,
-      render: (record: ExtendedProduct) => {
-        let color = 'default';
-        let text = '---';
-        switch (record.status) {
-            case 'active':
-                color = 'green';
-                text = 'Đang bán';
-                break;
-            case 'inactive':
-                color = 'red';
-                text = 'Ngừng bán';
-                break;
-            case 'pending':
-                color = 'orange';
-                text = 'Chờ duyệt';
-                break;
-            case 'archived':
-                color = 'default';
-                text = 'Đã lưu trữ';
-                break;
+          { text: "Đã lưu trữ", value: "archived" },
+        ],
+        filteredValue: filters.status ? [filters.status] : null, // Controlled filter state
+        filterMultiple: false,
+        render: (record: ExtendedProduct) => {
+          let color = "default"
+          let text = "---"
+          switch (record.status) {
+            case "active":
+              color = "green"
+              text = "Đang bán"
+              break
+            case "inactive":
+              color = "red"
+              text = "Ngừng bán"
+              break
+            case "pending":
+              color = "orange"
+              text = "Chờ duyệt"
+              break
+            case "archived":
+              color = "default"
+              text = "Đã lưu trữ"
+              break
             default:
-                text = record.status;
-        }
-        return <Tag color={color}>{text}</Tag>
+              text = record.status
+          }
+          return <Tag color={color}>{text}</Tag>
+        },
       },
-    },
-    {
-      key: "taxable_quantity_stock",
-      dataIndex: "taxable_quantity_stock",
-      title: "Tồn thuế",
-      width: 120,
-      align: 'center' as const,
-      sorter: true,
-      render: (value: number, record: ExtendedProduct) => (
-        <TaxableStockEditor 
-          value={value} 
-          record={record} 
-          isPending={updateProductMutation.isPending}
-          onUpdate={async (id, newValue) => {
-            try {
-              await updateProductMutation.mutateAsync({
-                id,
-                productData: {
+      {
+        key: "taxable_quantity_stock",
+        dataIndex: "taxable_quantity_stock",
+        title: "Tồn thuế",
+        width: 120,
+        align: "center" as const,
+        sorter: true,
+        render: (value: number, record: ExtendedProduct) => (
+          <TaxableStockEditor
+            value={value}
+            record={record}
+            isPending={updateProductMutation.isPending}
+            onUpdate={async (id, newValue) => {
+              try {
+                await updateProductMutation.mutateAsync({
                   id,
-                  taxable_quantity_stock: newValue
-                }
-              });
-              message.success("Cập nhật tồn thuế thành công!");
-            } catch (error) {
-              console.error("Error updating taxable stock:", error);
-            }
-          }}
-        />
-      ),
-    },
-    {
-      key: "action",
-      title: "Hành động",
-      width: 120,
-      render: (record: ExtendedProduct) => (
-        <Space size='small' onClick={(e) => e.stopPropagation()}>
-          <Button
-            icon={<EyeOutlined />}
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation()
-              setCurrentProduct(record)
-              setIsViewModalVisible(true)
-            }}
-            title='Xem'
-          />
-          <Button
-            icon={<HistoryOutlined />}
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation()
-              setCurrentProduct(record)
-              setIsExpiryModalVisible(true)
-            }}
-            title='Lô hàng & Hạn dùng'
-          />
-          <Button
-            icon={<EditOutlined />}
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleEditProduct(record)
-            }}
-            title='Sửa'
-          />
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            title='Xóa'
-            onClick={(e) => {
-              e.stopPropagation()
-              handleDelete(record)
+                  productData: {
+                    id,
+                    taxable_quantity_stock: newValue,
+                  },
+                })
+                message.success("Cập nhật tồn thuế thành công!")
+              } catch (error) {
+                console.error("Error updating taxable stock:", error)
+              }
             }}
           />
-        </Space>
-      ),
-    },
-  ], [filters, productTypes, handleEditProduct, handleFilterChange, handleDelete, updateProductMutation])
+        ),
+      },
+      {
+        key: "action",
+        title: "Hành động",
+        width: 120,
+        render: (record: ExtendedProduct) => (
+          <Space size='small' onClick={(e) => e.stopPropagation()}>
+            <Button
+              icon={<EyeOutlined />}
+              size='small'
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentProduct(record)
+                setIsViewModalVisible(true)
+              }}
+              title='Xem'
+            />
+            <Button
+              icon={<HistoryOutlined />}
+              size='small'
+              onClick={(e) => {
+                e.stopPropagation()
+                setCurrentProduct(record)
+                setIsExpiryModalVisible(true)
+              }}
+              title='Lô hàng & Hạn dùng'
+            />
+            <Button
+              icon={<EditOutlined />}
+              size='small'
+              onClick={(e) => {
+                e.stopPropagation()
+                handleEditProduct(record)
+              }}
+              title='Sửa'
+            />
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              size='small'
+              title='Xóa'
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete(record)
+              }}
+            />
+          </Space>
+        ),
+      },
+    ]
+    return cols
+  }, [
+    filters,
+    productTypes,
+    handleEditProduct,
+    handleFilterChange,
+    handleDelete,
+    updateProductMutation,
+  ])
 
   return (
     <div className='p-2 md:p-6'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
         <h1 className='text-2xl font-bold'>Danh sách sản phẩm</h1>
-        <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
-            {Object.keys(filters).length > 0 && (
-                <Button 
-                    onClick={handleClearFilters}
-                    icon={<FilterOutlined />}
-                    danger
-                    className="w-full sm:w-auto"
-                >
-                    Xóa bộ lọc
-                </Button>
-            )}
+        <div className='flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto'>
+          {Object.keys(filters).length > 0 && (
             <Button
+              onClick={handleClearFilters}
+              icon={<FilterOutlined />}
+              danger
+              className='w-full sm:w-auto'
+            >
+              Xóa bộ lọc
+            </Button>
+          )}
+          <Button
             type='primary'
             icon={<PlusOutlined />}
             onClick={() => navigate("/products/new")}
-            className="w-full sm:w-auto"
-            >
+            className='w-full sm:w-auto'
+          >
             Thêm sản phẩm
-            </Button>
+          </Button>
         </div>
       </div>
-
 
       {/* Danh sách sản phẩm */}
       <div className='bg-white rounded shadow'>
@@ -554,12 +623,12 @@ const ProductsList: React.FC = () => {
       />
 
       {/* Modal xem thông tin lô hàng & hạn dùng */}
-      <BatchExpiryModal 
+      <BatchExpiryModal
         product={currentProduct}
         visible={isExpiryModalVisible}
         onCancel={() => {
-            setIsExpiryModalVisible(false)
-            setCurrentProduct(null)
+          setIsExpiryModalVisible(false)
+          setCurrentProduct(null)
         }}
       />
     </div>
