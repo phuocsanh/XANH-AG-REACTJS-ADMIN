@@ -1,8 +1,22 @@
-
 import React, { useEffect, useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Button, message, Form, Spin, Alert, Typography, Card, Popover } from "antd"
-import { SaveOutlined, PlusOutlined, DeleteOutlined, ArrowLeftOutlined, SmileOutlined } from "@ant-design/icons"
+import {
+  Button,
+  message,
+  Form,
+  Spin,
+  Alert,
+  Typography,
+  Card,
+  Popover,
+} from "antd"
+import {
+  SaveOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  ArrowLeftOutlined,
+  SmileOutlined,
+} from "@ant-design/icons"
 import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
 import { useForm, useFieldArray, useWatch, FormProvider } from "react-hook-form"
@@ -23,7 +37,12 @@ import {
   useUpdateProductMutation,
   useCreateProductMutation,
 } from "../../../queries/product"
-import { Product, ProductFormProps, ProductUnitConversion, ProductComponent } from "../../../models/product.model"
+import {
+  Product,
+  ProductFormProps,
+  ProductUnitConversion,
+  ProductComponent,
+} from "../../../models/product.model"
 import {
   productFormSchema,
   ProductFormValues,
@@ -44,14 +63,17 @@ import AdjustStockModal from "./AdjustStockModal"
 import { useProductsQuery } from "@/queries/product"
 import { UPLOAD_TYPES } from "@/services/upload.service"
 // Thêm import cho ImageAnalyzer
-import { ImageAnalyzer, ExtractedProductData } from "@/components/image-analyzer"
+import {
+  ImageAnalyzer,
+  ExtractedProductData,
+} from "@/components/image-analyzer"
 import ImageStudio from "@/components/image-studio/image-studio"
 import { useUploadImageMutation } from "@/queries/upload"
 import { UploadType } from "@/services/upload.service"
 import ProductUnitConversionTable from "./ProductUnitConversionTable"
 import ProductBOMTable from "./ProductBOMTable"
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { imageAnalyzerService } from "@/services/image-analyzer.service";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react"
+import { imageAnalyzerService } from "@/services/image-analyzer.service"
 
 const { Title } = Typography
 
@@ -86,15 +108,33 @@ const TiptapEditor: React.FC<{
     return null
   }
 
-  const commonEmojis = ["⚡", "⭐", "✅", "🌿", "🐛", "🌱", "💊", "🛡️", "🚀", "🌾", "🍎", "📌", "✨", "🔥"]
+  const commonEmojis = [
+    "⚡",
+    "⭐",
+    "✅",
+    "🌿",
+    "🐛",
+    "🌱",
+    "💊",
+    "🛡️",
+    "🚀",
+    "🌾",
+    "🍎",
+    "📌",
+    "✨",
+    "🔥",
+  ]
 
-  const ToolbarButton = React.forwardRef<HTMLButtonElement, { 
-    onClick?: () => void, 
-    isActive?: boolean, 
-    children: React.ReactNode,
-    title?: string,
-    [key: string]: any
-  }>(({ onClick, isActive = false, children, title, ...props }, ref) => (
+  const ToolbarButton = React.forwardRef<
+    HTMLButtonElement,
+    {
+      onClick?: () => void
+      isActive?: boolean
+      children: React.ReactNode
+      title?: string
+      [key: string]: any
+    }
+  >(({ onClick, isActive = false, children, title, ...props }, ref) => (
     <button
       type='button'
       ref={ref}
@@ -116,7 +156,7 @@ const TiptapEditor: React.FC<{
         justifyContent: "center",
         minWidth: "32px",
         height: "32px",
-        ...props.style
+        ...props.style,
       }}
       onMouseOver={(e) => {
         if (!isActive) e.currentTarget.style.backgroundColor = "#f3f4f6"
@@ -132,7 +172,14 @@ const TiptapEditor: React.FC<{
   ))
 
   return (
-    <div style={{ border: "1px solid #d9d9d9", borderRadius: "8px", overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+    <div
+      style={{
+        border: "1px solid #d9d9d9",
+        borderRadius: "8px",
+        overflow: "hidden",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}
+    >
       {/* Toolbar */}
       <div
         style={{
@@ -144,56 +191,81 @@ const TiptapEditor: React.FC<{
           backgroundColor: "#f9fafb",
         }}
       >
-        <ToolbarButton 
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        <ToolbarButton
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           isActive={editor.isActive("heading", { level: 2 })}
-          title="Tiêu đề lớn (H2)"
+          title='Tiêu đề lớn (H2)'
         >
           H2
         </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        <ToolbarButton
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
           isActive={editor.isActive("heading", { level: 3 })}
-          title="Tiêu đề vừa (H3)"
+          title='Tiêu đề vừa (H3)'
         >
           H3
         </ToolbarButton>
-        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
-        <ToolbarButton 
+        <div
+          style={{
+            width: "1px",
+            height: "24px",
+            backgroundColor: "#d1d5db",
+            margin: "4px 2px",
+          }}
+        />
+        <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive("bold")}
-          title="In đậm"
+          title='In đậm'
         >
           B
         </ToolbarButton>
-        <ToolbarButton 
+        <ToolbarButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           isActive={editor.isActive("italic")}
-          title="In nghiêng"
+          title='In nghiêng'
         >
           I
         </ToolbarButton>
-        <ToolbarButton 
+        <ToolbarButton
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           isActive={editor.isActive("underline")}
-          title="Gạch chân"
+          title='Gạch chân'
         >
           U
         </ToolbarButton>
-        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
-        <ToolbarButton 
+        <div
+          style={{
+            width: "1px",
+            height: "24px",
+            backgroundColor: "#d1d5db",
+            margin: "4px 2px",
+          }}
+        />
+        <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           isActive={editor.isActive("bulletList")}
-          title="Danh sách dấu chấm"
+          title='Danh sách dấu chấm'
         >
           • List
         </ToolbarButton>
-        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
-        
+        <div
+          style={{
+            width: "1px",
+            height: "24px",
+            backgroundColor: "#d1d5db",
+            margin: "4px 2px",
+          }}
+        />
+
         {/* Emoji Picker Library */}
         <Popover
           content={
-            <EmojiPicker 
+            <EmojiPicker
               onEmojiClick={(emojiData: EmojiClickData) => {
                 editor.chain().focus().insertContent(emojiData.emoji).run()
               }}
@@ -202,24 +274,42 @@ const TiptapEditor: React.FC<{
               height={400}
             />
           }
-          trigger="click"
-          placement="bottomLeft"
+          trigger='click'
+          placement='bottomLeft'
           overlayInnerStyle={{ padding: 0 }}
         >
-          <ToolbarButton onClick={() => {}} title="Tất cả Emoji">
-            <SmileOutlined style={{ fontSize: '18px' }} />
+          <ToolbarButton onClick={() => {}} title='Tất cả Emoji'>
+            <SmileOutlined style={{ fontSize: "18px" }} />
           </ToolbarButton>
         </Popover>
 
-        <div style={{ width: "1px", height: "24px", backgroundColor: "#d1d5db", margin: "4px 2px" }} />
-        
+        <div
+          style={{
+            width: "1px",
+            height: "24px",
+            backgroundColor: "#d1d5db",
+            margin: "4px 2px",
+          }}
+        />
+
         {/* Emoji Quick Picker (Nông nghiệp) */}
-        <div style={{ display: "flex", gap: "4px", alignItems: "center", marginLeft: "4px" }}>
-          <span style={{ fontSize: '11px', color: '#9ca3af', marginRight: '4px' }}>Nhanh:</span>
-          {commonEmojis.map(emoji => (
+        <div
+          style={{
+            display: "flex",
+            gap: "4px",
+            alignItems: "center",
+            marginLeft: "4px",
+          }}
+        >
+          <span
+            style={{ fontSize: "11px", color: "#9ca3af", marginRight: "4px" }}
+          >
+            Nhanh:
+          </span>
+          {commonEmojis.map((emoji) => (
             <button
               key={emoji}
-              type="button"
+              type='button'
               onClick={() => editor.chain().focus().insertContent(emoji).run()}
               style={{
                 padding: "2px",
@@ -228,10 +318,12 @@ const TiptapEditor: React.FC<{
                 cursor: "pointer",
                 fontSize: "18px",
                 borderRadius: "4px",
-                transition: "transform 0.1s"
+                transition: "transform 0.1s",
               }}
-              onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.2)"}
-              onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.transform = "scale(1.2)")
+              }
+              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               {emoji}
             </button>
@@ -239,9 +331,9 @@ const TiptapEditor: React.FC<{
         </div>
       </div>
       {/* Editor Content */}
-      <div 
+      <div
         style={{ minHeight: "200px", padding: "16px", backgroundColor: "#fff" }}
-        className="tiptap-content"
+        className='tiptap-content'
       >
         <EditorContent editor={editor} />
       </div>
@@ -273,13 +365,25 @@ const TiptapEditor: React.FC<{
 
 const ProductForm: React.FC<ProductFormProps> = (props) => {
   const { isEdit = false, productId } = props
-  const { control, handleSubmit, watch, reset, setValue, getValues, formState: { isDirty } } = useForm<ProductFormValues>({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    setValue,
+    getValues,
+    formState: { isDirty },
+  } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: defaultProductFormValues,
   })
-  
+
   // Field array cho thuộc tính động
-  const { fields: attributeFields, append: appendAttribute, remove: removeAttribute } = useFieldArray({
+  const {
+    fields: attributeFields,
+    append: appendAttribute,
+    remove: removeAttribute,
+  } = useFieldArray({
     control,
     name: "attribute_list" as const,
   })
@@ -328,65 +432,113 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   // Kiểm tra dirty cho cả form và nội dung rich text
   // Lưu ý: Chỉ coi là dirty nếu dữ liệu thực sự khác với dữ liệu ban đầu từ API (nếu đang ở mode Edit)
-  const productItemData = productData && 'data' in (productData as any) ? (productData as any).data : productData;
-  const isFormDirty = isDirty || 
-    (isEdit && productItemData ? 
-      (description !== (productItemData as any)?.description || notes !== (productItemData as any)?.notes || mechanism !== (productItemData as any)?.mechanism) : 
-      (description !== "" || (notes !== "" && notes !== "<p></p>") || (mechanism !== "" && mechanism !== "<p></p>"))
-    );
+  const productItemData =
+    productData && "data" in (productData as any)
+      ? (productData as any).data
+      : productData
+  const isFormDirty =
+    isDirty ||
+    (isEdit && productItemData
+      ? description !== (productItemData as any)?.description ||
+        notes !== (productItemData as any)?.notes ||
+        mechanism !== (productItemData as any)?.mechanism
+      : description !== "" ||
+        (notes !== "" && notes !== "<p></p>") ||
+        (mechanism !== "" && mechanism !== "<p></p>"))
 
-  const { confirmExit } = useFormGuard(isFormDirty && !isSubmitSuccess);
+  const { confirmExit } = useFormGuard(isFormDirty && !isSubmitSuccess)
 
   const watchedUnitId = useWatch({
     control,
-    name: 'unit_id',
-  });
+    name: "unit_id",
+  })
 
-  const unitsList = (units as any)?.data?.items || [];
-  const mainUnitName = unitsList.find((u: any) => u.id === watchedUnitId)?.name || '';
+  const unitsList = (units as any)?.data?.items || []
+  const mainUnitName =
+    unitsList.find((u: any) => u.id === watchedUnitId)?.name || ""
 
   // ✅ THEO DÕI GIÁ TRỊ ĐỂ TÍNH QUY ĐỔI SANG BAO
-  const watchedConversions = useWatch({ control, name: 'unit_conversions' }) || [];
-  const watchedPrice = useWatch({ control, name: 'price' });
-  const watchedCreditPrice = useWatch({ control, name: 'credit_price' });
-  const watchedTaxPrice = useWatch({ control, name: 'tax_selling_price' });
-  const watchedQty = useWatch({ control, name: 'quantity' });
-  const watchedTaxQty = useWatch({ control, name: 'taxable_quantity_stock' });
+  const watchedConversions =
+    useWatch({ control, name: "unit_conversions" }) || []
+  const watchedPrice = useWatch({ control, name: "price" })
+  const watchedCreditPrice = useWatch({ control, name: "credit_price" })
+  const watchedTaxPrice = useWatch({ control, name: "tax_selling_price" })
+  const watchedQty = useWatch({ control, name: "quantity" })
+  const watchedTaxQty = useWatch({ control, name: "taxable_quantity_stock" })
+  const watchedAvgCost = useWatch({ control, name: "average_cost_price" })
+  const watchedAvgVatInput = useWatch({
+    control,
+    name: "average_vat_input_cost",
+  })
 
   // Tìm hệ số quy đổi của Bao (quét kỹ tên đơn vị)
   const baoConversion = watchedConversions.find((c: any) => {
     // Ưu tiên tìm trong snapshot hoặc bảng unitsList hệ thống
-    const uName = c.unit_name || unitsList.find((u: any) => u.id === c.unit_id)?.name || '';
-    return uName.toLowerCase().includes('bao');
-  });
-  
-  const baoFactor = baoConversion ? Number(baoConversion.conversion_factor) : null;
-  const baoName = baoConversion?.unit_name || unitsList.find((u: any) => u.id === baoConversion?.unit_id)?.name || 'Bao';
+    const uName =
+      c.unit_name || unitsList.find((u: any) => u.id === c.unit_id)?.name || ""
+    return uName.toLowerCase().includes("bao")
+  })
+
+  const baoFactor = baoConversion
+    ? Number(baoConversion.conversion_factor)
+    : null
+  const baoName =
+    baoConversion?.unit_name ||
+    unitsList.find((u: any) => u.id === baoConversion?.unit_id)?.name ||
+    "Bao"
 
   // Hàm helper để render nhãn quy đổi chính xác
   const renderConversionHint = (value: any, isPrice: boolean = true) => {
-    if (!baoFactor || !value || value === "0") return null;
-    const rawValue = String(value).replace(/[^0-9.]/g, '');
-    const numValue = parseFloat(rawValue);
-    
-    if (isNaN(numValue) || numValue === 0) return null;
+    if (!baoFactor || !value || value === "0") return null
+    const rawValue = String(value).replace(/[^0-9.]/g, "")
+    const numValue = parseFloat(rawValue)
+
+    if (isNaN(numValue) || numValue === 0) return null
 
     if (isPrice) {
-      const total = numValue * baoFactor;
+      const total = numValue * baoFactor
       return (
-        <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', marginLeft: '8px', backgroundColor: '#ecfdf5', padding: '1px 8px', borderRadius: '4px', border: '1px solid #d1fae5', whiteSpace: 'nowrap' }}>
-          {total.toLocaleString('vi-VN')} đ/{baoName}
+        <span
+          style={{
+            color: "#10b981",
+            fontSize: "11px",
+            fontWeight: "bold",
+            marginLeft: "8px",
+            backgroundColor: "#ecfdf5",
+            padding: "1px 8px",
+            borderRadius: "4px",
+            border: "1px solid #d1fae5",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {total.toLocaleString("vi-VN")} đ/{baoName}
         </span>
-      );
+      )
     } else {
-      const total = numValue / baoFactor;
+      const total = numValue / baoFactor
       return (
-        <span style={{ color: '#10b981', fontSize: '11px', fontWeight: 'bold', marginLeft: '8px', backgroundColor: '#ecfdf5', padding: '1px 8px', borderRadius: '4px', border: '1px solid #d1fae5', whiteSpace: 'nowrap' }}>
-          {new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(total)} {baoName}
+        <span
+          style={{
+            color: "#10b981",
+            fontSize: "11px",
+            fontWeight: "bold",
+            marginLeft: "8px",
+            backgroundColor: "#ecfdf5",
+            padding: "1px 8px",
+            borderRadius: "4px",
+            border: "1px solid #d1fae5",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {new Intl.NumberFormat("vi-VN", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          }).format(total)}{" "}
+          {baoName}
         </span>
-      );
+      )
     }
-  };
+  }
 
   useEffect(() => {
     if (isEdit && productData && !productLoading) {
@@ -394,9 +546,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         setInitialLoading(true)
 
         // Lấy dữ liệu từ response
-        let productItem: any = productData;
-        if (productData && 'data' in (productData as any)) {
-            productItem = (productData as any).data;
+        let productItem: any = productData
+        if (productData && "data" in (productData as any)) {
+          productItem = (productData as any).data
         }
 
         if (!productItem) {
@@ -413,7 +565,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
         // Hàm tiện ích để chuẩn hóa một mảng các URL thành mảng các đối tượng file
         const normalizeFileList = (
-          urls: string[] | undefined
+          urls: string[] | undefined,
         ): UploadFile[] => {
           if (!urls) return []
           return urls.map((url, index) => normalizeFile(url, index))
@@ -422,7 +574,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Reset form với dữ liệu sản phẩm
         reset({
           name: productItem.name?.trim() || "",
-          trade_name: productItem.trade_name?.trim() || productItem.name?.trim() || "",
+          trade_name:
+            productItem.trade_name?.trim() || productItem.name?.trim() || "",
           volume: productItem.volume?.trim() || "",
           price: String(productItem.price || ""),
           credit_price: String(productItem.credit_price || ""), // Giá bán nợ
@@ -430,45 +583,72 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           type: productItem.type || undefined,
           quantity: productItem.quantity || 0,
           attributes: productItem.attributes || {},
-          unit_id: productItem.unit_id ? Number(productItem.unit_id) : undefined, // Đơn vị tính
+          unit_id: productItem.unit_id
+            ? Number(productItem.unit_id)
+            : undefined, // Đơn vị tính
           sub_types: productItem.sub_product_type || [], // Loại phụ sản phẩm
-          symbol_id: productItem.symbol_id ? Number(productItem.symbol_id) : undefined,
+          symbol_id: productItem.symbol_id
+            ? Number(productItem.symbol_id)
+            : undefined,
           discount: productItem.discount || "",
           status: productItem.status || "active",
           thumb: productItem.thumb ? [normalizeFile(productItem.thumb, 0)] : [], // Ảnh đại diện
           pictures: normalizeFileList(productItem.pictures), // Danh sách ảnh
           videos: productItem.videos || [], // Danh sách video
           description: productItem.description || "", // Mô tả
-          profit_margin_percent: String(productItem.profit_margin_percent || ""), // Chuyển sang string
+          profit_margin_percent: String(
+            productItem.profit_margin_percent || "",
+          ), // Chuyển sang string
           average_cost_price: String(productItem.average_cost_price || ""), // Chuyển sang string
-          average_vat_input_cost: String(productItem.average_vat_input_cost || ""), // Giá nhập TB VAT
+          average_vat_input_cost: String(
+            productItem.average_vat_input_cost || "",
+          ), // Giá nhập TB VAT
           ingredient: Array.isArray(productItem.ingredient)
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
           notes: productItem.notes || "", // Ghi chú
-          has_input_invoice: productItem.has_input_invoice !== undefined ? productItem.has_input_invoice : true, // Hóa đơn đầu vào
-          taxable_quantity_stock: Number(productItem.taxable_quantity_stock || 0), // Ép kiểu number để tránh lỗi string từ database "0.00"
-          is_sold_on_web: (productItem as any).is_sold_on_web !== undefined ? (productItem as any).is_sold_on_web : false,
-          show_price_on_web: (productItem as any).show_price_on_web !== undefined ? (productItem as any).show_price_on_web : true,
+          has_input_invoice:
+            productItem.has_input_invoice !== undefined
+              ? productItem.has_input_invoice
+              : true, // Hóa đơn đầu vào
+          taxable_quantity_stock: Number(
+            productItem.taxable_quantity_stock || 0,
+          ), // Ép kiểu number để tránh lỗi string từ database "0.00"
+          is_sold_on_web:
+            (productItem as any).is_sold_on_web !== undefined
+              ? (productItem as any).is_sold_on_web
+              : false,
+          show_price_on_web:
+            (productItem as any).show_price_on_web !== undefined
+              ? (productItem as any).show_price_on_web
+              : true,
           web_name: (productItem as any).web_name || "",
           mechanism: productItem.mechanism || "", // Cơ chế tác động
-          unit_conversions: (productItem.unit_conversions || []).map((conv: ProductUnitConversion) => ({
-            ...conv,
-            unit_id: conv.unit_id ? Number(conv.unit_id) : undefined,
-            conversion_factor: conv.conversion_factor !== undefined ? Number(conv.conversion_factor) : undefined
-          })),
-          
+          unit_conversions: (productItem.unit_conversions || []).map(
+            (conv: ProductUnitConversion) => ({
+              ...conv,
+              unit_id: conv.unit_id ? Number(conv.unit_id) : undefined,
+              conversion_factor:
+                conv.conversion_factor !== undefined
+                  ? Number(conv.conversion_factor)
+                  : undefined,
+            }),
+          ),
+
           // Chuyển đổi attributes object thành array cho form
-          attribute_list: productItem.attributes && typeof productItem.attributes === 'object'
-            ? Object.entries(productItem.attributes)
-                .filter(([key]) => key !== 'unit') // Lọc bỏ trường unit vì đã có trường riêng
-                .map(([key, value]) => ({ key, value }))
-            : [],
-          
-          components: (productItem.components || []).map((comp: ProductComponent) => ({
-            ...comp,
-            quantity: comp.quantity !== undefined ? Number(comp.quantity) : 0
-          })),
+          attribute_list:
+            productItem.attributes && typeof productItem.attributes === "object"
+              ? Object.entries(productItem.attributes)
+                  .filter(([key]) => key !== "unit") // Lọc bỏ trường unit vì đã có trường riêng
+                  .map(([key, value]) => ({ key, value }))
+              : [],
+
+          components: (productItem.components || []).map(
+            (comp: ProductComponent) => ({
+              ...comp,
+              quantity: comp.quantity !== undefined ? Number(comp.quantity) : 0,
+            }),
+          ),
         } as ProductFormValues)
 
         // Đặt giá trị cho mô tả, ghi chú và cơ chế tác động
@@ -496,7 +676,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
   // Kiểm tra trùng tên sản phẩm khi người dùng nhập tên (chỉ khi tạo mới)
   useEffect(() => {
-    
     // Chỉ kiểm tra khi đang tạo mới (không phải edit)
     if (isEdit) {
       setDuplicateProducts([])
@@ -507,19 +686,22 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
     const timer = setTimeout(async () => {
       const productName = watchedName?.trim()
       const tradeName = watchedTradeName?.trim()
-      
+
       // Chỉ kiểm tra nếu có ít nhất tên sản phẩm hoặc hiệu thuốc (ít nhất 2 ký tự)
-      if ((!productName || productName.length < 2) && (!tradeName || tradeName.length < 2)) {
+      if (
+        (!productName || productName.length < 2) &&
+        (!tradeName || tradeName.length < 2)
+      ) {
         setDuplicateProducts([])
         return
       }
 
       try {
         setIsCheckingDuplicate(true)
-        
+
         // Import api từ utils
         const api = (await import("@/utils/api")).default
-        
+
         // Gọi API search để tìm sản phẩm có tên hoặc hiệu thuốc tương tự
         const response = await api.postRaw<{
           success: boolean
@@ -528,40 +710,46 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             total: number
             totalPages: number | null
           }
-        }>('/products/search', { 
+        }>("/products/search", {
           keyword: productName || tradeName, // Tìm theo tên hoặc hiệu thuốc
           limit: 10, // Tăng limit để tìm nhiều hơn
-          page: 1
+          page: 1,
         })
-        
-        
+
         // Lọc các sản phẩm có tên hoặc hiệu thuốc giống/tương tự
-        const duplicates = response?.data?.filter((product: Product) => {
-          const normalizedProductName = product.name?.toLowerCase().trim()
-          const normalizedProductTradeName = (product as Product & { trade_name?: string }).trade_name?.toLowerCase().trim()
-          const normalizedInputName = productName?.toLowerCase().trim()
-          const normalizedInputTradeName = tradeName?.toLowerCase().trim()
-          
-          // Kiểm tra trùng tên sản phẩm
-          const nameMatch = normalizedInputName && (
-            normalizedProductName === normalizedInputName || 
-            normalizedProductName?.includes(normalizedInputName)
-          )
-          
-          // Kiểm tra trùng hiệu thuốc
-          const tradeNameMatch = normalizedInputTradeName && (
-            normalizedProductTradeName === normalizedInputTradeName ||
-            normalizedProductTradeName?.includes(normalizedInputTradeName) ||
-            normalizedProductName === normalizedInputTradeName || // Tên sản phẩm trùng với hiệu thuốc đang nhập
-            normalizedProductName?.includes(normalizedInputTradeName)
-          )
-          
-          return nameMatch || tradeNameMatch
-        }) || []
-        
+        const duplicates =
+          response?.data?.filter((product: Product) => {
+            const normalizedProductName = product.name?.toLowerCase().trim()
+            const normalizedProductTradeName = (
+              product as Product & { trade_name?: string }
+            ).trade_name
+              ?.toLowerCase()
+              .trim()
+            const normalizedInputName = productName?.toLowerCase().trim()
+            const normalizedInputTradeName = tradeName?.toLowerCase().trim()
+
+            // Kiểm tra trùng tên sản phẩm
+            const nameMatch =
+              normalizedInputName &&
+              (normalizedProductName === normalizedInputName ||
+                normalizedProductName?.includes(normalizedInputName))
+
+            // Kiểm tra trùng hiệu thuốc
+            const tradeNameMatch =
+              normalizedInputTradeName &&
+              (normalizedProductTradeName === normalizedInputTradeName ||
+                normalizedProductTradeName?.includes(
+                  normalizedInputTradeName,
+                ) ||
+                normalizedProductName === normalizedInputTradeName || // Tên sản phẩm trùng với hiệu thuốc đang nhập
+                normalizedProductName?.includes(normalizedInputTradeName))
+
+            return nameMatch || tradeNameMatch
+          }) || []
+
         setDuplicateProducts(duplicates)
       } catch (error) {
-        console.error('❌ Lỗi khi kiểm tra trùng tên sản phẩm:', error)
+        console.error("❌ Lỗi khi kiểm tra trùng tên sản phẩm:", error)
         setDuplicateProducts([])
       } finally {
         setIsCheckingDuplicate(false)
@@ -577,19 +765,19 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const renderProductAttributes = () => {
     return (
       <div className='mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200'>
-        <div className="flex justify-between items-center mb-4">
+        <div className='flex justify-between items-center mb-4'>
           <h3 className='text-lg font-medium m-0'>Thuộc tính sản phẩm</h3>
-          <Button 
-            type="dashed" 
+          <Button
+            type='dashed'
             onClick={() => appendAttribute({ key: "", value: "" })}
             icon={<PlusOutlined />}
           >
             Thêm thuộc tính
           </Button>
         </div>
-        
+
         {attributeFields.length === 0 && (
-          <div className="text-center text-gray-500 py-4 italic">
+          <div className='text-center text-gray-500 py-4 italic'>
             Chưa có thuộc tính nào. Nhấn &quot;Thêm thuộc tính&quot; để tạo mới.
           </div>
         )}
@@ -601,7 +789,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 <FormField
                   name={`attribute_list.${index}.key`}
                   control={control}
-                  label="Tên thuộc tính"
+                  label='Tên thuộc tính'
                   placeholder='VD: Liều phun'
                   className='mb-0'
                 />
@@ -610,16 +798,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 <FormField
                   name={`attribute_list.${index}.value`}
                   control={control}
-                  label="Giá trị"
+                  label='Giá trị'
                   placeholder='VD: 100ml'
                   className='mb-0'
                 />
               </div>
-              <Button 
-                danger 
-                icon={<DeleteOutlined />} 
+              <Button
+                danger
+                icon={<DeleteOutlined />}
                 onClick={() => removeAttribute(index)}
-                className="mb-2"
+                className='mb-2'
               />
             </div>
           ))}
@@ -629,7 +817,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   }
 
   const onSubmit = async (values: ProductFormValues) => {
-    console.log("🚀 ~ ProductForm ~ onSubmit called with values:", values);
+    console.log("🚀 ~ ProductForm ~ onSubmit called with values:", values)
     try {
       setLoading(true)
 
@@ -657,12 +845,24 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Thêm đơn vị tính vào attributes
         // Thêm đơn vị tính vào attributes và xử lý attribute_list
         attributes: {
-          ...((values as ProductFormValues & { attribute_list?: Array<{ key: string; value: string }> }).attribute_list || []).reduce((acc: Record<string, string>, item: { key: string; value: string }) => {
-            if (item.key) {
-              acc[item.key] = item.value;
-            }
-            return acc;
-          }, {}),
+          ...(
+            (
+              values as ProductFormValues & {
+                attribute_list?: Array<{ key: string; value: string }>
+              }
+            ).attribute_list || []
+          ).reduce(
+            (
+              acc: Record<string, string>,
+              item: { key: string; value: string },
+            ) => {
+              if (item.key) {
+                acc[item.key] = item.value
+              }
+              return acc
+            },
+            {},
+          ),
           unit: values.unit_id?.toString() || "",
         },
         status: values.status,
@@ -714,17 +914,17 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         sub_product_type: Array.isArray(convertedValues.sub_types)
           ? convertedValues.sub_types
           : convertedValues.sub_types
-          ? [convertedValues.sub_types]
-          : [],
+            ? [convertedValues.sub_types]
+            : [],
         unit_id: convertedValues.unit_id,
         symbol_id: convertedValues.symbol_id,
         ingredient: Array.isArray(convertedValues.ingredient)
           ? convertedValues.ingredient
           : convertedValues.ingredient
-          ? (convertedValues.ingredient as string)
-              .split(",")
-              .map((item: string) => item.trim())
-          : [],
+            ? (convertedValues.ingredient as string)
+                .split(",")
+                .map((item: string) => item.trim())
+            : [],
         notes: notes || "", // Ghi chú (rich text HTML)
         has_input_invoice: convertedValues.has_input_invoice,
         taxable_quantity_stock: convertedValues.taxable_quantity_stock,
@@ -770,17 +970,17 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       }
     } catch (error: any) {
       console.error("Error saving product:", error)
-      
+
       // Xử lý lỗi chi tiết từ backend
       let errorMessage = "Có lỗi xảy ra khi lưu sản phẩm"
-      
+
       // Kiểm tra lỗi từ response
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error?.message) {
         errorMessage = error.message
       }
-      
+
       message.error(errorMessage)
     } finally {
       setLoading(false)
@@ -791,78 +991,81 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
    * Xử lý khi AI trích xuất được thông tin từ ảnh
    */
   const handleDataExtracted = (data: ExtractedProductData) => {
-    
     // Tự động điền thông tin vào form
     if (data.name) {
-      setValue('name', data.name);
-    
-    // Set trade_name: Nếu AI trả về trade_name thì dùng, không thì dùng name (loại bỏ dung tích)
-    if (data.trade_name) {
-      setValue('trade_name', data.trade_name);
-    } else if (data.name) {
-      // Nếu không có trade_name, dùng name nhưng loại bỏ phần dung tích (nếu có)
-      const nameWithoutVolume = data.name.replace(/\s*\([^)]*\)\s*$/g, '').trim();
-      setValue('trade_name', nameWithoutVolume);
+      setValue("name", data.name)
+
+      // Set trade_name: Nếu AI trả về trade_name thì dùng, không thì dùng name (loại bỏ dung tích)
+      if (data.trade_name) {
+        setValue("trade_name", data.trade_name)
+      } else if (data.name) {
+        // Nếu không có trade_name, dùng name nhưng loại bỏ phần dung tích (nếu có)
+        const nameWithoutVolume = data.name
+          .replace(/\s*\([^)]*\)\s*$/g, "")
+          .trim()
+        setValue("trade_name", nameWithoutVolume)
+      }
+
+      // Set volume nếu AI trả về
+      if (data.volume) {
+        setValue("volume", data.volume)
+      }
+
+      // Set notes nếu AI trả về (bao gồm tính toán liều lượng)
+      if (data.notes) {
+        const formattedNotes = data.notes.replace(/\n/g, "<br/>")
+        setNotes(`<p>${formattedNotes}</p>`)
+      }
     }
-    
-    // Set volume nếu AI trả về
-    if (data.volume) {
-      setValue('volume', data.volume);
-    }
-    
-    // Set notes nếu AI trả về (bao gồm tính toán liều lượng)
-    if (data.notes) {
-      const formattedNotes = data.notes.replace(/\n/g, '<br/>');
-      setNotes(`<p>${formattedNotes}</p>`);
-    }
-    }
-    
+
     if (data.active_ingredient) {
-      setValue('ingredient', data.active_ingredient);
+      setValue("ingredient", data.active_ingredient)
     }
-    
+
     // Xử lý mô tả chi tiết từ AI
     if (data.details) {
       // Helper function để giữ xuống dòng
       const formatText = (text?: string) => {
-        if (!text) return '';
-        return text.replace(/\n/g, '<br/>');
-      };
-
-      let htmlDescription = '';
-      
-      if (data.details.usage) {
-        htmlDescription += `<p><strong>Công dụng: 🛡️</strong><br/>${formatText(data.details.usage)}</p>`;
+        if (!text) return ""
+        return text.replace(/\n/g, "<br/>")
       }
-      
+
+      let htmlDescription = ""
+
+      if (data.details.usage) {
+        htmlDescription += `<p><strong>Công dụng: 🛡️</strong><br/>${formatText(data.details.usage)}</p>`
+      }
+
       if (data.details.application_time) {
-        htmlDescription += `<p><strong>Thời điểm sử dụng: ⏰</strong><br/>${formatText(data.details.application_time)}</p>`;
+        htmlDescription += `<p><strong>Thời điểm sử dụng: ⏰</strong><br/>${formatText(data.details.application_time)}</p>`
       }
 
       if (data.details.dosage) {
-        htmlDescription += `<p><strong>Liều lượng / Hướng dẫn sử dụng: 🧪</strong><br/>${formatText(data.details.dosage)}</p>`;
+        htmlDescription += `<p><strong>Liều lượng / Hướng dẫn sử dụng: 🧪</strong><br/>${formatText(data.details.dosage)}</p>`
       }
-      
+
       if (data.details.preharvest_interval) {
-        htmlDescription += `<p><strong>Thời gian cách ly: 🗓️</strong><br/>${formatText(data.details.preharvest_interval)}</p>`;
+        htmlDescription += `<p><strong>Thời gian cách ly: 🗓️</strong><br/>${formatText(data.details.preharvest_interval)}</p>`
       }
-      
+
       if (data.details.notes) {
-        htmlDescription += `<p><strong>Lưu ý / Cảnh báo: ⚠️</strong><br/>${formatText(data.details.notes)}</p>`;
+        htmlDescription += `<p><strong>Lưu ý / Cảnh báo: ⚠️</strong><br/>${formatText(data.details.notes)}</p>`
       }
-      
+
       // Nếu có dữ liệu chi tiết thì dùng, không thì fallback về description thường
       if (htmlDescription) {
-        setDescription(htmlDescription);
+        setDescription(htmlDescription)
       } else if (data.description || data.usage) {
-        setDescription(data.description || data.usage || '');
+        setDescription(data.description || data.usage || "")
       }
     } else if (data.description || data.usage) {
-      const desc = data.description || data.usage || '';
-      setDescription(desc);
+      const desc = data.description || data.usage || ""
+      setDescription(desc)
     }
-    
-    message.success('Đã điền thông tin tự động. Vui lòng kiểm tra và chỉnh sửa nếu cần.');
+
+    message.success(
+      "Đã điền thông tin tự động. Vui lòng kiểm tra và chỉnh sửa nếu cần.",
+    )
   }
 
   /**
@@ -870,28 +1073,32 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
    */
   const handleGenerateWebName = async () => {
     try {
-      setGeneratingWebName(true);
-      const currentValues = getValues();
-      const typeId = currentValues.type;
-      const typeOptions = productTypes && (productTypes as any).data ? (productTypes as any).data.items : [];
-      const typeName = typeOptions?.find((t: any) => t.id === typeId)?.name || "";
-      
+      setGeneratingWebName(true)
+      const currentValues = getValues()
+      const typeId = currentValues.type
+      const typeOptions =
+        productTypes && (productTypes as any).data
+          ? (productTypes as any).data.items
+          : []
+      const typeName =
+        typeOptions?.find((t: any) => t.id === typeId)?.name || ""
+
       const result = await imageAnalyzerService.generateWebName({
         type: typeName,
         name: currentValues.name, // Dùng tên sản phẩm thay vì tên thương mại
         volume: currentValues.volume,
         description: description, // nội dung rich text
-      });
-      
-      setValue('web_name', result, { shouldDirty: true });
-      message.success("Đã tạo tên Web bằng AI!");
+      })
+
+      setValue("web_name", result, { shouldDirty: true })
+      message.success("Đã tạo tên Web bằng AI!")
     } catch (error) {
-      console.error("AI Generate Web Name error:", error);
-      message.error("Lỗi khi tạo tên Web bằng AI");
+      console.error("AI Generate Web Name error:", error)
+      message.error("Lỗi khi tạo tên Web bằng AI")
     } finally {
-      setGeneratingWebName(false);
+      setGeneratingWebName(false)
     }
-  };
+  }
 
   return (
     <div className=''>
@@ -900,640 +1107,728 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         <Button
           type='text'
           icon={<ArrowLeftOutlined />}
-          onClick={() => confirmExit(() => navigate(`/products${location.search}`))}
+          onClick={() =>
+            confirmExit(() => navigate(`/products${location.search}`))
+          }
           className='mr-4'
         />
         <Title level={3} className='mb-0'>
           {isEdit ? "Chỉnh sửa sản phẩm" : "Thêm Sản phẩm mới"}
         </Title>
       </div>
-      
-      <Card className="mb-4">
+
+      <Card className='mb-4'>
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-6'>
-        {/* Form sản phẩm - 2 cột */}
-        <div className='lg:col-span-2'>
-          <div className="bg-white rounded-lg shadow-sm h-full overflow-hidden">
-            <Spin spinning={loading || productLoading || initialLoading}>
-      <FormProvider {...{ control, handleSubmit, watch, reset, setValue, getValues, formState: { isDirty } } as any}>
-              <form onSubmit={handleSubmit(onSubmit, (errors) => console.error("❌ Form Validation Errors:", errors))} className="product-form">
-              {/* Component trích xuất thông tin từ hình ảnh - Hỗ trợ cả tạo mới và chỉnh sửa */}
-              <div className="px-3 md:px-6 pt-3 md:pt-6">
-                <ImageAnalyzer 
-                  onDataExtracted={handleDataExtracted}
-                  loading={loading || initialLoading}
-                />
-              </div>
-
-              {/* AI Image Studio Trigger */}
-              <div className="px-3 md:px-6 mb-4">
-                <Button 
-                  icon={<Sparkles className="w-4 h-4" />} 
-                  onClick={() => setStudioVisible(true)}
-                  style={{ 
-                    background: 'linear-gradient(to right, #3b82f6, #4f46e5)',
-                    color: 'white',
-                    border: 'none',
-                    height: 'auto',
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontWeight: 600,
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
-                    width: '100%', // Chiếm full width
-                    whiteSpace: 'normal', // Cho phép xuống dòng
-                    textAlign: 'center', // Căn giữa text
-                    justifyContent: 'center', // Căn giữa nội dung
-                  }}
-                  className="hover:opacity-90 transition-opacity"
+          {/* Form sản phẩm - 2 cột */}
+          <div className='lg:col-span-2'>
+            <div className='bg-white rounded-lg shadow-sm h-full overflow-hidden'>
+              <Spin spinning={loading || productLoading || initialLoading}>
+                <FormProvider
+                  {...({
+                    control,
+                    handleSubmit,
+                    watch,
+                    reset,
+                    setValue,
+                    getValues,
+                    formState: { isDirty },
+                  } as any)}
                 >
-                 Tạo ảnh sản phẩm chuyên nghiệp
-                </Button>
-                
-                <ImageStudio 
-                  visible={studioVisible}
-                  showSaveProductButton={true}
-                  onCancel={() => setStudioVisible(false)}
-                  onSave={async (file) => {
-                    try {
-                      message.loading({ content: 'Đang tải ảnh lên hệ thống...', key: 'upload-ai' });
-                      const result = await uploadMutation.mutateAsync({
-                        file,
-                        type: UPLOAD_TYPES.COMMON as UploadType
-                      });
-                      
-                      // 1. Cập nhật trường thumb (Ảnh đại diện)
-                      setValue('thumb', [{
-                        uid: result.id,
-                        name: result.name || 'product-ai.png',
-                        status: 'done',
-                        url: result.url
-                      }]);
+                  <form
+                    onSubmit={handleSubmit(onSubmit, (errors) =>
+                      console.error("❌ Form Validation Errors:", errors),
+                    )}
+                    className='product-form'
+                  >
+                    {/* Component trích xuất thông tin từ hình ảnh - Hỗ trợ cả tạo mới và chỉnh sửa */}
+                    <div className='px-3 md:px-6 pt-3 md:pt-6'>
+                      <ImageAnalyzer
+                        onDataExtracted={handleDataExtracted}
+                        loading={loading || initialLoading}
+                      />
+                    </div>
 
-                      // 2. Thêm vào trường pictures (Hình ảnh chi tiết)
-                      const currentPictures = getValues('pictures') || [];
-                      setValue('pictures', [...currentPictures, {
-                        uid: result.id,
-                        name: result.name || 'product-ai.png',
-                        status: 'done',
-                        url: result.url
-                      }]);
-                      
-                      message.success({ content: 'Đã cập nhật ảnh đại diện và thêm vào bộ sưu tập!', key: 'upload-ai' });
-                    } catch (error) {
-                      console.error('Upload Error:', error);
-                      message.error({ content: 'Lỗi khi tải ảnh lên hệ thống', key: 'upload-ai' });
-                    }
-                  }}
-                />
-              </div>
-              
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0 px-3 md:px-6 pb-3 md:pb-6'>
-                <div className='w-full md:col-span-2'>
-                  <FormField
-                    name='web_name'
-                    control={control}
-                    label="Tên hiển thị Web (SEO)"
-                    type="textarea"
-                    autoSize={{ minRows: 3, maxRows: 6 }}
-                    addonAfter={
-                      <Button 
-                        type="primary" 
-                        size="middle" 
-                        icon={<Sparkles size={16} />}
-                        onClick={handleGenerateWebName}
-                        loading={generatingWebName}
-                        className="flex items-center gap-1 px-4 h-full font-medium"
-                        style={{ height: '100%', minHeight: '52px' }}
+                    {/* AI Image Studio Trigger */}
+                    <div className='px-3 md:px-6 mb-4'>
+                      <Button
+                        icon={<Sparkles className='w-4 h-4' />}
+                        onClick={() => setStudioVisible(true)}
+                        style={{
+                          background:
+                            "linear-gradient(to right, #3b82f6, #4f46e5)",
+                          color: "white",
+                          border: "none",
+                          height: "auto",
+                          padding: "10px 24px",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          fontWeight: 600,
+                          boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
+                          width: "100%", // Chiếm full width
+                          whiteSpace: "normal", // Cho phép xuống dòng
+                          textAlign: "center", // Căn giữa text
+                          justifyContent: "center", // Căn giữa nội dung
+                        }}
+                        className='hover:opacity-90 transition-opacity'
                       >
-                        AI
+                        Tạo ảnh sản phẩm chuyên nghiệp
                       </Button>
-                    }
-                    placeholder='VD: Thuốc trừ sâu SÂU RẦY 999 260EW (Chai 450ml) - Đặc trị Sâu, rầy, rệp'
-                    className='w-full'
-                    autoComplete='off'
-                  />
-                </div>
 
-                <div className='w-full md:col-span-2'>
-                  <FormField
-                    name='name'
-                    control={control}
-                    label='Tên sản phẩm'
-                    placeholder='Nhập tên sản phẩm'
-                    required
-                    rules={{ required: "Vui lòng nhập tên sản phẩm" }}
-                    className='w-full'
-                    autoComplete='off'
-                  />
-                  
-                  {/* Hiển thị trạng thái kiểm tra */}
-                  {isCheckingDuplicate && (
-                    <Alert
-                      message="Đang kiểm tra trùng lặp..."
-                      type="info"
-                      showIcon
-                      className="mt-2"
-                      icon={<Spin size="small" />}
-                    />
-                  )}
-                  
-                  {/* Hiển thị cảnh báo nếu có sản phẩm trùng tên */}
-                  {!isCheckingDuplicate && duplicateProducts.length > 0 && (
-                    <Alert
-                      message={
-                        <div>
-                          <div className="font-semibold mb-2">
-                            ⚠️ Phát hiện {duplicateProducts.length} sản phẩm có tên hoặc hiệu thuốc tương tự:
-                          </div>
-                          {/* Danh sách sản phẩm với scroll nếu quá nhiều */}
-                          <div 
-                            className="overflow-y-auto" 
-                            style={{ maxHeight: '200px' }}
-                          >
-                            <ul className="list-disc pl-5 mb-0">
-                              {duplicateProducts.slice(0, 5).map((product) => (
-                                <li key={product.id} className="mb-1">
-                                  <strong>{product.name}</strong>
-                                  {product.price && (
-                                    <span className="text-gray-600 ml-2">
-                                      - Giá: {Number(product.price).toLocaleString('vi-VN')}đ
-                                    </span>
-                                  )}
-                                  {product.code && (
-                                    <span className="text-gray-500 ml-2 text-sm">
-                                      (Mã: {product.code})
-                                    </span>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                            {/* Hiển thị thông báo nếu có nhiều hơn 5 sản phẩm */}
-                            {duplicateProducts.length > 5 && (
-                              <div className="mt-2 text-sm text-gray-500 italic">
-                                ... và {duplicateProducts.length - 5} sản phẩm khác
+                      <ImageStudio
+                        visible={studioVisible}
+                        showSaveProductButton={true}
+                        onCancel={() => setStudioVisible(false)}
+                        onSave={async (file) => {
+                          try {
+                            message.loading({
+                              content: "Đang tải ảnh lên hệ thống...",
+                              key: "upload-ai",
+                            })
+                            const result = await uploadMutation.mutateAsync({
+                              file,
+                              type: UPLOAD_TYPES.COMMON as UploadType,
+                            })
+
+                            // 1. Cập nhật trường thumb (Ảnh đại diện)
+                            setValue("thumb", [
+                              {
+                                uid: result.id,
+                                name: result.name || "product-ai.png",
+                                status: "done",
+                                url: result.url,
+                              },
+                            ])
+
+                            // 2. Thêm vào trường pictures (Hình ảnh chi tiết)
+                            const currentPictures = getValues("pictures") || []
+                            setValue("pictures", [
+                              ...currentPictures,
+                              {
+                                uid: result.id,
+                                name: result.name || "product-ai.png",
+                                status: "done",
+                                url: result.url,
+                              },
+                            ])
+
+                            message.success({
+                              content:
+                                "Đã cập nhật ảnh đại diện và thêm vào bộ sưu tập!",
+                              key: "upload-ai",
+                            })
+                          } catch (error) {
+                            console.error("Upload Error:", error)
+                            message.error({
+                              content: "Lỗi khi tải ảnh lên hệ thống",
+                              key: "upload-ai",
+                            })
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-x-2 gap-y-0 md:gap-x-4 md:gap-y-0 px-3 md:px-6 pb-3 md:pb-6'>
+                      <div className='w-full md:col-span-2'>
+                        <FormField
+                          name='web_name'
+                          control={control}
+                          label='Tên hiển thị Web (SEO)'
+                          type='textarea'
+                          autoSize={{ minRows: 3, maxRows: 6 }}
+                          addonAfter={
+                            <Button
+                              type='primary'
+                              size='middle'
+                              icon={<Sparkles size={16} />}
+                              onClick={handleGenerateWebName}
+                              loading={generatingWebName}
+                              className='flex items-center gap-1 px-4 h-full font-medium'
+                              style={{ height: "100%", minHeight: "52px" }}
+                            >
+                              AI
+                            </Button>
+                          }
+                          placeholder='VD: Thuốc trừ sâu SÂU RẦY 999 260EW (Chai 450ml) - Đặc trị Sâu, rầy, rệp'
+                          className='w-full'
+                          autoComplete='off'
+                        />
+                      </div>
+
+                      <div className='w-full md:col-span-2'>
+                        <FormField
+                          name='name'
+                          control={control}
+                          label='Tên sản phẩm'
+                          placeholder='Nhập tên sản phẩm'
+                          required
+                          rules={{ required: "Vui lòng nhập tên sản phẩm" }}
+                          className='w-full'
+                          autoComplete='off'
+                        />
+
+                        {/* Hiển thị trạng thái kiểm tra */}
+                        {isCheckingDuplicate && (
+                          <Alert
+                            message='Đang kiểm tra trùng lặp...'
+                            type='info'
+                            showIcon
+                            className='mt-2'
+                            icon={<Spin size='small' />}
+                          />
+                        )}
+
+                        {/* Hiển thị cảnh báo nếu có sản phẩm trùng tên */}
+                        {!isCheckingDuplicate &&
+                          duplicateProducts.length > 0 && (
+                            <Alert
+                              message={
+                                <div>
+                                  <div className='font-semibold mb-2'>
+                                    ⚠️ Phát hiện {duplicateProducts.length} sản
+                                    phẩm có tên hoặc hiệu thuốc tương tự:
+                                  </div>
+                                  {/* Danh sách sản phẩm với scroll nếu quá nhiều */}
+                                  <div
+                                    className='overflow-y-auto'
+                                    style={{ maxHeight: "200px" }}
+                                  >
+                                    <ul className='list-disc pl-5 mb-0'>
+                                      {duplicateProducts
+                                        .slice(0, 5)
+                                        .map((product) => (
+                                          <li key={product.id} className='mb-1'>
+                                            <strong>{product.name}</strong>
+                                            {product.price && (
+                                              <span className='text-gray-600 ml-2'>
+                                                - Giá:{" "}
+                                                {Number(
+                                                  product.price,
+                                                ).toLocaleString("vi-VN")}
+                                                đ
+                                              </span>
+                                            )}
+                                            {product.code && (
+                                              <span className='text-gray-500 ml-2 text-sm'>
+                                                (Mã: {product.code})
+                                              </span>
+                                            )}
+                                          </li>
+                                        ))}
+                                    </ul>
+                                    {/* Hiển thị thông báo nếu có nhiều hơn 5 sản phẩm */}
+                                    {duplicateProducts.length > 5 && (
+                                      <div className='mt-2 text-sm text-gray-500 italic'>
+                                        ... và {duplicateProducts.length - 5}{" "}
+                                        sản phẩm khác
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              }
+                              type='warning'
+                              className='mt-2'
+                            />
+                          )}
+                      </div>
+
+                      {/* Hiệu thuốc / Tên thương mại */}
+                      <div className='w-full md:col-span-2'>
+                        <FormField
+                          name='trade_name'
+                          control={control}
+                          label='Hiệu thuốc / Tên thương mại'
+                          placeholder='Nhập hiệu thuốc (nếu không có sẽ dùng tên sản phẩm)'
+                          required
+                          rules={{ required: "Vui lòng nhập hiệu thuốc" }}
+                          className='w-full'
+                          autoComplete='off'
+                        />
+                      </div>
+
+                      {/* Dung tích / Khối lượng - nằm cạnh Loại sản phẩm */}
+                      <div className='w-full'>
+                        <FormField
+                          name='volume'
+                          control={control}
+                          label='Dung tích / Khối lượng'
+                          placeholder='VD: 450ml, 1 lít, 500g'
+                          className='w-full'
+                          autoComplete='off'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='type'
+                          control={control}
+                          label='Loại sản phẩm'
+                          placeholder='Chọn loại sản phẩm'
+                          required
+                          rules={{ required: "Vui lòng chọn loại sản phẩm" }}
+                          options={
+                            productTypes?.data?.items?.map(
+                              (type: ProductType) => ({
+                                label: type.name,
+                                value: type.id,
+                              }),
+                            ) || []
+                          }
+                          className='w-full'
+                        />
+                      </div>
+
+                      {/* Đơn vị tính - nằm dưới Loại sản phẩm cùng cột phải */}
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='unit_id'
+                          control={control}
+                          label='Đơn vị tính'
+                          placeholder='Chọn đơn vị tính'
+                          options={
+                            units?.data?.items?.map((unit: any) => ({
+                              label: unit.name,
+                              value: unit.id,
+                            })) || []
+                          }
+                          className='w-full'
+                          required
+                          rules={{ required: "Vui lòng chọn đơn vị tính" }}
+                        />
+                      </div>
+
+                      <div className='col-span-1'>
+                        <FormFieldNumber
+                          name='price'
+                          control={control}
+                          label={
+                            <div className='flex justify-between items-center w-full'>
+                              <span>{`Giá bán tiền mặt (VNĐ${mainUnitName ? "/" + mainUnitName : ""})`}</span>
+                              {renderConversionHint(watchedPrice)}
+                            </div>
+                          }
+                          placeholder='150.000'
+                          className='w-full'
+                          fixedDecimalScale={false}
+                          outputType='string'
+                          // Trường price theo schema là string nên component sẽ tự động trả về string
+                        />
+                      </div>
+
+                      <div className='col-span-1'>
+                        <FormFieldNumber
+                          name='credit_price'
+                          control={control}
+                          label={
+                            <div className='flex justify-between items-center w-full'>
+                              <span>{`Giá bán nợ (VNĐ${mainUnitName ? "/" + mainUnitName : ""})`}</span>
+                              {renderConversionHint(watchedCreditPrice)}
+                            </div>
+                          }
+                          placeholder='160.000'
+                          className='w-full'
+                          fixedDecimalScale={false}
+                          outputType='string'
+                        />
+                      </div>
+
+                      <div className='col-span-1'>
+                        <FormFieldNumber
+                          name='tax_selling_price'
+                          control={control}
+                          label={
+                            <div className='flex justify-between items-center w-full'>
+                              <span>{`GBKT (VNĐ${mainUnitName ? "/" + mainUnitName : ""})`}</span>
+                              {renderConversionHint(watchedTaxPrice)}
+                            </div>
+                          }
+                          placeholder='140.000'
+                          className='w-full'
+                          fixedDecimalScale={false}
+                          outputType='string'
+                        />
+                      </div>
+
+                      <div className='md:col-span-2 mt-2'>
+                        <ProductUnitConversionTable control={control} />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormFieldNumber
+                          name='quantity'
+                          control={control}
+                          label={
+                            <div className='flex justify-between items-center w-full'>
+                              <span>
+                                Số lượng{" "}
+                                <Typography.Text
+                                  type='secondary'
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: "normal",
+                                  }}
+                                >
+                                  (Khóa: Dùng phiếu nhập hàng)
+                                </Typography.Text>
+                              </span>
+                              {renderConversionHint(watchedQty, false)}
+                            </div>
+                          }
+                          placeholder='Số lượng sẽ tự tăng khi nhập hàng'
+                          className='w-full'
+                          disabled={true}
+                          {...(isEdit && {
+                            addonAfter: (
+                              <div
+                                className='cursor-pointer px-2 hover:text-blue-500 transition-colors'
+                                onClick={() => setAdjustModalVisible(true)}
+                                title='Điều chỉnh tồn kho'
+                              >
+                                ✏️
                               </div>
-                            )}
-                          </div>
-                         
+                            ),
+                          })}
+                        />
+                      </div>
+
+                      {/* Thêm trường profit_margin_percent */}
+                      <div className='w-full'>
+                        <FormFieldNumber
+                          name='profit_margin_percent'
+                          control={control}
+                          label='Phần trăm lợi nhuận mong muốn (%)'
+                          placeholder='Nhập phần trăm lợi nhuận mong muốn'
+                          className='w-full'
+                          outputType='string'
+                        />
+                      </div>
+
+                      {/* Thêm trường average_cost_price */}
+                      <div className='w-full'>
+                        <FormFieldNumber
+                          name='average_cost_price'
+                          control={control}
+                          label={
+                            <span>
+                              Giá vốn trung bình (VNĐ)
+                              {renderConversionHint(watchedAvgCost)}
+                            </span>
+                          }
+                          placeholder='Nhập giá vốn trung bình'
+                          className='w-full'
+                          outputType='string'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormFieldNumber
+                          name='average_vat_input_cost'
+                          control={control}
+                          label={
+                            <span>
+                              Giá nhập TB VAT (VNĐ)
+                              {renderConversionHint(watchedAvgVatInput)}
+                            </span>
+                          }
+                          placeholder='Tự động tính từ phiếu nhập đã duyệt'
+                          className='w-full'
+                          outputType='string'
+                          disabled
+                        />
+                      </div>
+
+                      {/* Thêm trường symbol */}
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='symbol_id'
+                          control={control}
+                          label='Ký hiệu'
+                          placeholder='Chọn ký hiệu'
+                          options={
+                            symbols?.data?.items?.map((symbol: Symbol) => ({
+                              label: `${symbol.name}`,
+                              value: symbol.id,
+                            })) || []
+                          }
+                          className='w-full'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='sub_types'
+                          control={control}
+                          label='Loại phụ sản phẩm'
+                          placeholder='Chọn loại phụ sản phẩm'
+                          mode='multiple'
+                          options={
+                            productSubtypes?.data?.items?.map(
+                              (subtype: ProductSubtype) => ({
+                                label: (subtype.subtypeName ||
+                                  subtype.name ||
+                                  "") as string,
+                                value: subtype.id,
+                              }),
+                            ) || []
+                          }
+                          className='w-full'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormFieldNumber
+                          name='discount'
+                          control={control}
+                          label='Giảm giá (%)'
+                          placeholder='Nhập giảm giá'
+                          className='w-full'
+                          outputType='string'
+                          min={0}
+                          max={100}
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='status'
+                          control={control}
+                          label='Trạng thái'
+                          placeholder='Chọn trạng thái'
+                          options={BASE_STATUS.map((status) => ({
+                            label: status.label,
+                            value: status.value,
+                          }))}
+                          className='w-full'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='has_input_invoice'
+                          control={control}
+                          label='Hóa đơn đầu vào'
+                          placeholder='Chọn loại hóa đơn'
+                          options={[
+                            { label: "Có hóa đơn", value: true },
+                            { label: "Không có hóa đơn", value: false },
+                          ]}
+                          className='w-full'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormFieldNumber
+                          name='taxable_quantity_stock'
+                          control={control}
+                          label={
+                            <div className='flex justify-between items-center w-full'>
+                              <span>
+                                SL tồn khai thuế{" "}
+                                <Typography.Text
+                                  type='secondary'
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: "normal",
+                                  }}
+                                >
+                                  (Khóa: Dùng phiếu nhập hàng)
+                                </Typography.Text>
+                              </span>
+                              {renderConversionHint(watchedTaxQty, false)}
+                            </div>
+                          }
+                          placeholder='Số lượng thuế sẽ tự tăng khi nhập hàng'
+                          className='w-full'
+                          disabled={true}
+                        />
+                      </div>
+
+                      {/* Bán trên Web và Hiển thị giá trên Web - nằm cạnh nhau (2 cột) */}
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='is_sold_on_web'
+                          control={control}
+                          label='Bán trên Web'
+                          placeholder='Chọn'
+                          options={[
+                            { label: "Có", value: true },
+                            { label: "Không", value: false },
+                          ]}
+                          className='w-full'
+                        />
+                      </div>
+
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='show_price_on_web'
+                          control={control}
+                          label='Hiển thị giá trên Web'
+                          placeholder='Chọn'
+                          options={[
+                            { label: "Hiện giá", value: true },
+                            { label: "Giá liên hệ", value: false },
+                          ]}
+                          className='w-full'
+                        />
+                      </div>
+
+                      {/* Thành phần nguyên liệu - ở cuối, textarea chiếm full 2 cột */}
+                      <div className='w-full md:col-span-2'>
+                        <FormField
+                          name='ingredient'
+                          control={control}
+                          label='Thành phần nguyên liệu'
+                          placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
+                          className='w-full'
+                          required
+                          type='textarea'
+                          autoSize={{ minRows: 4, maxRows: 10 }}
+                          rules={{
+                            required: "Vui lòng nhập thành phần nguyên liệu",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className='px-3 md:px-6 pb-3 md:pb-6'>
+                      {/* Ghi chú - Đặt trước Mô tả */}
+                      <Form.Item
+                        label='Ghi chú'
+                        className='w-full mb-4'
+                        layout='vertical'
+                      >
+                        <div className='w-full'>
+                          <TiptapEditor
+                            content={notes}
+                            onChange={(content) => {
+                              setNotes(content)
+                            }}
+                          />
                         </div>
-                      }
-                      type="warning"
-                  
-                      className="mt-2"
-                    />
-                  )}
-                </div>
+                      </Form.Item>
 
-                {/* Hiệu thuốc / Tên thương mại */}
-                <div className='w-full md:col-span-2'>
-                  <FormField
-                    name='trade_name'
-                    control={control}
-                    label='Hiệu thuốc / Tên thương mại'
-                    placeholder='Nhập hiệu thuốc (nếu không có sẽ dùng tên sản phẩm)'
-                    required
-                    rules={{ required: "Vui lòng nhập hiệu thuốc" }}
-                    className='w-full'
-                    autoComplete='off'
-                  />
-                  
-                </div>
-
-                {/* Dung tích / Khối lượng - nằm cạnh Loại sản phẩm */}
-                <div className='w-full'>
-                  <FormField
-                    name='volume'
-                    control={control}
-                    label='Dung tích / Khối lượng'
-                    placeholder='VD: 450ml, 1 lít, 500g'
-                    className='w-full'
-                    autoComplete='off'
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <FormComboBox
-                    name='type'
-                    control={control}
-                    label='Loại sản phẩm'
-                    placeholder='Chọn loại sản phẩm'
-                    required
-                    rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                    options={
-                      productTypes?.data?.items?.map((type: ProductType) => ({
-                        label: type.name,
-                        value: type.id,
-                      })) || []
-                    }
-                    className='w-full'
-                  />
-                </div>
-
-                {/* Đơn vị tính - nằm dưới Loại sản phẩm cùng cột phải */}
-                <div className='w-full'>
-                  <FormComboBox
-                    name='unit_id'
-                    control={control}
-                    label='Đơn vị tính'
-                    placeholder='Chọn đơn vị tính'
-                    options={
-                      units?.data?.items?.map((unit: any) => ({
-                        label: unit.name,
-                        value: unit.id,
-                      })) || []
-                    }
-                    className='w-full'
-                    required
-                    rules={{ required: "Vui lòng chọn đơn vị tính" }}
-                  />
-                </div>
-
-                 <div className='col-span-1'>
-                  <FormFieldNumber
-                    name='price'
-                    control={control}
-                    label={
-                      <div className="flex justify-between items-center w-full">
-                        <span>{`Giá bán tiền mặt (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}</span>
-                        {renderConversionHint(watchedPrice)}
-                      </div>
-                    }
-                    placeholder='150.000'
-                    className='w-full'
-                    fixedDecimalScale={false}
-                    outputType="string"
-                    // Trường price theo schema là string nên component sẽ tự động trả về string
-                  />
-                </div>
-
-                <div className='col-span-1'>
-                  <FormFieldNumber
-                    name='credit_price'
-                    control={control}
-                    label={
-                      <div className="flex justify-between items-center w-full">
-                        <span>{`Giá bán nợ (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}</span>
-                        {renderConversionHint(watchedCreditPrice)}
-                      </div>
-                    }
-                    placeholder='160.000'
-                    className='w-full'
-                    fixedDecimalScale={false}
-                    outputType="string"
-                  />
-                </div>
-
-                <div className='col-span-1'>
-                  <FormFieldNumber
-                    name='tax_selling_price'
-                    control={control}
-                    label={
-                      <div className="flex justify-between items-center w-full">
-                        <span>{`GBKT (VNĐ${mainUnitName ? '/' + mainUnitName : ''})`}</span>
-                        {renderConversionHint(watchedTaxPrice)}
-                      </div>
-                    }
-                    placeholder='140.000'
-                    className='w-full'
-                    fixedDecimalScale={false}
-                    outputType="string"
-                  />
-                </div>
-
-                <div className='md:col-span-2 mt-2'>
-                   <ProductUnitConversionTable control={control} />
-                </div>
-
-
-                 <div className='w-full'>
-                  <FormFieldNumber
-                    name='quantity'
-                    control={control}
-                    label={
-                      <div className="flex justify-between items-center w-full">
-                        <span>
-                          Số lượng <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
-                        </span>
-                        {renderConversionHint(watchedQty, false)}
-                      </div>
-                    }
-                    placeholder='Số lượng sẽ tự tăng khi nhập hàng'
-                    className='w-full'
-                    disabled={true}
-                    {...(isEdit && {
-                      addonAfter: (
-                        <div 
-                           className="cursor-pointer px-2 hover:text-blue-500 transition-colors"
-                           onClick={() => setAdjustModalVisible(true)}
-                           title="Điều chỉnh tồn kho"
-                         >
-                           ✏️
+                      <Form.Item
+                        label='Mô tả sản phẩm'
+                        className='w-full'
+                        layout='vertical'
+                      >
+                        <div className='w-full'>
+                          <TiptapEditor
+                            content={description}
+                            onChange={(content) => {
+                              setDescription(content)
+                            }}
+                          />
                         </div>
-                      )
-                    })}
-                  />
-                </div>
+                      </Form.Item>
 
-                {/* Thêm trường profit_margin_percent */}
-                <div className='w-full'>
-                  <FormFieldNumber
-                    name='profit_margin_percent'
-                    control={control}
-                    label='Phần trăm lợi nhuận mong muốn (%)'
-                    placeholder='Nhập phần trăm lợi nhuận mong muốn'
-                    className='w-full'
-                    outputType="string"
-                  />
-                </div>
+                      {/* Thêm trường mechanism - Cơ chế tác động (Rich Text) */}
+                      <Form.Item
+                        label='Cơ chế tác động'
+                        className='w-full mb-4'
+                        layout='vertical'
+                      >
+                        <div className='w-full'>
+                          <TiptapEditor
+                            content={mechanism}
+                            onChange={(content) => {
+                              setMechanism(content)
+                            }}
+                          />
+                        </div>
+                      </Form.Item>
 
-                {/* Thêm trường average_cost_price */}
-                <div className='w-full'>
-                  <FormFieldNumber
-                    name='average_cost_price'
-                    control={control}
-                    label='Giá vốn trung bình (VNĐ)'
-                    placeholder='Nhập giá vốn trung bình'
-                    className='w-full'
-                    outputType="string"
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <FormFieldNumber
-                    name='average_vat_input_cost'
-                    control={control}
-                    label='Giá nhập TB VAT (VNĐ)'
-                    placeholder='Tự động tính từ phiếu nhập đã duyệt'
-                    className='w-full'
-                    outputType="string"
-                    disabled
-                  />
-                </div>
-
-                {/* Thêm trường symbol */}
-                <div className='w-full'>
-                  <FormComboBox
-                    name='symbol_id'
-                    control={control}
-                    label='Ký hiệu'
-                    placeholder='Chọn ký hiệu'
-                    options={
-                      symbols?.data?.items?.map((symbol: Symbol) => ({
-                        label: `${symbol.name}`,
-                        value: symbol.id,
-                      })) || []
-                    }
-                    className='w-full'
-                  />
-                </div>
-
-
-
-                <div className='w-full'>
-                  <FormComboBox
-                    name='sub_types'
-                    control={control}
-                    label='Loại phụ sản phẩm'
-                    placeholder='Chọn loại phụ sản phẩm'
-                    mode='multiple'
-                    options={
-                      productSubtypes?.data?.items?.map(
-                        (subtype: ProductSubtype) => ({
-                          label: (subtype.subtypeName ||
-                            subtype.name ||
-                            "") as string,
-                          value: subtype.id,
-                        })
-                      ) || []
-                    }
-                    className='w-full'
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <FormFieldNumber
-                    name='discount'
-                    control={control}
-                    label='Giảm giá (%)'
-                    placeholder='Nhập giảm giá'
-                    className='w-full'
-                    outputType="string"
-                    min={0}
-                    max={100}
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <FormComboBox
-                    name='status'
-                    control={control}
-                    label='Trạng thái'
-                    placeholder='Chọn trạng thái'
-                    options={BASE_STATUS.map((status) => ({
-                      label: status.label,
-                      value: status.value,
-                    }))}
-                    className='w-full'
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <FormComboBox
-                    name='has_input_invoice'
-                    control={control}
-                    label='Hóa đơn đầu vào'
-                    placeholder='Chọn loại hóa đơn'
-                    options={[
-                      { label: "Có hóa đơn", value: true },
-                      { label: "Không có hóa đơn", value: false },
-                      ]}
-                    className='w-full'
-                  />
-                </div>
-
-                 <div className='w-full'>
-                  <FormFieldNumber
-                    name='taxable_quantity_stock'
-                    control={control}
-                    label={
-                      <div className="flex justify-between items-center w-full">
-                        <span>
-                          SL tồn khai thuế <Typography.Text type="secondary" style={{ fontSize: '11px', fontWeight: 'normal' }}>(Khóa: Dùng phiếu nhập hàng)</Typography.Text>
-                        </span>
-                        {renderConversionHint(watchedTaxQty, false)}
+                      <div className='w-full'>
+                        <FormImageUpload
+                          name='pictures'
+                          control={control}
+                          label='Hình ảnh chi tiết'
+                          maxCount={5}
+                          multiple={true}
+                          uploadType={UPLOAD_TYPES.PRODUCT}
+                          className='w-full'
+                        />
                       </div>
-                    }
-                    placeholder='Số lượng thuế sẽ tự tăng khi nhập hàng'
-                    className='w-full'
-                    disabled={true}
-                  />
-                </div>
 
-                {/* Bán trên Web và Hiển thị giá trên Web - nằm cạnh nhau (2 cột) */}
-                <div className='w-full'>
-                  <FormComboBox
-                    name='is_sold_on_web'
-                    control={control}
-                    label='Bán trên Web'
-                    placeholder='Chọn'
-                    options={[
-                      { label: "Có", value: true },
-                      { label: "Không", value: false },
-                    ]}
-                    className='w-full'
-                  />
-                </div>
+                      <div className='w-full'>
+                        <ProductBOMTable control={control} />
+                      </div>
 
-                <div className='w-full'>
-                  <FormComboBox
-                    name='show_price_on_web'
-                    control={control}
-                    label='Hiển thị giá trên Web'
-                    placeholder='Chọn'
-                    options={[
-                      { label: "Hiện giá", value: true },
-                      { label: "Giá liên hệ", value: false },
-                    ]}
-                    className='w-full'
-                  />
-                </div>
+                      {renderProductAttributes()}
 
-                {/* Thành phần nguyên liệu - ở cuối, textarea chiếm full 2 cột */}
-                <div className='w-full md:col-span-2'>
-                  <FormField
-                    name='ingredient'
-                    control={control}
-                    label='Thành phần nguyên liệu'
-                    placeholder='Nhập các thành phần, ngăn cách bằng dấu phẩy'
-                    className='w-full'
-                    required
-                    type="textarea"
-                    autoSize={{ minRows: 4, maxRows: 10 }}
-                    rules={{ required: "Vui lòng nhập thành phần nguyên liệu" }}
-                  />
-                </div>
-              </div>
+                      <div style={{ textAlign: "right", marginTop: "24px" }}>
+                        <Button
+                          style={{ marginRight: "8px" }}
+                          onClick={() =>
+                            confirmExit(() =>
+                              navigate(`/products${location.search}`),
+                            )
+                          }
+                        >
+                          Hủy
+                        </Button>
+                        <Button
+                          type='primary'
+                          htmlType='submit'
+                          loading={loading}
+                          icon={<SaveOutlined />}
+                        >
+                          {isEdit ? "Cập nhật" : "Thêm mới"}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </FormProvider>
+              </Spin>
+            </div>
+          </div>
 
-              <div className="px-3 md:px-6 pb-3 md:pb-6">
-                {/* Ghi chú - Đặt trước Mô tả */}
-                <Form.Item
-                  label='Ghi chú'
-                  className='w-full mb-4'
-                  layout='vertical'
-                >
-                  <div className='w-full'>
-                    <TiptapEditor
-                      content={notes}
-                      onChange={(content) => {
-                        setNotes(content)
-                      }}
-                    />
-                  </div>
-                </Form.Item>
-
-                <Form.Item
-                  label='Mô tả sản phẩm'
-                  className='w-full'
-                  layout='vertical'
-                >
-                  <div className='w-full'>
-                    <TiptapEditor
-                      content={description}
-                      onChange={(content) => {
-                        setDescription(content)
-                      }}
-                    />
-                  </div>
-                </Form.Item>
-
-                {/* Thêm trường mechanism - Cơ chế tác động (Rich Text) */}
-                <Form.Item
-                  label='Cơ chế tác động'
-                  className='w-full mb-4'
-                  layout='vertical'
-                >
-                  <div className='w-full'>
-                    <TiptapEditor
-                      content={mechanism}
-                      onChange={(content) => {
-                        setMechanism(content)
-                      }}
-                    />
-                  </div>
-                </Form.Item>
-
-                <div className='w-full'>
-                  <FormImageUpload
-                    name='pictures'
-                    control={control}
-                    label='Hình ảnh chi tiết'
-                    maxCount={5}
-                    multiple={true}
-                    uploadType={UPLOAD_TYPES.PRODUCT}
-                    className='w-full'
-                  />
-                </div>
-
-                <div className='w-full'>
-                  <ProductBOMTable control={control} />
-                </div>
-
-                {renderProductAttributes()}
-
-                <div style={{ textAlign: "right", marginTop: "24px" }}>
-                  <Button
-                    style={{ marginRight: "8px" }}
-                    onClick={() => confirmExit(() => navigate(`/products${location.search}`))}
-                  >
-                    Hủy
-                  </Button>
-                  <Button
-                    type='primary'
-                    htmlType='submit'
-                    loading={loading}
-                    icon={<SaveOutlined />}
-                  >
-                    {isEdit ? "Cập nhật" : "Thêm mới"}
-                  </Button>
-                </div>
-              </div>
-            </form>
-            </FormProvider>
-            </Spin>
+          {/* AI So sánh sản phẩm - 1 cột */}
+          <div className='lg:col-span-1'>
+            <div className='sticky top-4'>
+              <ProductComparisonPanel
+                currentProduct={{
+                  name: watch("name") || "",
+                  product_type: productTypes?.data?.items?.find(
+                    (t: ProductType) => t.id === watch("type"),
+                  )?.name,
+                  active_ingredient: watch("ingredient") || "",
+                  price: watch("price")
+                    ? parseFloat(watch("price"))
+                    : undefined,
+                  unit: units?.data?.items?.find(
+                    (u: any) => u.id === watch("unit_id"),
+                  )?.name,
+                  description: description,
+                }}
+                availableProducts={
+                  allProducts?.data?.items?.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    product_type: productTypes?.data?.items?.find(
+                      (t: ProductType) => t.id === p.type,
+                    )?.name,
+                    active_ingredient: Array.isArray(p.ingredient)
+                      ? p.ingredient.join(", ")
+                      : p.ingredient,
+                    concentration: p.attributes?.concentration as
+                      | string
+                      | undefined,
+                    unit: units?.data?.items?.find(
+                      (u: any) => u.id === p.unit_id,
+                    )?.name,
+                    price: parseFloat(p.price || "0"),
+                    manufacturer: p.attributes?.manufacturer as
+                      | string
+                      | undefined,
+                    description: p.description,
+                    usage: p.attributes?.usage as string | undefined,
+                  })) || []
+                }
+              />
+            </div>
           </div>
         </div>
-
-        {/* AI So sánh sản phẩm - 1 cột */}
-        <div className='lg:col-span-1'>
-          <div className='sticky top-4'>
-            <ProductComparisonPanel
-              currentProduct={{
-                name: watch('name') || '',
-                product_type: productTypes?.data?.items?.find((t: ProductType) => t.id === watch('type'))?.name,
-                active_ingredient: watch('ingredient') || '',
-                price: watch('price') ? parseFloat(watch('price')) : undefined,
-                unit: units?.data?.items?.find((u: any) => u.id === watch('unit_id'))?.name,
-                description: description,
-              }}
-              availableProducts={
-                allProducts?.data?.items?.map((p) => ({
-                  id: p.id,
-                  name: p.name,
-                  product_type: productTypes?.data?.items?.find((t: ProductType) => t.id === p.type)?.name,
-                  active_ingredient: Array.isArray(p.ingredient) ? p.ingredient.join(', ') : p.ingredient,
-                  concentration: p.attributes?.concentration as string | undefined,
-                  unit: units?.data?.items?.find((u: any) => u.id === p.unit_id)?.name,
-                  price: parseFloat(p.price || '0'),
-                  manufacturer: p.attributes?.manufacturer as string | undefined,
-                  description: p.description,
-                  usage: p.attributes?.usage as string | undefined,
-                })) || []
-              }
-            />
-          </div>
-        </div>
-      </div>
       </Card>
 
       {/* Modal điều chỉnh tồn kho */}
@@ -1544,7 +1839,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
           product={{
             id: currentProductId,
             name: watchedName || (productItemData as any)?.name,
-            trade_name: watchedTradeName || (productItemData as any)?.trade_name,
+            trade_name:
+              watchedTradeName || (productItemData as any)?.trade_name,
             currentQuantity: watchedQuantity,
           }}
         />
