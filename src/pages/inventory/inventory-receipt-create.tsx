@@ -663,6 +663,8 @@ const InventoryReceiptCreate: React.FC = () => {
         notes: data.description || undefined,
         bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
         payment_due_date: data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : undefined,
+        shared_shipping_cost: data.hasSharedShipping ? data.sharedShippingCost : 0,
+        shipping_allocation_method: data.allocationMethod,
         ...(imageUrls.length > 0 && { images: imageUrls }),
       };
 
