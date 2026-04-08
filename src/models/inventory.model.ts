@@ -91,8 +91,6 @@ export interface InventoryReceipt {
   // Images
   images?: string[] // Mảng URL ảnh hóa đơn
 
-  // Tax
-  is_taxable?: boolean // Phiếu có hóa đơn đầu vào
 
   // Relations
   payments?: InventoryReceiptPayment[]
@@ -480,8 +478,6 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   shared_shipping_cost?: number // Phí vận chuyển chung (tùy chọn)
   shipping_allocation_method?: "by_value" | "by_quantity" // Phương thức phân bổ (tùy chọn)
 
-  // ===== TRƯỜNG MỚI - THUẾ =====
-  is_taxable?: boolean // Có hóa đơn đầu vào
 }
 
 // Interface cho request cập nhật phiếu nhập hàng

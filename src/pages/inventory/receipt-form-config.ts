@@ -46,8 +46,6 @@ export const receiptFormSchema = z.object({
   discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
 
-  // Thuế
-  is_taxable: z.boolean().default(false),
 
   // Thanh toán
   paymentType: z.enum(['full', 'partial', 'debt']).default('partial'),
@@ -127,7 +125,7 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   discountMethod: 'none',
   discountType: 'fixed_amount',
   discountValue: 0,
-  is_taxable: false,
+
   paymentType: 'partial',
   paidAmount: 0,
 };

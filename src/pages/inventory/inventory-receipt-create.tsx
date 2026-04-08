@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom"
 import {
   Card,
   Button,
-  Form,
   Table,
   Typography,
   Alert,
@@ -27,10 +26,6 @@ import dayjs from "dayjs"
 import MobileItemCard from "./components/receipt-create/mobile-item-card"
 // Import itemColumns từ components
 import useItemColumns from "./components/receipt-create/item-columns"
-import NumberInput from "@/components/common/number-input"
-import ComboBox from "@/components/common/combo-box"
-import DatePicker from "@/components/common/DatePicker"
-import Field from "@/components/common/field"
 import { useForm, useFieldArray, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { 
@@ -38,7 +33,6 @@ import {
   FormComboBox, 
   FormFieldNumber, 
   FormDatePicker, 
-  FormImageUpload 
 } from "@/components/form"
 import { 
   receiptFormSchema, 
@@ -51,7 +45,6 @@ import {
 
 import {
   CreateInventoryReceiptRequest,
-  InventoryReceiptItemForm,
   InventoryReceiptStatus,
   getInventoryReceiptStatusText,
 } from "@/models/inventory.model"
@@ -98,7 +91,7 @@ const InventoryReceiptCreate: React.FC = () => {
     setValue,
     getValues,
     watch,
-    formState: { errors, isDirty },
+    formState: { isDirty },
     reset,
   } = useForm<ReceiptFormData>({
     resolver: zodResolver(receiptFormSchema),
@@ -185,7 +178,6 @@ const InventoryReceiptCreate: React.FC = () => {
   const watchedHasSharedShipping = watch("hasSharedShipping")
   const watchedSharedShippingCost = watch("sharedShippingCost") || 0
   const watchedPaymentType = watch("paymentType")
-  const watchedPaidAmount = watch("paidAmount") || 0
   const watchedStatus = watch("status") // Theo dõi trạng thái phiếu nhập
   const watchedDiscountType = watch("discountType")
   const watchedDiscountValue = watch("discountValue") || 0
@@ -226,46 +218,6 @@ const InventoryReceiptCreate: React.FC = () => {
   const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(receiptId || 0)
   const { data: existingItems, isLoading: isLoadingItems } = useInventoryReceiptItemsQuery(receiptId || 0)
 
-  // Logic xử lý nút "Tất cả là hàng tính thuế"
-  const watchedIsTaxable = watch("is_taxable")
-  // watchedItems đã được khai báo ở trên (dòng 156) nên không khai báo lại
-
-  // Chiều 1: Checkbox thay đổi -> Cập nhật danh sách
-  useEffect(() => {
-    // Chỉ xử lý khi có sự thay đổi thực sự để tránh loop
-    const currentItems = getValues("items") || []
-    if (currentItems.length === 0) return
-
-    if (watchedIsTaxable) {
-      // Nếu tích chọn: Điền đầy SL Thuế = SL cho những dòng chưa đủ
-      currentItems.forEach((item: any, index: number) => {
-        if (item.taxable_quantity !== item.quantity) {
-          setValue(`items.${index}.taxable_quantity`, item.quantity)
-        }
-      })
-    } else {
-      // Nếu bỏ tích: Kiểm tra nếu tất cả đang là "Full thuế" thì mới reset về 0
-      // Điều này giúp tránh việc vô tình xóa sạch dữ liệu nếu user chỉ muốn sửa 1 dòng
-      const isAllFullyTaxable = currentItems.every((item: any) => item.taxable_quantity === item.quantity && item.quantity > 0)
-      if (isAllFullyTaxable) {
-        currentItems.forEach((item: any, index: number) => {
-          setValue(`items.${index}.taxable_quantity`, 0)
-        })
-      }
-    }
-  }, [watchedIsTaxable, setValue, getValues])
-
-  // Chiều 2: Danh sách thay đổi (nhập tay) -> Cập nhật ngược lại Checkbox
-  useEffect(() => {
-    if (watchedIsTaxable && watchedItems.length > 0) {
-      const isStillAllTaxable = watchedItems.every((item: any) => 
-        Number(item.taxable_quantity) === Number(item.quantity) && Number(item.quantity) > 0
-      )
-      if (!isStillAllTaxable) {
-        setValue("is_taxable", false)
-      }
-    }
-  }, [watchedItems, watchedIsTaxable, setValue])
 
   // Pre-fill form khi load dữ liệu trong edit mode
   useEffect(() => {
@@ -343,7 +295,7 @@ const InventoryReceiptCreate: React.FC = () => {
         paidAmount: Number(receipt.paid_amount || 0),
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
-        is_taxable: !!existingReceipt.is_taxable,
+
         discountMethod: 'none',
         discountType: receipt.discount_type || 'fixed_amount',
         discountValue: Number(receipt.discount_value || 0),
@@ -576,7 +528,7 @@ const InventoryReceiptCreate: React.FC = () => {
         notes: data.description,
         bill_date: data.bill_date ? dayjs(data.bill_date).format('YYYY-MM-DD') : undefined,
         status: data.status || "draft",
-        is_taxable: !!data.is_taxable,
+
         created_by: 1,
         shared_shipping_cost: Number(data.sharedShippingCost || 0),
         shipping_allocation_method: data.allocationMethod,
@@ -618,10 +570,6 @@ const InventoryReceiptCreate: React.FC = () => {
       } else {
         await createReceiptMutation.mutateAsync(submissionData as CreateInventoryReceiptRequest)
       }
-
-      const finalReceiptId = isEditMode
-        ? receiptId
-        : (createReceiptMutation.data as any)?.id || (createReceiptMutation.data as any)?.data?.id;
 
       navigate("/inventory/receipts");
     } catch (error) {
@@ -758,25 +706,6 @@ const InventoryReceiptCreate: React.FC = () => {
               rows={3}
             />
 
-            <div className="mt-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
-              <Controller
-                name="is_taxable"
-                control={control}
-                render={({ field }) => (
-                  <Checkbox 
-                    checked={field.value}
-                    disabled={isApproved}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                    className="text-blue-700 font-medium"
-                  >
-                    Tất cả là hàng tính thuế (Có hóa đơn đầu vào)
-                  </Checkbox>
-                )}
-              />
-              <p className="mt-1 ml-6 text-xs text-blue-600 italic">
-                Mẹo: Tích chọn để tự động điền SL Thuế cho tất cả mặt hàng. Nếu chỉ một vài món có thuế, anh nên để trống ô này và tự nhập số lượng vào cột &quot;SL Thuế&quot; bên dưới.
-              </p>
-            </div>
         </Card>
 
           <Divider className='my-4' />
