@@ -255,29 +255,24 @@ function AppContent({
 
   return (
     <MyContext.Provider value={values}>
-      <div className='flex flex-col min-h-screen overflow-x-hidden'>
+      <div className='flex flex-col h-screen overflow-hidden'>
         {/* Header - luôn hiển thị trên cùng và trải dài toàn bộ chiều rộng */}
         {shouldShowLayout && (
-          <div className='w-full'>
+          <div className='w-full flex-shrink-0 h-[70px] z-[100]'>
             <Header />
           </div>
         )}
 
-        <div className='flex flex-1 overflow-x-hidden'>
+        <div className='flex flex-1 overflow-hidden relative'>
           {/* Sidebar - hidden on mobile by default, shown as overlay */}
           {shouldShowSidebar && isSidebarOpen && (
-                <div className='hidden md:block md:fixed md:left-0 md:top-0 md:bottom-0 md:w-[17%] md:z-10 md:pt-[70px]' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
+                <div className='hidden md:block w-[17%] flex-shrink-0 overflow-y-auto z-10' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
                   <Sidebar />
                 </div>
               )}
 
               {/* Main content area */}
-              <div className={`flex-1 overflow-x-hidden min-w-0 ${shouldShowSidebar && isSidebarOpen ? 'md:ml-[17%]' : ''}`}>
-                {/* Space for header on all devices */}
-                {shouldShowLayout && (
-                  <div className='h-[70px]'></div>
-                )}
-
+              <div className='flex-1 overflow-y-auto overflow-x-hidden min-w-0'>
                 <main
                   className={
                     shouldShowLayout && !isWeatherForecastPage && !isLunarCalendarPage ? "p-2 md:p-6" : ""

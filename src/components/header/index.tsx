@@ -62,7 +62,7 @@ export const Header: React.FC = () => {
   }
 
   return (
-    <header className='w-full fixed top-0 right-0 py-3 z-[100] flex items-center justify-between px-4 shadow-sm' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
+    <header className='w-full h-full py-3 z-[100] flex items-center justify-between px-4 shadow-sm' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
       {/* Mobile menu button */}
       <div className='md:hidden'>
         <Button onClick={toggleMobileSidebar}>
