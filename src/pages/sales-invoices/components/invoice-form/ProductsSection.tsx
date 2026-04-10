@@ -90,7 +90,22 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
 
         {errors.items && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {errors.items.message || "Vui lòng kiểm tra lại thông tin các sản phẩm trong danh sách (Số lượng, giá...)"}
+            {(() => {
+              if (errors.items.message) return errors.items.message;
+              
+              // Nếu không có message chung, tìm message lỗi trong từng item
+              const itemErrors = errors.items;
+              if (Array.isArray(itemErrors)) {
+                for (const itemErr of itemErrors) {
+                  if (itemErr) {
+                    const firstFieldErr = Object.values(itemErr)[0] as any;
+                    if (firstFieldErr?.message) return firstFieldErr.message;
+                  }
+                }
+              }
+              
+              return "Vui lòng kiểm tra lại thông tin các sản phẩm trong danh sách (Số lượng, giá, đơn vị...)";
+            })()}
           </Alert>
         )}
 
