@@ -326,16 +326,23 @@ const ProductsList: React.FC = () => {
         title: (
           <FilterHeader
             title='Tên sản phẩm'
-            dataIndex='name'
-            value={filters.name}
-            onChange={(val) => handleFilterChange("name", val)}
+            dataIndex='keyword'
+            value={filters.keyword}
+            onChange={(val) => handleFilterChange("keyword", val)}
             inputType='text'
           />
         ),
         width: 180,
         render: (_: unknown, record: ExtendedProduct) => (
-          <div className='font-medium text-gray-700 whitespace-normal break-words'>
-            {record.name}
+          <div className='flex flex-col gap-0.5'>
+            <div className='font-medium text-gray-700 whitespace-normal break-words'>
+              {record.name}
+            </div>
+            {record.trade_name && record.trade_name !== record.name && (
+              <div className='text-[11px] text-gray-500 italic whitespace-normal break-words'>
+                ({record.trade_name})
+              </div>
+            )}
           </div>
         ),
       },

@@ -118,11 +118,18 @@ export const searchProductsApi = async ({
     }
 
     // Chuyển đổi dữ liệu sang format của ComboBox
-    const data = products.map((product: Product) => ({
-      ...product,
-      value: product.id,
-      label: product.trade_name?.trim() || product.name?.trim() || `Sản phẩm ${product.id}`,
-    }))
+    const data = products.map((product: Product) => {
+      const name = product.name?.trim() || ""
+      const tradeName = product.trade_name?.trim() || ""
+      const label = tradeName && tradeName !== name ? `${tradeName} (${name})` : (tradeName || name || `Sản phẩm ${product.id}`)
+      
+      return {
+        ...product,
+        value: product.id,
+        label: label,
+        scientific_name: name, // Dùng làm tooltip hiển thị tên sản phẩm gốc trong ComboBox
+      }
+    })
 
     // Log để debug
 

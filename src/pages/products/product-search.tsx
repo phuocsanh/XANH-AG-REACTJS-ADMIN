@@ -152,13 +152,20 @@ const ProductSearch: React.FC = () => {
   // Cấu hình columns cho DataTable
   const columns = [
     {
-      key: "trade_name",
-      title: "Tên thương mại",
-      width: getColumnWidth(150, 200, 250), // Mobile: 150, Tablet: 200, Desktop: 250
-      fixed: "left" as const, // Cố định cột bên trái
+      key: "name",
+      title: "Tên sản phẩm",
+      width: getColumnWidth(180, 220, 280),
+      fixed: "left" as const,
       render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-900 whitespace-normal break-words'>
-          {record.trade_name || "---"}
+        <div className='flex flex-col gap-0.5'>
+          <div className='font-medium text-gray-900 whitespace-normal break-words'>
+            {record.name}
+          </div>
+          {record.trade_name && record.trade_name !== record.name && (
+            <div className='text-[12px] text-gray-500 italic whitespace-normal break-words'>
+              ({record.trade_name})
+            </div>
+          )}
         </div>
       ),
     },
@@ -174,16 +181,6 @@ const ProductSearch: React.FC = () => {
             : "---")
         return <div className='text-gray-600'>{unitName}</div>
       },
-    },
-    {
-      key: "name",
-      title: "Tên sản phẩm",
-      width: getColumnWidth(150, 180, 220), // Mobile: 150, Tablet: 180, Desktop: 220
-      render: (_: unknown, record: ExtendedProduct) => (
-        <div className='font-medium text-gray-700 whitespace-normal break-words'>
-          {record.name}
-        </div>
-      ),
     },
     {
       key: "notes",

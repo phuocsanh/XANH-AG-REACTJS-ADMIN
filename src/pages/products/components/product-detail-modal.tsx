@@ -134,6 +134,11 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <Descriptions.Item label='Tên sản phẩm'>
             {product.name}
           </Descriptions.Item>
+          {product.trade_name && (
+            <Descriptions.Item label='Tên thương mại'>
+              {product.trade_name}
+            </Descriptions.Item>
+          )}
           {product.notes && (
             <Descriptions.Item label='Ghi chú'>
               {/<[^>]+>/.test(product.notes) ? (
