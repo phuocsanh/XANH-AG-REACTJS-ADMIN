@@ -90,7 +90,7 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
 
         {errors.items && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {errors.items.message}
+            {errors.items.message || "Vui lòng kiểm tra lại thông tin các sản phẩm trong danh sách (Số lượng, giá...)"}
           </Alert>
         )}
 

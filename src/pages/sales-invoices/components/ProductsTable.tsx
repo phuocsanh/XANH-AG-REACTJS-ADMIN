@@ -88,7 +88,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           <Table 
             size="small" 
             sx={{ 
-              minWidth: 1600,
+              minWidth: 1500,
               tableLayout: 'fixed',
               borderSpacing: 0,
               borderCollapse: 'collapse',
@@ -112,8 +112,8 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 <TableCell sx={{ width: 300, minWidth: 300 }}>Sản phẩm</TableCell>
                 <TableCell align="center" sx={{ width: 110, minWidth: 110 }}>ĐVT</TableCell>
                 <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Tồn kho</TableCell>
-                <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Tồn thuế</TableCell>
-                <TableCell align="center" sx={{ width: 130, minWidth: 130 }}>Loại giá</TableCell>
+
+                <TableCell align="center" sx={{ width: 180, minWidth: 180 }}>Loại giá</TableCell>
                 <TableCell align="right" sx={{ width: 160, minWidth: 160 }}>Số lượng</TableCell>
                 <TableCell align="right" sx={{ width: 220, minWidth: 220 }}>Đơn giá</TableCell>
                 <TableCell align="right" sx={{ width: 130, minWidth: 130 }}>Giảm giá</TableCell>
@@ -263,30 +263,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         );
                       })()}
                     </TableCell>
-                    <TableCell align="center">
-                      {(() => {
-                        const taxStock = Number(watch(`items.${index}.taxable_quantity_stock`)) || 0;
-                        const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                        
-                        const displayTaxStock = factor > 0 ? Math.floor((taxStock / factor) * 100) / 100 : taxStock;
-                        const unitName = watch(`items.${index}.unit_name`) || '';
 
-                        return (
-                          <Box sx={{ 
-                            p: '4px 8px',
-                            borderRadius: '4px',
-                            backgroundColor: '#f0f7ff',
-                            border: '1px solid #bae0ff',
-                            color: '#0958d9',
-                            minWidth: '80px'
-                          }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'center' }}>
-                              {displayTaxStock.toLocaleString('vi-VN')} {unitName}
-                            </Typography>
-                          </Box>
-                        );
-                      })()}
-                    </TableCell>
                     <TableCell align="center">
                       <Controller
                         name={`items.${index}.price_type`}
@@ -314,7 +291,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                               { value: 'credit', label: priceTypeLabels.credit }
                             ]}
                             size="small"
-                            style={{ width: 140 }}
+                            style={{ width: 170 }}
                             showSearch={false}
                             allowClear={false}
                           />
@@ -585,17 +562,15 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
-                    Tồn (Kho / Thuế)
+                    Tồn kho
                   </Typography>
                   {(() => {
                     const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                    const taxStock = Number(watch(`items.${index}.taxable_quantity_stock`)) || 0;
                     const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
                     const unitName = watch(`items.${index}.unit_name`) || '';
                     const sellQty = Number(watch(`items.${index}.quantity`)) || 0;
                     
                     const displayStock = factor > 0 ? Math.floor((stock / factor) * 100) / 100 : stock;
-                    const displayTax = factor > 0 ? Math.floor((taxStock / factor) * 100) / 100 : taxStock;
                     const isOver = (sellQty * factor) > stock;
 
                     return (
@@ -609,10 +584,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         gap: 0.5
                       }}>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: isOver ? '#cf1322' : '#1e293b' }}>
-                          KH: {displayStock.toLocaleString('vi-VN')} {unitName}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0958d9' }}>
-                          TH: {displayTax.toLocaleString('vi-VN')} {unitName}
+                          Tồn: {displayStock.toLocaleString('vi-VN')} {unitName}
                         </Typography>
                       </Box>
                     );

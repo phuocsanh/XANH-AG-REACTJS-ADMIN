@@ -7,6 +7,7 @@ import {
   IconButton,
   Tabs,
   Tab,
+  Alert,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -1372,6 +1373,11 @@ ${productInfo}`;
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* TAB 1: Invoice Information */}
         <TabPanel value={currentTab} index={0}>
+          {Object.keys(errors).length > 0 && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              Vui lòng kiểm tra lại các thông tin còn thiếu hoặc sai định dạng trong hóa đơn (Tên khách hàng, SĐT, Ruộng lúa, Sản phẩm...).
+            </Alert>
+          )}
           <Grid container spacing={3}>
             
             {/* Customer Information */}
