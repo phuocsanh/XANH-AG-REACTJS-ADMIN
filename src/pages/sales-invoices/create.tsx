@@ -685,11 +685,11 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       : (product.unit_name || product.unit?.name || '');
 
     prepend({
-      product_id: product.id,
+      product_id: Number(product.id),
       product_name: product.trade_name || product.name,
       unit_name: unitName,
       quantity: 1,
-      unit_price: unitPrice,
+      unit_price: Number(unitPrice) || 0,
       discount_amount: 0,
       notes: '',
       price_type: priceType,
@@ -698,12 +698,12 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
             ? Number(product.average_cost_price)
             : Number(product.average_cost_price.replace(/[^0-9]/g, '')))
         : Number(product.average_cost_price || 0),
-      stock_quantity: product.quantity || 0,
-      taxable_quantity_stock: product.taxable_quantity_stock || 0,
+      stock_quantity: Number(product.quantity || 0),
+      taxable_quantity_stock: Number(product.taxable_quantity_stock || 0),
       tax_selling_price: String((Number(product.tax_selling_price || 0) || 0) * factor),
-      sale_unit_id: saleUnitId,
-      conversion_factor: factor,
-      base_quantity: factor,
+      sale_unit_id: Number(saleUnitId),
+      conversion_factor: Number(factor) || 1,
+      base_quantity: Number(factor) || 1,
       conversions: product.unit_conversions || [],
     });
 

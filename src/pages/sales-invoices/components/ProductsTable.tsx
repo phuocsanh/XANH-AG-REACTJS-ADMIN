@@ -329,11 +329,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 </Typography>
                               );
                             })()}
-                            <NumberInput
-                              value={field.value}
-                              onChange={(val) => {
-                                field.onChange(val);
-                                if (val !== null) {
+                              <NumberInput
+                                value={field.value}
+                                onChange={(val) => {
+                                  const numVal = Number(val) || 0;
+                                  field.onChange(numVal);
+                                  if (numVal !== 0) {
                                   const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
                                   const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
                                   const baseQty = Number(val) * factor;
@@ -396,7 +397,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                             })()}
                             <NumberInput
                               value={field.value}
-                              onChange={(val) => field.onChange(val)}
+                              onChange={(val) => field.onChange(Number(val) || 0)}
                               min={0}
                               allowClear
                               size="small"
@@ -413,7 +414,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         render={({ field }) => (
                           <NumberInput
                             value={field.value}
-                            onChange={(val) => field.onChange(val)}
+                            onChange={(val) => field.onChange(Number(val) || 0)}
                             min={0}
                             allowClear
                             size="small"
