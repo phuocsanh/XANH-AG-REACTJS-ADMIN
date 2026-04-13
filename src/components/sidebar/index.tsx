@@ -22,7 +22,7 @@ import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
 import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch, MdAutoAwesome } from "react-icons/md"
-import { GiftOutlined } from "@ant-design/icons"
+import { GiftOutlined, ThunderboltOutlined } from "@ant-design/icons"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
@@ -174,6 +174,11 @@ const Sidebar: React.FC = () => {
     // Báo cáo Doanh thu
     else if (path.startsWith('/reports/revenue')) {
       setActiveTab(35)
+      setIsToggleSubmenu(false)
+    }
+    // Đồng bộ thuế 2026
+    else if (path.startsWith('/reports/tax-revenue-2026')) {
+      setActiveTab(36)
       setIsToggleSubmenu(false)
     }
     // Cảnh báo Bệnh/Sâu hại
@@ -618,6 +623,21 @@ const Sidebar: React.FC = () => {
                         <MdTrendingUp className='text-emerald-300' />
                       </span>
                       Doanh thu & Lợi nhuận
+                    </Button>
+                  </Link>
+                </li>
+              )}
+              {hasPermission(userInfo, "store_profit_report:read") && (
+                <li>
+                  <Link to='/reports/tax-revenue-2026'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 36 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(36)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <ThunderboltOutlined className='text-blue-300' />
+                      </span>
+                      Đồng bộ thuế 2026
                     </Button>
                   </Link>
                 </li>

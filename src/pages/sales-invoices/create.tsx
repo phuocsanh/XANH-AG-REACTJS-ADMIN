@@ -664,6 +664,16 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       setProductSearch('');
       return;
     }
+
+    // ✅ VALIDATION: Cảnh báo nếu sản phẩm có tồn thuế nhưng chưa điền GBKT
+    const hasTaxableStock = Number(product.taxable_quantity_stock || 0) > 0;
+    const hasTaxPrice = Number(product.tax_selling_price || 0) > 0;
+    if (hasTaxableStock && !hasTaxPrice) {
+      antMessage.warning(
+        `⚠️ Sản phẩm "${product.trade_name || product.name}" có tồn thuế nhưng chưa điền Giá bán khai thuế (GBKT)! Vui lòng cập nhật GBKT trong danh mục sản phẩm trước khi tạo hóa đơn.`,
+        6,
+      );
+    }
     
     // Nếu là công nợ -> dùng giá nợ (nếu có), ngược lại dùng giá tiền mặt
     const priceType = isDebt ? 'credit' : 'cash';
@@ -743,6 +753,18 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       }
       if (!data.rice_crop_id) {
         antMessage.error('Vui lòng chọn Ruộng lúa cho khách hàng này');
+        return;
+      }
+    }
+
+    // ✅ VALIDATION: Chặn submit nếu có sản phẩm có tồn thuế mà chưa điền GBKT
+    for (const item of data.items || []) {
+      const hasTaxableStock = Number(item.taxable_quantity_stock || 0) > 0;
+      const hasTaxPrice = Number(item.tax_selling_price || 0) > 0;
+      if (hasTaxableStock && !hasTaxPrice) {
+        antMessage.error(
+          `❌ Sản phẩm "${item.product_name}" có tồn thuế nhưng chưa điền Giá bán khai thuế (GBKT)! Vui lòng vào danh mục sản phẩm và điền GBKT trước khi tạo hóa đơn này.`
+        );
         return;
       }
     }

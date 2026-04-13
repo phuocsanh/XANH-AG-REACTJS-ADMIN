@@ -138,17 +138,19 @@ export const usePeriodStoreProfitReport = (
   endDate: string, 
   taxableFilter: string = 'all',
   sortBy: string = 'sale_date',
-  sortOrder: 'ASC' | 'DESC' = 'DESC'
+  sortOrder: 'ASC' | 'DESC' = 'DESC',
+  onlyRecentTaxedProducts?: string
 ) => {
   return useQuery({
-    queryKey: storeProfitReportKeys.period(startDate, endDate, taxableFilter, sortBy, sortOrder),
+    queryKey: [...storeProfitReportKeys.period(startDate, endDate, taxableFilter, sortBy, sortOrder), onlyRecentTaxedProducts],
     queryFn: async () => {
       const response = await api.get<PeriodReport>(`/store-profit-report/period`, {
         startDate, 
         endDate,
         taxableFilter,
         sortBy,
-        sortOrder
+        sortOrder,
+        onlyRecentTaxedProducts
       });
       return response;
     },
@@ -177,6 +179,30 @@ export const useSyncTaxableDataMutation = () => {
     },
     onError: (error: any) => {
       console.error('❌ Lỗi đồng bộ:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Vui lòng thử lại sau';
+      message.error(`Lỗi khi đồng bộ dữ liệu: ${errorMsg}`);
+    }
+  });
+};
+
+/**
+ * Hook mutation để đồng bộ dữ liệu tồn kho thuế V2 - Có lọc ngày
+ */
+export const useSyncTaxableDataV2Mutation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (startDate: string) => {
+      const response = await api.instance.post('/inventory/sync-taxable-data-v2', { startDate });
+      return response.data;
+    },
+    onSuccess: (response: any) => {
+      const data = response.data || response;
+      message.success(`Đồng bộ 2026 xong: ${data.productsUpdated || 0} sản phẩm, ${data.salesItemsUpdated || 0} item bán hàng.`);
+      queryClient.invalidateQueries({ queryKey: storeProfitReportKeys.all });
+    },
+    onError: (error: any) => {
+      console.error('❌ Lỗi đồng bộ V2:', error);
       const errorMsg = error.response?.data?.message || error.message || 'Vui lòng thử lại sau';
       message.error(`Lỗi khi đồng bộ dữ liệu: ${errorMsg}`);
     }

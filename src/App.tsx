@@ -72,6 +72,7 @@ import EditDeliveryLog from "./pages/delivery-logs/edit"
 // Thêm import cho trang báo cáo lợi nhuận
 import ProfitReportsPage from "./pages/profit-reports"
 import RevenueReportPage from "./pages/reports/revenue-report"
+import TaxRevenueReport2026Page from "./pages/reports/tax-revenue-report-2026"
 // Thêm import cho trang quản lý diện tích mỗi công đất
 import Areas from "./pages/area-of-each-plot-of-land"
 import CreateSalesReturn from "./pages/sales-returns/create"
@@ -697,6 +698,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="store-profit-report:read">
                           <RevenueReportPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/reports/tax-revenue-2026'
+                      element={
+                        <ProtectedRoute requiredPermission="store-profit-report:read">
+                          <TaxRevenueReport2026Page />
                         </ProtectedRoute>
                       }
                     />
