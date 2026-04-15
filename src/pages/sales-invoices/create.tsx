@@ -405,45 +405,45 @@ const CreateSalesInvoice = () => {
         isCalculating = true; // Bắt đầu tính toán
         
         const currentItems = value.items || [];
+        let totalRev = 0;
+        let totalCst = 0;
+        
         const total = currentItems.reduce((sum: number, item: any) => {
           const quantity = Number(item?.quantity) || 0;
           const unitPrice = Number(item?.unit_price) || 0;
           const itemDiscount = Number(item?.discount_amount) || 0;
+          
+          // Lấy giá vốn trung bình (đã được mặc định quy về đơn vị cơ sở - ví dụ: Kg)
+          let rawCost = item.average_cost_price;
+          if (!rawCost) {
+             const prod = productsData?.data?.items?.find((p: any) => p.id === item.product_id);
+             rawCost = prod?.average_cost_price;
+          }
+          
+          // Chuyển đổi giá vốn sang dạng số chuẩn (Xử lý cả chuỗi có dấu phẩy hoặc chấm)
+          const cstPrice = typeof rawCost === 'string' 
+             ? parseFloat(rawCost.replace(/,/g, '')) 
+             : Number(rawCost || 0);
+
+          // Sử dụng base_quantity (số lượng đã quy đổi sang đơn vị cơ sở như Kg) để nhân với giá vốn Kg
+          // Nếu base_quantity không có (trường hợp cũ), fallback về qty * factor
+          const factor = Number(item.conversion_factor || 1);
+          const baseQty = Number(item.base_quantity || (quantity * factor));
+          
+          totalRev += (quantity * unitPrice) - itemDiscount;
+          totalCst += (baseQty * cstPrice);
+          
           return sum + (quantity * unitPrice) - itemDiscount;
         }, 0);
         
         const currentDiscount = Number(value.discount_amount) || 0;
         const finalAmount = total - currentDiscount;
-        // ✅ TÍNH LỢI NHUẬN TẠI ĐÂY
-        let totalRev = 0;
-        let totalCst = 0;
-        currentItems.forEach((item: any) => {
-          if (item?.product_id && item?.quantity) {
-             let rawCost = item.average_cost_price;
-             if (!rawCost) {
-                const prod = productsData?.data?.items?.find((p: any) => p.id === item.product_id);
-                rawCost = prod?.average_cost_price;
-             }
-             const cstPrice = typeof rawCost === 'string' 
-                ? (rawCost.includes('.') && rawCost.split('.').pop()?.length === 2 
-                    ? Number(rawCost) 
-                    : Number(rawCost.replace(/[^0-9]/g, '')))
-                : Number(rawCost || 0);
-             const uPrice = Number(item.unit_price || 0);
-             const qty = Number(item.quantity || 0);
-             const iDiscount = Number(item.discount_amount || 0);
-             totalRev += (qty * uPrice) - iDiscount;
-             const factor = Number(item.conversion_factor || 1);
-             totalCst += (qty * factor * cstPrice);
-          }
-        });
-        const calProfit = totalRev - totalCst;
-        const calMargin = totalRev > 0 ? (calProfit / totalRev) * 100 : 0;
+        
+        const grossProfit = totalRev - totalCst - currentDiscount;
         setCalculatedProfit({
-          revenue: totalRev,
-          cost: totalCst,
-          profit: calProfit,
-          margin: calMargin
+           revenue: totalRev - currentDiscount,
+           profit: grossProfit,
+           margin: (totalRev - currentDiscount) > 0 ? (grossProfit / (totalRev - currentDiscount)) * 100 : 0
         });
 
         
@@ -704,9 +704,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       notes: '',
       price_type: priceType,
       average_cost_price: typeof product.average_cost_price === 'string' 
-        ? (product.average_cost_price.includes('.') && product.average_cost_price.split('.').pop()?.length === 2
-            ? Number(product.average_cost_price)
-            : Number(product.average_cost_price.replace(/[^0-9]/g, '')))
+        ? parseFloat(product.average_cost_price.replace(/,/g, ''))
         : Number(product.average_cost_price || 0),
       stock_quantity: Number(product.quantity || 0),
       taxable_quantity_stock: Number(product.taxable_quantity_stock || 0),
