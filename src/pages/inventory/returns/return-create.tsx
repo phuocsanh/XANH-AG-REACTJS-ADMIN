@@ -252,17 +252,24 @@ const ReturnCreate = () => {
         if (img.response?.data?.url) return img.response.data.url;
         return img.response?.url || img.thumbUrl;
       }).filter(Boolean) || [];
-
+      
+      // Đảm bảo các giá trị số là kiểu Number
       const returnData = {
         return_code: data.return_code,
-        supplier_id: data.supplier_id,
-        receipt_id: data.receipt_id,
-        total_amount: processedItems.reduce((sum, item) => sum + item.total_price, 0),
+        supplier_id: Number(data.supplier_id),
+        receipt_id: Number(data.receipt_id),
+        total_amount: Number(processedItems.reduce((sum, item) => sum + item.total_price, 0)),
         reason: data.reason,
         notes: data.notes,
         status: data.status,
-        created_by: userInfo.id,
-        items: processedItems,
+        created_by: Number(userInfo.id),
+        items: processedItems.map(item => ({
+          ...item,
+          product_id: Number(item.product_id),
+          quantity: Number(item.quantity),
+          unit_cost: Number(item.unit_cost),
+          total_price: Number(item.total_price)
+        })),
         images: imageUrls,
       };
 
@@ -273,8 +280,9 @@ const ReturnCreate = () => {
       }
 
       navigate('/inventory/returns');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating return:', error);
+      message.error(error?.response?.data?.message || 'Có lỗi xảy ra khi lưu phiếu trả hàng');
     }
   };
 
@@ -305,6 +313,43 @@ const ReturnCreate = () => {
       </Box>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Hiển thị lỗi tổng quát từ Validation hoặc Server */}
+        {(Object.keys(errors).length > 0 || createMutation.error || updateMutation.error) && (
+          <Alert
+            severity="error"
+            sx={{ mb: 3 }}
+            onClose={() => {}}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">Vui lòng kiểm tra lại thông tin:</Typography>
+            <ul style={{ margin: 0, paddingLeft: '20px' }}>
+              {errors.receipt_id && <li>{errors.receipt_id.message}</li>}
+              {errors.supplier_id && <li>{errors.supplier_id.message}</li>}
+              {errors.return_code && <li>Mã phiếu: {errors.return_code.message}</li>}
+              {errors.reason && <li>Lý do chung: {errors.reason.message}</li>}
+              {errors.items?.message && <li>Sản phẩm: {errors.items.message}</li>}
+              
+              {/* Hiển thị lỗi cho từng item nếu có */}
+              {Array.isArray(errors.items) && errors.items.map((itemError, idx) => {
+                if (!itemError) return null;
+                const productName = watch(`items.${idx}.product_name`);
+                return Object.entries(itemError).map(([field, err]: [string, any]) => (
+                  <li key={`${idx}-${field}`}>
+                    Sản phẩm "{productName}": {err?.message || `${field} không hợp lệ`}
+                  </li>
+                ));
+              })}
+
+              {/* Lỗi từ server */}
+              {(createMutation.error as any)?.response?.data?.message && (
+                <li>{ (createMutation.error as any).response.data.message }</li>
+              )}
+              {(updateMutation.error as any)?.response?.data?.message && (
+                <li>{ (updateMutation.error as any).response.data.message }</li>
+              )}
+            </ul>
+          </Alert>
+        )}
+
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Card sx={{ height: '100%' }}>
@@ -498,7 +543,7 @@ const ReturnCreate = () => {
                       </Box>
                     </Box>
 
-                    {errors.items && (
+                    {errors.items?.message && (
                       <Alert severity="error" sx={{ mb: 2 }}>
                         {errors.items.message}
                       </Alert>
