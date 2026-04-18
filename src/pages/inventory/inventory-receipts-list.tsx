@@ -38,7 +38,7 @@ import {
   useDeleteInventoryReceiptMutation,
   useInventoryStatsQuery,
 } from "@/queries/inventory"
-import { useSupplierSearch } from "@/queries/supplier"
+import { useSupplierSearch, useSupplierQuery } from "@/queries/supplier"
 import { LoadingSpinner, RangePicker, DatePicker, ComboBox } from "@/components/common"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from '@/components/common/filter-header'
@@ -96,21 +96,36 @@ const InventoryReceiptsList: React.FC = () => {
   const [searchTermSupplier, setSearchTermSupplier] = useState("")
   const { data: suppliersData, isLoading: isLoadingSuppliers } = useSupplierSearch(searchTermSupplier, 20, true)
 
+  // Fetch thông tin NCC cụ thể nếu có ID trong bộ lọc để hiển thị label đúng
+  const { data: selectedSupplierData } = useSupplierQuery(
+    filters.supplier_id ? Number(filters.supplier_id) : 0
+  )
+
   const supplierOptions = useMemo(() => {
-    if (!suppliersData?.pages) return []
     const uniqueSuppliers = new Map();
-    suppliersData.pages.forEach(page => {
-        page.data.forEach((s: any) => {
-            if (s.id && !uniqueSuppliers.has(s.id)) {
-                uniqueSuppliers.set(s.id, {
-                    value: s.id, 
-                    label: s.name
-                })
-            }
-        })
-    })
+    
+    // Thêm NCC đang chọn vào list để luôn có label
+    if (selectedSupplierData) {
+      uniqueSuppliers.set(selectedSupplierData.id, {
+        value: selectedSupplierData.id,
+        label: selectedSupplierData.name
+      })
+    }
+
+    if (suppliersData?.pages) {
+      suppliersData.pages.forEach(page => {
+          page.data.forEach((s: any) => {
+              if (s.id && !uniqueSuppliers.has(s.id)) {
+                  uniqueSuppliers.set(s.id, {
+                      value: s.id, 
+                      label: s.name
+                  })
+              }
+          })
+      })
+    }
     return Array.from(uniqueSuppliers.values());
-  }, [suppliersData])
+  }, [suppliersData, selectedSupplierData])
 
   // Tạo params cho API call
   const queryParams = useMemo<InventoryReceiptListParams>(() => {
