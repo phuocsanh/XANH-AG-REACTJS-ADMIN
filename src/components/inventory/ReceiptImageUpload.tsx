@@ -8,7 +8,6 @@ import heic2any from "heic2any"
 
 import {
   useUploadFileMutation,
-  useAttachImageToReceiptMutation,
   useUpdateInventoryReceiptMutation,
 } from "@/queries/inventory"
 
@@ -33,7 +32,6 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId, images = [], onImagesC
   const containerRef = useRef<HTMLDivElement>(null)
 
   const uploadFileMutation = useUploadFileMutation()
-  const attachImageMutation = useAttachImageToReceiptMutation()
   const updateReceiptMutation = useUpdateInventoryReceiptMutation()
 
   // Chuyển đổi mảng URL string thành ImageData để hiển thị
@@ -78,11 +76,18 @@ const ReceiptImageUpload: React.FC<Props> = ({ receiptId, images = [], onImagesC
       // 1. Upload file lên server
       const uploadResult = await uploadFileMutation.mutateAsync(fileToUpload)
 
-      // 2. Gắn file vào phiếu
-      await attachImageMutation.mutateAsync({
-        receiptId,
-        fileId: (uploadResult as any).data.id,
-        fieldName: "invoice_images",
+      // 2. Cập nhật phiếu nhập với mảng images mới
+      const imageUrl = (uploadResult as any).data?.url || (uploadResult as any).url
+      if (!imageUrl) throw new Error("Không lấy được URL ảnh sau khi upload")
+
+      const updatedImages = [...images, imageUrl]
+      
+      await updateReceiptMutation.mutateAsync({
+        id: receiptId,
+        receipt: { 
+          id: receiptId,
+          images: updatedImages 
+        }
       })
 
       antdMessage.success("Upload ảnh thành công!")

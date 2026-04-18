@@ -325,6 +325,9 @@ export function mapApiResponseToInventoryReceipt(
     has_adjustments: apiReceipt.has_adjustments,
     is_payment_locked: apiReceipt.is_payment_locked,
 
+    // Images
+    images: apiReceipt.images || [],
+
     // Relations
     payments: apiReceipt.payments,
     creator: apiReceipt.creator
@@ -477,7 +480,7 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   // ===== TRƯỜNG MỚI - PHÍ VẬN CHUYỂN =====
   shared_shipping_cost?: number // Phí vận chuyển chung (tùy chọn)
   shipping_allocation_method?: "by_value" | "by_quantity" // Phương thức phân bổ (tùy chọn)
-
+  images?: string[] // Mảng URL ảnh hóa đơn (tùy chọn)
 }
 
 // Interface cho request cập nhật phiếu nhập hàng
