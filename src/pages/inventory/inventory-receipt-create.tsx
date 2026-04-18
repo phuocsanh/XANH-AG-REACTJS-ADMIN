@@ -33,6 +33,7 @@ import {
   FormComboBox, 
   FormFieldNumber, 
   FormDatePicker, 
+  FormImageUpload,
 } from "@/components/form"
 import { 
   receiptFormSchema, 
@@ -75,8 +76,7 @@ const InventoryReceiptCreate: React.FC = () => {
   const isTablet = useTablet()
 
 
-  // State quản lý danh sách file ảnh
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+
 
   // State tìm kiếm sản phẩm và nhà cung cấp
   const [searchTerm, setSearchTerm] = useState("")
@@ -300,18 +300,8 @@ const InventoryReceiptCreate: React.FC = () => {
         discountType: receipt.discount_type || 'fixed_amount',
         discountValue: Number(receipt.discount_value || 0),
       })
-
-      // Set images (vẫn giữ fileList state cho component Upload)
-      if (receipt.images && Array.isArray(receipt.images)) {
-        const images = receipt.images.map((url: string, index: number) => ({
-          uid: `-${index}`,
-          name: `Image ${index + 1}`,
-          status: 'done',
-          url: url,
-        }));
-        setFileList(images as any);
+        setValue('images', receipt.images);
       }
-    }
   }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, reset])
 
   // Reset chiết khấu khi đổi phương thức để tránh tính chồng chéo
@@ -464,26 +454,8 @@ const InventoryReceiptCreate: React.FC = () => {
     console.log("Submitting form with data:", data);
 
     try {
-      // 1. Xử lý upload ảnh (dùng chung cho cả 2 luồng)
-      const imageUrls: string[] = [];
-      if (fileList.length > 0) {
-        try {
-          const needsUpload = fileList.some(f => f.originFileObj);
-          if (needsUpload) toast.info("Đang xử lý hình ảnh...");
-          for (const file of fileList) {
-            if (file.url) {
-              imageUrls.push(file.url);
-            } else if (file.originFileObj) {
-              const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj);
-              imageUrls.push((uploadResult as any).data.url);
-            }
-          }
-        } catch (uploadError) {
-          console.error("Lỗi khi upload ảnh:", uploadError);
-          toast.error("Có lỗi khi upload ảnh");
-          return;
-        }
-      }
+      // 1. Lấy danh sách URL ảnh từ form data
+      const imageUrls = data.images || [];
 
       // ========================================================
       // 2A. NẾU PHIẾU ĐÃ DUYỆT: chỉ gửi các trường metadata được phép
@@ -595,17 +567,6 @@ const InventoryReceiptCreate: React.FC = () => {
         return;
       }
 
-      // Xử lý upload ảnh nếu có
-      const imageUrls: string[] = [];
-      for (const file of fileList) {
-        if (file.url) {
-          imageUrls.push(file.url);
-        } else if (file.originFileObj) {
-          const uploadResult = await uploadFileMutation.mutateAsync(file.originFileObj);
-          imageUrls.push((uploadResult as any).data.url);
-        }
-      }
-
       const metadataPayload: any = {
         supplier_id: data.supplierId,
         notes: data.description || undefined,
@@ -613,7 +574,7 @@ const InventoryReceiptCreate: React.FC = () => {
         payment_due_date: data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : undefined,
         shared_shipping_cost: data.hasSharedShipping ? data.sharedShippingCost : 0,
         shipping_allocation_method: data.allocationMethod,
-        ...(imageUrls.length > 0 && { images: imageUrls }),
+        images: data.images || [],
       };
 
       await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
@@ -892,19 +853,13 @@ const InventoryReceiptCreate: React.FC = () => {
 
           {/* Phần upload ảnh hóa đơn */}
           <Card title="Hình ảnh hóa đơn (Tùy chọn)" className='mt-4'>
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-              beforeUpload={() => false} // Prevent auto upload
-              accept="image/*"
+            <FormImageUpload
+              name="images"
+              control={control}
+              uploadType="common"
               multiple
-            >
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
-              </div>
-            </Upload>
+              maxCount={10}
+            />
           </Card>
 
           {/* Phần thanh toán - Chỉ hiển thị khi trạng thái là Đã duyệt */}
