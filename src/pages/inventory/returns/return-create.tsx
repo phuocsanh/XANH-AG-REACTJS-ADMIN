@@ -436,6 +436,7 @@ const ReturnCreate = () => {
                   label="Lý do trả hàng"
                   type="textarea"
                   rows={3}
+                  required={true}
                   placeholder="VD: Hàng lỗi, không đúng quy cách..."
                   className="mb-4"
                 />
