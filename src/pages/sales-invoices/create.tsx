@@ -547,18 +547,17 @@ const CreateSalesInvoice = () => {
         return;
       }
 
-      const prompt = `Dựa trên danh sách sản phẩm và mô tả sau, hãy tạo một lưu ý quan trọng ngắn gọn (1-2 câu) cho đơn hàng. Lưu ý nên tập trung vào:
-- Cách sử dụng an toàn
-- Thời gian sử dụng tối ưu
-- Lưu ý khi phối trộn (nếu có)
-- Điều kiện bảo quản
-- Lưu ý khi sử dụng cùng với các sản phẩm khác
-- Tập chú ý các dữ liệu trong tên sản phẩm , ký hiệu, liều lượng. 
+      const prompt = `Dựa trên danh sách sản phẩm (bao gồm mô tả, thành phần và ghi chú) sau đây, hãy tạo một lưu ý quan trọng cực kỳ ngắn gọn và súc tích (tối đa 2-3 câu) cho đơn hàng này. 
 
-Danh sách sản phẩm:
+YÊU CẦU QUAN TRỌNG:
+1. KIỂM TRA XUNG ĐỘT PHỐI TRỘN: Phân tích kỹ xem các sản phẩm TRONG DANH SÁCH này có hoạt chất hay đặc tính nào kỵ nhau không. Nếu phát hiện xung đột giữa các thuốc đã chọn, phải cảnh báo RÕ RÀNG (ví dụ: "Tuyệt đối không pha chung SẢN PHẨM A với SẢN PHẨM B vì kỵ hoạt chất...").
+2. HƯỚNG DẪN SỬ DỤNG: Tập trung vào cách dùng an toàn, thời điểm xịt tối ưu, và lưu ý về liều lượng/ký hiệu đặc biệt có trong tên thuốc.
+3. NGÔN NGỮ: Sử dụng ngôn ngữ chuyên môn nông nghiệp Việt Nam, ngắn gọn, đanh thép.
+
+Danh sách các sản phẩm đã chọn:
 ${productDescriptions}
 
-Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.`;
+Chỉ trả về nội dung lưu ý cuối cùng để điền vào ô nhập liệu, không kèm theo giải thích, không thêm tiêu đề.`;
 
       const response = await frontendAiService.generateWarning(prompt);
       
