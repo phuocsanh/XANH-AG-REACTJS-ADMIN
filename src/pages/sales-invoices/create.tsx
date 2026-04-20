@@ -527,7 +527,14 @@ const CreateSalesInvoice = () => {
         .map(item => {
           const product = (productsData?.data?.items || []).find((p: Product) => p.id === item.product_id);
           if (product) {
-            return `- ${product.trade_name || product.name}: ${product.description || 'Không có mô tả'}`;
+            const parts = [];
+            if (product.description) parts.push(`Mô tả: ${product.description}`);
+            if (product.ingredient && product.ingredient.length > 0) parts.push(`Thành phần: ${product.ingredient.join(', ')}`);
+            if (product.notes) parts.push(`Ghi chú danh mục: ${product.notes}`);
+            if (item.notes) parts.push(`Ghi chú riêng trong đơn: ${item.notes}`);
+            
+            const detail = parts.length > 0 ? parts.join(' | ') : 'Không có mô tả';
+            return `- ${product.trade_name || product.name}: ${detail}`;
           }
           return null;
         })
@@ -582,7 +589,14 @@ Chỉ trả về nội dung lưu ý, không thêm tiêu đề hay giải thích.
     
     try {
       const productInfo = currentProducts
-        .map(product => `- ${product.trade_name || product.name}: ${product.description || product.ingredient?.join(', ') || 'Không có thông tin'}`)
+        .map(product => {
+          const parts = [];
+          if (product.description) parts.push(`Mô tả: ${product.description}`);
+          if (product.ingredient && product.ingredient.length > 0) parts.push(`Thành phần: ${product.ingredient.join(', ')}`);
+          if (product.notes) parts.push(`Ghi chú: ${product.notes}`);
+          const detail = parts.length > 0 ? parts.join(' | ') : 'Không có thông tin';
+          return `- ${product.trade_name || product.name}: ${detail}`;
+        })
         .join('\n');
 
       const prompt = `Phân tích xem có xung đột giữa lưu ý đơn hàng trước và sản phẩm hiện tại không.

@@ -143,7 +143,7 @@ export const InvoiceInfoSection = React.memo<InvoiceInfoSectionProps>(({
             name="warning"
             control={control}
             label=""
-            placeholder="AI sẽ tự động tạo lưu ý dựa trên mô tả sản phẩm, hoặc bạn có thể nhập thủ công"
+            placeholder="AI sẽ tự động tạo lưu ý dựa trên mô tả, thành phần và ghi chú sản phẩm, hoặc bạn có thể nhập thủ công"
             type="textarea"
             rows={2}
           />
