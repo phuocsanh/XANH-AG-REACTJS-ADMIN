@@ -144,7 +144,7 @@ export const useCreateSalesReturnMutation = () => {
 export const useCancelSalesReturnMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(`/sales-returns/${id}/cancel`, { id })
+      const response = await api.postRaw(`/sales-returns/${id}/cancel`, { id })
       return response
     },
     onSuccess: () => {
