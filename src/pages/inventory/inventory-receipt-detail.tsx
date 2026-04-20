@@ -942,8 +942,10 @@ const InventoryReceiptDetail: React.FC = () => {
                           </Tooltip>
                         </Descriptions.Item>
                       )}
-                      <Descriptions.Item label='Mô tả / Ghi chú' span={2}>
-                        {receipt.notes || (
+                      <Descriptions.Item label='Ghi chú' span={2}>
+                        {receipt.notes ? (
+                           <div style={{ whiteSpace: 'pre-wrap' }}>{receipt.notes}</div>
+                        ) : (
                           <Text type='secondary' italic>
                             Không có ghi chú
                           </Text>

@@ -535,11 +535,25 @@ const InventoryReceiptsList: React.FC = () => {
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
-      title: "Mô tả",
+      title: "Ghi chú",
       dataIndex: "notes",
       key: "notes",
-      ellipsis: true,
-      render: (notes: string) => notes || "-",
+      width: 250,
+      render: (notes: string) => {
+        if (!notes) return "-";
+        return (
+          <Tooltip title={<div style={{ whiteSpace: 'pre-wrap' }}>{notes}</div>}>
+            <div style={{ 
+              maxWidth: 250, 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap' 
+            }}>
+              {notes}
+            </div>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Thao tác",

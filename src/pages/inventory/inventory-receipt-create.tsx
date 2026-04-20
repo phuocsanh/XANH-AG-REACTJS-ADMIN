@@ -660,11 +660,11 @@ const InventoryReceiptCreate: React.FC = () => {
           </div>
 
             <FormField
-              label='Mô tả'
+              label='Ghi chú'
               name='description'
               control={control}
               type="textarea"
-              placeholder='Nhập mô tả (nếu có)'
+              placeholder='Nhập ghi chú (nếu có)'
               rows={3}
             />
 
