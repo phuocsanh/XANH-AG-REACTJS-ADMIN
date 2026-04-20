@@ -993,6 +993,28 @@ const SalesInvoicesList: React.FC = () => {
               </Typography.Paragraph>
             </div>
 
+            {/* ✅ Section phiếu trả hàng liên kết */}
+            {(viewingInvoice as any).returns && (viewingInvoice as any).returns.length > 0 && (
+              <div className='mb-4 p-4 bg-orange-50 rounded-lg border border-orange-100'>
+                <div className='text-orange-800 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2'>
+                  <UndoOutlined /> Phiếu trả hàng liên kết ({(viewingInvoice as any).returns.length})
+                </div>
+                <div className='flex flex-wrap gap-2'>
+                  {(viewingInvoice as any).returns.map((ret: any) => (
+                    <Tag 
+                      key={ret.id} 
+                      color="orange" 
+                      className="cursor-pointer hover:opacity-80"
+                      onClick={() => navigate(`/sales-returns?code=${ret.code}`)}
+                    >
+                      {ret.code} - {formatCurrency(ret.total_refund_amount)}
+                    </Tag>
+                  ))}
+                </div>
+                <div className="text-[11px] text-orange-600 mt-2 italic">* Nhấp vào mã phiếu để xem chi tiết bên trang Trả hàng</div>
+              </div>
+            )}
+
             <div className='mt-4'>
               <div className='font-medium text-lg mb-3'>Danh sách sản phẩm</div>
               {viewingInvoice.items && viewingInvoice.items.length > 0 ? (

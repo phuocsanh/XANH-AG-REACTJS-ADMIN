@@ -375,8 +375,12 @@ const SalesReturnsList: React.FC = () => {
             <div className='grid grid-cols-2 gap-4 mb-4'>
               <Card>
                 <div className='text-gray-500 text-sm'>Hóa đơn gốc</div>
-                <div className='text-lg font-medium'>
+                <div 
+                  className='text-lg font-medium text-blue-600 cursor-pointer hover:underline flex items-center gap-1'
+                  onClick={() => navigate(`/sales-invoices?code=${viewingReturn.invoice?.code || viewingReturn.invoice_code}`)}
+                >
                   {viewingReturn.invoice?.code || viewingReturn.invoice_code || '-'}
+                  <EyeOutlined className="text-xs" />
                 </div>
                 <div className='text-gray-500 text-sm mt-2'>Khách hàng</div>
                 <div className='font-medium'>
