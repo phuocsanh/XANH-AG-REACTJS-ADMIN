@@ -550,7 +550,7 @@ const CreateSalesInvoice = () => {
       const prompt = `Dựa trên danh sách sản phẩm dưới đây (bao gồm tên, mô tả, thành phần và ghi chú), hãy tạo một lưu ý quan trọng cực kỳ ngắn gọn (tối đa 2-3 câu) cho người nông dân.
 
 YÊU CẦU BẮT BUỘC:
-1. GỌI TÊN SẢN PHẨM ĐÍCH DANH: Nếu phát hiện xung đột giữa các thuốc đang chọn (ví dụ: thuốc A kỵ hoạt chất của thuốc B), bạn PHẢI NÊU ĐÍCH DANH TÊN SẢN PHẨM có trong danh sách. Tuyệt đối không nói chung chung là "thuốc chứa hoạt chất X" mà phải nói rõ là "Không pha chung [Tên thuốc A] với [Tên thuốc B] vì xung đột hoạt chất...".
+1. GỌI TÊN SẢN PHẨM ĐÍCH DANH: Nếu phát hiện xung đột giữa các thuốc đang chọn (ví dụ: thuốc A kỵ hoạt chất của thuốc B). Không pha chung [Tên thuốc A] với [Tên thuốc B] vì xung đột hoạt chất...".
 2. KIỂM TRA CHÉO TƯƠNG TÁC: Phân tích kỹ xem các sản phẩm TRONG DANH SÁCH này có kỵ nhau không dựa trên thành phần và mô tả. 
 3. HƯỚNG DẪN KỸ THUẬT: Tập trung vào cách dùng an toàn, thời điểm xịt và liều lượng đặc thù cho các sản phẩm này.
 
