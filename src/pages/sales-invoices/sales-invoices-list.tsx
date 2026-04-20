@@ -1001,46 +1001,59 @@ const SalesInvoicesList: React.FC = () => {
                     <Card key={index} size='small'>
                       <div className='grid grid-cols-4 gap-4'>
                         <div className='col-span-2'>
-                          <div className='font-medium'>{item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định'}</div>
-                          {/* Hiển thị số lượng đã trả hàng nếu có (lấy từ trường returned_quantity của backend) */}
+                          <div className='font-medium text-base'>{item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định'}</div>
+                          {/* Hiển thị số lượng đã trả hàng nếu có */}
                           {(item.returned_quantity ?? 0) > 0 && (
-                            <div className='flex items-center gap-1 mt-1'>
-                              <span className='text-xs font-medium px-1.5 py-0.5 rounded bg-orange-50 border border-orange-200 text-orange-600'>
-                                ↩ Đã trả: {item.returned_quantity} / {item.quantity} {item.unit_name || item.product?.unit?.name || ''}
+                            <div className='flex items-center gap-2 mt-1'>
+                              <Tag color="orange" className="m-0 border-orange-200">
+                                ↩ Đã trả: {item.returned_quantity} {item.unit_name || item.product?.unit?.name || ''}
+                              </Tag>
+                              <span className="text-xs text-gray-400 italic">
+                                (Gốc: {item.quantity})
                               </span>
                             </div>
                           )}
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>
-                            SL: {item.quantity} {item.unit_name || item.product?.unit?.name}
+                            { (item.returned_quantity ?? 0) > 0 ? (
+                                <span>SL thực: <b className="text-gray-800">{item.quantity - (item.returned_quantity || 0)}</b> {item.unit_name || item.product?.unit?.name}</span>
+                            ) : (
+                                <span>SL: {item.quantity} {item.unit_name || item.product?.unit?.name}</span>
+                            )}
+                          </div>
+                          <div className='text-sm text-gray-500'>
+                            Giá: {formatCurrency(item.unit_price)}
                           </div>
                           {item.other_unit_name && Number(item.other_unit_factor) > 0 && (
-                            <div className='text-xs text-gray-400 italic'>
+                            <div className='text-[11px] text-gray-400 italic'>
                               {(() => {
-                                const isBase = Number(item.conversion_factor || 1) === 1;
-                                const otherFactor = Number(item.other_unit_factor);
                                 const factor = Number(item.conversion_factor || 1);
+                                const otherFactor = Number(item.other_unit_factor);
+                                const isBase = factor === 1;
                                 
-                                const otherQty = isBase ? (item.quantity / otherFactor) : (item.base_quantity || (item.quantity * factor));
+                                const actualQty = item.quantity - (item.returned_quantity || 0);
+                                const otherQty = isBase ? (actualQty / otherFactor) : (actualQty * factor);
                                 const otherPrice = isBase ? (item.unit_price * otherFactor) : (item.unit_price / factor);
                                 
                                 return `(${otherQty.toLocaleString('vi-VN')} ${item.other_unit_name} - ${formatCurrency(otherPrice)}/${item.other_unit_name})`;
                               })()}
                             </div>
                           )}
-                          <div className='text-sm text-gray-500'>
-                            Giá: {formatCurrency(item.unit_price)}
-                          </div>
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>Thành tiền</div>
-                          <div className='font-medium text-green-600'>
+                          <div className='font-bold text-green-700 text-base'>
                             {formatCurrency(
-                              item.quantity * item.unit_price -
+                              (item.quantity - (item.returned_quantity || 0)) * item.unit_price -
                                 (item.discount_amount || 0)
                             )}
                           </div>
+                          {(item.returned_quantity ?? 0) > 0 && (
+                            <div className="text-[10px] text-gray-400 line-through">
+                                {formatCurrency(item.quantity * item.unit_price)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Card>
