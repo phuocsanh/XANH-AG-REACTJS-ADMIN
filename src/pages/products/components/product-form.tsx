@@ -887,6 +887,19 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
       if (!convertedValues.type) convertedValues.type = 0
       if (!convertedValues.quantity) convertedValues.quantity = 0
 
+      // 🛡️ BẢO VỆ DỮ LIỆU: Đảm bảo đơn vị cơ sở luôn có factor = 1 trước khi gửi lên server
+      const sanitizedUnitConversions = (values.unit_conversions || []).map(
+        (conv) => {
+          if (
+            conv.is_base_unit ||
+            Number(conv.unit_id) === Number(values.unit_id)
+          ) {
+            return { ...conv, conversion_factor: 1, is_base_unit: true }
+          }
+          return conv
+        },
+      )
+
       // Tạo object với tên các trường theo yêu cầu của server
       // TODO: Cập nhật service API để tự động mapping tên các trường thay vì phải convert thủ công
       const serverData = {
@@ -932,7 +945,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         show_price_on_web: convertedValues.show_price_on_web,
         web_name: convertedValues.web_name,
         mechanism: mechanism || "",
-        unit_conversions: values.unit_conversions || [],
+        unit_conversions: sanitizedUnitConversions,
         components: values.components || [],
       }
 
