@@ -15,7 +15,7 @@ import { DatePicker, RangePicker, ConfirmModal } from '@/components/common';
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { TableProps } from "antd"
 import {
   returnStatusLabels,
@@ -41,6 +41,15 @@ const SalesReturnsList: React.FC = () => {
   const [pageSize, setPageSize] = React.useState(10)
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // ✅ Đọc mã từ URL để tự động lọc
+  React.useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      setFilters(prev => ({ ...prev, code }))
+    }
+  }, [searchParams])
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({

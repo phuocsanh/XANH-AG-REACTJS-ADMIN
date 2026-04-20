@@ -43,7 +43,7 @@ dayjs.extend(utc);
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { paymentMethodLabels, paymentStatusLabels, invoiceStatusLabels } from "./form-config"
 import { TablePaginationConfig, TableProps } from "antd"
 import { FilterValue, SorterResult } from "antd/es/table/interface"
@@ -78,6 +78,15 @@ const SalesInvoicesList: React.FC = () => {
   const [currentCustomer, setCurrentCustomer] = React.useState<{id: number, name: string} | null>(null);
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // ✅ Đọc mã từ URL để tự động lọc
+  React.useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      setFilters(prev => ({ ...prev, code }))
+    }
+  }, [searchParams])
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
