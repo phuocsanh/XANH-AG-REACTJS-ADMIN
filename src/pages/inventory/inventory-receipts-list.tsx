@@ -613,7 +613,7 @@ const InventoryReceiptsList: React.FC = () => {
                   </Space.Compact>
                 </Space>
               </Col>
-              {(filters.supplier_id || (filters.start_date && filters.end_date)) && (
+              {(filters.code || filters.supplier_id || filters.status || filters.payment_status || (filters.start_date && filters.end_date)) && (
                 <Col xs={24} md={6}>
                    <div className="mt-4 md:mt-0 text-right">
                      <Button 
@@ -623,7 +623,7 @@ const InventoryReceiptsList: React.FC = () => {
                        onClick={() => setSearchParams({})}
                        className="text-[11px]"
                      >
-                       XÓA LỌC
+                       XÓA BỘ LỌC
                      </Button>
                    </div>
                 </Col>

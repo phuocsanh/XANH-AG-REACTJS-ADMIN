@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams, useLocation } from "react-router-dom"
 import {
   Card,
   Button,
@@ -69,6 +69,7 @@ const { Title, Text } = Typography
 const InventoryReceiptCreate: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const receiptId = id ? Number(id) : undefined
   const isEditMode = !!receiptId
   
@@ -411,7 +412,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Handlers
   const handleBack = () => {
-    confirmExit(() => navigate("/inventory/receipts"))
+    confirmExit(() => navigate(`/inventory/receipts${location.search}`))
   }
 
   const handleAddItem = useCallback(() => {
@@ -470,7 +471,7 @@ const InventoryReceiptCreate: React.FC = () => {
           ...(imageUrls.length > 0 && { images: imageUrls }),
         };
         await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
-        navigate("/inventory/receipts");
+        navigate(`/inventory/receipts${location.search}`);
         return;
       }
 
@@ -543,7 +544,7 @@ const InventoryReceiptCreate: React.FC = () => {
         await createReceiptMutation.mutateAsync(submissionData as CreateInventoryReceiptRequest)
       }
 
-      navigate("/inventory/receipts");
+      navigate(`/inventory/receipts${location.search}`);
     } catch (error) {
       console.error("Error saving receipt:", error)
     }
@@ -578,7 +579,7 @@ const InventoryReceiptCreate: React.FC = () => {
       };
 
       await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
-      navigate("/inventory/receipts");
+      navigate(`/inventory/receipts${location.search}`);
     } catch (error) {
       console.error('Error updating approved receipt metadata:', error);
     }

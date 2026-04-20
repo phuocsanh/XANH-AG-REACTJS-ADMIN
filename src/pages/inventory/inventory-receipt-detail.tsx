@@ -105,7 +105,7 @@ const InventoryReceiptDetail: React.FC = () => {
   }
 
   const handleEdit = () => {
-    navigate(`/inventory/receipts/edit/${receiptId}`)
+    navigate(`/inventory/receipts/edit/${receiptId}${location.search}`)
   }
 
   const handleApprove = async () => {
@@ -129,7 +129,7 @@ const InventoryReceiptDetail: React.FC = () => {
   const handleDelete = async () => {
     try {
       await deleteReceiptMutation.mutateAsync(receiptId)
-      navigate("/inventory/receipts")
+      navigate(`/inventory/receipts${location.search}`)
     } catch (error) {
       console.error("Error deleting receipt:", error)
     }

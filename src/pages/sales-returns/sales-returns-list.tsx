@@ -41,15 +41,35 @@ const SalesReturnsList: React.FC = () => {
   const [pageSize, setPageSize] = React.useState(10)
 
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  // ✅ Đọc mã từ URL để tự động lọc
+  // ✅ 1. Khôi phục bộ lọc từ URL khi vào trang
   React.useEffect(() => {
-    const code = searchParams.get('code')
-    if (code) {
-      setFilters(prev => ({ ...prev, code }))
+    const params: Record<string, any> = {}
+    searchParams.forEach((value, key) => {
+      if (key === 'page') setCurrentPage(Number(value))
+      else if (key === 'pageSize') setPageSize(Number(value))
+      else params[key] = value
+    })
+    
+    if (Object.keys(params).length > 0) {
+      setFilters(params)
     }
-  }, [searchParams])
+  }, [])
+
+  // ✅ 2. Cập nhật URL mỗi khi bộ lọc thay đổi
+  React.useEffect(() => {
+    const params: Record<string, string> = {}
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params[key] = String(value)
+      }
+    })
+    if (currentPage > 1) params.page = String(currentPage)
+    if (pageSize !== 10) params.pageSize = String(pageSize)
+
+    setSearchParams(params, { replace: true })
+  }, [filters, currentPage, pageSize, setSearchParams])
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({

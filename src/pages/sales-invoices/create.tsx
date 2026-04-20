@@ -15,7 +15,7 @@ import {
 import {
   PrinterOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
@@ -118,6 +118,7 @@ function TabPanel(props: TabPanelProps) {
 
 const CreateSalesInvoice = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
   
@@ -848,7 +849,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       updateMutation.mutate({ id: parseInt(id), invoice: submitData as any, silent: true }, {
         onSuccess: () => {
           antMessage.success('Cập nhật hóa đơn thành công!');
-          navigate('/sales-invoices');
+          navigate(`/sales-invoices${location.search}`);
         }
       });
     } else {
@@ -865,7 +866,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
             window.open(`/delivery-logs/print/${deliveryLogId}`, '_blank');
           }
           
-          navigate('/sales-invoices');
+          navigate(`/sales-invoices${location.search}`);
         }
       });
     }
@@ -1351,7 +1352,7 @@ ${productInfo}`;
 
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Box display="flex" alignItems="center">
-          <IconButton onClick={() => confirmExit(() => navigate('/sales-invoices'))} sx={{ mr: { xs: 1, md: 2 } }}>
+          <IconButton onClick={() => confirmExit(() => navigate(`/sales-invoices${location.search}`))} sx={{ mr: { xs: 1, md: 2 } }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography 
@@ -1502,7 +1503,7 @@ ${productInfo}`;
             {/* Actions */}
             <Grid item xs={12}>
               <InvoiceActions
-                onCancel={() => confirmExit(() => navigate('/sales-invoices'))}
+                onCancel={() => confirmExit(() => navigate(`/sales-invoices${location.search}`))}
                 onSaveDraft={handleSubmit((data) => onSubmit({ ...data, status: 'draft' }))}
                 onSaveConfirm={handleSubmit((data) => {
                   let status: 'draft' | 'confirmed' | 'paid' = 'confirmed';

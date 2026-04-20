@@ -78,15 +78,41 @@ const SalesInvoicesList: React.FC = () => {
   const [currentCustomer, setCurrentCustomer] = React.useState<{id: number, name: string} | null>(null);
 
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  // ✅ Đọc mã từ URL để tự động lọc
+  // ✅ 1. Khôi phục bộ lọc từ URL khi vào trang
   React.useEffect(() => {
-    const code = searchParams.get('code')
-    if (code) {
-      setFilters(prev => ({ ...prev, code }))
+    const params: Record<string, any> = {}
+    searchParams.forEach((value, key) => {
+      // Chuyển đổi một số kiểu dữ liệu đặc biệt nếu cần
+      if (key === 'page') setCurrentPage(Number(value))
+      else if (key === 'pageSize') setPageSize(Number(value))
+      else if (key === 'season_id') params[key] = Number(value)
+      else if (key === 'rice_crop_id' && !isNaN(Number(value))) params[key] = Number(value)
+      else params[key] = value
+    })
+    
+    if (Object.keys(params).length > 0) {
+      setFilters(params)
+      // Nếu đã có lọc mùa vụ từ URL thì không set mặc định nữa
+      if (params.season_id) setHasSetDefaultSeason(true)
     }
-  }, [searchParams])
+  }, []) // Chỉ chạy 1 lần khi mount
+
+  // ✅ 2. Cập nhật URL mỗi khi bộ lọc thay đổi
+  React.useEffect(() => {
+    const params: Record<string, string> = {}
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params[key] = String(value)
+      }
+    })
+    // Lưu cả phân trang
+    if (currentPage > 1) params.page = String(currentPage)
+    if (pageSize !== 10) params.pageSize = String(pageSize)
+
+    setSearchParams(params, { replace: true })
+  }, [filters, currentPage, pageSize, setSearchParams])
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
@@ -773,7 +799,7 @@ const SalesInvoicesList: React.FC = () => {
         <Button
           type='primary'
           icon={<PlusOutlined />}
-          onClick={() => navigate("/sales-invoices/create")}
+          onClick={() => navigate(`/sales-invoices/create${location.search}`)}
           className="w-full sm:w-auto"
         >
           Tạo hóa đơn mới
