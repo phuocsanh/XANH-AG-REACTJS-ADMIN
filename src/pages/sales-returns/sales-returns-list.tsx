@@ -11,7 +11,7 @@ import {
   CloseCircleOutlined,
 } from "@ant-design/icons"
 import { useCancelSalesReturnMutation } from "@/queries/sales-return"
-import { DatePicker, RangePicker } from '@/components/common';
+import { DatePicker, RangePicker, ConfirmModal } from '@/components/common';
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -35,6 +35,8 @@ const SalesReturnsList: React.FC = () => {
     React.useState<boolean>(false)
   const [viewingReturn, setViewingReturn] =
     React.useState<SalesReturn | null>(null)
+  const [isCancelConfirmVisible, setIsCancelConfirmVisible] = React.useState(false) // ✅ Thêm state cho popup hủy
+  const [cancellingReturnId, setCancellingReturnId] = React.useState<number | null>(null)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
 
@@ -148,20 +150,25 @@ const SalesReturnsList: React.FC = () => {
   const cancelMutation = useCancelSalesReturnMutation();
 
   const handleCancelReturn = (id: number) => {
-    Modal.confirm({
-      title: 'Xác nhận hủy phiếu trả hàng',
-      content: 'Hành động này sẽ đảo ngược việc hoàn kho và hoàn tiền. Bạn có chắc chắn muốn hủy phiếu này không?',
-      okText: 'Xác nhận hủy',
-      okType: 'danger',
-      cancelText: 'Bỏ qua',
-      onOk: async () => {
-        await cancelMutation.mutateAsync(id);
-        if (isDetailModalVisible) {
-          handleCloseDetailModal();
-        }
-      }
-    });
+    setCancellingReturnId(id)
+    setIsCancelConfirmVisible(true)
   };
+
+  const handleConfirmCancel = async () => {
+    if (cancellingReturnId) {
+      await cancelMutation.mutateAsync(cancellingReturnId)
+      setIsCancelConfirmVisible(false)
+      setCancellingReturnId(null)
+      if (isDetailModalVisible) {
+        handleCloseDetailModal()
+      }
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setIsCancelConfirmVisible(false)
+    setCancellingReturnId(null)
+  }
 
 
 
@@ -467,7 +474,20 @@ const SalesReturnsList: React.FC = () => {
           </div>
         )}
       </Modal>
-
+      
+      {/* Modal xác nhận hủy */}
+      <ConfirmModal
+        title='Xác nhận hủy phiếu trả hàng'
+        content='Hành động này sẽ đảo ngược việc hoàn kho (trừ lại tồn) và cộng trả nợ vào hóa đơn gốc. Bạn có chắc chắn muốn hủy không?'
+        open={isCancelConfirmVisible}
+        onOk={handleConfirmCancel}
+        onCancel={handleCancelDelete}
+        okText='Xác nhận hủy'
+        okType='primary'
+        danger
+        cancelText='Bỏ qua'
+        confirmLoading={cancelMutation.isPending}
+      />
 
     </div>
   )
