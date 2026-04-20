@@ -534,7 +534,7 @@ const CreateSalesInvoice = () => {
             if (item.notes) parts.push(`Ghi chú riêng trong đơn: ${item.notes}`);
             
             const detail = parts.length > 0 ? parts.join(' | ') : 'Không có mô tả';
-            return `- ${product.trade_name || product.name}: ${detail}`;
+            return `- SẢN PHẨM: ${product.trade_name || product.name} | ${detail}`;
           }
           return null;
         })
@@ -547,17 +547,17 @@ const CreateSalesInvoice = () => {
         return;
       }
 
-      const prompt = `Dựa trên danh sách sản phẩm (bao gồm mô tả, thành phần và ghi chú) sau đây, hãy tạo một lưu ý quan trọng cực kỳ ngắn gọn và súc tích (tối đa 2-3 câu) cho đơn hàng này. 
+      const prompt = `Dựa trên danh sách sản phẩm dưới đây (bao gồm tên, mô tả, thành phần và ghi chú), hãy tạo một lưu ý quan trọng cực kỳ ngắn gọn (tối đa 2-3 câu) cho người nông dân.
 
-YÊU CẦU QUAN TRỌNG:
-1. KIỂM TRA XUNG ĐỘT PHỐI TRỘN: Phân tích kỹ xem các sản phẩm TRONG DANH SÁCH này có hoạt chất hay đặc tính nào kỵ nhau không. Nếu phát hiện xung đột giữa các thuốc đã chọn, phải cảnh báo RÕ RÀNG (ví dụ: "Tuyệt đối không pha chung SẢN PHẨM A với SẢN PHẨM B vì kỵ hoạt chất...").
-2. HƯỚNG DẪN SỬ DỤNG: Tập trung vào cách dùng an toàn, thời điểm xịt tối ưu, và lưu ý về liều lượng/ký hiệu đặc biệt có trong tên thuốc.
-3. NGÔN NGỮ: Sử dụng ngôn ngữ chuyên môn nông nghiệp Việt Nam, ngắn gọn, đanh thép.
+YÊU CẦU BẮT BUỘC:
+1. GỌI TÊN SẢN PHẨM ĐÍCH DANH: Nếu phát hiện xung đột giữa các thuốc đang chọn (ví dụ: thuốc A kỵ hoạt chất của thuốc B), bạn PHẢI NÊU ĐÍCH DANH TÊN SẢN PHẨM có trong danh sách. Tuyệt đối không nói chung chung là "thuốc chứa hoạt chất X" mà phải nói rõ là "Không pha chung [Tên thuốc A] với [Tên thuốc B] vì xung đột hoạt chất...".
+2. KIỂM TRA CHÉO TƯƠNG TÁC: Phân tích kỹ xem các sản phẩm TRONG DANH SÁCH này có kỵ nhau không dựa trên thành phần và mô tả. 
+3. HƯỚNG DẪN KỸ THUẬT: Tập trung vào cách dùng an toàn, thời điểm xịt và liều lượng đặc thù cho các sản phẩm này.
 
-Danh sách các sản phẩm đã chọn:
+Danh sách sản phẩm phân tích:
 ${productDescriptions}
 
-Chỉ trả về nội dung lưu ý cuối cùng để điền vào ô nhập liệu, không kèm theo giải thích, không thêm tiêu đề.`;
+Chỉ trả về nội dung lưu ý cuối cùng, không tiêu đề, không giải thích.`;
 
       const response = await frontendAiService.generateWarning(prompt);
       
