@@ -52,14 +52,31 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
           is_sales_unit: true,
         })
       } else {
-        // Đảm bảo [0] là đơn vị cơ sở
-        if (fields[0]?.unit_id !== mainUnitId) {
-          update(0, { ...fields[0], unit_id: mainUnitId, conversion_factor: 1, is_base_unit: true });
+        // Đảm bảo [0] là đơn vị cơ sở và có hệ số = 1
+        const firstField = fields[0];
+        if (
+          Number(firstField?.unit_id) !== Number(mainUnitId) || 
+          Number(firstField?.conversion_factor) !== 1 || 
+          !firstField?.is_base_unit
+        ) {
+          update(0, { 
+            ...firstField, 
+            unit_id: mainUnitId, 
+            conversion_factor: 1, 
+            is_base_unit: true 
+          });
         }
-        // Xóa các dòng trùng với đơn vị cơ sở ở các vị trí >= 1 (tránh hiển thị "9 = 1 Kg")
+        // Kiểm tra và dọn dẹp các dòng từ chỉ mục 1 trở đi
         for (let i = fields.length - 1; i >= 1; i--) {
-          if (Number(fields[i]?.unit_id) === Number(mainUnitId)) {
+          const currentField = fields[i];
+          // 1. Xóa nếu dòng này trùng với đơn vị cơ sở (Tránh trường hợp 1 Kg = 1 Kg)
+          if (Number(currentField?.unit_id) === Number(mainUnitId)) {
             remove(i);
+            continue;
+          }
+          // 2. Đảm bảo các dòng quy đổi (index >= 1) không bị đánh dấu là đơn vị cơ sở
+          if (currentField?.is_base_unit) {
+            update(i, { ...currentField, is_base_unit: false });
           }
         }
       }
