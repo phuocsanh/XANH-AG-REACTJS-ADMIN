@@ -139,15 +139,16 @@ export const useCreateSalesReturnMutation = () => {
 
 
 /**
- * Hook xóa phiếu trả hàng
+ * Hook hủy phiếu trả hàng
  */
-export const useDeleteSalesReturnMutation = () => {
+export const useCancelSalesReturnMutation = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.delete(`/sales-returns/${id}`)
+      const response = await api.post(`/sales-returns/${id}/cancel`, { id })
       return response
     },
     onSuccess: () => {
+      // Invalidate sales returns list
       queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
       
       // ✅ Invalidate các dữ liệu liên quan
@@ -161,10 +162,10 @@ export const useDeleteSalesReturnMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['profit-reports'] })
       queryClient.invalidateQueries({ queryKey: ['store-profit-reports'] })
       
-      toast.success("Xóa phiếu trả hàng thành công!")
+      toast.success("Hủy phiếu trả hàng thành công!")
     },
     onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi xóa phiếu trả hàng")
+      handleApiError(error, "Có lỗi xảy ra khi hủy phiếu trả hàng")
     },
   })
 }

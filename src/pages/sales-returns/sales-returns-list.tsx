@@ -8,7 +8,9 @@ import {
   PlusOutlined,
   EyeOutlined,
   SearchOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons"
+import { useCancelSalesReturnMutation } from "@/queries/sales-return"
 import { DatePicker, RangePicker } from '@/components/common';
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
@@ -143,6 +145,24 @@ const SalesReturnsList: React.FC = () => {
     setViewingReturn(null)
   }
 
+  const cancelMutation = useCancelSalesReturnMutation();
+
+  const handleCancelReturn = (id: number) => {
+    Modal.confirm({
+      title: 'Xác nhận hủy phiếu trả hàng',
+      content: 'Hành động này sẽ đảo ngược việc hoàn kho và hoàn tiền. Bạn có chắc chắn muốn hủy phiếu này không?',
+      okText: 'Xác nhận hủy',
+      okType: 'danger',
+      cancelText: 'Bỏ qua',
+      onOk: async () => {
+        await cancelMutation.mutateAsync(id);
+        if (isDetailModalVisible) {
+          handleCloseDetailModal();
+        }
+      }
+    });
+  };
+
 
 
   // Helpers
@@ -270,6 +290,17 @@ const SalesReturnsList: React.FC = () => {
           >
             Xem
           </Button>
+          {record.status !== 'cancelled' && (
+            <Button
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={() => handleCancelReturn(record.id)}
+              size='small'
+              loading={cancelMutation.isPending}
+            >
+              Hủy
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -319,6 +350,16 @@ const SalesReturnsList: React.FC = () => {
           <Button key='close' onClick={handleCloseDetailModal}>
             Đóng
           </Button>,
+          viewingReturn?.status !== 'cancelled' && (
+            <Button 
+              key='cancel' 
+              danger 
+              onClick={() => handleCancelReturn(viewingReturn!.id)}
+              loading={cancelMutation.isPending}
+            >
+              Hủy phiếu này
+            </Button>
+          ),
         ]}
         width={800}
       >
