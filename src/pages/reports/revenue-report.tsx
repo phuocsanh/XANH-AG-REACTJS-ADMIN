@@ -232,31 +232,42 @@ const RevenueReportPage: React.FC = () => {
                   { 
                     key: 'sale_date', 
                     header: 'Ngày bán', 
-                    format: (val, record) => record.is_summary ? '' : dayjs(val).format('DD/MM/YYYY') 
+                    value: (record) => record.is_summary ? '' : record.sale_date,
+                    excelType: 'date',
+                    minWidth: 14,
                   },
                   { 
                     key: 'product_name', 
-                    header: 'Tên sản phẩm' 
+                    header: 'Tên sản phẩm',
+                    wrapText: true,
+                    minWidth: 20,
+                    maxWidth: 36,
                   },
                   {
                     key: 'taxable_quantity',
                     header: 'Số lượng',
-                    format: (val, record) => record.is_summary ? '' : val
+                    value: (record) => record.is_summary ? '' : record.taxable_quantity,
+                    excelType: 'integer',
+                    minWidth: 12,
                   },
                   {
                     key: 'unit_name',
                     header: 'Đơn vị',
-                    format: (val, record) => record.is_summary ? '' : val
+                    value: (record) => record.is_summary ? '' : record.unit_name,
+                    minWidth: 12,
                   },
                   { 
                     key: 'tax_selling_price', 
                     header: 'Đơn giá khai thuế (GBKT)',
-                    format: (val, record) => record.is_summary ? '' : Number(val || 0).toLocaleString('vi-VN')
+                    value: (record) => record.is_summary ? '' : record.tax_selling_price,
+                    excelType: 'currency',
+                    minWidth: 18,
                   },
                   { 
                     key: 'taxable_total_amount', 
                     header: 'Thành tiền khai thuế (TTKT)',
-                    format: (val) => Number(val || 0).toLocaleString('vi-VN')
+                    excelType: 'currency',
+                    minWidth: 20,
                   }
                 ]}
               />
