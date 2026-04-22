@@ -14,7 +14,6 @@ import {
   InventoryReceiptApiResponse,
   InventoryReceiptItemApiResponse,
   InventoryHistoryApiResponse,
-  InventoryReceiptPayment,
   InventoryReceiptLog,
   // Thêm các interface mới từ backend NestJS
   InventoryBatch,
@@ -33,7 +32,6 @@ import {
   mapApiResponseToInventoryReceiptItem,
   mapApiResponseToInventoryHistory,
 } from "@/models/inventory.model"
-import { InventoryReturnRefund } from "@/models/inventory-return.model"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
@@ -86,6 +84,55 @@ export const inventoryKeys = {
     ["expiry-alert", "product", productId, "batches"] as const,
 } as const
 
+export interface InventoryReceiptsSearchResponse {
+  data: InventoryReceiptApiResponse[]
+  total: number
+  page: number
+  limit: number
+  pagination?: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+}
+
+interface InventoryReceiptsSearchPayload {
+  page: number
+  limit: number
+  sort: string
+  keyword?: string
+  status?: string
+  supplier_name?: string
+  supplier_id?: number
+  start_date?: string
+  end_date?: string
+  payment_status?: string
+}
+
+export const buildInventoryReceiptsSearchPayload = (
+  params?: InventoryReceiptListParams,
+  overrides?: Partial<Pick<InventoryReceiptsSearchPayload, "page" | "limit" | "sort">>
+): InventoryReceiptsSearchPayload => {
+  const page = params?.offset !== undefined
+    ? Math.floor(params.offset / (params.limit || 10)) + 1
+    : 1
+  const limit = params?.limit || 10
+
+  return {
+    page: overrides?.page ?? page,
+    limit: overrides?.limit ?? limit,
+    ...(params?.code && { keyword: params.code }),
+    ...(params?.status && { status: params.status }),
+    ...(params?.supplierName && { supplier_name: params.supplierName }),
+    ...(params?.supplier_id && { supplier_id: params.supplier_id }),
+    ...(params?.startDate && { start_date: params.startDate }),
+    ...(params?.endDate && { end_date: params.endDate }),
+    ...(params?.payment_status && { payment_status: params.payment_status }),
+    sort: overrides?.sort ?? "created_at:DESC",
+  }
+}
+
 // ========== INVENTORY RECEIPT HOOKS ==========
 
 /**
@@ -102,29 +149,10 @@ export const useInventoryReceiptsQuery = (
   return useQuery({
     queryKey: inventoryKeys.receiptsList(params),
     queryFn: async () => {
-      const response = await api.postRaw<{
-        data: InventoryReceiptApiResponse[]
-        total: number
-        page: number
-        limit: number
-        pagination?: {
-          total: number
-          page: number
-          limit: number
-          totalPages: number
-        }
-      }>('/inventory/receipts/search', {
-        page,
-        limit,
-        keyword: params?.code, // Global search
-        ...(params?.status && { status: params.status }),
-        ...(params?.supplierName && { supplier_name: params.supplierName }),
-        ...(params?.supplier_id && { supplier_id: params.supplier_id }),
-        ...(params?.startDate && { start_date: params.startDate }),
-        ...(params?.endDate && { end_date: params.endDate }),
-        ...(params?.payment_status && { payment_status: params.payment_status }),
-        sort: 'created_at:DESC',
-      })
+      const response = await api.postRaw<InventoryReceiptsSearchResponse>(
+        '/inventory/receipts/search',
+        buildInventoryReceiptsSearchPayload(params, { page, limit })
+      )
 
       const items = response.data || []
       const total = response.pagination?.total ?? response.total ?? items.length

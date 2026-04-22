@@ -7,12 +7,9 @@ import {
   Button,
   Space,
   Typography,
-  Table,
   Tag,
   Tooltip,
   Popconfirm,
-  Modal,
-  Statistic,
 } from "antd"
 import {
   EyeOutlined,
@@ -21,12 +18,19 @@ import {
   ReloadOutlined,
   SearchOutlined,
   InfoCircleOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
+import ExcelJS from 'exceljs'
+import { toast } from 'react-toastify'
+
+import api from "@/utils/api"
 
 import { 
   InventoryReceipt, 
+  InventoryReceiptItem,
+  InventoryReceiptPayment,
   InventoryReceiptStatus, 
   InventoryReceiptListParams,
   mapApiResponseToInventoryReceipt,
@@ -37,6 +41,8 @@ import {
   useInventoryReceiptsQuery,
   useDeleteInventoryReceiptMutation,
   useInventoryStatsQuery,
+  buildInventoryReceiptsSearchPayload,
+  InventoryReceiptsSearchResponse,
 } from "@/queries/inventory"
 import { useSupplierSearch, useSupplierQuery } from "@/queries/supplier"
 import { LoadingSpinner, RangePicker, DatePicker, ComboBox } from "@/components/common"
@@ -45,6 +51,281 @@ import FilterHeader from '@/components/common/filter-header'
 import TaxableItemsModal from "./components/taxable-items-modal"
 
 const { Title, Text } = Typography
+
+const formatDate = (value?: string) =>
+  value ? dayjs(value).format('DD/MM/YYYY') : ''
+
+const formatDateTime = (value?: string) =>
+  value ? dayjs(value).format('DD/MM/YYYY HH:mm') : ''
+
+const formatExcelMoney = (value?: number | string) => {
+  const numericValue = Number(value || 0)
+  const hasFraction = Math.abs(numericValue % 1) > 0
+
+  return numericValue.toLocaleString('vi-VN', {
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: 2,
+  })
+}
+
+const getPaymentMethodLabel = (method?: string) => {
+  const methods: Record<string, string> = {
+    cash: 'Tien mat',
+    transfer: 'Chuyen khoan',
+    debt: 'Cong no',
+  }
+
+  return methods[method || ''] || (method || '')
+}
+
+const buildPaymentHistoryText = (
+  receipt: InventoryReceipt,
+  payments: InventoryReceiptPayment[]
+) => {
+  if (payments.length > 0) {
+    return payments
+      .map(
+        (payment) =>
+          [
+            formatDateTime(payment.payment_date),
+            `${formatExcelMoney(payment.amount)} - ${getPaymentMethodLabel(payment.payment_method)}`,
+            payment.notes || '',
+          ]
+            .filter(Boolean)
+            .join('\n')
+      )
+      .join('\n\n')
+  }
+
+  const paidAmount = Number(receipt.paid_amount) || 0
+  const debtAmount = Number(receipt.debt_amount) || 0
+  const supplierAmount = Number(receipt.supplier_amount) || Number(receipt.total_amount) || 0
+
+  if (paidAmount > 0) {
+    return `Da thanh toan ${formatExcelMoney(paidAmount)} / Phai tra ${formatExcelMoney(supplierAmount)} / Con no ${formatExcelMoney(debtAmount)}`
+  }
+
+  if (receipt.payment_status === 'paid') {
+    return `Da thanh toan du ${formatExcelMoney(supplierAmount)}`
+  }
+
+  return 'Chua co thanh toan'
+}
+
+const sanitizeFileNamePart = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+
+const createUniqueSheetName = (rawName: string, usedNames: Set<string>) => {
+  const sanitizedName = rawName
+    .replace(/[:\\/?*[\]]/g, '')
+    .trim() || 'Sheet'
+
+  let candidate = sanitizedName.slice(0, 31) || 'Sheet'
+  let suffix = 1
+
+  while (usedNames.has(candidate)) {
+    const suffixText = `_${suffix}`
+    const baseName = sanitizedName.slice(0, Math.max(0, 31 - suffixText.length)) || 'Sheet'
+    candidate = `${baseName}${suffixText}`
+    suffix += 1
+  }
+
+  usedNames.add(candidate)
+  return candidate
+}
+
+const buildSupplierSheet = (
+  workbook: ExcelJS.Workbook,
+  sheetName: string,
+  supplierName: string,
+  receipts: InventoryReceipt[],
+  paymentsByReceiptId: Map<number, InventoryReceiptPayment[]>
+) => {
+  const rows: Array<Array<string | number>> = []
+  const merges: Array<{ fromRow: number; fromCol: number; toRow: number; toCol: number }> = []
+  const rowHeights: Array<{ hpt: number }> = []
+
+  const totalDebt = receipts.reduce((sum, receipt) => sum + (Number(receipt.debt_amount) || 0), 0)
+  const totalAmount = receipts.reduce((sum, receipt) => sum + (Number(receipt.total_amount) || 0), 0)
+
+  rows.push([`NHA CUNG CAP: ${supplierName}`])
+  rowHeights.push({ hpt: 24 })
+  merges.push({ fromRow: 1, fromCol: 1, toRow: 1, toCol: 16 })
+  rows.push([
+    'Ngay',
+    'Ma phieu',
+    'Ten hang',
+    'Don vi tinh',
+    'So luong',
+    'SL thue',
+    'Don gia',
+    'Don gia VAT',
+    'Phi boc vac',
+    'Thanh tien',
+    'Lich su thanh toan',
+    'Ghi chu',
+    'No chua thanh toan',
+    'Tong moi dot',
+    'Tong no NCC',
+    'Tong tat ca NCC',
+  ])
+  rowHeights.push({ hpt: 22 })
+
+  receipts.forEach((receipt) => {
+    const items = receipt.items || []
+    const sharedShippingCost = Number(receipt.shared_shipping_cost) || 0
+    const debtAmount = Number(receipt.debt_amount) || 0
+    const receiptTotal = Number(receipt.total_amount) || 0
+    const payments = paymentsByReceiptId.get(receipt.id) || []
+    const paymentHistoryText = buildPaymentHistoryText(receipt, payments)
+
+    const noteParts = [
+      `Phieu: ${receipt.code}`,
+      `Trang thai: ${receipt.status}`,
+      receipt.notes ? `Ghi chu: ${receipt.notes}` : '',
+    ].filter(Boolean)
+    const receiptNote = noteParts.join('\n')
+
+    const displayRows: Array<Array<string | number>> = items.map((item: InventoryReceiptItem, itemIndex: number) => [
+      formatDate(receipt.bill_date || receipt.created_at),
+      receipt.code,
+      item.product_name || item.product?.name || '',
+      item.unit_name || '',
+      Number(item.quantity) || 0,
+      Number(item.taxable_quantity) || 0,
+      formatExcelMoney(Number(item.unit_cost) || 0),
+      formatExcelMoney(Number(item.vat_unit_cost) || 0),
+      formatExcelMoney(Number(item.individual_shipping_cost) || 0),
+      formatExcelMoney(Number(item.total_price) || (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0)),
+      itemIndex === 0 ? paymentHistoryText : '',
+      itemIndex === 0 ? receiptNote : '',
+      formatExcelMoney(debtAmount),
+      formatExcelMoney(receiptTotal),
+      formatExcelMoney(totalDebt),
+      formatExcelMoney(totalAmount),
+    ])
+
+    if (sharedShippingCost > 0) {
+      displayRows.push([
+        '',
+        '',
+        'Phi boc vac chung',
+        '',
+        '',
+        '',
+        '',
+        '',
+        formatExcelMoney(sharedShippingCost),
+        formatExcelMoney(sharedShippingCost),
+        '',
+        '',
+        formatExcelMoney(debtAmount),
+        formatExcelMoney(receiptTotal),
+        formatExcelMoney(totalDebt),
+        formatExcelMoney(totalAmount),
+      ])
+    }
+
+    if (displayRows.length === 0) {
+      displayRows.push([
+        formatDate(receipt.bill_date || receipt.created_at),
+        receipt.code,
+        'Khong co hang hoa',
+        '',
+        '',
+        '',
+        '',
+        '',
+        formatExcelMoney(sharedShippingCost),
+        formatExcelMoney(receiptTotal),
+        paymentHistoryText,
+        receiptNote,
+        formatExcelMoney(debtAmount),
+        formatExcelMoney(receiptTotal),
+        formatExcelMoney(totalDebt),
+        formatExcelMoney(totalAmount),
+      ])
+    }
+
+    const startRow = rows.length
+    displayRows.forEach((row) => rows.push(row))
+    displayRows.forEach((row, rowIndex) => {
+      if (rowIndex === 0) {
+        const paymentLines = String(row[10] || '').split('\n').filter(Boolean).length
+        const noteLines = String(row[11] || '').split('\n').filter(Boolean).length
+        const lineCount = Math.max(paymentLines, noteLines, 1)
+        rowHeights.push({ hpt: Math.max(22, lineCount * 16) })
+      } else {
+        rowHeights.push({ hpt: 20 })
+      }
+    })
+    const endRow = rows.length - 1
+
+    if (endRow > startRow) {
+      [0, 1, 10, 11, 12, 13].forEach((column) => {
+        merges.push({
+          fromRow: startRow + 1,
+          fromCol: column + 1,
+          toRow: endRow + 1,
+          toCol: column + 1,
+        })
+      })
+    }
+  })
+
+  if (rows.length > 2) {
+    merges.push({ fromRow: 3, fromCol: 15, toRow: rows.length, toCol: 15 })
+    merges.push({ fromRow: 3, fromCol: 16, toRow: rows.length, toCol: 16 })
+  }
+
+  const worksheet = workbook.addWorksheet(sheetName)
+  worksheet.columns = [
+    { width: 12 },
+    { width: 18 },
+    { width: 28 },
+    { width: 12 },
+    { width: 10 },
+    { width: 10 },
+    { width: 12 },
+    { width: 12 },
+    { width: 12 },
+    { width: 14 },
+    { width: 34 },
+    { width: 28 },
+    { width: 14 },
+    { width: 14 },
+    { width: 14 },
+    { width: 14 },
+  ]
+
+  rows.forEach((row, index) => {
+    const excelRow = worksheet.addRow(row)
+    excelRow.height = rowHeights[index]?.hpt
+  })
+
+  merges.forEach(({ fromRow, fromCol, toRow, toCol }) => {
+    worksheet.mergeCells(fromRow, fromCol, toRow, toCol)
+  })
+
+  worksheet.eachRow((row, rowNumber) => {
+    row.eachCell((cell, colNumber) => {
+      cell.alignment = {
+        vertical: 'top',
+        wrapText: colNumber === 11 || colNumber === 12,
+      }
+
+      if (rowNumber === 1 || rowNumber === 2) {
+        cell.font = { bold: true }
+      }
+    })
+  })
+
+  return worksheet
+}
 
 const InventoryReceiptsList: React.FC = () => {
   const navigate = useNavigate()
@@ -184,6 +465,85 @@ const InventoryReceiptsList: React.FC = () => {
 
   // Mutations
   const deleteReceiptMutation = useDeleteInventoryReceiptMutation()
+
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Handlers
+  const handleExportExcel = async () => {
+    setIsExporting(true)
+    try {
+      const exportResponse = await api.postRaw<any[]>(
+        '/inventory/receipts/export',
+        buildInventoryReceiptsSearchPayload(queryParams, {
+          page: 1,
+          limit: 100000,
+        })
+      )
+
+      const detailedReceipts = (exportResponse || [])
+        .map(mapApiResponseToInventoryReceipt)
+        .filter(
+          (receipt) =>
+            normalizeReceiptStatus(receipt.status_code || receipt.status) ===
+            InventoryReceiptStatus.APPROVED
+        )
+
+      if (detailedReceipts.length === 0) {
+        toast.warning("Không có phiếu đã duyệt để xuất!")
+        return
+      }
+      const paymentsByReceiptId = new Map<number, InventoryReceiptPayment[]>(
+        detailedReceipts.map((receipt) => [receipt.id, receipt.payments || []])
+      )
+
+      const wb = new ExcelJS.Workbook()
+      const usedSheetNames = new Set<string>()
+      const receiptsBySupplier = new Map<string, InventoryReceipt[]>()
+
+      detailedReceipts.forEach((receipt) => {
+        const supplierName = receipt.supplier?.name || receipt.supplier_name || 'Khac'
+        const currentReceipts = receiptsBySupplier.get(supplierName) || []
+        currentReceipts.push(receipt)
+        receiptsBySupplier.set(supplierName, currentReceipts)
+      })
+
+      Array.from(receiptsBySupplier.entries()).forEach(([supplierName, supplierReceipts]) => {
+        buildSupplierSheet(
+          wb,
+          createUniqueSheetName(supplierName, usedSheetNames),
+          supplierName,
+          supplierReceipts,
+          paymentsByReceiptId
+        )
+      })
+
+      // 4. Xuất file
+      const selectedSupplierName = supplierOptions.find(
+        (supplier) => supplier.value === filters.supplier_id
+      )?.label
+      const dateSuffix = dayjs().format('DD-MM-YYYY')
+      const fileName = selectedSupplierName
+        ? `Phieu_Nhap_${sanitizeFileNamePart(selectedSupplierName)}_${dateSuffix}.xlsx`
+        : `Phieu_Nhap_Hang_${dateSuffix}.xlsx`
+      const buffer = await wb.xlsx.writeBuffer()
+      const blob = new Blob(
+        [buffer],
+        { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      )
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.click()
+      window.URL.revokeObjectURL(url)
+      toast.success("Xuất file Excel thành công!")
+    } catch (error) {
+      console.error("Export Excel Error:", error)
+      toast.error("Lỗi khi xuất file Excel!")
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   // Handlers
   const handleTableChange = (
@@ -760,6 +1120,15 @@ const InventoryReceiptsList: React.FC = () => {
               loading={isLoadingReceipts}
             >
               <span className="hidden sm:inline">Làm mới</span>
+            </Button>
+            <Button
+              icon={<FileExcelOutlined className="text-green-600" />}
+              onClick={handleExportExcel}
+              loading={isExporting}
+              className="hover:border-green-500 hover:text-green-600"
+            >
+              <span className="hidden sm:inline">Xuất Excel</span>
+              <span className="sm:hidden">Excel</span>
             </Button>
             <Button
               type='primary'

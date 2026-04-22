@@ -115,6 +115,30 @@ export interface InventoryReceiptPayment {
   }
 }
 
+export function mapApiResponseToInventoryReceiptPayment(
+  apiPayment: any,
+): InventoryReceiptPayment {
+  return {
+    id: apiPayment.id,
+    receipt_id: apiPayment.receipt_id,
+    payment_date: apiPayment.payment_date,
+    amount: parseFloat(apiPayment.amount || "0"),
+    payment_method: apiPayment.payment_method,
+    notes: apiPayment.notes,
+    created_by: apiPayment.created_by,
+    created_at: apiPayment.created_at,
+    updated_at: apiPayment.updated_at,
+    deleted_at: apiPayment.deleted_at,
+    creator: apiPayment.creator
+      ? {
+          id: apiPayment.creator.id,
+          username: apiPayment.creator.username,
+          account: apiPayment.creator.account,
+        }
+      : undefined,
+  }
+}
+
 // Interface cho thống kê phiếu nhập hàng (8 chỉ số)
 export interface InventoryReceiptStats {
   totalReceipts: number
@@ -329,7 +353,7 @@ export function mapApiResponseToInventoryReceipt(
     images: apiReceipt.images || [],
 
     // Relations
-    payments: apiReceipt.payments,
+    payments: apiReceipt.payments?.map(mapApiResponseToInventoryReceiptPayment),
     creator: apiReceipt.creator
       ? {
           ...apiReceipt.creator,
