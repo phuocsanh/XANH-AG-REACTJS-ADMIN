@@ -12,7 +12,11 @@ module.exports = {
     "plugin:react/jsx-runtime",
     "plugin:react-hooks/recommended",
   ],
-  ignorePatterns: ["dist"], // Không cần `.eslintrc.cjs`
+  ignorePatterns: [
+    "dist",
+    "dev-dist",
+    "public/firebase-messaging-sw.js",
+  ], // Bỏ qua output/generated files
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",

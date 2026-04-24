@@ -940,7 +940,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             : [],
         notes: notes || "", // Ghi chú (rich text HTML)
         has_input_invoice: convertedValues.has_input_invoice,
-        taxable_quantity_stock: convertedValues.taxable_quantity_stock,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
         web_name: convertedValues.web_name,
