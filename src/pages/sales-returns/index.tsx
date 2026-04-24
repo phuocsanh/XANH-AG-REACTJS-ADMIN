@@ -5,7 +5,7 @@ import CreateSalesReturn from "./create"
 
 /**
  * Component chính quản lý routing cho module Sales Returns
- * Bao gồm các trang: danh sách, tạo phiếu trả hàng
+ * Bao gồm các trang: danh sách, tạo phiếu trả hàng 
  */
 const SalesReturns: React.FC = () => {
   return (
