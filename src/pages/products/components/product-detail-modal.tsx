@@ -13,7 +13,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onCancel,
   product,
 }) => {
-  // Hàm tiện ích để xử lý đường dẫn ảnh
+  // Hàm tiện ích để xử lý đường dẫn ảnh 
   const getImageUrl = (url: string | undefined): string => {
     if (!url) return "https://via.placeholder.com/80?text=No+Image"
     if (url.startsWith("http")) return url
