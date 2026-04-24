@@ -1040,12 +1040,14 @@ const InventoryReceiptDetail: React.FC = () => {
                         </Table.Summary.Cell>
                         <Table.Summary.Cell index={4} />
                         <Table.Summary.Cell index={5} />
-                        <Table.Summary.Cell index={6} align='right'>
+                        <Table.Summary.Cell index={6} />
+                        <Table.Summary.Cell index={7} />
+                        <Table.Summary.Cell index={8} align='right'>
                           <Text strong className='text-green-600'>
                             {totalA.toLocaleString("vi-VN")} ₫
                           </Text>
                         </Table.Summary.Cell>
-                        <Table.Summary.Cell index={7} colSpan={2} />
+                        <Table.Summary.Cell index={9} colSpan={2} />
                       </Table.Summary.Row>
                     </Table.Summary>
                   )
