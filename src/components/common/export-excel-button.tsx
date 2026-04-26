@@ -85,6 +85,12 @@ const toExcelDateValue = (value: any) => {
   return parsed.isValid() ? parsed.toDate() : value;
 };
 
+const toExcelDateText = (value: any) => {
+  if (!value) return '';
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed.format('DD/MM/YYYY') : String(value);
+};
+
 const applyCellFormatting = (
   cell: ExcelJS.Cell,
   value: any,
@@ -123,8 +129,8 @@ const applyCellFormatting = (
       cell.numFmt = '#,##0.##';
       break;
     case 'date':
-      cell.value = toExcelDateValue(value) as any;
-      cell.numFmt = 'dd/mm/yyyy';
+      // Xuat dang text de tranh Excel/OS tu doi timezone roi bi lech ngay.
+      cell.value = toExcelDateText(value);
       break;
     case 'datetime':
       cell.value = toExcelDateValue(value) as any;
