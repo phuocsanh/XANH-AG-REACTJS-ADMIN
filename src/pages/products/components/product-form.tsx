@@ -910,7 +910,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         credit_price: convertedValues.credit_price, // Giá bán nợ
         tax_selling_price: convertedValues.tax_selling_price, // Giá bán khai thuế
         type: convertedValues.type,
-        quantity: convertedValues.quantity,
         description: convertedValues.description,
         thumb: convertedValues.thumb,
         pictures: Array.isArray(convertedValues.pictures)
@@ -919,8 +918,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         attributes: convertedValues.attributes || {},
         discount: convertedValues.discount || "0",
         discounted_price: "0",
-        average_cost_price: convertedValues.average_cost_price || "0",
-        average_vat_input_cost: convertedValues.average_vat_input_cost || "0",
         profit_margin_percent: convertedValues.profit_margin_percent || "0",
         suggested_price: "0",
         status: convertedValues.status,
@@ -939,13 +936,19 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 .map((item: string) => item.trim())
             : [],
         notes: notes || "", // Ghi chú (rich text HTML)
-        has_input_invoice: convertedValues.has_input_invoice,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
         web_name: convertedValues.web_name,
         mechanism: mechanism || "",
         unit_conversions: sanitizedUnitConversions,
         components: values.components || [],
+      }
+
+      const inventoryManagedData = {
+        quantity: convertedValues.quantity,
+        average_cost_price: convertedValues.average_cost_price || "0",
+        average_vat_input_cost: convertedValues.average_vat_input_cost || "0",
+        has_input_invoice: convertedValues.has_input_invoice,
       }
 
       // Log dữ liệu trước khi gửi để kiểm tra
@@ -974,7 +977,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         navigate(`/products${location.search}`)
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await createProductMutation.mutateAsync(serverData as any)
+        await createProductMutation.mutateAsync({
+          ...serverData,
+          ...inventoryManagedData,
+        } as any)
         setIsSubmitSuccess(true)
         message.success("Thêm sản phẩm thành công!")
         reset()
@@ -1521,14 +1527,26 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           name='average_cost_price'
                           control={control}
                           label={
-                            <span>
-                              Giá vốn trung bình (VNĐ)
+                            <div className='flex justify-between items-center w-full'>
+                              <span>
+                                Giá vốn trung bình (VNĐ){" "}
+                                <Typography.Text
+                                  type='secondary'
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: "normal",
+                                  }}
+                                >
+                                  (Khóa: Tự tính từ nhập/xuất kho)
+                                </Typography.Text>
+                              </span>
                               {renderConversionHint(watchedAvgCost)}
-                            </span>
+                            </div>
                           }
-                          placeholder='Nhập giá vốn trung bình'
+                          placeholder='Tự động tính từ nhập/xuất kho'
                           className='w-full'
                           outputType='string'
+                          disabled={isEdit}
                         />
                       </div>
 
@@ -1625,6 +1643,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                             { label: "Không có hóa đơn", value: false },
                           ]}
                           className='w-full'
+                          disabled={isEdit}
                         />
                       </div>
 
