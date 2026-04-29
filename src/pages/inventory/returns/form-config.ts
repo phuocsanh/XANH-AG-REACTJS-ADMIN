@@ -7,6 +7,7 @@ export const returnItemSchema = z.object({
   quantity: z.coerce.number().min(1, 'Số lượng phải lớn hơn 0'),
   unit_cost: z.coerce.number().min(0, 'Đơn giá phải lớn hơn hoặc bằng 0'),
   total_price: z.coerce.number().min(0),
+  current_stock: z.coerce.number().optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
 });

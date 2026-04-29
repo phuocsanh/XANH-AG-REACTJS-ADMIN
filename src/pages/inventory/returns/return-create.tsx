@@ -16,6 +16,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
   TableRow,
   Paper,
@@ -302,6 +303,13 @@ const ReturnCreate = () => {
     }
     return list;
   }, [receiptsData, editStageReceipt]);
+
+  const returnItems = watch('items') || [];
+  const totalReturnAmount = returnItems.reduce((sum, item) => {
+    const quantity = Number(item?.quantity || 0);
+    const unitCost = Number(item?.unit_cost || 0);
+    return sum + quantity * unitCost;
+  }, 0);
 
   return (
     <Box>
@@ -648,6 +656,21 @@ const ReturnCreate = () => {
                               );
                             })}
                           </TableBody>
+                          <TableFooter>
+                            <TableRow>
+                              <TableCell colSpan={3} align="right">
+                                <Typography fontWeight="bold" color="text.primary">
+                                  Tổng tiền hàng trả
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography fontWeight="bold" color="error.main" fontSize={18}>
+                                  {formatCurrency(totalReturnAmount)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell colSpan={2} />
+                            </TableRow>
+                          </TableFooter>
                         </Table>
                       </TableContainer>
                     )}
