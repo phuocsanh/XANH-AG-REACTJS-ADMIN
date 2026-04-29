@@ -58,6 +58,7 @@ export const useCreateReturnMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
       message.success('Tạo phiếu trả hàng thành công!')
     },
     onError: (error) => {

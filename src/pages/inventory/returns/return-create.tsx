@@ -170,6 +170,7 @@ const ReturnCreate = () => {
       product_name: item.product?.trade_name || item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`,
       quantity: item.quantity,
       unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
+      current_stock: item.product?.quantity,
     })) || [];
   }, [isEditMode, editStageReceipt, selectedReceipt]);
 
@@ -226,6 +227,7 @@ const ReturnCreate = () => {
       quantity: 1,
       unit_cost: product.unit_cost,
       total_price: product.unit_cost,
+      current_stock: product.current_stock,
       reason: '',
       notes: '',
     });
@@ -573,6 +575,7 @@ const ReturnCreate = () => {
                                 (i: any) => i.product_id === field.product_id
                               );
                               const maxQuantity = receiptItem ? receiptItem.quantity : 999;
+                              const currentStock = receiptItem?.product?.quantity ?? (field as any).current_stock;
 
                               return (
                                 <TableRow key={field.id}>
@@ -580,9 +583,14 @@ const ReturnCreate = () => {
                                     <Typography variant="body2" fontWeight="bold">
                                       {field.product_name}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      Đã nhập: {maxQuantity}
-                                    </Typography>
+                                    <Box>
+                                      <Typography variant="caption" color="text.secondary" display="block">
+                                        Đã nhập: {maxQuantity}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary" display="block">
+                                        Tồn hiện tại: {currentStock ?? 'N/A'}
+                                      </Typography>
+                                    </Box>
                                   </TableCell>
                                   <TableCell align="right">
                                     <Controller
