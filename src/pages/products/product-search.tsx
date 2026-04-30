@@ -209,6 +209,27 @@ const ProductSearch: React.FC = () => {
       },
     },
     {
+      key: "active_promotions",
+      title: "Khuyến mãi",
+      width: getColumnWidth(180, 220, 260),
+      render: (_: unknown, record: ExtendedProduct) => {
+        const promotions = record.active_promotions || []
+        if (!promotions.length) {
+          return <span className='text-gray-300'>Không có</span>
+        }
+
+        return (
+          <div className='flex flex-wrap gap-1'>
+            {promotions.map((promotion) => (
+              <Tag key={promotion.id} color='gold'>
+                {promotion.code ? `${promotion.code} - ${promotion.name}` : promotion.name}
+              </Tag>
+            ))}
+          </div>
+        )
+      },
+    },
+    {
       key: "price",
       title: "Giá tiền mặt",
       width: 140,

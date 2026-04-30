@@ -362,6 +362,27 @@ const ProductsList: React.FC = () => {
         },
       },
       {
+        key: "active_promotions",
+        title: "Khuyến mãi đang tham gia",
+        width: 240,
+        render: (_: unknown, record: ExtendedProduct) => {
+          const promotions = record.active_promotions || []
+          if (!promotions.length) {
+            return <span className='text-gray-400'>Không có</span>
+          }
+
+          return (
+            <div className='flex flex-wrap gap-1'>
+              {promotions.map((promotion) => (
+                <Tag key={promotion.id} color='gold'>
+                  {promotion.code ? `${promotion.code} - ${promotion.name}` : promotion.name}
+                </Tag>
+              ))}
+            </div>
+          )
+        },
+      },
+      {
         key: "price",
         dataIndex: "price", // Needed for sorter to identify field
         title: "Giá tiền mặt",

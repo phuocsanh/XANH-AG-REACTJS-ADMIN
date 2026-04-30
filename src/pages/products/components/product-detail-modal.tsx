@@ -139,6 +139,19 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {product.trade_name}
             </Descriptions.Item>
           )}
+          <Descriptions.Item label='Chương trình khuyến mãi'>
+            {product.active_promotions && product.active_promotions.length > 0 ? (
+              <div className='flex flex-wrap gap-2'>
+                {product.active_promotions.map((promotion) => (
+                  <Tag key={promotion.id} color='gold'>
+                    {promotion.code ? `${promotion.code} - ${promotion.name}` : promotion.name}
+                  </Tag>
+                ))}
+              </div>
+            ) : (
+              "Không tham gia chương trình nào"
+            )}
+          </Descriptions.Item>
           {product.notes && (
             <Descriptions.Item label='Ghi chú'>
               {/<[^>]+>/.test(product.notes) ? (

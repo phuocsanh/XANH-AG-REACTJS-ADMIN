@@ -156,6 +156,15 @@ const Sidebar: React.FC = () => {
       setActiveTab(43)
       setIsToggleSubmenu(false)
     }
+    // Campaign khuyến mãi
+    else if (path.startsWith('/promotion-campaigns')) {
+      setActiveTab(45)
+      setIsToggleSubmenu(false)
+    }
+    else if (path.startsWith('/promotion-campaign-rewards')) {
+      setActiveTab(46)
+      setIsToggleSubmenu(false)
+    }
     // Trả hàng
     else if (path.startsWith('/sales-returns')) {
       setActiveTab(22)
@@ -555,6 +564,38 @@ const Sidebar: React.FC = () => {
                         <GiftOutlined className='text-gold-200' />
                       </span>
                       Chăm sóc khách hàng
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission(userInfo, "sales:read") && (
+                <li>
+                  <Link to='/promotion-campaigns'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 45 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(45)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <ThunderboltOutlined className='text-gold-200' />
+                      </span>
+                      Campaign khuyến mãi
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission(userInfo, "sales:read") && (
+                <li>
+                  <Link to='/promotion-campaign-rewards'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 46 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(46)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <GiftOutlined className='text-yellow-200' />
+                      </span>
+                      Quà campaign
                     </Button>
                   </Link>
                 </li>

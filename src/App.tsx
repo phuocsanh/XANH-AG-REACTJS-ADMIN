@@ -65,6 +65,8 @@ import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
 import CustomerRewardsPage from "./pages/customer-rewards"
+import PromotionCampaignsPage from "./pages/promotion-campaigns"
+import PromotionCampaignRewardsPage from "./pages/promotion-campaign-rewards"
 import CreateDeliveryLog from "./pages/delivery-logs/create"
 import DeliveryLogsList from "./pages/delivery-logs"
 import DeliveryLogDetail from "./pages/delivery-logs/detail"
@@ -634,6 +636,22 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="sales:read">
                           <CustomerRewardsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/promotion-campaigns'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <PromotionCampaignsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/promotion-campaign-rewards'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <PromotionCampaignRewardsPage />
                         </ProtectedRoute>
                       }
                     />

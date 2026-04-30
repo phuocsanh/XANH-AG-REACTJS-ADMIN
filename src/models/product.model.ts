@@ -78,6 +78,14 @@ export interface Product {
   mechanism?: string // Cơ chế tác động
   unit_conversions?: ProductUnitConversion[]
   components?: ProductComponent[]
+  active_promotions?: Array<{
+    id: number
+    code: string
+    name: string
+    status: string
+    start_at: string
+    end_at: string
+  }>
 }
 
 // Extend Product interface để tương thích với DataTable
