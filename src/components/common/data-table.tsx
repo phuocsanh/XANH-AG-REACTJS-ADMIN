@@ -8,6 +8,8 @@ import {
   Input,
   Select,
   Card,
+  Popover,
+  Checkbox,
 } from "antd"
 import type { ColumnType, TablePaginationConfig } from "antd/es/table"
 import type { FilterValue, SorterResult } from "antd/es/table/interface"
@@ -16,6 +18,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   SearchOutlined,
+  SettingOutlined,
 } from "@ant-design/icons"
 import LoadingSpinner from "./loading-spinner"
 import { useMobile } from "../../hooks/use-media-query"
@@ -45,6 +48,15 @@ interface ColumnFilter {
   placeholder?: string
 }
 
+interface ColumnVisibilityOption {
+  key: string
+  label: string
+  disabled?: boolean
+}
+
+const isSameStringArray = (left: string[], right: string[]) =>
+  left.length === right.length && left.every((value, index) => value === right[index])
+
 interface DataTableProps<T = Record<string, unknown>>
   extends Omit<TableProps<T>, "columns" | "onChange"> {
   columns: ColumnType<T>[]
@@ -65,6 +77,12 @@ interface DataTableProps<T = Record<string, unknown>>
   // Tính năng filter
   showFilters?: boolean
   columnFilters?: ColumnFilter[]
+  // Tính năng ẩn / hiện cột
+  showColumnVisibility?: boolean
+  columnVisibilityOptions?: ColumnVisibilityOption[]
+  columnVisibilityStorageKey?: string
+  defaultVisibleColumnKeys?: string[]
+  columnVisibilityButtonText?: string
   // Pagination config
   paginationConfig?: {
     current?: number
@@ -108,6 +126,11 @@ const DataTable = <T extends Record<string, unknown>>({
   searchableColumns = [],
   showFilters = false,
   columnFilters = [],
+  showColumnVisibility = false,
+  columnVisibilityOptions,
+  columnVisibilityStorageKey,
+  defaultVisibleColumnKeys,
+  columnVisibilityButtonText = "Cột",
   paginationConfig = {
     pageSize: 10,
     showSizeChanger: true,
@@ -129,6 +152,77 @@ const DataTable = <T extends Record<string, unknown>>({
   
   // Dùng để giả lập double click trên mobile
   const lastClickRef = React.useRef<{ time: number; record: T } | null>(null)
+
+  const getColumnKey = React.useCallback((column: ColumnType<T>, index: number) => {
+    if (column.key !== undefined && column.key !== null) return String(column.key)
+    if (column.dataIndex !== undefined && column.dataIndex !== null) return String(column.dataIndex)
+    return `column-${index}`
+  }, [])
+
+  const resolvedColumnVisibilityOptions = useMemo<ColumnVisibilityOption[]>(() => {
+    const columnLabels = new Map(
+      (columnVisibilityOptions || []).map((option) => [option.key, option])
+    )
+
+    return columns.map((column, index) => {
+      const key = getColumnKey(column, index)
+      const configuredOption = columnLabels.get(key)
+
+      if (configuredOption) return configuredOption
+
+      return {
+        key,
+        label: typeof column.title === "string" ? column.title : key,
+      }
+    })
+  }, [columnVisibilityOptions, columns, getColumnKey])
+
+  const allColumnVisibilityKeys = useMemo(
+    () => resolvedColumnVisibilityOptions.map((option) => option.key),
+    [resolvedColumnVisibilityOptions]
+  )
+
+  const resolvedDefaultVisibleColumnKeys = useMemo(
+    () => defaultVisibleColumnKeys || allColumnVisibilityKeys,
+    [allColumnVisibilityKeys, defaultVisibleColumnKeys]
+  )
+
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
+    if (!showColumnVisibility) return resolvedDefaultVisibleColumnKeys
+    if (!columnVisibilityStorageKey) return resolvedDefaultVisibleColumnKeys
+
+    try {
+      const savedValue = localStorage.getItem(columnVisibilityStorageKey)
+      if (!savedValue) return resolvedDefaultVisibleColumnKeys
+
+      const parsedValue = JSON.parse(savedValue)
+      if (!Array.isArray(parsedValue)) return resolvedDefaultVisibleColumnKeys
+
+      const validKeys = parsedValue.filter((key) =>
+        allColumnVisibilityKeys.includes(String(key))
+      ).map(String)
+
+      return validKeys.length > 0 ? validKeys : resolvedDefaultVisibleColumnKeys
+    } catch {
+      return resolvedDefaultVisibleColumnKeys
+    }
+  })
+
+  React.useEffect(() => {
+    if (!showColumnVisibility) return
+
+    setVisibleColumnKeys((currentKeys) => {
+      const validKeys = currentKeys.filter((key) => allColumnVisibilityKeys.includes(key))
+      const nextKeys = validKeys.length > 0 ? validKeys : resolvedDefaultVisibleColumnKeys
+      return isSameStringArray(currentKeys, nextKeys) ? currentKeys : nextKeys
+    })
+  }, [allColumnVisibilityKeys, resolvedDefaultVisibleColumnKeys, showColumnVisibility])
+
+  React.useEffect(() => {
+    if (!showColumnVisibility || !columnVisibilityStorageKey) return
+
+    localStorage.setItem(columnVisibilityStorageKey, JSON.stringify(visibleColumnKeys))
+  }, [columnVisibilityStorageKey, showColumnVisibility, visibleColumnKeys])
 
   // Lọc dữ liệu dựa trên search text
   const filteredData = useMemo(() => {
@@ -312,8 +406,12 @@ const DataTable = <T extends Record<string, unknown>>({
     };
   };
 
+  const visibleSourceColumns = showColumnVisibility
+    ? columns.filter((column, index) => visibleColumnKeys.includes(getColumnKey(column, index)))
+    : columns
+
   // Kết hợp columns: STT + columns (wrapped with ellipsis) + action column
-  let finalColumns = columns.map(wrapColumnWithEllipsis);
+  let finalColumns = visibleSourceColumns.map(wrapColumnWithEllipsis);
   
   // Thêm STT column ở đầu nếu showSTT = true
   if (showSTT) {
@@ -351,7 +449,7 @@ const DataTable = <T extends Record<string, unknown>>({
   return (
     <div className='data-table-wrapper'>
       {/* Search và Filter Controls */}
-      {(showSearch || showFilters) && (
+      {(showSearch || showFilters || showColumnVisibility) && (
         <Card className='mb-4' size='small'>
           <Space wrap>
             {/* Search Input */}
@@ -384,6 +482,44 @@ const DataTable = <T extends Record<string, unknown>>({
                   ))}
                 </Select>
               ))}
+
+            {showColumnVisibility && (
+              <Popover
+                trigger="click"
+                placement="bottomRight"
+                title="Ẩn / hiện cột"
+                content={
+                  <div style={{ minWidth: 190 }}>
+                    <Checkbox.Group
+                      style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                      options={resolvedColumnVisibilityOptions.map((option) => ({
+                        label: option.label,
+                        value: option.key,
+                        disabled: option.disabled,
+                      }))}
+                      value={visibleColumnKeys}
+                      onChange={(checkedValues) => {
+                        const nextKeys = checkedValues.map(String)
+                        if (nextKeys.length === 0) return
+                        setVisibleColumnKeys(nextKeys)
+                      }}
+                    />
+                    <Button
+                      type="link"
+                      size="small"
+                      style={{ marginTop: 8, padding: 0 }}
+                      onClick={() => setVisibleColumnKeys(allColumnVisibilityKeys)}
+                    >
+                      Hiện tất cả
+                    </Button>
+                  </div>
+                }
+              >
+                <Button icon={<SettingOutlined />}>
+                  {columnVisibilityButtonText}
+                </Button>
+              </Popover>
+            )}
           </Space>
         </Card>
       )}

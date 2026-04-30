@@ -24,7 +24,6 @@ import {
   Typography,
   App,
   Popover,
-  Checkbox,
 } from "antd"
 import {
   PlusOutlined,
@@ -36,7 +35,6 @@ import {
   DeleteOutlined,
   CloseCircleOutlined,
   UndoOutlined,
-  SettingOutlined,
 } from "@ant-design/icons"
 import { DatePicker, RangePicker } from '@/components/common'
 import dayjs from 'dayjs';
@@ -58,23 +56,21 @@ interface ExtendedSalesInvoice extends SalesInvoice {
 
 const COLUMN_VISIBILITY_STORAGE_KEY = "sales-invoices-visible-columns"
 
-const salesInvoiceColumnOptions = [
-  { label: "Mã HĐ", value: "code" },
-  { label: "Khách hàng", value: "customer_name" },
-  { label: "SĐT", value: "customer_phone" },
-  { label: "Mùa vụ", value: "season_id" },
-  { label: "Ngày bán", value: "sale_date" },
-  { label: "Ruộng lúa", value: "rice_crop_id" },
-  { label: "Tổng tiền", value: "final_amount" },
-  { label: "Đã trả", value: "partial_payment_amount" },
-  { label: "Còn nợ", value: "remaining_amount" },
-  { label: "Trạng thái", value: "status" },
-  { label: "Thanh toán", value: "payment_status" },
-  { label: "Ghi chú", value: "notes" },
-  { label: "Thao tác", value: "action" },
+const salesInvoiceColumnVisibilityOptions = [
+  { label: "Mã HĐ", key: "code" },
+  { label: "Khách hàng", key: "customer_name" },
+  { label: "SĐT", key: "customer_phone" },
+  { label: "Mùa vụ", key: "season_id" },
+  { label: "Ngày bán", key: "sale_date" },
+  { label: "Ruộng lúa", key: "rice_crop_id" },
+  { label: "Tổng tiền", key: "final_amount" },
+  { label: "Đã trả", key: "partial_payment_amount" },
+  { label: "Còn nợ", key: "remaining_amount" },
+  { label: "Trạng thái", key: "status" },
+  { label: "Thanh toán", key: "payment_status" },
+  { label: "Ghi chú", key: "notes" },
+  { label: "Thao tác", key: "action" },
 ]
-
-const defaultVisibleSalesInvoiceColumns = salesInvoiceColumnOptions.map((column) => column.value)
 
 const SalesInvoicesList: React.FC = () => {
   const { modal } = App.useApp()
@@ -89,23 +85,6 @@ const SalesInvoicesList: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = React.useState(0)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
-  const [visibleColumnKeys, setVisibleColumnKeys] = React.useState<string[]>(() => {
-    try {
-      const savedValue = localStorage.getItem(COLUMN_VISIBILITY_STORAGE_KEY)
-      if (!savedValue) return defaultVisibleSalesInvoiceColumns
-
-      const parsedValue = JSON.parse(savedValue)
-      if (!Array.isArray(parsedValue)) return defaultVisibleSalesInvoiceColumns
-
-      const validKeys = parsedValue.filter((key) =>
-        defaultVisibleSalesInvoiceColumns.includes(key)
-      )
-
-      return validKeys.length > 0 ? validKeys : defaultVisibleSalesInvoiceColumns
-    } catch {
-      return defaultVisibleSalesInvoiceColumns
-    }
-  })
   
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState('')
@@ -152,13 +131,6 @@ const SalesInvoicesList: React.FC = () => {
 
     setSearchParams(params, { replace: true })
   }, [filters, currentPage, pageSize, setSearchParams])
-
-  React.useEffect(() => {
-    localStorage.setItem(
-      COLUMN_VISIBILITY_STORAGE_KEY,
-      JSON.stringify(visibleColumnKeys)
-    )
-  }, [visibleColumnKeys])
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
@@ -838,61 +810,25 @@ const SalesInvoicesList: React.FC = () => {
     },
   ]
 
-  const visibleColumns = columns.filter((column) =>
-    visibleColumnKeys.includes(String(column.key))
-  )
-
   return (
     <div className='p-2 md:p-6'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
         <h1 className='text-2xl font-bold'>Quản lý Hóa đơn bán hàng</h1>
-        <Space className="w-full sm:w-auto" wrap>
-          <Popover
-            trigger="click"
-            placement="bottomRight"
-            title="Ẩn / hiện cột"
-            content={
-              <div className="w-48">
-                <Checkbox.Group
-                  className="flex flex-col gap-2"
-                  options={salesInvoiceColumnOptions}
-                  value={visibleColumnKeys}
-                  onChange={(checkedValues) => {
-                    if (checkedValues.length === 0) return
-                    setVisibleColumnKeys(checkedValues.map(String))
-                  }}
-                />
-                <Button
-                  type="link"
-                  size="small"
-                  className="mt-2 p-0"
-                  onClick={() => setVisibleColumnKeys(defaultVisibleSalesInvoiceColumns)}
-                >
-                  Hiện tất cả
-                </Button>
-              </div>
-            }
-          >
-            <Button icon={<SettingOutlined />} className="w-full sm:w-auto">
-              Cột
-            </Button>
-          </Popover>
-          <Button
-            type='primary'
-            icon={<PlusOutlined />}
-            onClick={() => navigate(`/sales-invoices/create${location.search}`)}
-            className="w-full sm:w-auto"
-          >
-            Tạo hóa đơn mới
-          </Button>
-        </Space>
+        <Button
+          type='primary'
+          icon={<PlusOutlined />}
+          onClick={() => navigate(`/sales-invoices/create${location.search}`)}
+          className="w-full sm:w-auto"
+        >
+          Tạo hóa đơn mới
+        </Button>
       </div>
 
       {/* Danh sách hóa đơn */}
       <div className='bg-white rounded shadow'>
         <DataTable
           data={getInvoiceList()}
-          columns={visibleColumns}
+          columns={columns}
           loading={loading}
           pagination={{
             current: currentPage,
@@ -907,6 +843,9 @@ const SalesInvoicesList: React.FC = () => {
           showActions={false}
           showSearch={false}
           showFilters={false}
+          showColumnVisibility
+          columnVisibilityStorageKey={COLUMN_VISIBILITY_STORAGE_KEY}
+          columnVisibilityOptions={salesInvoiceColumnVisibilityOptions}
         />
       </div>
 
