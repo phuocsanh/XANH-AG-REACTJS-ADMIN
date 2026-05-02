@@ -6,6 +6,7 @@ import {
   Input,
   InputNumber,
   Modal,
+  Popover,
   Space,
   Table,
   Tag,
@@ -16,6 +17,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
   EditOutlined,
+  GiftOutlined,
   PauseCircleOutlined,
   PlusOutlined,
   StopOutlined,
@@ -27,6 +29,7 @@ import { FormComboBox, FormDatePicker, FormField, FormFieldNumber } from "@/comp
 import {
   CreatePromotionCampaignRequest,
   PromotionCampaign,
+  PromotionCampaignParticipant,
   PromotionCampaignStatus,
   PromotionRewardPoolItem,
   PromotionRewardReservation,
@@ -35,9 +38,11 @@ import { useProductsByIdsQuery, useProductSearch } from "@/queries/product"
 import {
   useCreatePromotionCampaignMutation,
   useIssuePromotionReservationMutation,
+  usePromotionCampaignParticipantsQuery,
   usePromotionCampaignQuery,
   usePromotionCampaignReservationsQuery,
   usePromotionCampaignsQuery,
+  useSetPromotionParticipantForceWinMutation,
   useUpdatePromotionCampaignMutation,
   useUpdatePromotionCampaignStatusMutation,
 } from "@/queries/promotion-campaign"
@@ -138,6 +143,8 @@ const PromotionCampaignsPage: React.FC = () => {
   const [productSearchTerm, setProductSearchTerm] = React.useState("")
   const [selectedCampaign, setSelectedCampaign] = React.useState<PromotionCampaign | null>(null)
   const [isReservationsModalOpen, setIsReservationsModalOpen] = React.useState(false)
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = React.useState(false)
+  const [participantKeyword, setParticipantKeyword] = React.useState("")
   const [rewards, setRewards] = React.useState<PromotionRewardPoolItem[]>([defaultReward()])
 
   const pageSize = 10
@@ -161,8 +168,17 @@ const PromotionCampaignsPage: React.FC = () => {
   })
   const { data: campaignDetail, isLoading: isCampaignDetailLoading } =
     usePromotionCampaignQuery(editingId)
+  const { data: selectedCampaignDetail } = usePromotionCampaignQuery(
+    isParticipantsModalOpen ? selectedCampaign?.id : undefined,
+  )
   const { data: reservationsData, isLoading: isReservationsLoading } =
     usePromotionCampaignReservationsQuery(selectedCampaign?.id)
+  const { data: participantsData, isLoading: isParticipantsLoading } =
+    usePromotionCampaignParticipantsQuery(selectedCampaign?.id, {
+      page: 1,
+      limit: 100,
+      keyword: participantKeyword || undefined,
+    })
 
   const {
     data: productSearchData,
@@ -178,6 +194,7 @@ const PromotionCampaignsPage: React.FC = () => {
   const updateMutation = useUpdatePromotionCampaignMutation()
   const updateStatusMutation = useUpdatePromotionCampaignStatusMutation()
   const issueReservationMutation = useIssuePromotionReservationMutation()
+  const forceWinMutation = useSetPromotionParticipantForceWinMutation()
 
   const productOptions = React.useMemo(() => {
     const optionMap = new Map<number, { value: number; label: string }>()
@@ -278,9 +295,21 @@ const PromotionCampaignsPage: React.FC = () => {
     setIsReservationsModalOpen(true)
   }
 
+  const openParticipantsModal = (record: PromotionCampaign) => {
+    setSelectedCampaign(record)
+    setParticipantKeyword("")
+    setIsParticipantsModalOpen(true)
+  }
+
   const closeReservationsModal = () => {
     setSelectedCampaign(null)
     setIsReservationsModalOpen(false)
+  }
+
+  const closeParticipantsModal = () => {
+    setSelectedCampaign(null)
+    setParticipantKeyword("")
+    setIsParticipantsModalOpen(false)
   }
 
   const totalRewardQuantity = rewards.reduce(
@@ -550,6 +579,12 @@ const PromotionCampaignsPage: React.FC = () => {
           showActions
           actionButtons={[
             {
+              key: "participants",
+              icon: <GiftOutlined />,
+              tooltip: "Khách hàng tham gia / lượt quay",
+              onClick: (record) => openParticipantsModal(record as PromotionCampaign),
+            },
+            {
               key: "reservations",
               icon: <EyeOutlined />,
               tooltip: "Quà đã reserve",
@@ -815,6 +850,175 @@ const PromotionCampaignsPage: React.FC = () => {
             </Space>
           </div>
         </Card>
+      </Modal>
+
+      <Modal
+        title={selectedCampaign ? `Khách tham gia - ${selectedCampaign.name}` : "Khách tham gia"}
+        open={isParticipantsModalOpen}
+        onCancel={closeParticipantsModal}
+        width={1180}
+        footer={[<Button key="close" onClick={closeParticipantsModal}>Đóng</Button>]}
+      >
+        <Table<PromotionCampaignParticipant>
+          rowKey="customer_id"
+          loading={isParticipantsLoading || forceWinMutation.isPending}
+          dataSource={participantsData?.items || []}
+          pagination={false}
+          title={() => (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Text strong>Theo dõi khách đang có bao nhiêu lượt quay và set force trúng 1 lần</Text>
+              </div>
+              <Input
+                allowClear
+                placeholder="Tìm khách hàng, số điện thoại..."
+                value={participantKeyword}
+                onChange={(e) => setParticipantKeyword(e.target.value)}
+                style={{ maxWidth: 320 }}
+              />
+            </div>
+          )}
+          columns={[
+            {
+              title: "Khách hàng",
+              render: (_, record) => (
+                <Space direction="vertical" size={0}>
+                  <Text strong>{record.customer?.name || `KH #${record.customer_id}`}</Text>
+                  <Text type="secondary">{record.customer?.phone || record.customer?.code}</Text>
+                </Space>
+              ),
+            },
+            {
+              title: "Đã tích lũy",
+              width: 150,
+              render: (_, record) => formatCurrency(record.qualified_amount),
+            },
+            {
+              title: "Lượt quay",
+              width: 180,
+              render: (_, record) => (
+                <Space direction="vertical" size={0}>
+                  <Text>Có: {record.earned_spin_count}</Text>
+                  <Text type="secondary">Dùng: {record.used_spin_count} · Còn: {record.remaining_spin_count}</Text>
+                </Space>
+              ),
+            },
+            {
+              title: "Đã trúng",
+              width: 90,
+              render: (_, record) => record.win_count,
+            },
+            {
+              title: "Force trúng",
+              width: 260,
+              render: (_, record) =>
+                record.force_win_pending ? (
+                  <Space direction="vertical" size={0}>
+                    <Tag color="gold">Đang chờ quay trúng 1 lần</Tag>
+                    <Text type="secondary">
+                      {record.forced_reward_name}
+                      {record.forced_reward_value
+                        ? ` · ${formatCurrency(record.forced_reward_value)}`
+                        : ""}
+                      {record.forced_month_index ? ` · Tháng ${record.forced_month_index}` : ""}
+                    </Text>
+                  </Space>
+                ) : (
+                  <Text type="secondary">Chưa set</Text>
+                ),
+            },
+            {
+              title: "Thao tác",
+              width: 170,
+              render: (_, record) => {
+                const isForced = record.force_win_pending;
+                const forceCampaign = selectedCampaignDetail || selectedCampaign;
+
+                return (
+                  <Space>
+                    {isForced ? (
+                      <Button
+                        size="small"
+                        danger
+                            onClick={() =>
+                              selectedCampaign &&
+                              forceWinMutation.mutateAsync({
+                                id: selectedCampaign.id,
+                                customerId: record.customer_id,
+                            note: "UNSET",
+                          })
+                        }
+                      >
+                        Gỡ force
+                      </Button>
+                    ) : (
+                      <Popover
+                        content={
+                          <div className="w-80 space-y-3">
+                            <Text strong>Chọn quà & tháng chắc chắn trúng:</Text>
+                            <div className="max-h-72 overflow-y-auto pr-1">
+                              {(forceCampaign?.reward_pools || []).map(pool => (
+                                <div key={pool.reward_name} className="mb-4 last:mb-0">
+                                  <div className="bg-slate-50 px-2 py-1 rounded mb-2 border-l-4 border-emerald-500">
+                                    <Text strong size="small">{pool.reward_name}</Text>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 pl-2">
+                                    {(pool.monthly_release || [])
+                                      .filter(r => r.release_quantity > 0)
+                                      .sort((a, b) => a.month_index - b.month_index)
+                                      .map(release => {
+                                        const availableQuantity = Number(
+                                          release.available_quantity ?? release.release_quantity ?? 0,
+                                        );
+                                        const isUnavailable = availableQuantity <= 0;
+                                        
+                                        return (
+                                          <Button
+                                            key={release.month_index}
+                                            size="small"
+                                            type="dashed"
+                                            disabled={isUnavailable}
+                                            className="text-xs flex h-auto min-h-9 flex-col items-start justify-center"
+                                            onClick={() => 
+                                              selectedCampaign &&
+                                              forceWinMutation.mutateAsync({
+                                                id: selectedCampaign.id,
+                                                customerId: record.customer_id,
+                                                rewardPoolId: pool.id,
+                                                bucketMonth: release.month_index,
+                                                note: `${pool.reward_name} · Tháng ${release.month_index}`,
+                                              })
+                                            }
+                                          >
+                                            <span>Tháng {release.month_index}</span>
+                                            <span className="text-[11px] text-slate-500">
+                                              Còn {availableQuantity}/{release.release_quantity}
+                                            </span>
+                                          </Button>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              ))}
+                              {(forceCampaign?.reward_pools || []).length === 0 && (
+                                <Text type="secondary">Chiến dịch chưa có cấu trúc quà tặng</Text>
+                              )}
+                            </div>
+                          </div>
+                        }
+                        title="Thiết lập trúng thưởng đích danh"
+                        trigger="click"
+                        placement="left"
+                      >
+                        <Button size="small">Set trúng 1 lần</Button>
+                      </Popover>
+                    )}
+                  </Space>
+                );
+              },
+            },
+          ]}
+        />
       </Modal>
 
       <Modal

@@ -5,6 +5,7 @@ import {
   PromotionCampaign,
   PromotionCampaignListParams,
   PromotionCampaignStatus,
+  PromotionCampaignParticipant,
   PromotionRewardReservation,
   PromotionRewardReservationListParams,
   UpdatePromotionCampaignRequest,
@@ -20,6 +21,8 @@ export const promotionCampaignKeys = {
   detail: (id?: number | null) => [...promotionCampaignKeys.all, "detail", id] as const,
   reservations: (id?: number | null) =>
     [...promotionCampaignKeys.all, "reservations", id] as const,
+  participants: (id?: number | null, params?: { page?: number; limit?: number; keyword?: string }) =>
+    [...promotionCampaignKeys.all, "participants", id, params] as const,
   allReservations: (params?: PromotionRewardReservationListParams) =>
     [...promotionCampaignKeys.all, "all-reservations", params] as const,
 }
@@ -50,6 +53,22 @@ export const usePromotionCampaignReservationsQuery = (id?: number | null) =>
       api.get<{ items: PromotionRewardReservation[] }>(
         `/promotion-campaigns/${id}/reservations`,
       ),
+    enabled: !!id,
+  })
+
+export const usePromotionCampaignParticipantsQuery = (
+  id?: number | null,
+  params?: { page?: number; limit?: number; keyword?: string },
+) =>
+  useQuery({
+    queryKey: promotionCampaignKeys.participants(id, params),
+    queryFn: async () =>
+      api.get<{
+        items: PromotionCampaignParticipant[]
+        total: number
+        page: number
+        limit: number
+      }>(`/promotion-campaigns/${id}/participants`, params),
     enabled: !!id,
   })
 
@@ -138,5 +157,37 @@ export const useIssuePromotionReservationMutation = () =>
     },
     onError: (error: unknown) => {
       handleApiError(error, "Không thể xác nhận trao quà")
+    },
+  })
+
+export const useSetPromotionParticipantForceWinMutation = () =>
+  useMutation({
+    mutationFn: async ({
+      id,
+      customerId,
+      rewardPoolId,
+      bucketMonth,
+      note,
+    }: {
+      id: number
+      customerId: number
+      rewardPoolId?: number
+      bucketMonth?: number
+      note?: string
+    }) =>
+      api.patchRaw<{ success: boolean; message: string }>(
+        `/promotion-campaigns/${id}/participants/${customerId}/force-win`,
+        {
+          reward_pool_id: rewardPoolId,
+          bucket_month: bucketMonth,
+          note,
+        },
+      ),
+    onSuccess: () => {
+      invalidateResourceQueries("/promotion-campaigns")
+      toast.success("Đã set khách này chắc chắn trúng 1 lần ở lượt quay kế tiếp")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Không thể set force trúng cho khách hàng")
     },
   })

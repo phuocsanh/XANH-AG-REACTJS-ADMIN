@@ -15,6 +15,7 @@ export interface PromotionRewardMonthlyRelease {
   id?: number
   month_index: number
   release_quantity: number
+  available_quantity?: number
 }
 
 export interface PromotionRewardPoolItem {
@@ -108,4 +109,27 @@ export interface PromotionRewardReservationListParams {
   promotion_id?: number
   status?: string
   keyword?: string
+}
+
+export interface PromotionCampaignParticipant {
+  customer_id: number
+  customer?: {
+    id: number
+    code?: string
+    name?: string
+    phone?: string
+  }
+  qualified_amount: number
+  earned_spin_count: number
+  used_spin_count: number
+  remaining_spin_count: number
+  win_count: number
+  force_win_pending: boolean
+  force_win_remaining_count: number
+  forced_reward_name?: string | null
+  forced_reward_value?: number
+  forced_month_index?: number | null
+  force_set_at?: string | null
+  override_note?: string | null
+  updated_at?: string
 }
