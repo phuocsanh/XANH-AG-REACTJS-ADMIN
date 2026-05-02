@@ -131,5 +131,6 @@ export interface PromotionCampaignParticipant {
   forced_month_index?: number | null
   force_set_at?: string | null
   override_note?: string | null
+  is_blocked?: boolean
   updated_at?: string
 }

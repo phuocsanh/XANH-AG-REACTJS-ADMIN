@@ -89,7 +89,7 @@ export const usePromotionCampaignAllReservationsQuery = (
 export const useCreatePromotionCampaignMutation = () =>
   useMutation({
     mutationFn: async (data: CreatePromotionCampaignRequest) =>
-      api.postRaw<PromotionCampaign>("/promotion-campaigns", data),
+      api.postRaw<PromotionCampaign>("/promotion-campaigns", data as unknown as Record<string, unknown>),
     onSuccess: () => {
       invalidateResourceQueries("/promotion-campaigns")
       toast.success("Tạo campaign quay thưởng thành công")
@@ -107,7 +107,7 @@ export const useUpdatePromotionCampaignMutation = () =>
     }: {
       id: number
       data: UpdatePromotionCampaignRequest
-    }) => api.patchRaw<PromotionCampaign>(`/promotion-campaigns/${id}`, data),
+    }) => api.patchRaw<PromotionCampaign>(`/promotion-campaigns/${id}`, data as unknown as Record<string, unknown>),
     onSuccess: () => {
       invalidateResourceQueries("/promotion-campaigns")
       toast.success("Cập nhật campaign quay thưởng thành công")
@@ -157,6 +157,28 @@ export const useIssuePromotionReservationMutation = () =>
     },
     onError: (error: unknown) => {
       handleApiError(error, "Không thể xác nhận trao quà")
+    },
+  })
+
+export const useCancelIssuePromotionReservationMutation = () =>
+  useMutation({
+    mutationFn: async ({
+      id,
+      reservationId,
+    }: {
+      id: number
+      reservationId: number
+    }) =>
+      api.patchRaw<{ success: boolean; message: string }>(
+        `/promotion-campaigns/${id}/reservations/${reservationId}/cancel-issue`,
+        {},
+      ),
+    onSuccess: () => {
+      invalidateResourceQueries("/promotion-campaigns")
+      toast.success("Đã hoàn tác xác nhận trao quà")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Không thể hoàn tác xác nhận trao quà")
     },
   })
 

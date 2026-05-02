@@ -7,13 +7,16 @@ import {
   InputNumber,
   Modal,
   Popover,
+  Progress,
   Space,
   Table,
   Tag,
   Typography,
+  Skeleton,
 } from "antd"
 import {
   CheckCircleOutlined,
+  CopyOutlined,
   DeleteOutlined,
   EyeOutlined,
   EditOutlined,
@@ -68,7 +71,7 @@ const defaultValues: CampaignFormValues = {
   start_at: null,
   end_at: null,
   threshold_amount: 0,
-  base_win_rate: 5,
+  base_win_rate: 8,
   second_win_rate: 2,
   max_reward_per_customer: 2,
   notes: "",
@@ -160,6 +163,10 @@ const PromotionCampaignsPage: React.FC = () => {
     () => getCampaignMonthCount(startAt, endAt),
     [startAt, endAt],
   )
+  const campaignDayCount = React.useMemo(() => {
+    if (!startAt || !endAt) return 0
+    return Math.max(0, dayjs(endAt).diff(dayjs(startAt), "day"))
+  }, [startAt, endAt])
 
   const { data: campaignsData, isLoading: isCampaignsLoading } = usePromotionCampaignsQuery({
     page,
@@ -168,9 +175,11 @@ const PromotionCampaignsPage: React.FC = () => {
   })
   const { data: campaignDetail, isLoading: isCampaignDetailLoading } =
     usePromotionCampaignQuery(editingId)
-  const { data: selectedCampaignDetail } = usePromotionCampaignQuery(
-    isParticipantsModalOpen ? selectedCampaign?.id : undefined,
-  )
+  // Load chi tiết khi mở modal participants HOẶC modal tổng quan (reservations)
+  const { data: selectedCampaignDetail, isLoading: isSelectedCampaignDetailLoading } =
+    usePromotionCampaignQuery(
+      isParticipantsModalOpen || isReservationsModalOpen ? selectedCampaign?.id : undefined,
+    )
   const { data: reservationsData, isLoading: isReservationsLoading } =
     usePromotionCampaignReservationsQuery(selectedCampaign?.id)
   const { data: participantsData, isLoading: isParticipantsLoading } =
@@ -241,7 +250,7 @@ const PromotionCampaignsPage: React.FC = () => {
       start_at: campaignDetail.start_at || null,
       end_at: campaignDetail.end_at || null,
       threshold_amount: Number(campaignDetail.threshold_amount || 0),
-      base_win_rate: Number(campaignDetail.base_win_rate || 20),
+      base_win_rate: Number(campaignDetail.base_win_rate || 8),
       second_win_rate: Number(campaignDetail.second_win_rate || 2),
       max_reward_per_customer: Number(campaignDetail.max_reward_per_customer || 2),
       notes: campaignDetail.notes || "",
@@ -287,6 +296,51 @@ const PromotionCampaignsPage: React.FC = () => {
     setProductSearchTerm("")
     setRewards([defaultReward()])
     reset(defaultValues)
+    setIsModalOpen(true)
+  }
+
+  /**
+   * Mở modal tạo mới nhưng prefill dữ liệu từ campaign gốc (nhân bản).
+   * Code tự động thêm hậu tố _COPY, name thêm " (Bản sao)", status về draft.
+   */
+  const openCloneModal = (record: PromotionCampaign) => {
+    setEditingId(null) // Tạo mới, không phải chỉnh sửa
+    setProductSearchTerm("")
+
+    // Prefill rewards từ campaign gốc (nếu có)
+    const clonedRewards: PromotionRewardPoolItem[] =
+      record.reward_pools?.length
+        ? record.reward_pools.map((reward) => ({
+            reward_name: reward.reward_name,
+            reward_value: Number(reward.reward_value || 0),
+            total_quantity: Number(reward.total_quantity || 0),
+            sort_order: reward.sort_order || 0,
+            monthly_release:
+              reward.monthly_release?.length
+                ? reward.monthly_release.map((release) => ({
+                    month_index: release.month_index,
+                    release_quantity: release.release_quantity,
+                  }))
+                : [{ month_index: 1, release_quantity: Number(reward.total_quantity || 0) }],
+          }))
+        : [defaultReward()]
+
+    setRewards(clonedRewards)
+
+    // Prefill form values từ campaign gốc
+    reset({
+      code: `${record.code}_COPY`,
+      name: `${record.name} (Bản sao)`,
+      start_at: record.start_at || null,
+      end_at: record.end_at || null,
+      threshold_amount: Number(record.threshold_amount || 0),
+      base_win_rate: Number(record.base_win_rate || 8),
+      second_win_rate: Number(record.second_win_rate || 2),
+      max_reward_per_customer: Number(record.max_reward_per_customer || 2),
+      notes: record.notes || "",
+      product_ids: (record.products || []).map((item) => Number(item.product_id)),
+    })
+
     setIsModalOpen(true)
   }
 
@@ -570,7 +624,7 @@ const PromotionCampaignsPage: React.FC = () => {
       </Card>
 
       <Card>
-        <DataTable
+        <DataTable<PromotionCampaign>
           rowKey="id"
           columns={columns}
           data={campaignsData?.items || []}
@@ -587,7 +641,7 @@ const PromotionCampaignsPage: React.FC = () => {
             {
               key: "reservations",
               icon: <EyeOutlined />,
-              tooltip: "Quà đã reserve",
+              tooltip: "Xem tổng quan chiến dịch",
               onClick: (record) => openReservationsModal(record as PromotionCampaign),
             },
             {
@@ -595,6 +649,12 @@ const PromotionCampaignsPage: React.FC = () => {
               icon: <EditOutlined />,
               tooltip: "Chỉnh sửa",
               onClick: (record) => openEditModal(record as PromotionCampaign),
+            },
+            {
+              key: "clone",
+              icon: <CopyOutlined />,
+              tooltip: "Nhân bản campaign",
+              onClick: (record) => openCloneModal(record as PromotionCampaign),
             },
             {
               key: "activate",
@@ -648,11 +708,17 @@ const PromotionCampaignsPage: React.FC = () => {
           </Button>,
         ]}
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField name="code" control={control} label="Mã campaign" required />
+        {isCampaignDetailLoading ? (
+          <div className="py-10">
+            <Skeleton active paragraph={{ rows: 12 }} />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField name="code" control={control} label="Mã campaign" required />
           <FormField name="name" control={control} label="Tên campaign" required />
           <FormDatePicker name="start_at" control={control} label="Bắt đầu" showTime format="DD/MM/YYYY HH:mm" required />
-          <FormDatePicker name="end_at" control={control} label="Kết thúc" showTime format="DD/MM/YYYY HH:mm" required />
+          <FormDatePicker name="end_at" control={control} label={`Kết thúc ${campaignDayCount > 0 ? `(Tổng ${campaignDayCount} ngày)` : ""}`} showTime format="DD/MM/YYYY HH:mm" required />
           <FormFieldNumber name="threshold_amount" control={control} label="Ngưỡng cộng 1 lượt quay" addonAfter="VND" required />
           <FormFieldNumber name="base_win_rate" control={control} label="Tỉ lệ khởi điểm lượt đầu" addonAfter="%" required />
           <FormFieldNumber name="second_win_rate" control={control} label="Tỉ lệ nền lượt trúng lần 2" addonAfter="%" required />
@@ -850,6 +916,8 @@ const PromotionCampaignsPage: React.FC = () => {
             </Space>
           </div>
         </Card>
+        </>
+        )}
       </Modal>
 
       <Modal
@@ -912,7 +980,9 @@ const PromotionCampaignsPage: React.FC = () => {
               title: "Force trúng",
               width: 260,
               render: (_, record) =>
-                record.force_win_pending ? (
+                record.is_blocked ? (
+                  <Tag color="red">Bị chặn trúng thưởng</Tag>
+                ) : record.force_win_pending ? (
                   <Space direction="vertical" size={0}>
                     <Tag color="gold">Đang chờ quay trúng 1 lần</Tag>
                     <Text type="secondary">
@@ -932,19 +1002,20 @@ const PromotionCampaignsPage: React.FC = () => {
               width: 170,
               render: (_, record) => {
                 const isForced = record.force_win_pending;
+                const isBlocked = record.is_blocked;
                 const forceCampaign = selectedCampaignDetail || selectedCampaign;
 
                 return (
-                  <Space>
+                  <Space direction="vertical" size={4}>
                     {isForced ? (
                       <Button
                         size="small"
                         danger
-                            onClick={() =>
-                              selectedCampaign &&
-                              forceWinMutation.mutateAsync({
-                                id: selectedCampaign.id,
-                                customerId: record.customer_id,
+                        onClick={() =>
+                          selectedCampaign &&
+                          forceWinMutation.mutateAsync({
+                            id: selectedCampaign.id,
+                            customerId: record.customer_id,
                             note: "UNSET",
                           })
                         }
@@ -960,7 +1031,7 @@ const PromotionCampaignsPage: React.FC = () => {
                               {(forceCampaign?.reward_pools || []).map(pool => (
                                 <div key={pool.reward_name} className="mb-4 last:mb-0">
                                   <div className="bg-slate-50 px-2 py-1 rounded mb-2 border-l-4 border-emerald-500">
-                                    <Text strong size="small">{pool.reward_name}</Text>
+                                    <Text strong>{pool.reward_name}</Text>
                                   </div>
                                   <div className="grid grid-cols-2 gap-2 pl-2">
                                     {(pool.monthly_release || [])
@@ -1010,8 +1081,40 @@ const PromotionCampaignsPage: React.FC = () => {
                         trigger="click"
                         placement="left"
                       >
-                        <Button size="small">Set trúng 1 lần</Button>
+                        <Button size="small" disabled={isBlocked}>Set trúng 1 lần</Button>
                       </Popover>
+                    )}
+
+                    {isBlocked ? (
+                      <Button
+                        size="small"
+                        onClick={() =>
+                          selectedCampaign &&
+                          forceWinMutation.mutateAsync({
+                            id: selectedCampaign.id,
+                            customerId: record.customer_id,
+                            note: "UNSET",
+                          })
+                        }
+                      >
+                        Bỏ chặn
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        danger
+                        disabled={isForced}
+                        onClick={() =>
+                          selectedCampaign &&
+                          forceWinMutation.mutateAsync({
+                            id: selectedCampaign.id,
+                            customerId: record.customer_id,
+                            note: "BLOCK",
+                          })
+                        }
+                      >
+                        Chặn trúng
+                      </Button>
                     )}
                   </Space>
                 );
@@ -1021,69 +1124,256 @@ const PromotionCampaignsPage: React.FC = () => {
         />
       </Modal>
 
+      {/* Modal tổng quan chiến dịch: tiến độ quà theo tháng + ngày còn lại + danh sách trúng */}
       <Modal
-        title={selectedCampaign ? `Quà đã reserve - ${selectedCampaign.name}` : "Quà đã reserve"}
+        title={
+          selectedCampaign
+            ? `Tổng quan chiến dịch — ${selectedCampaign.name}`
+            : "Tổng quan chiến dịch"
+        }
         open={isReservationsModalOpen}
         onCancel={closeReservationsModal}
-        width={1080}
+        width={1100}
+        styles={{ body: { maxHeight: "80vh", overflowY: "auto" } }}
         footer={[<Button key="close" onClick={closeReservationsModal}>Đóng</Button>]}
       >
-        <Table<PromotionRewardReservation>
-          rowKey="id"
-          loading={isReservationsLoading || issueReservationMutation.isPending}
-          dataSource={reservationsData?.items || []}
-          pagination={false}
-          columns={[
-            {
-              title: "Khách hàng",
-              render: (_, record) => (
-                <Space direction="vertical" size={0}>
-                  <Text strong>{record.customer?.name || `KH #${record.customer_id}`}</Text>
-                  <Text type="secondary">{record.customer?.phone}</Text>
-                </Space>
-              ),
-            },
-            {
-              title: "Quà",
-              render: (_, record) => (
-                <Space direction="vertical" size={0}>
-                  <Text>{record.reward_name}</Text>
-                  <Text type="secondary">{formatCurrency(record.reward_value)}</Text>
-                </Space>
-              ),
-            },
-            {
-              title: "Trạng thái",
-              render: (_, record) => (
-                <Tag color={record.status === "issued" ? "blue" : "gold"}>
-                  {record.status === "issued" ? "Đã trao" : "Đã reserve"}
-                </Tag>
-              ),
-            },
-            {
-              title: "Thời gian reserve",
-              render: (_, record) => dayjs(record.reserved_at).format("DD/MM/YYYY HH:mm"),
-            },
-            {
-              title: "Thao tác",
-              render: (_, record) =>
-                record.status === "issued" ? null : (
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      selectedCampaign &&
-                      issueReservationMutation.mutateAsync({
-                        id: selectedCampaign.id,
-                        reservationId: record.id,
-                      })
-                    }
+        {isSelectedCampaignDetailLoading ? (
+          <div className="py-10 text-center">
+            <Text type="secondary">Đang tải dữ liệu chiến dịch...</Text>
+          </div>
+        ) : selectedCampaignDetail ? (
+          <div className="space-y-4">
+
+            {/* ── Thông tin tổng quan ── */}
+            {(() => {
+              const daysRemaining = Math.max(
+                0,
+                dayjs(selectedCampaignDetail.end_at).diff(dayjs(), "day"),
+              )
+              const isEnded = daysRemaining === 0
+              const isUrgent = daysRemaining <= 7 && !isEnded
+              const dayColor = isEnded ? "red" : isUrgent ? "orange" : "green"
+
+              return (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                    <Text type="secondary" className="block text-xs">Trạng thái</Text>
+                    <div className="mt-1">
+                      <Tag color={statusMeta[selectedCampaignDetail.status]?.color}>
+                        {statusMeta[selectedCampaignDetail.status]?.label}
+                      </Tag>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                    <Text type="secondary" className="block text-xs">Bắt đầu</Text>
+                    <div className="mt-1 font-medium">
+                      {dayjs(selectedCampaignDetail.start_at).format("DD/MM/YYYY")}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                    <Text type="secondary" className="block text-xs">Kết thúc</Text>
+                    <div className="mt-1 font-medium">
+                      {dayjs(selectedCampaignDetail.end_at).format("DD/MM/YYYY")}
+                    </div>
+                  </div>
+                  <div
+                    className={`rounded-lg border p-3 ${
+                      isEnded
+                        ? "border-red-200 bg-red-50"
+                        : isUrgent
+                          ? "border-amber-200 bg-amber-50"
+                          : "border-emerald-200 bg-emerald-50"
+                    }`}
                   >
-                    Xác nhận trao
-                  </Button>
-                ),
-            },
-          ]}
-        />
+                    <Text type="secondary" className="block text-xs">Còn lại</Text>
+                    <div className={`mt-1 text-xl font-bold text-${dayColor}-600`}>
+                      {isEnded ? "Đã kết thúc" : `${daysRemaining} ngày`}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* ── Tiến độ quà theo tháng ── */}
+            <Card size="small" title="Tiến độ phát hành quà theo tháng">
+              <div className="space-y-5">
+                {(selectedCampaignDetail.reward_pools || []).length === 0 ? (
+                  <Text type="secondary">Chiến dịch chưa cấu hình cơ cấu quà.</Text>
+                ) : (
+                  (selectedCampaignDetail.reward_pools || []).map((pool, poolIdx) => {
+                    const totalQty = Number(pool.total_quantity || 0)
+                    const remainingQty = Number(pool.remaining_quantity ?? totalQty)
+                    const wonQty = totalQty - remainingQty
+                    const wonPct = totalQty > 0 ? Number(((wonQty / totalQty) * 100).toFixed(1)) : 0
+
+                    return (
+                      <div key={poolIdx}>
+                        {/* Header pool */}
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <Text strong>{pool.reward_name}</Text>
+                          <Space size={8} wrap>
+                            <Tag>
+                              Tổng: {totalQty} phần · {formatCurrency(pool.reward_value)}/phần
+                            </Tag>
+                            <Tag color="blue">Đã trúng: {wonQty}</Tag>
+                            <Tag color={remainingQty <= 0 ? "red" : "green"}>
+                              Còn lại: {remainingQty}
+                            </Tag>
+                            <Tag color={wonPct >= 80 ? "red" : wonPct >= 50 ? "orange" : "green"}>
+                              Tiến độ trúng: {wonPct}%
+                            </Tag>
+                          </Space>
+                        </div>
+
+                        {/* Bảng tiến độ theo tháng */}
+                        <Table
+                          size="small"
+                          rowKey="month_index"
+                          pagination={false}
+                          dataSource={pool.monthly_release || []}
+                          columns={[
+                            {
+                              title: "Tháng",
+                              dataIndex: "month_index",
+                              width: 80,
+                              render: (v: number) => <Text strong>Tháng {v}</Text>,
+                            },
+                            {
+                              title: "Quota tháng",
+                              dataIndex: "release_quantity",
+                              width: 120,
+                              render: (v: number) => `${v} phần`,
+                            },
+                            {
+                              title: "Đã trúng",
+                              width: 110,
+                              render: (_: unknown, r: { release_quantity: number; available_quantity?: number }) => {
+                                const won =
+                                  Number(r.release_quantity || 0) -
+                                  Number(r.available_quantity ?? r.release_quantity)
+                                return (
+                                  <Text type={won > 0 ? "warning" : "secondary"}>
+                                    {won} phần
+                                  </Text>
+                                )
+                              },
+                            },
+                            {
+                              title: "Còn lại",
+                              width: 110,
+                              render: (_: unknown, r: { release_quantity: number; available_quantity?: number }) => {
+                                const rem = Number(r.available_quantity ?? r.release_quantity)
+                                return (
+                                  <Text type={rem <= 0 ? "danger" : "success"}>
+                                    {rem} phần
+                                  </Text>
+                                )
+                              },
+                            },
+                            {
+                              title: "Tiến độ",
+                              render: (_: unknown, r: { release_quantity: number; available_quantity?: number }) => {
+                                const won =
+                                  Number(r.release_quantity || 0) -
+                                  Number(r.available_quantity ?? r.release_quantity)
+                                const pct =
+                                  Number(r.release_quantity) > 0
+                                    ? Number(((won / Number(r.release_quantity)) * 100).toFixed(1))
+                                    : 0
+                                return (
+                                  <Progress
+                                    percent={pct}
+                                    size="small"
+                                    strokeColor={
+                                      pct >= 80 ? "#ef4444" : pct >= 50 ? "#f59e0b" : "#10b981"
+                                    }
+                                    format={(p) => `${p}%`}
+                                  />
+                                )
+                              },
+                            },
+                          ]}
+                        />
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </Card>
+
+            {/* ── Danh sách trúng thưởng ── */}
+            <Card
+              size="small"
+              title={`Danh sách trúng thưởng (${reservationsData?.items?.length || 0} người)`}
+            >
+              <Table<PromotionRewardReservation>
+                rowKey="id"
+                size="small"
+                loading={isReservationsLoading || issueReservationMutation.isPending}
+                dataSource={reservationsData?.items || []}
+                pagination={{ pageSize: 8, size: "small" }}
+                columns={[
+                  {
+                    title: "Khách hàng",
+                    render: (_, record) => (
+                      <Space direction="vertical" size={0}>
+                        <Text strong>{record.customer?.name || `KH #${record.customer_id}`}</Text>
+                        <Text type="secondary">{record.customer?.phone}</Text>
+                      </Space>
+                    ),
+                  },
+                  {
+                    title: "Quà",
+                    render: (_, record) => (
+                      <Space direction="vertical" size={0}>
+                        <Text>{record.reward_name}</Text>
+                        <Text type="secondary">{formatCurrency(record.reward_value)}</Text>
+                      </Space>
+                    ),
+                  },
+                  {
+                    title: "Trạng thái",
+                    width: 130,
+                    render: (_, record) => (
+                      <Tag color={record.status === "issued" ? "blue" : "gold"}>
+                        {record.status === "issued" ? "Đã trao" : "Chờ nhận quà"}
+                      </Tag>
+                    ),
+                  },
+                  {
+                    title: "Trúng lúc",
+                    width: 140,
+                    render: (_, record) =>
+                      dayjs(record.reserved_at).format("DD/MM/YYYY HH:mm"),
+                  },
+                  {
+                    title: "Thao tác",
+                    width: 130,
+                    render: (_, record) =>
+                      record.status === "issued" ? null : (
+                        <Button
+                          size="small"
+                          onClick={() =>
+                            selectedCampaign &&
+                            issueReservationMutation.mutateAsync({
+                              id: selectedCampaign.id,
+                              reservationId: record.id,
+                            })
+                          }
+                        >
+                          Xác nhận trao
+                        </Button>
+                      ),
+                  },
+                ]}
+              />
+            </Card>
+          </div>
+        ) : (
+          <div className="py-10 text-center">
+            <Text type="secondary">Không tìm thấy dữ liệu chiến dịch.</Text>
+          </div>
+        )}
       </Modal>
     </div>
   )

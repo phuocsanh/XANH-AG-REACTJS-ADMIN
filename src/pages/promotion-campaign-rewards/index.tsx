@@ -1,8 +1,9 @@
 import React from "react"
-import { Button, Card, Space, Table, Tag, Typography } from "antd"
+import { Button, Card, Popconfirm, Space, Table, Tag, Typography } from "antd"
 import dayjs from "dayjs"
 import FilterHeader from "@/components/common/filter-header"
 import {
+  useCancelIssuePromotionReservationMutation,
   useIssuePromotionReservationMutation,
   usePromotionCampaignAllReservationsQuery,
 } from "@/queries/promotion-campaign"
@@ -27,6 +28,10 @@ const PromotionCampaignRewardsPage: React.FC = () => {
     ...filters,
   })
   const issueMutation = useIssuePromotionReservationMutation()
+  const cancelIssueMutation = useCancelIssuePromotionReservationMutation()
+
+  // Loading chung cho cả 2 thao tác
+  const isActionLoading = isLoading || issueMutation.isPending || cancelIssueMutation.isPending
 
   return (
     <div className="space-y-4">
@@ -37,7 +42,7 @@ const PromotionCampaignRewardsPage: React.FC = () => {
               Quà campaign quay thưởng
             </Title>
             <Text type="secondary">
-              Trang riêng để quản lý quà reserve, xác nhận trao quà và theo dõi lịch sử nhận quà từ campaign.
+              Trang riêng để quản lý quà trúng thưởng, xác nhận trao quà và theo dõi lịch sử nhận quà từ campaign.
             </Text>
           </div>
         </div>
@@ -46,7 +51,7 @@ const PromotionCampaignRewardsPage: React.FC = () => {
       <Card>
         <Table
           rowKey="id"
-          loading={isLoading || issueMutation.isPending}
+          loading={isActionLoading}
           dataSource={data?.items || []}
           pagination={{
             current: page,
@@ -99,18 +104,18 @@ const PromotionCampaignRewardsPage: React.FC = () => {
               width: 160,
               render: (_, record: any) => (
                 <Tag color={record.status === "issued" ? "blue" : "gold"}>
-                  {record.status === "issued" ? "Đã trao" : "Đã reserve"}
+                  {record.status === "issued" ? "Đã trao" : "Chờ nhận quà"}
                 </Tag>
               ),
               filters: [
-                { text: "Đã reserve", value: "reserved" },
+                { text: "Chờ nhận quà", value: "reserved" },
                 { text: "Đã trao", value: "issued" },
               ],
               filteredValue: filters.status ? [filters.status] : null,
               onFilter: () => true,
             },
             {
-              title: "Reserve lúc",
+              title: "Trúng thưởng lúc",
               key: "reserved_at",
               width: 170,
               render: (_, record: any) =>
@@ -130,21 +135,48 @@ const PromotionCampaignRewardsPage: React.FC = () => {
             {
               title: "Thao tác",
               key: "actions",
-              width: 130,
-              render: (_, record: any) =>
-                record.status === "issued" ? null : (
-                  <Button
-                    size="small"
-                    onClick={() =>
+              width: 150,
+              render: (_, record: any) => {
+                if (record.status === "issued") {
+                  // Đã trao → cho phép hoàn tác (có confirm)
+                  return (
+                    <Popconfirm
+                      title="Hoàn tác xác nhận trao?"
+                      description="Quà sẽ trở về trạng thái 'Chờ nhận quà'. Bạn chắc chắn?"
+                      okText="Hoàn tác"
+                      okButtonProps={{ danger: true }}
+                      cancelText="Thôi"
+                      onConfirm={() =>
+                        cancelIssueMutation.mutateAsync({
+                          id: record.promotion_id,
+                          reservationId: record.id,
+                        })
+                      }
+                    >
+                      <Button size="small" danger>
+                        Hoàn tác
+                      </Button>
+                    </Popconfirm>
+                  )
+                }
+                // Chưa trao → xác nhận trao (có confirm trước khi thực hiện)
+                return (
+                  <Popconfirm
+                    title="Xác nhận đã trao quà?"
+                    description={`Xác nhận trao "${record.reward_name}" cho ${record.customer?.name || `KH #${record.customer_id}`}?`}
+                    okText="Xác nhận trao"
+                    cancelText="Thôi"
+                    onConfirm={() =>
                       issueMutation.mutateAsync({
                         id: record.promotion_id,
                         reservationId: record.id,
                       })
                     }
                   >
-                    Xác nhận trao
-                  </Button>
-                ),
+                    <Button size="small">Xác nhận trao</Button>
+                  </Popconfirm>
+                )
+              },
             },
           ]}
           onChange={(_, tableFilters) => {

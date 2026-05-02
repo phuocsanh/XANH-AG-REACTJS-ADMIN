@@ -109,7 +109,7 @@ interface DataTableProps<T = Record<string, unknown>>
  * Hỗ trợ search, filter, pagination, sorting
  * Responsive và có thể tùy chỉnh hoàn toàn
  */
-const DataTable = <T extends Record<string, unknown>>({
+const DataTable = <T extends object>({
   columns,
   data,
   loading = false,
@@ -232,7 +232,7 @@ const DataTable = <T extends Record<string, unknown>>({
     if (searchText && searchableColumns.length > 0) {
       filtered = filtered.filter((item) =>
         searchableColumns.some((column) => {
-          const value = item[column]
+          const value = (item as Record<string, unknown>)[column]
           return (
             value &&
             value.toString().toLowerCase().includes(searchText.toLowerCase())
@@ -245,7 +245,7 @@ const DataTable = <T extends Record<string, unknown>>({
     Object.entries(filterValues).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
         filtered = filtered.filter((item) => {
-          const itemValue = item[key]
+          const itemValue = (item as Record<string, unknown>)[key]
           return itemValue === value
         })
       }
