@@ -9,6 +9,7 @@ import { useRiceCropSearch } from '@/queries/rice-crop';
 import { useOperatingCostCategories } from '@/queries/operating-cost-category';
 import { useCustomerSearch } from '@/queries/customer';
 import dayjs from 'dayjs';
+import { notifyFormErrors } from '@/utils/form-error';
 
 interface CreateOperatingCostModalProps {
   visible: boolean;
@@ -159,12 +160,16 @@ const CreateOperatingCostModal: React.FC<CreateOperatingCostModalProps> = ({
     }
   };
 
+  const handleFormInvalid = (formErrors: any) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại chi phí vận hành');
+  };
+
   return (
     <Modal
       title={initialData ? "Cập nhật chi phí vận hành" : "Thêm chi phí vận hành mới"}
       open={visible}
       onCancel={onCancel}
-      onOk={handleSubmit(onSubmit)}
+      onOk={handleSubmit(onSubmit, handleFormInvalid)}
       confirmLoading={createMutation.isPending || updateMutation.isPending}
       okText={initialData ? "Lưu thay đổi" : "Tạo mới"}
       cancelText="Hủy"

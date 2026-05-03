@@ -15,6 +15,7 @@ import {
 } from "@/queries/product-subtype"
 import { ProductType } from "@/models/product-type.model"
 import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
+import { notifyFormErrors } from "@/utils/form-error"
 import {
   productSubtypeSchema,
   ProductSubtypeFormData,
@@ -134,6 +135,10 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
     }
   }
 
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, "Vui lòng kiểm tra lại loại phụ sản phẩm")
+  }
+
   const isLoading = createMutation.isPending || updateMutation.isPending
 
   return (
@@ -148,7 +153,7 @@ const DialogAddUpdate: React.FC<DialogAddUpdateProps> = ({
       footer={null}
       width={600}
     >
-      <Form layout='vertical' onFinish={handleSubmit(onSubmit)}>
+      <Form layout='vertical' onFinish={handleSubmit(onSubmit, handleFormInvalid)}>
         {/* Tên loại phụ sản phẩm */}
         <Form.Item
           label='Tên loại phụ sản phẩm'

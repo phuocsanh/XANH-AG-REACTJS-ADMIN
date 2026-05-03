@@ -73,12 +73,12 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
   const [receiverPhone, setReceiverPhone] = useState('');
   const [driverName, setDriverName] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
-  const [totalCost, setTotalCost] = useState<number>(0);
+  const [totalCost, setTotalCost] = useState<number | null>(0);
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<DeliveryStatus>(DeliveryStatus.PENDING);
   
   // Danh sách sản phẩm được chọn để giao (lưu sales_invoice_item_id)
-  const [selectedItems, setSelectedItems] = useState<Map<number, number>>(new Map());
+  const [selectedItems, setSelectedItems] = useState<Map<number, number | null>>(new Map());
   const isInitialized = useRef(false);
 
   // Populate from initialValue (edit mode)
@@ -99,7 +99,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
       if (initialValue.status) setStatus(initialValue.status);
       
       if (initialValue.items) {
-        const itemMap = new Map<number, number>();
+        const itemMap = new Map<number, number | null>();
         initialValue.items.forEach(item => {
           if (item.sales_invoice_item_id !== undefined) {
             itemMap.set(item.sales_invoice_item_id, item.quantity || 0);
@@ -149,12 +149,12 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
       receiver_phone: receiverPhone,
       driver_name: driverName || undefined,
       vehicle_number: vehiclePlate || undefined,
-      total_cost: totalCost,
+      total_cost: totalCost ?? 0,
       status: status,
       delivery_notes: notes || undefined,
       items: Array.from(selectedItems.entries()).map(([productIndex, quantity]) => ({
         sales_invoice_item_id: productIndex, // Sẽ được map sau khi tạo invoice items
-        quantity: quantity,
+        quantity: quantity ?? 0,
       })),
     };
 
@@ -185,7 +185,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
     setSelectedItems(newSelected);
   };
 
-  const handleQuantityChange = (index: number, quantity: number) => {
+  const handleQuantityChange = (index: number, quantity: number | null) => {
     const newSelected = new Map(selectedItems);
     newSelected.set(index, quantity);
     setSelectedItems(newSelected);
@@ -365,7 +365,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
               <NumberInput
                 style={{ width: '100%' }}
                 value={totalCost}
-                onChange={(val) => setTotalCost(val || 0)}
+                onChange={(val) => setTotalCost(val)}
                 placeholder="0"
               />
             </Box>
@@ -408,7 +408,9 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                     ) : (
                       items.map((item, index) => {
                         const isSelected = selectedItems.has(index);
-                        const deliveryQty = selectedItems.get(index) || item.quantity;
+                        const deliveryQty = selectedItems.has(index)
+                          ? (selectedItems.get(index) ?? null)
+                          : item.quantity;
 
                         return (
                           <TableRow key={index}>
@@ -426,7 +428,7 @@ export const DeliveryInfoSection: React.FC<DeliveryInfoSectionProps> = ({
                                   size="small"
                                   value={deliveryQty}
                                   onChange={(val) =>
-                                    handleQuantityChange(index, val || 0)
+                                    handleQuantityChange(index, val)
                                   }
                                   min={0}
                                   max={item.quantity}

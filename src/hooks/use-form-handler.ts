@@ -12,6 +12,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query"
 import { useMutate } from "./use-mutate"
+import { notifyFormErrors } from "@/utils/form-error"
 
 /**
  * Configuration options for the useFormHandler hook.
@@ -220,6 +221,7 @@ export const useFormHandler = <
 
     const submitHandler = methods.handleSubmit(onSubmit, (error) => {
       console.error("Form submit failure: ", error)
+      notifyFormErrors(error)
     })
 
     submitHandler().catch((error) => {

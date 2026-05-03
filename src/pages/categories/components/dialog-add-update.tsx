@@ -5,6 +5,7 @@ import DialogCustom from "@/components/dialog"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import FormField from "@/components/form/form-field"
+import { notifyFormErrors } from "@/utils/form-error"
 import {
   useCreateProductTypeMutation,
   useUpdateProductTypeMutation,
@@ -33,6 +34,7 @@ function DialogAddUpdate({
     setValue,
     watch,
     reset,
+    formState: { errors },
   } = useForm<ProductTypeFormData>({
     resolver: zodResolver(productTypeSchema),
     defaultValues: defaultProductTypeValues,
@@ -96,6 +98,10 @@ function DialogAddUpdate({
     }
   }
 
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, "Vui lòng kiểm tra lại loại sản phẩm")
+  }
+
   const isLoading =
     createProductTypeMutation.isPending || updateProductTypeMutation.isPending
 
@@ -117,7 +123,7 @@ function DialogAddUpdate({
           </span>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col'>
+        <form onSubmit={handleSubmit(onSubmit, handleFormInvalid)} className='flex flex-col'>
           {/* Tên loại sản phẩm */}
           <div className='mt-3'>
             <FormField

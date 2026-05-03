@@ -28,6 +28,7 @@ import {
 } from '@/queries/harvest-record';
 import { HarvestRecord, CreateHarvestRecordDto } from '@/models/rice-farming';
 import { FormField, FormFieldNumber, FormDatePicker } from '@/components/form';
+import { notifyFormErrors } from '@/utils/form-error';
 
 interface HarvestRecordsTabProps {
   riceCropId: number;
@@ -150,6 +151,10 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
     } catch (error) {
       console.error('Submit failed:', error);
     }
+  };
+
+  const handleFormInvalid = (formErrors: any) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại bản ghi thu hoạch');
   };
 
   const columns = [
@@ -294,13 +299,13 @@ const HarvestRecordsTab: React.FC<HarvestRecordsTabProps> = ({ riceCropId }) => 
       <Modal
         title={editingItem ? 'Sửa đợt thu hoạch' : 'Thêm đợt thu hoạch mới'}
         open={isModalVisible}
-        onOk={handleSubmit(onSubmit)}
+        onOk={handleSubmit(onSubmit, handleFormInvalid)}
         onCancel={() => setIsModalVisible(false)}
         width={700}
         okText={editingItem ? 'Cập nhật' : 'Lưu'}
         cancelText="Hủy"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-4 flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit, handleFormInvalid)} className="mt-4 flex flex-col gap-4">
           <Row gutter={16}>
             <Col span={12}>
               <FormDatePicker

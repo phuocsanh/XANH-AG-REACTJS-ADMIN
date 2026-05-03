@@ -14,6 +14,7 @@ import { GrowthStage, CropStatus, type RiceCrop, type CreateRiceCropDto } from '
 import { useAppStore } from '@/stores/store';
 import dayjs from 'dayjs';
 import { convertSolar2Lunar } from '@/lib/lunar-calendar';
+import { notifyFormErrors } from '@/utils/form-error';
 
 interface RiceCropModalProps {
   open: boolean;
@@ -296,12 +297,16 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
     }
   };
 
+  const handleFormInvalid = (formErrors: any) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại thông tin ruộng lúa');
+  };
+
   return (
     <Modal
       title={isEditMode ? 'Chỉnh sửa Ruộng lúa' : 'Tạo Ruộng lúa mới'}
       open={open}
       onCancel={onCancel}
-      onOk={handleSubmit(onSubmit)}
+      onOk={handleSubmit(onSubmit, handleFormInvalid)}
       confirmLoading={createMutation.isPending || updateMutation.isPending}
       width={800}
       okText={isEditMode ? 'Cập nhật' : 'Tạo mới'}

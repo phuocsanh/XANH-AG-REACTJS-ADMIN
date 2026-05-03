@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { Modal } from 'antd';
 import { useForm } from 'react-hook-form';
 import { FormField, FormFieldNumber, FormComboBox, FormDatePicker } from '@/components/form';
+import { notifyFormErrors } from '@/utils/form-error';
 import { useSeasonsQuery } from '@/queries/season';
 import { useCustomersQuery } from '@/queries/customer';
 import { useRiceCrops } from '@/queries/rice-crop';
@@ -162,12 +163,16 @@ export const FarmServiceCostModal: React.FC<FarmServiceCostModalProps> = ({
   const isPending = createServiceMutation.isPending || updateServiceMutation.isPending || 
                     createGiftMutation.isPending || updateGiftMutation.isPending;
 
+  const handleFormInvalid = (formErrors: any) => {
+    notifyFormErrors(formErrors, `Vui lòng kiểm tra lại ${mode === 'service' ? 'chi phí dịch vụ' : 'quà tặng'}`);
+  };
+
   return (
     <Modal
       title={editingCost ? `Chỉnh sửa ${mode === 'service' ? 'chi phí' : 'quà tặng'}` : `Thêm ${mode === 'service' ? 'chi phí' : 'quà tặng'} mới`}
       open={open}
       onCancel={onCancel}
-      onOk={handleSubmit(onSubmit)}
+      onOk={handleSubmit(onSubmit, handleFormInvalid)}
       confirmLoading={isPending}
       width={700}
       okText={editingCost ? 'Lưu thay đổi' : 'Tạo mới'}

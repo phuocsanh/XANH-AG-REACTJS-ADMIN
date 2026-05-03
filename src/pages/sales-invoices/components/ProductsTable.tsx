@@ -330,26 +330,25 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 </Typography>
                               );
                             })()}
-                              <NumberInput
+                            <NumberInput
                                 value={field.value}
                                 onChange={(val) => {
-                                  const numVal = Number(val) || 0;
-                                  field.onChange(numVal);
-                                  if (numVal !== 0) {
-                                  const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
-                                  const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
-                                  const baseQty = Number(val) * factor;
-                                  
-                                  if (baseQty > stock) {
-                                    const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
-                                    const unitName = watch(`items.${index}.unit_name`) || '';
-                                    antMessage.warning(`Số lượng nhập (${val} ${unitName}) vượt quá tồn kho (${displayStock} ${unitName})!`);
+                                  field.onChange(val);
+
+                                  if (val !== null) {
+                                    const stock = Number(watch(`items.${index}.stock_quantity`)) || 0;
+                                    const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                                    const baseQty = val * factor;
+
+                                    if (baseQty > stock) {
+                                      const displayStock = factor > 0 ? (stock / factor).toFixed(2) : stock;
+                                      const unitName = watch(`items.${index}.unit_name`) || '';
+                                      antMessage.warning(`Số lượng nhập (${val} ${unitName}) vượt quá tồn kho (${displayStock} ${unitName})!`);
+                                    }
+
+                                    setValue(`items.${index}.base_quantity`, baseQty);
                                   }
-                                  
-                                  // Cập nhật base_quantity
-                                  setValue(`items.${index}.base_quantity`, baseQty);
-                                }
-                              }}
+                                }}
                               min={1}
                               status={(() => {
                                 const qty = Number(watch(`items.${index}.quantity`)) || 0;
@@ -398,7 +397,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                             })()}
                             <NumberInput
                               value={field.value}
-                              onChange={(val) => field.onChange(Number(val) || 0)}
+                              onChange={(val) => field.onChange(val)}
                               min={0}
                               allowClear
                               size="small"
@@ -415,7 +414,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         render={({ field }) => (
                           <NumberInput
                             value={field.value}
-                            onChange={(val) => field.onChange(Number(val) || 0)}
+                            onChange={(val) => field.onChange(val)}
                             min={0}
                             allowClear
                             size="small"

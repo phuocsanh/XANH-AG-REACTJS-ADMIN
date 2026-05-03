@@ -29,6 +29,7 @@ import { useForm } from "react-hook-form"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import { FormComboBox, FormDatePicker, FormField, FormFieldNumber } from "@/components/form"
+import { notifyFormErrors } from "@/utils/form-error"
 import {
   CreatePromotionCampaignRequest,
   PromotionCampaign,
@@ -152,7 +153,7 @@ const PromotionCampaignsPage: React.FC = () => {
 
   const pageSize = 10
 
-  const { control, handleSubmit, reset, setValue, watch } = useForm<CampaignFormValues>({
+  const { control, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CampaignFormValues>({
     defaultValues,
   })
 
@@ -439,6 +440,10 @@ const PromotionCampaignsPage: React.FC = () => {
     closeModal()
   }
 
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, "Vui lòng kiểm tra lại campaign quay thưởng")
+  }
+
   const updateReward = (index: number, patch: Partial<PromotionRewardPoolItem>) => {
     setRewards((current) =>
       current.map((reward, rewardIndex) =>
@@ -702,7 +707,7 @@ const PromotionCampaignsPage: React.FC = () => {
             key="submit"
             type="primary"
             loading={createMutation.isPending || updateMutation.isPending || isCampaignDetailLoading}
-            onClick={handleSubmit(onSubmit)}
+            onClick={handleSubmit(onSubmit, handleFormInvalid)}
           >
             {editingId ? "Lưu thay đổi" : "Tạo campaign"}
           </Button>,

@@ -13,6 +13,7 @@ import SEOChecker from './seo-checker'
 import { frontendAiService } from '@/services/ai.service'
 import { message } from 'antd'
 import { Input } from 'antd'
+import { notifyFormErrors } from '@/utils/form-error'
 
 interface NewsFormProps {
   visible: boolean
@@ -145,6 +146,10 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
     onCancel()
   }
 
+  const handleFormInvalid = (formErrors: typeof methods.formState.errors) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại nội dung bài viết')
+  }
+
   const handleGenerateTags = async () => {
     const title = watch('title')
     const content = watch('content')
@@ -198,7 +203,7 @@ const NewsForm: React.FC<NewsFormProps> = ({ visible, onCancel, initialData }) =
       destroyOnClose
     >
       <FormProvider {...methods}>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, handleFormInvalid)}>
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Column: Form Inputs */}
             <div className="flex-grow lg:w-2/3">

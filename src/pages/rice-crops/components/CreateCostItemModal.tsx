@@ -6,6 +6,7 @@ import { useCostItemCategories } from '@/queries/cost-item-category';
 import type { CostItem } from '@/models/cost-item';
 import FormField from '@/components/form/form-field';
 import FormFieldNumber from '@/components/form/form-field-number';
+import { notifyFormErrors } from '@/utils/form-error';
 import FormDatePicker from '@/components/form/form-date-picker';
 import FormComboBox from '@/components/form/form-combo-box';
 import dayjs from 'dayjs';
@@ -99,12 +100,16 @@ const CreateCostItemModal: React.FC<CreateCostItemModalProps> = ({
     }
   };
 
+  const handleFormInvalid = (formErrors: any) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại chi phí canh tác');
+  };
+
   return (
     <Modal
       title={isEdit ? 'Sửa chi phí canh tác' : 'Thêm chi phí canh tác'}
       open={visible}
       onCancel={onCancel}
-      onOk={handleSubmit(onSubmit)}
+      onOk={handleSubmit(onSubmit, handleFormInvalid)}
       confirmLoading={createMutation.isPending || updateMutation.isPending}
       width={600}
       okText={isEdit ? 'Cập nhật' : 'Thêm'}

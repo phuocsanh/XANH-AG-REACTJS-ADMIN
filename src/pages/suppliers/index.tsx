@@ -15,6 +15,7 @@ import { Add } from "@mui/icons-material"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { FormField, FormComboBox } from "@/components/form"
+import { notifyFormErrors } from "@/utils/form-error"
 import {
   useSuppliersQuery,
   useCreateSupplierMutation,
@@ -72,6 +73,7 @@ export const Suppliers = () => {
     control,
     handleSubmit,
     reset,
+    formState: { errors },
   } = useForm<SupplierFormData>({
     resolver: zodResolver(supplierSchema),
     defaultValues: defaultSupplierValues,
@@ -263,6 +265,10 @@ export const Suppliers = () => {
     } catch (error) {
       console.error("Lỗi khi xử lý form:", error)
     }
+  }
+
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, "Vui lòng kiểm tra lại thông tin nhà cung cấp")
   }
 
   // Xử lý xác nhận xóa
@@ -538,7 +544,7 @@ export const Suppliers = () => {
         <DialogContent>
           <Box
             component='form'
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, handleFormInvalid)}
             sx={{ mt: 2 }}
           >
             <FormField

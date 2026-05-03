@@ -45,6 +45,7 @@ import {
   defaultAdjustmentValues,
 } from './form-config';
 import { handleApiError } from '@/utils/error-handler';
+import { notifyFormErrors } from '@/utils/form-error';
 import { LoadingSpinner } from '@/components/common';
 import { useFormGuard } from '@/hooks/use-form-guard';
 
@@ -208,6 +209,10 @@ const AdjustmentCreate = () => {
     }
   };
 
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại phiếu điều chỉnh kho');
+  };
+
   if (isEditMode && isLoadingAdjustment) {
     return <LoadingSpinner />;
   }
@@ -223,7 +228,7 @@ const AdjustmentCreate = () => {
           </Typography>
         </Box>
   
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, handleFormInvalid)}>
           <Grid container spacing={3}>
             {/* Thông tin chung */}
             <Grid item xs={12}>

@@ -32,6 +32,7 @@ import { VIETNAM_LOCATIONS, DEFAULT_LOCATION, Location } from '@/constants/locat
 import LocationMap from '@/components/LocationMap';
 import { Modal as AntModal, App as AntApp } from 'antd';
 import { useFormGuard } from '@/hooks/use-form-guard';
+import { notifyFormErrors } from '@/utils/form-error';
 import {
   salesInvoiceSchema,
   SalesInvoiceFormData,
@@ -872,6 +873,10 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     }
   };
 
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại thông tin hóa đơn');
+  };
+
   const totalAmount = watch('total_amount');
   const finalAmount = watch('final_amount');
   const remainingAmount = finalAmount - partialPaymentAmount;
@@ -1404,7 +1409,7 @@ ${productInfo}`;
         <Tab label="Cảnh Báo Bệnh/Sâu Hại" />
       </Tabs>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, handleFormInvalid)}>
         {/* TAB 1: Invoice Information */}
         <TabPanel value={currentTab} index={0}>
           {Object.keys(errors).length > 0 && (
@@ -1504,14 +1509,14 @@ ${productInfo}`;
             <Grid item xs={12}>
               <InvoiceActions
                 onCancel={() => confirmExit(() => navigate(`/sales-invoices${location.search}`))}
-                onSaveDraft={handleSubmit((data) => onSubmit({ ...data, status: 'draft' }))}
+                onSaveDraft={handleSubmit((data) => onSubmit({ ...data, status: 'draft' }), handleFormInvalid)}
                 onSaveConfirm={handleSubmit((data) => {
                   let status: 'draft' | 'confirmed' | 'paid' = 'confirmed';
                   if (data.payment_method === 'cash' && (data.final_amount - data.partial_payment_amount) <= 0) {
                     status = 'paid';
                   }
                   onSubmit({ ...data, status });
-                })}
+                }, handleFormInvalid)}
                 isPending={createMutation.isPending}
                 calculatedProfit={calculatedProfit}
               />

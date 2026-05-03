@@ -36,6 +36,7 @@ import {
   defaultSalesReturnValues,
   refundMethodLabels,
 } from './form-config';
+import { notifyFormErrors } from '@/utils/form-error';
 
 const CreateSalesReturn = () => {
   const navigate = useNavigate();
@@ -155,6 +156,10 @@ const CreateSalesReturn = () => {
     });
   };
 
+  const handleFormInvalid = (formErrors: typeof errors) => {
+    notifyFormErrors(formErrors, 'Vui lòng kiểm tra lại phiếu trả hàng');
+  };
+
   // Get invoice list from pagination response
   const invoiceList = invoicesData?.data?.items || (Array.isArray(invoicesData?.data) ? invoicesData.data : []) || [];
 
@@ -169,7 +174,7 @@ const CreateSalesReturn = () => {
         </Typography>
       </Box>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, handleFormInvalid)}>
         <Grid container spacing={3}>
           {/* Invoice Selection */}
           <Grid item xs={12} md={6}>

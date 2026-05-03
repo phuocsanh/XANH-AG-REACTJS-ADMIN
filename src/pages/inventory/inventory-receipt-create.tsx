@@ -13,6 +13,7 @@ import {
   Upload,
 } from "antd"
 import { toast } from "react-toastify"
+import { notifyFormErrors } from "@/utils/form-error"
 import type { UploadFile } from "antd"
 import {
   ArrowLeftOutlined,
@@ -588,7 +589,7 @@ const InventoryReceiptCreate: React.FC = () => {
   // Callback khi validate form thất bại
   const onFormError = (errors: any) => {
     console.error("Form validation errors:", errors);
-    toast.error("Vui lòng kiểm tra lại các trường thông tin bắt buộc");
+    notifyFormErrors(errors, "Vui lòng kiểm tra lại các trường thông tin bắt buộc");
   };
 
   // Loading state khi đang load dữ liệu trong edit mode
