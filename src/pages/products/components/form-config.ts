@@ -1,8 +1,40 @@
 import { z } from "zod"
 import { UploadFile } from "antd/lib/upload/interface"
 
+const refineCostingMethod = (
+  data: {
+    costing_method?: "fixed" | "by_price_type"
+    cash_cost_price?: string
+    credit_cost_price?: string
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.costing_method !== "by_price_type") {
+    return
+  }
+
+  const cashCost = Number(data.cash_cost_price || "")
+  const creditCost = Number(data.credit_cost_price || "")
+
+  if (!Number.isFinite(cashCost) || cashCost <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["cash_cost_price"],
+      message: "Nhập giá vốn tiền mặt cho sản phẩm tính giá vốn theo loại giá",
+    })
+  }
+
+  if (!Number.isFinite(creditCost) || creditCost <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["credit_cost_price"],
+      message: "Nhập giá vốn bán nợ cho sản phẩm tính giá vốn theo loại giá",
+    })
+  }
+}
+
 // Schema validation cho form sản phẩm
-export const productFormSchema = z.object({
+const productFormSchemaBase = z.object({
   name: z.string().min(1, "Tên sản phẩm không được để trống"),
   trade_name: z.string().min(1, "Hiệu thuốc không được để trống"),
   volume: z.string().optional(), // Dung tích/Khối lượng
@@ -78,36 +110,17 @@ export const productFormSchema = z.object({
     quantity: z.coerce.number().min(0.0001, "Số lượng phải lớn hơn 0"),
     unitId: z.number().optional(),
   })).optional(),
-}).superRefine((data, ctx) => {
-  if (data.costing_method !== "by_price_type") {
-    return
-  }
-
-  const cashCost = Number(data.cash_cost_price || "")
-  const creditCost = Number(data.credit_cost_price || "")
-
-  if (!Number.isFinite(cashCost) || cashCost <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["cash_cost_price"],
-      message: "Nhập giá vốn tiền mặt cho sản phẩm tính giá vốn theo loại giá",
-    })
-  }
-
-  if (!Number.isFinite(creditCost) || creditCost <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["credit_cost_price"],
-      message: "Nhập giá vốn bán nợ cho sản phẩm tính giá vốn theo loại giá",
-    })
-  }
 })
+
+export const productFormSchema = productFormSchemaBase.superRefine(refineCostingMethod)
 
 // Schema validation cho form tạo sản phẩm mới (yêu cầu thêm một số trường bắt buộc)
 export const createProductFormSchema = productFormSchema
 
 // Schema validation cho form cập nhật sản phẩm
-export const updateProductFormSchema = productFormSchema.partial()
+export const updateProductFormSchema = productFormSchemaBase
+  .partial()
+  .superRefine(refineCostingMethod)
 
 // Types cho form data
 export type ProductFormData = z.infer<typeof productFormSchema>
