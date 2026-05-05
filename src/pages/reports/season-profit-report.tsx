@@ -143,6 +143,8 @@ const SeasonProfitReportPage: React.FC = () => {
       dataIndex: 'quantity_sold',
       key: 'quantity_sold',
       align: 'right',
+      render: (value: number, record: any) =>
+        `${Number(value || 0).toLocaleString('vi-VN')}${record.unit_name ? ` ${record.unit_name}` : ''}`,
     },
     {
       title: 'Doanh thu',

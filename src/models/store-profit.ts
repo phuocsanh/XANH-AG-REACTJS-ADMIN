@@ -83,6 +83,7 @@ export interface TopProductProfit {
   product_id: number;
   product_name: string;
   quantity_sold: number;
+  unit_name?: string;
   total_revenue: number;
   total_profit: number;
   margin: number;

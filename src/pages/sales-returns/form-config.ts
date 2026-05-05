@@ -1,6 +1,7 @@
 import * as z from 'zod';
 
 export const salesReturnItemSchema = z.object({
+  sales_invoice_item_id: z.number().optional(),
   product_id: z.number().min(1, 'Vui lòng chọn sản phẩm'),
   product_name: z.string().optional(),
   quantity: z.number().min(1, 'Số lượng phải lớn hơn 0'),
@@ -44,4 +45,3 @@ export const returnStatusColors = {
   approved: 'success',
   cancelled: 'error',
 } as const;
-

@@ -17,6 +17,10 @@ export interface SalesInvoiceItem {
   quantity: number;
   unit_price: number;
   discount_amount: number;
+  total_price?: number;
+  price_type?: 'cash' | 'credit';
+  cost_price?: number;
+  costing_method_snapshot?: 'fixed' | 'by_price_type';
   tax_selling_price?: string;
   sale_unit_id?: number;
   conversion_factor?: number;
@@ -87,6 +91,7 @@ export interface CreateSalesInvoiceDto {
     quantity: number;
     unit_price: number;
     discount_amount?: number;
+    price_type?: 'cash' | 'credit';
     tax_selling_price?: string;
     sale_unit_id?: number;
     conversion_factor?: number;

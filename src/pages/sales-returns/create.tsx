@@ -112,6 +112,27 @@ const CreateSalesReturn = () => {
 
   const createMutation = useCreateSalesReturnMutation();
 
+  const getRefundUnitPrice = (item: any) => {
+    const invoiceItemsGross = (selectedInvoice?.items || []).reduce(
+      (sum, invoiceItem) =>
+        sum +
+        Number(
+          invoiceItem.total_price ||
+            Number(invoiceItem.quantity || 0) * Number(invoiceItem.unit_price || 0),
+        ),
+      0,
+    );
+    const itemGross = Number(
+      item.total_price || Number(item.quantity || 0) * Number(item.unit_price || 0),
+    );
+    const invoiceDiscountShare =
+      invoiceItemsGross > 0
+        ? Number(selectedInvoice?.discount_amount || 0) * (itemGross / invoiceItemsGross)
+        : 0;
+    const itemNet = Math.max(0, itemGross - invoiceDiscountShare);
+    return Number(item.quantity || 0) > 0 ? itemNet / Number(item.quantity) : 0;
+  };
+
   const handleInvoiceSelect = (id: number | undefined) => {
     if (id) {
       setValue('invoice_id', id);
@@ -126,17 +147,18 @@ const CreateSalesReturn = () => {
 
   const handleAddItem = (item: any) => {
     // Check if item already exists
-    const exists = fields.some((field) => field.product_id === item.product_id);
+    const exists = fields.some((field) => field.sales_invoice_item_id === item.id);
     if (exists) return;
 
     // Lấy tên sản phẩm từ relation product hoặc fallback về product_name
     const productName = item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định';
 
     append({
+      sales_invoice_item_id: item.id,
       product_id: item.product_id,
       product_name: productName,
       quantity: 1,
-      unit_price: item.unit_price,
+      unit_price: getRefundUnitPrice(item),
       reason: '',
     });
   };
@@ -334,7 +356,7 @@ const CreateSalesReturn = () => {
                               variant="outlined"
                               size="small"
                               onClick={() => handleAddItem(item)}
-                              disabled={fields.some((f) => f.product_id === item.product_id)}
+                              disabled={fields.some((f) => f.sales_invoice_item_id === item.id)}
                             >
                               {productName}
                               <Box component="span" sx={{ ml: 1, color: 'success.main', fontSize: '0.85em' }}>
@@ -379,7 +401,7 @@ const CreateSalesReturn = () => {
 
                           // ✅ Find max quantity from invoice (sử dụng returnable_quantity)
                           const invoiceItem = selectedInvoice?.items?.find(
-                            (i) => i.product_id === field.product_id
+                            (i) => i.id === field.sales_invoice_item_id
                           );
                           // Sử dụng returnable_quantity nếu có, fallback về quantity
                           const maxQuantity = invoiceItem 

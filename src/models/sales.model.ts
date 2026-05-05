@@ -72,6 +72,12 @@ export interface SalesInvoiceItem {
   total_price: number
   /** Số tiền giảm giá */
   discount_amount?: number
+  /** Loại giá dùng để chốt giá vốn và giá bán */
+  price_type?: 'cash' | 'credit'
+  /** Giá vốn snapshot tại thời điểm bán */
+  cost_price?: number
+  /** Cách tính giá vốn snapshot */
+  costing_method_snapshot?: 'fixed' | 'by_price_type'
   /** Số lượng tính thuế */
   taxable_quantity: number
   /** Ghi chú */

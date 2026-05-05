@@ -465,8 +465,9 @@ const SalesReturnsList: React.FC = () => {
               {viewingReturn.items && viewingReturn.items.length > 0 ? (
                 <Space direction='vertical' className='w-full' size='small'>
                   {viewingReturn.items.map((item, index) => {
-                    // ✅ Tính refund_amount từ quantity * unit_price
-                    const refundAmount = (item.quantity || 0) * (item.unit_price || 0);
+                    const refundAmount = Number(
+                      item.total_price ?? (item.quantity || 0) * (item.unit_price || 0),
+                    );
                     
                     return (
                       <Card key={index} size='small'>

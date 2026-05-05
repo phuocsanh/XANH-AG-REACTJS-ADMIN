@@ -1,8 +1,13 @@
 // Model cho Phiếu Xuất Trả Hàng (Return)
 
 export interface ReturnItem {
+  receipt_item_id?: number
   product_id: number
   quantity: number
+  unit_name?: string
+  unit_id?: number
+  conversion_factor?: number
+  base_quantity?: number
   unit_cost: number
   total_price: number
   reason?: string

@@ -2,9 +2,14 @@ import * as z from 'zod';
 
 // Schema cho item trong phiếu trả hàng
 export const returnItemSchema = z.object({
+  receipt_item_id: z.coerce.number().optional(),
   product_id: z.coerce.number().min(1, 'Vui lòng chọn sản phẩm'),
   product_name: z.string().optional(),
   quantity: z.coerce.number().min(1, 'Số lượng phải lớn hơn 0'),
+  unit_name: z.string().optional(),
+  unit_id: z.coerce.number().optional(),
+  conversion_factor: z.coerce.number().optional().default(1),
+  base_quantity: z.coerce.number().optional(),
   unit_cost: z.coerce.number().min(0, 'Đơn giá phải lớn hơn hoặc bằng 0'),
   total_price: z.coerce.number().min(0),
   current_stock: z.coerce.number().optional(),

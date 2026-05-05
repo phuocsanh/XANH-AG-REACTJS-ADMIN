@@ -12,6 +12,7 @@ export const getSalesReturnStatusText = (status: SalesReturnStatus): string => {
 export interface SalesReturnItem {
   id: number;
   sales_return_id: number;
+  sales_invoice_item_id?: number;
   product_id: number;
   product_name?: string;
   product?: {
@@ -22,6 +23,7 @@ export interface SalesReturnItem {
   };
   quantity: number;
   unit_price: number;
+  total_price?: number;
   refund_amount: number;
   reason?: string;
   created_at: string;
@@ -65,6 +67,7 @@ export interface CreateSalesReturnDto {
   reason?: string;
   notes?: string;
   items: {
+    sales_invoice_item_id?: number;
     product_id: number;
     quantity: number;
     unit_price: number;

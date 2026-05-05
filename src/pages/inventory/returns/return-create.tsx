@@ -119,13 +119,18 @@ const ReturnCreate = () => {
       setValue('status', existingReturn.status as any || 'draft');
       
       if (existingReturn.items) {
-        setValue('items', existingReturn.items.map(item => ({
-          product_id: item.product_id,
-          product_name: (item as any).product?.trade_name || (item as any).product?.name || (item as any).product_name || `Sản phẩm #${item.product_id}`,
-          quantity: item.quantity,
-          unit_cost: typeof item.unit_cost === 'string' ? parseFloat(item.unit_cost) : item.unit_cost,
-          total_price: typeof item.total_price === 'string' ? parseFloat(item.total_price) : item.total_price,
-          reason: item.reason || '',
+	        setValue('items', existingReturn.items.map(item => ({
+	          receipt_item_id: (item as any).receipt_item_id,
+	          product_id: item.product_id,
+	          product_name: (item as any).product?.trade_name || (item as any).product?.name || (item as any).product_name || `Sản phẩm #${item.product_id}`,
+	          quantity: item.quantity,
+	          unit_name: item.unit_name,
+	          unit_id: item.unit_id,
+	          conversion_factor: Number(item.conversion_factor || 1),
+	          base_quantity: Number(item.base_quantity || Number(item.quantity) * Number(item.conversion_factor || 1)),
+	          unit_cost: typeof item.unit_cost === 'string' ? parseFloat(item.unit_cost) : item.unit_cost,
+	          total_price: typeof item.total_price === 'string' ? parseFloat(item.total_price) : item.total_price,
+	          reason: item.reason || '',
           notes: item.notes || '',
         })));
       }
@@ -166,40 +171,54 @@ const ReturnCreate = () => {
   const availableProducts = useMemo(() => {
     const sourceReceipt = isEditMode ? editStageReceipt : selectedReceipt;
     
-    return (sourceReceipt as any)?.items?.map((item: any) => ({
-      product_id: item.product_id,
-      product_name: item.product?.trade_name || item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`,
-      quantity: item.quantity,
-      unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
-      current_stock: item.product?.quantity,
-    })) || [];
+	    return (sourceReceipt as any)?.items?.map((item: any) => ({
+	      receipt_item_id: item.id,
+	      product_id: item.product_id,
+	      product_name: item.product?.trade_name || item.product?.name || item.product_name || `Sản phẩm #${item.product_id}`,
+	      quantity: item.quantity,
+	      unit_name: item.unit_name || item.product?.unit?.name || '',
+	      unit_id: item.unit_id,
+	      conversion_factor: Number(item.conversion_factor || 1),
+	      base_quantity: Number(item.base_quantity || Number(item.quantity) * Number(item.conversion_factor || 1)),
+	      unit_cost: item.unit_cost || parseFloat(item.final_unit_cost || '0'),
+	      current_stock: item.product?.quantity,
+	    })) || [];
   }, [isEditMode, editStageReceipt, selectedReceipt]);
 
   // Compute options for ComboBox based on search results
   const productOptions = useMemo(() => {
     // Nếu không tìm kiếm, hiển thị list available (client-side)
-    if (!productSearchTerm) {
-        return availableProducts.map((p: any) => ({
-            value: p.product_id,
-            label: `${p.product_name} (Đã nhập: ${p.quantity})`,
-            productData: p
-        }));
-    }
+	    if (!productSearchTerm) {
+	        return availableProducts.map((p: any) => ({
+	            value: p.receipt_item_id,
+	            label: `${p.product_name} (Đã nhập: ${p.quantity}${p.unit_name ? ` ${p.unit_name}` : ''}${p.unit_cost ? ` | Giá: ${Number(p.unit_cost).toLocaleString('vi-VN')}` : ''})`,
+	            productData: p
+	        }));
+	    }
 
     // Nếu tìm kiếm, hiển thị kết quả từ server merge với info receipt
     if (!productSearchData?.pages) return [];
 
-    return productSearchData.pages.flatMap((page: any) => page?.data || []).map((product: any) => {
+	    return productSearchData.pages.flatMap((page: any) => page?.data || []).map((product: any) => {
         // Tìm info trong receipt
-        const inReceipt = availableProducts.find((ap: any) => ap.product_id === product.id);
+        const receiptMatches = availableProducts.filter((ap: any) => ap.product_id === product.id);
         
-        return {
-            value: product.id,
-            label: `${product.trade_name || product.name} ${inReceipt ? `(Đã nhập: ${inReceipt.quantity})` : '(Không có trong phiếu)'}`,
-            disabled: !inReceipt, // Disable nếu không có trong phiếu
-            productData: inReceipt // Null nếu không có
-        };
-    });
+	        if (receiptMatches.length === 0) {
+          return [{
+	            value: product.id,
+	            label: `${product.trade_name || product.name} (Không có trong phiếu)`,
+	            disabled: true,
+	            productData: null,
+          }];
+        }
+
+        return receiptMatches.map((inReceipt: any) => ({
+	          value: inReceipt.receipt_item_id,
+	          label: `${product.trade_name || product.name} (Đã nhập: ${inReceipt.quantity}${inReceipt.unit_name ? ` ${inReceipt.unit_name}` : ''}${inReceipt.unit_cost ? ` | Giá: ${Number(inReceipt.unit_cost).toLocaleString('vi-VN')}` : ''})`,
+	          disabled: false,
+	          productData: inReceipt,
+        }));
+    }).flat();
   }, [availableProducts, productSearchTerm, productSearchData]);
 
   const handleReceiptSelect = (receiptId: number | null) => {
@@ -219,16 +238,23 @@ const ReturnCreate = () => {
   };
 
   const handleAddProduct = (product: typeof availableProducts[0]) => {
-    const exists = fields.some((field) => field.product_id === product.product_id);
+    const exists = fields.some(
+      (field) => (field as any).receipt_item_id === product.receipt_item_id,
+    );
     if (exists) return;
 
-    append({
-      product_id: product.product_id,
-      product_name: product.product_name,
-      quantity: 1,
-      unit_cost: product.unit_cost,
-      total_price: product.unit_cost,
-      current_stock: product.current_stock,
+	    append({
+	      receipt_item_id: product.receipt_item_id,
+	      product_id: product.product_id,
+	      product_name: product.product_name,
+	      quantity: 1,
+	      unit_name: product.unit_name,
+	      unit_id: product.unit_id,
+	      conversion_factor: product.conversion_factor || 1,
+	      base_quantity: product.conversion_factor || 1,
+	      unit_cost: product.unit_cost,
+	      total_price: product.unit_cost,
+	      current_stock: product.current_stock,
       reason: '',
       notes: '',
     });
@@ -241,12 +267,17 @@ const ReturnCreate = () => {
     }
 
     try {
-      const processedItems = data.items.map((item) => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_cost: item.unit_cost,
-          total_price: item.quantity * item.unit_cost,
-          reason: item.reason,
+	      const processedItems = data.items.map((item) => ({
+	          receipt_item_id: item.receipt_item_id,
+	          product_id: item.product_id,
+	          quantity: item.quantity,
+	          unit_name: item.unit_name,
+	          unit_id: item.unit_id,
+	          conversion_factor: item.conversion_factor || 1,
+	          base_quantity: item.base_quantity || Number(item.quantity) * Number(item.conversion_factor || 1),
+	          unit_cost: item.unit_cost,
+	          total_price: item.quantity * item.unit_cost,
+	          reason: item.reason,
           notes: item.notes,
       }));
 
@@ -266,13 +297,17 @@ const ReturnCreate = () => {
         notes: data.notes,
         status: data.status,
         created_by: Number(userInfo.id),
-        items: processedItems.map(item => ({
+	        items: processedItems.map(item => ({
           ...item,
-          product_id: Number(item.product_id),
-          quantity: Number(item.quantity),
-          unit_cost: Number(item.unit_cost),
-          total_price: Number(item.total_price)
-        })),
+	          receipt_item_id: item.receipt_item_id ? Number(item.receipt_item_id) : undefined,
+	          product_id: Number(item.product_id),
+	          quantity: Number(item.quantity),
+	          unit_id: item.unit_id ? Number(item.unit_id) : undefined,
+	          conversion_factor: Number(item.conversion_factor || 1),
+	          base_quantity: Number(item.base_quantity || Number(item.quantity) * Number(item.conversion_factor || 1)),
+	          unit_cost: Number(item.unit_cost),
+	          total_price: Number(item.total_price)
+	        })),
         images: imageUrls,
       };
 
@@ -497,13 +532,13 @@ const ReturnCreate = () => {
                           <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
                             {availableProducts.slice(0, 10).map((product: any) => (
                               <Button
-                                key={product.product_id}
+                                key={product.receipt_item_id}
                                 variant="outlined"
                                 size="small"
                                 onClick={() => handleAddProduct(product)}
-                                disabled={fields.some((f) => f.product_id === product.product_id)}
+                                disabled={fields.some((f) => (f as any).receipt_item_id === product.receipt_item_id)}
                               >
-                                {product.product_name} (SL: {product.quantity})
+                                {product.product_name} (SL: {product.quantity}{product.unit_name ? ` ${product.unit_name}` : ''})
                               </Button>
                             ))}
                           </Box>
@@ -530,7 +565,9 @@ const ReturnCreate = () => {
                                 return;
                             }
                             
-                            const productToAdd = option?.productData || availableProducts.find((p: any) => p.product_id === value);
+                            const productToAdd =
+                              option?.productData ||
+                              availableProducts.find((p: any) => p.receipt_item_id === value);
                             
                             if (productToAdd) {
                               handleAddProduct(productToAdd);
@@ -579,22 +616,26 @@ const ReturnCreate = () => {
                               const unitCost = watch(`items.${index}.unit_cost`) || 0;
                               const total = quantity * unitCost;
 
-                              const receiptItem = (selectedReceipt as any)?.items?.find(
-                                (i: any) => i.product_id === field.product_id
-                              );
-                              const maxQuantity = receiptItem ? receiptItem.quantity : 999;
-                              const currentStock = receiptItem?.product?.quantity ?? (field as any).current_stock;
+	                              const receiptItem = (selectedReceipt as any)?.items?.find(
+	                                (i: any) => Number(i.id) === Number((field as any).receipt_item_id)
+	                              );
+	                              const maxQuantity = receiptItem ? receiptItem.quantity : 999;
+	                              const currentStock = receiptItem?.product?.quantity ?? (field as any).current_stock;
+	                              const unitName = (field as any).unit_name || receiptItem?.unit_name || '';
 
-                              return (
+	                              return (
                                 <TableRow key={field.id}>
                                   <TableCell>
                                     <Typography variant="body2" fontWeight="bold">
                                       {field.product_name}
                                     </Typography>
                                     <Box>
-                                      <Typography variant="caption" color="text.secondary" display="block">
-                                        Đã nhập: {maxQuantity}
-                                      </Typography>
+	                                      <Typography variant="caption" color="text.secondary" display="block">
+	                                        Dòng nhập: #{(field as any).receipt_item_id || receiptItem?.id || 'N/A'}
+	                                      </Typography>
+	                                      <Typography variant="caption" color="text.secondary" display="block">
+	                                        Đã nhập: {maxQuantity}{unitName ? ` ${unitName}` : ''}
+	                                      </Typography>
                                       <Typography variant="caption" color="text.secondary" display="block">
                                         Tồn hiện tại: {currentStock ?? 'N/A'}
                                       </Typography>
@@ -604,12 +645,17 @@ const ReturnCreate = () => {
                                     <Controller
                                       name={`items.${index}.quantity`}
                                       control={control}
-                                      render={({ field }) => (
-                                        <NumberInput
-                                          value={field.value ? Number(field.value) : null}
-                                          onChange={(val) => field.onChange(val)}
-                                          min={1}
-                                          max={maxQuantity}
+	                                      render={({ field }) => (
+	                                        <NumberInput
+	                                          value={field.value ? Number(field.value) : null}
+	                                          onChange={(val) => {
+	                                            const qty = Number(val || 0);
+	                                            field.onChange(qty);
+	                                            const factor = Number(watch(`items.${index}.conversion_factor`) || 1);
+	                                            setValue(`items.${index}.base_quantity`, qty * factor);
+	                                          }}
+	                                          min={1}
+	                                          max={maxQuantity}
                                           size="small"
                                           style={{ width: 80 }}
                                         />

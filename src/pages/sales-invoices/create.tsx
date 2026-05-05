@@ -117,6 +117,25 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+const parseProductMoney = (value: unknown): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return value;
+  return Number(String(value).replace(/[^0-9.-]/g, '')) || 0;
+};
+
+const resolveProductCostByPriceType = (
+  product: Product | undefined,
+  priceType: 'cash' | 'credit',
+): number => {
+  if (!product) return 0;
+  if (product.costing_method === 'by_price_type') {
+    return priceType === 'credit'
+      ? parseProductMoney(product.credit_cost_price)
+      : parseProductMoney(product.cash_cost_price);
+  }
+  return parseProductMoney(product.average_cost_price);
+};
+
 const CreateSalesInvoice = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -353,7 +372,9 @@ const CreateSalesInvoice = () => {
           conversion_factor: Number(item.conversion_factor || 1),
           base_quantity: Number(item.base_quantity || (Number(item.quantity || 0) * Number(item.conversion_factor || 1))),
           notes: item.notes || '',
-          price_type: inferredPriceType as 'cash' | 'credit',
+          price_type: (item.price_type || inferredPriceType) as 'cash' | 'credit',
+          average_cost_price: Number(item.cost_price || 0),
+          costing_method: item.costing_method_snapshot || 'fixed',
         })).reverse());
 
         // ✅ Mặc định chọn tất cả sản phẩm để phân tích khi load dữ liệu chỉnh sửa
@@ -415,17 +436,11 @@ const CreateSalesInvoice = () => {
           const unitPrice = Number(item?.unit_price) || 0;
           const itemDiscount = Number(item?.discount_amount) || 0;
           
-          // Lấy giá vốn trung bình (đã được mặc định quy về đơn vị cơ sở - ví dụ: Kg)
-          let rawCost = item.average_cost_price;
-          if (!rawCost) {
-             const prod = productsData?.data?.items?.find((p: any) => p.id === item.product_id);
-             rawCost = prod?.average_cost_price;
-          }
-          
-          // Chuyển đổi giá vốn sang dạng số chuẩn (Xử lý cả chuỗi có dấu phẩy hoặc chấm)
-          const cstPrice = typeof rawCost === 'string' 
-             ? parseFloat(rawCost.replace(/,/g, '')) 
-             : Number(rawCost || 0);
+          const prod = productsData?.data?.items?.find((p: any) => p.id === item.product_id);
+          const priceType = (item.price_type || 'cash') as 'cash' | 'credit';
+          const cstPrice = item.average_cost_price !== undefined
+             ? Number(item.average_cost_price || 0)
+             : resolveProductCostByPriceType(prod, priceType);
 
           // Sử dụng base_quantity (số lượng đã quy đổi sang đơn vị cơ sở như Kg) để nhân với giá vốn Kg
           // Nếu base_quantity không có (trường hợp cũ), fallback về qty * factor
@@ -468,7 +483,7 @@ const CreateSalesInvoice = () => {
         const currentFinalAmount = Number(value.final_amount || 0);
         
         // Nếu chọn tiền mặt hoặc chuyển khoản → Tự động set đã trả đủ
-        if (paymentMethod === 'cash' || paymentMethod === 'bank_transfer') {
+        if (paymentMethod === 'cash' || paymentMethod === 'transfer' || paymentMethod === 'bank_transfer') {
           setValue('partial_payment_amount', currentFinalAmount, { shouldValidate: false });
 
         }
@@ -477,11 +492,41 @@ const CreateSalesInvoice = () => {
           setValue('partial_payment_amount', 0, { shouldValidate: false });
 
         }
+
+        if (name === 'payment_method') {
+          const newPriceType = paymentMethod === 'debt' ? 'credit' : 'cash';
+          const currentItems = value.items || [];
+
+          currentItems.forEach((item: any, index: number) => {
+            const product = productsData?.data?.items?.find(
+              (p: Product) => Number(p.id) === Number(item.product_id),
+            );
+            if (!product) return;
+
+            const factor = Number(item.conversion_factor || 1);
+            const basePrice = newPriceType === 'credit'
+              ? parseProductMoney(product.credit_price || product.price)
+              : parseProductMoney(product.price);
+
+            setValue(`items.${index}.price_type`, newPriceType, { shouldValidate: true });
+            setValue(`items.${index}.unit_price`, basePrice * factor, { shouldValidate: true });
+            setValue(
+              `items.${index}.average_cost_price`,
+              resolveProductCostByPriceType(product, newPriceType),
+              { shouldValidate: true },
+            );
+            setValue(
+              `items.${index}.costing_method`,
+              product.costing_method || 'fixed',
+              { shouldValidate: false },
+            );
+          });
+        }
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [watch, setValue]);
+  }, [watch, setValue, productsData]);
 
   const handleCustomerSelect = (customer: Customer | null) => {
     setSelectedCustomer(customer);
@@ -692,6 +737,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     
     // Nếu là công nợ -> dùng giá nợ (nếu có), ngược lại dùng giá tiền mặt
     const priceType = isDebt ? 'credit' : 'cash';
+    const baseCostPrice = resolveProductCostByPriceType(product, priceType);
     
     let unitPrice = Number(product.price) || 0;
     // Nếu chọn nợ và sản phẩm có giá nợ -> dùng giá nợ
@@ -718,9 +764,10 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       discount_amount: 0,
       notes: '',
       price_type: priceType,
-      average_cost_price: typeof product.average_cost_price === 'string' 
-        ? parseFloat(product.average_cost_price.replace(/,/g, ''))
-        : Number(product.average_cost_price || 0),
+      average_cost_price: baseCostPrice,
+      cash_cost_price: parseProductMoney(product.cash_cost_price),
+      credit_cost_price: parseProductMoney(product.credit_cost_price),
+      costing_method: product.costing_method || 'fixed',
       stock_quantity: Number(product.quantity || 0),
       taxable_quantity_stock: Number(product.taxable_quantity_stock || 0),
       tax_selling_price: String((Number(product.tax_selling_price || 0) || 0) * factor),
@@ -777,6 +824,14 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       if (hasTaxableStock && !hasTaxPrice) {
         antMessage.error(
           `❌ Sản phẩm "${item.product_name}" có tồn thuế nhưng chưa điền Giá bán khai thuế (GBKT)! Vui lòng vào danh mục sản phẩm và điền GBKT trước khi tạo hóa đơn này.`
+        );
+        return;
+      }
+
+      if (item.costing_method === 'by_price_type' && Number(item.average_cost_price || 0) <= 0) {
+        const priceTypeLabel = item.price_type === 'credit' ? 'bán nợ' : 'tiền mặt';
+        antMessage.error(
+          `Sản phẩm "${item.product_name}" chưa có giá vốn ${priceTypeLabel}. Vui lòng cập nhật lại trong danh mục sản phẩm.`
         );
         return;
       }

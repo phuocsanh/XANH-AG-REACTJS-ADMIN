@@ -29,6 +29,8 @@ export interface ProductComponent {
   unit?: { id: number; name: string }
 }
 
+export type ProductCostingMethod = "fixed" | "by_price_type"
+
 // Interface cho dữ liệu sản phẩm từ API
 export interface Product {
   id: number
@@ -54,6 +56,9 @@ export interface Product {
   attributes: Record<string, unknown>
   profit_margin_percent: string
   average_cost_price: string
+  costing_method?: ProductCostingMethod
+  cash_cost_price?: string
+  credit_cost_price?: string
   unit_id?: number
   unit?: { id: number; name: string }
   latest_purchase_price?: string
@@ -109,6 +114,9 @@ export interface ProductFormValues
   symbol_id?: number
   ingredient?: string
   credit_price?: string // Giá bán nợ
+  costing_method?: ProductCostingMethod
+  cash_cost_price?: string
+  credit_cost_price?: string
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
@@ -138,6 +146,9 @@ export interface CreateProductRequest extends AnyObject {
   symbol_id?: number
   ingredient?: string[]
   credit_price?: string // Giá bán nợ
+  costing_method?: ProductCostingMethod
+  cash_cost_price?: string
+  credit_cost_price?: string
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
@@ -208,6 +219,9 @@ export interface ConvertedProductValues {
   symbol_id?: number
   ingredient?: string[]
   credit_price?: string // Giá bán nợ
+  costing_method?: ProductCostingMethod
+  cash_cost_price?: string
+  credit_cost_price?: string
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế

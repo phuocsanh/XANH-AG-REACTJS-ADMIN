@@ -466,6 +466,12 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const watchedQty = useWatch({ control, name: "quantity" })
   const watchedTaxQty = useWatch({ control, name: "taxable_quantity_stock" })
   const watchedAvgCost = useWatch({ control, name: "average_cost_price" })
+  const watchedCostingMethod = useWatch({ control, name: "costing_method" })
+  const watchedCashCost = useWatch({ control, name: "cash_cost_price" })
+  const watchedCreditCostPrice = useWatch({
+    control,
+    name: "credit_cost_price",
+  })
   const watchedAvgVatInput = useWatch({
     control,
     name: "average_vat_input_cost",
@@ -600,6 +606,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             productItem.profit_margin_percent || "",
           ), // Chuyển sang string
           average_cost_price: String(productItem.average_cost_price || ""), // Chuyển sang string
+          costing_method: productItem.costing_method || "fixed",
+          cash_cost_price: String(productItem.cash_cost_price || ""),
+          credit_cost_price: String(productItem.credit_cost_price || ""),
           average_vat_input_cost: String(
             productItem.average_vat_input_cost || "",
           ), // Giá nhập TB VAT
@@ -874,6 +883,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         sub_types: values.sub_types || [],
         profit_margin_percent: values.profit_margin_percent || "", // Thêm trường mới
         average_cost_price: values.average_cost_price || "", // Thêm trường mới
+        costing_method: values.costing_method || "fixed",
+        cash_cost_price: values.cash_cost_price || "",
+        credit_cost_price: values.credit_cost_price || "",
         average_vat_input_cost: values.average_vat_input_cost || "", // Giá nhập trung bình VAT
         has_input_invoice: values.has_input_invoice,
         is_sold_on_web: values.is_sold_on_web,
@@ -919,6 +931,9 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         discount: convertedValues.discount || "0",
         discounted_price: "0",
         profit_margin_percent: convertedValues.profit_margin_percent || "0",
+        costing_method: convertedValues.costing_method || "fixed",
+        cash_cost_price: convertedValues.cash_cost_price || "",
+        credit_cost_price: convertedValues.credit_cost_price || "",
         suggested_price: "0",
         status: convertedValues.status,
         sub_product_type: Array.isArray(convertedValues.sub_types)
@@ -1549,6 +1564,62 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           disabled={isEdit}
                         />
                       </div>
+
+                      <div className='w-full'>
+                        <FormComboBox
+                          name='costing_method'
+                          control={control}
+                          label='Cách chốt giá vốn khi bán'
+                          placeholder='Chọn cách tính giá vốn'
+                          options={[
+                            {
+                              label: 'Theo giá vốn trung bình',
+                              value: 'fixed',
+                            },
+                            {
+                              label: 'Theo loại giá bán (lúa giống)',
+                              value: 'by_price_type',
+                            },
+                          ]}
+                          className='w-full'
+                        />
+                      </div>
+
+                      {watchedCostingMethod === 'by_price_type' && (
+                        <>
+                          <div className='w-full'>
+                            <FormFieldNumber
+                              name='cash_cost_price'
+                              control={control}
+                              label={
+                                <div className='flex justify-between items-center w-full'>
+                                  <span>{`Giá vốn tiền mặt (VNĐ${mainUnitName ? "/" + mainUnitName : ""})`}</span>
+                                  {renderConversionHint(watchedCashCost)}
+                                </div>
+                              }
+                              placeholder='VD: 13.000'
+                              className='w-full'
+                              outputType='string'
+                            />
+                          </div>
+
+                          <div className='w-full'>
+                            <FormFieldNumber
+                              name='credit_cost_price'
+                              control={control}
+                              label={
+                                <div className='flex justify-between items-center w-full'>
+                                  <span>{`Giá vốn bán nợ (VNĐ${mainUnitName ? "/" + mainUnitName : ""})`}</span>
+                                  {renderConversionHint(watchedCreditCostPrice)}
+                                </div>
+                              }
+                              placeholder='VD: 13.500'
+                              className='w-full'
+                              outputType='string'
+                            />
+                          </div>
+                        </>
+                      )}
 
                       <div className='w-full'>
                         <FormFieldNumber

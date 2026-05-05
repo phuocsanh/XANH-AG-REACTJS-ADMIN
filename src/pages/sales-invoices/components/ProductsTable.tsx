@@ -41,6 +41,10 @@ interface ProductField {
   discount_amount: number;
   notes?: string;
   price_type: 'cash' | 'credit';
+  average_cost_price?: number;
+  cash_cost_price?: number;
+  credit_cost_price?: number;
+  costing_method?: 'fixed' | 'by_price_type';
   stock_quantity?: number;
   taxable_quantity_stock?: number;
   sale_unit_id?: number;
@@ -78,6 +82,25 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
     const baseTaxPrice = Number(rawTaxSellingPrice || 0);
     const safeFactor = Number(factor || 1);
     return String(baseTaxPrice * safeFactor);
+  };
+
+  const parseProductMoney = (value: unknown): number => {
+    if (value === null || value === undefined || value === '') return 0;
+    if (typeof value === 'number') return value;
+    return Number(String(value).replace(/[^0-9.-]/g, '')) || 0;
+  };
+
+  const resolveProductCostByPriceType = (
+    product: Product | undefined,
+    priceType: 'cash' | 'credit',
+  ): number => {
+    if (!product) return 0;
+    if (product.costing_method === 'by_price_type') {
+      return priceType === 'credit'
+        ? parseProductMoney(product.credit_cost_price)
+        : parseProductMoney(product.cash_cost_price);
+    }
+    return parseProductMoney(product.average_cost_price);
   };
 
   return (
@@ -179,6 +202,10 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                     const isCash = watch(`items.${index}.price_type`) === 'cash';
                                     const basePrice = Number(isCash ? product?.price : (product?.credit_price || product?.price)) || 0;
                                     setValue(`items.${index}.unit_price`, basePrice * factor);
+                                    setValue(
+                                      `items.${index}.average_cost_price`,
+                                      resolveProductCostByPriceType(product, isCash ? 'cash' : 'credit'),
+                                    );
                                     setValue(`items.${index}.tax_selling_price`, calculateTaxSellingPriceByFactor(product?.tax_selling_price, factor));
 
                                     // Cập nhật base_quantity
@@ -284,7 +311,13 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 const newPrice = newPriceType === 'cash' 
                                   ? Number(product.price) || 0
                                   : Number(product.credit_price) || Number(product.price) || 0;
-                                setValue(`items.${index}.unit_price`, newPrice);
+                                const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                                setValue(`items.${index}.unit_price`, newPrice * factor);
+                                setValue(
+                                  `items.${index}.average_cost_price`,
+                                  resolveProductCostByPriceType(product, newPriceType),
+                                );
+                                setValue(`items.${index}.costing_method`, product.costing_method || 'fixed');
                               }
                             }}
                             options={[
@@ -539,6 +572,10 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                 const isCash = watch(`items.${index}.price_type`) === 'cash';
                                 const basePrice = Number(isCash ? product?.price : (product?.credit_price || product?.price)) || 0;
                                 setValue(`items.${index}.unit_price`, basePrice * factor);
+                                setValue(
+                                  `items.${index}.average_cost_price`,
+                                  resolveProductCostByPriceType(product, isCash ? 'cash' : 'credit'),
+                                );
                                 setValue(`items.${index}.tax_selling_price`, calculateTaxSellingPriceByFactor(product?.tax_selling_price, factor));
 
                                 setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name);
@@ -630,7 +667,13 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                             const newPrice = newPriceType === 'cash' 
                               ? Number(product.price) || 0
                               : Number(product.credit_price) || Number(product.price) || 0;
-                            setValue(`items.${index}.unit_price`, newPrice);
+                            const factor = Number(watch(`items.${index}.conversion_factor`)) || 1;
+                            setValue(`items.${index}.unit_price`, newPrice * factor);
+                            setValue(
+                              `items.${index}.average_cost_price`,
+                              resolveProductCostByPriceType(product, newPriceType),
+                            );
+                            setValue(`items.${index}.costing_method`, product.costing_method || 'fixed');
                           }
                         }}
                         options={[

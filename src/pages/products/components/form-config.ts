@@ -39,6 +39,9 @@ export const productFormSchema = z.object({
   // Thêm 2 trường mới từ server
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
+  costing_method: z.enum(["fixed", "by_price_type"]).default("fixed"),
+  cash_cost_price: z.string().optional(),
+  credit_cost_price: z.string().optional(),
   average_vat_input_cost: z.string().optional(), // Giá nhập trung bình VAT (tự tính)
   has_input_invoice: z.boolean().default(true), // Bắt buộc nhập, mặc định là có hóa đơn
   taxable_quantity_stock: z.coerce.number().optional(), // Số lượng tồn khai thuế
@@ -75,6 +78,29 @@ export const productFormSchema = z.object({
     quantity: z.coerce.number().min(0.0001, "Số lượng phải lớn hơn 0"),
     unitId: z.number().optional(),
   })).optional(),
+}).superRefine((data, ctx) => {
+  if (data.costing_method !== "by_price_type") {
+    return
+  }
+
+  const cashCost = Number(data.cash_cost_price || "")
+  const creditCost = Number(data.credit_cost_price || "")
+
+  if (!Number.isFinite(cashCost) || cashCost <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["cash_cost_price"],
+      message: "Nhập giá vốn tiền mặt cho sản phẩm tính giá vốn theo loại giá",
+    })
+  }
+
+  if (!Number.isFinite(creditCost) || creditCost <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["credit_cost_price"],
+      message: "Nhập giá vốn bán nợ cho sản phẩm tính giá vốn theo loại giá",
+    })
+  }
 })
 
 // Schema validation cho form tạo sản phẩm mới (yêu cầu thêm một số trường bắt buộc)
@@ -113,6 +139,9 @@ export interface ProductFormValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
+  costing_method?: "fixed" | "by_price_type"
+  cash_cost_price?: string
+  credit_cost_price?: string
   average_vat_input_cost?: string
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
@@ -158,6 +187,9 @@ export interface ConvertedProductValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
+  costing_method?: "fixed" | "by_price_type"
+  cash_cost_price?: string
+  credit_cost_price?: string
   average_vat_input_cost?: string
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
   tax_selling_price: string // Giá bán khai thuế
@@ -185,6 +217,9 @@ export const defaultProductFormValues: ProductFormValues = {
   notes: "", // Ghi chú
   profit_margin_percent: "", // Thêm trường mới
   average_cost_price: "", // Thêm trường mới
+  costing_method: "fixed",
+  cash_cost_price: "",
+  credit_cost_price: "",
   average_vat_input_cost: "", // Giá nhập trung bình VAT
   has_input_invoice: true, // Mặc định là có hóa đơn
   tax_selling_price: "0", // Giá khai thuế mặc định là 0
