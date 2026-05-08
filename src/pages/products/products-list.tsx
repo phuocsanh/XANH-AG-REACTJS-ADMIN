@@ -309,19 +309,6 @@ const ProductsList: React.FC = () => {
       //   ),
       // },
       {
-        key: "unit",
-        title: "Đơn vị",
-        width: 100,
-        render: (_: unknown, record: ExtendedProduct) => {
-          const unitName =
-            record.unit_name ||
-            (typeof record.unit === "object" && record.unit
-              ? record.unit.name
-              : "---")
-          return <div className='text-gray-600'>{unitName}</div>
-        },
-      },
-      {
         key: "name",
         title: (
           <FilterHeader
@@ -347,6 +334,19 @@ const ProductsList: React.FC = () => {
         ),
       },
       {
+        key: "unit",
+        title: "Đơn vị",
+        width: 100,
+        render: (_: unknown, record: ExtendedProduct) => {
+          const unitName =
+            record.unit_name ||
+            (typeof record.unit === "object" && record.unit
+              ? record.unit.name
+              : "---")
+          return <div className='text-gray-600'>{unitName}</div>
+        },
+      },
+      {
         key: "category",
         title: "Danh mục",
         width: 150,
@@ -359,27 +359,6 @@ const ProductsList: React.FC = () => {
               ? record.type.name
               : productTypes.find((t) => t.id === record.type)?.name
           return <div className='text-gray-600'>{typeName || "---"}</div>
-        },
-      },
-      {
-        key: "active_promotions",
-        title: "Khuyến mãi đang tham gia",
-        width: 240,
-        render: (_: unknown, record: ExtendedProduct) => {
-          const promotions = record.active_promotions || []
-          if (!promotions.length) {
-            return <span className='text-gray-400'>Không có</span>
-          }
-
-          return (
-            <div className='flex flex-wrap gap-1'>
-              {promotions.map((promotion) => (
-                <Tag key={promotion.id} color='gold'>
-                  {promotion.code ? `${promotion.code} - ${promotion.name}` : promotion.name}
-                </Tag>
-              ))}
-            </div>
-          )
         },
       },
       {
@@ -562,6 +541,27 @@ const ProductsList: React.FC = () => {
         },
       },
       {
+        key: "active_promotions",
+        title: "Khuyến mãi đang tham gia",
+        width: 240,
+        render: (_: unknown, record: ExtendedProduct) => {
+          const promotions = record.active_promotions || []
+          if (!promotions.length) {
+            return <span className='text-gray-400'>Không có</span>
+          }
+
+          return (
+            <div className='flex flex-wrap gap-1'>
+              {promotions.map((promotion) => (
+                <Tag key={promotion.id} color='gold'>
+                  {promotion.code ? `${promotion.code} - ${promotion.name}` : promotion.name}
+                </Tag>
+              ))}
+            </div>
+          )
+        },
+      },
+      {
         key: "action",
         title: "Hành động",
         width: 120,
@@ -620,6 +620,42 @@ const ProductsList: React.FC = () => {
     updateProductMutation,
   ])
 
+  const columnVisibilityOptions = React.useMemo(
+    () => [
+      { key: "stt", label: "STT" },
+      { key: "name", label: "Tên sản phẩm" },
+      { key: "unit", label: "Đơn vị" },
+      { key: "category", label: "Danh mục" },
+      { key: "price", label: "Giá tiền mặt" },
+      { key: "credit_price", label: "Giá nợ" },
+      { key: "tax_selling_price", label: "GBKT" },
+      { key: "quantity", label: "Tồn kho" },
+      { key: "taxable_quantity_stock", label: "Tồn thuế" },
+      { key: "status", label: "Trạng thái" },
+      { key: "active_promotions", label: "Khuyến mãi đang tham gia" },
+      { key: "action", label: "Hành động" },
+    ],
+    []
+  )
+
+  const defaultVisibleColumnKeys = React.useMemo(
+    () => [
+      "stt",
+      "name",
+      "unit",
+      "category",
+      "price",
+      "credit_price",
+      "tax_selling_price",
+      "quantity",
+      "taxable_quantity_stock",
+      "status",
+      "active_promotions",
+      "action",
+    ],
+    []
+  )
+
   return (
     <div className='p-2 md:p-6'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
@@ -665,6 +701,11 @@ const ProductsList: React.FC = () => {
           searchableColumns={[]} // Disable client-side search
           showSearch={false} // Disable client-side search UI
           showFilters={false} // Disable client-side filter UI
+          showColumnVisibility
+          columnVisibilityOptions={columnVisibilityOptions}
+          defaultVisibleColumnKeys={defaultVisibleColumnKeys}
+          columnVisibilityStorageKey='products-list-visible-columns'
+          columnVisibilityButtonText='Ẩn/Hiện cột'
           onView={handleEditProduct}
           showActions={false}
         />
