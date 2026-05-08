@@ -19,6 +19,7 @@ export const receiptItemSchema = z.object({
   conversion_factor: z.number().optional().default(1), // Đã thêm
   base_quantity: z.number().optional(), // Đã thêm
   conversions: z.array(z.any()).optional(), // Đã thêm
+  costing_method: z.enum(['fixed', 'by_price_type']).optional(),
   discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
   discount_amount: z.number().optional().default(0),
@@ -40,6 +41,7 @@ export const receiptFormSchema = z.object({
   
   // Hình ảnh
   images: z.any().optional(),
+  supplierSettlementMode: z.enum(['standard', 'by_sale_type']).default('standard'),
 
   // Chiết khấu
   discountMethod: z.enum(['none', 'per_item', 'global']).default('none'),
@@ -68,6 +70,17 @@ export const receiptFormSchema = z.object({
   }
 
   // Validate payment logic
+  if (data.supplierSettlementMode === 'by_sale_type') {
+    if (data.paidAmount > 0 && !data.paymentMethod) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Vui lòng chọn phương thức tạm ứng',
+        path: ['paymentMethod'],
+      });
+    }
+    return;
+  }
+
   if (data.paymentType === 'partial') {
     if (data.paidAmount <= 0) {
       ctx.addIssue({
@@ -122,6 +135,7 @@ export const defaultReceiptValues: Partial<ReceiptFormData> = {
   sharedShippingCost: 0,
   allocationMethod: 'by_quantity',
   images: [],
+  supplierSettlementMode: 'standard',
   discountMethod: 'none',
   discountType: 'fixed_amount',
   discountValue: 0,

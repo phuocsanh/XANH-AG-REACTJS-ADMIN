@@ -184,8 +184,16 @@ const InventoryReceiptCreate: React.FC = () => {
   const watchedDiscountType = watch("discountType")
   const watchedDiscountValue = watch("discountValue") || 0
   const watchedDiscountMethod = watch("discountMethod")
+  const watchedSupplierSettlementMode = watch("supplierSettlementMode")
   
   const isApproved = isEditMode && watchedStatus === 'approved'
+  const specialCostingCount = watchedItems.filter(
+    (item: any) => item?.costing_method === 'by_price_type',
+  ).length
+  const hasReceiptItems = watchedItems.length > 0
+  const isBySaleTypeReceiptCandidate = hasReceiptItems && specialCostingCount === watchedItems.length
+  const hasMixedCostingItems = specialCostingCount > 0 && specialCostingCount < watchedItems.length
+  const isBySaleTypeSettlement = isBySaleTypeReceiptCandidate && watchedSupplierSettlementMode === 'by_sale_type'
   
   // State và hooks tìm kiếm nhà cung cấp
   const {
@@ -209,6 +217,28 @@ const InventoryReceiptCreate: React.FC = () => {
   }, [supplierData?.pages])
 
   const { confirmExit } = useFormGuard(isDirty);
+
+  useEffect(() => {
+    if (!hasReceiptItems || hasMixedCostingItems) {
+      setValue('supplierSettlementMode', 'standard', { shouldValidate: true })
+      return
+    }
+
+    if (!isBySaleTypeReceiptCandidate) {
+      setValue('supplierSettlementMode', 'standard', { shouldValidate: true })
+      return
+    }
+
+    if (!watchedSupplierSettlementMode) {
+      setValue('supplierSettlementMode', 'by_sale_type', { shouldValidate: true })
+    }
+  }, [
+    hasMixedCostingItems,
+    hasReceiptItems,
+    isBySaleTypeReceiptCandidate,
+    setValue,
+    watchedSupplierSettlementMode,
+  ])
 
 
   // Queries
@@ -264,6 +294,7 @@ const InventoryReceiptCreate: React.FC = () => {
           conversion_factor: Number(item.conversion_factor || 1),
           base_quantity: Number(item.base_quantity || item.quantity),
           conversions,
+          costing_method: item.product?.costing_method || 'fixed',
         };
       }).reverse()
 
@@ -278,6 +309,7 @@ const InventoryReceiptCreate: React.FC = () => {
           unit_id: item.unit_id,
           unit_name: item.product?.unit?.name || item.unit_name || '',
           unit_conversions: item.product?.unit_conversions || [],
+          costing_method: item.product?.costing_method || 'fixed',
           cost_price: item.unit_cost,
           average_vat_input_cost: item.vat_unit_cost,
         }))
@@ -293,6 +325,7 @@ const InventoryReceiptCreate: React.FC = () => {
         hasSharedShipping: !!receipt.shared_shipping_cost,
         sharedShippingCost: Number(receipt.shared_shipping_cost || 0),
         allocationMethod: (receipt.shipping_allocation_method as any) || 'by_value',
+        supplierSettlementMode: receipt.supplier_settlement_mode || 'standard',
         paymentType: (receipt.payment_status === 'paid' ? 'full' : (receipt.payment_status === 'partial' ? 'partial' : 'debt')) as any,
         paidAmount: Number(receipt.paid_amount || 0),
         paymentMethod: receipt.payment_method,
@@ -433,6 +466,7 @@ const InventoryReceiptCreate: React.FC = () => {
       conversion_factor: 1,
       base_quantity: 1,
       conversions: [],
+      costing_method: 'fixed',
     })
   }, [prepend])
 
@@ -479,12 +513,21 @@ const InventoryReceiptCreate: React.FC = () => {
       // ========================================================
       // 2B. PHIẾU NHÁP: gửi toàn bộ dữ liệu bình thường
       // ========================================================
+      if (hasMixedCostingItems) {
+        toast.error('Không được trộn lúa giống quyết toán theo loại bán với sản phẩm thường trong cùng một phiếu nhập.')
+        return
+      }
+
       const totals = calculateTotals()
-      
+
+      const isSpecialSettlement = isBySaleTypeReceiptCandidate && data.supplierSettlementMode === 'by_sale_type'
       let paid_amount = 0;
       let payment_status = 'unpaid' as any;
       if (data.status === 'approved') {
-        if (data.paymentType === 'full') {
+        if (isSpecialSettlement) {
+          paid_amount = Math.round(data.paidAmount || 0);
+          payment_status = paid_amount > 0 ? 'advance' : 'unpaid';
+        } else if (data.paymentType === 'full') {
           paid_amount = totals.supplierAmount;
           payment_status = 'paid';
         } else if (data.paymentType === 'partial') {
@@ -506,13 +549,24 @@ const InventoryReceiptCreate: React.FC = () => {
         created_by: 1,
         shared_shipping_cost: Number(data.sharedShippingCost || 0),
         shipping_allocation_method: data.allocationMethod,
+        supplier_settlement_mode: isBySaleTypeReceiptCandidate
+          ? data.supplierSettlementMode
+          : 'standard',
         ...(imageUrls.length > 0 && { images: imageUrls }),
         paid_amount: Number(paid_amount || 0),
         payment_status: payment_status,
         is_shipping_paid_to_supplier: false,
-        debt_amount: Math.round(Number(totals.supplierAmount || 0) - Number(paid_amount || 0)),
-        payment_method: data.status === 'approved' && data.paymentType !== 'debt' ? data.paymentMethod : null,
-        payment_due_date: data.status === 'approved' && data.paymentType !== 'full'
+        debt_amount: isSpecialSettlement
+          ? 0
+          : Math.round(Number(totals.supplierAmount || 0) - Number(paid_amount || 0)),
+        payment_method: data.status === 'approved' && (isSpecialSettlement
+          ? paid_amount > 0
+          : data.paymentType !== 'debt')
+          ? data.paymentMethod
+          : null,
+        payment_due_date: data.status === 'approved' && (isSpecialSettlement
+          ? !!data.paymentDueDate
+          : data.paymentType !== 'full')
           ? (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null)
           : null,
         items: totals.finalItems.map((item: any) => ({
@@ -525,6 +579,7 @@ const InventoryReceiptCreate: React.FC = () => {
           taxable_quantity: item.taxable_quantity || 0,
           unit_cost: Number(item.unit_cost || 0),
           vat_unit_cost: Number(item.vat_unit_cost ?? 0),
+          costing_method: item.costing_method || 'fixed',
           total_price: Number(item.totalPriceRaw || 0),
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
           notes: item.notes,
@@ -659,6 +714,36 @@ const InventoryReceiptCreate: React.FC = () => {
               className='w-full'
             />
           </div>
+
+          {hasMixedCostingItems && (
+            <Alert
+              className='mt-4'
+              type='error'
+              showIcon
+              message='Phiếu nhập đang trộn lúa giống và sản phẩm thường'
+              description='Hãy tách riêng phiếu nhập lúa giống quyết toán theo loại bán với phiếu nhập sản phẩm thường để công nợ NCC không bị sai.'
+            />
+          )}
+
+          {isBySaleTypeReceiptCandidate && !hasMixedCostingItems && (
+            <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
+              <FormComboBox
+                label='Chế độ quyết toán NCC'
+                name='supplierSettlementMode'
+                control={control}
+                options={[
+                  { value: 'by_sale_type', label: 'Quyết toán theo loại bán' },
+                  { value: 'standard', label: 'Nhập chuẩn như sản phẩm thường' },
+                ]}
+              />
+              <Alert
+                type='info'
+                showIcon
+                message='Phiếu này chỉ gồm sản phẩm lúa giống'
+                description='Nếu chọn "Quyết toán theo loại bán", công nợ NCC sẽ phát sinh dần theo hóa đơn bán tiền mặt / bán nợ thực tế, thay vì chốt toàn bộ ngay lúc nhập.'
+              />
+            </div>
+          )}
 
             <FormField
               label='Ghi chú'
@@ -867,83 +952,136 @@ const InventoryReceiptCreate: React.FC = () => {
           {/* Phần thanh toán - Chỉ hiển thị khi trạng thái là Đã duyệt */}
           {watchedStatus === 'approved' && (
             <Card title="Thông tin thanh toán" className='mt-4 border-blue-200'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div>
-                  <Text className="block mb-2 font-medium">Hình thức thanh toán</Text>
-                  <Controller
-                    name="paymentType"
-                    control={control}
-                    render={({ field }) => (
-                      <Radio.Group 
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        className="w-full"
-                      >
-                        <Space direction="vertical" className="w-full bg-blue-50/50 p-4 rounded-md border border-blue-100">
-                          <Radio value="full">Thanh toán toàn bộ</Radio>
-                          <Radio value="partial">Thanh toán một phần (Ghi nợ còn lại)</Radio>
-                          <Radio value="debt">Ghi nợ hoàn toàn (Trả sau)</Radio>
-                        </Space>
-                      </Radio.Group>
-                    )}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-4">
-                  {watchedPaymentType !== 'debt' && (
-                    <FormComboBox
-                      label='Phương thức thanh toán'
-                      name='paymentMethod'
-                      control={control}
-                      required={(watchedPaymentType as string) !== 'debt'}
-                      options={[
-                        { value: 'cash', label: 'Tiền mặt' },
-                        { value: 'transfer', label: 'Chuyển khoản' },
-                      ]}
+              {isBySaleTypeSettlement ? (
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div className='flex flex-col gap-4'>
+                    <Alert
+                      type='info'
+                      showIcon
+                      message='Phiếu lúa giống đang ở chế độ quyết toán theo loại bán'
+                      description='Lúc nhập chỉ ghi nhận tạm ứng và ngày hẹn quyết toán. Phải trả NCC sẽ tăng dần theo hóa đơn bán tiền mặt / bán nợ thực tế.'
                     />
-                  )}
+                    <FormFieldNumber
+                      label="Số tiền tạm ứng NCC"
+                      name="paidAmount"
+                      control={control}
+                      addonAfter="VND"
+                    />
+                  </div>
 
-                  {watchedPaymentType === 'partial' && (
-                    <>
-                      <FormFieldNumber
-                        label="Số tiền trả trước"
-                        name="paidAmount"
+                  <div className="flex flex-col gap-4">
+                    {(watch('paidAmount') || 0) > 0 && (
+                      <FormComboBox
+                        label='Phương thức tạm ứng'
+                        name='paymentMethod'
                         control={control}
-                        addonAfter="VND"
                         required
+                        options={[
+                          { value: 'cash', label: 'Tiền mặt' },
+                          { value: 'transfer', label: 'Chuyển khoản' },
+                        ]}
                       />
-                      
-                      {/* Hiển thị số tiền còn nợ NCC */}
-                      {watch('paidAmount') && (
-                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-orange-700">
-                              Còn nợ NCC:
-                            </span>
-                            <strong className="text-lg text-orange-600">
-                              {(calculateTotals().supplierAmount - (watch('paidAmount') || 0)).toLocaleString('vi-VN')} VND
-                            </strong>
-                          </div>
-                          <p className="text-xs text-orange-600 mt-1">
-                            (Đã trừ phí vận chuyển/bốc vác bạn tự chịu)
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
+                    )}
 
-                  { (watchedPaymentType as string) !== 'full' && (
                     <FormDatePicker
-                      label={(watchedPaymentType as string) === 'debt' ? 'Hạn trả nợ' : 'Hạn trả nợ còn lại'}
+                      label='Ngày hẹn quyết toán'
                       name='paymentDueDate'
                       control={control}
-                      required
-                      placeholder='Chọn ngày hạn'
+                      placeholder='Chọn ngày hẹn'
                       className='w-full'
                     />
-                  )}
+
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-amber-800">
+                          Phải trả NCC lúc tạo phiếu:
+                        </span>
+                        <strong className="text-lg text-amber-700">0 VND</strong>
+                      </div>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Công nợ thực tế sẽ được cộng dồn theo các hóa đơn bán ra của lô lúa giống này.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div>
+                    <Text className="block mb-2 font-medium">Hình thức thanh toán</Text>
+                    <Controller
+                      name="paymentType"
+                      control={control}
+                      render={({ field }) => (
+                        <Radio.Group 
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full"
+                        >
+                          <Space direction="vertical" className="w-full bg-blue-50/50 p-4 rounded-md border border-blue-100">
+                            <Radio value="full">Thanh toán toàn bộ</Radio>
+                            <Radio value="partial">Thanh toán một phần (Ghi nợ còn lại)</Radio>
+                            <Radio value="debt">Ghi nợ hoàn toàn (Trả sau)</Radio>
+                          </Space>
+                        </Radio.Group>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    {watchedPaymentType !== 'debt' && (
+                      <FormComboBox
+                        label='Phương thức thanh toán'
+                        name='paymentMethod'
+                        control={control}
+                        required={(watchedPaymentType as string) !== 'debt'}
+                        options={[
+                          { value: 'cash', label: 'Tiền mặt' },
+                          { value: 'transfer', label: 'Chuyển khoản' },
+                        ]}
+                      />
+                    )}
+
+                    {watchedPaymentType === 'partial' && (
+                      <>
+                        <FormFieldNumber
+                          label="Số tiền trả trước"
+                          name="paidAmount"
+                          control={control}
+                          addonAfter="VND"
+                          required
+                        />
+                        
+                        {watch('paidAmount') && (
+                          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-orange-700">
+                                Còn nợ NCC:
+                              </span>
+                              <strong className="text-lg text-orange-600">
+                                {(calculateTotals().supplierAmount - (watch('paidAmount') || 0)).toLocaleString('vi-VN')} VND
+                              </strong>
+                            </div>
+                            <p className="text-xs text-orange-600 mt-1">
+                              (Đã trừ phí vận chuyển/bốc vác bạn tự chịu)
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {(watchedPaymentType as string) !== 'full' && (
+                      <FormDatePicker
+                        label={(watchedPaymentType as string) === 'debt' ? 'Hạn trả nợ' : 'Hạn trả nợ còn lại'}
+                        name='paymentDueDate'
+                        control={control}
+                        required
+                        placeholder='Chọn ngày hạn'
+                        className='w-full'
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </Card>
           )}
 

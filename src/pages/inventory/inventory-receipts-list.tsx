@@ -101,6 +101,10 @@ const buildPaymentHistoryText = (
   const debtAmount = Number(receipt.debt_amount) || 0
   const supplierAmount = Number(receipt.supplier_amount) || Number(receipt.total_amount) || 0
 
+  if (receipt.payment_status === 'advance') {
+    return `Tam ung ${formatExcelMoney(paidAmount)} / Phai tra hien tai ${formatExcelMoney(supplierAmount)} / Con no ${formatExcelMoney(debtAmount)}`
+  }
+
   if (paidAmount > 0) {
     return `Da thanh toan ${formatExcelMoney(paidAmount)} / Phai tra ${formatExcelMoney(supplierAmount)} / Con no ${formatExcelMoney(debtAmount)}`
   }
@@ -841,6 +845,7 @@ const InventoryReceiptsList: React.FC = () => {
             options={[
               { label: "Đã thanh toán", value: "paid" },
               { label: "Một phần", value: "partial" },
+              { label: "Tạm ứng", value: "advance" },
               { label: "Chưa TT", value: "unpaid" },
             ]}
         />
@@ -851,6 +856,7 @@ const InventoryReceiptsList: React.FC = () => {
       render: (status: string) => {
         if (status === 'paid') return <Tag color="success">Đã thanh toán</Tag>
         if (status === 'partial') return <Tag color="warning">Một phần</Tag>
+        if (status === 'advance') return <Tag color="processing">Tạm ứng</Tag>
         if (status === 'unpaid' || !status) return <Tag color="error">Chưa TT</Tag>
         return <Tag>-</Tag>
       },

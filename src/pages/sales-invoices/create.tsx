@@ -818,6 +818,16 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     }
 
     // ✅ VALIDATION: Chặn submit nếu có sản phẩm có tồn thuế mà chưa điền GBKT
+    const byPriceTypeCount = (data.items || []).filter(
+      (item) => item.costing_method === 'by_price_type',
+    ).length;
+    if (byPriceTypeCount > 0 && byPriceTypeCount < (data.items || []).length) {
+      antMessage.error(
+        'Không được trộn lúa giống quyết toán theo loại bán với sản phẩm thường trong cùng một phiếu bán.',
+      );
+      return;
+    }
+
     for (const item of data.items || []) {
       const hasTaxableStock = Number(item.taxable_quantity_stock || 0) > 0;
       const hasTaxPrice = Number(item.tax_selling_price || 0) > 0;

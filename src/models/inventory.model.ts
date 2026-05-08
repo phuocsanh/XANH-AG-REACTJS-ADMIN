@@ -65,9 +65,10 @@ export interface InventoryReceipt {
 
   // Payment fields
   paid_amount?: number
-  payment_status?: "unpaid" | "partial" | "paid"
+  payment_status?: "unpaid" | "partial" | "paid" | "advance"
   payment_method?: string
   payment_due_date?: string
+  supplier_settlement_mode?: "standard" | "by_sale_type"
 
   // Adjustment fields
   adjusted_amount?: number
@@ -322,6 +323,7 @@ export function mapApiResponseToInventoryReceipt(
     payment_status: apiReceipt.payment_status,
     payment_method: apiReceipt.payment_method,
     payment_due_date: apiReceipt.payment_due_date,
+    supplier_settlement_mode: apiReceipt.supplier_settlement_mode,
 
     // Adjustment fields
     adjusted_amount: apiReceipt.adjusted_amount
@@ -505,6 +507,7 @@ export interface CreateInventoryReceiptRequest extends AnyObject {
   shared_shipping_cost?: number // Phí vận chuyển chung (tùy chọn)
   shipping_allocation_method?: "by_value" | "by_quantity" // Phương thức phân bổ (tùy chọn)
   images?: string[] // Mảng URL ảnh hóa đơn (tùy chọn)
+  supplier_settlement_mode?: "standard" | "by_sale_type"
 }
 
 // Interface cho request cập nhật phiếu nhập hàng
@@ -537,6 +540,7 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
 
   // ===== TRƯỜNG MỚI - SỐ LƯỢNG KHAI THUẾ =====
   taxable_quantity?: number // Số lượng có hóa đơn đầu vào (để khai thuế)
+  costing_method?: "fixed" | "by_price_type"
 }
 
 // Interface cho request cập nhật chi tiết phiếu nhập hàng

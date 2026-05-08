@@ -128,6 +128,7 @@ const useItemColumns = ({
 
                             // Lưu conversions để dùng cho select ĐVT
                             setValue(`items.${index}.conversions`, selectedOpt.unit_conversions || [])
+                            setValue(`items.${index}.costing_method`, selectedOpt.costing_method || 'fixed')
 
                             if (selectedOpt.cost_price !== undefined) {
                               const cost = selectedOpt.cost_price
