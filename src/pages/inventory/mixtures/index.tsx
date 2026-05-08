@@ -48,13 +48,6 @@ const InventoryMixturesList: React.FC = () => {
 
   const columns: ColumnsType<any> = [
     {
-      title: 'STT',
-      key: 'stt',
-      width: 60,
-      align: 'center',
-      render: (_: any, __: any, index: number) => (currentPage - 1) * pageSize + index + 1,
-    },
-    {
       title: 'Mã phiếu',
       dataIndex: "code",
       key: "code",

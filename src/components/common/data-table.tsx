@@ -291,6 +291,30 @@ const DataTable = <T extends object>({
   // Kết hợp default và custom action buttons
   const allActionButtons = [...defaultActionButtons, ...actionButtons]
 
+  const resolvedPagination = useMemo(() => {
+    if (tableProps.pagination === false) return false
+
+    const basePagination =
+      typeof tableProps.pagination === "object" ? tableProps.pagination : {}
+
+    const mergedConfig = {
+      showSizeChanger: true,
+      showQuickJumper: true,
+      showTotal: (total: number, range: [number, number]) =>
+        `${range[0]}-${range[1]} của ${total} mục`,
+      ...basePagination,
+      ...paginationConfig,
+    }
+
+    return {
+      ...mergedConfig,
+      total:
+        typeof mergedConfig.total === "number"
+          ? mergedConfig.total
+          : filteredData.length,
+    }
+  }, [filteredData.length, paginationConfig, tableProps.pagination])
+
   // Tạo action column - chỉ fixed right trên desktop, mobile scroll tự do
   const actionColumn = {
     title: actionColumnTitle,
@@ -334,13 +358,19 @@ const DataTable = <T extends object>({
     width: 60,
     align: 'center',
     render: (_: unknown, __: T, index: number) => {
-      // Lấy current page và pageSize từ pagination
-      const currentPage = (tableProps.pagination as TablePaginationConfig)?.current || 1;
-      const pageSize = (tableProps.pagination as TablePaginationConfig)?.pageSize || paginationConfig.pageSize || 10;
-      const stt = (currentPage - 1) * pageSize + index + 1;
-      return <div className='font-medium text-gray-600'>{stt}</div>;
+      const currentPage =
+        resolvedPagination && typeof resolvedPagination === "object"
+          ? resolvedPagination.current || 1
+          : 1
+      const pageSize =
+        resolvedPagination && typeof resolvedPagination === "object"
+          ? resolvedPagination.pageSize || 10
+          : 10
+      const stt = (currentPage - 1) * pageSize + index + 1
+
+      return <div className='font-medium text-gray-600'>{stt}</div>
     },
-  };
+  }
 
   /**
    * Helper function để wrap column render với ellipsis và tooltip
@@ -544,26 +574,7 @@ const DataTable = <T extends object>({
           dataSource={filteredData}
           locale={{ emptyText }}
           scroll={{ x: "max-content" }}
-          pagination={tableProps.pagination === false ? false : (() => {
-            // Hợp nhất pagination từ tableProps và paginationConfig riêng
-            const basePagination = typeof tableProps.pagination === 'object' ? tableProps.pagination : {};
-            const mergedConfig = {
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total: number, range: [number, number]) => `${range[0]}-${range[1]} của ${total} mục`,
-              ...basePagination,
-              ...paginationConfig,
-            };
-
-            return {
-              ...mergedConfig,
-              // Đảm bảo total luôn đúng: ưu tiên mergedConfig.total (từ API)
-              // Chỉ dùng filteredData.length khi không có total từ bên ngoài
-              total: typeof mergedConfig.total === 'number'
-                ? mergedConfig.total
-                : filteredData.length,
-            };
-          })()}
+          pagination={resolvedPagination}
           onChange={handleTableChange}
           onRow={(record) => {
             const externalProps = tableProps.onRow ? tableProps.onRow(record) : {};
