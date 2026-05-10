@@ -9,7 +9,7 @@ import { FiUser } from "react-icons/fi"
 import { HiOutlineShoppingCart } from "react-icons/hi"
 import { TbBrandProducthunt } from "react-icons/tb"
 import { RiLockPasswordLine } from "react-icons/ri"
-import { MdInventory, MdTrendingUp } from "react-icons/md"
+import { MdInventory } from "react-icons/md"
 import { useAppStore } from "../../stores"
 import { BiCategory } from "react-icons/bi"
 import { TbCategoryMinus } from "react-icons/tb"
@@ -180,13 +180,8 @@ const Sidebar: React.FC = () => {
       setActiveTab(28)
       setIsToggleSubmenu(false)
     }
-    // Báo cáo Doanh thu
-    else if (path.startsWith('/reports/revenue')) {
-      setActiveTab(35)
-      setIsToggleSubmenu(false)
-    }
-    // Đồng bộ thuế 2026
-    else if (path.startsWith('/reports/tax-revenue-2026')) {
+    // Khai thuế
+    else if (path.startsWith('/reports/tax-revenue')) {
       setActiveTab(36)
       setIsToggleSubmenu(false)
     }
@@ -652,25 +647,9 @@ const Sidebar: React.FC = () => {
                 </li>
               )}
 
-              {/* Báo cáo Doanh thu */}
               {hasPermission(userInfo, "store_profit_report:read") && (
                 <li>
-                  <Link to='/reports/revenue'>
-                    <Button
-                      className={`w-full !justify-start !text-left ${activeTab === 35 ? "active" : ""}`}
-                      onClick={() => isOpenSubmenu(35)}
-                    >
-                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                        <MdTrendingUp className='text-emerald-300' />
-                      </span>
-                      Doanh thu & Lợi nhuận
-                    </Button>
-                  </Link>
-                </li>
-              )}
-              {hasPermission(userInfo, "store_profit_report:read") && (
-                <li>
-                  <Link to='/reports/tax-revenue-2026'>
+                  <Link to='/reports/tax-revenue'>
                     <Button
                       className={`w-full !justify-start !text-left ${activeTab === 36 ? "active" : ""}`}
                       onClick={() => isOpenSubmenu(36)}
@@ -678,7 +657,7 @@ const Sidebar: React.FC = () => {
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                         <ThunderboltOutlined className='text-blue-300' />
                       </span>
-                      Đồng bộ thuế 2026
+                      Khai thuế
                     </Button>
                   </Link>
                 </li>

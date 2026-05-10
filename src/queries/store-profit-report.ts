@@ -17,6 +17,7 @@ import type {
 
 export const storeProfitReportKeys = {
   all: ['store-profit-reports'] as const,
+  taxRevenueCutoverDate: () => [...storeProfitReportKeys.all, 'tax-revenue-cutover-date'] as const,
   invoice: (invoiceId: number) => [...storeProfitReportKeys.all, 'invoice', invoiceId] as const,
   season: (seasonId: number) => [...storeProfitReportKeys.all, 'season', seasonId] as const,
   customer: (customerId: number, filters?: {
@@ -27,6 +28,10 @@ export const storeProfitReportKeys = {
   }) => [...storeProfitReportKeys.all, 'customer', customerId, filters] as const,
   period: (startDate: string, endDate: string, taxableFilter: string, sortBy?: string, sortOrder?: string) => [...storeProfitReportKeys.all, 'period', startDate, endDate, taxableFilter, sortBy, sortOrder] as const,
 };
+
+export type TaxRevenueCutoverDateSetting = {
+  cutover_date: string
+}
 
 // ==================== QUERIES ====================
 
@@ -158,6 +163,39 @@ export const usePeriodStoreProfitReport = (
   });
 };
 
+export const useTaxRevenueCutoverDateQuery = () => {
+  return useQuery({
+    queryKey: storeProfitReportKeys.taxRevenueCutoverDate(),
+    queryFn: async () => {
+      const response = await api.get<TaxRevenueCutoverDateSetting>(`/store-profit-report/tax-revenue/cutover-date`);
+      return response;
+    },
+  });
+};
+
+export const useUpdateTaxRevenueCutoverDateMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (cutoverDate: string) => {
+      const response = await api.putRaw<TaxRevenueCutoverDateSetting>(
+        '/store-profit-report/tax-revenue/cutover-date',
+        { cutover_date: cutoverDate }
+      );
+      return response;
+    },
+    onSuccess: (response) => {
+      message.success(`Đã lưu ngày cutover: ${response.cutover_date}`);
+      queryClient.invalidateQueries({ queryKey: storeProfitReportKeys.taxRevenueCutoverDate() });
+      queryClient.invalidateQueries({ queryKey: storeProfitReportKeys.all });
+    },
+    onError: (error: any) => {
+      const errorMsg = error.response?.data?.message || error.message || 'Vui lòng thử lại sau';
+      message.error(`Lỗi khi lưu ngày cutover: ${errorMsg}`);
+    }
+  });
+};
+
 /**
  * Hook mutation để đồng bộ dữ liệu tồn kho thuế (Taxable Pool)
  */
@@ -198,7 +236,7 @@ export const useSyncTaxableDataV2Mutation = () => {
     },
     onSuccess: (response: any) => {
       const data = response.data || response;
-      message.success(`Đồng bộ 2026 xong: ${data.productsUpdated || 0} sản phẩm, ${data.salesItemsUpdated || 0} item bán hàng.`);
+      message.success(`Đồng bộ xong: ${data.productsUpdated || 0} sản phẩm, ${data.salesItemsUpdated || 0} item bán hàng.`);
       queryClient.invalidateQueries({ queryKey: storeProfitReportKeys.all });
     },
     onError: (error: any) => {

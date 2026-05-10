@@ -1,55 +1,78 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Card, 
-  Row, 
-  Col, 
-  Statistic, 
   Typography, 
   Space, 
   Divider, 
   Alert, 
   Spin,
   Table,
-  Tag,
   Button,
-  Segmented
+  Segmented,
+  Skeleton
 } from 'antd';
 import { DatePicker, ExportExcelButton } from '@/components/common';
 import { 
-  DollarOutlined, 
-  ShoppingOutlined, 
   ArrowUpOutlined, 
   ArrowDownOutlined,
   CalendarOutlined,
-  PieChartOutlined,
-  FileProtectOutlined,
-  FileExcelOutlined,
-  MinusCircleOutlined,
   SyncOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  SaveOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import type { PeriodInvoice, PeriodInvoiceItem } from '@/models/store-profit';
-import { usePeriodStoreProfitReport, useSyncTaxableDataV2Mutation } from '@/queries/store-profit-report';
+import {
+  usePeriodStoreProfitReport,
+  useSyncTaxableDataV2Mutation,
+  useTaxRevenueCutoverDateQuery,
+  useUpdateTaxRevenueCutoverDateMutation,
+} from '@/queries/store-profit-report';
+import { useAppStore } from '@/stores';
+import { hasPermission } from '@/utils/permission';
 
 const { Title, Text } = Typography;
 
 /**
- * Trang báo cáo doanh thu và lợi nhuận 2026 - Đồng bộ thuế theo ngày nhập 2026
+ * Trang khai thuế theo ngày nhập
  */
-const TaxRevenueReport2026Page: React.FC = () => {
-  // Mặc định xem báo cáo từ 1/1/2026
+const TaxRevenueReportPage: React.FC = () => {
+  const defaultCutoverDate = '2026-01-01';
+  // Mặc định xem báo cáo từ ngày cutover ban đầu
   const [dates, setDates] = useState<[Dayjs | null, Dayjs | null]>([
     dayjs('2026-01-01'),
     dayjs(),
   ]);
+  const [cutoverDateInput, setCutoverDateInput] = useState<Dayjs | null>(dayjs(defaultCutoverDate));
   const [taxableFilter, setTaxableFilter] = useState<'all' | 'yes' | 'no'>('yes');
   const [sortBy, setSortBy] = useState<string>('sale_date');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
+  const {
+    data: cutoverSetting,
+    isLoading: isCutoverDateLoading,
+  } = useTaxRevenueCutoverDateQuery();
+  const {
+    mutate: updateCutoverDate,
+    isPending: isSavingCutoverDate,
+  } = useUpdateTaxRevenueCutoverDateMutation();
+  const userInfo = useAppStore((state) => state.userInfo);
+  const canManageTaxReport = hasPermission(userInfo, 'inventory:manage');
+
+  useEffect(() => {
+    const savedDate = cutoverSetting?.cutover_date;
+    if (!savedDate) return;
+
+    const parsedDate = dayjs(savedDate);
+    if (parsedDate.isValid()) {
+      setCutoverDateInput(parsedDate);
+    }
+  }, [cutoverSetting?.cutover_date]);
+
   const startDate = dates[0]?.format('YYYY-MM-DD') || '2026-01-01';
   const endDate = dates[1]?.format('YYYY-MM-DD') || dayjs().format('YYYY-MM-DD');
+  const cutoverDate = cutoverSetting?.cutover_date || cutoverDateInput?.format('YYYY-MM-DD') || defaultCutoverDate;
+  const isCutoverDateDirty = cutoverDateInput?.format('YYYY-MM-DD') !== cutoverDate;
 
   const { data: report, isLoading, isError } = usePeriodStoreProfitReport(
     startDate, 
@@ -57,7 +80,7 @@ const TaxRevenueReport2026Page: React.FC = () => {
     taxableFilter, 
     sortBy, 
     sortOrder,
-    '2026-01-01' // Chỉ lấy sản phẩm có hóa đơn nhập từ 2026
+    cutoverDate
   );
 
   const formatMoney = (amount: number = 0) => {
@@ -69,62 +92,16 @@ const TaxRevenueReport2026Page: React.FC = () => {
 
   const summary = report?.summary;
 
-  const expenseData = summary ? [
-    {
-      key: '1',
-      type: 'Giá vốn hàng bán',
-      amount: summary.total_cogs,
-      icon: <ShoppingOutlined className="text-orange-500" />,
-      description: 'Tổng chi phí nhập hàng của các sản phẩm đã bán'
-    },
-    {
-      key: '2',
-      type: 'Chi phí vận hành',
-      amount: summary.total_operating_costs,
-      icon: <MinusCircleOutlined className="text-red-400" />,
-      description: 'Điện, nước, mặt bằng, nhân công...'
-    },
-    {
-      key: '3',
-      type: 'Quà tặng & Dịch vụ',
-      amount: summary.total_gift_costs,
-      icon: <DollarOutlined className="text-purple-400" />,
-      description: 'Quà tặng cho khách hàng, chi phí kỹ thuật, giao hàng'
-    },
-  ] : [];
-
-  const columns = [
-    {
-      title: 'Loại chi phí',
-      dataIndex: 'type',
-      key: 'type',
-      render: (text: string, record: any) => (
-        <Space>
-          {record.icon}
-          <Text strong>{text}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Mô tả',
-      dataIndex: 'description',
-      key: 'description',
-    },
-    {
-      title: 'Số tiền',
-      dataIndex: 'amount',
-      key: 'amount',
-      align: 'right' as const,
-      render: (amount: number) => <Text className="text-red-500 font-medium">{formatMoney(amount)}</Text>,
-    },
-  ];
-
-  // Sử dụng Mutation V2 cho năm 2026
-  const { mutate: syncTaxableData2026, isPending: isSyncing } = useSyncTaxableDataV2Mutation();
+  const { mutate: syncTaxableData, isPending: isSyncing } = useSyncTaxableDataV2Mutation();
 
   const handleSyncTaxableData = () => {
-    console.log('🔵 [2026] Bắt đầu đồng bộ dữ liệu thuế theo ngày nhập từ 1/1/2026...');
-    syncTaxableData2026('2026-01-01');
+    console.log(`🔵 Bắt đầu đồng bộ dữ liệu thuế theo ngày nhập từ ${cutoverDate}...`);
+    syncTaxableData(cutoverDate);
+  };
+
+  const handleSaveCutoverDate = () => {
+    if (!cutoverDateInput) return;
+    updateCutoverDate(cutoverDateInput.format('YYYY-MM-DD'));
   };
 
   return (
@@ -184,23 +161,27 @@ const TaxRevenueReport2026Page: React.FC = () => {
         <div>
           <Title level={2} className="!mb-0 !text-blue-800">
             <ThunderboltOutlined className="mr-2" />
-            Đồng bộ thuế 2026 (Theo ngày nhập)
+            Khai thuế
           </Title>
-          <Text type="secondary">Chỉ đồng bộ các sản phẩm có hóa đơn nhập từ <strong>01/01/2026</strong></Text>
+          <Text type="secondary">
+            Chỉ đồng bộ các sản phẩm có hóa đơn nhập từ <strong>{dayjs(cutoverDate).format('DD/MM/YYYY')}</strong>
+          </Text>
           <div className="mt-2 flex items-center gap-2">
-            <Button 
-              type="primary"
-              icon={<SyncOutlined spin={isSyncing} />} 
-              onClick={handleSyncTaxableData}
-              loading={isSyncing}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Đồng bộ dữ liệu thuế thực tế 2026
-            </Button>
+            {canManageTaxReport && (
+              <Button 
+                type="primary"
+                icon={<SyncOutlined spin={isSyncing} />} 
+                onClick={handleSyncTaxableData}
+                loading={isSyncing}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Đồng bộ dữ liệu khai thuế
+              </Button>
+            )}
             {report && (
               <ExportExcelButton 
                 label="Xuất Excel Kê Thuế"
-                fileName={`Bao-cao-thue-2026-${startDate}-den-${endDate}`}
+                fileName={`Bao-cao-thue-${startDate}-den-${endDate}`}
                 data={[
                   ...report.invoices.flatMap(invoice => 
                     invoice.items
@@ -276,31 +257,72 @@ const TaxRevenueReport2026Page: React.FC = () => {
             )}
           </div>
         </div>
-        <Card className="shadow-sm border-blue-100" bodyStyle={{ padding: '12px 24px' }}>
-          <Space direction="vertical" size={2}>
-            <Text type="secondary"><CalendarOutlined /> Phạm vi lọc báo cáo:</Text>
-            <Space.Compact>
-              <DatePicker 
-                className="rounded-l-lg"
-                value={dates[0]}
-                onChange={(val: any) => setDates([val, dates[1]])}
-                placeholder="Từ ngày"
-                format="DD/MM/YYYY"
-                size="large"
-                allowClear={false}
-              />
-              <DatePicker 
-                className="rounded-r-lg"
-                value={dates[1]}
-                onChange={(val: any) => setDates([dates[0], val])}
-                placeholder="Đến ngày"
-                format="DD/MM/YYYY"
-                size="large"
-                allowClear={false}
-              />
-            </Space.Compact>
-          </Space>
-        </Card>
+        <Space direction="vertical" size={12} className="w-full md:w-auto">
+          <Card className="shadow-sm border-blue-100" bodyStyle={{ padding: '12px 24px' }}>
+            <Space direction="vertical" size={8}>
+              <Text type="secondary"><CalendarOutlined /> Ngày cutover:</Text>
+              {isCutoverDateLoading ? (
+                <Skeleton.Input active size="default" className="!w-56" />
+              ) : (
+                <>
+                  <Space.Compact>
+                    <DatePicker
+                      value={cutoverDateInput}
+                      onChange={(val: any) => setCutoverDateInput(val)}
+                      placeholder="Ngày cutover"
+                      format="DD/MM/YYYY"
+                      size="large"
+                      allowClear={false}
+                      disabled={!canManageTaxReport}
+                    />
+                    {canManageTaxReport && (
+                      <Button
+                        type="primary"
+                        icon={<SaveOutlined />}
+                        onClick={handleSaveCutoverDate}
+                        loading={isSavingCutoverDate}
+                        disabled={!cutoverDateInput || !isCutoverDateDirty}
+                      >
+                        Lưu
+                      </Button>
+                    )}
+                  </Space.Compact>
+                  {!canManageTaxReport && (
+                    <Text type="secondary" className="text-xs">
+                      Chỉ người có quyền quản lý kho mới được sửa ngày cutover.
+                    </Text>
+                  )}
+                </>
+              )}
+            </Space>
+          </Card>
+
+          <Card className="shadow-sm border-blue-100" bodyStyle={{ padding: '12px 24px' }}>
+            <Space direction="vertical" size={2}>
+              <Text type="secondary"><CalendarOutlined /> Phạm vi lọc báo cáo:</Text>
+              <Space.Compact>
+                <DatePicker 
+                  className="rounded-l-lg"
+                  value={dates[0]}
+                  onChange={(val: any) => setDates([val, dates[1]])}
+                  placeholder="Từ ngày"
+                  format="DD/MM/YYYY"
+                  size="large"
+                  allowClear={false}
+                />
+                <DatePicker 
+                  className="rounded-r-lg"
+                  value={dates[1]}
+                  onChange={(val: any) => setDates([dates[0], val])}
+                  placeholder="Đến ngày"
+                  format="DD/MM/YYYY"
+                  size="large"
+                  allowClear={false}
+                />
+              </Space.Compact>
+            </Space>
+          </Card>
+        </Space>
       </div>
 
       <Divider />
@@ -314,27 +336,23 @@ const TaxRevenueReport2026Page: React.FC = () => {
         <Alert message="Lỗi tải dữ liệu" type="error" showIcon />
       ) : summary ? (
         <div className="animate-in fade-in duration-500">
-          <Row gutter={[24, 24]} className="mb-8">
-            <Col xs={24} sm={12} md={4.8}>
-              <Card className="rounded-2xl border-none shadow-sm h-full" bodyStyle={{ borderLeft: '4px solid #10b981' }}>
-                <Statistic title="TỔNG DOANH THU" value={summary.total_revenue} formatter={(v) => formatMoney(Number(v))} />
-                <div className="mt-2 text-xs">Phát sinh từ {summary.invoice_count} hóa đơn</div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} md={4.8}>
-              <Card className="rounded-2xl bg-blue-600 border-none shadow-md h-full">
-                <Statistic title={<span className="text-white">DOANH THU THUẾ</span>} value={summary.taxable_revenue} valueStyle={{ color: '#fff' }} formatter={(v) => formatMoney(Number(v))} />
-                <div className="mt-2 text-blue-100 text-xs">Dữ liệu sau khi đồng bộ</div>
-              </Card>
-            </Col>
-            {/* Các statistik khác giữ nguyên tương tự RevenueReportPage */}
-            <Col xs={24} sm={12} md={4.8}>
-              <Card className="rounded-2xl border-none shadow-sm h-full" bodyStyle={{ borderLeft: '4px solid #ef4444' }}>
-                <Statistic title="LỢI NHUẬN GỘP" value={summary.gross_profit} valueStyle={{ color: '#dc2626' }} formatter={(v) => formatMoney(Number(v))} />
-              </Card>
-            </Col>
-            {/* ... */}
-          </Row>
+          <div className="grid gap-4 mb-8 md:grid-cols-3">
+            <Card className="rounded-2xl border-none shadow-sm">
+              <Text type="secondary">Tổng hóa đơn</Text>
+              <div className="mt-2 text-2xl font-semibold text-slate-800">{summary.invoice_count}</div>
+              <div className="mt-1 text-xs text-slate-500">Trong kỳ báo cáo đã chọn</div>
+            </Card>
+            <Card className="rounded-2xl border-none shadow-sm">
+              <Text type="secondary">Tổng doanh thu bán hàng</Text>
+              <div className="mt-2 text-2xl font-semibold text-emerald-700">{formatMoney(summary.total_revenue)}</div>
+              <div className="mt-1 text-xs text-slate-500">Tổng doanh thu của các hóa đơn trong kỳ</div>
+            </Card>
+            <Card className="rounded-2xl bg-blue-600 border-none shadow-md">
+              <Text className="text-blue-100">Doanh thu khai thuế</Text>
+              <div className="mt-2 text-2xl font-semibold text-white">{formatMoney(summary.taxable_revenue)}</div>
+              <div className="mt-1 text-xs text-blue-100">Số liệu dùng cho kê khai thuế</div>
+            </Card>
+          </div>
 
           <Card title="Danh sách hóa đơn & Sản phẩm (Kỳ báo cáo)" className="rounded-2xl shadow-sm border-none">
              <div className="px-4 py-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -403,4 +421,4 @@ const TaxRevenueReport2026Page: React.FC = () => {
   );
 };
 
-export default TaxRevenueReport2026Page;
+export default TaxRevenueReportPage;
