@@ -290,6 +290,7 @@ const useItemColumns = ({
                 <NumberInput
                   {...field}
                   min={0}
+                  disabled={isApproved}
                   max={getValues(`items.${index}.quantity`) || 0}
                   placeholder='SL thuế'
                   onChange={(value) => {
@@ -319,6 +320,7 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
+                disabled={isApproved}
                 placeholder='Đơn giá'
                 onChange={(value) => {
                   const cost = value || 0
@@ -349,11 +351,40 @@ const useItemColumns = ({
               <NumberInput
                 {...field}
                 min={0}
+                disabled={isApproved}
                 placeholder='Giá VAT'
                 onChange={(value) => {
                   field.onChange(value || 0)
                 }}
               />
+            )}
+          />
+        )
+      },
+    },
+    {
+      title: "GBKT",
+      dataIndex: "tax_selling_price",
+      key: "tax_selling_price",
+      width: 140,
+      align: "right",
+      render: (_: number, __: any, index: number) => {
+        return (
+          <Controller
+            name={`items.${index}.tax_selling_price`}
+            control={control}
+            render={({ field }) => (
+              <Tooltip title="Giá bán khai thuế theo lô nhập">
+                <NumberInput
+                  {...field}
+                  min={0}
+                  disabled={isApproved}
+                  placeholder='GBKT'
+                  onChange={(value) => {
+                    field.onChange(value || 0)
+                  }}
+                />
+              </Tooltip>
             )}
           />
         )

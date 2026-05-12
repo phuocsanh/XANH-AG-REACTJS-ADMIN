@@ -270,6 +270,21 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
             />
           </div>
           <div>
+            <label className='block text-xs mb-1'>GBKT</label>
+            <Controller
+              name={`items.${index}.tax_selling_price`}
+              control={control}
+              render={({ field }) => (
+                <NumberInput
+                  {...field}
+                  min={0}
+                  disabled={isApproved}
+                  placeholder='Giá bán khai thuế'
+                />
+              )}
+            />
+          </div>
+          <div>
             <label className='block text-xs mb-1'>Thành tiền</label>
             <Controller
               name={`items.${index}.total_price`}

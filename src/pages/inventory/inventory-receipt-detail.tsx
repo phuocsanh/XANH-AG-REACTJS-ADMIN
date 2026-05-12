@@ -397,6 +397,73 @@ const InventoryReceiptDetail: React.FC = () => {
     )
   }
 
+  const TaxSellingPriceEditor: React.FC<{
+    value?: number
+    record: InventoryReceiptItem
+    canEdit: boolean
+  }> = ({ value, record, canEdit }) => {
+    const [editing, setEditing] = React.useState(false)
+    const [editValue, setEditValue] = React.useState(Number(value || 0))
+    const updateMutation = useUpdateInventoryReceiptItemMutation()
+
+    const handleSave = async () => {
+      try {
+        await updateMutation.mutateAsync({
+          id: record.id,
+          item: { tax_selling_price: editValue },
+        })
+        setEditing(false)
+        refetchReceipt()
+      } catch (error) {
+        console.error("Error updating tax selling price:", error)
+      }
+    }
+
+    if (editing && canEdit) {
+      return (
+        <Space.Compact>
+          <NumberInput
+            min={0}
+            value={editValue}
+            onChange={(val: number | null) => setEditValue(val || 0)}
+            onPressEnter={handleSave}
+            autoFocus
+            size='small'
+            style={{ width: 110 }}
+          />
+          <Button
+            type='primary'
+            size='small'
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+          >
+            Lưu
+          </Button>
+        </Space.Compact>
+      )
+    }
+
+    const displayValue = Number(value ?? 0)
+
+    return (
+      <Tooltip
+        title={
+          canEdit
+            ? "Click để sửa Giá bán khai thuế"
+            : "Giá bán khai thuế theo lô nhập"
+        }
+      >
+        <Tag
+          color={displayValue > 0 ? "gold" : "default"}
+          onClick={() => canEdit && setEditing(true)}
+          className={canEdit ? "cursor-pointer hover:opacity-80" : ""}
+        >
+          {displayValue.toLocaleString("vi-VN")} ₫
+        </Tag>
+      </Tooltip>
+    )
+  }
+
   const UnitCostEditor: React.FC<{
     value: number
     record: InventoryReceiptItem
@@ -538,6 +605,20 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (value, record) => (
         <VatUnitCostEditor
           value={value}
+          record={record}
+          canEdit={normalizedStatus === InventoryReceiptStatus.APPROVED}
+        />
+      ),
+    },
+    {
+      title: "GBKT",
+      dataIndex: "tax_selling_price",
+      key: "tax_selling_price",
+      width: 140,
+      align: "right",
+      render: (value, record) => (
+        <TaxSellingPriceEditor
+          value={Number(value || 0)}
           record={record}
           canEdit={normalizedStatus === InventoryReceiptStatus.APPROVED}
         />
@@ -732,6 +813,7 @@ const InventoryReceiptDetail: React.FC = () => {
                   unit_cost: "Đơn giá mua",
                   taxable_quantity: "SL Thuế",
                   vat_unit_cost: "Đơn giá VAT",
+                  tax_selling_price: "Giá bán khai thuế",
                   status: "Trạng thái",
                 }
 

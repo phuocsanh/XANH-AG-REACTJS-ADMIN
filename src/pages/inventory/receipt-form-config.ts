@@ -10,6 +10,7 @@ export const receiptItemSchema = z.object({
   quantity: z.number().min(1, 'Số lượng phải lớn hơn 0'),
   unit_cost: z.number().min(0, 'Đơn giá phải lớn hơn hoặc bằng 0'),
   vat_unit_cost: z.number().min(0, 'Giá VAT phải lớn hơn hoặc bằng 0').optional(),
+  tax_selling_price: z.number().min(0, 'Giá bán khai thuế phải lớn hơn hoặc bằng 0').optional(),
   total_price: z.number().min(0),
   expiry_date: z.any().optional(),
   batch_number: z.string().optional(),
@@ -55,6 +56,27 @@ export const receiptFormSchema = z.object({
   paymentMethod: z.string().optional(),
   paymentDueDate: z.any().optional(),
 }).superRefine((data, ctx) => {
+  data.items.forEach((item, index) => {
+    const taxableQty = Number(item.taxable_quantity || 0)
+    const taxSellingPrice = Number(item.tax_selling_price || 0)
+
+    if (taxableQty > Number(item.quantity || 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'SL Thuế không được lớn hơn số lượng nhập',
+        path: ['items', index, 'taxable_quantity'],
+      })
+    }
+
+    if (taxableQty > 0 && taxSellingPrice <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Có SL Thuế thì phải nhập Giá bán khai thuế lớn hơn 0',
+        path: ['items', index, 'tax_selling_price'],
+      })
+    }
+  })
+
   // 1. Validate phí vận chuyển/bốc vác (áp dụng cho mọi trạng thái)
   if (data.hasSharedShipping && (!data.sharedShippingCost || data.sharedShippingCost <= 0)) {
     ctx.addIssue({

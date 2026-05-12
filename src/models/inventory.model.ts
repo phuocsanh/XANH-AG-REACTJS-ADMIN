@@ -161,6 +161,7 @@ export interface InventoryReceiptItem {
   quantity: number
   unit_cost: number // Thay unitPrice thành unit_cost và string thành number để khớp với backend
   vat_unit_cost?: number
+  tax_selling_price?: number
   total_price: number // Thay totalPrice thành total_price và string thành number để khớp với backend
   notes?: string
   created_at: string
@@ -233,6 +234,7 @@ export interface InventoryReceiptItemApiResponse {
   quantity: number
   unit_price: string // Thay unitPrice thành unit_price
   vat_unit_cost?: string
+  tax_selling_price?: string
   total_price: string // Thay totalPrice thành total_price
   expiry_date?: string // Thay expiryDate thành expiry_date
   batch_number?: string // Thay batchNumber thành batch_number
@@ -384,6 +386,11 @@ export function mapApiResponseToInventoryReceiptItem(
       apiItem.vat_unit_cost !== undefined && apiItem.vat_unit_cost !== null
         ? parseFloat(apiItem.vat_unit_cost)
         : undefined,
+    tax_selling_price:
+      apiItem.tax_selling_price !== undefined &&
+      apiItem.tax_selling_price !== null
+        ? parseFloat(apiItem.tax_selling_price)
+        : undefined,
     total_price: parseFloat(apiItem.total_price || "0"),
     expiry_date: apiItem.expiry_date, // Thêm expiry_date
     batch_number: apiItem.batch_number, // Thêm batch_number
@@ -531,6 +538,7 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
   quantity: number // Số lượng (bắt buộc)
   unit_cost: number // Giá vốn đơn vị (bắt buộc)
   vat_unit_cost?: number // Đơn giá trên hóa đơn VAT (tùy chọn)
+  tax_selling_price?: number // Giá bán khai thuế theo lô nhập (tùy chọn)
   total_price: number // Tổng tiền (bắt buộc)
   expiry_date?: string // Ngày hết hạn (tùy chọn)
   notes?: string // Ghi chú (tùy chọn)
