@@ -497,6 +497,8 @@ const CreateSalesInvoice = () => {
           item.base_quantity ||
             Number(item.quantity || 0) * Number(item.conversion_factor || 1),
         ),
+        priceType:
+          item.price_type === 'credit' ? 'credit' : 'cash',
       }))
       .filter((item) => item.productId > 0 && item.quantity > 0);
 

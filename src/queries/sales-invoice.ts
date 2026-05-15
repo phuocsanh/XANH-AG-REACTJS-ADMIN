@@ -45,6 +45,7 @@ export const previewSalesInvoiceProfit = async (payload: {
   items: Array<{
     productId: number
     quantity: number
+    priceType?: 'cash' | 'credit'
   }>
 }) => {
   const response = await api.postRaw<SalesInvoiceProfitPreviewResponse>(
