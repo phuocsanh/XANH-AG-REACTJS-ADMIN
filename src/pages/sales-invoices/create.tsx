@@ -18,7 +18,7 @@ import {
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
+import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery, useSalesInvoiceProfitPreviewMutation } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery, useProductsByIdsQuery } from '@/queries/product';
@@ -296,6 +296,7 @@ const CreateSalesInvoice = () => {
   
   const createMutation = useCreateSalesInvoiceMutation();
   const updateMutation = useUpdateSalesInvoiceMutation();
+  const profitPreviewMutation = useSalesInvoiceProfitPreviewMutation();
 
   // State để lưu kết quả tính toán
   const [calculatedProfit, setCalculatedProfit] = useState({
@@ -308,6 +309,7 @@ const CreateSalesInvoice = () => {
   const partialPaymentAmount = watch('partial_payment_amount');
   const seasonId = watch('season_id');
   const customerId = watch('customer_id');
+  const discountAmount = watch('discount_amount');
 
   // Hook lấy thống kê khách hàng trong mùa vụ
   const { data: customerSeasonStats } = useCustomerSeasonStatsQuery(customerId, seasonId);
@@ -459,6 +461,7 @@ const CreateSalesInvoice = () => {
         const grossProfit = totalRev - totalCst - currentDiscount;
         setCalculatedProfit({
            revenue: totalRev - currentDiscount,
+           cost: totalCst,
            profit: grossProfit,
            margin: (totalRev - currentDiscount) > 0 ? (grossProfit / (totalRev - currentDiscount)) * 100 : 0
         });
@@ -473,6 +476,63 @@ const CreateSalesInvoice = () => {
     
     return () => subscription.unsubscribe();
   }, [watch, setValue, productsData]);
+
+  useEffect(() => {
+    const currentItems = items || [];
+    const currentDiscount = Number(discountAmount || 0);
+
+    if (!currentItems.length) {
+      setCalculatedProfit({
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+        margin: 0,
+      });
+      return;
+    }
+
+    const previewItems = currentItems
+      .map((item) => ({
+        productId: Number(item.product_id || 0),
+        quantity: Number(
+          item.base_quantity ||
+            Number(item.quantity || 0) * Number(item.conversion_factor || 1),
+        ),
+      }))
+      .filter((item) => item.productId > 0 && item.quantity > 0);
+
+    if (!previewItems.length) {
+      return;
+    }
+
+    const revenue = currentItems.reduce((sum, item: any) => {
+      return (
+        sum +
+        (Number(item?.quantity) || 0) * (Number(item?.unit_price) || 0) -
+        (Number(item?.discount_amount) || 0)
+      );
+    }, 0) - currentDiscount;
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const preview = await profitPreviewMutation.mutateAsync({
+          items: previewItems,
+        });
+        const cost = Number(preview.totalCostValue || 0);
+        const profit = revenue - cost;
+        setCalculatedProfit({
+          revenue,
+          cost,
+          profit,
+          margin: revenue > 0 ? (profit / revenue) * 100 : 0,
+        });
+      } catch (error) {
+        console.error('Error previewing profit by batch:', error);
+      }
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [discountAmount, items, profitPreviewMutation]);
 
   // ✅ Tự động set số tiền khách trả trước khi chọn phương thức thanh toán
   useEffect(() => {

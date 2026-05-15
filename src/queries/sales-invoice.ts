@@ -20,6 +20,27 @@ export const salesInvoiceKeys = {
     [...salesInvoiceKeys.all, "latest-by-customer", customerId] as const,
 } as const
 
+export interface SalesInvoiceProfitPreviewResponse {
+  items: Array<{
+    productId: number
+    quantity: number
+    totalCostValue: number
+    averageCostUsed: number
+    taxableQuantity: number
+    taxSellingPrice: number
+    remainingQuantity: number
+    affectedBatches: Array<{
+      batchId: number
+      deductedQuantity: number
+      taxableQuantity: number
+      remainingQuantity: number
+      cost: number
+      taxSellingPriceBaseUnit: number
+    }>
+  }>
+  totalCostValue: number
+}
+
 // ========== SALES INVOICE HOOKS ==========
 
 /**
@@ -117,6 +138,23 @@ export const useCreateSalesInvoiceMutation = () => {
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi tạo hóa đơn")
+    },
+  })
+}
+
+export const useSalesInvoiceProfitPreviewMutation = () => {
+  return useMutation({
+    mutationFn: async (payload: {
+      items: Array<{
+        productId: number
+        quantity: number
+      }>
+    }) => {
+      const response = await api.postRaw<SalesInvoiceProfitPreviewResponse>(
+        "/inventory/stock-out-preview",
+        payload as any,
+      )
+      return response
     },
   })
 }
