@@ -39,6 +39,7 @@ import {
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
+import { toast } from "react-toastify"
 
 import {
   InventoryReceiptItem,
@@ -93,6 +94,26 @@ const InventoryReceiptDetail: React.FC = () => {
 
   // Items từ receipt
   const items = receipt?.items || []
+
+  const hasMissingTaxSellingPrice = (
+    record: InventoryReceiptItem,
+    nextTaxableQuantity?: number,
+  ) => {
+    const taxableQuantity =
+      nextTaxableQuantity !== undefined
+        ? Number(nextTaxableQuantity || 0)
+        : Number(record.taxable_quantity || 0)
+
+    return (
+      taxableQuantity > 0 && Number(record.tax_selling_price || 0) <= 0
+    )
+  }
+
+  const showMissingTaxSellingPriceError = () => {
+    toast.error(
+      "Dòng có SL Thuế > 0 bắt buộc phải nhập GBKT lớn hơn 0 trước khi lưu.",
+    )
+  }
 
   // Mutations
   const approveReceiptMutation = useApproveInventoryReceiptMutation()
@@ -280,6 +301,11 @@ const InventoryReceiptDetail: React.FC = () => {
     const updateMutation = useUpdateInventoryReceiptItemMutation()
 
     const handleSave = async () => {
+      if (hasMissingTaxSellingPrice(record, editValue)) {
+        showMissingTaxSellingPriceError()
+        return
+      }
+
       try {
         await updateMutation.mutateAsync({
           id: record.id,
@@ -342,6 +368,11 @@ const InventoryReceiptDetail: React.FC = () => {
     const updateMutation = useUpdateInventoryReceiptItemMutation()
 
     const handleSave = async () => {
+      if (hasMissingTaxSellingPrice(record)) {
+        showMissingTaxSellingPriceError()
+        return
+      }
+
       try {
         await updateMutation.mutateAsync({
           id: record.id,
@@ -454,7 +485,13 @@ const InventoryReceiptDetail: React.FC = () => {
         }
       >
         <Tag
-          color={displayValue > 0 ? "gold" : "default"}
+          color={
+            displayValue > 0
+              ? "gold"
+              : Number(record.taxable_quantity || 0) > 0
+                ? "error"
+                : "default"
+          }
           onClick={() => canEdit && setEditing(true)}
           className={canEdit ? "cursor-pointer hover:opacity-80" : ""}
         >
@@ -474,6 +511,11 @@ const InventoryReceiptDetail: React.FC = () => {
     const updateMutation = useUpdateInventoryReceiptItemMutation()
 
     const handleSave = async () => {
+      if (hasMissingTaxSellingPrice(record)) {
+        showMissingTaxSellingPriceError()
+        return
+      }
+
       try {
         await updateMutation.mutateAsync({
           id: record.id,
