@@ -725,16 +725,6 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       return;
     }
 
-    // ✅ VALIDATION: Cảnh báo nếu sản phẩm có tồn thuế nhưng chưa điền GBKT
-    const hasTaxableStock = Number(product.taxable_quantity_stock || 0) > 0;
-    const hasTaxPrice = Number(product.tax_selling_price || 0) > 0;
-    if (hasTaxableStock && !hasTaxPrice) {
-      antMessage.warning(
-        `⚠️ Sản phẩm "${product.trade_name || product.name}" có tồn thuế nhưng chưa điền Giá bán khai thuế (GBKT)! Vui lòng cập nhật GBKT trong danh mục sản phẩm trước khi tạo hóa đơn.`,
-        6,
-      );
-    }
-    
     // Nếu là công nợ -> dùng giá nợ (nếu có), ngược lại dùng giá tiền mặt
     const priceType = isDebt ? 'credit' : 'cash';
     const baseCostPrice = resolveProductCostByPriceType(product, priceType);
@@ -770,7 +760,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       costing_method: product.costing_method || 'fixed',
       stock_quantity: Number(product.quantity || 0),
       taxable_quantity_stock: Number(product.taxable_quantity_stock || 0),
-      tax_selling_price: String((Number(product.tax_selling_price || 0) || 0) * factor),
+      tax_selling_price: '0',
       sale_unit_id: Number(saleUnitId),
       conversion_factor: Number(factor) || 1,
       base_quantity: Number(factor) || 1,
@@ -817,7 +807,6 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       }
     }
 
-    // ✅ VALIDATION: Chặn submit nếu có sản phẩm có tồn thuế mà chưa điền GBKT
     const byPriceTypeCount = (data.items || []).filter(
       (item) => item.costing_method === 'by_price_type',
     ).length;
@@ -829,15 +818,6 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     }
 
     for (const item of data.items || []) {
-      const hasTaxableStock = Number(item.taxable_quantity_stock || 0) > 0;
-      const hasTaxPrice = Number(item.tax_selling_price || 0) > 0;
-      if (hasTaxableStock && !hasTaxPrice) {
-        antMessage.error(
-          `❌ Sản phẩm "${item.product_name}" có tồn thuế nhưng chưa điền Giá bán khai thuế (GBKT)! Vui lòng vào danh mục sản phẩm và điền GBKT trước khi tạo hóa đơn này.`
-        );
-        return;
-      }
-
       if (item.costing_method === 'by_price_type' && Number(item.average_cost_price || 0) <= 0) {
         const priceTypeLabel = item.price_type === 'credit' ? 'bán nợ' : 'tiền mặt';
         antMessage.error(

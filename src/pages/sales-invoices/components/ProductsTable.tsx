@@ -206,7 +206,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                       `items.${index}.average_cost_price`,
                                       resolveProductCostByPriceType(product, isCash ? 'cash' : 'credit'),
                                     );
-                                    setValue(`items.${index}.tax_selling_price`, calculateTaxSellingPriceByFactor(product?.tax_selling_price, factor));
+                                    setValue(`items.${index}.tax_selling_price`, '0');
 
                                     // Cập nhật base_quantity
                                     const qty = Number(watch(`items.${index}.quantity`)) || 0;
@@ -576,7 +576,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                                   `items.${index}.average_cost_price`,
                                   resolveProductCostByPriceType(product, isCash ? 'cash' : 'credit'),
                                 );
-                                setValue(`items.${index}.tax_selling_price`, calculateTaxSellingPriceByFactor(product?.tax_selling_price, factor));
+                                setValue(`items.${index}.tax_selling_price`, '0');
 
                                 setValue(`items.${index}.unit_name`, selectedConv.unit?.name || selectedConv.unit_name);
                                 
