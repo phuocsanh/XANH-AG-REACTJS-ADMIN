@@ -41,6 +41,19 @@ export interface SalesInvoiceProfitPreviewResponse {
   totalCostValue: number
 }
 
+export const previewSalesInvoiceProfit = async (payload: {
+  items: Array<{
+    productId: number
+    quantity: number
+  }>
+}) => {
+  const response = await api.postRaw<SalesInvoiceProfitPreviewResponse>(
+    "/inventory/stock-out-preview",
+    payload as any,
+  )
+  return response
+}
+
 // ========== SALES INVOICE HOOKS ==========
 
 /**
@@ -144,18 +157,7 @@ export const useCreateSalesInvoiceMutation = () => {
 
 export const useSalesInvoiceProfitPreviewMutation = () => {
   return useMutation({
-    mutationFn: async (payload: {
-      items: Array<{
-        productId: number
-        quantity: number
-      }>
-    }) => {
-      const response = await api.postRaw<SalesInvoiceProfitPreviewResponse>(
-        "/inventory/stock-out-preview",
-        payload as any,
-      )
-      return response
-    },
+    mutationFn: previewSalesInvoiceProfit,
   })
 }
 

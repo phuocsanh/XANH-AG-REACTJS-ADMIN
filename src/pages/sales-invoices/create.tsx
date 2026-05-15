@@ -18,7 +18,7 @@ import {
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery, useSalesInvoiceProfitPreviewMutation } from '@/queries/sales-invoice';
+import { previewSalesInvoiceProfit, useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery, useProductsByIdsQuery } from '@/queries/product';
@@ -296,7 +296,6 @@ const CreateSalesInvoice = () => {
   
   const createMutation = useCreateSalesInvoiceMutation();
   const updateMutation = useUpdateSalesInvoiceMutation();
-  const profitPreviewMutation = useSalesInvoiceProfitPreviewMutation();
 
   // State để lưu kết quả tính toán
   const [calculatedProfit, setCalculatedProfit] = useState({
@@ -515,7 +514,7 @@ const CreateSalesInvoice = () => {
 
     const timer = window.setTimeout(async () => {
       try {
-        const preview = await profitPreviewMutation.mutateAsync({
+        const preview = await previewSalesInvoiceProfit({
           items: previewItems,
         });
         const cost = Number(preview.totalCostValue || 0);
@@ -532,7 +531,7 @@ const CreateSalesInvoice = () => {
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [discountAmount, items, profitPreviewMutation]);
+  }, [discountAmount, items]);
 
   // ✅ Tự động set số tiền khách trả trước khi chọn phương thức thanh toán
   useEffect(() => {
