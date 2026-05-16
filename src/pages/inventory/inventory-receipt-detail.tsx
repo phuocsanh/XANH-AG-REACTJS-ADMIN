@@ -675,18 +675,10 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (p) => (p > 0 ? (p || 0).toLocaleString("vi-VN") + " ₫" : "-"),
     },
     {
-      title: "Phí PB",
-      dataIndex: "allocated_shipping_cost",
-      key: "allocated_shipping_cost",
-      width: 120,
-      align: "right",
-      render: (p) => (Number(p || 0) > 0 ? Number(p || 0).toLocaleString("vi-VN") + " ₫" : "-"),
-    },
-    {
-      title: "Giá vốn sau phí",
+      title: "Giá vốn",
       dataIndex: "final_unit_cost",
       key: "final_unit_cost",
-      width: 150,
+      width: 180,
       align: "right",
       render: (value, record) => {
         const finalUnitCost = Number(value ?? record.unit_cost ?? 0)
@@ -698,8 +690,8 @@ const InventoryReceiptDetail: React.FC = () => {
           <Tooltip
             title={
               hasShippingAdjustment
-                ? `Giá vốn cuối cùng = Đơn giá gốc + phí bốc vác riêng + phí phân bổ`
-                : "Chưa có phí bốc vác/phân bổ cho dòng này"
+                ? `Giá dùng tính lợi nhuận = Đơn giá nhập + phí bốc vác/vận chuyển`
+                : "Chưa có phí bốc vác/vận chuyển cộng thêm"
             }
           >
             <Text strong className={hasShippingAdjustment ? "text-emerald-600" : undefined}>
