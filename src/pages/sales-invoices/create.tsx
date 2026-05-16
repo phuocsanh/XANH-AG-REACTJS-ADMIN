@@ -16,7 +16,7 @@ import {
   PrinterOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { previewSalesInvoiceProfit, useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
 import { useCustomerSearchQuery } from '@/queries/customer';
@@ -256,7 +256,7 @@ const CreateSalesInvoice = () => {
   });
   const { data: latestInvoiceResponse } = useLatestInvoiceByCustomerQuery(selectedCustomer?.id);
   
-  const items = watch('items') || [];
+  const items = useWatch({ control, name: 'items' }) || [];
 
   // Lấy toàn bộ thông tin sản phẩm có trong hóa đơn (bao gồm cả thành phần/ingredients)
   // để đảm bảo tab Tư vấn kỹ thuật luôn có đủ dữ liệu, không bị phụ thuộc vào kết quả search
@@ -309,7 +309,7 @@ const CreateSalesInvoice = () => {
   const partialPaymentAmount = watch('partial_payment_amount');
   const seasonId = watch('season_id');
   const customerId = watch('customer_id');
-  const discountAmount = watch('discount_amount');
+  const discountAmount = useWatch({ control, name: 'discount_amount' }) || 0;
 
   // Hook lấy thống kê khách hàng trong mùa vụ
   const { data: customerSeasonStats } = useCustomerSeasonStatsQuery(customerId, seasonId);
@@ -426,6 +426,8 @@ const CreateSalesInvoice = () => {
       if (name?.startsWith('items') || name === 'discount_amount') {
         // Không tính lại nếu thay đổi từ total_amount hoặc final_amount
         if (name === 'total_amount' || name === 'final_amount') return;
+
+        setIsProfitLoading((value.items || []).length > 0);
         
         isCalculating = true; // Bắt đầu tính toán
         
