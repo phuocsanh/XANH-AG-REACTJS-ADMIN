@@ -399,6 +399,16 @@ export function mapApiResponseToInventoryReceiptItem(
     individual_shipping_cost: apiItem.individual_shipping_cost
       ? parseFloat(apiItem.individual_shipping_cost)
       : 0,
+    allocated_shipping_cost:
+      apiItem.allocated_shipping_cost !== undefined &&
+      apiItem.allocated_shipping_cost !== null
+        ? parseFloat(apiItem.allocated_shipping_cost)
+        : 0,
+    final_unit_cost:
+      apiItem.final_unit_cost !== undefined &&
+      apiItem.final_unit_cost !== null
+        ? parseFloat(apiItem.final_unit_cost)
+        : undefined,
     notes: apiItem.notes,
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
