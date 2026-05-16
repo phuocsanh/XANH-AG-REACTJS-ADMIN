@@ -172,6 +172,8 @@ export interface InventoryReceiptItem {
   batch_number?: string
   expiry_date?: string
   individual_shipping_cost?: number
+  allocated_shipping_cost?: number
+  final_unit_cost?: number
   taxable_quantity?: number
   unit_id?: number
   conversion_factor?: number
