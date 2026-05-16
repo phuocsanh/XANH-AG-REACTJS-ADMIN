@@ -1,6 +1,6 @@
 // Component hiển thị các nút hành động của hóa đơn
 import React from 'react';
-import { Box, Button, IconButton } from '@mui/material';
+import { Box, Button, CircularProgress, IconButton } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import { ThunderboltOutlined } from '@ant-design/icons';
 import { Popover } from 'antd';
@@ -10,6 +10,7 @@ interface InvoiceActionsProps {
   onSaveDraft: () => void;
   onSaveConfirm: () => void;
   isPending: boolean;
+  isProfitLoading: boolean;
   calculatedProfit: {
     revenue: number;
     cost: number;
@@ -23,8 +24,11 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(({
   onSaveDraft,
   onSaveConfirm,
   isPending,
+  isProfitLoading,
   calculatedProfit,
 }) => {
+  const isPositiveProfit = calculatedProfit.profit >= 0;
+
   return (
     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', position: 'relative' }}>
       {/* Nút hiển thị lợi nhuận - Hover để xem */}
@@ -41,22 +45,33 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(({
               <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
                 Dự kiến:
               </div>
-              <div 
-                style={{ 
-                  fontSize: 20, 
-                  fontWeight: 'bold',
-                  color: calculatedProfit.profit >= 0 ? '#52c41a' : '#ff4d4f',
-                  marginBottom: 4,
-                }}
-              >
-                {new Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: 'VND',
-                }).format(calculatedProfit.profit)}
-              </div>
-              <div style={{ fontSize: 12, color: '#666' }}>
-                Tỷ suất: {calculatedProfit.margin.toFixed(2)}%
-              </div>
+              {isProfitLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 52 }}>
+                  <CircularProgress size={18} />
+                  <div style={{ fontSize: 12, color: '#666' }}>
+                    Đang tính theo giá vốn lô...
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 'bold',
+                      color: isPositiveProfit ? '#52c41a' : '#ff4d4f',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(calculatedProfit.profit)}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#666' }}>
+                    Tỷ suất: {calculatedProfit.margin.toFixed(2)}%
+                  </div>
+                </>
+              )}
             </div>
           }
           trigger="hover"
@@ -65,16 +80,28 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(({
           <IconButton
             size="small"
             sx={{
-              bgcolor: calculatedProfit.profit >= 0 ? 'success.light' : 'error.light',
+              bgcolor: isProfitLoading
+                ? 'warning.light'
+                : isPositiveProfit
+                  ? 'success.light'
+                  : 'error.light',
               '&:hover': {
-                bgcolor: calculatedProfit.profit >= 0 ? 'success.main' : 'error.main',
+                bgcolor: isProfitLoading
+                  ? 'warning.main'
+                  : isPositiveProfit
+                    ? 'success.main'
+                    : 'error.main',
               },
               width: 32,
               height: 32,
               cursor: 'pointer',
             }}
           >
-            <ThunderboltOutlined style={{ fontSize: 16, color: '#fff' }} />
+            {isProfitLoading ? (
+              <CircularProgress size={16} sx={{ color: '#fff' }} />
+            ) : (
+              <ThunderboltOutlined style={{ fontSize: 16, color: '#fff' }} />
+            )}
           </IconButton>
         </Popover>
       </Box>

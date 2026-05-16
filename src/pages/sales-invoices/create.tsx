@@ -304,6 +304,7 @@ const CreateSalesInvoice = () => {
     profit: 0,
     margin: 0,
   });
+  const [isProfitLoading, setIsProfitLoading] = useState(false);
 
   const partialPaymentAmount = watch('partial_payment_amount');
   const seasonId = watch('season_id');
@@ -429,43 +430,17 @@ const CreateSalesInvoice = () => {
         isCalculating = true; // Bắt đầu tính toán
         
         const currentItems = value.items || [];
-        let totalRev = 0;
-        let totalCst = 0;
-        
         const total = currentItems.reduce((sum: number, item: any) => {
           const quantity = Number(item?.quantity) || 0;
           const unitPrice = Number(item?.unit_price) || 0;
           const itemDiscount = Number(item?.discount_amount) || 0;
-          
-          const prod = productsData?.data?.items?.find((p: any) => p.id === item.product_id);
-          const priceType = (item.price_type || 'cash') as 'cash' | 'credit';
-          const cstPrice = item.average_cost_price !== undefined
-             ? Number(item.average_cost_price || 0)
-             : resolveProductCostByPriceType(prod, priceType);
-
-          // Sử dụng base_quantity (số lượng đã quy đổi sang đơn vị cơ sở như Kg) để nhân với giá vốn Kg
-          // Nếu base_quantity không có (trường hợp cũ), fallback về qty * factor
-          const factor = Number(item.conversion_factor || 1);
-          const baseQty = Number(item.base_quantity || (quantity * factor));
-          
-          totalRev += (quantity * unitPrice) - itemDiscount;
-          totalCst += (baseQty * cstPrice);
           
           return sum + (quantity * unitPrice) - itemDiscount;
         }, 0);
         
         const currentDiscount = Number(value.discount_amount) || 0;
         const finalAmount = total - currentDiscount;
-        
-        const grossProfit = totalRev - totalCst - currentDiscount;
-        setCalculatedProfit({
-           revenue: totalRev - currentDiscount,
-           cost: totalCst,
-           profit: grossProfit,
-           margin: (totalRev - currentDiscount) > 0 ? (grossProfit / (totalRev - currentDiscount)) * 100 : 0
-        });
 
-        
         setValue('total_amount', total, { shouldValidate: false, shouldDirty: false });
         setValue('final_amount', finalAmount, { shouldValidate: false, shouldDirty: false });
         
@@ -479,8 +454,10 @@ const CreateSalesInvoice = () => {
   useEffect(() => {
     const currentItems = items || [];
     const currentDiscount = Number(discountAmount || 0);
+    let isCancelled = false;
 
     if (!currentItems.length) {
+      setIsProfitLoading(false);
       setCalculatedProfit({
         revenue: 0,
         cost: 0,
@@ -503,6 +480,7 @@ const CreateSalesInvoice = () => {
       .filter((item) => item.productId > 0 && item.quantity > 0);
 
     if (!previewItems.length) {
+      setIsProfitLoading(false);
       return;
     }
 
@@ -514,6 +492,7 @@ const CreateSalesInvoice = () => {
       );
     }, 0) - currentDiscount;
 
+    setIsProfitLoading(true);
     const timer = window.setTimeout(async () => {
       try {
         const preview = await previewSalesInvoiceProfit({
@@ -521,18 +500,25 @@ const CreateSalesInvoice = () => {
         });
         const cost = Number(preview.totalCostValue || 0);
         const profit = revenue - cost;
+        if (isCancelled) return;
         setCalculatedProfit({
           revenue,
           cost,
           profit,
           margin: revenue > 0 ? (profit / revenue) * 100 : 0,
         });
+        setIsProfitLoading(false);
       } catch (error) {
         console.error('Error previewing profit by batch:', error);
+        if (isCancelled) return;
+        setIsProfitLoading(false);
       }
     }, 300);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [discountAmount, items]);
 
   // ✅ Tự động set số tiền khách trả trước khi chọn phương thức thanh toán
@@ -1624,6 +1610,7 @@ ${productInfo}`;
                   onSubmit({ ...data, status });
                 }, handleFormInvalid)}
                 isPending={createMutation.isPending}
+                isProfitLoading={isProfitLoading}
                 calculatedProfit={calculatedProfit}
               />
             </Grid>
