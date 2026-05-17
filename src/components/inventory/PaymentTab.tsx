@@ -132,9 +132,14 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
 
   const paymentData = (payments || []) as any[]
 
+  const isBySaleTypeSettlement =
+    receipt.supplier_settlement_mode === "by_sale_type"
   const grandTotal =
-    Number(receipt.final_amount) || Number(receipt.total_amount) || 0
-  const supplierAmount = Number((receipt as any).supplier_amount) || grandTotal
+    Number(receipt.total_amount) || Number(receipt.final_amount) || 0
+  const rawSupplierAmount = Number((receipt as any).supplier_amount) || 0
+  const supplierAmount = isBySaleTypeSettlement
+    ? rawSupplierAmount
+    : rawSupplierAmount || grandTotal
   const paidAmount = Number(receipt.paid_amount) || 0
   const debtAmount = Number(receipt.debt_amount) || 0
 
@@ -231,6 +236,11 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
                     ⚠️ Thanh toán một phần
                   </Tag>
                 )}
+                {receipt.payment_status === "advance" && (
+                  <Tag color='processing' className='px-3 py-1 text-sm'>
+                    💰 Đã tạm ứng, chờ quyết toán
+                  </Tag>
+                )}
                 {(receipt.payment_status === "unpaid" ||
                   !receipt.payment_status) && (
                   <Tag color='error' className='px-3 py-1 text-sm'>
@@ -257,6 +267,16 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
       </Card>
 
       {/* 3. Cảnh báo nghiệp vụ */}
+      {isBySaleTypeSettlement && (
+        <Alert
+          message='Phiếu lúa giống đang quyết toán theo loại bán'
+          description='Phiếu này không chốt công nợ lúc nhập. Phải trả NCC chỉ tăng khi hàng từ chính phiếu nhập này được bán ra trên hóa đơn đã xác nhận hoặc đã thanh toán. Nếu đã bán mà vẫn đang 0đ, cần đồng bộ lại xuất kho/hóa đơn để hệ thống tạo quyết toán NCC.'
+          type='info'
+          showIcon
+          icon={<InfoCircleOutlined />}
+        />
+      )}
+
       {normalizedStatus === InventoryReceiptStatus.DRAFT && (
         <Alert
           message='Thông báo nghiệp vụ'
