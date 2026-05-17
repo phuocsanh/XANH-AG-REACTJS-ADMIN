@@ -142,6 +142,12 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
     : rawSupplierAmount || grandTotal
   const paidAmount = Number(receipt.paid_amount) || 0
   const debtAmount = Number(receipt.debt_amount) || 0
+  const cashSettlementAmount = Number(
+    receipt.supplier_settlement_summary?.cash_amount || 0,
+  )
+  const creditSettlementAmount = Number(
+    receipt.supplier_settlement_summary?.credit_amount || 0,
+  )
 
   const normalizedStatus = normalizeReceiptStatus(
     receipt.status_code || receipt.status,
@@ -216,6 +222,37 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
           </Card>
         </Col>
       </Row>
+
+      {isBySaleTypeSettlement && (
+        <Row gutter={[16, 16]} className='flex flex-wrap'>
+          <Col xs={24} sm={12} className='flex flex-col'>
+            <Card bordered={false} className='bg-emerald-50 shadow-sm h-full w-full'>
+              <Statistic
+                title='Phải trả theo bán tiền mặt'
+                value={cashSettlementAmount}
+                formatter={(value) => formatCurrency(Number(value))}
+                valueStyle={{ color: "#059669" }}
+              />
+              <Text type='secondary' className='text-xs'>
+                Phần này phát sinh từ các hóa đơn bán OM18 chọn giá tiền mặt.
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} className='flex flex-col'>
+            <Card bordered={false} className='bg-violet-50 shadow-sm h-full w-full'>
+              <Statistic
+                title='Nợ cuối vụ theo giá nợ'
+                value={creditSettlementAmount}
+                formatter={(value) => formatCurrency(Number(value))}
+                valueStyle={{ color: "#7c3aed" }}
+              />
+              <Text type='secondary' className='text-xs'>
+                Phần này phát sinh từ các hóa đơn bán OM18 chọn giá bán nợ.
+              </Text>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* 2. Trạng thái & Hành động */}
       <Card size='small' className='border-none shadow-none bg-transparent'>

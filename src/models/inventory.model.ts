@@ -76,6 +76,11 @@ export interface InventoryReceipt {
   final_amount?: number
   supplier_amount?: number
   debt_amount?: number
+  supplier_settlement_summary?: {
+    cash_amount: number
+    credit_amount: number
+    total_amount: number
+  }
   shared_shipping_cost?: number
   shipping_allocation_method?: string
 
@@ -225,6 +230,11 @@ export interface InventoryReceiptApiResponse {
   updated_at: string
   approved_at?: string
   shipping_allocation_method?: string
+  supplier_settlement_summary?: {
+    cash_amount?: string | number
+    credit_amount?: string | number
+    total_amount?: string | number
+  }
   items?: InventoryReceiptItemApiResponse[]
 }
 
@@ -345,6 +355,19 @@ export function mapApiResponseToInventoryReceipt(
     debt_amount: apiReceipt.debt_amount
       ? parseFloat(apiReceipt.debt_amount)
       : 0,
+    supplier_settlement_summary: apiReceipt.supplier_settlement_summary
+      ? {
+          cash_amount: parseFloat(
+            String(apiReceipt.supplier_settlement_summary.cash_amount || 0),
+          ),
+          credit_amount: parseFloat(
+            String(apiReceipt.supplier_settlement_summary.credit_amount || 0),
+          ),
+          total_amount: parseFloat(
+            String(apiReceipt.supplier_settlement_summary.total_amount || 0),
+          ),
+        }
+      : undefined,
     shared_shipping_cost: apiReceipt.shared_shipping_cost
       ? parseFloat(apiReceipt.shared_shipping_cost)
       : 0,
