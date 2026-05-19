@@ -586,6 +586,9 @@ const CreateSalesInvoice = () => {
       setValue('customer_name', customer.name);
       setValue('customer_phone', customer.phone);
       setValue('customer_address', customer.address || '');
+      if (customer.is_guest) {
+        setValue('payment_method', 'cash', { shouldValidate: true });
+      }
       
       // ✨ BẮT BUỘC: Reset season và rice crop để người dùng chọn lại
       setValue('season_id', undefined as any);
