@@ -382,11 +382,6 @@ const InventoryReceiptDetail: React.FC = () => {
     const updateMutation = useUpdateInventoryReceiptItemMutation()
 
     const handleSave = async () => {
-      if (hasMissingTaxSellingPrice(record)) {
-        showMissingTaxSellingPriceError()
-        return
-      }
-
       try {
         await updateMutation.mutateAsync({
           id: record.id,
