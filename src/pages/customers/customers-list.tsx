@@ -52,6 +52,7 @@ interface CustomerFormValues {
   email?: string
   address?: string
   type: "regular" | "vip" | "wholesale"
+  is_guest?: boolean
   tax_code?: string
   notes?: string
 }
@@ -144,6 +145,7 @@ const CustomersList: React.FC = () => {
       email: "",
       address: "",
       type: "regular",
+      is_guest: false,
       tax_code: "",
       notes: "",
     })
@@ -160,6 +162,7 @@ const CustomersList: React.FC = () => {
       email: customer.email || "",
       address: customer.address || "",
       type: customer.type,
+      is_guest: customer.is_guest || false,
       tax_code: customer.tax_code || "",
       notes: customer.notes || "",
     })
@@ -332,7 +335,10 @@ const CustomersList: React.FC = () => {
       ),
       width: 250,
       render: (record: ExtendedCustomer) => (
-        <div className='font-medium'>{record.name}</div>
+        <Space size={8}>
+          <div className='font-medium'>{record.name}</div>
+          {record.is_guest && <Tag color='orange'>Vãng lai</Tag>}
+        </Space>
       ),
     },
     {
@@ -465,17 +471,20 @@ const CustomersList: React.FC = () => {
               {viewingCustomer.code}
             </Descriptions.Item>
             <Descriptions.Item label='Loại khách hàng' span={1}>
-              <Tag
-                color={
-                  viewingCustomer.type === "vip"
-                    ? "gold"
-                    : viewingCustomer.type === "wholesale"
-                      ? "blue"
-                      : "default"
-                }
-              >
-                {customerTypeLabels[viewingCustomer.type]}
-              </Tag>
+              <Space wrap>
+                <Tag
+                  color={
+                    viewingCustomer.type === "vip"
+                      ? "gold"
+                      : viewingCustomer.type === "wholesale"
+                        ? "blue"
+                        : "default"
+                  }
+                >
+                  {customerTypeLabels[viewingCustomer.type]}
+                </Tag>
+                {viewingCustomer.is_guest && <Tag color='orange'>Khách vãng lai</Tag>}
+              </Space>
             </Descriptions.Item>
             <Descriptions.Item label='Tên khách hàng' span={2}>
               {viewingCustomer.name}
@@ -714,6 +723,14 @@ const CustomersList: React.FC = () => {
                 <Select.Option value='vip'>Khách hàng VIP</Select.Option>
                 <Select.Option value='wholesale'>Khách hàng sỉ</Select.Option>
               </Select>
+            </Form.Item>
+
+            <Form.Item
+              label='Tùy chọn'
+              name='is_guest'
+              valuePropName='checked'
+            >
+              <Checkbox>Đánh dấu là khách vãng lai</Checkbox>
             </Form.Item>
 
             <Form.Item label='Mã số thuế' name='tax_code'>

@@ -35,6 +35,7 @@ export interface CreateCustomerDto {
   email?: string;
   address?: string;
   type?: CustomerType;
+  is_guest?: boolean;
   tax_code?: string;
   notes?: string;
 }

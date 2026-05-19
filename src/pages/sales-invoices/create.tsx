@@ -136,6 +136,23 @@ const resolveProductCostByPriceType = (
   return parseProductMoney(product.average_cost_price);
 };
 
+const isWalkInCustomerRecord = (customer: Customer | null): boolean => {
+  if (!customer) return false;
+
+  const normalizedName = String(customer.name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  const normalizedPhone = String(customer.phone || '').replace(/\D/g, '');
+
+  return (
+    customer.is_guest === true ||
+    normalizedName.includes('khach van lai') ||
+    /^0+$/.test(normalizedPhone)
+  );
+};
+
 const CreateSalesInvoice = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -580,13 +597,15 @@ const CreateSalesInvoice = () => {
   const handleCustomerSelect = (customer: Customer | null) => {
     setSelectedCustomer(customer);
     if (customer) {
+      const isWalkInCustomer = isWalkInCustomerRecord(customer);
+
       // Khách hàng từ hệ thống
       setIsGuestCustomer(false);
       setValue('customer_id', customer.id);
       setValue('customer_name', customer.name);
       setValue('customer_phone', customer.phone);
       setValue('customer_address', customer.address || '');
-      if (customer.is_guest) {
+      if (isWalkInCustomer) {
         setValue('payment_method', 'cash', { shouldValidate: true });
       }
       
