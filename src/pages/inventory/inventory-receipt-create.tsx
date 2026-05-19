@@ -71,8 +71,18 @@ const InventoryReceiptCreate: React.FC = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
   const receiptId = id ? Number(id) : undefined
   const isEditMode = !!receiptId
+  const cloneSourceId = Number(searchParams.get("clone_from") || 0) || undefined
+  const isCloneMode = !isEditMode && !!cloneSourceId
+  const sourceReceiptId = receiptId || cloneSourceId
+  const listSearch = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    params.delete("clone_from")
+    const query = params.toString()
+    return query ? `?${query}` : ""
+  }, [location.search])
   
   const isMobile = useMobile()
   const isTablet = useTablet()
@@ -247,13 +257,13 @@ const InventoryReceiptCreate: React.FC = () => {
   const uploadFileMutation = useUploadFileMutation()
   
   // Load dữ liệu khi edit mode (hooks đã có enabled built-in)
-  const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(receiptId || 0)
-  const { data: existingItems, isLoading: isLoadingItems } = useInventoryReceiptItemsQuery(receiptId || 0)
+  const { data: existingReceipt, isLoading: isLoadingReceipt } = useInventoryReceiptQuery(sourceReceiptId || 0)
+  const { data: existingItems, isLoading: isLoadingItems } = useInventoryReceiptItemsQuery(sourceReceiptId || 0)
 
 
   // Pre-fill form khi load dữ liệu trong edit mode
   useEffect(() => {
-    if (isEditMode && existingReceipt && existingItems && !isLoadingReceipt && !isLoadingItems) {
+    if ((isEditMode || isCloneMode) && existingReceipt && existingItems && !isLoadingReceipt && !isLoadingItems) {
       const receipt = existingReceipt as any
       
       // Mapped items - resolve đúng đơn vị tính từ snapshot DB và conversions
@@ -317,6 +327,34 @@ const InventoryReceiptCreate: React.FC = () => {
       setInitialProductOptions(initOpts)
 
       // Reset toàn bộ form với dữ liệu mới
+      if (isCloneMode) {
+        reset({
+          supplierId: existingReceipt.supplier_id,
+          status: 'draft',
+          bill_date: existingReceipt.bill_date ? dayjs(existingReceipt.bill_date) : dayjs(),
+          description: receipt.code
+            ? `Clone từ phiếu ${receipt.code}${receipt.notes ? `\n${receipt.notes}` : ''}`
+            : receipt.notes || '',
+          items: mappedItems.reverse().map((item: any) => ({
+            ...item,
+            batch_number: undefined,
+          })),
+          hasSharedShipping: !!receipt.shared_shipping_cost,
+          sharedShippingCost: Number(receipt.shared_shipping_cost || 0),
+          allocationMethod: (receipt.shipping_allocation_method as any) || 'by_value',
+          supplierSettlementMode: receipt.supplier_settlement_mode || 'standard',
+          paymentType: 'debt',
+          paidAmount: 0,
+          paymentMethod: undefined,
+          paymentDueDate: undefined,
+          images: [],
+          discountMethod: 'none',
+          discountType: receipt.discount_type || 'fixed_amount',
+          discountValue: Number(receipt.discount_value || 0),
+        })
+        return
+      }
+
       reset({
         supplierId: existingReceipt.supplier_id,
         status: existingReceipt.status_code || existingReceipt.status || 'draft',
@@ -336,9 +374,9 @@ const InventoryReceiptCreate: React.FC = () => {
         discountType: receipt.discount_type || 'fixed_amount',
         discountValue: Number(receipt.discount_value || 0),
       })
-        setValue('images', receipt.images);
-      }
-  }, [isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, reset])
+      setValue('images', receipt.images);
+    }
+  }, [isCloneMode, isEditMode, existingReceipt, existingItems, isLoadingReceipt, isLoadingItems, reset, setValue])
 
   // Reset chiết khấu khi đổi phương thức để tránh tính chồng chéo
   useEffect(() => {
@@ -447,7 +485,7 @@ const InventoryReceiptCreate: React.FC = () => {
 
   // Handlers
   const handleBack = () => {
-    confirmExit(() => navigate(`/inventory/receipts${location.search}`))
+    confirmExit(() => navigate(`/inventory/receipts${listSearch}`))
   }
 
   const handleAddItem = useCallback(() => {
@@ -508,7 +546,7 @@ const InventoryReceiptCreate: React.FC = () => {
           ...(imageUrls.length > 0 && { images: imageUrls }),
         };
         await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
-        navigate(`/inventory/receipts${location.search}`);
+        navigate(`/inventory/receipts${listSearch}`);
         return;
       }
 
@@ -603,7 +641,7 @@ const InventoryReceiptCreate: React.FC = () => {
         await createReceiptMutation.mutateAsync(submissionData as CreateInventoryReceiptRequest)
       }
 
-      navigate(`/inventory/receipts${location.search}`);
+      navigate(`/inventory/receipts${listSearch}`);
     } catch (error) {
       console.error("Error saving receipt:", error)
     }
@@ -638,7 +676,7 @@ const InventoryReceiptCreate: React.FC = () => {
       };
 
       await updateReceiptMutation.mutateAsync({ id: receiptId, receipt: metadataPayload as any });
-      navigate(`/inventory/receipts${location.search}`);
+      navigate(`/inventory/receipts${listSearch}`);
     } catch (error) {
       console.error('Error updating approved receipt metadata:', error);
     }
@@ -651,7 +689,7 @@ const InventoryReceiptCreate: React.FC = () => {
   };
 
   // Loading state khi đang load dữ liệu trong edit mode
-  if (isEditMode && (isLoadingReceipt || isLoadingItems)) {
+  if ((isEditMode || isCloneMode) && (isLoadingReceipt || isLoadingItems)) {
     return (
       <div className='p-4 flex justify-center items-center' style={{ minHeight: '400px' }}>
         <div className='text-center'>
@@ -672,7 +710,11 @@ const InventoryReceiptCreate: React.FC = () => {
           Quay lại
         </Button>
         <Title level={4} className='m-0 text-lg sm:text-xl'>
-          {isEditMode ? "Chỉnh sửa phiếu nhập hàng" : "Tạo phiếu nhập hàng"}
+          {isEditMode
+            ? "Chỉnh sửa phiếu nhập hàng"
+            : isCloneMode
+              ? "Clone phiếu nhập hàng"
+              : "Tạo phiếu nhập hàng"}
         </Title>
       </div>
 

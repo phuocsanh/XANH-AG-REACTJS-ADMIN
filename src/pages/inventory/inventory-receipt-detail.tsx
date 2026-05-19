@@ -26,6 +26,7 @@ import {
   EditOutlined,
   CheckOutlined,
   CloseOutlined,
+  CopyOutlined,
   PrinterOutlined,
   HistoryOutlined,
   DeleteOutlined,
@@ -129,6 +130,13 @@ const InventoryReceiptDetail: React.FC = () => {
     navigate(`/inventory/receipts/edit/${receiptId}${location.search}`)
   }
 
+  const handleClone = () => {
+    const params = new URLSearchParams(location.search)
+    params.set("clone_from", String(receiptId))
+    const queryString = params.toString()
+    navigate(`/inventory/receipts/create${queryString ? `?${queryString}` : ""}`)
+  }
+
   const handleApprove = async () => {
     try {
       await approveReceiptMutation.mutateAsync(receiptId)
@@ -211,6 +219,12 @@ const InventoryReceiptDetail: React.FC = () => {
         </Tooltip>,
       )
     }
+
+    buttons.push(
+      <Button key='clone' icon={<CopyOutlined />} onClick={handleClone}>
+        Clone phiếu
+      </Button>,
+    )
 
     // 2. Nút Duyệt - Chỉ cho Nháp
     if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
