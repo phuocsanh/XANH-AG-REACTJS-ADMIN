@@ -1,13 +1,13 @@
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAddRefundMutation } from '@/queries/inventory'
 import { formatCurrency } from '@/utils/format'
 import { DatePicker } from 'antd'
 import dayjs from 'dayjs'
+import NumberInput from '@/components/common/number-input'
 
 interface AddRefundModalProps {
   returnId: number
@@ -33,7 +33,7 @@ export default function AddRefundModal({
   onClose,
 }: AddRefundModalProps) {
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
     reset,
@@ -85,22 +85,35 @@ export default function AddRefundModal({
             <Label htmlFor="amount">
               Số tiền <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="amount"
-              type="number"
-              step="1000"
-              placeholder="Nhập số tiền"
-              {...register('amount', {
+            <Controller
+              name="amount"
+              control={control}
+              rules={{
                 required: 'Vui lòng nhập số tiền',
-                min: {
-                  value: 1000,
-                  message: 'Số tiền tối thiểu 1,000đ',
+                validate: (value) => {
+                  if (value == null || Number.isNaN(value)) {
+                    return 'Vui lòng nhập số tiền'
+                  }
+                  if (value < 1000) {
+                    return 'Số tiền tối thiểu 1,000đ'
+                  }
+                  if (value > maxAmount) {
+                    return `Số tiền không được vượt quá ${formatCurrency(maxAmount)}`
+                  }
+                  return true
                 },
-                max: {
-                  value: maxAmount,
-                  message: `Số tiền không được vượt quá ${formatCurrency(maxAmount)}`,
-                },
-              })}
+              }}
+              render={({ field }) => (
+                <NumberInput
+                  value={field.value ?? null}
+                  onChange={field.onChange}
+                  placeholder="Nhập số tiền"
+                  min={0}
+                  max={maxAmount}
+                  decimalScale={0}
+                  className="w-full"
+                />
+              )}
             />
             {errors.amount && (
               <p className="text-sm text-red-500">{errors.amount.message}</p>
