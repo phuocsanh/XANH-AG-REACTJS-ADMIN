@@ -35,6 +35,7 @@ export default function AddRefundModal({
   const {
     control,
     handleSubmit,
+    register,
     formState: { errors },
     reset,
     setValue,
