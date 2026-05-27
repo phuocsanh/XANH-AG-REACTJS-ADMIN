@@ -487,6 +487,10 @@ const SalesInvoicesList: React.FC = () => {
     })
   }
 
+  const handleCreateSalesReturn = (invoice: SalesInvoice) => {
+    navigate(`/sales-returns/create?invoice_id=${invoice.id}`)
+  }
+
   // Helpers
   const getInvoiceList = (): ExtendedSalesInvoice[] => {
     if (!invoicesData?.data?.items) return []
@@ -858,6 +862,16 @@ const SalesInvoicesList: React.FC = () => {
           <Button key='close' onClick={handleCloseDetailModal}>
             Đóng
           </Button>,
+          viewingInvoice &&
+            ['confirmed', 'paid'].includes(viewingInvoice.status) && (
+              <Button
+                key='create-sales-return'
+                icon={<UndoOutlined />}
+                onClick={() => handleCreateSalesReturn(viewingInvoice)}
+              >
+                Tạo phiếu trả hàng
+              </Button>
+            ),
           viewingInvoice?.status === 'confirmed' && (
             <Button
               key='cancel'

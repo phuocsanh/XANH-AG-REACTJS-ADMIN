@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFormGuard } from '@/hooks/use-form-guard';
 import {
   Box,
@@ -24,7 +24,7 @@ import {
   Save as SaveIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateSalesReturnMutation } from '@/queries/sales-return';
@@ -40,8 +40,10 @@ import { notifyFormErrors } from '@/utils/form-error';
 
 const CreateSalesReturn = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
+  const prefilledInvoiceId = Number(searchParams.get('invoice_id') || 0);
 
   const {
     control,
@@ -109,6 +111,12 @@ const CreateSalesReturn = () => {
         }
     }
   }, [invoiceDetail, setValue, selectedInvoiceId]);
+
+  useEffect(() => {
+    if (prefilledInvoiceId > 0 && !selectedInvoiceId) {
+      setValue('invoice_id', prefilledInvoiceId);
+    }
+  }, [prefilledInvoiceId, selectedInvoiceId, setValue]);
 
   const createMutation = useCreateSalesReturnMutation();
 
@@ -183,7 +191,18 @@ const CreateSalesReturn = () => {
   };
 
   // Get invoice list from pagination response
-  const invoiceList = invoicesData?.data?.items || (Array.isArray(invoicesData?.data) ? invoicesData.data : []) || [];
+  const invoiceList = useMemo(() => {
+    const list =
+      invoicesData?.data?.items ||
+      (Array.isArray(invoicesData?.data) ? invoicesData.data : []) ||
+      [];
+
+    if (invoiceDetail && !list.find((invoice: SalesInvoice) => invoice.id === invoiceDetail.id)) {
+      return [invoiceDetail, ...list];
+    }
+
+    return list;
+  }, [invoiceDetail, invoicesData]);
 
   return (
     <Box>

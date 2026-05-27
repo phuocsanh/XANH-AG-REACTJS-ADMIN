@@ -30,7 +30,7 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
@@ -52,8 +52,10 @@ import {
 const ReturnCreate = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const returnId = id ? Number(id) : undefined;
   const isEditMode = !!returnId;
+  const prefilledReceiptId = Number(searchParams.get('receipt_id') || 0);
   
   const userInfo = useAppStore((state) => state.userInfo);
   const [receiptSearch, setReceiptSearch] = useState('');
@@ -65,6 +67,7 @@ const ReturnCreate = () => {
   const { 
     data: productSearchData, 
     isLoading: isProductSearchLoading,
+    isFetching: isProductSearching,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
@@ -103,7 +106,8 @@ const ReturnCreate = () => {
   const { data: existingReturn, isLoading: isLoadingReturn } = useReturnQuery(returnId as number);
   
   // Load receipt if edit mode to get available products
-  const { data: editStageReceipt } = useInventoryReceiptQuery(existingReturn?.receipt_id || 0);
+  const targetReceiptId = isEditMode ? Number(existingReturn?.receipt_id || 0) : prefilledReceiptId;
+  const { data: editStageReceipt } = useInventoryReceiptQuery(targetReceiptId || 0);
 
   // Set form data khi có existingReturn
   useEffect(() => {
@@ -166,6 +170,17 @@ const ReturnCreate = () => {
       setSelectedReceipt(editStageReceipt as any);
     }
   }, [isEditMode, editStageReceipt]);
+
+  useEffect(() => {
+    if (!isEditMode && prefilledReceiptId > 0 && editStageReceipt) {
+      const receipt = editStageReceipt as any;
+      setSelectedReceipt(receipt);
+      setValue('receipt_id', receipt.id);
+      setValue('supplier_id', receipt.supplier_id || 0);
+      setValue('return_code', `RT-${receipt.code}`);
+      setValue('items', []);
+    }
+  }, [editStageReceipt, isEditMode, prefilledReceiptId, setValue]);
 
   // Lấy danh sách sản phẩm từ phiếu nhập đã chọn
   const availableProducts = useMemo(() => {
@@ -579,13 +594,12 @@ const ReturnCreate = () => {
                           showSearch
                           allowClear
                           onSearch={setProductSearchTerm}
-                          loading={isProductSearchLoading}
-                          onPopupScroll={(e) => {
-                              const target = e.target as HTMLDivElement;
-                              if (target.scrollTop + target.offsetHeight === target.scrollHeight && hasNextPage) {
-                                  fetchNextPage();
-                              }
-                          }}
+                          isLoading={isProductSearchLoading}
+                          isFetching={isProductSearching}
+                          hasNextPage={hasNextPage}
+                          isFetchingNextPage={isFetchingNextPage}
+                          fetchNextPage={fetchNextPage}
+                          enableLoadMore
                           filterOption={false}
                         />
                       </Box>

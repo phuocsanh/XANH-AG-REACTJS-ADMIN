@@ -137,6 +137,12 @@ const InventoryReceiptDetail: React.FC = () => {
     navigate(`/inventory/receipts/create${queryString ? `?${queryString}` : ""}`)
   }
 
+  const handleCreateReturn = () => {
+    const params = new URLSearchParams()
+    params.set("receipt_id", String(receiptId))
+    navigate(`/inventory/returns/create?${params.toString()}`)
+  }
+
   const handleApprove = async () => {
     try {
       await approveReceiptMutation.mutateAsync(receiptId)
@@ -225,6 +231,18 @@ const InventoryReceiptDetail: React.FC = () => {
         Clone phiếu
       </Button>,
     )
+
+    if (normalizedStatus === InventoryReceiptStatus.APPROVED) {
+      buttons.push(
+        <Button
+          key='create-return'
+          icon={<ArrowRightOutlined />}
+          onClick={handleCreateReturn}
+        >
+          Tạo phiếu trả hàng
+        </Button>,
+      )
+    }
 
     // 2. Nút Duyệt - Chỉ cho Nháp
     if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
