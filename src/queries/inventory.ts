@@ -1057,9 +1057,10 @@ export const useAddRefundMutation = () => {
   return useMutation({
     mutationFn: async ({ returnId, data }: { returnId: number; data: any }) =>
       api.postRaw(`/inventory/returns/${returnId}/refunds`, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['return-refunds'] })
-      queryClient.invalidateQueries({ queryKey: ['inventory-returns'] })
+      queryClient.invalidateQueries({ queryKey: ['returns'] })
+      queryClient.invalidateQueries({ queryKey: ['return', variables.returnId] })
       toast.success('Thêm hoàn tiền thành công')
     },
     onError: (error: unknown) => {

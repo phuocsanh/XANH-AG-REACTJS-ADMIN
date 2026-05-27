@@ -28,7 +28,7 @@ import {
 } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
-import { getReturnStatusText } from '@/models/inventory-return.model'
+import { getReturnRefundStatusText, getReturnStatusText } from '@/models/inventory-return.model'
 
 import {
   InventoryReturn,
@@ -157,6 +157,29 @@ const ReturnsList: React.FC = () => {
       <Tag color={config.color} icon={config.icon}>
         {statusText}
       </Tag>
+    )
+  }
+
+  const renderRefundStatus = (record: InventoryReturn) => {
+    const status = record.refund_status || 'not_required'
+    const statusConfig: Record<string, { color: string }> = {
+      not_required: { color: 'default' },
+      pending: { color: 'warning' },
+      partial: { color: 'processing' },
+      refunded: { color: 'success' },
+    }
+
+    return (
+      <Space direction="vertical" size={2}>
+        <Tag color={statusConfig[status]?.color || 'default'}>
+          {getReturnRefundStatusText(status)}
+        </Tag>
+        {status !== 'not_required' && (
+          <Text type="secondary">
+            Đã xử lý {(record.refund_amount || 0).toLocaleString('vi-VN')}đ
+          </Text>
+        )}
+      </Space>
     )
   }
 
@@ -328,6 +351,12 @@ const ReturnsList: React.FC = () => {
       width: 150,
       align: "center",
       render: (status: string) => renderStatus(status),
+    },
+    {
+      title: "Xử lý tiền NCC",
+      key: "refund_status",
+      width: 220,
+      render: (_: unknown, record: InventoryReturn) => renderRefundStatus(record),
     },
     {
       title: "Ngày tạo",

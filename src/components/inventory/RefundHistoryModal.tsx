@@ -15,6 +15,7 @@ interface RefundHistoryModalProps {
   returnCode: string
   totalAmount: number
   refundedAmount: number
+  refundableTargetAmount?: number
   open: boolean
   onClose: () => void
 }
@@ -27,6 +28,7 @@ export default function RefundHistoryModal({
   returnCode,
   totalAmount,
   refundedAmount,
+  refundableTargetAmount,
   open,
   onClose,
 }: RefundHistoryModalProps) {
@@ -35,7 +37,8 @@ export default function RefundHistoryModal({
   // Query lấy danh sách refunds
   const { data: refunds = [], isLoading, refetch } = useReturnRefundsQuery(returnId)
   
-  const remainingAmount = totalAmount - refundedAmount
+  const targetAmount = refundableTargetAmount ?? totalAmount
+  const remainingAmount = Math.max(0, targetAmount - refundedAmount)
 
   // Columns cho table
   const columns: ColumnsType<InventoryReturnRefund> = [
@@ -99,7 +102,7 @@ export default function RefundHistoryModal({
           <div className="space-y-4">
             {/* Summary */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Tổng giá trị trả hàng</p>
                   <p className="text-lg font-semibold">
@@ -107,7 +110,13 @@ export default function RefundHistoryModal({
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Đã hoàn tiền</p>
+                  <p className="text-sm text-gray-600">Mức cần hoàn / cấn trừ</p>
+                  <p className="text-lg font-semibold text-orange-600">
+                    {formatCurrency(targetAmount)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Đã xử lý</p>
                   <p className="text-lg font-semibold text-blue-600">
                     {formatCurrency(refundedAmount)}
                   </p>

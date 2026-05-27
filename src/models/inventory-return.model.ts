@@ -44,7 +44,7 @@ export interface InventoryReturn {
   
   // Refund fields
   refund_amount?: number
-  refund_status?: 'pending' | 'partial' | 'refunded'
+  refund_status?: 'not_required' | 'pending' | 'partial' | 'refunded'
   refund_method?: string
   
   // Relations
@@ -96,7 +96,11 @@ export interface ReturnApiResponse {
   approved_at?: string
   completed_at?: string
   cancelled_at?: string
+  refund_amount?: string | number
+  refund_status?: 'not_required' | 'pending' | 'partial' | 'refunded'
+  refund_method?: string
   items?: ReturnItem[]
+  receipt?: any
   supplier?: {
     id: number
     name: string
@@ -125,6 +129,17 @@ export const getReturnStatusText = (status: any): string => {
     '4': 'Đã hủy',
   }
   return statusMap[s] || 'Không xác định';
+}
+
+export const getReturnRefundStatusText = (status?: string): string => {
+  const statusMap: Record<string, string> = {
+    not_required: 'Chỉ giảm công nợ',
+    pending: 'Chờ NCC hoàn/cấn trừ',
+    partial: 'Đã hoàn một phần',
+    refunded: 'Đã xử lý xong',
+  }
+
+  return statusMap[String(status || '')] || 'Chưa xác định'
 }
 
 /**
@@ -165,10 +180,14 @@ export const mapApiResponseToReturn = (
     reason: apiReturn.reason,
     status: normalizedStatus,  // Giữ nguyên status code ('draft', 'approved', ...)
     notes: apiReturn.notes,
+    refund_amount: parseFloat(String(apiReturn.refund_amount || '0')),
+    refund_status: apiReturn.refund_status,
+    refund_method: apiReturn.refund_method,
     created_by: apiReturn.created_by,
     created_at: apiReturn.created_at,
     updated_at: apiReturn.updated_at,
     items: apiReturn.items,
+    receipt: apiReturn.receipt,
     supplier: apiReturn.supplier,
     approved_at: apiReturn.approved_at,
     cancelled_at: apiReturn.cancelled_at,

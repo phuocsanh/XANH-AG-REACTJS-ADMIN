@@ -3,6 +3,7 @@
 import React from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import {
+  Alert,
   Card,
   Button,
   Space,
@@ -24,7 +25,7 @@ import {
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
 
-import { ReturnItem } from "@/models/inventory-return.model"
+import { ReturnItem, ReturnStatus, getReturnRefundStatusText } from "@/models/inventory-return.model"
 import {
   useReturnQuery,
   useApproveReturnMutation,
@@ -33,12 +34,14 @@ import {
 } from "@/queries/inventory-return"
 import { useProductsQuery } from "@/queries/product"
 import { LoadingSpinner } from "@/components/common"
+import RefundHistoryModal from "@/components/inventory/RefundHistoryModal"
 
 const { Title, Text } = Typography
 
 const ReturnDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [showRefundHistory, setShowRefundHistory] = React.useState(false)
 
   // Queries
   const { data: returnData, isLoading } = useReturnQuery(Number(id))
@@ -167,6 +170,18 @@ const ReturnDetail: React.FC = () => {
     )
   }
 
+  const receiptPaidAmount = Number(returnData.receipt?.paid_amount || 0)
+  const receiptSupplierAmount = Number(
+    returnData.receipt?.supplier_amount ||
+      returnData.receipt?.final_amount ||
+      returnData.receipt?.total_amount ||
+      0
+  )
+  const refundableTargetAmount = Math.min(
+    returnData.total_amount,
+    Math.max(0, receiptPaidAmount - receiptSupplierAmount)
+  )
+
   return (
     <div style={{ padding: "24px" }}>
       <Card>
@@ -181,7 +196,7 @@ const ReturnDetail: React.FC = () => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Title level={2}>Chi tiết phiếu trả hàng</Title>
             <Space>
-              {returnData.status === "Nháp" && (
+              {returnData.status === ReturnStatus.DRAFT && (
                 <Popconfirm
                   title="Duyệt phiếu trả hàng"
                   description="Bạn có chắc chắn muốn duyệt phiếu này?"
@@ -199,7 +214,7 @@ const ReturnDetail: React.FC = () => {
                 </Popconfirm>
               )}
 
-              {(returnData.status === "Nháp" || returnData.status === "Đã duyệt") && (
+              {(returnData.status === ReturnStatus.DRAFT || returnData.status === ReturnStatus.APPROVED) && (
                 <Popconfirm
                   title="Hủy phiếu"
                   description="Bạn có chắc chắn muốn hủy phiếu này?"
@@ -216,7 +231,7 @@ const ReturnDetail: React.FC = () => {
                   </Button>
                 </Popconfirm>
               )}
-              {(returnData.status === "Nháp" || returnData.status === "Đã hủy") && (
+              {(returnData.status === ReturnStatus.DRAFT || returnData.status === ReturnStatus.CANCELLED) && (
                 <Popconfirm
                   title="Xóa phiếu"
                   description="Bạn có chắc chắn muốn xóa phiếu này? Hành động này không thể hoàn tác."
@@ -262,6 +277,11 @@ const ReturnDetail: React.FC = () => {
                 <Descriptions.Item label="Lý do trả hàng" span={2}>
                   {returnData.reason}
                 </Descriptions.Item>
+                {returnData.receipt?.code && (
+                  <Descriptions.Item label="Phiếu nhập gốc" span={2}>
+                    {returnData.receipt.code}
+                  </Descriptions.Item>
+                )}
                 {returnData.notes && (
                   <Descriptions.Item label="Ghi chú" span={2}>
                     {returnData.notes}
@@ -286,6 +306,51 @@ const ReturnDetail: React.FC = () => {
                   </Descriptions.Item>
                 )}
               </Descriptions>
+            </Card>
+
+            <Card title="Xử lý tiền với nhà cung cấp" style={{ marginBottom: "16px" }}>
+              {returnData.refund_status === 'not_required' ? (
+                <Alert
+                  type="info"
+                  showIcon
+                  message="Phiếu này chỉ giảm công nợ hoặc giá trị phải trả nhà cung cấp."
+                  description="Không phát sinh khoản nhà cung cấp phải hoàn lại tiền cho cửa hàng."
+                />
+              ) : (
+                <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                  <Alert
+                    type={returnData.refund_status === 'refunded' ? 'success' : 'warning'}
+                    showIcon
+                    message={getReturnRefundStatusText(returnData.refund_status)}
+                    description="Phiếu trả hàng này đã làm phát sinh khoản nhà cung cấp phải hoàn tiền hoặc cấn trừ lại cho cửa hàng."
+                  />
+                  <Descriptions column={2} bordered size="small">
+                    <Descriptions.Item label="Giá trị cần xử lý">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(refundableTargetAmount || returnData.total_amount)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Đã hoàn / cấn trừ">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(returnData.refund_amount || 0)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Còn lại" span={2}>
+                      <Text strong type={(returnData.total_amount - (returnData.refund_amount || 0)) > 0 ? 'warning' : undefined}>
+                        {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                        }).format(Math.max(0, (refundableTargetAmount || returnData.total_amount) - (returnData.refund_amount || 0)))}
+                      </Text>
+                    </Descriptions.Item>
+                  </Descriptions>
+                  <Button onClick={() => setShowRefundHistory(true)}>
+                    Xem lịch sử hoàn / cấn trừ
+                  </Button>
+                </Space>
+              )}
             </Card>
 
             {/* Danh sách sản phẩm */}
@@ -334,6 +399,16 @@ const ReturnDetail: React.FC = () => {
           </Col>
         </Row>
       </Card>
+
+      <RefundHistoryModal
+        returnId={returnData.id}
+        returnCode={returnData.code}
+        totalAmount={returnData.total_amount}
+        refundedAmount={returnData.refund_amount || 0}
+        refundableTargetAmount={refundableTargetAmount || returnData.total_amount}
+        open={showRefundHistory}
+        onClose={() => setShowRefundHistory(false)}
+      />
     </div>
   )
 }
