@@ -1,7 +1,7 @@
 import React from "react"
 import { Card, Button, Typography, Popconfirm, Tooltip } from "antd"
 
-import { Controller } from "react-hook-form"
+import { Controller, useWatch } from "react-hook-form"
 import {
   DeleteOutlined,
 } from "@ant-design/icons"
@@ -41,6 +41,27 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
   getValues,
   isApproved,
 }) => {
+  const watchedProductName = useWatch({
+    control,
+    name: `items.${index}.product_name`,
+  })
+  const watchedScientificName = useWatch({
+    control,
+    name: `items.${index}.scientific_name`,
+  })
+  const watchedUnitName = useWatch({
+    control,
+    name: `items.${index}.unit_name`,
+  })
+  const watchedUnitId = useWatch({
+    control,
+    name: `items.${index}.unit_id`,
+  })
+  const watchedConversions = useWatch({
+    control,
+    name: `items.${index}.conversions`,
+  }) || []
+
   return (
     <Card
       size='small'
@@ -71,11 +92,11 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 title={
                   <div className="flex flex-col py-0.5" style={{ fontSize: '11px' }}>
                     <div className="text-[10px] text-gray-400">Tên thương mại:</div>
-                    <div className="font-semibold mb-1 leading-tight">{getValues(`items.${index}.product_name`) || 'Chưa có'}</div>
+                    <div className="font-semibold mb-1 leading-tight">{watchedProductName || 'Chưa có'}</div>
                     <div className="text-[10px] text-gray-400">Tên sản phẩm:</div>
-                    <div className="font-semibold mb-1 leading-tight">{getValues(`items.${index}.scientific_name`) || 'Chưa có'}</div>
+                    <div className="font-semibold mb-1 leading-tight">{watchedScientificName || 'Chưa có'}</div>
                     <div className="text-[10px] text-gray-400">Đơn vị tính:</div>
-                    <div className="font-semibold leading-tight">{getValues(`items.${index}.unit_name`) || 'Chưa có'}</div>
+                    <div className="font-semibold leading-tight">{watchedUnitName || 'Chưa có'}</div>
                   </div>
                 }
                 placement="topLeft"
@@ -148,14 +169,14 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
           <div>
             <label className='block text-xs mb-1'>Đơn vị tính</label>
             {(() => {
-              const conversions = getValues(`items.${index}.conversions`) || []
+              const conversions = watchedConversions
               // Chỉ hiện dropdown khi có nhiều hơn 1 đơn vị để chọn
               const hasMultipleConversions = conversions.length > 1
 
               // Luôn lấy unit_name tốt nhất có thể
-              const currentUnitId = getValues(`items.${index}.unit_id`)
-              const storedUnitName = getValues(`items.${index}.unit_name`) || ''
-              const matchedConv = conversions.find((c: any) => c.unit_id === currentUnitId)
+              const currentUnitId = watchedUnitId
+              const storedUnitName = watchedUnitName || ''
+              const matchedConv = conversions.find((c: any) => Number(c.unit_id) === Number(currentUnitId))
               const displayUnitName = storedUnitName
                 || matchedConv?.unit?.name
                 || matchedConv?.unit_name
