@@ -1,7 +1,7 @@
 import Logo from "../assets/images/logo.png"
 import { Link } from "react-router-dom"
 import Button from "@mui/material/Button"
-import { MdOutlineDashboard } from "react-icons/md"
+import { MdCalculate, MdOutlineDashboard } from "react-icons/md"
 import { FaAngleRight } from "react-icons/fa6"
 import { MdNotificationsNone } from "react-icons/md"
 import { IoSettingsOutline } from "react-icons/io5"
@@ -103,6 +103,20 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
                     <MdOutlineDashboard />
                   </span>
                   Dashboard
+                </Button>
+              </Link>
+            </li>
+
+            <li>
+              <Link to='/fertilizer-calculator' onClick={handleLinkClick}>
+                <Button
+                  className={`w-full ${activeTab === 11 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(11)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <MdCalculate />
+                  </span>
+                  Tính phối phân
                 </Button>
               </Link>
             </li>

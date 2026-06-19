@@ -976,6 +976,27 @@ body {
   height: auto !important;
 }
 
+/* Giữ tên sản phẩm phân bón gọn trong ô chọn */
+.fertilizer-product-select .ant-select-selector {
+  overflow: hidden;
+}
+
+.fertilizer-product-select .ant-select-selection-overflow,
+.fertilizer-product-select .ant-select-selection-search,
+.fertilizer-product-select .ant-select-selection-item,
+.fertilizer-product-select .ant-select-selection-placeholder {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fertilizer-product-select .ant-select-selection-item,
+.fertilizer-product-select .ant-select-selection-placeholder {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Ngăn chặn overscroll chaining trên mobile cho các dropdown (fix lỗi scroll cả trang khi scroll combobox) */
 .ant-select-dropdown,
 .ant-picker-dropdown,

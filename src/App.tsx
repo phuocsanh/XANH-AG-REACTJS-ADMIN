@@ -88,6 +88,7 @@ import OperatingCostsPage from "./pages/operating-costs"
 import GiftCostsPage from "./pages/operating-costs/gift-costs"
 import CostItemCategoriesPage from './pages/cost-item-categories'
 import DosageCalculator from "./pages/calculator/dosage-calculator"
+import FertilizerCalculator from "./pages/fertilizer-calculator"
 // Thêm import cho trang dự báo thời tiết
 import WeatherForecastPage from "./pages/weather-forecast"
 // Thêm import cho trang Lịch Vạn Niên
@@ -292,6 +293,15 @@ function AppContent({
                       element={
                         <ProtectedRoute>
                           <DosageCalculator />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path='/fertilizer-calculator'
+                      element={
+                        <ProtectedRoute>
+                          <FertilizerCalculator />
                         </ProtectedRoute>
                       }
                     />

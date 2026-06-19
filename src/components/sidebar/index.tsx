@@ -56,6 +56,11 @@ const Sidebar: React.FC = () => {
       setActiveTab(29)
       setIsToggleSubmenu(false)
     }
+    // Tính phối phân
+    else if (path.startsWith('/fertilizer-calculator')) {
+      setActiveTab(47)
+      setIsToggleSubmenu(false)
+    }
     // Dự báo thời tiết
     else if (path.startsWith('/weather-forecast')) {
       setActiveTab(31)
@@ -426,6 +431,20 @@ const Sidebar: React.FC = () => {
                   <MdCalculate className='text-cyan-400' />
                 </span>
                 Tính Liều Lượng
+              </Button>
+            </Link>
+          </li>
+
+          <li>
+            <Link to='/fertilizer-calculator'>
+              <Button
+                className={`w-full !justify-start !text-left ${activeTab === 47 ? "active" : ""}`}
+                onClick={() => isOpenSubmenu(47)}
+              >
+                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                  <MdCalculate className='text-lime-300' />
+                </span>
+                Tính phối phân
               </Button>
             </Link>
           </li>

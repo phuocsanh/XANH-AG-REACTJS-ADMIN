@@ -20,8 +20,8 @@ export const productKeys = {
     [...productKeys.lists(), params] as const,
   details: () => [...productKeys.all, "detail"] as const,
   detail: (id: number) => [...productKeys.details(), id] as const,
-  search: (searchTerm: string) =>
-    [...productKeys.all, "search", searchTerm] as const,
+  search: (searchTerm: string, filters?: Record<string, unknown>) =>
+    [...productKeys.all, "search", searchTerm, filters || {}] as const,
   // Thêm key cho multiple products
   multiple: (ids: number[]) => [...productKeys.all, "multiple", ids] as const,
 }
@@ -38,6 +38,7 @@ interface SearchProductsParams {
   page: number
   limit: number
   search?: string
+  type_id?: number
 }
 
 // Hàm search sản phẩm mới với phân trang đúng
@@ -45,6 +46,7 @@ export const searchProductsApi = async ({
   page,
   limit,
   search = "",
+  type_id,
 }: SearchProductsParams): Promise<ProductSearchResponse> => {
   try {
     // Log để debug
@@ -60,6 +62,9 @@ export const searchProductsApi = async ({
     // Thêm keyword nếu có search term
     if (search.trim()) {
       searchDto.keyword = search.trim()
+    }
+    if (type_id) {
+      searchDto.type_id = type_id
     }
 
     // Gọi API POST /products/search với đúng format
@@ -203,15 +208,17 @@ export const useProductsByIdsQuery = (ids: number[]) => {
 export const useProductSearch = (
   searchTerm: string = "",
   limit: number = 20,
-  enabled: boolean = true
+  enabled: boolean = true,
+  filters?: Pick<SearchProductsParams, "type_id">
 ) => {
   return useInfiniteQuery<ProductSearchResponse, Error>({
-    queryKey: productKeys.search(searchTerm),
+    queryKey: productKeys.search(searchTerm, filters),
     queryFn: async ({ pageParam = 1 }) => {
       const response = await searchProductsApi({
         page: pageParam as number,
         limit,
         search: searchTerm,
+        ...filters,
       })
 
       // Log để debug
