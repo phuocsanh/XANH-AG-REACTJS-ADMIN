@@ -13,7 +13,6 @@ import {
   Tag,
   Typography,
 } from "antd"
-import type { ColumnsType } from "antd/es/table"
 import {
   CalculatorOutlined,
   DeleteOutlined,
@@ -58,6 +57,10 @@ const nutrientLabels: Record<NutrientKey, string> = {
 }
 
 const FERTILIZER_PRODUCT_TYPE_ID = 5
+const VI_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
 
 const defaultIngredients: Ingredient[] = [
   {
@@ -88,6 +91,27 @@ const formatPercent = (value: number) =>
     maximumFractionDigits: 2,
   }).format(value)}%`
 
+const formatViDecimal = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === "") {
+    return ""
+  }
+
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? VI_NUMBER_FORMATTER.format(numberValue) : ""
+}
+
+const parseViDecimal = (value: string | undefined) =>
+  value
+    ?.replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .replace(/[^\d.-]/g, "") || ""
+
+const viNumberInputProps = {
+  formatter: formatViDecimal,
+  parser: parseViDecimal,
+}
+
 const getAvailableKg = (ingredient: Ingredient) =>
   Math.max(0, Number(ingredient.availableKg || 0))
 
@@ -116,7 +140,6 @@ const calculateActual = (
 
 const calculateMixture = (
   ingredients: Ingredient[],
-  totalWeight: number,
   target: TargetNutrients,
 ): MixtureResult | null => {
   const activeNutrients = getActiveNutrients(target)
@@ -159,8 +182,8 @@ const calculateMixture = (
 }
 
 const FertilizerCalculator: React.FC = () => {
-  const [totalWeight, setTotalWeight] = useState(200)
-  const [target, setTarget] = useState<TargetNutrients>({ n: 15, p: null, k: 20 })
+  const [totalWeight, setTotalWeight] = useState<number | null>(null)
+  const [target, setTarget] = useState<TargetNutrients>({ n: null, p: null, k: null })
   const [ingredients, setIngredients] = useState<Ingredient[]>(defaultIngredients)
   const [productSearchTerm, setProductSearchTerm] = useState("")
 
@@ -195,8 +218,8 @@ const FertilizerCalculator: React.FC = () => {
     [ingredients],
   )
   const result = useMemo(
-    () => calculateMixture(ingredients, totalWeight, target),
-    [ingredients, totalWeight, target],
+    () => calculateMixture(ingredients, target),
+    [ingredients, target],
   )
 
   const updateIngredient = (id: string, patch: Partial<Ingredient>) => {
@@ -223,6 +246,12 @@ const FertilizerCalculator: React.FC = () => {
 
   const removeIngredient = (id: string) => {
     setIngredients((current) => current.filter((ingredient) => ingredient.id !== id))
+  }
+
+  const resetCalculator = () => {
+    setTotalWeight(null)
+    setTarget({ n: null, p: null, k: null })
+    setIngredients(defaultIngredients)
   }
 
   const selectProduct = (
@@ -253,116 +282,81 @@ const FertilizerCalculator: React.FC = () => {
     setTarget((current) => ({ ...current, [nutrient]: value }))
   }
 
-  const ingredientColumns: ColumnsType<Ingredient> = [
-    {
-      title: "Tên phân",
-      dataIndex: "name",
-      width: 260,
-      render: (_, record) => (
-        <ComboBox
-          noFormItem
-          value={record.productId}
-          data={fertilizerProductOptions}
-          isLoading={isLoadingFertilizerProducts}
-          isFetching={isFetchingFertilizerProducts}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          fetchNextPage={fetchNextPage}
-          onSearch={setProductSearchTerm}
-          onSelectionChange={(value, option) => selectProduct(record.id, value, option)}
-          placeholder="Chọn sản phẩm phân bón"
-          className="fertilizer-product-select"
-          style={{ width: 260, maxWidth: "100%" }}
-        />
-      ),
-    },
-    {
-      title: "Kg có sẵn",
-      dataIndex: "availableKg",
-      width: 130,
-      align: "right",
-      render: (_, record) => (
-        <InputNumber
-          min={0}
-          precision={2}
-          value={record.availableKg}
-          className="w-full"
-          addonAfter="kg"
-          onChange={(value) => updateIngredient(record.id, { availableKg: Number(value || 0) })}
-        />
-      ),
-    },
-    {
-      title: "Đạm %",
-      dataIndex: "n",
-      width: 110,
-      align: "right",
-      render: (_, record) => (
-        <InputNumber
-          min={0}
-          max={100}
-          precision={2}
-          value={record.n}
-          className="w-full"
-          onChange={(value) => updateIngredient(record.id, { n: Number(value || 0) })}
-        />
-      ),
-    },
-    {
-      title: "Lân %",
-      dataIndex: "p",
-      width: 110,
-      align: "right",
-      render: (_, record) => (
-        <InputNumber
-          min={0}
-          max={100}
-          precision={2}
-          value={record.p}
-          className="w-full"
-          onChange={(value) => updateIngredient(record.id, { p: Number(value || 0) })}
-        />
-      ),
-    },
-    {
-      title: "Kali %",
-      dataIndex: "k",
-      width: 110,
-      align: "right",
-      render: (_, record) => (
-        <InputNumber
-          min={0}
-          max={100}
-          precision={2}
-          value={record.k}
-          className="w-full"
-          onChange={(value) => updateIngredient(record.id, { k: Number(value || 0) })}
-        />
-      ),
-    },
-    {
-      title: "",
-      key: "actions",
-      width: 64,
-      align: "center",
-      render: (_, record) => (
-        <Button
-          danger
-          type="text"
-          icon={<DeleteOutlined />}
-          disabled={ingredients.length <= 1}
-          onClick={() => removeIngredient(record.id)}
-        />
-      ),
-    },
-  ]
-
   const resultRows = ingredients
     .map((ingredient) => ({
       ...ingredient,
       quantity: result?.quantities[ingredient.id] || 0,
     }))
     .filter((ingredient) => ingredient.quantity > 0.005)
+
+  const renderIngredientBlock = (ingredient: Ingredient, index: number) => (
+    <div
+      key={ingredient.id}
+      className="rounded-lg border border-gray-200 bg-gray-50 p-3 md:p-4"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <Text strong>Loại phân {index + 1}</Text>
+        <Button
+          danger
+          type="text"
+          icon={<DeleteOutlined />}
+          disabled={ingredients.length <= 1}
+          onClick={() => removeIngredient(ingredient.id)}
+        />
+      </div>
+
+      <Row gutter={[12, 12]}>
+        <Col xs={24} md={12} xl={10}>
+          <Text strong>Tên phân</Text>
+          <ComboBox
+            noFormItem
+            value={ingredient.productId}
+            data={fertilizerProductOptions}
+            isLoading={isLoadingFertilizerProducts}
+            isFetching={isFetchingFertilizerProducts}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+            onSearch={setProductSearchTerm}
+            onSelectionChange={(value, option) => selectProduct(ingredient.id, value, option)}
+            placeholder="Chọn sản phẩm phân bón"
+            className="fertilizer-product-select mt-2"
+            style={{ width: "100%" }}
+          />
+        </Col>
+
+        <Col xs={12} sm={8} md={6} xl={4}>
+          <Text strong>Kg có sẵn</Text>
+          <InputNumber
+            min={0}
+            precision={2}
+            value={ingredient.availableKg}
+            className="w-full mt-2"
+            addonAfter="kg"
+            {...viNumberInputProps}
+            onChange={(value) => updateIngredient(ingredient.id, { availableKg: Number(value || 0) })}
+          />
+        </Col>
+
+        {(["n", "p", "k"] as NutrientKey[]).map((nutrient) => (
+          <Col xs={12} sm={8} md={6} xl={3} key={nutrient}>
+            <Text strong>{nutrientLabels[nutrient]} %</Text>
+            <InputNumber
+              min={0}
+              max={100}
+              precision={2}
+              value={ingredient[nutrient]}
+              className="w-full mt-2"
+              {...viNumberInputProps}
+              onChange={(value) =>
+                updateIngredient(ingredient.id, { [nutrient]: Number(value || 0) })
+              }
+            />
+          </Col>
+        ))}
+      </Row>
+    </div>
+  )
 
   return (
     <div className="p-2 md:p-6">
@@ -378,7 +372,7 @@ const FertilizerCalculator: React.FC = () => {
           <Card bordered={false} className="shadow-sm h-full">
             <Title level={5}>Mục tiêu</Title>
             <Row gutter={[12, 12]}>
-              <Col span={24}>
+              <Col xs={12}>
                 <Text strong>Số kg muốn trộn</Text>
                 <InputNumber
                   min={0}
@@ -386,10 +380,11 @@ const FertilizerCalculator: React.FC = () => {
                   value={totalWeight}
                   className="w-full mt-2"
                   addonAfter="kg"
-                  onChange={(value) => setTotalWeight(Number(value || 0))}
+                  {...viNumberInputProps}
+                  onChange={(value) => setTotalWeight(value === null ? null : Number(value))}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col xs={12}>
                 <Text strong>Đạm</Text>
                 <InputNumber
                   min={0}
@@ -399,10 +394,11 @@ const FertilizerCalculator: React.FC = () => {
                   className="w-full mt-2"
                   addonAfter="%"
                   placeholder="Bỏ trống"
+                  {...viNumberInputProps}
                   onChange={(value) => setTargetValue("n", value === null ? null : Number(value))}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col xs={12}>
                 <Text strong>Lân</Text>
                 <InputNumber
                   min={0}
@@ -412,10 +408,11 @@ const FertilizerCalculator: React.FC = () => {
                   className="w-full mt-2"
                   addonAfter="%"
                   placeholder="Bỏ trống"
+                  {...viNumberInputProps}
                   onChange={(value) => setTargetValue("p", value === null ? null : Number(value))}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col xs={12}>
                 <Text strong>Kali</Text>
                 <InputNumber
                   min={0}
@@ -425,6 +422,7 @@ const FertilizerCalculator: React.FC = () => {
                   className="w-full mt-2"
                   addonAfter="%"
                   placeholder="Bỏ trống"
+                  {...viNumberInputProps}
                   onChange={(value) => setTargetValue("k", value === null ? null : Number(value))}
                 />
               </Col>
@@ -435,16 +433,6 @@ const FertilizerCalculator: React.FC = () => {
               </Col>
             </Row>
 
-            <Divider />
-
-            <Row gutter={[12, 12]}>
-              <Col span={12}>
-                <Statistic title="Tổng kg đã chọn" value={totalAvailable} suffix="kg" precision={2} />
-              </Col>
-              <Col span={12}>
-                <Statistic title="Dư sau trộn" value={totalAvailable - totalWeight} suffix="kg" precision={2} />
-              </Col>
-            </Row>
           </Card>
         </Col>
 
@@ -456,7 +444,7 @@ const FertilizerCalculator: React.FC = () => {
             extra={
               <Space>
                 <Tag color="green">Tổng {formatKg(totalAvailable)}</Tag>
-                <Button icon={<ReloadOutlined />} onClick={() => setIngredients(defaultIngredients)}>
+                <Button icon={<ReloadOutlined />} onClick={resetCalculator}>
                   Làm mới
                 </Button>
                 <Button type="primary" icon={<PlusOutlined />} onClick={addIngredient}>
@@ -465,15 +453,9 @@ const FertilizerCalculator: React.FC = () => {
               </Space>
             }
           >
-            <Table
-              rowKey="id"
-              columns={ingredientColumns}
-              dataSource={ingredients}
-              pagination={false}
-              tableLayout="fixed"
-              scroll={{ x: 820 }}
-              size="middle"
-            />
+            <div className="space-y-3">
+              {ingredients.map((ingredient, index) => renderIngredientBlock(ingredient, index))}
+            </div>
           </Card>
         </Col>
 
@@ -490,9 +472,7 @@ const FertilizerCalculator: React.FC = () => {
               )}
             </div>
 
-            {!totalWeight || totalWeight <= 0 ? (
-              <Alert type="info" showIcon message="Nhập số kg muốn trộn." />
-            ) : !result ? (
+            {!result ? (
               <Alert type="warning" showIcon message="Nhập số kg phân đã chọn để tính tỷ lệ thực tế." />
             ) : (
               <>
@@ -509,7 +489,7 @@ const FertilizerCalculator: React.FC = () => {
                         title={`${nutrientLabels[nutrient]} thực tế`}
                         value={result.actual[nutrient]}
                         suffix="%"
-                        precision={2}
+                        formatter={(value) => formatViDecimal(value)}
                         valueStyle={{
                           color:
                             target[nutrient] !== null &&
