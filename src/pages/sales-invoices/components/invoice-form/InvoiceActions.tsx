@@ -28,6 +28,18 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(({
   calculatedProfit,
 }) => {
   const isPositiveProfit = calculatedProfit.profit >= 0;
+  const lossOnCost =
+    calculatedProfit.cost > 0
+      ? (calculatedProfit.profit / calculatedProfit.cost) * 100
+      : 0;
+  const lossMultiple =
+    calculatedProfit.revenue > 0
+      ? Math.abs(calculatedProfit.profit) / calculatedProfit.revenue
+      : 0;
+  const shouldExplainLowRevenueLoss =
+    calculatedProfit.profit < 0 &&
+    calculatedProfit.revenue > 0 &&
+    lossMultiple >= 3;
 
   return (
     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', position: 'relative' }}>
@@ -54,6 +66,20 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(({
                 </div>
               ) : (
                 <>
+                  <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
+                    Doanh thu:{' '}
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(calculatedProfit.revenue)}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>
+                    Giá vốn:{' '}
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(calculatedProfit.cost)}
+                  </div>
                   <div
                     style={{
                       fontSize: 20,
@@ -67,9 +93,20 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(({
                       currency: 'VND',
                     }).format(calculatedProfit.profit)}
                   </div>
-                  <div style={{ fontSize: 12, color: '#666' }}>
-                    Tỷ suất: {calculatedProfit.margin.toFixed(2)}%
-                  </div>
+                  {shouldExplainLowRevenueLoss ? (
+                    <>
+                      <div style={{ fontSize: 12, color: '#666' }}>
+                        Lỗ/doanh thu: gấp {lossMultiple.toFixed(2)} lần
+                      </div>
+                      <div style={{ fontSize: 12, color: '#666' }}>
+                        Lỗ/giá vốn: {lossOnCost.toFixed(2)}%
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 12, color: '#666' }}>
+                      Tỷ suất: {calculatedProfit.margin.toFixed(2)}%
+                    </div>
+                  )}
                 </>
               )}
             </div>

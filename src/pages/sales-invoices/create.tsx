@@ -806,6 +806,12 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         unitPrice = Number(product.credit_price);
     }
 
+    if (Number(unitPrice || 0) <= 0) {
+      antMessage.warning(
+        `Sản phẩm "${product.trade_name || product.name}" chưa có giá bán ${isDebt ? 'công nợ' : 'tiền mặt'}. Vui lòng nhập đơn giá trước khi xác nhận hóa đơn.`
+      );
+    }
+
     // Tìm đơn vị bán hàng mặc định (ưu tiên đơn vị gốc nếu nó cũng là đơn vị bán hàng)
     const salesConv = product.unit_conversions?.find((c: any) => c.is_sales_unit && c.unit_id === product.unit_id)
                    || product.unit_conversions?.find((c: any) => c.is_sales_unit);
@@ -897,7 +903,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
         return;
       }
     }
-    
+
     const remainingAmount = data.final_amount - data.partial_payment_amount;
     
     // ✅ Validation cho delivery_log nếu NGƯỜI DÙNG ĐÃ BẬT tính năng tạo phiếu giao

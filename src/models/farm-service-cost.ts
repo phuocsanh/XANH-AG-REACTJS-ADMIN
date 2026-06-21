@@ -78,6 +78,10 @@ export interface FarmGiftCost {
   id: number;
   name: string;
   amount: number;
+  product_id?: number;
+  product_name?: string;
+  quantity?: number;
+  unit_price?: number;
   season_id: number;
   customer_id: number;
   rice_crop_id?: number;
@@ -85,6 +89,8 @@ export interface FarmGiftCost {
   gift_date: string;
   source: 'manually_awarded' | 'gift_from_invoice' | 'reward_from_debt_note';
   invoice_id?: number;
+  reward_history_id?: number;
+  inventory_transaction_id?: number;
   created_at: string;
   updated_at: string;
   
@@ -97,12 +103,17 @@ export interface FarmGiftCost {
 export interface CreateFarmGiftCostDto {
   name: string;
   amount: number;
+  product_id?: number;
+  product_name?: string;
+  quantity?: number;
+  unit_price?: number;
   season_id: number;
   customer_id: number;
   rice_crop_id?: number;
   notes?: string;
   gift_date: string;
   source?: string;
+  inventory_transaction_id?: number;
 }
 
 export interface SearchFarmGiftCostDto {

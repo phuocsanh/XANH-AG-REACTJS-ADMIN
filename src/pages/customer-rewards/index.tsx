@@ -9,9 +9,7 @@ import {
   Button,
   Modal,
   Form,
-  Input,
-  InputNumber,
-  Checkbox,
+  Select,
 } from "antd"
 import {
   GiftOutlined,
@@ -33,9 +31,10 @@ import {
 } from "@/queries/debt-note"
 import { useSeasonsQuery } from "@/queries/season"
 import { useRiceCrops } from "@/queries/rice-crop"
-import { Select } from "antd"
 import { useForm, Controller } from "react-hook-form";
 import { FormField, FormFieldNumber, FormComboBox } from "@/components/form";
+import { useProductSearch } from "@/queries/product"
+import type { Product } from "@/models/product.model"
 
 const { Title, Text } = Typography
 
@@ -53,7 +52,7 @@ const CustomerRewardsPage: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = React.useState<any>(null)
   const [editingHistoryId, setEditingHistoryId] = React.useState<number | null>(null)
   const [isAddingAppreciationGift, setIsAddingAppreciationGift] = React.useState(false) // Chế độ thêm quà tri ân mới
-  const [form] = Form.useForm()
+  const [productSearchTerm, setProductSearchTerm] = React.useState("")
   
   // React Hook Form cho Modal tặng quà
   const { control, handleSubmit, reset, setValue, watch } = useForm({
@@ -64,6 +63,9 @@ const CustomerRewardsPage: React.FC = () => {
       season_id: undefined as number | undefined,
       rice_crop_id: undefined as number | undefined,
       customer_id: undefined as number | undefined, // Dùng khi thêm quà tri ân mới
+      gift_product_id: undefined as number | undefined,
+      gift_quantity: 1,
+      gift_unit_price: 0,
       gift_status: "pending" as string,
     }
   });
@@ -95,6 +97,9 @@ const CustomerRewardsPage: React.FC = () => {
   // Lấy customer_id từ form (khi thêm quà tri ân mới) hoặc từ khách được chọn (khi tặng từ tab tích lũy)
   const watchedCustomerId = watch('customer_id')
   const watchedSeasonId = watch('season_id')
+  const watchedGiftProductId = watch('gift_product_id')
+  const watchedGiftQuantity = watch('gift_quantity')
+  const watchedGiftUnitPrice = watch('gift_unit_price')
   const effectiveCustomerId = watchedCustomerId || selectedCustomer?.customer_id
   
   // Load ruộng lúa theo KHÁCH HÀNG và MÙA VỤ (nếu có)
@@ -103,6 +108,20 @@ const CustomerRewardsPage: React.FC = () => {
     season_id: watchedSeasonId, // ✅ Lọc theo mùa vụ bổ sung
     limit: 100 
   }, { enabled: !!effectiveCustomerId })
+
+  const { data: productsSearchData, isLoading: isProductsLoading } = useProductSearch(
+    productSearchTerm,
+    20,
+    isModalOpen
+  )
+  const productOptions = React.useMemo(
+    () => productsSearchData?.pages.flatMap((page) => page.data) || [],
+    [productsSearchData]
+  )
+  const selectedGiftProduct = React.useMemo(
+    () => productOptions.find((p: Product) => Number(p.id) === Number(watchedGiftProductId)),
+    [productOptions, watchedGiftProductId]
+  )
 
   const createRewardMutation = useCreateManualRewardMutation()
   const updateRewardMutation = useUpdateRewardHistoryMutation()
@@ -118,6 +137,13 @@ const CustomerRewardsPage: React.FC = () => {
     }).format(value)
   }
 
+  React.useEffect(() => {
+    if (!watchedGiftProductId) return
+    const total =
+      Number(watchedGiftQuantity || 0) * Number(watchedGiftUnitPrice || 0)
+    setValue("gift_value", Math.round(total))
+  }, [watchedGiftProductId, watchedGiftQuantity, watchedGiftUnitPrice, setValue])
+
   // Helper to refetch everything
   const refetchAll = () => {
     refetchTracking()
@@ -128,6 +154,7 @@ const CustomerRewardsPage: React.FC = () => {
   // Mở modal từ tab tích lũy (chọn khách từ tracking)
   const handleOpenRewardModal = (record: any, isEdit: boolean = false) => {
     setIsAddingAppreciationGift(false)
+    setProductSearchTerm(record.gift_product_name || "")
     if (isEdit) {
         setEditingHistoryId(record.id)
         setSelectedCustomer({ customer_id: record.customer_id, customer: record.customer })
@@ -138,6 +165,9 @@ const CustomerRewardsPage: React.FC = () => {
             season_id: record.season_ids?.[0],
             rice_crop_id: record.rice_crop_id,
             customer_id: record.customer_id,
+            gift_product_id: record.gift_product_id,
+            gift_quantity: Number(record.gift_quantity || 1),
+            gift_unit_price: Number(record.gift_unit_price || 0),
             gift_status: record.gift_status,
         })
     } else {
@@ -150,6 +180,9 @@ const CustomerRewardsPage: React.FC = () => {
             season_id: undefined,
             rice_crop_id: undefined,
             customer_id: record.customer_id,
+            gift_product_id: undefined,
+            gift_quantity: 1,
+            gift_unit_price: 0,
             gift_status: 'pending',
         })
     }
@@ -161,6 +194,7 @@ const CustomerRewardsPage: React.FC = () => {
     setIsAddingAppreciationGift(true)
     setEditingHistoryId(null)
     setSelectedCustomer(null)
+    setProductSearchTerm("")
     reset({
         gift_description: "",
         gift_value: 0,
@@ -168,6 +202,10 @@ const CustomerRewardsPage: React.FC = () => {
         season_id: undefined,
         rice_crop_id: undefined,
         customer_id: undefined,
+        gift_product_id: undefined,
+        gift_quantity: 1,
+        gift_unit_price: 0,
+        gift_status: 'pending',
     })
     setIsModalOpen(true)
   }
@@ -185,6 +223,9 @@ const CustomerRewardsPage: React.FC = () => {
                 gift_status: values.gift_status,
                 season_id: values.season_id ? Number(values.season_id) : undefined,
                 rice_crop_id: values.rice_crop_id ? Number(values.rice_crop_id) : undefined,
+                gift_product_id: values.gift_product_id ? Number(values.gift_product_id) : undefined,
+                gift_quantity: values.gift_product_id ? Number(values.gift_quantity || 0) : undefined,
+                gift_unit_price: values.gift_product_id ? Number(values.gift_unit_price || 0) : undefined,
             }
         })
     } else if (isAddingAppreciationGift) {
@@ -194,8 +235,12 @@ const CustomerRewardsPage: React.FC = () => {
             gift_description: values.gift_description,
             gift_value: values.gift_value,
             notes: values.notes,
+            gift_status: values.gift_status,
             season_id: values.season_id ? Number(values.season_id) : undefined,
             rice_crop_id: values.rice_crop_id ? Number(values.rice_crop_id) : undefined,
+            gift_product_id: values.gift_product_id ? Number(values.gift_product_id) : undefined,
+            gift_quantity: values.gift_product_id ? Number(values.gift_quantity || 0) : undefined,
+            gift_unit_price: values.gift_product_id ? Number(values.gift_unit_price || 0) : undefined,
             reward_type: 'APPRECIATION_GIFT', // ✅ Mặc định là Quà tri ân, không trừ tích lũy
         })
     } else {
@@ -205,8 +250,12 @@ const CustomerRewardsPage: React.FC = () => {
             gift_description: values.gift_description,
             gift_value: values.gift_value,
             notes: values.notes,
+            gift_status: values.gift_status,
             season_id: values.season_id ? Number(values.season_id) : undefined,
             rice_crop_id: values.rice_crop_id ? Number(values.rice_crop_id) : undefined,
+            gift_product_id: values.gift_product_id ? Number(values.gift_product_id) : undefined,
+            gift_quantity: values.gift_product_id ? Number(values.gift_quantity || 0) : undefined,
+            gift_unit_price: values.gift_product_id ? Number(values.gift_unit_price || 0) : undefined,
             reward_type: 'ACCUMULATION_REWARD',
         })
     }
@@ -367,7 +416,16 @@ const CustomerRewardsPage: React.FC = () => {
       dataIndex: "gift_description",
       key: "gift_description",
       width: 250,
-      render: (text: string) => <Text>{text || 'Quà tặng'}</Text>
+      render: (text: string, record: any) => (
+        <Space direction="vertical" size={0}>
+          <Text>{text || record.gift_product_name || 'Quà tặng'}</Text>
+          {record.gift_product_id && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {record.gift_product_name || `Sản phẩm #${record.gift_product_id}`} · SL {Number(record.gift_quantity || 0)} · {formatCurrency(Number(record.gift_unit_price || 0))}
+            </Text>
+          )}
+        </Space>
+      )
     },
     {
       title: "Giá trị",
@@ -634,6 +692,77 @@ const CustomerRewardsPage: React.FC = () => {
                 />
             </div>
 
+            <Form.Item label="Sản phẩm quà từ kho" layout="vertical">
+              <Controller
+                name="gift_product_id"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    showSearch
+                    allowClear
+                    placeholder="Tìm và chọn sản phẩm trong cửa hàng..."
+                    loading={isProductsLoading}
+                    filterOption={false}
+                    onSearch={setProductSearchTerm}
+                    onClear={() => {
+                      field.onChange(undefined)
+                      setValue("gift_quantity", 1)
+                      setValue("gift_unit_price", 0)
+                    }}
+                    onChange={(value) => {
+                      field.onChange(value)
+                      const product = productOptions.find((p: any) => Number(p.id) === Number(value))
+                      if (!product) return
+
+                      const defaultPrice = Number(
+                        product.latest_purchase_price ||
+                        product.average_cost_price ||
+                        product.price ||
+                        0
+                      )
+                      setValue("gift_description", product.trade_name || product.name || `Sản phẩm #${product.id}`)
+                      setValue("gift_quantity", 1)
+                      setValue("gift_unit_price", defaultPrice)
+                    }}
+                    options={productOptions.map((product: any) => ({
+                      value: product.id,
+                      label: `${product.label || product.trade_name || product.name} - tồn ${Number(product.quantity || 0)} ${product.unit?.name || product.unit_name || ''}`,
+                    }))}
+                  />
+                )}
+              />
+              {watchedGiftProductId && (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Tồn kho hiện tại: {Number(selectedGiftProduct?.quantity || 0)} {selectedGiftProduct?.unit?.name || selectedGiftProduct?.unit_name || ''}
+                </Text>
+              )}
+            </Form.Item>
+
+            {watchedGiftProductId && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormFieldNumber
+                  name="gift_quantity"
+                  control={control}
+                  label="Số lượng sản phẩm"
+                  placeholder="1"
+                  decimalScale={4}
+                  min={0.0001}
+                  required
+                />
+                <FormFieldNumber
+                  name="gift_unit_price"
+                  control={control}
+                  label="Đơn giá hạch toán (đ)"
+                  placeholder="0"
+                  decimalScale={0}
+                  suffix=" đ"
+                  min={0}
+                  required
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
                 <FormField
                     name="gift_description"
@@ -663,6 +792,7 @@ const CustomerRewardsPage: React.FC = () => {
                 placeholder="0"
                 decimalScale={0}
                 suffix=" đ"
+                disabled={!!watchedGiftProductId}
             />
 
             <FormField
