@@ -42,6 +42,9 @@ export const salesInvoiceSchema = z.object({
   // Quà tặng khi bán hàng
   gift_description: z.string().optional(),
   gift_value: z.number().min(0, 'Giá trị quà tặng phải lớn hơn hoặc bằng 0').default(0),
+  gift_product_id: z.number().optional(),
+  gift_quantity: z.number().min(0).optional(),
+  gift_unit_price: z.number().min(0).optional(),
   gift_status: z.string().optional().default('delivered'),
   items: z.array(salesInvoiceItemSchema).min(1, 'Phải có ít nhất 1 sản phẩm'),
   status: z.enum(['draft', 'confirmed', 'paid']).optional(),
@@ -78,6 +81,9 @@ export const defaultSalesInvoiceValues: SalesInvoiceFormData = {
   // Quà tặng khi bán hàng
   gift_description: '',
   gift_value: 0,
+  gift_product_id: undefined,
+  gift_quantity: 1,
+  gift_unit_price: 0,
   gift_status: 'delivered',
   items: [],
   status: 'draft',

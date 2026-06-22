@@ -63,6 +63,11 @@ export interface SalesInvoice {
   items?: SalesInvoiceItem[];
   gift_description?: string;
   gift_value?: number;
+  gift_product_id?: number;
+  gift_product_name?: string;
+  gift_quantity?: number;
+  gift_unit_price?: number;
+  gift_status?: string;
   sale_date?: Date | string;
 }
 
@@ -84,6 +89,10 @@ export interface CreateSalesInvoiceDto {
   // Quà tặng khi bán hàng
   gift_description?: string;
   gift_value?: number;
+  gift_product_id?: number;
+  gift_quantity?: number;
+  gift_unit_price?: number;
+  gift_status?: string;
   items: {
     product_id: number;
     product_name?: string;

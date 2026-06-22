@@ -368,6 +368,12 @@ const CreateSalesInvoice = () => {
       setValue('partial_payment_amount', invoice.partial_payment_amount);
       setValue('notes', invoice.notes || '');
       setValue('warning', invoice.warning || '');
+      setValue('gift_description', invoice.gift_description || '');
+      setValue('gift_value', Number(invoice.gift_value || 0));
+      setValue('gift_product_id', invoice.gift_product_id);
+      setValue('gift_quantity', Number(invoice.gift_quantity || 1));
+      setValue('gift_unit_price', Number(invoice.gift_unit_price || 0));
+      setValue('gift_status', invoice.gift_status || 'delivered');
       
       // Khôi phục ngày bán
       if (invoice.sale_date) {
@@ -1618,6 +1624,7 @@ ${productInfo}`;
             <Grid item xs={12}>
               <PaymentSummarySection
                 control={control}
+                setValue={setValue}
                 totalAmount={totalAmount}
                 finalAmount={finalAmount}
                 partialPaymentAmount={partialPaymentAmount}

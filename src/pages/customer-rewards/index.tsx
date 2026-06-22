@@ -34,6 +34,7 @@ import { useRiceCrops } from "@/queries/rice-crop"
 import { useForm, Controller } from "react-hook-form";
 import { FormField, FormFieldNumber, FormComboBox } from "@/components/form";
 import { useProductSearch } from "@/queries/product"
+import { useCustomerSearch } from "@/queries/customer"
 import type { Product } from "@/models/product.model"
 
 const { Title, Text } = Typography
@@ -53,6 +54,7 @@ const CustomerRewardsPage: React.FC = () => {
   const [editingHistoryId, setEditingHistoryId] = React.useState<number | null>(null)
   const [isAddingAppreciationGift, setIsAddingAppreciationGift] = React.useState(false) // Chế độ thêm quà tri ân mới
   const [productSearchTerm, setProductSearchTerm] = React.useState("")
+  const [customerSearchTerm, setCustomerSearchTerm] = React.useState("")
   
   // React Hook Form cho Modal tặng quà
   const { control, handleSubmit, reset, setValue, watch } = useForm({
@@ -122,6 +124,15 @@ const CustomerRewardsPage: React.FC = () => {
     () => productOptions.find((p: Product) => Number(p.id) === Number(watchedGiftProductId)),
     [productOptions, watchedGiftProductId]
   )
+  const { data: customersSearchData, isLoading: isCustomersLoading } = useCustomerSearch(
+    customerSearchTerm,
+    20,
+    isModalOpen && isAddingAppreciationGift
+  )
+  const customerOptions = React.useMemo(
+    () => customersSearchData?.pages.flatMap((page) => page.data) || [],
+    [customersSearchData]
+  )
 
   const createRewardMutation = useCreateManualRewardMutation()
   const updateRewardMutation = useUpdateRewardHistoryMutation()
@@ -155,6 +166,7 @@ const CustomerRewardsPage: React.FC = () => {
   const handleOpenRewardModal = (record: any, isEdit: boolean = false) => {
     setIsAddingAppreciationGift(false)
     setProductSearchTerm(record.gift_product_name || "")
+    setCustomerSearchTerm(record.customer?.name || record.customer_name || "")
     if (isEdit) {
         setEditingHistoryId(record.id)
         setSelectedCustomer({ customer_id: record.customer_id, customer: record.customer })
@@ -195,6 +207,7 @@ const CustomerRewardsPage: React.FC = () => {
     setEditingHistoryId(null)
     setSelectedCustomer(null)
     setProductSearchTerm("")
+    setCustomerSearchTerm("")
     reset({
         gift_description: "",
         gift_value: 0,
@@ -650,18 +663,40 @@ const CustomerRewardsPage: React.FC = () => {
             )}
 
             {isAddingAppreciationGift && (
-              <FormComboBox
-                name="customer_id"
-                control={control}
-                label="Khách hàng"
-                placeholder="Tìm và chọn khách hàng..."
-                options={trackingData?.items?.map((t: any) => ({
-                  label: `${t.customer?.name} - ${t.customer?.phone || ''}`,
-                  value: t.customer_id
-                })) || []}
-                required
-                allowClear
-              />
+              <Form.Item label="Khách hàng" layout="vertical" required>
+                <Controller
+                  name="customer_id"
+                  control={control}
+                  rules={{ required: "Vui lòng chọn khách hàng" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <Select
+                        {...field}
+                        showSearch
+                        allowClear
+                        placeholder="Tìm và chọn khách hàng..."
+                        loading={isCustomersLoading}
+                        filterOption={false}
+                        status={error ? "error" : undefined}
+                        onSearch={setCustomerSearchTerm}
+                        onChange={(value) => {
+                          field.onChange(value)
+                          setValue("rice_crop_id", undefined)
+                        }}
+                        options={customerOptions.map((customer: any) => ({
+                          label: customer.label || `${customer.name} - ${customer.phone || ""}`,
+                          value: customer.id,
+                        }))}
+                      />
+                      {error && (
+                        <div style={{ color: "#ff4d4f", fontSize: 14, marginTop: 4 }}>
+                          {error.message}
+                        </div>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Item>
             )}
 
             <div className="grid grid-cols-2 gap-4">
