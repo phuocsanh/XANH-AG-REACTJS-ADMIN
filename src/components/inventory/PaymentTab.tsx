@@ -27,6 +27,7 @@ import {
   normalizeReceiptStatus,
   InventoryReceiptStatus,
   getInventoryReceiptStatusText,
+  getEffectiveReceiptPaymentStatus,
 } from "@/models/inventory.model"
 import {
   useReceiptPaymentsQuery,
@@ -152,6 +153,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
   const normalizedStatus = normalizeReceiptStatus(
     receipt.status_code || receipt.status,
   )
+  const paymentStatus = getEffectiveReceiptPaymentStatus(receipt)
 
   return (
     <div className='space-y-4 py-4'>
@@ -263,23 +265,22 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
                 Trạng thái thanh toán
               </Text>
               <Space>
-                {receipt.payment_status === "paid" && (
+                {paymentStatus === "paid" && (
                   <Tag color='success' className='px-3 py-1 text-sm'>
                     ✅ Đã thanh toán đầy đủ
                   </Tag>
                 )}
-                {receipt.payment_status === "partial" && (
+                {paymentStatus === "partial" && (
                   <Tag color='warning' className='px-3 py-1 text-sm'>
                     ⚠️ Thanh toán một phần
                   </Tag>
                 )}
-                {receipt.payment_status === "advance" && (
+                {paymentStatus === "advance" && (
                   <Tag color='processing' className='px-3 py-1 text-sm'>
                     💰 Đã tạm ứng, chờ quyết toán
                   </Tag>
                 )}
-                {(receipt.payment_status === "unpaid" ||
-                  !receipt.payment_status) && (
+                {paymentStatus === "unpaid" && (
                   <Tag color='error' className='px-3 py-1 text-sm'>
                     ❌ Chưa thanh toán
                   </Tag>

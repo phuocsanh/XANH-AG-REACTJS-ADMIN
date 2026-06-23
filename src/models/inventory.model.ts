@@ -102,6 +102,28 @@ export interface InventoryReceipt {
   payments?: InventoryReceiptPayment[]
 }
 
+export function getEffectiveReceiptPaymentStatus(
+  receipt: Partial<InventoryReceipt>,
+): NonNullable<InventoryReceipt["payment_status"]> {
+  const rawStatus = receipt.payment_status || "unpaid"
+
+  if (receipt.supplier_settlement_mode === "by_sale_type") {
+    return rawStatus
+  }
+
+  const payableAmount = Number(
+    receipt.supplier_amount ?? receipt.final_amount ?? receipt.total_amount ?? 0,
+  )
+  const paidAmount = Number(receipt.paid_amount || 0)
+  const debtAmount = Number(receipt.debt_amount || 0)
+
+  if (debtAmount <= 0 && paidAmount >= payableAmount) {
+    return "paid"
+  }
+
+  return rawStatus
+}
+
 // Interface cho payment record
 export interface InventoryReceiptPayment {
   id: number

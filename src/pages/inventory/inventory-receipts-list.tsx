@@ -35,7 +35,8 @@ import {
   InventoryReceiptListParams,
   mapApiResponseToInventoryReceipt,
   normalizeReceiptStatus,
-  getInventoryReceiptStatusText
+  getInventoryReceiptStatusText,
+  getEffectiveReceiptPaymentStatus,
 } from "@/models/inventory.model"
 import {
   useInventoryReceiptsQuery,
@@ -101,7 +102,9 @@ const buildPaymentHistoryText = (
   const debtAmount = Number(receipt.debt_amount) || 0
   const supplierAmount = Number(receipt.supplier_amount) || Number(receipt.total_amount) || 0
 
-  if (receipt.payment_status === 'advance') {
+  const paymentStatus = getEffectiveReceiptPaymentStatus(receipt)
+
+  if (paymentStatus === 'advance') {
     return `Tam ung ${formatExcelMoney(paidAmount)} / Phai tra hien tai ${formatExcelMoney(supplierAmount)} / Con no ${formatExcelMoney(debtAmount)}`
   }
 
@@ -109,7 +112,7 @@ const buildPaymentHistoryText = (
     return `Da thanh toan ${formatExcelMoney(paidAmount)} / Phai tra ${formatExcelMoney(supplierAmount)} / Con no ${formatExcelMoney(debtAmount)}`
   }
 
-  if (receipt.payment_status === 'paid') {
+  if (paymentStatus === 'paid') {
     return `Da thanh toan du ${formatExcelMoney(supplierAmount)}`
   }
 
@@ -853,11 +856,12 @@ const InventoryReceiptsList: React.FC = () => {
       dataIndex: "payment_status",
       key: "payment_status",
       width: 150,
-      render: (status: string) => {
-        if (status === 'paid') return <Tag color="success">Đã thanh toán</Tag>
-        if (status === 'partial') return <Tag color="warning">Một phần</Tag>
-        if (status === 'advance') return <Tag color="processing">Tạm ứng</Tag>
-        if (status === 'unpaid' || !status) return <Tag color="error">Chưa TT</Tag>
+      render: (_status: string, record: InventoryReceipt) => {
+        const paymentStatus = getEffectiveReceiptPaymentStatus(record)
+        if (paymentStatus === 'paid') return <Tag color="success">Đã thanh toán</Tag>
+        if (paymentStatus === 'partial') return <Tag color="warning">Một phần</Tag>
+        if (paymentStatus === 'advance') return <Tag color="processing">Tạm ứng</Tag>
+        if (paymentStatus === 'unpaid') return <Tag color="error">Chưa TT</Tag>
         return <Tag>-</Tag>
       },
     },
