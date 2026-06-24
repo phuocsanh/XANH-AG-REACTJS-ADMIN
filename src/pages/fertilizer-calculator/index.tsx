@@ -7,6 +7,7 @@ import {
   Divider,
   InputNumber,
   Row,
+  Slider,
   Space,
   Statistic,
   Table,
@@ -42,6 +43,13 @@ type Ingredient = {
 
 type TargetNutrients = Record<NutrientKey, number | null>
 
+type FertilizerProductOption = Partial<Product> & {
+  label?: string
+  value?: string | number
+  unit_name?: string
+  unit?: { name?: string }
+}
+
 type MixtureResult = {
   type: "exact" | "approximate"
   quantities: Record<string, number>
@@ -57,6 +65,8 @@ const nutrientLabels: Record<NutrientKey, string> = {
 }
 
 const FERTILIZER_PRODUCT_TYPE_ID = 5
+const KG_RANGE = { min: 1, max: 500 }
+const PERCENT_RANGE = { min: 1, max: 100 }
 const VI_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -110,6 +120,16 @@ const parseViDecimal = (value: string | undefined) =>
 const viNumberInputProps = {
   formatter: formatViDecimal,
   parser: parseViDecimal,
+}
+
+const getSliderValue = (value: number | null | undefined, min: number, max: number) => {
+  const numericValue = Number(value || 0)
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return min
+  }
+
+  return Math.min(max, Math.max(min, numericValue))
 }
 
 const getAvailableKg = (ingredient: Ingredient) =>
@@ -257,7 +277,7 @@ const FertilizerCalculator: React.FC = () => {
   const selectProduct = (
     ingredientId: string,
     value: string | number | (string | number)[],
-    option: any,
+    option: unknown,
   ) => {
     if (!value || Array.isArray(value)) {
       updateIngredient(ingredientId, {
@@ -269,7 +289,9 @@ const FertilizerCalculator: React.FC = () => {
       return
     }
 
-    const selectedProduct = Array.isArray(option) ? option[0] : option
+    const selectedProduct = (Array.isArray(option) ? option[0] : option) as
+      | FertilizerProductOption
+      | undefined
     updateIngredient(ingredientId, {
       productId: Number(value),
       productCode: selectedProduct?.code,
@@ -281,6 +303,51 @@ const FertilizerCalculator: React.FC = () => {
   const setTargetValue = (nutrient: NutrientKey, value: number | null) => {
     setTarget((current) => ({ ...current, [nutrient]: value }))
   }
+
+  const renderNumberSliderInput = ({
+    value,
+    min,
+    max,
+    unit,
+    onChange,
+  }: {
+    value: number
+    min: number
+    max: number
+    unit?: string
+    onChange: (value: number) => void
+  }) => (
+    <>
+      <InputNumber
+        min={min}
+        max={max}
+        precision={2}
+        value={value}
+        className="w-full mt-2"
+        addonAfter={unit}
+        {...viNumberInputProps}
+        onChange={(inputValue) => onChange(Number(inputValue || 0))}
+      />
+      <Slider
+        min={min}
+        max={max}
+        step={1}
+        value={getSliderValue(value, min, max)}
+        className="mt-2 mb-0"
+        onChange={(sliderValue) => onChange(sliderValue)}
+      />
+      <div className="flex justify-between text-[11px] font-semibold text-gray-400">
+        <span>
+          {min}
+          {unit ? ` ${unit}` : ""}
+        </span>
+        <span>
+          {max}
+          {unit ? ` ${unit}` : ""}
+        </span>
+      </div>
+    </>
+  )
 
   const resultRows = ingredients
     .map((ingredient) => ({
@@ -327,31 +394,25 @@ const FertilizerCalculator: React.FC = () => {
 
         <Col xs={12} sm={8} md={6} xl={4}>
           <Text strong>Kg có sẵn</Text>
-          <InputNumber
-            min={0}
-            precision={2}
-            value={ingredient.availableKg}
-            className="w-full mt-2"
-            addonAfter="kg"
-            {...viNumberInputProps}
-            onChange={(value) => updateIngredient(ingredient.id, { availableKg: Number(value || 0) })}
-          />
+          {renderNumberSliderInput({
+            value: ingredient.availableKg,
+            min: KG_RANGE.min,
+            max: KG_RANGE.max,
+            unit: "kg",
+            onChange: (value) => updateIngredient(ingredient.id, { availableKg: value }),
+          })}
         </Col>
 
         {(["n", "p", "k"] as NutrientKey[]).map((nutrient) => (
           <Col xs={12} sm={8} md={6} xl={3} key={nutrient}>
             <Text strong>{nutrientLabels[nutrient]} %</Text>
-            <InputNumber
-              min={0}
-              max={100}
-              precision={2}
-              value={ingredient[nutrient]}
-              className="w-full mt-2"
-              {...viNumberInputProps}
-              onChange={(value) =>
-                updateIngredient(ingredient.id, { [nutrient]: Number(value || 0) })
-              }
-            />
+            {renderNumberSliderInput({
+              value: ingredient[nutrient],
+              min: PERCENT_RANGE.min,
+              max: PERCENT_RANGE.max,
+              unit: "%",
+              onChange: (value) => updateIngredient(ingredient.id, { [nutrient]: value }),
+            })}
           </Col>
         ))}
       </Row>
@@ -483,8 +544,18 @@ const FertilizerCalculator: React.FC = () => {
                 />
 
                 <Row gutter={[16, 16]} className="mt-4">
+                  <Col xs={24} md={6}>
+                    <Statistic
+                      title="Tổng phân đã phối"
+                      value={totalAvailable}
+                      suffix="kg"
+                      formatter={(value) => formatViDecimal(value)}
+                      valueStyle={{ color: "#047857" }}
+                    />
+                    <Text type="secondary">Tổng kg từ các loại phân đã nhập</Text>
+                  </Col>
                   {(["n", "p", "k"] as NutrientKey[]).map((nutrient) => (
-                    <Col xs={24} md={8} key={nutrient}>
+                    <Col xs={24} md={6} key={nutrient}>
                       <Statistic
                         title={`${nutrientLabels[nutrient]} thực tế`}
                         value={result.actual[nutrient]}
@@ -520,7 +591,7 @@ const FertilizerCalculator: React.FC = () => {
                     {
                       title: "Loại phân",
                       dataIndex: "name",
-                      render: (name: string, record: Ingredient & { quantity: number }) => (
+                      render: (name: string) => (
                         <div>
                           <Text strong>{name}</Text>
                         </div>
