@@ -9,7 +9,6 @@ import {
   Row,
   Slider,
   Space,
-  Statistic,
   Table,
   Tag,
   Typography,
@@ -54,6 +53,7 @@ type MixtureResult = {
   type: "exact" | "approximate"
   quantities: Record<string, number>
   actual: Record<NutrientKey, number>
+  nutrientKg: Record<NutrientKey, number>
   errors: Record<NutrientKey, number>
   message: string
 }
@@ -177,6 +177,11 @@ const calculateMixture = (
     ingredients.map((ingredient) => [ingredient.id, getAvailableKg(ingredient)]),
   )
   const actual = calculateActual(ingredients, quantities, selectedTotal)
+  const nutrientKg = {
+    n: (selectedTotal * actual.n) / 100,
+    p: (selectedTotal * actual.p) / 100,
+    k: (selectedTotal * actual.k) / 100,
+  }
   const errors = Object.fromEntries(
     (Object.keys(actual) as NutrientKey[]).map((nutrient) => [
       nutrient,
@@ -191,6 +196,7 @@ const calculateMixture = (
     type: isWithinTarget ? "exact" : "approximate",
     quantities,
     actual,
+    nutrientKg,
     errors,
     message:
       activeNutrients.length === 0
@@ -241,6 +247,7 @@ const FertilizerCalculator: React.FC = () => {
     () => calculateMixture(ingredients, target),
     [ingredients, target],
   )
+  const hasTarget = getActiveNutrients(target).length > 0
 
   const updateIngredient = (id: string, patch: Partial<Ingredient>) => {
     setIngredients((current) =>
@@ -526,7 +533,7 @@ const FertilizerCalculator: React.FC = () => {
               <Title level={5} className="!mb-0">
                 Kết quả
               </Title>
-              {result && (
+              {result && hasTarget && (
                 <Tag color={result.type === "exact" ? "success" : "warning"}>
                   {result.type === "exact" ? "Đạt mục tiêu" : "Chưa đạt"}
                 </Tag>
@@ -538,47 +545,39 @@ const FertilizerCalculator: React.FC = () => {
             ) : (
               <>
                 <Alert
-                  type={result.type === "exact" ? "success" : "warning"}
+                  type={hasTarget ? (result.type === "exact" ? "success" : "warning") : "info"}
                   showIcon
                   message={result.message}
                 />
 
-                <Row gutter={[16, 16]} className="mt-4">
-                  <Col xs={24} md={6}>
-                    <Statistic
-                      title="Tổng phân đã phối"
-                      value={totalAvailable}
-                      suffix="kg"
-                      formatter={(value) => formatViDecimal(value)}
-                      valueStyle={{ color: "#047857" }}
-                    />
-                    <Text type="secondary">Tổng kg từ các loại phân đã nhập</Text>
-                  </Col>
-                  {(["n", "p", "k"] as NutrientKey[]).map((nutrient) => (
-                    <Col xs={24} md={6} key={nutrient}>
-                      <Statistic
-                        title={`${nutrientLabels[nutrient]} thực tế`}
-                        value={result.actual[nutrient]}
-                        suffix="%"
-                        formatter={(value) => formatViDecimal(value)}
-                        valueStyle={{
-                          color:
-                            target[nutrient] !== null &&
-                            Math.abs(result.errors[nutrient]) > 0.05
-                              ? "#cf1322"
-                              : undefined,
-                        }}
-                      />
-                      {target[nutrient] !== null ? (
-                        <Text type="secondary">
-                          Mục tiêu {formatPercent(target[nutrient] || 0)}
-                        </Text>
-                      ) : (
-                        <Text type="secondary">Không đặt mục tiêu</Text>
-                      )}
-                    </Col>
-                  ))}
-                </Row>
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+                  <div className="rounded-lg bg-emerald-50 p-4">
+                    <p className="text-sm font-bold text-emerald-700">Tổng phân đã phối</p>
+                    <p className="mt-1 text-3xl font-black text-emerald-700">{formatViDecimal(totalAvailable)} kg</p>
+                    <p className="mt-2 text-sm font-medium text-emerald-700/80">Tổng kg từ các loại phân đã nhập</p>
+                  </div>
+                  {(["n", "p", "k"] as NutrientKey[]).map((nutrient) => {
+                    const hasNutrientTarget = target[nutrient] !== null
+                    const isOff = hasNutrientTarget && Math.abs(result.errors[nutrient]) > 0.05
+
+                    return (
+                      <div key={nutrient} className="rounded-lg bg-gray-50 p-4">
+                        <p className="text-sm font-bold text-gray-500">{nutrientLabels[nutrient]} thực tế</p>
+                        <p className={`mt-1 text-3xl font-black ${isOff ? "text-red-600" : "text-emerald-700"}`}>
+                          {formatPercent(result.actual[nutrient])}
+                        </p>
+                        {hasNutrientTarget ? (
+                          <p className="mt-2 text-sm font-medium text-gray-500">
+                            Mục tiêu {formatPercent(target[nutrient] || 0)}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-sm font-medium text-gray-500">
+                          Có {formatViDecimal(result.nutrientKg[nutrient])} kg {nutrientLabels[nutrient].toLowerCase()}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
 
                 <Divider />
 
@@ -610,7 +609,7 @@ const FertilizerCalculator: React.FC = () => {
                   ]}
                 />
 
-                {result.type === "approximate" && (
+                {hasTarget && result.type === "approximate" && (
                   <Alert
                     className="mt-4"
                     type="info"
