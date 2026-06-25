@@ -77,6 +77,48 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
   productsData,
 }) => {
   const { message: antMessage } = AntApp.useApp();
+  const productColumnSx = {
+    width: 300,
+    minWidth: 300,
+    position: 'sticky',
+    left: 0,
+    zIndex: 2,
+    backgroundColor: '#fff',
+    boxShadow: '2px 0 4px rgba(15, 23, 42, 0.08)',
+  } as const;
+  const productHeaderColumnSx = {
+    ...productColumnSx,
+    zIndex: 3,
+    backgroundColor: '#f5f5f5',
+  } as const;
+  const actionColumnWidth = 50;
+  const totalColumnSx = {
+    width: 160,
+    minWidth: 160,
+    position: 'sticky',
+    right: actionColumnWidth,
+    zIndex: 2,
+    backgroundColor: '#fff',
+    boxShadow: '-2px 0 4px rgba(15, 23, 42, 0.08)',
+  } as const;
+  const totalHeaderColumnSx = {
+    ...totalColumnSx,
+    zIndex: 3,
+    backgroundColor: '#f5f5f5',
+  } as const;
+  const actionColumnSx = {
+    width: actionColumnWidth,
+    minWidth: actionColumnWidth,
+    position: 'sticky',
+    right: 0,
+    zIndex: 2,
+    backgroundColor: '#fff',
+  } as const;
+  const actionHeaderColumnSx = {
+    ...actionColumnSx,
+    zIndex: 3,
+    backgroundColor: '#f5f5f5',
+  } as const;
 
   const calculateTaxSellingPriceByFactor = (rawTaxSellingPrice: unknown, factor: number) => {
     const baseTaxPrice = Number(rawTaxSellingPrice || 0);
@@ -132,7 +174,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
             <TableHead>
               <TableRow>
                 <TableCell align="center" sx={{ width: 40, minWidth: 40 }}>STT</TableCell>
-                <TableCell sx={{ width: 300, minWidth: 300 }}>Sản phẩm</TableCell>
+                <TableCell sx={productHeaderColumnSx}>Sản phẩm</TableCell>
                 <TableCell align="center" sx={{ width: 110, minWidth: 110 }}>ĐVT</TableCell>
                 <TableCell align="center" sx={{ width: 150, minWidth: 150 }}>Tồn kho</TableCell>
 
@@ -141,8 +183,8 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 <TableCell align="right" sx={{ width: 220, minWidth: 220 }}>Đơn giá</TableCell>
                 <TableCell align="right" sx={{ width: 130, minWidth: 130 }}>Giảm giá</TableCell>
                 <TableCell align="center" sx={{ width: 220, minWidth: 220 }}>Ghi chú</TableCell>
-                <TableCell align="center" sx={{ width: 160, minWidth: 160 }}>Thành tiền</TableCell>
-                <TableCell align="center" sx={{ width: 50, minWidth: 50 }}>Xóa</TableCell>
+                <TableCell align="center" sx={totalHeaderColumnSx}>Thành tiền</TableCell>
+                <TableCell align="center" sx={actionHeaderColumnSx}>Xóa</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -156,7 +198,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                     <TableCell align="center">
                       <Typography variant="body2">{index + 1}</Typography>
                     </TableCell>
-                    <TableCell sx={{ minWidth: 200 }}>
+                    <TableCell sx={productColumnSx}>
                       <Typography 
                         variant="body2" 
                         fontWeight="bold"
@@ -471,12 +513,12 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         )}
                       />
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={totalColumnSx}>
                       <Typography variant="body2" fontWeight="bold" color="success.main">
                         {formatCurrency(itemTotal)}
                       </Typography>
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" sx={actionColumnSx}>
                       <IconButton
                         size="small"
                         color="error"
