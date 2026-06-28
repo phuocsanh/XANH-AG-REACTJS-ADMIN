@@ -244,10 +244,11 @@ const SalesInvoicesList: React.FC = () => {
   const handleCreateInvoice = () => {
     const params = new URLSearchParams(searchParams)
     const firstInvoice = invoicesData?.data?.items?.[0]
+    const hasCustomerNameFilter = Boolean(String(filters.customer_name || '').trim())
 
     params.delete('customer_id')
 
-    if (firstInvoice?.customer_id) {
+    if (hasCustomerNameFilter && firstInvoice?.customer_id) {
       params.set('customer_id', String(firstInvoice.customer_id))
     }
 
