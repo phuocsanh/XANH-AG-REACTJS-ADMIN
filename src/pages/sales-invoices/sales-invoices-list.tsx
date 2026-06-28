@@ -239,6 +239,18 @@ const SalesInvoicesList: React.FC = () => {
       setCurrentPage(1)
   }
 
+  const handleCreateInvoice = () => {
+    const params = new URLSearchParams(searchParams)
+    const firstInvoice = invoicesData?.data?.items?.[0]
+
+    if (firstInvoice?.customer_id) {
+      params.set('customer_id', String(firstInvoice.customer_id))
+    }
+
+    const queryString = params.toString()
+    navigate(`/sales-invoices/create${queryString ? `?${queryString}` : ''}`)
+  }
+
   // Queries
   const { data: invoicesData, isLoading } = useSalesInvoicesQuery({
     page: currentPage,
@@ -821,7 +833,7 @@ const SalesInvoicesList: React.FC = () => {
         <Button
           type='primary'
           icon={<PlusOutlined />}
-          onClick={() => navigate(`/sales-invoices/create${location.search}`)}
+          onClick={handleCreateInvoice}
           className="w-full sm:w-auto"
         >
           Tạo hóa đơn mới

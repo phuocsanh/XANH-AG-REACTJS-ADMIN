@@ -19,7 +19,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { previewSalesInvoiceProfit, useCreateSalesInvoiceMutation, useUpdateSalesInvoiceMutation, useSalesInvoiceQuery, useLatestInvoiceByCustomerQuery, useCustomerSeasonStatsQuery } from '@/queries/sales-invoice';
-import { useCustomerSearchQuery } from '@/queries/customer';
+import { useCustomerQuery, useCustomerSearchQuery } from '@/queries/customer';
 import { useSeasonsQuery, useActiveSeasonQuery } from '@/queries/season';
 import { useProductsQuery, useProductsByIdsQuery } from '@/queries/product';
 import { Customer } from '@/models/customer';
@@ -158,6 +158,15 @@ const CreateSalesInvoice = () => {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const initialCustomerId = useMemo(() => {
+    const value = Number(queryParams.get('customer_id'));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [queryParams]);
+  const initialSeasonId = useMemo(() => {
+    const value = Number(queryParams.get('season_id'));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [queryParams]);
   
   // Fetch invoice data if in edit mode
   const { data: invoiceData } = useSalesInvoiceQuery(
@@ -265,6 +274,7 @@ const CreateSalesInvoice = () => {
 
   // Queries
   const { data: customers } = useCustomerSearchQuery(customerSearch);
+  const { data: initialCustomer } = useCustomerQuery(initialCustomerId);
   const { data: activeSeason } = useActiveSeasonQuery(); // Lấy mùa vụ mới nhất
   const { data: seasons } = useSeasonsQuery();
   const { data: productsData } = useProductsQuery({ 
@@ -282,6 +292,11 @@ const CreateSalesInvoice = () => {
   }, [items]);
 
   const { data: fullInvoiceProducts } = useProductsByIdsQuery(productIdsInInvoice);
+  const customerOptions = useMemo(() => {
+    if (!initialCustomer) return customers;
+    const hasInitialCustomer = customers?.some((customer) => customer.id === initialCustomer.id);
+    return hasInitialCustomer ? customers : [initialCustomer, ...(customers || [])];
+  }, [customers, initialCustomer]);
   
   // Filter out current invoice if we are editing the latest one
   const latestInvoice = useMemo(() => {
@@ -330,6 +345,24 @@ const CreateSalesInvoice = () => {
 
   // Hook lấy thống kê khách hàng trong mùa vụ
   const { data: customerSeasonStats } = useCustomerSeasonStatsQuery(customerId, seasonId);
+
+  useEffect(() => {
+    if (!isEditMode && initialSeasonId) {
+      setValue('season_id', initialSeasonId, { shouldValidate: true });
+    }
+  }, [initialSeasonId, isEditMode, setValue]);
+
+  useEffect(() => {
+    if (!isEditMode && initialCustomer && selectedCustomer?.id !== initialCustomer.id) {
+      setIsGuestCustomer(false);
+      setSelectedCustomer(initialCustomer);
+      setCustomerSearch(initialCustomer.name);
+      setValue('customer_id', initialCustomer.id, { shouldValidate: true });
+      setValue('customer_name', initialCustomer.name, { shouldValidate: true });
+      setValue('customer_phone', initialCustomer.phone || '', { shouldValidate: true });
+      setValue('customer_address', initialCustomer.address || '');
+    }
+  }, [initialCustomer, isEditMode, selectedCustomer?.id, setValue]);
 
 
 
@@ -1551,7 +1584,7 @@ ${productInfo}`;
             <Grid item xs={12} md={6}>
               <CustomerInfoSection
                 control={control}
-                customers={customers}
+                customers={customerOptions}
                 customerSearch={customerSearch}
                 setCustomerSearch={setCustomerSearch}
                 handleCustomerSelect={handleCustomerSelect}
