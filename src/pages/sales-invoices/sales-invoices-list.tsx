@@ -102,6 +102,7 @@ const SalesInvoicesList: React.FC = () => {
   React.useEffect(() => {
     const params: Record<string, any> = {}
     searchParams.forEach((value, key) => {
+      if (key === 'customer_id') return
       // Chuyển đổi một số kiểu dữ liệu đặc biệt nếu cần
       if (key === 'page') setCurrentPage(Number(value))
       else if (key === 'pageSize') setPageSize(Number(value))
@@ -121,6 +122,7 @@ const SalesInvoicesList: React.FC = () => {
   React.useEffect(() => {
     const params: Record<string, string> = {}
     Object.entries(filters).forEach(([key, value]) => {
+      if (key === 'customer_id') return
       if (value !== undefined && value !== null && value !== '') {
         params[key] = String(value)
       }
@@ -242,6 +244,8 @@ const SalesInvoicesList: React.FC = () => {
   const handleCreateInvoice = () => {
     const params = new URLSearchParams(searchParams)
     const firstInvoice = invoicesData?.data?.items?.[0]
+
+    params.delete('customer_id')
 
     if (firstInvoice?.customer_id) {
       params.set('customer_id', String(firstInvoice.customer_id))
