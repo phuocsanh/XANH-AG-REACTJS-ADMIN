@@ -142,6 +142,10 @@ const Sidebar: React.FC = () => {
       setIsToggleSubmenu(false)
     }
     // Hóa đơn bán hàng
+    else if (path.startsWith('/sales-invoices/undelivered')) {
+      setActiveTab(47)
+      setIsToggleSubmenu(false)
+    }
     else if (path.startsWith('/sales-invoices')) {
       setActiveTab(19)
       setIsToggleSubmenu(false)
@@ -527,6 +531,22 @@ const Sidebar: React.FC = () => {
                         <HiOutlineShoppingCart className='text-green-200' />
                       </span>
                       Hóa đơn bán hàng
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission(userInfo, "sales:read") && (
+                <li>
+                  <Link to='/sales-invoices/undelivered'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 47 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(47)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <MdLocalShipping className='text-yellow-200' />
+                      </span>
+                      Hàng chưa giao
                     </Button>
                   </Link>
                 </li>

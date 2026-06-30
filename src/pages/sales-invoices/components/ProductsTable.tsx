@@ -50,6 +50,7 @@ interface ProductField {
   sale_unit_id?: number;
   conversion_factor?: number;
   base_quantity?: number;
+  is_delivered?: boolean;
   conversions?: any[];
 }
 
@@ -153,7 +154,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
           <Table 
             size="small" 
             sx={{ 
-              minWidth: 1700,
+              minWidth: 1790,
               tableLayout: 'fixed',
               borderSpacing: 0,
               borderCollapse: 'collapse',
@@ -182,6 +183,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                 <TableCell align="right" sx={{ width: 160, minWidth: 160 }}>Số lượng</TableCell>
                 <TableCell align="right" sx={{ width: 220, minWidth: 220 }}>Đơn giá</TableCell>
                 <TableCell align="right" sx={{ width: 130, minWidth: 130 }}>Giảm giá</TableCell>
+                <TableCell align="center" sx={{ width: 90, minWidth: 90 }}>Đã giao</TableCell>
                 <TableCell align="center" sx={{ width: 220, minWidth: 220 }}>Ghi chú</TableCell>
                 <TableCell align="center" sx={totalHeaderColumnSx}>Thành tiền</TableCell>
                 <TableCell align="center" sx={actionHeaderColumnSx}>Xóa</TableCell>
@@ -494,6 +496,19 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                             allowClear
                             size="small"
                             style={{ width: 120 }}
+                          />
+                        )}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Controller
+                        name={`items.${index}.is_delivered`}
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox
+                            checked={field.value !== false}
+                            onChange={(event) => field.onChange(event.target.checked)}
+                            size="small"
                           />
                         )}
                       />
@@ -860,6 +875,24 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({
                         min={0}
                         allowClear
                         style={{ width: '100%' }}
+                      />
+                    )}
+                  />
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={0.25}>
+                    Đã giao
+                  </Typography>
+                  <Controller
+                    name={`items.${index}.is_delivered`}
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        checked={field.value !== false}
+                        onChange={(event) => field.onChange(event.target.checked)}
+                        size="small"
+                        sx={{ p: 0.5 }}
                       />
                     )}
                   />

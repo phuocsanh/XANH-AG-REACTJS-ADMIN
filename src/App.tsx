@@ -61,6 +61,7 @@ import Seasons from "./pages/seasons"
 import Customers from "./pages/customers"
 import SalesInvoicesList from "./pages/sales-invoices"
 import CreateSalesInvoice from "./pages/sales-invoices/create"
+import UndeliveredSalesInvoicesPage from "./pages/sales-invoices/undelivered"
 import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
 import SalesReturnsList from "./pages/sales-returns"
@@ -617,9 +618,25 @@ function AppContent({
                       }
                     />
                     <Route
+                      path='/sales-invoices/undelivered'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <UndeliveredSalesInvoicesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path='/sales-invoices/create'
                       element={
                         <ProtectedRoute requiredPermission="sales:create">
+                          <CreateSalesInvoice />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/sales-invoices/edit/:id'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
                           <CreateSalesInvoice />
                         </ProtectedRoute>
                       }

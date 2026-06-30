@@ -429,6 +429,7 @@ const CreateSalesInvoice = () => {
           sale_unit_id: item.sale_unit_id,
           conversion_factor: Number(item.conversion_factor || 1),
           base_quantity: Number(item.base_quantity || (Number(item.quantity || 0) * Number(item.conversion_factor || 1))),
+          is_delivered: item.is_delivered !== false,
           notes: item.notes || '',
           price_type: (item.price_type || inferredPriceType) as 'cash' | 'credit',
           average_cost_price: Number(item.cost_price || 0),
@@ -880,6 +881,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
       sale_unit_id: Number(saleUnitId),
       conversion_factor: Number(factor) || 1,
       base_quantity: Number(factor) || 1,
+      is_delivered: true,
       conversions: product.unit_conversions || [],
     });
 

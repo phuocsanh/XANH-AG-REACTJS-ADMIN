@@ -16,6 +16,8 @@ export const salesInvoiceKeys = {
     [...salesInvoiceKeys.lists(), params] as const,
   details: () => [...salesInvoiceKeys.all, "detail"] as const,
   detail: (id: number) => [...salesInvoiceKeys.details(), id] as const,
+  undelivered: (params?: Record<string, unknown>) =>
+    [...salesInvoiceKeys.all, "undelivered", params] as const,
   latestByCustomer: (customerId: number) => 
     [...salesInvoiceKeys.all, "latest-by-customer", customerId] as const,
 } as const
@@ -119,6 +121,48 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
   })
 }
 
+export const useUndeliveredSalesInvoicesQuery = (params?: Record<string, unknown>) => {
+  const page = (params?.page as number) || 1
+  const limit = (params?.limit as number) || 10
+
+  return useQuery({
+    queryKey: salesInvoiceKeys.undelivered(params),
+    queryFn: async () => {
+      const payload: any = {
+        page,
+        limit,
+      }
+
+      if (params?.keyword) payload.keyword = params.keyword
+      if (params?.search) payload.search = params.search
+      if (params?.code) payload.code = params.code
+      if (params?.customer_name) payload.customer_name = params.customer_name
+      if (params?.customer_phone) payload.customer_phone = params.customer_phone
+      if (params?.season_id) payload.season_id = params.season_id
+      if (params?.start_date) payload.sale_date_start = params.start_date
+      if (params?.end_date) payload.sale_date_end = params.end_date
+      if (params?.sale_date_start) payload.sale_date_start = params.sale_date_start
+      if (params?.sale_date_end) payload.sale_date_end = params.sale_date_end
+
+      const response = await api.postRaw<{
+        success: boolean
+        data: SalesInvoice[]
+        pagination?: {
+          total: number
+          totalPages: number | null
+        }
+        total?: number
+        page?: number
+        limit?: number
+      }>('/sales/invoices/undelivered/search', payload)
+
+      return mapSearchResponse(response, page, limit)
+    },
+    refetchOnMount: true,
+    staleTime: 0,
+  })
+}
+
 /**
  * Hook lấy hóa đơn theo ID
  */
@@ -207,6 +251,56 @@ export const useUpdateSalesInvoiceMutation = () => {
     },
     onError: (error: unknown) => {
       handleApiError(error, "Có lỗi xảy ra khi cập nhật hóa đơn")
+    },
+  })
+}
+
+export const useUpdateSalesInvoiceItemDeliveryStatusMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      itemId,
+      isDelivered,
+    }: {
+      itemId: number
+      isDelivered: boolean
+    }) => {
+      const response = await api.patchRaw<SalesInvoice>(
+        `/sales/invoice/item/${itemId}/delivery-status`,
+        { is_delivered: isDelivered },
+      )
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.all })
+      toast.success("Cập nhật trạng thái giao hàng thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật trạng thái giao hàng")
+    },
+  })
+}
+
+export const useUpdateSalesInvoiceDeliveryStatusMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      invoiceId,
+      isDelivered,
+    }: {
+      invoiceId: number
+      isDelivered: boolean
+    }) => {
+      const response = await api.patchRaw<SalesInvoice>(
+        `/sales/invoice/${invoiceId}/delivery-status`,
+        { is_delivered: isDelivered },
+      )
+      return response
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.all })
+      toast.success("Cập nhật trạng thái giao hàng hóa đơn thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật trạng thái giao hàng")
     },
   })
 }

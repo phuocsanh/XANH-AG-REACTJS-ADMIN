@@ -25,6 +25,9 @@ export interface SalesInvoiceItem {
   sale_unit_id?: number;
   conversion_factor?: number;
   base_quantity?: number;
+  is_delivered?: boolean;
+  delivered_at?: Date | string;
+  delivered_by?: number;
   notes?: string;
   // ✅ Quy đổi đơn vị đối ứng (Snapshot từ Backend)
   other_unit_name?: string;
@@ -105,6 +108,7 @@ export interface CreateSalesInvoiceDto {
     sale_unit_id?: number;
     conversion_factor?: number;
     base_quantity?: number;
+    is_delivered?: boolean;
     notes?: string;
   }[];
   sale_date?: string;

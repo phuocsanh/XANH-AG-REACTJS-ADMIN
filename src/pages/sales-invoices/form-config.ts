@@ -20,6 +20,7 @@ export const salesInvoiceItemSchema = z.object({
   sale_unit_id: z.number().optional(), // Đã thêm
   conversion_factor: z.number().optional().default(1), // Đã thêm
   base_quantity: z.number().optional(), // Đã thêm
+  is_delivered: z.boolean().optional().default(true),
   conversions: z.array(z.any()).optional(), // Đã thêm
 });
 
@@ -103,6 +104,7 @@ export const defaultSalesInvoiceItemValues: SalesInvoiceItemFormData = {
   sale_unit_id: undefined,
   conversion_factor: 1,
   base_quantity: 1,
+  is_delivered: true,
   conversions: [],
 };
 
