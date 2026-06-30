@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Input,
+  Modal,
   Popconfirm,
   Space,
   Table,
@@ -33,6 +34,8 @@ const UndeliveredSalesInvoicesPage: React.FC = () => {
   const [submittedKeyword, setSubmittedKeyword] = React.useState("")
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
+  const [selectedInvoice, setSelectedInvoice] =
+    React.useState<SalesInvoice | null>(null)
 
   const queryParams = React.useMemo(
     () => ({
@@ -58,13 +61,39 @@ const UndeliveredSalesInvoicesPage: React.FC = () => {
     setSubmittedKeyword(keyword.trim())
   }
 
+  const handleMarkItemDelivered = (itemId: number) => {
+    updateItemDeliveryStatus.mutate(
+      {
+        itemId,
+        isDelivered: true,
+      },
+      {
+        onSuccess: () => {
+          setSelectedInvoice((current) => {
+            if (!current?.items) return current
+
+            const nextItems = current.items.filter((item) => item.id !== itemId)
+            if (nextItems.length === 0) {
+              return null
+            }
+
+            return {
+              ...current,
+              items: nextItems,
+            }
+          })
+        },
+      },
+    )
+  }
+
   const columns: ColumnsType<SalesInvoice> = [
     {
       title: "Mã HĐ",
       dataIndex: "code",
       width: 140,
       render: (code: string, record) => (
-        <Button type="link" onClick={() => navigate(`/sales-invoices/edit/${record.id}`)}>
+        <Button type="link" onClick={() => setSelectedInvoice(record)}>
           {code}
         </Button>
       ),
@@ -87,44 +116,11 @@ const UndeliveredSalesInvoicesPage: React.FC = () => {
       render: (value: string) => value ? dayjs(value).format("DD/MM/YYYY") : "---",
     },
     {
-      title: "Sản phẩm chưa giao",
+      title: "Số sản phẩm chưa giao",
       dataIndex: "items",
+      width: 170,
       render: (items: SalesInvoiceItem[] = []) => (
-        <Space direction="vertical" size={8} style={{ width: "100%" }}>
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col gap-2 rounded border border-slate-200 bg-slate-50 p-2 md:flex-row md:items-center md:justify-between"
-            >
-              <Space direction="vertical" size={0}>
-                <Text strong>{item.product_name || item.product?.trade_name || item.product?.name}</Text>
-                <Text type="secondary">
-                  {Number(item.quantity || 0).toLocaleString("vi-VN")} {item.unit_name || item.product?.unit?.name || ""}
-                </Text>
-              </Space>
-              <Popconfirm
-                title="Đánh dấu sản phẩm này đã giao?"
-                okText="Đã giao"
-                cancelText="Hủy"
-                onConfirm={() =>
-                  updateItemDeliveryStatus.mutate({
-                    itemId: item.id,
-                    isDelivered: true,
-                  })
-                }
-              >
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<CheckCircleOutlined />}
-                  loading={updateItemDeliveryStatus.isPending}
-                >
-                  Đã giao
-                </Button>
-              </Popconfirm>
-            </div>
-          ))}
-        </Space>
+        <Tag color="warning">{items.length} sản phẩm</Tag>
       ),
     },
     {
@@ -142,8 +138,10 @@ const UndeliveredSalesInvoicesPage: React.FC = () => {
         <Space>
           <Button
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/sales-invoices/edit/${record.id}`)}
-          />
+            onClick={() => setSelectedInvoice(record)}
+          >
+            Chi tiết
+          </Button>
           <Popconfirm
             title="Đánh dấu toàn bộ sản phẩm trong hóa đơn đã giao?"
             okText="Đã giao hết"
@@ -215,6 +213,69 @@ const UndeliveredSalesInvoicesPage: React.FC = () => {
           onChange={handleTableChange}
         />
       </Card>
+
+      <Modal
+        title={
+          selectedInvoice
+            ? `Sản phẩm chưa giao - ${selectedInvoice.code}`
+            : "Sản phẩm chưa giao"
+        }
+        open={!!selectedInvoice}
+        onCancel={() => setSelectedInvoice(null)}
+        footer={[
+          <Button key="edit" onClick={() => selectedInvoice && navigate(`/sales-invoices/edit/${selectedInvoice.id}`)}>
+            Xem hóa đơn
+          </Button>,
+          <Button key="close" onClick={() => setSelectedInvoice(null)}>
+            Đóng
+          </Button>,
+        ]}
+        width={760}
+      >
+        <Space direction="vertical" size={12} style={{ width: "100%" }}>
+          {selectedInvoice && (
+            <div className="rounded border border-slate-200 bg-slate-50 p-3">
+              <Space direction="vertical" size={2}>
+                <Text strong>{selectedInvoice.customer_name}</Text>
+                {selectedInvoice.customer_phone && (
+                  <Text type="secondary">{selectedInvoice.customer_phone}</Text>
+                )}
+                <Text type="secondary">
+                  Ngày bán: {selectedInvoice.sale_date ? dayjs(selectedInvoice.sale_date).format("DD/MM/YYYY") : "---"}
+                </Text>
+              </Space>
+            </div>
+          )}
+
+          {(selectedInvoice?.items || []).map((item) => (
+            <div
+              key={item.id}
+              className="flex flex-col gap-2 rounded border border-slate-200 p-3 md:flex-row md:items-center md:justify-between"
+            >
+              <Space direction="vertical" size={0}>
+                <Text strong>{item.product_name || item.product?.trade_name || item.product?.name}</Text>
+                <Text type="secondary">
+                  {Number(item.quantity || 0).toLocaleString("vi-VN")} {item.unit_name || item.product?.unit?.name || ""}
+                </Text>
+              </Space>
+              <Popconfirm
+                title="Đánh dấu sản phẩm này đã giao?"
+                okText="Đã giao"
+                cancelText="Hủy"
+                onConfirm={() => handleMarkItemDelivered(item.id)}
+              >
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  loading={updateItemDeliveryStatus.isPending}
+                >
+                  Đã giao
+                </Button>
+              </Popconfirm>
+            </div>
+          ))}
+        </Space>
+      </Modal>
     </div>
   )
 }
