@@ -407,12 +407,15 @@ const DataTable = <T extends object>({
           displayValue = value as React.ReactNode;
         }
 
-        // Chuyển đổi displayValue thành string để hiển thị trong tooltip
-        const tooltipContent = typeof displayValue === 'string' || typeof displayValue === 'number'
-          ? String(displayValue)
-          : typeof value === 'string' || typeof value === 'number'
-          ? String(value)
-          : '';
+        // Chỉ bọc tooltip khi nội dung hiển thị là text thuần.
+        // Với custom render (Tag, Badge, Button...), tooltip từ raw value
+        // rất dễ gây hiểu nhầm vì nội dung hiển thị có thể khác hoàn toàn.
+        const hasCustomRender = Boolean(originalRender)
+        const tooltipContent =
+          !hasCustomRender &&
+          (typeof displayValue === 'string' || typeof displayValue === 'number')
+            ? String(displayValue)
+            : '';
 
         // Nếu không có nội dung, không cần tooltip
         if (!tooltipContent || tooltipContent === 'N/A' || tooltipContent === '') {

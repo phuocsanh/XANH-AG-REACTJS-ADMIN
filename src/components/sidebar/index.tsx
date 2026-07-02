@@ -26,6 +26,8 @@ import { GiftOutlined, ThunderboltOutlined } from "@ant-design/icons"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
+// Import hook thống kê cảnh báo hết hạn để hiển thị badge
+import { useExpiryAlertStats } from "../../queries/expiry-alert"
 
 const Sidebar: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0)
@@ -33,6 +35,9 @@ const Sidebar: React.FC = () => {
   const isLogin = useAppStore((state) => state.isLogin)
   const userInfo = useAppStore((state) => state.userInfo)
   const location = useLocation()
+
+  // Lấy số lượng cảnh báo hết hạn chưa xử lý để hiển thị badge
+  const { data: expiryStats } = useExpiryAlertStats()
 
   // Debug: Log user info
   console.log("=== SIDEBAR DEBUG ===")
@@ -808,6 +813,26 @@ const Sidebar: React.FC = () => {
                       </Button>
                     </Link>
                   )}
+
+                  {/* Menu lô hàng sắp hết hạn - hiển thị badge số cảnh báo chưa xử lý */}
+                  <Link to='/inventory/expiry-alerts'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname.includes("/inventory/expiry-alerts")
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      <span className='flex items-center gap-1 w-full'>
+                        <span className='flex-1'>Lô sắp hết hạn</span>
+                        {(expiryStats?.pending ?? 0) > 0 && (
+                          <span className='ml-1 bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none'>
+                            {expiryStats!.pending > 99 ? '99+' : expiryStats!.pending}
+                          </span>
+                        )}
+                      </span>
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </li>
