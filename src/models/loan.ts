@@ -26,6 +26,7 @@ export interface CreateLoanDto {
   customer_id: number
   loan_date: string
   principal_amount: number
+  monthly_interest_rate?: number // Lãi suất mỗi tháng (%) (tùy chọn)
   notes?: string
 }
 

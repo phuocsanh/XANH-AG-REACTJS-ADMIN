@@ -147,6 +147,7 @@ const LoansList: React.FC = () => {
       customer_id: values.customer_id,
       loan_date: toDatePayload(values.loan_date),
       principal_amount: values.principal_amount,
+      monthly_interest_rate: values.monthly_interest_rate,
       notes: values.notes,
     })
     setCreateOpen(false)
@@ -412,6 +413,12 @@ const LoansList: React.FC = () => {
             rules={[{ required: true, message: "Vui lòng nhập tiền gốc" }]}
           >
             <NumberInput className="w-full" min={0} decimalScale={0} placeholder="Nhập tiền gốc" />
+          </Form.Item>
+          <Form.Item
+            name="monthly_interest_rate"
+            label="Lãi suất mỗi tháng (%)"
+          >
+            <NumberInput className="w-full" min={0} decimalScale={2} addonAfter="% / tháng" placeholder="Nhập lãi suất (mặc định 0)" />
           </Form.Item>
           <Form.Item name="notes" label="Ghi chú">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
