@@ -100,6 +100,7 @@ const LoansList: React.FC = () => {
   const repayMutation = useRepayLoanMutation()
   const deleteMutation = useDeleteLoanMutation()
   const repayDate = Form.useWatch("repayment_date", repayForm)
+  const repayInterestRate = Form.useWatch("monthly_interest_rate", repayForm)
 
   const customerOptions = React.useMemo(() => {
     return (customersData?.data?.items || []).map((customer: Customer) => ({
@@ -146,7 +147,6 @@ const LoansList: React.FC = () => {
       customer_id: values.customer_id,
       loan_date: toDatePayload(values.loan_date),
       principal_amount: values.principal_amount,
-      monthly_interest_rate: values.monthly_interest_rate,
       notes: values.notes,
     })
     setCreateOpen(false)
@@ -155,7 +155,11 @@ const LoansList: React.FC = () => {
 
   const handleOpenRepay = (loan: Loan) => {
     setSelectedLoan(loan)
-    repayForm.setFieldsValue({ repayment_date: dayjs(), payment_method: "cash" })
+    repayForm.setFieldsValue({
+      repayment_date: dayjs(),
+      monthly_interest_rate: loan.monthly_interest_rate || 0,
+      payment_method: "cash",
+    })
     setRepayOpen(true)
   }
 
@@ -166,6 +170,7 @@ const LoansList: React.FC = () => {
       id: selectedLoan.id,
       data: {
         repayment_date: toDatePayload(values.repayment_date),
+        monthly_interest_rate: values.monthly_interest_rate,
         payment_method: values.payment_method,
         notes: values.notes,
       },
@@ -183,11 +188,11 @@ const LoansList: React.FC = () => {
     if (!selectedLoan) return null
     return calculateRepayment(
       Number(selectedLoan.principal_amount || 0),
-      Number(selectedLoan.monthly_interest_rate || 0),
+      Number(repayInterestRate || 0),
       selectedLoan.loan_date,
       repayDate ? dayjs(repayDate).toISOString() : null,
     )
-  }, [selectedLoan, repayDate])
+  }, [selectedLoan, repayDate, repayInterestRate])
 
   const columns = [
     {
@@ -380,7 +385,7 @@ const LoansList: React.FC = () => {
         okText="Lưu khoản vay"
         destroyOnClose
       >
-        <Form form={form} layout="vertical" initialValues={{ loan_date: dayjs(), monthly_interest_rate: 0 }}>
+        <Form form={form} layout="vertical" initialValues={{ loan_date: dayjs() }}>
           <Form.Item
             name="customer_id"
             label="Khách hàng"
@@ -408,13 +413,6 @@ const LoansList: React.FC = () => {
           >
             <NumberInput className="w-full" min={0} decimalScale={0} placeholder="Nhập tiền gốc" />
           </Form.Item>
-          <Form.Item
-            name="monthly_interest_rate"
-            label="Lãi suất mỗi tháng (%)"
-            rules={[{ required: true, message: "Vui lòng nhập lãi suất" }]}
-          >
-            <NumberInput className="w-full" min={0} decimalScale={2} addonAfter="% / tháng" placeholder="Nhập lãi suất" />
-          </Form.Item>
           <Form.Item name="notes" label="Ghi chú">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
           </Form.Item>
@@ -438,7 +436,6 @@ const LoansList: React.FC = () => {
               <p><strong>Mã vay:</strong> {selectedLoan.code}</p>
               <p><strong>Khách hàng:</strong> {selectedLoan.customer?.name || `KH #${selectedLoan.customer_id}`}</p>
               <p><strong>Tiền gốc:</strong> {formatCurrency(Number(selectedLoan.principal_amount || 0))}</p>
-              <p><strong>Lãi suất:</strong> {Number(selectedLoan.monthly_interest_rate || 0)}% / tháng</p>
             </div>
             <Form form={repayForm} layout="vertical">
               <Form.Item
@@ -453,6 +450,13 @@ const LoansList: React.FC = () => {
                     Boolean(selectedLoan?.loan_date && current && current.startOf("day").isBefore(dayjs(selectedLoan.loan_date).startOf("day")))
                   }
                 />
+              </Form.Item>
+              <Form.Item
+                name="monthly_interest_rate"
+                label="Lãi suất mỗi tháng (%)"
+                rules={[{ required: true, message: "Vui lòng nhập lãi suất" }]}
+              >
+                <NumberInput className="w-full" min={0} decimalScale={2} addonAfter="% / tháng" placeholder="Nhập lãi suất" />
               </Form.Item>
               <Form.Item
                 name="payment_method"

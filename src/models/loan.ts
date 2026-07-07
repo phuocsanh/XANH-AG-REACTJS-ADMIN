@@ -26,12 +26,12 @@ export interface CreateLoanDto {
   customer_id: number
   loan_date: string
   principal_amount: number
-  monthly_interest_rate: number
   notes?: string
 }
 
 export interface RepayLoanDto {
   repayment_date?: string
+  monthly_interest_rate: number
   payment_method?: 'cash' | 'transfer'
   notes?: string
 }
