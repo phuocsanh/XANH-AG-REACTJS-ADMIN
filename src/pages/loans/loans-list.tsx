@@ -7,7 +7,6 @@ import {
   DatePicker,
   Form,
   Input,
-  InputNumber,
   Modal,
   Popconfirm,
   Select,
@@ -22,6 +21,7 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons"
 import DataTable from "@/components/common/data-table"
+import NumberInput from "@/components/common/number-input"
 import { useCustomersQuery } from "@/queries/customer"
 import {
   useLoansQuery,
@@ -406,14 +406,14 @@ const LoansList: React.FC = () => {
             label="Tiền gốc"
             rules={[{ required: true, message: "Vui lòng nhập tiền gốc" }]}
           >
-            <InputNumber className="w-full" min={0} formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")} />
+            <NumberInput className="w-full" min={0} decimalScale={0} placeholder="Nhập tiền gốc" />
           </Form.Item>
           <Form.Item
             name="monthly_interest_rate"
             label="Lãi suất mỗi tháng (%)"
             rules={[{ required: true, message: "Vui lòng nhập lãi suất" }]}
           >
-            <InputNumber className="w-full" min={0} step={0.1} addonAfter="% / tháng" />
+            <NumberInput className="w-full" min={0} decimalScale={2} addonAfter="% / tháng" placeholder="Nhập lãi suất" />
           </Form.Item>
           <Form.Item name="notes" label="Ghi chú">
             <Input.TextArea rows={3} placeholder="Ghi chú thêm" />
