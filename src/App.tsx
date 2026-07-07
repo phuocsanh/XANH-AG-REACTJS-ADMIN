@@ -64,6 +64,7 @@ import CreateSalesInvoice from "./pages/sales-invoices/create"
 import UndeliveredSalesInvoicesPage from "./pages/sales-invoices/undelivered"
 import PaymentsList from "./pages/payments"
 import DebtNotesList from "./pages/debt-notes"
+import Loans from "./pages/loans"
 import SalesReturnsList from "./pages/sales-returns"
 import CustomerRewardsPage from "./pages/customer-rewards"
 import PromotionCampaignsPage from "./pages/promotion-campaigns"
@@ -666,6 +667,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="sales:read">
                           <DebtNotesList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/loans'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <Loans />
                         </ProtectedRoute>
                       }
                     />

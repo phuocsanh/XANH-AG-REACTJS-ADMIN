@@ -23,6 +23,7 @@ import { MdLocalShipping } from "react-icons/md"
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
 import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch, MdAutoAwesome } from "react-icons/md"
 import { GiftOutlined, ThunderboltOutlined } from "@ant-design/icons"
+import { DollarOutlined } from "@ant-design/icons"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
@@ -163,6 +164,10 @@ const Sidebar: React.FC = () => {
     // Công nợ
     else if (path.startsWith('/debt-notes')) {
       setActiveTab(21)
+      setIsToggleSubmenu(false)
+    }
+    else if (path.startsWith('/loans')) {
+      setActiveTab(48)
       setIsToggleSubmenu(false)
     }
     // Chăm sóc khách hàng
@@ -586,6 +591,22 @@ const Sidebar: React.FC = () => {
                         <RiFileListLine className='text-red-200' />
                       </span>
                       Công nợ
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {hasPermission(userInfo, "sales:read") && (
+                <li>
+                  <Link to='/loans'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 48 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(48)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <DollarOutlined className='text-cyan-200' />
+                      </span>
+                      Quản lý cho vay
                     </Button>
                   </Link>
                 </li>

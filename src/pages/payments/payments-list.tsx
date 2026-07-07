@@ -322,13 +322,14 @@ const PaymentsList: React.FC = () => {
       title: "Loại thu",
       width: 140,
       render: (record: ExtendedPayment) => {
+        const isLoan = String(record.debt_note_code || "").startsWith("LN-");
         const isDebt = !!record.debt_note_code;
         return (
           <Tag 
-            color={isDebt ? "processing" : "success"}
+            color={isLoan ? "purple" : isDebt ? "processing" : "success"}
             className="font-medium px-2 py-0.5"
           >
-            {isDebt ? "Thu nợ lẻ" : "Hóa đơn bán lẻ"}
+            {isLoan ? "Thu vay" : isDebt ? "Thu nợ lẻ" : "Hóa đơn bán lẻ"}
           </Tag>
         );
       }
@@ -337,7 +338,7 @@ const PaymentsList: React.FC = () => {
       key: "debt_note_code",
       title: (
         <FilterHeader 
-            title="Mã Phiếu Nợ" 
+            title="Mã liên quan" 
             dataIndex="debt_note_code" 
             value={filters.debt_note_code} 
             onChange={(val) => handleFilterChange('debt_note_code', val)}
@@ -516,7 +517,7 @@ const PaymentsList: React.FC = () => {
               <Descriptions.Item label='Mã PT'>
                 <span className='font-bold'>{viewingPayment.code}</span>
               </Descriptions.Item>
-              <Descriptions.Item label='Mã Phiếu Nợ'>
+              <Descriptions.Item label='Mã liên quan'>
                 {viewingPayment.debt_note_code ? (
                    <Tag color="cyan">{viewingPayment.debt_note_code}</Tag>
                 ) : "-"}
