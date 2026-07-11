@@ -55,10 +55,13 @@ interface ColumnVisibilityOption {
 }
 
 const isSameStringArray = (left: string[], right: string[]) =>
-  left.length === right.length && left.every((value, index) => value === right[index])
+  left.length === right.length &&
+  left.every((value, index) => value === right[index])
 
-interface DataTableProps<T = Record<string, unknown>>
-  extends Omit<TableProps<T>, "columns" | "onChange"> {
+interface DataTableProps<T = Record<string, unknown>> extends Omit<
+  TableProps<T>,
+  "columns" | "onChange"
+> {
   columns: ColumnType<T>[]
   data: T[]
   loading?: boolean
@@ -99,7 +102,7 @@ interface DataTableProps<T = Record<string, unknown>>
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue | null>,
     sorter: SorterResult<T> | SorterResult<T>[],
-    extra: { currentDataSource: T[]; action: "paginate" | "sort" | "filter" }
+    extra: { currentDataSource: T[]; action: "paginate" | "sort" | "filter" },
   ) => void
 }
 
@@ -149,19 +152,26 @@ const DataTable = <T extends object>({
   const [filterValues, setFilterValues] = useState<
     Record<string, string | number | undefined>
   >({})
-  
+
   // Dùng để giả lập double click trên mobile
   const lastClickRef = React.useRef<{ time: number; record: T } | null>(null)
 
-  const getColumnKey = React.useCallback((column: ColumnType<T>, index: number) => {
-    if (column.key !== undefined && column.key !== null) return String(column.key)
-    if (column.dataIndex !== undefined && column.dataIndex !== null) return String(column.dataIndex)
-    return `column-${index}`
-  }, [])
+  const getColumnKey = React.useCallback(
+    (column: ColumnType<T>, index: number) => {
+      if (column.key !== undefined && column.key !== null)
+        return String(column.key)
+      if (column.dataIndex !== undefined && column.dataIndex !== null)
+        return String(column.dataIndex)
+      return `column-${index}`
+    },
+    [],
+  )
 
-  const resolvedColumnVisibilityOptions = useMemo<ColumnVisibilityOption[]>(() => {
+  const resolvedColumnVisibilityOptions = useMemo<
+    ColumnVisibilityOption[]
+  >(() => {
     const columnLabels = new Map(
-      (columnVisibilityOptions || []).map((option) => [option.key, option])
+      (columnVisibilityOptions || []).map((option) => [option.key, option]),
     )
 
     return columns.map((column, index) => {
@@ -179,12 +189,12 @@ const DataTable = <T extends object>({
 
   const allColumnVisibilityKeys = useMemo(
     () => resolvedColumnVisibilityOptions.map((option) => option.key),
-    [resolvedColumnVisibilityOptions]
+    [resolvedColumnVisibilityOptions],
   )
 
   const resolvedDefaultVisibleColumnKeys = useMemo(
     () => defaultVisibleColumnKeys || allColumnVisibilityKeys,
-    [allColumnVisibilityKeys, defaultVisibleColumnKeys]
+    [allColumnVisibilityKeys, defaultVisibleColumnKeys],
   )
 
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
@@ -198,9 +208,9 @@ const DataTable = <T extends object>({
       const parsedValue = JSON.parse(savedValue)
       if (!Array.isArray(parsedValue)) return resolvedDefaultVisibleColumnKeys
 
-      const validKeys = parsedValue.filter((key) =>
-        allColumnVisibilityKeys.includes(String(key))
-      ).map(String)
+      const validKeys = parsedValue
+        .filter((key) => allColumnVisibilityKeys.includes(String(key)))
+        .map(String)
 
       return validKeys.length > 0 ? validKeys : resolvedDefaultVisibleColumnKeys
     } catch {
@@ -212,16 +222,26 @@ const DataTable = <T extends object>({
     if (!showColumnVisibility) return
 
     setVisibleColumnKeys((currentKeys) => {
-      const validKeys = currentKeys.filter((key) => allColumnVisibilityKeys.includes(key))
-      const nextKeys = validKeys.length > 0 ? validKeys : resolvedDefaultVisibleColumnKeys
+      const validKeys = currentKeys.filter((key) =>
+        allColumnVisibilityKeys.includes(key),
+      )
+      const nextKeys =
+        validKeys.length > 0 ? validKeys : resolvedDefaultVisibleColumnKeys
       return isSameStringArray(currentKeys, nextKeys) ? currentKeys : nextKeys
     })
-  }, [allColumnVisibilityKeys, resolvedDefaultVisibleColumnKeys, showColumnVisibility])
+  }, [
+    allColumnVisibilityKeys,
+    resolvedDefaultVisibleColumnKeys,
+    showColumnVisibility,
+  ])
 
   React.useEffect(() => {
     if (!showColumnVisibility || !columnVisibilityStorageKey) return
 
-    localStorage.setItem(columnVisibilityStorageKey, JSON.stringify(visibleColumnKeys))
+    localStorage.setItem(
+      columnVisibilityStorageKey,
+      JSON.stringify(visibleColumnKeys),
+    )
   }, [columnVisibilityStorageKey, showColumnVisibility, visibleColumnKeys])
 
   // Lọc dữ liệu dựa trên search text
@@ -237,7 +257,7 @@ const DataTable = <T extends object>({
             value &&
             value.toString().toLowerCase().includes(searchText.toLowerCase())
           )
-        })
+        }),
       )
     }
 
@@ -321,7 +341,7 @@ const DataTable = <T extends object>({
     key: "actions",
     width: actionColumnWidth,
     // Ghim cột thao tác bên phải chỉ khi desktop
-    fixed: isMobile ? undefined : ('right' as const),
+    fixed: isMobile ? undefined : ("right" as const),
     render: (_: unknown, record: T) => (
       <Space size='small'>
         {allActionButtons.map((button) => {
@@ -353,10 +373,11 @@ const DataTable = <T extends object>({
 
   // Tạo cột STT (Số thứ tự)
   const sttColumn: ColumnType<T> = {
-    title: 'STT',
-    key: 'stt',
+    title: "STT",
+    key: "stt",
     width: 60,
-    align: 'center',
+    align: "center",
+    fixed: "left",
     render: (_: unknown, __: T, index: number) => {
       const currentPage =
         resolvedPagination && typeof resolvedPagination === "object"
@@ -380,14 +401,14 @@ const DataTable = <T extends object>({
    */
   const wrapColumnWithEllipsis = (column: ColumnType<T>): ColumnType<T> => {
     // Không wrap cho cột actions và STT
-    if (column.key === 'actions' || column.key === 'stt') {
-      return column;
+    if (column.key === "actions" || column.key === "stt") {
+      return column
     }
 
-    const originalRender = column.render;
+    const originalRender = column.render
 
     // Tự động thêm width mặc định nếu chưa có
-    const defaultWidth = column.width || 150;
+    const defaultWidth = column.width || 150
 
     return {
       ...column,
@@ -397,14 +418,14 @@ const DataTable = <T extends object>({
       },
       render: (value: unknown, record: T, index: number) => {
         // Lấy giá trị hiển thị
-        let displayValue: React.ReactNode;
-        
+        let displayValue: React.ReactNode
+
         if (originalRender) {
           // Nếu có custom render, sử dụng nó
-          displayValue = originalRender(value, record, index) as React.ReactNode;
+          displayValue = originalRender(value, record, index) as React.ReactNode
         } else {
           // Nếu không có custom render, hiển thị giá trị trực tiếp
-          displayValue = value as React.ReactNode;
+          displayValue = value as React.ReactNode
         }
 
         // Chỉ bọc tooltip khi nội dung hiển thị là text thuần.
@@ -413,53 +434,61 @@ const DataTable = <T extends object>({
         const hasCustomRender = Boolean(originalRender)
         const tooltipContent =
           !hasCustomRender &&
-          (typeof displayValue === 'string' || typeof displayValue === 'number')
+          (typeof displayValue === "string" || typeof displayValue === "number")
             ? String(displayValue)
-            : '';
+            : ""
 
         // Nếu không có nội dung, không cần tooltip
-        if (!tooltipContent || tooltipContent === 'N/A' || tooltipContent === '') {
-          return displayValue;
+        if (
+          !tooltipContent ||
+          tooltipContent === "N/A" ||
+          tooltipContent === ""
+        ) {
+          return displayValue
         }
 
         // Wrap với Tooltip
         return (
-          <Tooltip title={tooltipContent} placement="topLeft">
-            <div style={{ 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap',
-              cursor: 'pointer'
-            }}>
+          <Tooltip title={tooltipContent} placement='topLeft'>
+            <div
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
               {displayValue}
             </div>
           </Tooltip>
-        );
+        )
       },
-    };
-  };
+    }
+  }
 
   const visibleSourceColumns = showColumnVisibility
-    ? columns.filter((column, index) => visibleColumnKeys.includes(getColumnKey(column, index)))
+    ? columns.filter((column, index) =>
+        visibleColumnKeys.includes(getColumnKey(column, index)),
+      )
     : columns
 
   // Kết hợp columns: STT + columns (wrapped with ellipsis) + action column
-  let finalColumns = visibleSourceColumns.map(wrapColumnWithEllipsis);
-  
+  let finalColumns = visibleSourceColumns.map(wrapColumnWithEllipsis)
+
   // Thêm STT column ở đầu nếu showSTT = true
   if (showSTT) {
-    finalColumns = [sttColumn, ...finalColumns];
+    finalColumns = [sttColumn, ...finalColumns]
   }
-  
+
   // Thêm action column ở cuối nếu cần
   if (showActions && allActionButtons.length > 0) {
-    finalColumns = [...finalColumns, actionColumn];
+    finalColumns = [...finalColumns, actionColumn]
   }
 
   // Handle filter change
   const handleFilterChange = (
     key: string,
-    value: string | number | undefined
+    value: string | number | undefined,
   ) => {
     setFilterValues((prev) => ({
       ...prev,
@@ -472,7 +501,7 @@ const DataTable = <T extends object>({
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue | null>,
     sorter: SorterResult<T> | SorterResult<T>[],
-    extra: { currentDataSource: T[]; action: "paginate" | "sort" | "filter" }
+    extra: { currentDataSource: T[]; action: "paginate" | "sort" | "filter" },
   ) => {
     if (onChange) {
       onChange(pagination, filters, sorter, extra)
@@ -518,18 +547,24 @@ const DataTable = <T extends object>({
 
             {showColumnVisibility && (
               <Popover
-                trigger="click"
-                placement="bottomRight"
-                title="Ẩn / hiện cột"
+                trigger='click'
+                placement='bottomRight'
+                title='Ẩn / hiện cột'
                 content={
                   <div style={{ minWidth: 190 }}>
                     <Checkbox.Group
-                      style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                      options={resolvedColumnVisibilityOptions.map((option) => ({
-                        label: option.label,
-                        value: option.key,
-                        disabled: option.disabled,
-                      }))}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                      options={resolvedColumnVisibilityOptions.map(
+                        (option) => ({
+                          label: option.label,
+                          value: option.key,
+                          disabled: option.disabled,
+                        }),
+                      )}
                       value={visibleColumnKeys}
                       onChange={(checkedValues) => {
                         const nextKeys = checkedValues.map(String)
@@ -538,10 +573,12 @@ const DataTable = <T extends object>({
                       }}
                     />
                     <Button
-                      type="link"
-                      size="small"
+                      type='link'
+                      size='small'
                       style={{ marginTop: 8, padding: 0 }}
-                      onClick={() => setVisibleColumnKeys(allColumnVisibilityKeys)}
+                      onClick={() =>
+                        setVisibleColumnKeys(allColumnVisibilityKeys)
+                      }
                     >
                       Hiện tất cả
                     </Button>
@@ -561,7 +598,7 @@ const DataTable = <T extends object>({
       {loading ? (
         <LoadingSpinner tip='Đang tải dữ liệu...'>
           <Table
-            size="small"
+            size='small'
             columns={finalColumns}
             dataSource={[]}
             pagination={false}
@@ -572,7 +609,7 @@ const DataTable = <T extends object>({
       ) : (
         <Table
           {...tableProps}
-          size="small"
+          size='small'
           columns={finalColumns}
           dataSource={filteredData}
           locale={{ emptyText }}
@@ -580,34 +617,41 @@ const DataTable = <T extends object>({
           pagination={resolvedPagination}
           onChange={handleTableChange}
           onRow={(record) => {
-            const externalProps = tableProps.onRow ? tableProps.onRow(record) : {};
-            
+            const externalProps = tableProps.onRow
+              ? tableProps.onRow(record)
+              : {}
+
             return {
               ...externalProps,
               onClick: (event) => {
-                if (externalProps.onClick) externalProps.onClick(event);
+                if (externalProps.onClick) externalProps.onClick(event)
 
                 // Giả lập double click cho mobile
                 if (isMobile && onView) {
-                  const now = Date.now();
-                  const isFunctionalElement = (event.target as HTMLElement).closest('button, a, .ant-dropdown-trigger, .ant-select, .ant-checkbox-wrapper');
-                  
+                  const now = Date.now()
+                  const isFunctionalElement = (
+                    event.target as HTMLElement
+                  ).closest(
+                    "button, a, .ant-dropdown-trigger, .ant-select, .ant-checkbox-wrapper",
+                  )
+
                   if (!isFunctionalElement) {
-                    if (lastClickRef.current && 
-                        lastClickRef.current.record === record && 
-                        (now - lastClickRef.current.time) < 300) {
-                      
+                    if (
+                      lastClickRef.current &&
+                      lastClickRef.current.record === record &&
+                      now - lastClickRef.current.time < 300
+                    ) {
                       // Phát hiện double tap
-                      onView(record);
-                      lastClickRef.current = null;
+                      onView(record)
+                      lastClickRef.current = null
                     } else {
-                      lastClickRef.current = { time: now, record };
+                      lastClickRef.current = { time: now, record }
                       // Tự động xóa sau 300ms
                       setTimeout(() => {
                         if (lastClickRef.current?.time === now) {
-                          lastClickRef.current = null;
+                          lastClickRef.current = null
                         }
-                      }, 300);
+                      }, 300)
                     }
                   }
                 }
@@ -615,22 +659,24 @@ const DataTable = <T extends object>({
               onDoubleClick: (event) => {
                 // Gọi handler bên ngoài nếu có
                 if (externalProps.onDoubleClick) {
-                  externalProps.onDoubleClick(event);
+                  externalProps.onDoubleClick(event)
                 }
-                
+
                 // Logic mặc định: Nhấn đúp để xem chi tiết (chỉ dùng cho Desktop)
-                const target = event.target as HTMLElement;
-                const isFunctionalElement = target.closest('button, a, .ant-dropdown-trigger, .ant-select, .ant-checkbox-wrapper');
-                
+                const target = event.target as HTMLElement
+                const isFunctionalElement = target.closest(
+                  "button, a, .ant-dropdown-trigger, .ant-select, .ant-checkbox-wrapper",
+                )
+
                 if (onView && !isFunctionalElement) {
-                  onView(record);
+                  onView(record)
                 }
               },
-              style: { 
-                cursor: onView ? 'pointer' : 'default',
-                ...externalProps.style 
-              }
-            };
+              style: {
+                cursor: onView ? "pointer" : "default",
+                ...externalProps.style,
+              },
+            }
           }}
         />
       )}

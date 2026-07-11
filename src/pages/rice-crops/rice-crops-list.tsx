@@ -364,6 +364,7 @@ const RiceCropsList: React.FC = () => {
               />
             ),
             width: 180,
+            fixed: "left" as const,
             render: (record: ExtendedRiceCrop) => (
               <div>{record.customer?.name || "-"}</div>
             ),
