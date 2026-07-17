@@ -7,6 +7,7 @@ import ComboBox from '@/components/common/combo-box';
 import { Product } from '@/models/product.model';
 import { SalesInvoiceFormData } from '../../form-config';
 import { ProductsTable } from '../ProductsTable';
+import { getProductDisplayName } from '../../utils/product-display';
 
 interface ProductsSectionProps {
   control: Control<SalesInvoiceFormData>;
@@ -58,7 +59,7 @@ export const ProductsSection = React.memo<ProductsSectionProps>(({
           data={productsData?.data?.items?.map((product: Product) => {
             return {
               value: product.id,
-              label: product.trade_name || product.name,
+              label: getProductDisplayName(product),
               scientific_name: product.name,
               unit_name: product.unit?.name || product.unit_name || ""
             };

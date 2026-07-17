@@ -23,6 +23,7 @@ export interface PromotionRewardPoolItem {
   reward_name: string
   reward_value: number
   total_quantity: number
+  reward_image_url?: string | null
   remaining_quantity?: number
   reserved_quantity?: number
   issued_quantity?: number

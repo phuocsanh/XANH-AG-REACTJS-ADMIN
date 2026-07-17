@@ -29,6 +29,7 @@ import { useForm } from "react-hook-form"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import { FormComboBox, FormDatePicker, FormField, FormFieldNumber } from "@/components/form"
+import ImageUpload from "@/components/image-upload/image-upload"
 import { notifyFormErrors } from "@/utils/form-error"
 import {
   CreatePromotionCampaignRequest,
@@ -50,6 +51,7 @@ import {
   useUpdatePromotionCampaignMutation,
   useUpdatePromotionCampaignStatusMutation,
 } from "@/queries/promotion-campaign"
+import { UPLOAD_TYPES } from "@/services/upload.service"
 
 const { Title, Text } = Typography
 
@@ -83,6 +85,7 @@ const defaultReward = (): PromotionRewardPoolItem => ({
   reward_name: "",
   reward_value: 0,
   total_quantity: 1,
+  reward_image_url: null,
   sort_order: 0,
   monthly_release: [{ month_index: 1, release_quantity: 1 }],
 })
@@ -263,6 +266,7 @@ const PromotionCampaignsPage: React.FC = () => {
             reward_name: reward.reward_name,
             reward_value: Number(reward.reward_value || 0),
             total_quantity: Number(reward.total_quantity || 0),
+            reward_image_url: reward.reward_image_url || null,
             sort_order: reward.sort_order || 0,
             monthly_release:
               reward.monthly_release?.length
@@ -315,6 +319,7 @@ const PromotionCampaignsPage: React.FC = () => {
             reward_name: reward.reward_name,
             reward_value: Number(reward.reward_value || 0),
             total_quantity: Number(reward.total_quantity || 0),
+            reward_image_url: reward.reward_image_url || null,
             sort_order: reward.sort_order || 0,
             monthly_release:
               reward.monthly_release?.length
@@ -423,6 +428,7 @@ const PromotionCampaignsPage: React.FC = () => {
         reward_name: reward.reward_name.trim(),
         reward_value: Number(reward.reward_value || 0),
         total_quantity: Number(reward.total_quantity || 0),
+        reward_image_url: reward.reward_image_url || null,
         sort_order: index,
         monthly_release: reward.monthly_release.map((release) => ({
           month_index: Number(release.month_index || 1),
@@ -854,6 +860,33 @@ const PromotionCampaignsPage: React.FC = () => {
                       </div>
                     </div>
                     <Button danger onClick={() => removeReward(rewardIndex)}>Xóa</Button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px] md:items-start">
+                  <div>
+                    <Text strong>Ảnh món quà</Text>
+                    <div className="mt-2">
+                      <ImageUpload
+                        value={reward.reward_image_url ? [reward.reward_image_url] : []}
+                        onChange={(files) => updateReward(rewardIndex, { reward_image_url: (files?.[0] as string) || null })}
+                        maxCount={1}
+                        multiple={false}
+                        uploadType={UPLOAD_TYPES.COMMON}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3">
+                    <Text type="secondary" className="block">
+                      Ảnh này sẽ lưu lên Cloudinary và gắn với từng loại quà trong DB.
+                    </Text>
+                    {reward.reward_image_url && (
+                      <img
+                        src={reward.reward_image_url}
+                        alt={reward.reward_name || "Ảnh món quà"}
+                        className="mt-3 h-40 w-full rounded-lg object-cover border border-slate-200"
+                      />
+                    )}
                   </div>
                 </div>
 
