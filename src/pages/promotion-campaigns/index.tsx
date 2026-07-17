@@ -863,31 +863,24 @@ const PromotionCampaignsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px] md:items-start">
-                  <div>
-                    <Text strong>Ảnh món quà</Text>
-                    <div className="mt-2">
-                      <ImageUpload
-                        value={reward.reward_image_url ? [reward.reward_image_url] : []}
-                        onChange={(files) => updateReward(rewardIndex, { reward_image_url: (files?.[0] as string) || null })}
-                        maxCount={1}
-                        multiple={false}
-                        uploadType={UPLOAD_TYPES.COMMON}
-                      />
-                    </div>
+                <div className="mt-4">
+                  <Text strong>Ảnh món quà</Text>
+                  <div className="mt-2">
+                    <ImageUpload
+                      value={reward.reward_image_url ? [reward.reward_image_url] : []}
+                      onChange={(files) => updateReward(rewardIndex, { reward_image_url: (files?.[0] as string) || null })}
+                      maxCount={1}
+                      multiple={false}
+                      uploadType={UPLOAD_TYPES.COMMON}
+                    />
                   </div>
-                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3">
-                    <Text type="secondary" className="block">
-                      Ảnh này sẽ lưu lên Cloudinary và gắn với từng loại quà trong DB.
-                    </Text>
-                    {reward.reward_image_url && (
-                      <img
-                        src={reward.reward_image_url}
-                        alt={reward.reward_name || "Ảnh món quà"}
-                        className="mt-3 h-40 w-full rounded-lg object-cover border border-slate-200"
-                      />
-                    )}
-                  </div>
+                  {reward.reward_image_url && (
+                    <img
+                      src={reward.reward_image_url}
+                      alt={reward.reward_name || "Ảnh món quà"}
+                      className="mt-3 h-40 w-full max-w-[240px] rounded-lg border border-slate-200 object-cover"
+                    />
+                  )}
                 </div>
 
                 <div className="mt-4">
