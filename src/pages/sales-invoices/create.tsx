@@ -354,6 +354,8 @@ const CreateSalesInvoice = () => {
 
   useEffect(() => {
     if (!isEditMode && initialCustomer && selectedCustomer?.id !== initialCustomer.id) {
+      const isWalkInCustomer = isWalkInCustomerRecord(initialCustomer);
+
       setIsGuestCustomer(false);
       setSelectedCustomer(initialCustomer);
       setCustomerSearch(initialCustomer.name);
@@ -361,6 +363,10 @@ const CreateSalesInvoice = () => {
       setValue('customer_name', initialCustomer.name, { shouldValidate: true });
       setValue('customer_phone', initialCustomer.phone || '', { shouldValidate: true });
       setValue('customer_address', initialCustomer.address || '');
+
+      if (isWalkInCustomer) {
+        setValue('payment_method', 'cash', { shouldValidate: true });
+      }
     }
   }, [initialCustomer, isEditMode, selectedCustomer?.id, setValue]);
 
@@ -661,6 +667,7 @@ const CreateSalesInvoice = () => {
       setValue('customer_name', '');
       setValue('customer_phone', '');
       setValue('customer_address', '');
+      setValue('payment_method', 'cash', { shouldValidate: true });
       // Khách vãng lai không cần season/rice crop
       setValue('season_id', activeSeason?.id as any); // Set lại active season
       setValue('rice_crop_id', undefined);
