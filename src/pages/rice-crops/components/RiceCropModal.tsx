@@ -13,8 +13,61 @@ import { useAreasQuery } from '@/queries/area-of-each-plot-of-land';
 import { GrowthStage, CropStatus, type RiceCrop, type CreateRiceCropDto } from '@/models/rice-farming';
 import { useAppStore } from '@/stores/store';
 import dayjs from 'dayjs';
-import { convertSolar2Lunar } from '@/lib/lunar-calendar';
+import { convertSolar2Lunar, convertLunar2Solar } from '@/lib/lunar-calendar';
 import { notifyFormErrors } from '@/utils/form-error';
+
+type DayjsType = ReturnType<typeof dayjs>;
+
+const formatLunarDisplayDate = (day: number, month: number, year: number, isLeap = false) => {
+  const dayText = String(day).padStart(2, '0');
+  const monthText = String(month).padStart(2, '0');
+  return `${dayText}/${monthText}/${year}${isLeap ? ' (Nhuận)' : ''} (Âm lịch)`;
+};
+
+const parseLunarDateValue = (value?: string | null): DayjsType | null => {
+  if (!value) {
+    return null;
+  }
+
+  const normalizedValue = value
+    .replace(/\s*\(Âm lịch\)\s*/gi, '')
+    .replace(/\s*\(Nhuận\)\s*/gi, '')
+    .trim();
+
+  const parts = normalizedValue.split(/[/-]/).map(part => Number(part.trim()));
+  if (parts.length !== 3 || parts.some(part => Number.isNaN(part))) {
+    return null;
+  }
+
+  const [day, month, year] = parts;
+  const nativeDate = new Date(year, month - 1, day);
+  const isExactDate =
+    nativeDate.getFullYear() === year &&
+    nativeDate.getMonth() === month - 1 &&
+    nativeDate.getDate() === day;
+
+  if (!isExactDate) {
+    return null;
+  }
+
+  const parsedDate = dayjs(nativeDate);
+  return parsedDate.isValid() ? parsedDate : null;
+};
+
+const buildSolarDateFromLunar = (date: DayjsType) => {
+  const [solarDay, solarMonth, solarYear] = convertLunar2Solar(
+    date.date(),
+    date.month() + 1,
+    date.year(),
+  );
+
+  if (!solarDay || !solarMonth || !solarYear) {
+    return null;
+  }
+
+  const solarDate = dayjs(new Date(solarYear, solarMonth - 1, solarDay));
+  return solarDate.isValid() ? solarDate.toISOString() : null;
+};
 
 interface RiceCropModalProps {
   open: boolean;
@@ -188,8 +241,8 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
     if (watchedSowingDate) {
       const date = dayjs(watchedSowingDate);
       if (date.isValid()) {
-        const [d, m] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
-        setValue('sowing_lunar_date', `${d}/${m} (Âm lịch)`);
+        const [d, m, y, isLeap] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+        setValue('sowing_lunar_date', formatLunarDisplayDate(d, m, y, isLeap));
       }
     } else {
       setValue('sowing_lunar_date', '');
@@ -200,8 +253,8 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
     if (watchedTransplantingDate) {
       const date = dayjs(watchedTransplantingDate);
       if (date.isValid()) {
-        const [d, m] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
-        setValue('transplanting_lunar_date', `${d}/${m} (Âm lịch)`);
+        const [d, m, y, isLeap] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+        setValue('transplanting_lunar_date', formatLunarDisplayDate(d, m, y, isLeap));
       }
     } else {
       setValue('transplanting_lunar_date', '');
@@ -212,8 +265,8 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
     if (watchedExpectedHarvestDate) {
       const date = dayjs(watchedExpectedHarvestDate);
       if (date.isValid()) {
-        const [d, m] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
-        setValue('expected_harvest_lunar_date', `${d}/${m} (Âm lịch)`);
+        const [d, m, y, isLeap] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+        setValue('expected_harvest_lunar_date', formatLunarDisplayDate(d, m, y, isLeap));
       }
     } else {
       setValue('expected_harvest_lunar_date', '');
@@ -442,14 +495,41 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
             name="sowing_date"
             control={control}
             className="mb-4"
+            onDateChange={(date) => {
+              if (!date || !date.isValid()) {
+                setValue('sowing_lunar_date', '');
+                return;
+              }
+
+              const [d, m, y, isLeap] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+              setValue('sowing_lunar_date', formatLunarDisplayDate(d, m, y, isLeap));
+            }}
           />
 
-          <FormField
+          <FormDatePicker
             label="Ngày gieo âm lịch"
             name="sowing_lunar_date"
             control={control}
-            placeholder="Tự động tính..."
-            disabled
+            placeholder="Chọn ngày âm lịch"
+            serializeDate={(date) => {
+              if (!date || !date.isValid()) {
+                return null;
+              }
+
+              return date.format('DD/MM/YYYY');
+            }}
+            parseValue={parseLunarDateValue}
+            onDateChange={(date) => {
+              if (!date || !date.isValid()) {
+                setValue('sowing_date', undefined);
+                return;
+              }
+
+              const solarValue = buildSolarDateFromLunar(date);
+              if (solarValue) {
+                setValue('sowing_date', solarValue);
+              }
+            }}
             className="mb-4"
           />
 
@@ -458,14 +538,41 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
             name="transplanting_date"
             control={control}
             className="mb-4"
+            onDateChange={(date) => {
+              if (!date || !date.isValid()) {
+                setValue('transplanting_lunar_date', '');
+                return;
+              }
+
+              const [d, m, y, isLeap] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+              setValue('transplanting_lunar_date', formatLunarDisplayDate(d, m, y, isLeap));
+            }}
           />
 
-          <FormField
+          <FormDatePicker
             label="Ngày cấy âm lịch"
             name="transplanting_lunar_date"
             control={control}
-            placeholder="Tự động tính..."
-            disabled
+            placeholder="Chọn ngày âm lịch"
+            serializeDate={(date) => {
+              if (!date || !date.isValid()) {
+                return null;
+              }
+
+              return date.format('DD/MM/YYYY');
+            }}
+            parseValue={parseLunarDateValue}
+            onDateChange={(date) => {
+              if (!date || !date.isValid()) {
+                setValue('transplanting_date', undefined);
+                return;
+              }
+
+              const solarValue = buildSolarDateFromLunar(date);
+              if (solarValue) {
+                setValue('transplanting_date', solarValue);
+              }
+            }}
             className="mb-4"
           />
 
@@ -474,14 +581,41 @@ export const RiceCropModal: React.FC<RiceCropModalProps> = ({
             name="expected_harvest_date"
             control={control}
             className="mb-4"
+            onDateChange={(date) => {
+              if (!date || !date.isValid()) {
+                setValue('expected_harvest_lunar_date', '');
+                return;
+              }
+
+              const [d, m, y, isLeap] = convertSolar2Lunar(date.date(), date.month() + 1, date.year());
+              setValue('expected_harvest_lunar_date', formatLunarDisplayDate(d, m, y, isLeap));
+            }}
           />
 
-          <FormField
+          <FormDatePicker
             label="Ngày thu hoạch âm lịch"
             name="expected_harvest_lunar_date"
             control={control}
-            placeholder="Tự động tính..."
-            disabled
+            placeholder="Chọn ngày âm lịch"
+            serializeDate={(date) => {
+              if (!date || !date.isValid()) {
+                return null;
+              }
+
+              return date.format('DD/MM/YYYY');
+            }}
+            parseValue={parseLunarDateValue}
+            onDateChange={(date) => {
+              if (!date || !date.isValid()) {
+                setValue('expected_harvest_date', undefined);
+                return;
+              }
+
+              const solarValue = buildSolarDateFromLunar(date);
+              if (solarValue) {
+                setValue('expected_harvest_date', solarValue);
+              }
+            }}
             className="mb-4"
           />
 

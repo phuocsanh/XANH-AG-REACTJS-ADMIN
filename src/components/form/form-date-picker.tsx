@@ -2,9 +2,12 @@ import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import { Form } from 'antd';
 import { DatePicker } from '@/components/common';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 // Type cho dayjs object
 type DayjsType = ReturnType<typeof dayjs>;
+
+dayjs.extend(customParseFormat);
 
 // Interface cho props của FormDatePicker
 interface FormDatePickerProps<T extends FieldValues> {
@@ -21,6 +24,9 @@ interface FormDatePickerProps<T extends FieldValues> {
   className?: string; // CSS class
   size?: 'large' | 'middle' | 'small'; // Kích thước
   allowClear?: boolean; // Cho phép xóa
+  serializeDate?: (date: DayjsType | null) => string | null; // Tùy biến cách lưu giá trị
+  parseValue?: (value: string | null | undefined) => DayjsType | null; // Tùy biến cách đọc giá trị
+  onDateChange?: (date: DayjsType | null) => void; // Callback khi đổi ngày
   rules?: {
     required?: boolean | string;
     validate?: (value: string | null) => boolean | string;
@@ -49,6 +55,9 @@ function FormDatePicker<T extends FieldValues>({
   className,
   size = 'middle',
   allowClear = true,
+  serializeDate,
+  parseValue,
+  onDateChange,
   rules = {},
 }: FormDatePickerProps<T>) {
   // Tạo validation rules
@@ -81,10 +90,16 @@ function FormDatePicker<T extends FieldValues>({
               size={size}
               allowClear={allowClear}
               disabledDate={disabledDate}
-              value={value ? dayjs(value) : null}
+              value={parseValue ? parseValue(value) : value ? dayjs(value) : null}
               onChange={(date: any) => {
-                // Chuyển đổi dayjs object thành ISO string hoặc null
-                onChange(date ? date.toISOString() : null);
+                const serializedValue = serializeDate
+                  ? serializeDate(date)
+                  : date
+                    ? date.toISOString()
+                    : null;
+
+                onChange(serializedValue);
+                onDateChange?.(date);
               }}
               onBlur={onBlur}
               name={fieldName}
