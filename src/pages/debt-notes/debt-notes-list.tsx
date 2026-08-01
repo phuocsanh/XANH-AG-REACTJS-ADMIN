@@ -6,7 +6,7 @@
 import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
 import { CustomerDebtor } from "@/models/customer"
-import { useDebtNotesQuery } from "@/queries/debt-note"
+import { useDebtNotesQuery, useReverseCloseDebtNoteMutation } from "@/queries/debt-note"
 import { useSeasonsQuery, useActiveSeasonQuery } from "@/queries/season"
 import {
   Tag,
@@ -15,9 +15,13 @@ import {
   Row,
   Col,
   Space,
+  Modal,
+  Form,
+  Input,
+  Alert,
 } from "antd"
 import { RangePicker } from '@/components/common'
-import { DollarOutlined, SearchOutlined, GiftOutlined } from "@ant-design/icons"
+import { DollarOutlined, SearchOutlined, GiftOutlined, RollbackOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -51,6 +55,10 @@ const DebtNotesList: React.FC = () => {
   // State modal chốt sổ cuối vụ
   const [isCloseSeasonModalVisible, setIsCloseSeasonModalVisible] = React.useState(false)
   const [selectedDebtNoteId, setSelectedDebtNoteId] = React.useState<number | null>(null)
+  const [reverseForm] = Form.useForm()
+  const [isReverseModalVisible, setIsReverseModalVisible] = React.useState(false)
+  const [selectedReverseDebtNote, setSelectedReverseDebtNote] = React.useState<ExtendedDebtNote | null>(null)
+  const reverseCloseMutation = useReverseCloseDebtNoteMutation()
 
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState('')
@@ -226,6 +234,27 @@ const DebtNotesList: React.FC = () => {
     setSelectedDebtNoteId(null)
   }
 
+  const handleOpenReverseModal = (record: ExtendedDebtNote) => {
+    setSelectedReverseDebtNote(record)
+    setIsReverseModalVisible(true)
+  }
+
+  const handleCloseReverseModal = () => {
+    setIsReverseModalVisible(false)
+    setSelectedReverseDebtNote(null)
+    reverseForm.resetFields()
+  }
+
+  const handleReverseClose = async () => {
+    if (!selectedReverseDebtNote) return
+    const values = await reverseForm.validateFields()
+    await reverseCloseMutation.mutateAsync({
+      id: selectedReverseDebtNote.id,
+      reason: values.reason,
+    })
+    handleCloseReverseModal()
+  }
+
   // Sử dụng query hooks
   const { data: debtNotesData, isLoading } = useDebtNotesQuery({
     page: currentPage,
@@ -395,31 +424,45 @@ const DebtNotesList: React.FC = () => {
     {
       key: "action",
       title: "Hành động",
-      width: 120,
-      render: (record: ExtendedDebtNote) => (
-        <Space size="small">
-          {Number(record.remaining_amount) > 0 && (
-            <Button 
-              type="primary" 
-              size="small"
-              icon={<DollarOutlined />}
-              onClick={() => handleOpenSettleModal(record)}
-            >
-              Thanh toán
-            </Button>
-          )}
-          {(record.gift_description || record.reward_given) && (
-            <Button 
-              type="link" 
-              size="small"
-              icon={<GiftOutlined />}
-              onClick={() => handleOpenCloseSeasonModal(record)}
-            >
-              Chi tiết quà
-            </Button>
-          )}
-        </Space>
-      ),
+      width: 260,
+      render: (record: ExtendedDebtNote) => {
+        const canReverseClose = Boolean(record.can_reverse_close)
+
+        return (
+          <Space size="small" wrap>
+            {Number(record.remaining_amount) > 0 && (
+              <Button 
+                type="primary" 
+                size="small"
+                icon={<DollarOutlined />}
+                onClick={() => handleOpenSettleModal(record)}
+              >
+                Thanh toán
+              </Button>
+            )}
+            {(record.gift_description || record.reward_given) && (
+              <Button 
+                type="link" 
+                size="small"
+                icon={<GiftOutlined />}
+                onClick={() => handleOpenCloseSeasonModal(record)}
+              >
+                Chi tiết quà
+              </Button>
+            )}
+            {canReverseClose && (
+              <Button
+                danger
+                size="small"
+                icon={<RollbackOutlined />}
+                onClick={() => handleOpenReverseModal(record)}
+              >
+                Hoàn tác chốt
+              </Button>
+            )}
+          </Space>
+        )
+      },
     },
   ]
 
@@ -527,6 +570,49 @@ const DebtNotesList: React.FC = () => {
         debtNoteId={selectedDebtNoteId}
         onClose={handleCloseSeasonModal}
       />
+
+      <Modal
+        title="Hoàn tác chốt sổ công nợ"
+        open={isReverseModalVisible}
+        onCancel={handleCloseReverseModal}
+        onOk={handleReverseClose}
+        okText="Hoàn tác chốt"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}
+        confirmLoading={reverseCloseMutation.isPending}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Alert
+            type="warning"
+            showIcon
+            message="Thao tác này sẽ đảo công nợ, tích lũy và quà tặng phát sinh từ lần chốt."
+            description="Hệ thống chỉ cho hoàn tác khi dữ liệu hiện tại còn khớp với snapshot sau chốt."
+          />
+          <div>
+            <div><strong>Mã phiếu:</strong> {selectedReverseDebtNote?.code}</div>
+            <div><strong>Khách hàng:</strong> {selectedReverseDebtNote?.customer?.name || selectedReverseDebtNote?.customer_name || '-'}</div>
+            <div><strong>Mùa vụ:</strong> {selectedReverseDebtNote?.season?.name || selectedReverseDebtNote?.season_name || '-'}</div>
+            <div>
+              <strong>Ngày chốt:</strong>{" "}
+              {selectedReverseDebtNote?.closed_at
+                ? new Date(selectedReverseDebtNote.closed_at as string).toLocaleString('vi-VN')
+                : '-'}
+            </div>
+          </div>
+          <Form form={reverseForm} layout="vertical">
+            <Form.Item
+              label="Lý do hoàn tác"
+              name="reason"
+              rules={[
+                { required: true, message: 'Vui lòng nhập lý do hoàn tác' },
+                { min: 3, message: 'Lý do phải có ít nhất 3 ký tự' },
+              ]}
+            >
+              <Input.TextArea rows={3} placeholder="VD: Chốt nhầm khách / nhầm mùa vụ / nhập sai số liệu..." />
+            </Form.Item>
+          </Form>
+        </Space>
+      </Modal>
     </div>
   )
 }

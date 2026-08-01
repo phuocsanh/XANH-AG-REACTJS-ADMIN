@@ -375,10 +375,10 @@ const CreateSalesInvoice = () => {
 
   // Tự động set season_id nếu có activeSeason (chỉ cho form tạo mới)
   useEffect(() => {
-    if (!isEditMode && activeSeason?.id && !getValues('season_id')) {
+    if (!isEditMode && !initialSeasonId && activeSeason?.id && !getValues('season_id')) {
       setValue('season_id', activeSeason.id);
     }
-  }, [activeSeason, isEditMode, setValue, getValues]);
+  }, [activeSeason, initialSeasonId, isEditMode, setValue, getValues]);
 
   // Reset rice_crop_id khi thay đổi season_id
   useEffect(() => {
@@ -469,10 +469,10 @@ const CreateSalesInvoice = () => {
   useEffect(() => {
     // Chỉ set default nếu chưa có giá trị (để tránh override lựa chọn của user)
     // Kiểm tra cả isEditMode để không override khi đang edit
-    if (activeSeason && selectedSeasonId === undefined && !isEditMode) {
+    if (activeSeason && selectedSeasonId === undefined && !initialSeasonId && !isEditMode) {
       setValue('season_id', activeSeason.id);
     }
-  }, [activeSeason, selectedSeasonId, isEditMode, setValue]);
+  }, [activeSeason, selectedSeasonId, initialSeasonId, isEditMode, setValue]);
 
   // Watch items to calculate totals
 

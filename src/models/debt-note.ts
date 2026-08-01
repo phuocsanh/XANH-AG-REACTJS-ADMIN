@@ -26,6 +26,7 @@ export interface DebtNote {
   reward_given?: boolean;
   reward_count?: number;
   closed_at?: Date | string;
+  can_reverse_close?: boolean;
 }
 
 /**

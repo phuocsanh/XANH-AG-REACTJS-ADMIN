@@ -211,6 +211,35 @@ export const useCloseSeasonDebtNoteMutation = () => {
 }
 
 /**
+ * Hook hoàn tác chốt sổ công nợ
+ */
+export const useReverseCloseDebtNoteMutation = () => {
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: number; reason: string }) => {
+      const response = await api.postRaw<{
+        success: boolean
+        debt_note_id: number
+        closure_id: number
+        reward_history_cancelled: number
+        gift_cost_removed: number
+        inventory_reversal_transaction_ids: number[]
+        message: string
+      }>(`/debt-notes/${id}/reverse-close`, { reason })
+      return response
+    },
+    onSuccess: (response) => {
+      invalidateResourceQueries("/debt-notes")
+      invalidateResourceQueries("/customer-rewards")
+      invalidateResourceQueries("/inventory")
+      toast.success(response.message || "Hoàn tác chốt sổ công nợ thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi hoàn tác chốt sổ công nợ")
+    },
+  })
+}
+
+/**
  * Hook tìm kiếm thông tin tích lũy khách hàng
  */
 export const useRewardTrackingQuery = (params?: Record<string, unknown>) => {

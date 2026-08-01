@@ -97,6 +97,9 @@ const SalesInvoicesList: React.FC = () => {
 
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const hasSyncedFiltersToUrl = React.useRef(false)
+  // State to track if we have set the default season
+  const [hasSetDefaultSeason, setHasSetDefaultSeason] = React.useState(false)
 
   // ✅ 1. Khôi phục bộ lọc từ URL khi vào trang
   React.useEffect(() => {
@@ -120,6 +123,11 @@ const SalesInvoicesList: React.FC = () => {
 
   // ✅ 2. Cập nhật URL mỗi khi bộ lọc thay đổi
   React.useEffect(() => {
+    if (!hasSyncedFiltersToUrl.current) {
+      hasSyncedFiltersToUrl.current = true
+      return
+    }
+
     const params: Record<string, string> = {}
     Object.entries(filters).forEach(([key, value]) => {
       if (key === 'customer_id') return
@@ -274,9 +282,6 @@ const SalesInvoicesList: React.FC = () => {
     limit: 20,
     ...(seasonSearchText && { name: seasonSearchText })
   })
-
-  // State to track if we have set the default season
-  const [hasSetDefaultSeason, setHasSetDefaultSeason] = React.useState(false)
 
   // Effect to set default season
   React.useEffect(() => {
