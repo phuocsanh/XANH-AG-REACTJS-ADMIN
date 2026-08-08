@@ -596,6 +596,19 @@ export const useUpdateBatchMutation = () => {
   })
 }
 
+export const useBatchesByProductQuery = (productId: number) => {
+  return useQuery({
+    queryKey: inventoryKeys.batchByProduct(productId),
+    queryFn: async () => {
+      const response = await api.get<any[]>(
+        `/inventory/batches/product/${productId}`
+      )
+      return Array.isArray(response) ? response : ((response as any)?.data || [])
+    },
+    enabled: !!productId,
+  })
+}
+
 // ========== TRANSACTION MANAGEMENT HOOKS ==========
 
 /**

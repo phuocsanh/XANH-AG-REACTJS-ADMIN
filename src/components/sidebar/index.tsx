@@ -821,6 +821,18 @@ const Sidebar: React.FC = () => {
                     </Button>
                   </Link>
 
+                  <Link to='/inventory/borrows'>
+                    <Button
+                      className={`w-full !justify-start !text-left mb-2 ${
+                        location.pathname.includes("/inventory/borrows")
+                          ? "active"
+                          : ""
+                      }`}
+                    >
+                      Hàng cho mượn
+                    </Button>
+                  </Link>
+
                   {hasPermission(userInfo, "inventory:manage") && (
                     <Link to='/inventory/receipts/create'>
                       <Button

@@ -85,6 +85,7 @@ import AdjustmentsPage from "./pages/inventory/adjustments"
 import InventoryMixturesList from "./pages/inventory/mixtures"
 import InventoryMixtureCreate from "./pages/inventory/mixtures/create"
 import InventoryMixtureDetail from "./pages/inventory/mixtures/detail"
+import InventoryBorrowsPage from "./pages/inventory/borrows"
 // Thêm import cho trang quản lý lô hàng sắp hết hạn
 import ExpiryAlertsPage from "./pages/inventory/expiry-alerts"
 import OperatingCostCategoriesPage from './pages/operating-costs/categories'
@@ -583,6 +584,15 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="inventory:read">
                           <InventoryMixtureDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path='/inventory/borrows/*'
+                      element={
+                        <ProtectedRoute requiredPermission="inventory:read">
+                          <InventoryBorrowsPage />
                         </ProtectedRoute>
                       }
                     />
