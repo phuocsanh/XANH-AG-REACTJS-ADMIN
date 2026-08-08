@@ -32,7 +32,7 @@ const InventoryBorrowsList: React.FC = () => {
       render: (code: string) => <Text strong className="text-blue-600">{code}</Text>,
     },
     {
-      title: "Công ty mượn",
+      title: "Nhà cung cấp mượn",
       dataIndex: "borrower_name",
       key: "borrower_name",
       ellipsis: true,

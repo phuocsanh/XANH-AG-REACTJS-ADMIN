@@ -16,7 +16,7 @@ import {
   Typography,
 } from "antd"
 import { DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons"
-import { useCustomersQuery } from "@/queries/customer"
+import { useSupplierSearch } from "@/queries/supplier"
 import { useProductSearch } from "@/queries/product"
 import { useBatchesByProductQuery } from "@/queries/inventory"
 import { useCreateInventoryBorrowMutation } from "@/queries/inventory-borrow"
@@ -34,24 +34,24 @@ interface BorrowItemForm {
 const InventoryBorrowCreate: React.FC = () => {
   const navigate = useNavigate()
   const [form] = Form.useForm()
-  const [customerSearch, setCustomerSearch] = React.useState("")
+  const [supplierSearch, setSupplierSearch] = React.useState("")
+  const [selectedSupplierId, setSelectedSupplierId] = React.useState<number | undefined>()
+  const selectedSupplierRef = React.useRef<{ id: number; name: string } | null>(null)
   const [productSearch, setProductSearch] = React.useState("")
   const [items, setItems] = React.useState<BorrowItemForm[]>([{ key: crypto.randomUUID() }])
   const createMutation = useCreateInventoryBorrowMutation()
 
-  const { data: customersData } = useCustomersQuery({
-    page: 1,
-    limit: 50,
-    ...(customerSearch ? { keyword: customerSearch } : {}),
-  })
+  const { data: supplierData } = useSupplierSearch(supplierSearch, 50, true)
   const productQuery = useProductSearch(productSearch, 30, true)
   const products = productQuery.data?.pages.flatMap((page) => page.data) || []
 
-  const customerOptions = (customersData?.data?.items || []).map((customer: any) => ({
-    value: customer.name,
-    label: `${customer.name}${customer.phone ? ` - ${customer.phone}` : ""}`,
-    customerId: customer.id,
-  }))
+  const supplierOptions = (supplierData?.pages || []).flatMap((page) =>
+    (page?.data || []).map((supplier: any) => ({
+      value: supplier.name,
+      label: `${supplier.name}${supplier.phone ? ` - ${supplier.phone}` : ""}`,
+      supplierId: supplier.id,
+    }))
+  )
 
   const addItem = () => {
     setItems((current) => [...current, { key: crypto.randomUUID() }])
@@ -67,7 +67,6 @@ const InventoryBorrowCreate: React.FC = () => {
 
   const handleSubmit = async (approveNow: boolean) => {
     const values = await form.validateFields()
-    const selectedCustomer = customerOptions.find((option: any) => option.value === values.borrower_name)
     const payloadItems = items.map((item) => ({
       product_id: Number(item.product_id || 0),
       batch_id: Number(item.batch_id || 0),
@@ -81,8 +80,8 @@ const InventoryBorrowCreate: React.FC = () => {
     }
 
     await createMutation.mutateAsync({
-      borrower_customer_id: selectedCustomer?.customerId,
-      borrower_name: values.borrower_name,
+      borrower_customer_id: selectedSupplierId,
+      borrower_name: values.borrower_name.trim(),
       borrow_date: values.borrow_date.format("YYYY-MM-DD"),
       expected_return_date: values.expected_return_date?.format("YYYY-MM-DD"),
       status: approveNow ? "approved" : "draft",
@@ -171,15 +170,27 @@ const InventoryBorrowCreate: React.FC = () => {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Form.Item
-              label="Công ty mượn"
+              label="Nhà cung cấp mượn hàng"
               name="borrower_name"
-              rules={[{ required: true, message: "Vui lòng chọn hoặc nhập tên công ty mượn" }]}
+              rules={[{ required: true, message: "Vui lòng chọn hoặc nhập tên nhà cung cấp mượn hàng" }]}
             >
               <AutoComplete
-                placeholder="Chọn công ty có sẵn hoặc tự nhập tên"
-                onSearch={setCustomerSearch}
-                onChange={(value) => form.setFieldValue("borrower_name", value)}
-                options={customerOptions}
+                placeholder="Chọn nhà cung cấp có sẵn hoặc tự nhập tên"
+                onSearch={setSupplierSearch}
+                onChange={(value) => {
+                  form.setFieldValue("borrower_name", value)
+                  if (selectedSupplierRef.current?.name !== value) {
+                    selectedSupplierRef.current = null
+                    setSelectedSupplierId(undefined)
+                  }
+                }}
+                onSelect={(value, option) => {
+                  const supplierId = (option as any).supplierId
+                  form.setFieldValue("borrower_name", value)
+                  selectedSupplierRef.current = { id: supplierId, name: String(value) }
+                  setSelectedSupplierId(supplierId)
+                }}
+                options={supplierOptions}
                 filterOption={(input, option) =>
                   String(option?.label || "").toLowerCase().includes(input.toLowerCase())
                 }
