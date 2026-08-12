@@ -10,6 +10,7 @@ import {
   Modal,
   Form,
   Select,
+  InputNumber,
 } from "antd"
 import {
   GiftOutlined,
@@ -18,6 +19,7 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  SettingOutlined,
 } from "@ant-design/icons"
 import { Popconfirm, message } from "antd"
 import DataTable from "@/components/common/data-table"
@@ -27,7 +29,8 @@ import {
     useRewardHistoryQuery,
     useCreateManualRewardMutation,
     useUpdateRewardHistoryMutation,
-    useDeleteRewardHistoryMutation
+    useDeleteRewardHistoryMutation,
+    useUpdateRewardThresholdMutation
 } from "@/queries/debt-note"
 import { useSeasonsQuery } from "@/queries/season"
 import { useRiceCrops } from "@/queries/rice-crop"
@@ -55,6 +58,9 @@ const CustomerRewardsPage: React.FC = () => {
   const [isAddingAppreciationGift, setIsAddingAppreciationGift] = React.useState(false) // Chế độ thêm quà tri ân mới
   const [productSearchTerm, setProductSearchTerm] = React.useState("")
   const [customerSearchTerm, setCustomerSearchTerm] = React.useState("")
+  const [isThresholdModalOpen, setIsThresholdModalOpen] = React.useState(false)
+  const [thresholdCustomer, setThresholdCustomer] = React.useState<any>(null)
+  const [thresholdValue, setThresholdValue] = React.useState<number | null>(null)
   
   // React Hook Form cho Modal tặng quà
   const { control, handleSubmit, reset, setValue, watch } = useForm({
@@ -137,8 +143,17 @@ const CustomerRewardsPage: React.FC = () => {
   const createRewardMutation = useCreateManualRewardMutation()
   const updateRewardMutation = useUpdateRewardHistoryMutation()
   const deleteRewardMutation = useDeleteRewardHistoryMutation()
+  const updateRewardThresholdMutation = useUpdateRewardThresholdMutation()
 
-  const threshold = trackingData?.reward_threshold || 70000000 // Fallback 70 Triệu
+  const defaultThreshold = trackingData?.reward_threshold || 70000000 // Fallback 70 Triệu
+
+  const getRecordThreshold = (record: any) => {
+    return Number(
+      record?.effective_reward_threshold ||
+      record?.reward_threshold ||
+      defaultThreshold
+    )
+  }
 
   // Format currency
   const formatCurrency = (value: number) => {
@@ -187,7 +202,7 @@ const CustomerRewardsPage: React.FC = () => {
         setSelectedCustomer(record)
         reset({
             gift_description: "Quà tích lũy",
-            gift_value: Math.floor((Number(record.pending_amount || 0) / threshold) * 1000000),
+            gift_value: Math.floor((Number(record.pending_amount || 0) / getRecordThreshold(record)) * 1000000),
             notes: "",
             season_id: undefined,
             rice_crop_id: undefined,
@@ -281,6 +296,22 @@ const CustomerRewardsPage: React.FC = () => {
     refetchAll() // Refetch all tabs
   }
 
+  const handleOpenThresholdModal = (record: any) => {
+    setThresholdCustomer(record)
+    setThresholdValue(record.reward_threshold ? Number(record.reward_threshold) : null)
+    setIsThresholdModalOpen(true)
+  }
+
+  const handleSaveThreshold = async () => {
+    if (!thresholdCustomer?.customer_id) return
+    await updateRewardThresholdMutation.mutateAsync({
+      customerId: Number(thresholdCustomer.customer_id),
+      rewardThreshold: thresholdValue,
+    })
+    setIsThresholdModalOpen(false)
+    refetchTracking()
+  }
+
   const handleMarkAsDelivered = async (record: any) => {
     try {
         await updateRewardMutation.mutateAsync({
@@ -325,11 +356,12 @@ const CustomerRewardsPage: React.FC = () => {
       )
     },
     {
-      title: `Tiến trình (mốc ${Math.round(threshold / 1000000)}tr)`,
+      title: "Tiến trình",
       key: "progress",
       width: 300,
       render: (record: any) => {
         const pending = Number(record.pending_amount || 0)
+        const threshold = getRecordThreshold(record)
         const percent = Math.min(Math.round((pending / threshold) * 100), 100)
         return (
           <div className="w-full">
@@ -340,9 +372,36 @@ const CustomerRewardsPage: React.FC = () => {
             />
             <div className="flex justify-between text-xs mt-1">
                 <span>{formatCurrency(pending)}</span>
-                <span className="text-gray-400">Thiếu {formatCurrency(Math.max(0, threshold - pending))}</span>
+                <span className="text-gray-400">Mốc {formatCurrency(threshold)} · Thiếu {formatCurrency(Math.max(0, threshold - pending))}</span>
             </div>
           </div>
+        )
+      }
+    },
+    {
+      title: "Mốc tặng quà",
+      key: "reward_threshold",
+      width: 180,
+      render: (record: any) => {
+        const customThreshold = Number(record.reward_threshold || 0)
+        const effectiveThreshold = getRecordThreshold(record)
+
+        return (
+          <Space direction="vertical" size={2}>
+            <Text strong>{formatCurrency(effectiveThreshold)}</Text>
+            <Space>
+              <Tag color={customThreshold > 0 ? "blue" : "default"}>
+                {customThreshold > 0 ? "Riêng" : "Mặc định"}
+              </Tag>
+              <Tooltip title="Sửa mốc tặng quà">
+                <Button
+                  size="small"
+                  icon={<SettingOutlined />}
+                  onClick={() => handleOpenThresholdModal(record)}
+                />
+              </Tooltip>
+            </Space>
+          </Space>
         )
       }
     },
@@ -558,7 +617,7 @@ const CustomerRewardsPage: React.FC = () => {
                     label: (
                         <span>
                             <GiftOutlined />
-                            Lịch sử quà tích lũy (mốc 70tr)
+                            Lịch sử quà tích lũy
                         </span>
                     ),
                     children: (
@@ -620,6 +679,47 @@ const CustomerRewardsPage: React.FC = () => {
         />
       </div>
 
+      <Modal
+        title="Cấu hình mốc tặng quà"
+        open={isThresholdModalOpen}
+        onCancel={() => setIsThresholdModalOpen(false)}
+        onOk={handleSaveThreshold}
+        okText="Lưu"
+        cancelText="Hủy"
+        confirmLoading={updateRewardThresholdMutation.isPending}
+      >
+        <Space direction="vertical" className="w-full" size={12}>
+          <div>
+            <Text type="secondary">Khách hàng</Text>
+            <div>
+              <Text strong>{thresholdCustomer?.customer?.name}</Text>
+              <Text type="secondary"> {thresholdCustomer?.customer?.phone}</Text>
+            </div>
+          </div>
+          <Form.Item label="Mốc riêng" layout="vertical" className="mb-0">
+            <InputNumber
+              className="w-full"
+              min={1}
+              step={1000000}
+              controls={false}
+              value={thresholdValue}
+              placeholder={`Mặc định ${formatCurrency(defaultThreshold)}`}
+              formatter={(value) =>
+                value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ""
+              }
+              parser={(value) =>
+                Number((value || "").replace(/\./g, "").replace(/[^\d]/g, ""))
+              }
+              addonAfter="đ"
+              onChange={(value) => setThresholdValue(value ? Number(value) : null)}
+            />
+          </Form.Item>
+          <Button onClick={() => setThresholdValue(null)}>
+            Dùng mốc mặc định
+          </Button>
+        </Space>
+      </Modal>
+
       {/* Manual Reward Modal */}
       <Modal
         title={
@@ -645,8 +745,8 @@ const CustomerRewardsPage: React.FC = () => {
                       <Text strong className="text-blue-600">{formatCurrency(Number(selectedCustomer?.pending_amount || 0))}</Text>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <Text type="secondary">Gợi ý quà tặng (tỷ lệ 70tr/1tr):</Text>
-                      <Text strong className="text-amber-600">{formatCurrency(Math.floor((Number(selectedCustomer?.pending_amount || 0) / threshold) * 1000000))}</Text>
+                      <Text type="secondary">Gợi ý quà tặng:</Text>
+                      <Text strong className="text-amber-600">{formatCurrency(Math.floor((Number(selectedCustomer?.pending_amount || 0) / getRecordThreshold(selectedCustomer)) * 1000000))}</Text>
                     </div>
                   </div>
                 )}

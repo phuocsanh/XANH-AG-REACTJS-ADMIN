@@ -259,6 +259,34 @@ export const useRewardTrackingQuery = (params?: Record<string, unknown>) => {
 }
 
 /**
+ * Hook cập nhật mốc tặng quà riêng cho khách hàng
+ */
+export const useUpdateRewardThresholdMutation = () => {
+  return useMutation({
+    mutationFn: async ({
+      customerId,
+      rewardThreshold,
+    }: {
+      customerId: number
+      rewardThreshold?: number | null
+    }) => {
+      const response = await api.patchRaw<any>(
+        `/customer-rewards/tracking/${customerId}/threshold`,
+        { reward_threshold: rewardThreshold ?? null },
+      )
+      return response
+    },
+    onSuccess: () => {
+      invalidateResourceQueries('reward-tracking')
+      toast.success("Cập nhật mốc tặng quà thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật mốc tặng quà")
+    },
+  })
+}
+
+/**
  * Hook tìm kiếm lịch sử quà tặng
  */
 export const useRewardHistoryQuery = (params?: Record<string, unknown>) => {
