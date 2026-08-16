@@ -287,6 +287,8 @@ const DebtNotesList: React.FC = () => {
   const summary = debtNotesData?.data?.summary
   
   // Sử dụng summary từ API nếu có, fallback về 0 nếu không
+  const totalAmount = summary?.total_amount || 0
+  const totalPaid = summary?.total_paid || 0
   const totalDebt = summary?.total_debt || 0
   const overdueCount = summary?.overdue_count || 0
   const activeCount = summary?.active_count || 0
@@ -492,10 +494,42 @@ const DebtNotesList: React.FC = () => {
 
       {/* Summary Cards - Optimized for Mobile */}
       <Row gutter={[8, 8]} className='mb-6'>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={4}>
           <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
-              title='Tổng công nợ'
+              title='Công nợ cả vụ'
+              value={totalAmount}
+              precision={0}
+              valueStyle={{ color: "#722ed1", fontSize: '18px' }}
+              formatter={(value) =>
+                new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(Number(value))
+              }
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={4}>
+          <Card bodyStyle={{ padding: '12px' }}>
+            <Statistic
+              title='Tổng đã trả'
+              value={totalPaid}
+              precision={0}
+              valueStyle={{ color: "#3f8600", fontSize: '18px' }}
+              formatter={(value) =>
+                new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(Number(value))
+              }
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={4}>
+          <Card bodyStyle={{ padding: '12px' }}>
+            <Statistic
+              title='Còn nợ'
               value={totalDebt}
               precision={0}
               valueStyle={{ color: "#faad14", fontSize: '18px' }}
@@ -508,7 +542,7 @@ const DebtNotesList: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={4}>
           <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
               title='Quá hạn'
@@ -518,7 +552,7 @@ const DebtNotesList: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={4}>
           <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
               title='Đang nợ'
@@ -528,10 +562,10 @@ const DebtNotesList: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={12} sm={12} md={6}>
+        <Col xs={12} sm={12} md={4}>
           <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
-              title='Đã trả'
+              title='Phiếu đã trả'
               value={paidCount}
               suffix='phiếu'
               valueStyle={{ color: "#3f8600", fontSize: '18px' }}
