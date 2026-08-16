@@ -796,7 +796,7 @@ const InventoryReceiptsList: React.FC = () => {
       ),
     },
     {
-      title: "Đã thanh toán",
+      title: "Đã trả NCC",
       dataIndex: "paid_amount",
       key: "paid_amount",
       width: 150,
@@ -811,7 +811,7 @@ const InventoryReceiptsList: React.FC = () => {
       ),
     },
     {
-      title: "Còn nợ",
+      title: "Còn phải trả NCC",
       dataIndex: "debt_amount",
       key: "debt_amount",
       width: 150,
@@ -841,12 +841,12 @@ const InventoryReceiptsList: React.FC = () => {
     {
       title: (
         <FilterHeader 
-            title="TT Thanh toán" 
+            title="TT trả NCC" 
             value={filters.payment_status} 
             onChange={(val) => handleFilterChange('payment_status', val)}
             inputType="select"
             options={[
-              { label: "Đã thanh toán", value: "paid" },
+              { label: "Đã trả NCC", value: "paid" },
               { label: "Một phần", value: "partial" },
               { label: "Tạm ứng", value: "advance" },
               { label: "Chưa TT", value: "unpaid" },
@@ -858,8 +858,8 @@ const InventoryReceiptsList: React.FC = () => {
       width: 150,
       render: (_status: string, record: InventoryReceipt) => {
         const paymentStatus = getEffectiveReceiptPaymentStatus(record)
-        if (paymentStatus === 'paid') return <Tag color="success">Đã thanh toán</Tag>
-        if (paymentStatus === 'partial') return <Tag color="warning">Một phần</Tag>
+        if (paymentStatus === 'paid') return <Tag color="success">Đã trả NCC</Tag>
+        if (paymentStatus === 'partial') return <Tag color="warning">Trả một phần</Tag>
         if (paymentStatus === 'advance') return <Tag color="processing">Tạm ứng</Tag>
         if (paymentStatus === 'unpaid') return <Tag color="error">Chưa TT</Tag>
         return <Tag>-</Tag>
@@ -1072,7 +1072,7 @@ const InventoryReceiptsList: React.FC = () => {
                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#52c41a' }}>
                         {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalPaid ?? "0")))} đ
                       </div>
-                      <Text className="text-[10px] block" type="secondary">Đã thanh toán</Text>
+                      <Text className="text-[10px] block" type="secondary">Đã trả NCC</Text>
                     </Card>
                   </Col>
                   <Col xs={12} sm={12} md={3}>
@@ -1080,13 +1080,13 @@ const InventoryReceiptsList: React.FC = () => {
                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff4d4f' }}>
                         {new Intl.NumberFormat("vi-VN").format(parseFloat(String(statsData.totalDebt ?? "0")))} đ
                       </div>
-                      <Text className="text-[10px] block" type="secondary">Còn nợ</Text>
+                      <Text className="text-[10px] block" type="secondary">Còn phải trả NCC</Text>
                     </Card>
                   </Col>
                   <Col xs={12} sm={12} md={3}>
                     <Card size="small" bodyStyle={{ padding: '4px 2px', textAlign: 'center' }}>
                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#722ed1' }}>{statsData.debtReceiptsCount ?? 0}</div>
-                      <Text className="text-[10px] block" type="secondary">Phiếu còn nợ</Text>
+                      <Text className="text-[10px] block" type="secondary">Phiếu còn phải trả</Text>
                     </Card>
                   </Col>
                 </Row>

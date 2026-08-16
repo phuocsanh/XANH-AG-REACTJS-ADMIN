@@ -47,6 +47,8 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
   const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false)
   const { data: payments = [], isLoading } = useReceiptPaymentsQuery(receipt.id)
   const deletePaymentMutation = useDeletePaymentMutation()
+  const isBySaleTypeSettlement =
+    receipt.supplier_settlement_mode === "by_sale_type"
 
   const handleDeletePayment = async (paymentId: number) => {
     try {
@@ -62,7 +64,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
 
   const columns = [
     {
-      title: "Ngày thanh toán",
+      title: isBySaleTypeSettlement ? "Ngày trả NCC" : "Ngày thanh toán",
       dataIndex: "payment_date",
       key: "payment_date",
       render: (date: string) => (
@@ -73,7 +75,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
       ),
     },
     {
-      title: "Số tiền",
+      title: isBySaleTypeSettlement ? "Số tiền trả NCC" : "Số tiền",
       dataIndex: "amount",
       key: "amount",
       align: "right" as const,
@@ -133,8 +135,6 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
 
   const paymentData = (payments || []) as any[]
 
-  const isBySaleTypeSettlement =
-    receipt.supplier_settlement_mode === "by_sale_type"
   const grandTotal =
     Number(receipt.total_amount) || Number(receipt.final_amount) || 0
   const rawSupplierAmount = Number((receipt as any).supplier_amount) || 0
@@ -162,7 +162,11 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
         <Col xs={24} sm={6} className='flex flex-col'>
           <Card bordered={false} className='bg-gray-50 shadow-sm h-full w-full'>
             <Statistic
-              title='Tổng giá trị nhập'
+              title={
+                isBySaleTypeSettlement
+                  ? "Giá trị quyết toán NCC"
+                  : "Tổng giá trị nhập"
+              }
               value={grandTotal}
               formatter={(value) => formatCurrency(Number(value))}
               valueStyle={{ color: "#000" }}
@@ -177,7 +181,9 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
             <Statistic
               title={
                 <span className='text-gray-500 whitespace-nowrap'>
-                  Phải trả NCC
+                  {isBySaleTypeSettlement
+                    ? "Phải trả NCC theo bán ra"
+                    : "Phải trả NCC"}
                 </span>
               }
               value={supplierAmount}
@@ -202,7 +208,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
         <Col xs={24} sm={6} className='flex flex-col'>
           <Card bordered={false} className='bg-blue-50 shadow-sm h-full w-full'>
             <Statistic
-              title='Đã thanh toán'
+              title={isBySaleTypeSettlement ? "Đã trả NCC" : "Đã thanh toán"}
               value={paidAmount}
               formatter={(value) => formatCurrency(Number(value))}
               valueStyle={{ color: "#1890ff" }}
@@ -216,7 +222,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
             className={`${debtAmount > 0 ? "bg-red-50 shadow-sm" : "bg-green-50 shadow-sm"} h-full w-full`}
           >
             <Statistic
-              title='Còn nợ NCC'
+              title={isBySaleTypeSettlement ? "Chưa trả NCC" : "Còn nợ NCC"}
               value={debtAmount}
               formatter={(value) => formatCurrency(Number(value))}
               valueStyle={{ color: debtAmount > 0 ? "#cf1322" : "#3f8600" }}
@@ -243,7 +249,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
           <Col xs={24} sm={12} className='flex flex-col'>
             <Card bordered={false} className='bg-violet-50 shadow-sm h-full w-full'>
               <Statistic
-                title='Nợ cuối vụ theo giá nợ'
+                title='Phải trả theo bán nợ'
                 value={creditSettlementAmount}
                 formatter={(value) => formatCurrency(Number(value))}
                 valueStyle={{ color: "#7c3aed" }}
@@ -262,17 +268,23 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
           <Col>
             <Space direction='vertical' size={2}>
               <Text type='secondary' className='text-xs'>
-                Trạng thái thanh toán
+                {isBySaleTypeSettlement
+                  ? "Trạng thái trả tiền cho NCC"
+                  : "Trạng thái thanh toán"}
               </Text>
               <Space>
                 {paymentStatus === "paid" && (
                   <Tag color='success' className='px-3 py-1 text-sm'>
-                    ✅ Đã thanh toán đầy đủ
+                    {isBySaleTypeSettlement
+                      ? "Đã trả NCC đầy đủ"
+                      : "Đã thanh toán đầy đủ"}
                   </Tag>
                 )}
                 {paymentStatus === "partial" && (
                   <Tag color='warning' className='px-3 py-1 text-sm'>
-                    ⚠️ Thanh toán một phần
+                    {isBySaleTypeSettlement
+                      ? "Đã trả NCC một phần"
+                      : "Thanh toán một phần"}
                   </Tag>
                 )}
                 {paymentStatus === "advance" && (
@@ -282,7 +294,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
                 )}
                 {paymentStatus === "unpaid" && (
                   <Tag color='error' className='px-3 py-1 text-sm'>
-                    ❌ Chưa thanh toán
+                    {isBySaleTypeSettlement ? "Chưa trả NCC" : "Chưa thanh toán"}
                   </Tag>
                 )}
               </Space>
@@ -297,7 +309,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
                   size='large'
                   onClick={() => setIsAddPaymentModalOpen(true)}
                 >
-                  Thêm thanh toán
+                  {isBySaleTypeSettlement ? "Ghi nhận trả NCC" : "Thêm thanh toán"}
                 </Button>
               )}
           </Col>
@@ -308,7 +320,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
       {isBySaleTypeSettlement && (
         <Alert
           message='Phiếu lúa giống đang quyết toán theo loại bán'
-          description='Phiếu này không chốt công nợ lúc nhập. Phải trả NCC chỉ tăng khi hàng từ chính phiếu nhập này được bán ra trên hóa đơn đã xác nhận hoặc đã thanh toán. Nếu đã bán mà vẫn đang 0đ, cần đồng bộ lại xuất kho/hóa đơn để hệ thống tạo quyết toán NCC.'
+          description='Các hóa đơn bán đã thanh toán là tiền khách trả cho cửa hàng. Mục Đã trả NCC / Chưa trả NCC ở đây là khoản cửa hàng đã ghi nhận trả lại cho nhà cung cấp lúa giống. Nếu thực tế đã trả A LÂM, bấm Ghi nhận trả NCC để phiếu hết nợ.'
           type='info'
           showIcon
           icon={<InfoCircleOutlined />}
