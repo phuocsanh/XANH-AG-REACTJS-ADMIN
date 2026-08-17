@@ -644,6 +644,19 @@ const InventoryReceiptsList: React.FC = () => {
     }
   }
 
+  const canDeleteReceipt = (record: InventoryReceipt) => {
+    const normalizedStatus = normalizeReceiptStatus(record.status_code || record.status)
+    const hasPayment = Number(record.paid_amount || 0) > 0
+
+    if (hasPayment) return false
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT) return true
+
+    return (
+      normalizedStatus === InventoryReceiptStatus.CANCELLED &&
+      !record.approved_at
+    )
+  }
+
   // Render trạng thái
   const renderStatus = (record: InventoryReceipt) => {
     const normalizedStatus = normalizeReceiptStatus(record.status_code || record.status);
@@ -686,14 +699,13 @@ const InventoryReceiptsList: React.FC = () => {
       </Tooltip>
     )
 
-    // 2. Xóa phiếu - Chỉ hiển thị cho trạng thái "Nháp"
-    const normalizedStatus = normalizeReceiptStatus(record.status_code || record.status)
-    if (normalizedStatus === InventoryReceiptStatus.DRAFT) {
+    // 2. Xóa phiếu - Chỉ phiếu nháp hoặc phiếu đã hủy nhưng chưa từng duyệt
+    if (canDeleteReceipt(record)) {
       actions.push(
-        <Tooltip key='delete' title='Xóa phiếu nháp'>
+        <Tooltip key='delete' title='Xóa phiếu'>
           <Popconfirm
             title='Xóa phiếu nhập hàng'
-            description='Bạn có chắc chắn muốn xóa phiếu nhập hàng nháp này?'
+            description='Bạn có chắc chắn muốn xóa phiếu nhập hàng này? Hành động này không thể hoàn tác.'
             onConfirm={() => handleDeleteReceipt(record.id)}
             okText='Xóa'
             cancelText='Hủy'

@@ -170,6 +170,19 @@ const InventoryReceiptDetail: React.FC = () => {
     }
   }
 
+  const canDeleteReceipt = () => {
+    if (!receipt) return false
+    const hasPayment = Number(receipt.paid_amount || 0) > 0
+
+    if (hasPayment) return false
+    if (normalizedStatus === InventoryReceiptStatus.DRAFT) return true
+
+    return (
+      normalizedStatus === InventoryReceiptStatus.CANCELLED &&
+      !receipt.approved_at
+    )
+  }
+
   const handlePrint = () => {
     window.print()
   }
@@ -290,11 +303,8 @@ const InventoryReceiptDetail: React.FC = () => {
       )
     }
 
-    // 4. Nút Xóa - Cho Nháp hoặc Đã hủy
-    if (
-      normalizedStatus === InventoryReceiptStatus.DRAFT ||
-      normalizedStatus === InventoryReceiptStatus.CANCELLED
-    ) {
+    // 4. Nút Xóa - Chỉ phiếu nháp hoặc phiếu đã hủy nhưng chưa từng duyệt
+    if (canDeleteReceipt()) {
       buttons.push(
         <Popconfirm
           key='delete'
