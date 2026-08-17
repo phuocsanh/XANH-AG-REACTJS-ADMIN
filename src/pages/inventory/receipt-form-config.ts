@@ -1,6 +1,11 @@
 import * as z from 'zod';
 import dayjs from 'dayjs';
 
+const nullableString = z.preprocess(
+  (value) => (value === null ? '' : value),
+  z.string().optional(),
+);
+
 // Schema cho item trong phiếu nhập hàng
 export const receiptItemSchema = z.object({
   product_id: z.number().min(1, 'Vui lòng chọn sản phẩm'),
@@ -13,7 +18,7 @@ export const receiptItemSchema = z.object({
   tax_selling_price: z.number().min(0, 'Giá bán khai thuế phải lớn hơn hoặc bằng 0').optional(),
   total_price: z.number().min(0),
   expiry_date: z.any().optional(),
-  batch_number: z.string().optional(),
+  batch_number: nullableString,
   individual_shipping_cost: z.number().optional().default(0),
   taxable_quantity: z.number().min(0).optional().default(0),
   unit_id: z.number().optional(), // Đã thêm
@@ -24,7 +29,7 @@ export const receiptItemSchema = z.object({
   discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
   discount_amount: z.number().optional().default(0),
-  notes: z.string().optional(),
+  notes: nullableString,
 });
 
 // Schema cho form tạo phiếu nhập hàng

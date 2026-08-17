@@ -190,6 +190,9 @@ export interface InventoryReceiptItem {
   vat_unit_cost?: number
   tax_selling_price?: number
   total_price: number // Thay totalPrice thành total_price và string thành number để khớp với backend
+  discount_amount?: number
+  discount_value?: number
+  discount_type?: "percentage" | "fixed_amount"
   notes?: string
   created_at: string
   updated_at: string
@@ -270,6 +273,9 @@ export interface InventoryReceiptItemApiResponse {
   vat_unit_cost?: string
   tax_selling_price?: string
   total_price: string // Thay totalPrice thành total_price
+  discount_amount?: string | number
+  discount_value?: string | number
+  discount_type?: "percentage" | "fixed_amount"
   expiry_date?: string // Thay expiryDate thành expiry_date
   batch_number?: string // Thay batchNumber thành batch_number
   notes?: string
@@ -439,8 +445,11 @@ export function mapApiResponseToInventoryReceiptItem(
         ? parseFloat(apiItem.tax_selling_price)
         : undefined,
     total_price: parseFloat(apiItem.total_price || "0"),
+    discount_amount: parseFloat(String(apiItem.discount_amount || "0")),
+    discount_value: parseFloat(String(apiItem.discount_value || "0")),
+    discount_type: apiItem.discount_type || "fixed_amount",
     expiry_date: apiItem.expiry_date, // Thêm expiry_date
-    batch_number: apiItem.batch_number, // Thêm batch_number
+    batch_number: apiItem.batch_number ?? undefined, // Thêm batch_number
     individual_shipping_cost: apiItem.individual_shipping_cost
       ? parseFloat(apiItem.individual_shipping_cost)
       : 0,
@@ -454,7 +463,7 @@ export function mapApiResponseToInventoryReceiptItem(
       apiItem.final_unit_cost !== null
         ? parseFloat(apiItem.final_unit_cost)
         : undefined,
-    notes: apiItem.notes,
+    notes: apiItem.notes ?? "",
     created_at: apiItem.created_at,
     updated_at: apiItem.updated_at,
     product_name:
@@ -597,6 +606,9 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
   vat_unit_cost?: number // Đơn giá trên hóa đơn VAT (tùy chọn)
   tax_selling_price?: number // Giá bán khai thuế theo lô nhập (tùy chọn)
   total_price: number // Tổng tiền (bắt buộc)
+  discount_amount?: number
+  discount_value?: number
+  discount_type?: "percentage" | "fixed_amount"
   expiry_date?: string // Ngày hết hạn (tùy chọn)
   notes?: string // Ghi chú (tùy chọn)
 

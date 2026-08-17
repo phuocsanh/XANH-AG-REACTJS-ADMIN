@@ -702,6 +702,34 @@ const InventoryReceiptDetail: React.FC = () => {
       render: (p) => (p > 0 ? (p || 0).toLocaleString("vi-VN") + " ₫" : "-"),
     },
     {
+      title: "Chiết khấu",
+      dataIndex: "discount_amount",
+      key: "discount_amount",
+      width: 130,
+      align: "right",
+      render: (value, record) => {
+        const amount = Number(value || 0)
+        if (amount <= 0) return <Text type='secondary'>-</Text>
+
+        const rawValue = Number(record.discount_value || 0)
+        const suffix = record.discount_type === "percentage" ? "%" : "₫"
+
+        return (
+          <Tooltip
+            title={
+              rawValue > 0
+                ? `Giá trị nhập: ${rawValue.toLocaleString("vi-VN")} ${suffix}`
+                : undefined
+            }
+          >
+            <Text className='text-rose-600'>
+              -{amount.toLocaleString("vi-VN")} ₫
+            </Text>
+          </Tooltip>
+        )
+      },
+    },
+    {
       title: "Giá vốn",
       dataIndex: "final_unit_cost",
       key: "final_unit_cost",
@@ -712,16 +740,17 @@ const InventoryReceiptDetail: React.FC = () => {
         const hasShippingAdjustment =
           Number(record.individual_shipping_cost || 0) > 0 ||
           Number(record.allocated_shipping_cost || 0) > 0
+        const hasDiscount = Number(record.discount_amount || 0) > 0
 
         return (
           <Tooltip
             title={
-              hasShippingAdjustment
-                ? `Giá dùng tính lợi nhuận = Đơn giá nhập + phí bốc vác/vận chuyển`
-                : "Chưa có phí bốc vác/vận chuyển cộng thêm"
+              hasDiscount || hasShippingAdjustment
+                ? `Giá dùng tính lợi nhuận = đơn giá sau chiết khấu + phí bốc vác/vận chuyển`
+                : "Chưa có chiết khấu hoặc phí bốc vác/vận chuyển cộng thêm"
             }
           >
-            <Text strong className={hasShippingAdjustment ? "text-emerald-600" : undefined}>
+            <Text strong className={hasDiscount || hasShippingAdjustment ? "text-emerald-600" : undefined}>
               {finalUnitCost.toLocaleString("vi-VN")} ₫
             </Text>
           </Tooltip>
@@ -736,9 +765,7 @@ const InventoryReceiptDetail: React.FC = () => {
       align: "right",
       render: (p, record) => (
         <Text strong className='text-green-600'>
-          {(
-            Number(record.quantity || 0) * Number(record.unit_cost || 0)
-          ).toLocaleString("vi-VN")}{" "}
+          {Number(record.total_price || 0).toLocaleString("vi-VN")}{" "}
           ₫
         </Text>
       ),
@@ -1204,7 +1231,7 @@ const InventoryReceiptDetail: React.FC = () => {
                   )
                   const totalA = pageData.reduce(
                     (s, i) =>
-                      s + Number(i.quantity || 0) * Number(i.unit_cost || 0),
+                      s + Number(i.total_price || 0),
                     0,
                   )
                   return (

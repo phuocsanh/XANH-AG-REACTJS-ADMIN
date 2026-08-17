@@ -298,8 +298,11 @@ const InventoryReceiptCreate: React.FC = () => {
           tax_selling_price: Number(item.tax_selling_price ?? 0),
           total_price: Number(item.total_price || 0),
           individual_shipping_cost: Number(item.individual_shipping_cost || 0),
+          discountType: item.discount_type || 'fixed_amount',
+          discountValue: Number(item.discount_value || item.discount_amount || 0),
+          discount_amount: Number(item.discount_amount || 0),
           expiry_date: item.expiry_date,
-          notes: item.notes,
+          notes: item.notes ?? '',
           taxable_quantity: item.taxable_quantity || 0,
           unit_id: resolvedUnitId,
           conversion_factor: Number(item.conversion_factor || 1),
@@ -308,6 +311,7 @@ const InventoryReceiptCreate: React.FC = () => {
           costing_method: item.product?.costing_method || 'fixed',
         };
       }).reverse()
+      const hasItemDiscount = mappedItems.some((item: any) => Number(item.discountValue || 0) > 0)
 
       // Tạo danh sách option sản phẩm từ existingItems để ComboBox hiển thị tên thay vì ID
       const initOpts = existingItems
@@ -348,7 +352,7 @@ const InventoryReceiptCreate: React.FC = () => {
           paymentMethod: undefined,
           paymentDueDate: undefined,
           images: [],
-          discountMethod: 'none',
+          discountMethod: hasItemDiscount ? 'per_item' : 'none',
           discountType: receipt.discount_type || 'fixed_amount',
           discountValue: Number(receipt.discount_value || 0),
         })
@@ -370,7 +374,7 @@ const InventoryReceiptCreate: React.FC = () => {
         paymentMethod: receipt.payment_method,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
 
-        discountMethod: 'none',
+        discountMethod: hasItemDiscount ? 'per_item' : 'none',
         discountType: receipt.discount_type || 'fixed_amount',
         discountValue: Number(receipt.discount_value || 0),
       })
@@ -507,6 +511,7 @@ const InventoryReceiptCreate: React.FC = () => {
       base_quantity: 1,
       conversions: [],
       costing_method: 'fixed',
+      notes: '',
     })
   }, [prepend])
 
@@ -623,7 +628,7 @@ const InventoryReceiptCreate: React.FC = () => {
           costing_method: item.costing_method || 'fixed',
           total_price: Number(item.totalPriceRaw || 0),
           expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
-          notes: item.notes,
+          notes: item.notes || undefined,
           individual_shipping_cost: Number(item.individual_shipping_cost || 0),
           discount_amount: Number(item.itemDiscount || 0),
           discount_value: Number(item.discountValue || 0),
