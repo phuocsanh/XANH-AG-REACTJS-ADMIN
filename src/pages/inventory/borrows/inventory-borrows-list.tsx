@@ -1,7 +1,7 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { Button, Card, Popconfirm, Space, Tag, Tooltip, Typography } from "antd"
-import { CheckOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, StopOutlined } from "@ant-design/icons"
+import { CheckOutlined, DeleteOutlined, LoginOutlined, PlusOutlined, ReloadOutlined, StopOutlined } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
 import DataTable from "@/components/common/data-table"
@@ -16,6 +16,7 @@ import {
   useCancelInventoryBorrowMutation,
   useDeleteInventoryBorrowMutation,
   useInventoryBorrowsQuery,
+  useReturnInventoryBorrowMutation,
 } from "@/queries/inventory-borrow"
 
 const { Title, Text } = Typography
@@ -26,6 +27,7 @@ const InventoryBorrowsList: React.FC = () => {
   const approveMutation = useApproveInventoryBorrowMutation()
   const cancelMutation = useCancelInventoryBorrowMutation()
   const deleteMutation = useDeleteInventoryBorrowMutation()
+  const returnMutation = useReturnInventoryBorrowMutation()
 
   const columns: ColumnsType<InventoryBorrow> = [
     {
@@ -91,6 +93,19 @@ const InventoryBorrowsList: React.FC = () => {
                 cancelText="Hủy"
               >
                 <Button type="text" icon={<CheckOutlined />} style={{ color: "#52c41a" }} />
+              </Popconfirm>
+            </Tooltip>
+          )}
+          {record.status === "approved" && (
+            <Tooltip title="Khách trả hàng">
+              <Popconfirm
+                title="Ghi nhận khách trả hàng?"
+                description="Toàn bộ số lượng còn mượn sẽ được hoàn về đúng lô kho."
+                onConfirm={() => returnMutation.mutateAsync(record.id)}
+                okText="Trả hàng"
+                cancelText="Đóng"
+              >
+                <Button type="text" icon={<LoginOutlined />} style={{ color: "#1677ff" }} />
               </Popconfirm>
             </Tooltip>
           )}
