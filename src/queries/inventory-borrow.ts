@@ -79,3 +79,33 @@ export const useApproveInventoryBorrowMutation = () => {
     },
   })
 }
+
+export const useCancelInventoryBorrowMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.postRaw<InventoryBorrow>(`/inventory/borrows/${id}/cancel`),
+    onSuccess: async (_, id) => {
+      await queryClient.invalidateQueries({ queryKey: inventoryBorrowKeys.all })
+      await queryClient.invalidateQueries({ queryKey: inventoryBorrowKeys.detail(id) })
+      invalidateResourceQueries("products")
+      message.success("Đã hủy phiếu cho mượn và hoàn tồn kho.")
+    },
+    onError: (error) => {
+      handleApiError(error, "Hủy phiếu cho mượn thất bại!")
+    },
+  })
+}
+
+export const useDeleteInventoryBorrowMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.delete<{ success: boolean }>(`/inventory/borrows/${id}`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: inventoryBorrowKeys.all })
+      message.success("Đã xóa phiếu cho mượn.")
+    },
+    onError: (error) => {
+      handleApiError(error, "Xóa phiếu cho mượn thất bại!")
+    },
+  })
+}

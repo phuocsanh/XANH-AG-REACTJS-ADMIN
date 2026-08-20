@@ -1,7 +1,7 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
 import { Button, Card, Popconfirm, Space, Tag, Tooltip, Typography } from "antd"
-import { CheckOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons"
+import { CheckOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, StopOutlined } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
 import DataTable from "@/components/common/data-table"
@@ -13,6 +13,8 @@ import {
 } from "@/models/inventory-borrow.model"
 import {
   useApproveInventoryBorrowMutation,
+  useCancelInventoryBorrowMutation,
+  useDeleteInventoryBorrowMutation,
   useInventoryBorrowsQuery,
 } from "@/queries/inventory-borrow"
 
@@ -22,6 +24,8 @@ const InventoryBorrowsList: React.FC = () => {
   const navigate = useNavigate()
   const { data, isLoading, refetch } = useInventoryBorrowsQuery({ limit: 100 })
   const approveMutation = useApproveInventoryBorrowMutation()
+  const cancelMutation = useCancelInventoryBorrowMutation()
+  const deleteMutation = useDeleteInventoryBorrowMutation()
 
   const columns: ColumnsType<InventoryBorrow> = [
     {
@@ -87,6 +91,34 @@ const InventoryBorrowsList: React.FC = () => {
                 cancelText="Hủy"
               >
                 <Button type="text" icon={<CheckOutlined />} style={{ color: "#52c41a" }} />
+              </Popconfirm>
+            </Tooltip>
+          )}
+          {record.status === "approved" && (
+            <Tooltip title="Hủy và hoàn tồn">
+              <Popconfirm
+                title="Hủy phiếu cho mượn?"
+                description="Số lượng đã cho mượn sẽ được hoàn về đúng lô kho."
+                onConfirm={() => cancelMutation.mutateAsync(record.id)}
+                okText="Hủy phiếu"
+                cancelText="Đóng"
+                okButtonProps={{ danger: true }}
+              >
+                <Button type="text" icon={<StopOutlined />} style={{ color: "#fa8c16" }} />
+              </Popconfirm>
+            </Tooltip>
+          )}
+          {record.status === "draft" && (
+            <Tooltip title="Xóa phiếu nháp">
+              <Popconfirm
+                title="Xóa phiếu nháp?"
+                description="Phiếu nháp sẽ bị xóa khỏi danh sách."
+                onConfirm={() => deleteMutation.mutateAsync(record.id)}
+                okText="Xóa"
+                cancelText="Đóng"
+                okButtonProps={{ danger: true }}
+              >
+                <Button type="text" danger icon={<DeleteOutlined />} />
               </Popconfirm>
             </Tooltip>
           )}
