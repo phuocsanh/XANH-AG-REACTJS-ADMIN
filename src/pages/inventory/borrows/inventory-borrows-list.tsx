@@ -1,6 +1,6 @@
 import React from "react"
 import { useNavigate } from "react-router-dom"
-import { Button, Card, Popconfirm, Space, Tag, Tooltip, Typography } from "antd"
+import { Button, Card, InputNumber, Modal, Popconfirm, Space, Table, Tag, Tooltip, Typography } from "antd"
 import { CheckOutlined, DeleteOutlined, LoginOutlined, PlusOutlined, ReloadOutlined, StopOutlined } from "@ant-design/icons"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
@@ -28,6 +28,48 @@ const InventoryBorrowsList: React.FC = () => {
   const cancelMutation = useCancelInventoryBorrowMutation()
   const deleteMutation = useDeleteInventoryBorrowMutation()
   const returnMutation = useReturnInventoryBorrowMutation()
+  const [returningBorrow, setReturningBorrow] = React.useState<InventoryBorrow | null>(null)
+  const [returnQuantities, setReturnQuantities] = React.useState<Record<number, number>>({})
+
+  const getRemainingReturnQuantity = (item: NonNullable<InventoryBorrow["items"]>[number]) => {
+    const borrowedQuantity = Number(item.quantity || 0)
+    const returnedQuantity = Number(item.returned_quantity || 0)
+    const convertedQuantity = Number(item.converted_to_sale_quantity || 0)
+    return Math.max(0, borrowedQuantity - returnedQuantity - convertedQuantity)
+  }
+
+  const openReturnModal = (record: InventoryBorrow) => {
+    const initialQuantities: Record<number, number> = {}
+    for (const item of record.items || []) {
+      if (!item.id) continue
+      initialQuantities[item.id] = getRemainingReturnQuantity(item)
+    }
+    setReturningBorrow(record)
+    setReturnQuantities(initialQuantities)
+  }
+
+  const closeReturnModal = () => {
+    setReturningBorrow(null)
+    setReturnQuantities({})
+  }
+
+  const submitReturn = async () => {
+    if (!returningBorrow) return
+    const items = (returningBorrow.items || [])
+      .filter((item) => item.id)
+      .map((item) => ({
+        item_id: Number(item.id),
+        quantity: Number(returnQuantities[Number(item.id)] || 0),
+      }))
+      .filter((item) => item.quantity > 0)
+
+    if (items.length === 0) {
+      return
+    }
+
+    await returnMutation.mutateAsync({ id: returningBorrow.id, items })
+    closeReturnModal()
+  }
 
   const columns: ColumnsType<InventoryBorrow> = [
     {
@@ -96,17 +138,14 @@ const InventoryBorrowsList: React.FC = () => {
               </Popconfirm>
             </Tooltip>
           )}
-          {record.status === "approved" && (
+          {(record.status === "approved" || record.status === "partial_returned") && (
             <Tooltip title="Khách trả hàng">
-              <Popconfirm
-                title="Ghi nhận khách trả hàng?"
-                description="Toàn bộ số lượng còn mượn sẽ được hoàn về đúng lô kho."
-                onConfirm={() => returnMutation.mutateAsync(record.id)}
-                okText="Trả hàng"
-                cancelText="Đóng"
-              >
-                <Button type="text" icon={<LoginOutlined />} style={{ color: "#1677ff" }} />
-              </Popconfirm>
+              <Button
+                type="text"
+                icon={<LoginOutlined />}
+                style={{ color: "#1677ff" }}
+                onClick={() => openReturnModal(record)}
+              />
             </Tooltip>
           )}
           {record.status === "approved" && (
@@ -173,6 +212,83 @@ const InventoryBorrowsList: React.FC = () => {
           />
         )}
       </Card>
+
+      <Modal
+        title={returningBorrow ? `Trả hàng phiếu ${returningBorrow.code}` : "Trả hàng"}
+        open={!!returningBorrow}
+        onCancel={closeReturnModal}
+        width={760}
+        okText="Ghi nhận trả"
+        cancelText="Đóng"
+        confirmLoading={returnMutation.isPending}
+        onOk={submitReturn}
+      >
+        <Table
+          dataSource={returningBorrow?.items || []}
+          rowKey={(record) => String(record.id)}
+          pagination={false}
+          size="small"
+          scroll={{ x: 720 }}
+          columns={[
+            {
+              title: "Sản phẩm",
+              key: "product",
+              render: (_, record) => record.product?.name || `#${record.product_id}`,
+            },
+            {
+              title: "Lô",
+              key: "batch",
+              width: 110,
+              render: (_, record) => record.batch?.code || `#${record.batch_id}`,
+            },
+            {
+              title: "Đã mượn",
+              dataIndex: "quantity",
+              width: 100,
+              align: "right",
+              render: (quantity) => Number(quantity || 0),
+            },
+            {
+              title: "Đã trả",
+              dataIndex: "returned_quantity",
+              width: 100,
+              align: "right",
+              render: (quantity) => Number(quantity || 0),
+            },
+            {
+              title: "Còn lại",
+              key: "remaining",
+              width: 100,
+              align: "right",
+              render: (_, record) => getRemainingReturnQuantity(record),
+            },
+            {
+              title: "Trả lần này",
+              key: "return_quantity",
+              width: 150,
+              render: (_, record) => {
+                const itemId = Number(record.id)
+                const maxQuantity = getRemainingReturnQuantity(record)
+                return (
+                  <InputNumber
+                    min={0}
+                    max={maxQuantity}
+                    step={0.01}
+                    value={returnQuantities[itemId] || 0}
+                    style={{ width: "100%" }}
+                    onChange={(value) =>
+                      setReturnQuantities((previous) => ({
+                        ...previous,
+                        [itemId]: Number(value || 0),
+                      }))
+                    }
+                  />
+                )
+              },
+            },
+          ]}
+        />
+      </Modal>
     </div>
   )
 }

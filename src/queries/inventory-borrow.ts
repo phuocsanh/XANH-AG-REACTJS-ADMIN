@@ -99,10 +99,13 @@ export const useCancelInventoryBorrowMutation = () => {
 export const useReturnInventoryBorrowMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => apiClient.postRaw<InventoryBorrow>(`/inventory/borrows/${id}/return`),
-    onSuccess: async (_, id) => {
+    mutationFn: (data: {
+      id: number
+      items?: Array<{ item_id: number; quantity: number }>
+    }) => apiClient.postRaw<InventoryBorrow>(`/inventory/borrows/${data.id}/return`, { items: data.items }),
+    onSuccess: async (_, data) => {
       await queryClient.invalidateQueries({ queryKey: inventoryBorrowKeys.all })
-      await queryClient.invalidateQueries({ queryKey: inventoryBorrowKeys.detail(id) })
+      await queryClient.invalidateQueries({ queryKey: inventoryBorrowKeys.detail(data.id) })
       invalidateResourceQueries("products")
       message.success("Đã ghi nhận trả hàng và hoàn tồn kho.")
     },
