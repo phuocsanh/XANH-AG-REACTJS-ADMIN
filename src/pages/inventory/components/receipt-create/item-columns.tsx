@@ -36,6 +36,7 @@ interface ItemColumnsProps {
   calculateTotals: () => any
   discountMethod: 'none' | 'per_item' | 'global'
   isApproved?: boolean
+  forceFixedDiscount?: boolean
 }
 
 /**
@@ -50,6 +51,7 @@ const useItemColumns = ({
   calculateTotals,
   discountMethod,
   isApproved,
+  forceFixedDiscount,
 }: ItemColumnsProps): ColumnsType<any> => {
   const columns: ColumnsType<any> = [
     {
@@ -405,16 +407,18 @@ const useItemColumns = ({
               render={({ field }) => (
                 <Radio.Group 
                   size="small" 
-                  value={field.value} 
+                  value={forceFixedDiscount ? 'fixed_amount' : field.value}
                   disabled={isApproved}
                   onChange={(e: any) => {
-                    field.onChange(e.target.value)
+                    field.onChange(forceFixedDiscount ? 'fixed_amount' : e.target.value)
                     setValue(`items.${index}.discountValue`, 0) // Reset value khi đổi loại
                   }}
                   className="mb-1"
                 >
                   <Radio.Button value="fixed_amount">đ</Radio.Button>
-                  <Radio.Button value="percentage">%</Radio.Button>
+                  {!forceFixedDiscount && (
+                    <Radio.Button value="percentage">%</Radio.Button>
+                  )}
                 </Radio.Group>
               )}
             />
@@ -427,7 +431,7 @@ const useItemColumns = ({
                   min={0}
                   disabled={isApproved}
                   placeholder='0'
-                  addonAfter={getValues(`items.${index}.discountType`) === 'percentage' ? "%" : "đ"}
+                  addonAfter={forceFixedDiscount || getValues(`items.${index}.discountType`) !== 'percentage' ? "đ" : "%"}
                   onChange={(value) => {
                     field.onChange(value || 0)
                   }}

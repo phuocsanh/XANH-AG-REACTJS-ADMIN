@@ -98,6 +98,24 @@ export const receiptFormSchema = z.object({
 
   // Validate payment logic
   if (data.supplierSettlementMode === 'by_sale_type') {
+    if (data.discountType === 'percentage' && Number(data.discountValue || 0) > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Phiếu lúa giống chỉ được nhập chiết khấu bằng số tiền cố định',
+        path: ['discountType'],
+      });
+    }
+
+    data.items.forEach((item, index) => {
+      if (item.discountType === 'percentage' && Number(item.discountValue || 0) > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Phiếu lúa giống chỉ được nhập chiết khấu bằng số tiền cố định',
+          path: ['items', index, 'discountType'],
+        });
+      }
+    });
+
     if (data.paidAmount > 0 && !data.paymentMethod) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

@@ -400,6 +400,27 @@ const InventoryReceiptCreate: React.FC = () => {
     }
   }, [watchedDiscountMethod, setValue, getValues])
 
+  useEffect(() => {
+    if (!isBySaleTypeReceiptCandidate) return
+
+    if (watchedDiscountType !== 'fixed_amount') {
+      setValue('discountType', 'fixed_amount', { shouldValidate: true })
+    }
+
+    watchedItems.forEach((item: any, index: number) => {
+      if (item?.discountType !== 'fixed_amount') {
+        setValue(`items.${index}.discountType`, 'fixed_amount', {
+          shouldValidate: true,
+        })
+      }
+    })
+  }, [
+    isBySaleTypeReceiptCandidate,
+    setValue,
+    watchedDiscountType,
+    watchedItems,
+  ])
+
   // Hàm tính tổng tiền (dùng watched values)
   const calculateTotals = () => {
     const totalProductValueRaw = watchedItems.reduce((sum, item) => sum + (Number(item.unit_cost || 0) * Number(item.quantity || 0)), 0)
@@ -412,7 +433,7 @@ const InventoryReceiptCreate: React.FC = () => {
       
       let itemDisc = 0
       if (watchedDiscountMethod === 'per_item') {
-        if (item.discountType === 'percentage') {
+        if (!isBySaleTypeSettlement && item.discountType === 'percentage') {
           itemDisc = (itemBaseValue * (Number(item.discountValue) || 0)) / 100
         } else {
           itemDisc = Number(item.discountValue) || 0
@@ -433,26 +454,48 @@ const InventoryReceiptCreate: React.FC = () => {
     // 2. Tính chiết khấu tổng của cả đơn hàng (Global discount)
     let globalDiscountAmount = 0
     if (watchedDiscountMethod === 'global') {
-      if (watchedDiscountType === 'percentage') {
+      if (!isBySaleTypeSettlement && watchedDiscountType === 'percentage') {
         globalDiscountAmount = (totalValueAfterItemDiscounts * (Number(watchedDiscountValue) || 0)) / 100
       } else {
         globalDiscountAmount = Number(watchedDiscountValue) || 0
       }
     }
 
+    const getItemBaseQuantity = (item: any) => {
+      const quantity = Number(item.quantity) || 0
+      const conversionFactor = Number(item.conversion_factor || 1)
+      const computedBaseQuantity = quantity * (conversionFactor > 0 ? conversionFactor : 1)
+      return Number(item.base_quantity || 0) > 0
+        ? Number(item.base_quantity || 0)
+        : computedBaseQuantity
+    }
+
+    const totalQuantityForDiscountAllocation = itemsWithNetCost.reduce(
+      (sum, item) => sum + getItemBaseQuantity(item),
+      0,
+    )
+
     // 3. Phân bổ chiết khấu tổng vào từng item để có Giá vốn thực
     const finalItems = itemsWithNetCost.map(item => {
       let allocatedGlobalDisc = 0
-      if (globalDiscountAmount > 0 && totalValueAfterItemDiscounts > 0) {
-        allocatedGlobalDisc = (item.valueAfterItemDisc / totalValueAfterItemDiscounts) * globalDiscountAmount
+      if (globalDiscountAmount > 0) {
+        if (totalValueAfterItemDiscounts > 0) {
+          allocatedGlobalDisc = (item.valueAfterItemDisc / totalValueAfterItemDiscounts) * globalDiscountAmount
+        } else if (totalQuantityForDiscountAllocation > 0) {
+          allocatedGlobalDisc = (getItemBaseQuantity(item) / totalQuantityForDiscountAllocation) * globalDiscountAmount
+        }
       }
       
       const totalDiscountForItem = item.itemDiscount + allocatedGlobalDisc
-      const netUnitCost = item.quantity > 0 
-        ? Math.round((item.valueAfterItemDisc - allocatedGlobalDisc) / item.quantity)
-        : item.unit_cost
-      const netTotalValue = Math.round(item.valueAfterItemDisc - allocatedGlobalDisc)
       const totalPriceRaw = item.quantity * item.unit_cost
+      const netUnitCost = isBySaleTypeSettlement
+        ? Number(item.unit_cost || 0)
+        : item.quantity > 0 
+          ? Math.round((item.valueAfterItemDisc - allocatedGlobalDisc) / item.quantity)
+          : item.unit_cost
+      const netTotalValue = isBySaleTypeSettlement
+        ? Math.round(totalPriceRaw)
+        : Math.round(item.valueAfterItemDisc - allocatedGlobalDisc)
         
       return {
         ...item,
@@ -468,10 +511,14 @@ const InventoryReceiptCreate: React.FC = () => {
     const totalIndividualShipping = watchedItems.reduce((sum, item) => sum + (Number(item.individual_shipping_cost) || 0), 0)
     const totalSharedShipping = watchedHasSharedShipping ? Number(watchedSharedShippingCost) : 0
 
-    const grandTotal = totalProductValueRaw - totalDiscountAmount + totalIndividualShipping + totalSharedShipping
+    const grandTotal = isBySaleTypeSettlement
+      ? totalIndividualShipping + totalSharedShipping
+      : totalProductValueRaw - totalDiscountAmount + totalIndividualShipping + totalSharedShipping
     
     // Nợ NCC = Tiền hàng thực tế (đã trừ hết chiết khấu)
-    const supplierAmount = totalProductValueRaw - totalDiscountAmount
+    const supplierAmount = isBySaleTypeSettlement
+      ? 0
+      : totalProductValueRaw - totalDiscountAmount
     
     return {
       totalProductValue: Math.round(totalProductValueRaw),
@@ -529,6 +576,7 @@ const InventoryReceiptCreate: React.FC = () => {
     calculateTotals,
     discountMethod: watchedDiscountMethod,
     isApproved,
+    forceFixedDiscount: isBySaleTypeReceiptCandidate,
   })
 
   const onSubmit = async (data: ReceiptFormData) => {
@@ -614,26 +662,31 @@ const InventoryReceiptCreate: React.FC = () => {
           : data.paymentType !== 'full')
           ? (data.paymentDueDate ? dayjs(data.paymentDueDate).toISOString() : null)
           : null,
-        items: totals.finalItems.map((item: any) => ({
-          product_id: item.product_id,
-          unit_id: item.unit_id,
-          unit_name: item.unit_name,
-          conversion_factor: item.conversion_factor || 1,
-          base_quantity: item.base_quantity || item.quantity,
-          quantity: item.quantity,
-          taxable_quantity: item.taxable_quantity || 0,
-          unit_cost: Number(item.unit_cost || 0),
-          vat_unit_cost: Number(item.vat_unit_cost ?? 0),
-          tax_selling_price: Number(item.tax_selling_price ?? 0),
-          costing_method: item.costing_method || 'fixed',
-          total_price: Number(item.totalPriceRaw || 0),
-          expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
-          notes: item.notes || undefined,
-          individual_shipping_cost: Number(item.individual_shipping_cost || 0),
-          discount_amount: Number(item.itemDiscount || 0),
-          discount_value: Number(item.discountValue || 0),
-          discount_type: item.discountType || 'fixed_amount',
-        })).reverse(),
+        items: totals.finalItems.map((item: any) => {
+          const lineDiscount = Number(item.totalDiscountForItem ?? item.itemDiscount ?? 0)
+          const isGlobalDiscount = data.discountMethod === 'global'
+
+          return {
+            product_id: item.product_id,
+            unit_id: item.unit_id,
+            unit_name: item.unit_name,
+            conversion_factor: item.conversion_factor || 1,
+            base_quantity: item.base_quantity || item.quantity,
+            quantity: item.quantity,
+            taxable_quantity: item.taxable_quantity || 0,
+            unit_cost: Number(item.unit_cost || 0),
+            vat_unit_cost: Number(item.vat_unit_cost ?? 0),
+            tax_selling_price: Number(item.tax_selling_price ?? 0),
+            costing_method: item.costing_method || 'fixed',
+            total_price: Number(item.totalPriceRaw || 0),
+            expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
+            notes: item.notes || undefined,
+            individual_shipping_cost: Number(item.individual_shipping_cost || 0),
+            discount_amount: lineDiscount,
+            discount_value: isGlobalDiscount ? lineDiscount : Number(item.discountValue || 0),
+            discount_type: isGlobalDiscount ? 'fixed_amount' : item.discountType || 'fixed_amount',
+          }
+        }).reverse(),
         discount_amount: 0,
         discount_value: 0,
         discount_type: 'fixed_amount',
@@ -880,31 +933,33 @@ const InventoryReceiptCreate: React.FC = () => {
           {watchedDiscountMethod === 'global' && (
             <Card title="Chiết khấu (Tùy chọn)" className='mt-4'>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Text className="block mb-2">Loại chiết khấu</Text>
-                  <Controller
-                    name="discountType"
-                    control={control}
-                    render={({ field }) => (
-                      <Radio.Group 
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      >
-                        <Space>
-                          <Radio value="fixed_amount">Số tiền cố định (VND)</Radio>
-                          <Radio value="percentage">Phần trăm (%)</Radio>
-                        </Space>
-                      </Radio.Group>
-                    )}
-                  />
-                </div>
+                {!isBySaleTypeReceiptCandidate && (
+                  <div>
+                    <Text className="block mb-2">Loại chiết khấu</Text>
+                    <Controller
+                      name="discountType"
+                      control={control}
+                      render={({ field }) => (
+                        <Radio.Group 
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        >
+                          <Space>
+                            <Radio value="fixed_amount">Số tiền cố định (VND)</Radio>
+                            <Radio value="percentage">Phần trăm (%)</Radio>
+                          </Space>
+                        </Radio.Group>
+                      )}
+                    />
+                  </div>
+                )}
                 
                 <FormFieldNumber
-                  label={watchedDiscountType === 'percentage' ? "Phần trăm (%)" : "Số tiền giảm (VND)"}
+                  label={!isBySaleTypeReceiptCandidate && watchedDiscountType === 'percentage' ? "Phần trăm (%)" : "Số tiền giảm (VND)"}
                   name="discountValue"
                   control={control}
-                  addonAfter={watchedDiscountType === 'percentage' ? "%" : "VND"}
-                  placeholder={watchedDiscountType === 'percentage' ? "Nhập %" : "Nhập số tiền"}
+                  addonAfter={!isBySaleTypeReceiptCandidate && watchedDiscountType === 'percentage' ? "%" : "VND"}
+                  placeholder={!isBySaleTypeReceiptCandidate && watchedDiscountType === 'percentage' ? "Nhập %" : "Nhập số tiền"}
                 />
               </div>
               {watchedDiscountValue > 0 && (
@@ -917,7 +972,7 @@ const InventoryReceiptCreate: React.FC = () => {
                       (Tương đương: {((calculateTotals().discountAmount / calculateTotals().totalProductValue) * 100).toFixed(2)}%)
                     </span>
                   )}
-                  {watchedDiscountType === 'percentage' && (
+                  {!isBySaleTypeReceiptCandidate && watchedDiscountType === 'percentage' && (
                     <span className="text-gray-400 italic text-xs">
                       (Đã tính dựa trên tổng tiền hàng)
                     </span>
