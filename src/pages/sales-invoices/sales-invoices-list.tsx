@@ -36,15 +36,19 @@ import {
   CloseCircleOutlined,
   UndoOutlined,
 } from "@ant-design/icons"
-import { DatePicker, RangePicker } from '@/components/common'
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-dayjs.extend(utc);
+import { DatePicker, RangePicker } from "@/components/common"
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+dayjs.extend(utc)
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { paymentMethodLabels, paymentStatusLabels, invoiceStatusLabels } from "./form-config"
+import {
+  paymentMethodLabels,
+  paymentStatusLabels,
+  invoiceStatusLabels,
+} from "./form-config"
 import { TablePaginationConfig, TableProps } from "antd"
 import { FilterValue, SorterResult } from "antd/es/table/interface"
 
@@ -85,53 +89,58 @@ const SalesInvoicesList: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = React.useState(0)
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
-  
+
   // State cho season search
-  const [seasonSearchText, setSeasonSearchText] = React.useState('')
-  
+  const [seasonSearchText, setSeasonSearchText] = React.useState("")
+
   // State cho báo cáo tổng hợp lịch sử khách hàng
-  const [isHistoryModalVisible, setIsHistoryModalVisible] = React.useState(false);
-  const [historyData, setHistoryData] = React.useState<any[]>([]);
-  const [historyLoading, setHistoryLoading] = React.useState(false);
-  const [currentCustomer, setCurrentCustomer] = React.useState<{id: number, name: string} | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] =
+    React.useState(false)
+  const [historyData, setHistoryData] = React.useState<any[]>([])
+  const [historyLoading, setHistoryLoading] = React.useState(false)
+  const [currentCustomer, setCurrentCustomer] = React.useState<{
+    id: number
+    name: string
+  } | null>(null)
 
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const hasSyncedFiltersToUrl = React.useRef(false)
-  // State to track if we have set the default season
-  const [hasSetDefaultSeason, setHasSetDefaultSeason] = React.useState(false)
 
-  // ✅ 1. Khôi phục bộ lọc từ URL khi vào trang
-  React.useEffect(() => {
+  // Hàm khởi tạo filters từ URL searchParams
+  const getInitialFilters = () => {
     const params: Record<string, any> = {}
     searchParams.forEach((value, key) => {
-      if (key === 'customer_id') return
+      if (key === "customer_id" || key === "page" || key === "pageSize") return
       // Chuyển đổi một số kiểu dữ liệu đặc biệt nếu cần
-      if (key === 'page') setCurrentPage(Number(value))
-      else if (key === 'pageSize') setPageSize(Number(value))
-      else if (key === 'season_id') params[key] = Number(value)
-      else if (key === 'rice_crop_id' && !isNaN(Number(value))) params[key] = Number(value)
+      if (key === "season_id") params[key] = Number(value)
+      else if (key === "rice_crop_id" && !isNaN(Number(value)))
+        params[key] = Number(value)
       else params[key] = value
     })
-    
-    if (Object.keys(params).length > 0) {
-      setFilters(params)
-      // Nếu đã có lọc mùa vụ từ URL thì không set mặc định nữa
-      if (params.season_id) setHasSetDefaultSeason(true)
-    }
-  }, []) // Chỉ chạy 1 lần khi mount
+    return params
+  }
 
-  // ✅ 2. Cập nhật URL mỗi khi bộ lọc thay đổi
+  // State quản lý UI và filters khởi tạo trực tiếp từ URL
+  const [filters, setFilters] =
+    React.useState<Record<string, any>>(getInitialFilters)
+  const [currentPage, setCurrentPage] = React.useState<number>(
+    () => Number(searchParams.get("page")) || 1,
+  )
+  const [pageSize, setPageSize] = React.useState<number>(
+    () => Number(searchParams.get("pageSize")) || 10,
+  )
+
+  // State đánh dấu đã xác định mùa vụ hay chưa (nếu URL đã có season_id thì coi như đã set)
+  const [hasSetDefaultSeason, setHasSetDefaultSeason] = React.useState<boolean>(
+    () => Boolean(searchParams.get("season_id")),
+  )
+
+  // Cập nhật URL mỗi khi bộ lọc thay đổi
   React.useEffect(() => {
-    if (!hasSyncedFiltersToUrl.current) {
-      hasSyncedFiltersToUrl.current = true
-      return
-    }
-
     const params: Record<string, string> = {}
     Object.entries(filters).forEach(([key, value]) => {
-      if (key === 'customer_id') return
-      if (value !== undefined && value !== null && value !== '') {
+      if (key === "customer_id") return
+      if (value !== undefined && value !== null && value !== "") {
         params[key] = String(value)
       }
     })
@@ -144,46 +153,53 @@ const SalesInvoicesList: React.FC = () => {
 
   // Date Filter UI Helper
   const getDateColumnSearchProps = (dataIndex: string): any => ({
-    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }: any) => (
+    filterDropdown: ({
+      setSelectedKeys,
+      selectedKeys,
+      confirm,
+      clearFilters,
+    }: any) => (
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <RangePicker 
-            style={{ marginBottom: 8, display: 'flex' }}
-            format="DD/MM/YYYY"
-            linkedPanels={false}
-            value={
-                selectedKeys && selectedKeys[0] 
-                ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])] 
-                : undefined
+        <RangePicker
+          style={{ marginBottom: 8, display: "flex" }}
+          format='DD/MM/YYYY'
+          linkedPanels={false}
+          value={
+            selectedKeys && selectedKeys[0]
+              ? [dayjs(selectedKeys[0]), dayjs(selectedKeys[1])]
+              : undefined
+          }
+          onChange={(
+            dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null,
+          ) => {
+            if (dates && dates[0] && dates[1]) {
+              setSelectedKeys([
+                dates[0].startOf("day").toISOString(),
+                dates[1].endOf("day").toISOString(),
+              ])
+            } else {
+              setSelectedKeys([])
             }
-            onChange={(dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => {
-                if (dates && dates[0] && dates[1]) {
-                    setSelectedKeys([
-                        dates[0].startOf('day').toISOString(), 
-                        dates[1].endOf('day').toISOString()
-                    ])
-                } else {
-                    setSelectedKeys([])
-                }
-            }}
+          }}
         />
         <Space>
           <Button
-            type="primary"
+            type='primary'
             onClick={() => confirm({ closeDropdown: false })}
             icon={<SearchOutlined />}
-            size="small"
+            size='small'
             style={{ width: 90 }}
           >
             Lọc
           </Button>
           <Button
             onClick={() => {
-                if (clearFilters) {
-                    clearFilters()
-                    confirm()
-                }
+              if (clearFilters) {
+                clearFilters()
+                confirm()
+              }
             }}
-            size="small"
+            size='small'
             style={{ width: 90 }}
           >
             Xóa
@@ -192,41 +208,41 @@ const SalesInvoicesList: React.FC = () => {
       </div>
     ),
     filterIcon: (filtered: boolean) => (
-      <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+      <SearchOutlined style={{ color: filtered ? "#1890ff" : undefined }} />
     ),
   })
 
   // Handle Table Change
-  const handleTableChange: TableProps<ExtendedSalesInvoice>['onChange'] = (
+  const handleTableChange: TableProps<ExtendedSalesInvoice>["onChange"] = (
     pagination,
     tableFilters,
     sorter,
-    extra
+    extra,
   ) => {
     setCurrentPage(pagination.current || 1)
     setPageSize(pagination.pageSize || 10)
-    
+
     const newFilters = { ...filters }
 
     // Status filter
     if (tableFilters.status && tableFilters.status.length > 0) {
-        newFilters.status = tableFilters.status[0]
+      newFilters.status = tableFilters.status[0]
     } else {
-        delete newFilters.status
+      delete newFilters.status
     }
 
     // Payment status filter
     if (tableFilters.payment_status && tableFilters.payment_status.length > 0) {
-        newFilters.payment_status = tableFilters.payment_status[0]
+      newFilters.payment_status = tableFilters.payment_status[0]
     } else {
-        delete newFilters.payment_status
+      delete newFilters.payment_status
     }
 
     // Rice Crop filter
     if (tableFilters.rice_crop_id && tableFilters.rice_crop_id.length > 0) {
-        newFilters.rice_crop_id = tableFilters.rice_crop_id[0]
+      newFilters.rice_crop_id = tableFilters.rice_crop_id[0]
     } else {
-        delete newFilters.rice_crop_id
+      delete newFilters.rice_crop_id
     }
 
     // Sale Date Range
@@ -243,175 +259,224 @@ const SalesInvoicesList: React.FC = () => {
 
   // Handle Filter Change
   const handleFilterChange = (key: string, value: any) => {
-      const newFilters = { ...filters, [key]: value }
-      if (!value) delete newFilters[key]
-      setFilters(newFilters)
-      setCurrentPage(1)
+    const newFilters = { ...filters, [key]: value }
+    if (!value) delete newFilters[key]
+    setFilters(newFilters)
+    setCurrentPage(1)
   }
 
+  // Chuyển sang màn hình tạo hóa đơn mới, giữ lại các tham số lọc hiện tại
   const handleCreateInvoice = () => {
-    const params = new URLSearchParams(searchParams)
-    const firstInvoice = invoicesData?.data?.items?.[0]
-    const hasCustomerNameFilter = Boolean(String(filters.customer_name || '').trim())
+    const params = new URLSearchParams()
 
-    params.delete('customer_id')
+    // Giữ lại tất cả bộ lọc hiện tại (bao gồm season_id)
+    Object.entries(filters).forEach(([key, value]) => {
+      if (key === "customer_id") return
+      if (value !== undefined && value !== null && value !== "") {
+        params.set(key, String(value))
+      }
+    })
+
+    const firstInvoice = invoicesData?.data?.items?.[0]
+    const hasCustomerNameFilter = Boolean(
+      String(filters.customer_name || "").trim(),
+    )
 
     if (hasCustomerNameFilter && firstInvoice?.customer_id) {
-      params.set('customer_id', String(firstInvoice.customer_id))
+      params.set("customer_id", String(firstInvoice.customer_id))
     }
 
     const queryString = params.toString()
-    navigate(`/sales-invoices/create${queryString ? `?${queryString}` : ''}`)
+    navigate(`/sales-invoices/create${queryString ? `?${queryString}` : ""}`)
   }
 
   // Queries
   const { data: invoicesData, isLoading } = useSalesInvoicesQuery({
     page: currentPage,
     limit: pageSize,
-    ...filters
+    ...filters,
   })
   const addPaymentMutation = useAddPaymentMutation()
   const deleteInvoiceMutation = useDeleteSalesInvoiceMutation()
   const cancelInvoiceMutation = useCancelSalesInvoiceMutation()
   const refundInvoiceMutation = useRefundSalesInvoiceMutation()
   const updateInvoiceMutation = useUpdateSalesInvoiceMutation()
-   
+
   // Load mùa vụ với search
-  const { data: seasonsData } = useSeasonsQuery({ 
-    page: 1, 
+  const { data: seasonsData } = useSeasonsQuery({
+    page: 1,
     limit: 20,
-    ...(seasonSearchText && { name: seasonSearchText })
+    ...(seasonSearchText && { name: seasonSearchText }),
   })
 
-  // Effect to set default season
+  // Effect to set default season nếu chưa có season_id nào trong URL hoặc filters
   React.useEffect(() => {
-    const items = seasonsData?.data?.items;
-    if (items && items.length > 0 && !hasSetDefaultSeason) {
+    const items = seasonsData?.data?.items
+    const seasonIdInUrl = searchParams.get("season_id")
+
+    // Nếu đã có season_id (từ filter hoặc URL) hoặc đã thiết lập mùa vụ rồi thì không ghi đè
+    if (filters.season_id || seasonIdInUrl || hasSetDefaultSeason) {
+      if (!hasSetDefaultSeason) {
+        setHasSetDefaultSeason(true)
+      }
+      return
+    }
+
+    if (items && items.length > 0) {
       const seasons = items
       const today = dayjs()
-      
+
       // 1. Tìm mùa vụ đang diễn ra (today between start and end)
       let targetSeason = seasons.find((s: any) => {
         if (!s.start_date || !s.end_date) return false
         const start = dayjs(s.start_date)
         const end = dayjs(s.end_date)
-        return (today.isAfter(start) || today.isSame(start)) && (today.isBefore(end) || today.isSame(end))
+        return (
+          (today.isAfter(start) || today.isSame(start)) &&
+          (today.isBefore(end) || today.isSame(end))
+        )
       })
 
       // 2. Nếu không có, lấy mùa vụ mới nhất (dựa trên end_date sort desc)
       if (!targetSeason) {
         // Copy để không mutate mảng gốc
         const sortedSeasons = [...seasons].sort((a: any, b: any) => {
-           const dateA = a.end_date ? new Date(a.end_date).getTime() : 0
-           const dateB = b.end_date ? new Date(b.end_date).getTime() : 0
-           return dateB - dateA
+          const dateA = a.end_date ? new Date(a.end_date).getTime() : 0
+          const dateB = b.end_date ? new Date(b.end_date).getTime() : 0
+          return dateB - dateA
         })
         targetSeason = sortedSeasons[0]
       }
 
       if (targetSeason) {
-        setFilters((prev) => ({ ...prev, season_id: targetSeason.id }))
+        setFilters((prev) => {
+          if (prev.season_id) return prev
+          return { ...prev, season_id: targetSeason.id }
+        })
       }
-      
+
       setHasSetDefaultSeason(true)
     }
-  }, [seasonsData, hasSetDefaultSeason])
-
+  }, [seasonsData, hasSetDefaultSeason, filters.season_id, searchParams])
 
   // Handlers
   const handleViewInvoice = async (invoice: SalesInvoice) => {
     try {
       if (!invoice?.id) {
-        toast.error("Không tìm thấy ID hóa đơn");
-        return;
+        toast.error("Không tìm thấy ID hóa đơn")
+        return
       }
 
       // Sử dụng api utility để lấy chi tiết đầy đủ (bao gồm items)
-      console.log(`[DEBUG] Fetching detail for Invoice ID: ${invoice.id}, Code: ${invoice.code}`);
-      
-      const response = await api.get<any>(`/sales/invoice/${invoice.id}`);
-      
-      console.log('[DEBUG] API Response:', response);
+      console.log(
+        `[DEBUG] Fetching detail for Invoice ID: ${invoice.id}, Code: ${invoice.code}`,
+      )
+
+      const response = await api.get<any>(`/sales/invoice/${invoice.id}`)
+
+      console.log("[DEBUG] API Response:", response)
 
       if (response) {
         // Kiểm tra mảng items ở mọi nơi có thể (items, invoice_items, sales_invoice_items)
-        const items = response.items || response.invoice_items || response.sales_invoice_items || [];
-        
+        const items =
+          response.items ||
+          response.invoice_items ||
+          response.sales_invoice_items ||
+          []
+
         // Nếu API trả về mảng rỗng trong khi DB có, ta cần log kỹ hơn
         if (items.length === 0) {
-          console.warn('[DEBUG] API returned empty items array for invoice:', invoice.id);
+          console.warn(
+            "[DEBUG] API returned empty items array for invoice:",
+            invoice.id,
+          )
         }
 
-        setViewingInvoice({ ...response, items });
-        setIsDetailModalVisible(true);
+        setViewingInvoice({ ...response, items })
+        setIsDetailModalVisible(true)
       } else {
-        throw new Error("API không trả về dữ liệu");
+        throw new Error("API không trả về dữ liệu")
       }
     } catch (error: any) {
-      console.error('[DEBUG] Fetch detail error:', error);
-      
+      console.error("[DEBUG] Fetch detail error:", error)
+
       // Thông báo lỗi rõ ràng nếu API fail (401, 500, v.v.)
-      const errorMsg = error?.response?.data?.message || error?.message || "Không thể lấy thông tin chi tiết từ máy chủ";
-      toast.error(`Lỗi: ${errorMsg}`);
-      
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Không thể lấy thông tin chi tiết từ máy chủ"
+      toast.error(`Lỗi: ${errorMsg}`)
+
       // Vẫn hiện modal với dữ liệu từ list nhưng kèm cảnh báo
-      setViewingInvoice({ ...invoice, items: [] });
-      setIsDetailModalVisible(true);
+      setViewingInvoice({ ...invoice, items: [] })
+      setIsDetailModalVisible(true)
     }
   }
 
-  const handleUpdateInvoiceField = async (fields: any, msg = 'Cập nhật thành công') => {
-    if (!viewingInvoice) return;
-    
+  const handleUpdateInvoiceField = async (
+    fields: any,
+    msg = "Cập nhật thành công",
+  ) => {
+    if (!viewingInvoice) return
+
     try {
-      await updateInvoiceMutation.mutateAsync({
-        id: viewingInvoice.id,
-        invoice: fields,
-        silent: true
-      }, {
-        onSuccess: (updatedInvoice: any) => {
-          setViewingInvoice(updatedInvoice.data || updatedInvoice);
-          toast.success(msg);
-        }
-      });
+      await updateInvoiceMutation.mutateAsync(
+        {
+          id: viewingInvoice.id,
+          invoice: fields,
+          silent: true,
+        },
+        {
+          onSuccess: (updatedInvoice: any) => {
+            setViewingInvoice(updatedInvoice.data || updatedInvoice)
+            toast.success(msg)
+          },
+        },
+      )
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      console.error("Error updating invoice:", error)
     }
-  };
+  }
 
   const handleUpdateSaleDate = (date: dayjs.Dayjs | null) => {
     if (date) {
-      handleUpdateInvoiceField({ sale_date: date.toISOString() }, 'Cập nhật ngày bán thành công');
+      handleUpdateInvoiceField(
+        { sale_date: date.toISOString() },
+        "Cập nhật ngày bán thành công",
+      )
     }
-  };
+  }
 
   const handleOpenHistory = async (invoice: ExtendedSalesInvoice) => {
     if (!invoice.customer_id) {
-      toast.warning("Hóa đơn này không có thông tin khách hàng");
-      return;
+      toast.warning("Hóa đơn này không có thông tin khách hàng")
+      return
     }
-    
+
     setCurrentCustomer({
       id: invoice.customer_id,
-      name: invoice.customer_name || 'Khách hàng'
-    });
-    setIsHistoryModalVisible(true);
-    setHistoryLoading(true);
-    
+      name: invoice.customer_name || "Khách hàng",
+    })
+    setIsHistoryModalVisible(true)
+    setHistoryLoading(true)
+
     try {
       // Gọi API lấy lịch sử, truyền thêm season_id từ bộ lọc hiện tại
-      const seasonId = filters?.season_id;
-      const response = await api.get<any[]>(`/sales/customer/${invoice.customer_id}/purchase-history`, {
-        params: { seasonId }
-      });
-      setHistoryData(response || []);
+      const seasonId = filters?.season_id
+      const response = await api.get<any[]>(
+        `/sales/customer/${invoice.customer_id}/purchase-history`,
+        {
+          params: { seasonId },
+        },
+      )
+      setHistoryData(response || [])
     } catch (error) {
-      console.error('Error fetching history:', error);
-      toast.error('Không thể tải lịch sử mua hàng');
+      console.error("Error fetching history:", error)
+      toast.error("Không thể tải lịch sử mua hàng")
     } finally {
-      setHistoryLoading(false);
+      setHistoryLoading(false)
     }
-  };
+  }
 
   const handleCloseDetailModal = () => {
     setIsDetailModalVisible(false)
@@ -440,7 +505,7 @@ const SalesInvoicesList: React.FC = () => {
           onSuccess: () => {
             handleClosePaymentModal()
           },
-        }
+        },
       )
     } catch (error) {
       console.error("Payment failed:", error)
@@ -448,20 +513,20 @@ const SalesInvoicesList: React.FC = () => {
   }
 
   const handleDeleteInvoice = (invoice: SalesInvoice) => {
-    if (invoice.status !== 'draft') {
+    if (invoice.status !== "draft") {
       modal.warning({
-        title: 'Không thể xóa',
-        content: `Hóa đơn đã ${invoice.status === 'paid' ? 'thanh toán' : 'xác nhận'} không thể xóa cứng. Vui lòng sử dụng chức năng Hủy hoặc Hoàn tiền để đảm bảo tồn kho.`,
+        title: "Không thể xóa",
+        content: `Hóa đơn đã ${invoice.status === "paid" ? "thanh toán" : "xác nhận"} không thể xóa cứng. Vui lòng sử dụng chức năng Hủy hoặc Hoàn tiền để đảm bảo tồn kho.`,
       })
       return
     }
 
     modal.confirm({
-      title: 'Xác nhận xóa hóa đơn',
+      title: "Xác nhận xóa hóa đơn",
       content: `Bạn có chắc chắn muốn xóa hóa đơn nháp ${invoice.code}?`,
-      okText: 'Xóa',
-      okType: 'danger',
-      cancelText: 'Hủy',
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
       onOk: async () => {
         try {
           await deleteInvoiceMutation.mutateAsync(invoice.id)
@@ -475,11 +540,11 @@ const SalesInvoicesList: React.FC = () => {
 
   const handleCancelInvoice = (invoice: SalesInvoice) => {
     modal.confirm({
-      title: 'Xác nhận hủy hóa đơn',
+      title: "Xác nhận hủy hóa đơn",
       content: `Bạn có chắc chắn muốn hủy hóa đơn ${invoice.code}? Hệ thống sẽ tự động hoàn lại sản phẩm vào kho và xóa nợ tương ứng.`,
-      okText: 'Hủy hóa đơn',
-      okType: 'danger',
-      cancelText: 'Quay lại',
+      okText: "Hủy hóa đơn",
+      okType: "danger",
+      cancelText: "Quay lại",
       onOk: async () => {
         try {
           await cancelInvoiceMutation.mutateAsync(invoice.id)
@@ -493,11 +558,11 @@ const SalesInvoicesList: React.FC = () => {
 
   const handleRefundInvoice = (invoice: SalesInvoice) => {
     modal.confirm({
-      title: 'Xác nhận hoàn tiền',
+      title: "Xác nhận hoàn tiền",
       content: `Yêu cầu hoàn trả hóa đơn ${invoice.code}? Hệ thống sẽ hoàn lại số lượng sản phẩm vào kho.`,
-      okText: 'Hoàn tiền',
-      okType: 'danger',
-      cancelText: 'Hủy',
+      okText: "Hoàn tiền",
+      okType: "danger",
+      cancelText: "Hủy",
       onOk: async () => {
         try {
           await refundInvoiceMutation.mutateAsync(invoice.id)
@@ -558,12 +623,12 @@ const SalesInvoicesList: React.FC = () => {
     {
       key: "code",
       title: (
-        <FilterHeader 
-            title="Mã HĐ" 
-            dataIndex="code" 
-            value={filters.code} 
-            onChange={(val) => handleFilterChange('code', val)}
-            inputType="text"
+        <FilterHeader
+          title='Mã HĐ'
+          dataIndex='code'
+          value={filters.code}
+          onChange={(val) => handleFilterChange("code", val)}
+          inputType='text'
         />
       ),
       width: 150,
@@ -575,11 +640,11 @@ const SalesInvoicesList: React.FC = () => {
       key: "customer_name",
       title: (
         <FilterHeader
-            title="Khách hàng"
-            dataIndex="customer_name"
-            value={filters.customer_name}
-            onChange={(val) => handleFilterChange('customer_name', val)}
-            inputType="text"
+          title='Khách hàng'
+          dataIndex='customer_name'
+          value={filters.customer_name}
+          onChange={(val) => handleFilterChange("customer_name", val)}
+          inputType='text'
         />
       ),
       width: 180,
@@ -590,12 +655,12 @@ const SalesInvoicesList: React.FC = () => {
     {
       key: "customer_phone",
       title: (
-        <FilterHeader 
-            title="SĐT" 
-            dataIndex="customer_phone" 
-            value={filters.customer_phone} 
-            onChange={(val) => handleFilterChange('customer_phone', val)}
-            inputType="text"
+        <FilterHeader
+          title='SĐT'
+          dataIndex='customer_phone'
+          value={filters.customer_phone}
+          onChange={(val) => handleFilterChange("customer_phone", val)}
+          inputType='text'
         />
       ),
       width: 130,
@@ -606,23 +671,26 @@ const SalesInvoicesList: React.FC = () => {
     {
       key: "season_id",
       title: (
-        <div className="flex flex-col gap-2 py-1" onClick={(e) => e.stopPropagation()}>
-          <div className="font-semibold text-gray-700">Mùa vụ</div>
+        <div
+          className='flex flex-col gap-2 py-1'
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className='font-semibold text-gray-700'>Mùa vụ</div>
           <ComboBox
-            placeholder="Chọn mùa vụ"
+            placeholder='Chọn mùa vụ'
             value={filters.season_id}
-            onChange={(val) => handleFilterChange('season_id', val)}
+            onChange={(val) => handleFilterChange("season_id", val)}
             onSearch={(text) => setSeasonSearchText(text)}
             data={(seasonsData?.data?.items || []).map((season: any) => ({
               value: season.id,
-              label: season.name
+              label: season.name,
             }))}
             isLoading={false}
             allowClear
             showSearch
             filterOption={false}
-            style={{ width: '100%', minWidth: 120 }}
-            size="small"
+            style={{ width: "100%", minWidth: 120 }}
+            size='small'
           />
         </div>
       ),
@@ -636,14 +704,15 @@ const SalesInvoicesList: React.FC = () => {
       title: "Ngày bán",
       dataIndex: "sale_date",
       width: 120,
-      ...getDateColumnSearchProps('sale_date'),
-      filteredValue: (filters.sale_date_start && filters.sale_date_end) ? [filters.sale_date_start, filters.sale_date_end] : null,
+      ...getDateColumnSearchProps("sale_date"),
+      filteredValue:
+        filters.sale_date_start && filters.sale_date_end
+          ? [filters.sale_date_start, filters.sale_date_end]
+          : null,
       render: (value: string, record: ExtendedSalesInvoice) => {
         const dateValue = value || record.created_at
         return (
-          <div>
-            {dateValue ? dayjs(dateValue).format("DD/MM/YYYY") : "-"}
-          </div>
+          <div>{dateValue ? dayjs(dateValue).format("DD/MM/YYYY") : "-"}</div>
         )
       },
     },
@@ -653,17 +722,21 @@ const SalesInvoicesList: React.FC = () => {
       title: "Ruộng lúa",
       width: 150,
       filters: [
-          { text: "Có liên kết Ruộng lúa", value: "has_crop" },
-          { text: "Chưa liên kết Ruộng lúa", value: "no_crop" },
+        { text: "Có liên kết Ruộng lúa", value: "has_crop" },
+        { text: "Chưa liên kết Ruộng lúa", value: "no_crop" },
       ],
       filteredValue: filters.rice_crop_id ? [filters.rice_crop_id] : null,
       filterMultiple: false,
       render: (value: any, record: ExtendedSalesInvoice) => {
-        if (!value) return <Tag color="default">Chưa liên kết</Tag>
+        if (!value) return <Tag color='default'>Chưa liên kết</Tag>
         return (
           <div className='flex flex-col'>
-            <div className='font-medium text-blue-600'>{record.rice_crop?.field_name || "Mảnh ruộng"}</div>
-            <div className='text-xs text-gray-500'>{record.rice_crop?.rice_variety}</div>
+            <div className='font-medium text-blue-600'>
+              {record.rice_crop?.field_name || "Mảnh ruộng"}
+            </div>
+            <div className='text-xs text-gray-500'>
+              {record.rice_crop?.rice_variety}
+            </div>
           </div>
         )
       },
@@ -717,7 +790,7 @@ const SalesInvoicesList: React.FC = () => {
       filteredValue: filters.status ? [filters.status] : null,
       filterMultiple: false,
       render: (status: string) => (
-        <Tag color={getStatusColor(status || 'draft')}>
+        <Tag color={getStatusColor(status || "draft")}>
           {(invoiceStatusLabels as any)[status as any] || status}
         </Tag>
       ),
@@ -727,14 +800,19 @@ const SalesInvoicesList: React.FC = () => {
       dataIndex: "payment_status",
       title: "Thanh toán",
       width: 150,
-      filters: Object.entries(paymentStatusLabels).map(([value, text]) => ({ text, value })),
+      filters: Object.entries(paymentStatusLabels).map(([value, text]) => ({
+        text,
+        value,
+      })),
       filteredValue: filters.payment_status ? [filters.payment_status] : null,
       filterMultiple: false,
       render: (status: string) => {
-        const displayStatus = status || 'pending'
+        const displayStatus = status || "pending"
         return (
           <Tag color={getPaymentStatusColor(displayStatus)}>
-            {paymentStatusLabels[displayStatus as keyof typeof paymentStatusLabels] || displayStatus}
+            {paymentStatusLabels[
+              displayStatus as keyof typeof paymentStatusLabels
+            ] || displayStatus}
           </Tag>
         )
       },
@@ -745,9 +823,9 @@ const SalesInvoicesList: React.FC = () => {
       dataIndex: "notes",
       width: 200,
       render: (notes: string) => (
-        <Typography.Text 
-          ellipsis={{ tooltip: notes }} 
-          style={{ maxWidth: 180, fontSize: '13px', color: '#666' }}
+        <Typography.Text
+          ellipsis={{ tooltip: notes }}
+          style={{ maxWidth: 180, fontSize: "13px", color: "#666" }}
         >
           {notes || "-"}
         </Typography.Text>
@@ -770,65 +848,72 @@ const SalesInvoicesList: React.FC = () => {
             icon={<FileTextOutlined />}
             onClick={() => handleOpenHistory(record)}
             size='small'
-            title="Xem tất cả lịch sử mua hàng"
+            title='Xem tất cả lịch sử mua hàng'
           >
             Tất cả
           </Button>
-          {record.status === 'draft' && (
+          {record.status === "draft" && (
             <Button
               icon={<EditOutlined />}
-              onClick={() => navigate(`/sales-invoices/edit/${record.id}`)}
+              onClick={() => {
+                const queryString = searchParams.toString()
+                navigate(
+                  `/sales-invoices/edit/${record.id}${queryString ? `?${queryString}` : ""}`,
+                )
+              }}
               size='small'
             >
               Sửa
             </Button>
           )}
-          {record.status !== 'draft' && record.remaining_amount > 0 && 
-           record.status !== 'cancelled' && record.status !== 'refunded' && (
-            <Button
-              type='primary'
-              icon={<DollarOutlined />}
-              onClick={() => handleOpenPaymentModal(record)}
-              size='small'
-            >
-              Trả nợ
-            </Button>
-          )}
-          
+          {record.status !== "draft" &&
+            record.remaining_amount > 0 &&
+            record.status !== "cancelled" &&
+            record.status !== "refunded" && (
+              <Button
+                type='primary'
+                icon={<DollarOutlined />}
+                onClick={() => handleOpenPaymentModal(record)}
+                size='small'
+              >
+                Trả nợ
+              </Button>
+            )}
+
           {/* Hủy cho hóa đơn confirmed/partial nợ */}
-          {record.status === 'confirmed' && (
+          {record.status === "confirmed" && (
             <Button
               danger
               icon={<CloseCircleOutlined />}
               onClick={() => handleCancelInvoice(record)}
               size='small'
-              title="Hủy hóa đơn"
+              title='Hủy hóa đơn'
             >
               Hủy
             </Button>
           )}
 
           {/* Hoàn tiền cho hóa đơn đã paid */}
-          {record.status === 'paid' && (
+          {record.status === "paid" && (
             <Button
               danger
               icon={<UndoOutlined />}
               onClick={() => handleRefundInvoice(record)}
               size='small'
-              title="Hoàn trả / Hoàn tiền"
+              title='Hoàn trả / Hoàn tiền'
             >
               Hoàn trả
             </Button>
           )}
 
           {/* Chỉ hiển thị nút xóa cho hóa đơn Nháp */}
-          {record.status === 'draft' && (
+          {record.status === "draft" && (
             <Button
               danger
               icon={<DeleteOutlined />}
               onClick={() => handleDeleteInvoice(record)}
               size='small'
-              title="Xóa hóa đơn nháp"
+              title='Xóa hóa đơn nháp'
             />
           )}
         </Space>
@@ -844,7 +929,7 @@ const SalesInvoicesList: React.FC = () => {
           type='primary'
           icon={<PlusOutlined />}
           onClick={handleCreateInvoice}
-          className="w-full sm:w-auto"
+          className='w-full sm:w-auto'
         >
           Tạo hóa đơn mới
         </Button>
@@ -885,7 +970,7 @@ const SalesInvoicesList: React.FC = () => {
             Đóng
           </Button>,
           viewingInvoice &&
-            ['confirmed', 'paid'].includes(viewingInvoice.status) && (
+            ["confirmed", "paid"].includes(viewingInvoice.status) && (
               <Button
                 key='create-sales-return'
                 icon={<UndoOutlined />}
@@ -894,7 +979,7 @@ const SalesInvoicesList: React.FC = () => {
                 Tạo phiếu trả hàng
               </Button>
             ),
-          viewingInvoice?.status === 'confirmed' && (
+          viewingInvoice?.status === "confirmed" && (
             <Button
               key='cancel'
               danger
@@ -905,7 +990,7 @@ const SalesInvoicesList: React.FC = () => {
               Hủy hóa đơn
             </Button>
           ),
-          viewingInvoice?.status === 'paid' && (
+          viewingInvoice?.status === "paid" && (
             <Button
               key='refund'
               danger
@@ -916,7 +1001,7 @@ const SalesInvoicesList: React.FC = () => {
               Hoàn trả / Hoàn tiền
             </Button>
           ),
-          viewingInvoice?.status === 'draft' && (
+          viewingInvoice?.status === "draft" && (
             <Button
               key='delete'
               danger
@@ -942,45 +1027,52 @@ const SalesInvoicesList: React.FC = () => {
                   {viewingInvoice.customer_phone}
                 </div>
                 {viewingInvoice.customer_address && (
-                <div className='text-gray-500 text-sm mt-1'>
-                  {viewingInvoice.customer_address}
-                </div>
-              )}
-              <div className='mt-3'>
-                <div className='text-gray-500 text-sm'>Ngày bán</div>
-                <div className='flex items-center gap-3'>
-                  <span className='font-medium text-base'>
-                    {dayjs(viewingInvoice.sale_date || viewingInvoice.created_at).format("DD/MM/YYYY")}
-                  </span>
-                  <Popover
-                    content={
-                      <div className="p-1">
-                        <DatePicker 
-                          value={dayjs(viewingInvoice.sale_date || viewingInvoice.created_at)}
-                          format="DD/MM/YYYY"
-                          onChange={(date) => handleUpdateSaleDate(date)}
-                          allowClear={false}
-                        />
-                      </div>
-                    }
-                    title="Thay đổi ngày bán"
-                    trigger="click"
-                    placement="right"
-                  >
-                    <Button 
-                      size="small" 
-                      icon={<EditOutlined />} 
-                      className="flex items-center"
+                  <div className='text-gray-500 text-sm mt-1'>
+                    {viewingInvoice.customer_address}
+                  </div>
+                )}
+                <div className='mt-3'>
+                  <div className='text-gray-500 text-sm'>Ngày bán</div>
+                  <div className='flex items-center gap-3'>
+                    <span className='font-medium text-base'>
+                      {dayjs(
+                        viewingInvoice.sale_date || viewingInvoice.created_at,
+                      ).format("DD/MM/YYYY")}
+                    </span>
+                    <Popover
+                      content={
+                        <div className='p-1'>
+                          <DatePicker
+                            value={dayjs(
+                              viewingInvoice.sale_date ||
+                                viewingInvoice.created_at,
+                            )}
+                            format='DD/MM/YYYY'
+                            onChange={(date) => handleUpdateSaleDate(date)}
+                            allowClear={false}
+                          />
+                        </div>
+                      }
+                      title='Thay đổi ngày bán'
+                      trigger='click'
+                      placement='right'
                     >
-                      Sửa
-                    </Button>
-                  </Popover>
+                      <Button
+                        size='small'
+                        icon={<EditOutlined />}
+                        className='flex items-center'
+                      >
+                        Sửa
+                      </Button>
+                    </Popover>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
 
               <Card>
-                <div className='text-gray-500 text-sm'>Thông tin thanh toán</div>
+                <div className='text-gray-500 text-sm'>
+                  Thông tin thanh toán
+                </div>
                 <div className='mt-2'>
                   <div className='text-sm text-gray-600'>Phương thức:</div>
                   <Tag color='blue'>
@@ -1015,36 +1107,48 @@ const SalesInvoicesList: React.FC = () => {
             {/* Thông tin Ruộng lúa (nếu có) */}
             {(viewingInvoice as any).rice_crop && (
               <Alert
-                message="🌾 Hóa đơn này liên kết với Ruộng lúa"
+                message='🌾 Hóa đơn này liên kết với Ruộng lúa'
                 description={
                   <div className='mt-2'>
                     <div className='font-medium text-base mb-1'>
                       {(viewingInvoice as any).rice_crop.field_name}
                     </div>
                     <div className='text-sm text-gray-600'>
-                      <span>Giống lúa: {(viewingInvoice as any).rice_crop.rice_variety}</span>
+                      <span>
+                        Giống lúa:{" "}
+                        {(viewingInvoice as any).rice_crop.rice_variety}
+                      </span>
                       {(viewingInvoice as any).rice_crop.field_area && (
                         <span className='ml-3'>
-                          Diện tích: {(viewingInvoice as any).rice_crop.field_area.toLocaleString('vi-VN')} m²
+                          Diện tích:{" "}
+                          {(
+                            viewingInvoice as any
+                          ).rice_crop.field_area.toLocaleString("vi-VN")}{" "}
+                          m²
                         </span>
                       )}
                     </div>
                     {(viewingInvoice as any).rice_crop.season && (
                       <div className='text-sm text-gray-600 mt-1'>
-                        Mùa vụ: {(viewingInvoice as any).rice_crop.season.name} ({(viewingInvoice as any).rice_crop.season.year})
+                        Mùa vụ: {(viewingInvoice as any).rice_crop.season.name}{" "}
+                        ({(viewingInvoice as any).rice_crop.season.year})
                       </div>
                     )}
                     <Button
-                      type="link"
-                      size="small"
+                      type='link'
+                      size='small'
                       className='mt-2 p-0'
-                      onClick={() => navigate(`/rice-crops/${(viewingInvoice as any).rice_crop_id}`)}
+                      onClick={() =>
+                        navigate(
+                          `/rice-crops/${(viewingInvoice as any).rice_crop_id}`,
+                        )
+                      }
                     >
                       Xem chi tiết Ruộng lúa →
                     </Button>
                   </div>
                 }
-                type="info"
+                type='info'
                 showIcon
                 className='mb-4'
               />
@@ -1052,19 +1156,24 @@ const SalesInvoicesList: React.FC = () => {
 
             <Alert
               message={
-                 <div className="flex items-center justify-between">
-                    <span>⚠️ Lưu ý quan trọng</span>
-                 </div>
+                <div className='flex items-center justify-between'>
+                  <span>⚠️ Lưu ý quan trọng</span>
+                </div>
               }
               description={
                 <Typography.Paragraph
                   editable={{
-                    onChange: (val) => handleUpdateInvoiceField({ warning: val }, 'Cập nhật lưu ý thành công'),
-                    tooltip: 'Nhấn để sửa lưu ý',
+                    onChange: (val) =>
+                      handleUpdateInvoiceField(
+                        { warning: val },
+                        "Cập nhật lưu ý thành công",
+                      ),
+                    tooltip: "Nhấn để sửa lưu ý",
                   }}
-                  className="mb-0"
+                  className='mb-0'
                 >
-                  {viewingInvoice.warning || "Chưa có lưu ý quan trọng. Nhấp vào đây để thêm..."}
+                  {viewingInvoice.warning ||
+                    "Chưa có lưu ý quan trọng. Nhấp vào đây để thêm..."}
                 </Typography.Paragraph>
               }
               type='error'
@@ -1073,56 +1182,80 @@ const SalesInvoicesList: React.FC = () => {
             />
 
             <div className='mb-4 py-3 px-4 bg-gray-50 rounded-lg border border-gray-100'>
-              <div className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2'>Ghi chú hóa đơn</div>
+              <div className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2'>
+                Ghi chú hóa đơn
+              </div>
               <Typography.Paragraph
                 editable={{
-                  onChange: (val) => handleUpdateInvoiceField({ notes: val }, 'Cập nhật ghi chú thành công'),
-                  tooltip: 'Nhấn để sửa ghi chú',
+                  onChange: (val) =>
+                    handleUpdateInvoiceField(
+                      { notes: val },
+                      "Cập nhật ghi chú thành công",
+                    ),
+                  tooltip: "Nhấn để sửa ghi chú",
                 }}
-                className="mb-0 text-gray-700"
+                className='mb-0 text-gray-700'
               >
-                {viewingInvoice.notes || "Chưa có ghi chú. Nhấp vào đây để thêm..."}
+                {viewingInvoice.notes ||
+                  "Chưa có ghi chú. Nhấp vào đây để thêm..."}
               </Typography.Paragraph>
             </div>
 
             {/* ✅ Section phiếu trả hàng liên kết */}
-            {(viewingInvoice as any).returns && (viewingInvoice as any).returns.length > 0 && (
-              <div className='mb-4 p-4 bg-orange-50 rounded-lg border border-orange-100'>
-                <div className='text-orange-800 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2'>
-                  <UndoOutlined /> Phiếu trả hàng liên kết ({(viewingInvoice as any).returns.length})
+            {(viewingInvoice as any).returns &&
+              (viewingInvoice as any).returns.length > 0 && (
+                <div className='mb-4 p-4 bg-orange-50 rounded-lg border border-orange-100'>
+                  <div className='text-orange-800 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-2'>
+                    <UndoOutlined /> Phiếu trả hàng liên kết (
+                    {(viewingInvoice as any).returns.length})
+                  </div>
+                  <div className='flex flex-wrap gap-2'>
+                    {(viewingInvoice as any).returns.map((ret: any) => (
+                      <Tag
+                        key={ret.id}
+                        color='orange'
+                        className='cursor-pointer hover:opacity-80'
+                        onClick={() =>
+                          navigate(`/sales-returns?code=${ret.code}`)
+                        }
+                      >
+                        {ret.code} - {formatCurrency(ret.total_refund_amount)}
+                      </Tag>
+                    ))}
+                  </div>
+                  <div className='text-[11px] text-orange-600 mt-2 italic'>
+                    * Nhấp vào mã phiếu để xem chi tiết bên trang Trả hàng
+                  </div>
                 </div>
-                <div className='flex flex-wrap gap-2'>
-                  {(viewingInvoice as any).returns.map((ret: any) => (
-                    <Tag 
-                      key={ret.id} 
-                      color="orange" 
-                      className="cursor-pointer hover:opacity-80"
-                      onClick={() => navigate(`/sales-returns?code=${ret.code}`)}
-                    >
-                      {ret.code} - {formatCurrency(ret.total_refund_amount)}
-                    </Tag>
-                  ))}
-                </div>
-                <div className="text-[11px] text-orange-600 mt-2 italic">* Nhấp vào mã phiếu để xem chi tiết bên trang Trả hàng</div>
-              </div>
-            )}
+              )}
 
             <div className='mt-4'>
               <div className='font-medium text-lg mb-3'>Danh sách sản phẩm</div>
               {viewingInvoice.items && viewingInvoice.items.length > 0 ? (
                 <Space direction='vertical' className='w-full' size='small'>
-                  {[...(viewingInvoice.items)].reverse().map((item, index) => (
+                  {[...viewingInvoice.items].reverse().map((item, index) => (
                     <Card key={index} size='small'>
                       <div className='grid grid-cols-4 gap-4'>
                         <div className='col-span-2'>
-                          <div className='font-medium text-base'>{item.product?.trade_name || item.product?.name || item.product_name || 'Sản phẩm không xác định'}</div>
+                          <div className='font-medium text-base'>
+                            {item.product?.trade_name ||
+                              item.product?.name ||
+                              item.product_name ||
+                              "Sản phẩm không xác định"}
+                          </div>
                           {/* Hiển thị số lượng đã trả hàng nếu có */}
                           {(item.returned_quantity ?? 0) > 0 && (
                             <div className='flex items-center gap-2 mt-1'>
-                              <Tag color="orange" className="m-0 border-orange-200">
-                                ↩ Đã trả: {item.returned_quantity} {item.unit_name || item.product?.unit?.name || ''}
+                              <Tag
+                                color='orange'
+                                className='m-0 border-orange-200'
+                              >
+                                ↩ Đã trả: {item.returned_quantity}{" "}
+                                {item.unit_name ||
+                                  item.product?.unit?.name ||
+                                  ""}
                               </Tag>
-                              <span className="text-xs text-gray-400 italic">
+                              <span className='text-xs text-gray-400 italic'>
                                 (Gốc: {item.quantity})
                               </span>
                             </div>
@@ -1130,42 +1263,66 @@ const SalesInvoicesList: React.FC = () => {
                         </div>
                         <div>
                           <div className='text-sm text-gray-500'>
-                            { (item.returned_quantity ?? 0) > 0 ? (
-                                <span>SL thực: <b className="text-gray-800">{item.quantity - (item.returned_quantity || 0)}</b> {item.unit_name || item.product?.unit?.name}</span>
+                            {(item.returned_quantity ?? 0) > 0 ? (
+                              <span>
+                                SL thực:{" "}
+                                <b className='text-gray-800'>
+                                  {item.quantity -
+                                    (item.returned_quantity || 0)}
+                                </b>{" "}
+                                {item.unit_name || item.product?.unit?.name}
+                              </span>
                             ) : (
-                                <span>SL: {item.quantity} {item.unit_name || item.product?.unit?.name}</span>
+                              <span>
+                                SL: {item.quantity}{" "}
+                                {item.unit_name || item.product?.unit?.name}
+                              </span>
                             )}
                           </div>
                           <div className='text-sm text-gray-500'>
                             Giá: {formatCurrency(item.unit_price)}
                           </div>
-                          {item.other_unit_name && Number(item.other_unit_factor) > 0 && (
-                            <div className='text-[11px] text-gray-400 italic'>
-                              {(() => {
-                                const factor = Number(item.conversion_factor || 1);
-                                const otherFactor = Number(item.other_unit_factor);
-                                const isBase = factor === 1;
-                                
-                                const actualQty = item.quantity - (item.returned_quantity || 0);
-                                const otherQty = isBase ? (actualQty / otherFactor) : (actualQty * factor);
-                                const otherPrice = isBase ? (item.unit_price * otherFactor) : (item.unit_price / factor);
-                                
-                                return `(${otherQty.toLocaleString('vi-VN')} ${item.other_unit_name} - ${formatCurrency(otherPrice)}/${item.other_unit_name})`;
-                              })()}
-                            </div>
-                          )}
+                          {item.other_unit_name &&
+                            Number(item.other_unit_factor) > 0 && (
+                              <div className='text-[11px] text-gray-400 italic'>
+                                {(() => {
+                                  const factor = Number(
+                                    item.conversion_factor || 1,
+                                  )
+                                  const otherFactor = Number(
+                                    item.other_unit_factor,
+                                  )
+                                  const isBase = factor === 1
+
+                                  const actualQty =
+                                    item.quantity -
+                                    (item.returned_quantity || 0)
+                                  const otherQty = isBase
+                                    ? actualQty / otherFactor
+                                    : actualQty * factor
+                                  const otherPrice = isBase
+                                    ? item.unit_price * otherFactor
+                                    : item.unit_price / factor
+
+                                  return `(${otherQty.toLocaleString("vi-VN")} ${item.other_unit_name} - ${formatCurrency(otherPrice)}/${item.other_unit_name})`
+                                })()}
+                              </div>
+                            )}
                         </div>
                         <div>
-                          <div className='text-sm text-gray-500'>Thành tiền</div>
+                          <div className='text-sm text-gray-500'>
+                            Thành tiền
+                          </div>
                           <div className='font-bold text-green-700 text-base'>
                             {formatCurrency(
-                              (item.quantity - (item.returned_quantity || 0)) * item.unit_price -
-                                (item.discount_amount || 0)
+                              (item.quantity - (item.returned_quantity || 0)) *
+                                item.unit_price -
+                                (item.discount_amount || 0),
                             )}
                           </div>
                           {(item.returned_quantity ?? 0) > 0 && (
-                            <div className="text-[10px] text-gray-400 line-through">
-                                {formatCurrency(item.quantity * item.unit_price)}
+                            <div className='text-[10px] text-gray-400 line-through'>
+                              {formatCurrency(item.quantity * item.unit_price)}
                             </div>
                           )}
                         </div>
@@ -1175,9 +1332,9 @@ const SalesInvoicesList: React.FC = () => {
                 </Space>
               ) : (
                 <Alert
-                  message="Không tìm thấy sản phẩm"
+                  message='Không tìm thấy sản phẩm'
                   description={`Hệ thống không tìm thấy mặt hàng nào cho hóa đơn ID: ${viewingInvoice.id}. Vui lòng kiểm tra lại trên DB hoặc liên hệ kỹ thuật.`}
-                  type="warning"
+                  type='warning'
                   showIcon
                 />
               )}
@@ -1237,8 +1394,8 @@ const SalesInvoicesList: React.FC = () => {
       {/* Modal Báo cáo tổng hợp mua hàng của khách hàng */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <FileTextOutlined className="text-blue-500" />
+          <div className='flex items-center gap-2'>
+            <FileTextOutlined className='text-blue-500' />
             <span>Báo cáo mua hàng: {currentCustomer?.name}</span>
           </div>
         }
@@ -1251,12 +1408,12 @@ const SalesInvoicesList: React.FC = () => {
           </Button>,
         ]}
       >
-        <div className="py-2">
+        <div className='py-2'>
           {filters.season_id && seasonsData?.data?.items && (
-            <Alert 
-              message={`Đang lọc theo mùa vụ: ${seasonsData.data.items.find((s: any) => s.id === filters.season_id)?.name || 'Không xác định'}`}
-              type="info" 
-              className="mb-4"
+            <Alert
+              message={`Đang lọc theo mùa vụ: ${seasonsData.data.items.find((s: any) => s.id === filters.season_id)?.name || "Không xác định"}`}
+              type='info'
+              className='mb-4'
               showIcon
             />
           )}
@@ -1268,73 +1425,80 @@ const SalesInvoicesList: React.FC = () => {
             scroll={{ y: 500 }}
             rowKey={(record, index) => `${record.invoice_id}-${index}`}
             summary={(pageData) => {
-              let totalAmount = 0;
+              let totalAmount = 0
               pageData.forEach(({ total_price }) => {
-                totalAmount += total_price;
-              });
+                totalAmount += total_price
+              })
 
               return (
-                <Table.Summary.Row className="bg-gray-50 font-bold">
-                  <Table.Summary.Cell index={0} colSpan={5} className="text-right">
+                <Table.Summary.Row className='bg-gray-50 font-bold'>
+                  <Table.Summary.Cell
+                    index={0}
+                    colSpan={5}
+                    className='text-right'
+                  >
                     TỔNG CỘNG:
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} className="text-right text-green-600">
+                  <Table.Summary.Cell
+                    index={1}
+                    className='text-right text-green-600'
+                  >
                     {formatCurrency(totalAmount)}
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} />
                 </Table.Summary.Row>
-              );
+              )
             }}
             columns={[
               {
-                title: 'Ngày hóa đơn',
-                dataIndex: 'date',
-                key: 'date',
+                title: "Ngày hóa đơn",
+                dataIndex: "date",
+                key: "date",
                 width: 120,
-                render: (date) => dayjs(date).format('DD/MM/YYYY'),
+                render: (date) => dayjs(date).format("DD/MM/YYYY"),
               },
               {
-                title: 'Tên hàng',
-                dataIndex: 'product_name',
-                key: 'product_name',
+                title: "Tên hàng",
+                dataIndex: "product_name",
+                key: "product_name",
               },
               {
-                title: 'ĐVT',
-                dataIndex: 'unit',
-                key: 'unit',
+                title: "ĐVT",
+                dataIndex: "unit",
+                key: "unit",
                 width: 100,
-                align: 'center',
+                align: "center",
               },
               {
-                title: 'SL',
-                dataIndex: 'quantity',
-                key: 'quantity',
+                title: "SL",
+                dataIndex: "quantity",
+                key: "quantity",
                 width: 80,
-                align: 'right',
+                align: "right",
               },
               {
-                title: 'Đơn giá',
-                dataIndex: 'unit_price',
-                key: 'unit_price',
+                title: "Đơn giá",
+                dataIndex: "unit_price",
+                key: "unit_price",
                 width: 120,
-                align: 'right',
+                align: "right",
                 render: (val) => formatCurrency(val),
               },
               {
-                title: 'Thành tiền',
-                dataIndex: 'total_price',
-                key: 'total_price',
+                title: "Thành tiền",
+                dataIndex: "total_price",
+                key: "total_price",
                 width: 140,
-                align: 'right',
+                align: "right",
                 render: (val) => formatCurrency(val),
               },
               {
-                title: 'Mã HĐ',
-                dataIndex: 'invoice_code',
-                key: 'invoice_code',
+                title: "Mã HĐ",
+                dataIndex: "invoice_code",
+                key: "invoice_code",
                 width: 150,
-                render: (code) => <Tag color="blue">{code}</Tag>,
-              }
+                render: (code) => <Tag color='blue'>{code}</Tag>,
+              },
             ]}
           />
         </div>
