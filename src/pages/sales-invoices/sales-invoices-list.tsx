@@ -78,8 +78,7 @@ const salesInvoiceColumnVisibilityOptions = [
 
 const SalesInvoicesList: React.FC = () => {
   const { modal } = App.useApp()
-  // State quản lý UI
-  const [filters, setFilters] = React.useState<Record<string, any>>({})
+  // State quản lý UI modal và chi tiết hóa đơn
   const [isDetailModalVisible, setIsDetailModalVisible] =
     React.useState<boolean>(false)
   const [isPaymentModalVisible, setIsPaymentModalVisible] =
@@ -87,8 +86,6 @@ const SalesInvoicesList: React.FC = () => {
   const [viewingInvoice, setViewingInvoice] =
     React.useState<SalesInvoice | null>(null)
   const [paymentAmount, setPaymentAmount] = React.useState(0)
-  const [currentPage, setCurrentPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(10)
 
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState("")
