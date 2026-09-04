@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Link, useLocation } from "react-router-dom"
 import Button from "@mui/material/Button"
 import { MdOutlineDashboard } from "react-icons/md"
@@ -21,14 +21,29 @@ import { FaRegCircle } from "react-icons/fa"
 import { MdLocalShipping } from "react-icons/md"
 // Thêm icon cho pesticides
 import { GiPoisonBottle, GiGrain } from "react-icons/gi"
-import { MdAssignmentReturn, MdWarning, MdCalculate, MdAttachMoney, MdSearch, MdAutoAwesome } from "react-icons/md"
-import { GiftOutlined, ThunderboltOutlined } from "@ant-design/icons"
+import {
+  MdAssignmentReturn,
+  MdWarning,
+  MdCalculate,
+  MdAttachMoney,
+  MdSearch,
+  MdAutoAwesome,
+} from "react-icons/md"
+import {
+  GiftOutlined,
+  ThunderboltOutlined,
+  AudioOutlined,
+} from "@ant-design/icons"
 import { DollarOutlined } from "@ant-design/icons"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 // Import hook thống kê cảnh báo hết hạn để hiển thị badge
 import { useExpiryAlertStats } from "../../queries/expiry-alert"
+// Import hook tìm kiếm bằng giọng nói để kích hoạt menu Khai thuế
+import { useVoiceSearch } from "../../hooks/useVoiceSearch"
+// Import RoleCode để kiểm tra quyền SUPER_ADMIN
+import { RoleCode } from "../../constant/role"
 
 const Sidebar: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0)
@@ -46,196 +61,247 @@ const Sidebar: React.FC = () => {
   console.log("User Role:", userInfo?.role)
 
   // Check nếu user là CUSTOMER
-  const isCustomer = userInfo?.role?.code === 'CUSTOMER'
+  const isCustomer = userInfo?.role?.code === "CUSTOMER"
+
+  // Check nếu user là SUPER_ADMIN (chỉ SUPER_ADMIN mới thấy menu Khai thuế)
+  const isSuperAdmin = userInfo?.role?.code === RoleCode.SUPER_ADMIN
+
+  // State hiển thị menu Khai thuế - chỉ hiện khi SUPER_ADMIN nói "mở khai thuế"
+  const [taxMenuVisible, setTaxMenuVisible] = useState<boolean>(false)
+
+  // Timer tự ẩn menu Khai thuế sau 30 phút
+  const taxMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Hàm hiện menu Khai thuế và đặt timer tự ẩn sau 30 phút
+  const showTaxMenu = () => {
+    setTaxMenuVisible(true)
+    // Xóa timer cũ nếu có
+    if (taxMenuTimerRef.current) {
+      clearTimeout(taxMenuTimerRef.current)
+    }
+    // Đặt timer tự ẩn sau 30 phút (1800000ms)
+    taxMenuTimerRef.current = setTimeout(
+      () => {
+        setTaxMenuVisible(false)
+      },
+      30 * 60 * 1000,
+    )
+  }
+
+  // Hook nhận diện giọng nói để kích hoạt menu Khai thuế
+  const { isListening, startListening, stopListening } = useVoiceSearch({
+    lang: "vi-VN",
+    continuous: false,
+    onTranscript: (text) => {
+      // Nếu SUPER_ADMIN nói "mở khai thuế" hoặc "khai thuế" → hiện menu
+      const normalized = text.toLowerCase().trim()
+      if (
+        isSuperAdmin &&
+        (normalized.includes("khai thuế") ||
+          normalized.includes("mở khai thuế"))
+      ) {
+        showTaxMenu()
+      }
+    },
+  })
+
+  // Cleanup timer khi component unmount
+  useEffect(() => {
+    return () => {
+      if (taxMenuTimerRef.current) {
+        clearTimeout(taxMenuTimerRef.current)
+      }
+    }
+  }, [])
 
   // Tự động set activeTab và mở submenu dựa trên URL hiện tại
   useEffect(() => {
     const path = location.pathname
-    
+
     // Dashboard
-    if (path === '/' || path === '/products/search') {
+    if (path === "/" || path === "/products/search") {
       setActiveTab(0)
       setIsToggleSubmenu(false)
     }
     // Tính liều lượng
-    else if (path.startsWith('/dosage-calculator')) {
+    else if (path.startsWith("/dosage-calculator")) {
       setActiveTab(29)
       setIsToggleSubmenu(false)
     }
     // Tính phối phân
-    else if (path.startsWith('/fertilizer-calculator')) {
+    else if (path.startsWith("/fertilizer-calculator")) {
       setActiveTab(47)
       setIsToggleSubmenu(false)
     }
     // Dự báo thời tiết
-    else if (path.startsWith('/weather-forecast')) {
+    else if (path.startsWith("/weather-forecast")) {
       setActiveTab(31)
       setIsToggleSubmenu(false)
     }
     // Lịch Vạn Niên
-    else if (path.startsWith('/lunar-calendar')) {
+    else if (path.startsWith("/lunar-calendar")) {
       setActiveTab(33)
       setIsToggleSubmenu(false)
     }
     // Sản phẩm - tab 1
-    else if (path.startsWith('/products') || path.startsWith('/product-comparison')) {
+    else if (
+      path.startsWith("/products") ||
+      path.startsWith("/product-comparison")
+    ) {
       setActiveTab(1)
       setIsToggleSubmenu(true)
     }
     // AI Image Studio
-    else if (path.startsWith('/image-studio')) {
+    else if (path.startsWith("/image-studio")) {
       setActiveTab(42)
       setIsToggleSubmenu(false)
     }
     // Loại sản phẩm
-    else if (path.startsWith('/category')) {
+    else if (path.startsWith("/category")) {
       setActiveTab(3)
       setIsToggleSubmenu(false)
     }
     // Loại phụ sản phẩm
-    else if (path.startsWith('/sub-category')) {
+    else if (path.startsWith("/sub-category")) {
       setActiveTab(4)
       setIsToggleSubmenu(false)
     }
     // Đơn vị tính
-    else if (path.startsWith('/units')) {
+    else if (path.startsWith("/units")) {
       setActiveTab(5)
       setIsToggleSubmenu(false)
     }
     // Ký hiệu
-    else if (path.startsWith('/symbols')) {
+    else if (path.startsWith("/symbols")) {
       setActiveTab(6)
       setIsToggleSubmenu(false)
     }
     // Nhà cung cấp
-    else if (path.startsWith('/suppliers')) {
+    else if (path.startsWith("/suppliers")) {
       setActiveTab(7)
       setIsToggleSubmenu(false)
     }
     // Thuốc BVTV
-    else if (path.startsWith('/pesticides')) {
+    else if (path.startsWith("/pesticides")) {
       setActiveTab(8)
       setIsToggleSubmenu(false)
     }
     // Quản lý người dùng
-    else if (path.startsWith('/users')) {
+    else if (path.startsWith("/users")) {
       setActiveTab(9)
       setIsToggleSubmenu(false)
     }
     // Quản lý nhập hàng - tab 10
-    else if (path.startsWith('/inventory')) {
+    else if (path.startsWith("/inventory")) {
       setActiveTab(10)
       setIsToggleSubmenu(true)
     }
     // Thị trường Lúa Gạo
-    else if (path.startsWith('/rice-market')) {
+    else if (path.startsWith("/rice-market")) {
       setActiveTab(15)
       setIsToggleSubmenu(false)
     }
     // Mùa vụ
-    else if (path.startsWith('/seasons')) {
+    else if (path.startsWith("/seasons")) {
       setActiveTab(17)
       setIsToggleSubmenu(false)
     }
     // Diện tích mỗi công đất
-    else if (path.startsWith('/area-of-each-plot-of-land')) {
+    else if (path.startsWith("/area-of-each-plot-of-land")) {
       setActiveTab(27)
       setIsToggleSubmenu(false)
     }
     // Khách hàng
-    else if (path.startsWith('/customers')) {
+    else if (path.startsWith("/customers")) {
       setActiveTab(18)
       setIsToggleSubmenu(false)
     }
     // Hóa đơn bán hàng
-    else if (path.startsWith('/sales-invoices/undelivered')) {
+    else if (path.startsWith("/sales-invoices/undelivered")) {
       setActiveTab(47)
       setIsToggleSubmenu(false)
-    }
-    else if (path.startsWith('/sales-invoices')) {
+    } else if (path.startsWith("/sales-invoices")) {
       setActiveTab(19)
       setIsToggleSubmenu(false)
     }
     // Thanh toán
-    else if (path.startsWith('/payments')) {
+    else if (path.startsWith("/payments")) {
       setActiveTab(20)
       setIsToggleSubmenu(false)
     }
     // Công nợ
-    else if (path.startsWith('/debt-notes')) {
+    else if (path.startsWith("/debt-notes")) {
       setActiveTab(21)
       setIsToggleSubmenu(false)
-    }
-    else if (path.startsWith('/loans')) {
+    } else if (path.startsWith("/loans")) {
       setActiveTab(48)
       setIsToggleSubmenu(false)
     }
     // Chăm sóc khách hàng
-    else if (path.startsWith('/customer-rewards')) {
+    else if (path.startsWith("/customer-rewards")) {
       setActiveTab(43)
       setIsToggleSubmenu(false)
     }
     // Campaign khuyến mãi
-    else if (path.startsWith('/promotion-campaigns')) {
+    else if (path.startsWith("/promotion-campaigns")) {
       setActiveTab(45)
       setIsToggleSubmenu(false)
-    }
-    else if (path.startsWith('/promotion-campaign-rewards')) {
+    } else if (path.startsWith("/promotion-campaign-rewards")) {
       setActiveTab(46)
       setIsToggleSubmenu(false)
     }
     // Trả hàng
-    else if (path.startsWith('/sales-returns')) {
+    else if (path.startsWith("/sales-returns")) {
       setActiveTab(22)
       setIsToggleSubmenu(false)
     }
     // Giao hàng
-    else if (path.startsWith('/delivery-logs')) {
+    else if (path.startsWith("/delivery-logs")) {
       setActiveTab(32)
       setIsToggleSubmenu(false)
     }
     // Báo cáo Lợi nhuận
-    else if (path.startsWith('/profit-reports')) {
+    else if (path.startsWith("/profit-reports")) {
       setActiveTab(28)
       setIsToggleSubmenu(false)
     }
     // Khai thuế
-    else if (path.startsWith('/reports/tax-revenue')) {
+    else if (path.startsWith("/reports/tax-revenue")) {
       setActiveTab(36)
       setIsToggleSubmenu(false)
     }
     // Cảnh báo Bệnh/Sâu hại
-    else if (path.startsWith('/disease-warning')) {
+    else if (path.startsWith("/disease-warning")) {
       setActiveTab(23)
       setIsToggleSubmenu(false)
     }
     // Kiểm tra thuốc bị cấm
-    else if (path.startsWith('/banned-pesticides')) {
+    else if (path.startsWith("/banned-pesticides")) {
       setActiveTab(24)
       setIsToggleSubmenu(false)
     }
     // Quản Lý Canh Tác
-    else if (path.startsWith('/rice-crops')) {
+    else if (path.startsWith("/rice-crops")) {
       setActiveTab(25)
       setIsToggleSubmenu(false)
     }
     // Đổi mật khẩu
-    else if (path.startsWith('/change-password')) {
+    else if (path.startsWith("/change-password")) {
       setActiveTab(26)
       setIsToggleSubmenu(false)
     }
     // Chi phí vận hành
-    else if (path.startsWith('/operating-costs')) {
+    else if (path.startsWith("/operating-costs")) {
       setActiveTab(30)
       setIsToggleSubmenu(true)
     }
     // Chi phí dịch vụ
-    else if (path.startsWith('/farm-service-costs')) {
+    else if (path.startsWith("/farm-service-costs")) {
       setActiveTab(25)
       setIsToggleSubmenu(true)
     }
     // Tin tức
-    else if (path.startsWith('/news')) {
+    else if (path.startsWith("/news")) {
       setActiveTab(44)
       setIsToggleSubmenu(false)
     }
@@ -265,7 +331,7 @@ const Sidebar: React.FC = () => {
                 </Button>
               </Link>
             </li>
-            
+
             <li>
               <Link to='/lunar-calendar'>
                 <Button
@@ -333,8 +399,6 @@ const Sidebar: React.FC = () => {
               </Link>
             </li>
 
-
-
             {/* Quản Lý Canh Tác */}
             <li>
               <Button
@@ -364,9 +428,7 @@ const Sidebar: React.FC = () => {
                   <Link to='/rice-crops'>
                     <Button
                       className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname === "/rice-crops"
-                          ? "active"
-                          : ""
+                        location.pathname === "/rice-crops" ? "active" : ""
                       }`}
                     >
                       Danh sách ruộng lúa
@@ -376,13 +438,12 @@ const Sidebar: React.FC = () => {
               </div>
             </li>
 
-
             <li>
               <h6 className='text-green-100 capitalize px-3 mt-4'>
                 Authentication
               </h6>
             </li>
-            
+
             <li>
               <Link to='/change-password'>
                 <Button
@@ -410,7 +471,7 @@ const Sidebar: React.FC = () => {
           <li>
             <Link to='/products/search'>
               <Button
-                className={`w-full !justify-start !text-left ${activeTab ===  0 ? "active" : ""}`}
+                className={`w-full !justify-start !text-left ${activeTab === 0 ? "active" : ""}`}
                 onClick={() => isOpenSubmenu(0)}
               >
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
@@ -434,7 +495,7 @@ const Sidebar: React.FC = () => {
               </Button>
             </Link>
           </li>
-          
+
           <li>
             <Link to='/dosage-calculator'>
               <Button
@@ -527,7 +588,6 @@ const Sidebar: React.FC = () => {
                   Quản lý bán hàng
                 </h6>
               </li>
-
 
               {/* Hóa đơn bán hàng */}
               {hasPermission(userInfo, "sales:read") && (
@@ -712,7 +772,36 @@ const Sidebar: React.FC = () => {
                 </li>
               )}
 
-              {hasPermission(userInfo, "store_profit_report:read") && (
+              {/* Nút Mic - chỉ SUPER_ADMIN mới thấy, dùng để kích hoạt menu Khai thuế bằng giọng nói */}
+              {isSuperAdmin && (
+                <li>
+                  <Button
+                    className={`w-full !justify-start !text-left ${isListening ? "active" : ""}`}
+                    onClick={() =>
+                      isListening ? stopListening() : startListening()
+                    }
+                    title={
+                      isListening
+                        ? "Đang nghe... (nhấn để dừng)"
+                        : 'Nói "mở khai thuế" để hiện menu'
+                    }
+                  >
+                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                      <AudioOutlined
+                        className={
+                          isListening
+                            ? "text-red-400 animate-pulse"
+                            : "text-yellow-300"
+                        }
+                      />
+                    </span>
+                    {isListening ? "Đang nghe..." : "Kích hoạt khai thuế"}
+                  </Button>
+                </li>
+              )}
+
+              {/* Menu Khai thuế - chỉ SUPER_ADMIN sau khi nói "mở khai thuế", tự ẩn sau 30 phút */}
+              {isSuperAdmin && taxMenuVisible && (
                 <li>
                   <Link to='/reports/tax-revenue'>
                     <Button
@@ -860,7 +949,9 @@ const Sidebar: React.FC = () => {
                         <span className='flex-1'>Lô sắp hết hạn</span>
                         {(expiryStats?.pending ?? 0) > 0 && (
                           <span className='ml-1 bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none'>
-                            {expiryStats!.pending > 99 ? '99+' : expiryStats!.pending}
+                            {expiryStats!.pending > 99
+                              ? "99+"
+                              : expiryStats!.pending}
                           </span>
                         )}
                       </span>
@@ -897,7 +988,7 @@ const Sidebar: React.FC = () => {
                 }`}
               >
                 <ul className='submenu pl-2'>
-                  <li className="mb-2">
+                  <li className='mb-2'>
                     <Link to='/products'>
                       <Button
                         className={`w-full !justify-start !text-left ${
@@ -909,7 +1000,7 @@ const Sidebar: React.FC = () => {
                     </Link>
                   </li>
                   {hasPermission(userInfo, "product:manage") && (
-                    <li >
+                    <li>
                       <Link to='/products/new'>
                         <Button
                           className={`w-full !justify-start !text-left ${
@@ -923,7 +1014,7 @@ const Sidebar: React.FC = () => {
                       </Link>
                     </li>
                   )}
-                  <li className="-mb-8 mt-2">
+                  <li className='-mb-8 mt-2'>
                     <Link to='/product-comparison'>
                       <Button
                         className={`w-full !justify-start !text-left ${
@@ -1030,8 +1121,6 @@ const Sidebar: React.FC = () => {
             </Link>
           </li>
 
-
-
           {/* Thêm menu cho disease warning */}
           {hasPermission(userInfo, "ai:rice_blast:read") && (
             <li>
@@ -1067,69 +1156,67 @@ const Sidebar: React.FC = () => {
           {/* Thêm menu cho Quản Lý Canh Tác */}
           {/* Thêm menu cho Quản Lý Canh Tác */}
           <li>
-              <Button
-                className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
-                onClick={() => isOpenSubmenu(25)}
-              >
-                <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                  <GiGrain className='text-green-200' />
-                </span>
-                Quản Lý Canh Tác
-                <span
-                  className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
-                    activeTab === 25 && isToggleSubmenu === true ? "rotate" : ""
-                  }`}
-                >
-                  <FaAngleRight />
-                </span>
-              </Button>
-              <div
-                className={`submenuWrapper ${
-                  activeTab === 25 && isToggleSubmenu === true
-                    ? "colapse"
-                    : "colapsed"
+            <Button
+              className={`w-full !justify-start !text-left ${activeTab === 25 ? "active" : ""}`}
+              onClick={() => isOpenSubmenu(25)}
+            >
+              <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                <GiGrain className='text-green-200' />
+              </span>
+              Quản Lý Canh Tác
+              <span
+                className={`arrow ml-auto w-[25px] h-[25px] flex items-center justify-center ${
+                  activeTab === 25 && isToggleSubmenu === true ? "rotate" : ""
                 }`}
               >
-                <div className='submenu pl-2'>
-                  <Link to='/rice-crops'>
+                <FaAngleRight />
+              </span>
+            </Button>
+            <div
+              className={`submenuWrapper ${
+                activeTab === 25 && isToggleSubmenu === true
+                  ? "colapse"
+                  : "colapsed"
+              }`}
+            >
+              <div className='submenu pl-2'>
+                <Link to='/rice-crops'>
+                  <Button
+                    className={`w-full !justify-start !text-left mb-2 ${
+                      location.pathname === "/rice-crops" ? "active" : ""
+                    }`}
+                  >
+                    Danh sách ruộng lúa
+                  </Button>
+                </Link>
+
+                {hasPermission(userInfo, "sales:manage") && (
+                  <Link to='/farm-service-costs'>
                     <Button
                       className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname === "/rice-crops"
+                        location.pathname === "/farm-service-costs"
                           ? "active"
                           : ""
                       }`}
                     >
-                      Danh sách ruộng lúa
+                      Chi phí Dịch vụ
                     </Button>
                   </Link>
+                )}
 
-                  {hasPermission(userInfo, "sales:manage") && (
-                    <Link to='/farm-service-costs'>
-                      <Button
-                        className={`w-full !justify-start !text-left mb-2 ${
-                          location.pathname === "/farm-service-costs"
-                            ? "active"
-                            : ""
-                        }`}
-                      >
-                        Chi phí Dịch vụ
-                      </Button>
-                    </Link>
-                  )}
-
-                  <Link to='/rice-crops/categories'>
-                    <Button
-                      className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname === "/rice-crops/categories"
-                          ? "active"
-                          : ""
-                      }`}
-                    >
-                      Loại chi phí canh tác
-                    </Button>
-                  </Link>
-                </div>
+                <Link to='/rice-crops/categories'>
+                  <Button
+                    className={`w-full !justify-start !text-left mb-2 ${
+                      location.pathname === "/rice-crops/categories"
+                        ? "active"
+                        : ""
+                    }`}
+                  >
+                    Loại chi phí canh tác
+                  </Button>
+                </Link>
               </div>
+            </div>
           </li>
 
           {hasPermission(userInfo, "sales:manage") && (
@@ -1178,9 +1265,7 @@ const Sidebar: React.FC = () => {
                   <Link to='/operating-costs'>
                     <Button
                       className={`w-full !justify-start !text-left mb-2 ${
-                        location.pathname === "/operating-costs"
-                          ? "active"
-                          : ""
+                        location.pathname === "/operating-costs" ? "active" : ""
                       }`}
                     >
                       Danh sách chi phí
