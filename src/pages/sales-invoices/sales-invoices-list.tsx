@@ -937,12 +937,14 @@ const SalesInvoicesList: React.FC = () => {
         <ComboBox
           placeholder='Lọc theo mùa vụ'
           value={filters.season_id}
-          onChange={(val) => handleFilterChange('season_id', val)}
+          onChange={(val) => handleFilterChange("season_id", val)}
           onSearch={(text) => setSeasonSearchText(text)}
-          options={(seasonsData?.data?.items || []).map((season: { id: number; name: string }) => ({
-            value: season.id,
-            label: season.name,
-          }))}
+          options={(seasonsData?.data?.items || []).map(
+            (season: { id: number; name: string }) => ({
+              value: season.id,
+              label: season.name,
+            }),
+          )}
           allowClear
           showSearch
           filterOption={false}
@@ -1418,6 +1420,7 @@ const SalesInvoicesList: React.FC = () => {
         open={isHistoryModalVisible}
         onCancel={() => setIsHistoryModalVisible(false)}
         width={1000}
+        style={{ maxWidth: "96vw", top: 20 }}
         footer={[
           <Button key='close' onClick={() => setIsHistoryModalVisible(false)}>
             Đóng
@@ -1439,6 +1442,7 @@ const SalesInvoicesList: React.FC = () => {
             loading={historyLoading}
             pagination={false}
             scroll={{ y: 500 }}
+            scroll={{ x: 920, y: 480 }}
             rowKey={(record, index) => `${record.invoice_id}-${index}`}
             summary={(pageData) => {
               let totalAmount = 0
@@ -1477,12 +1481,19 @@ const SalesInvoicesList: React.FC = () => {
                 title: "Tên hàng",
                 dataIndex: "product_name",
                 key: "product_name",
+                width: 220,
+                render: (text) => (
+                  <span className='font-medium text-gray-800' title={text}>
+                    {text}
+                  </span>
+                ),
               },
               {
                 title: "ĐVT",
                 dataIndex: "unit",
                 key: "unit",
                 width: 100,
+                width: 90,
                 align: "center",
               },
               {
@@ -1507,6 +1518,11 @@ const SalesInvoicesList: React.FC = () => {
                 width: 140,
                 align: "right",
                 render: (val) => formatCurrency(val),
+                render: (val) => (
+                  <span className='font-semibold text-green-600'>
+                    {formatCurrency(val)}
+                  </span>
+                ),
               },
               {
                 title: "Mã HĐ",
