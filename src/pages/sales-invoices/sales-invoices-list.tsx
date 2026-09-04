@@ -932,6 +932,25 @@ const SalesInvoicesList: React.FC = () => {
         </Button>
       </div>
 
+      {/* Bộ lọc theo mùa vụ phía trên bảng (tương tự trang Công nợ) */}
+      <div className='mb-4'>
+        <ComboBox
+          placeholder='Lọc theo mùa vụ'
+          value={filters.season_id}
+          onChange={(val) => handleFilterChange('season_id', val)}
+          onSearch={(text) => setSeasonSearchText(text)}
+          options={(seasonsData?.data?.items || []).map((season: { id: number; name: string }) => ({
+            value: season.id,
+            label: season.name,
+          }))}
+          allowClear
+          showSearch
+          filterOption={false}
+          style={{ width: 250 }}
+          className='w-full sm:w-[250px]'
+        />
+      </div>
+
       {/* Danh sách hóa đơn */}
       <div className='bg-white rounded shadow'>
         <DataTable
