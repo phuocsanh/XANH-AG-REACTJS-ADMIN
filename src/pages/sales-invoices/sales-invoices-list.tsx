@@ -1441,7 +1441,6 @@ const SalesInvoicesList: React.FC = () => {
             dataSource={historyData}
             loading={historyLoading}
             pagination={false}
-            scroll={{ y: 500 }}
             scroll={{ x: 920, y: 480 }}
             rowKey={(record, index) => `${record.invoice_id}-${index}`}
             summary={(pageData) => {
@@ -1492,7 +1491,6 @@ const SalesInvoicesList: React.FC = () => {
                 title: "ĐVT",
                 dataIndex: "unit",
                 key: "unit",
-                width: 100,
                 width: 90,
                 align: "center",
               },
@@ -1517,7 +1515,6 @@ const SalesInvoicesList: React.FC = () => {
                 key: "total_price",
                 width: 140,
                 align: "right",
-                render: (val) => formatCurrency(val),
                 render: (val) => (
                   <span className='font-semibold text-green-600'>
                     {formatCurrency(val)}
