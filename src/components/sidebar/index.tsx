@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import Button from "@mui/material/Button"
 import { MdOutlineDashboard } from "react-icons/md"
@@ -29,19 +29,13 @@ import {
   MdSearch,
   MdAutoAwesome,
 } from "react-icons/md"
-import {
-  GiftOutlined,
-  ThunderboltOutlined,
-  AudioOutlined,
-} from "@ant-design/icons"
+import { GiftOutlined, ThunderboltOutlined } from "@ant-design/icons"
 import { DollarOutlined } from "@ant-design/icons"
 import { TiWeatherPartlySunny } from "react-icons/ti"
 // Import permission helpers
 import { hasPermission, isAdmin } from "../../utils/permission"
 // Import hook thống kê cảnh báo hết hạn để hiển thị badge
 import { useExpiryAlertStats } from "../../queries/expiry-alert"
-// Import hook tìm kiếm bằng giọng nói để kích hoạt menu Khai thuế
-import { useVoiceSearch } from "../../hooks/useVoiceSearch"
 // Import RoleCode để kiểm tra quyền SUPER_ADMIN
 import { RoleCode } from "../../constant/role"
 
@@ -50,69 +44,18 @@ const Sidebar: React.FC = () => {
   const [isToggleSubmenu, setIsToggleSubmenu] = useState<boolean>(false)
   const isLogin = useAppStore((state) => state.isLogin)
   const userInfo = useAppStore((state) => state.userInfo)
+  // Đọc trạng thái menu Khai thuế từ store (được cập nhật bởi Header khi SUPER_ADMIN dùng giọng nói)
+  const taxMenuVisible = useAppStore((state) => state.taxMenuVisible)
   const location = useLocation()
 
   // Lấy số lượng cảnh báo hết hạn chưa xử lý để hiển thị badge
   const { data: expiryStats } = useExpiryAlertStats()
-
-  // Debug: Log user info
-  console.log("=== SIDEBAR DEBUG ===")
-  console.log("User Info:", userInfo)
-  console.log("User Role:", userInfo?.role)
 
   // Check nếu user là CUSTOMER
   const isCustomer = userInfo?.role?.code === "CUSTOMER"
 
   // Check nếu user là SUPER_ADMIN (chỉ SUPER_ADMIN mới thấy menu Khai thuế)
   const isSuperAdmin = userInfo?.role?.code === RoleCode.SUPER_ADMIN
-
-  // State hiển thị menu Khai thuế - chỉ hiện khi SUPER_ADMIN nói "mở khai thuế"
-  const [taxMenuVisible, setTaxMenuVisible] = useState<boolean>(false)
-
-  // Timer tự ẩn menu Khai thuế sau 30 phút
-  const taxMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Hàm hiện menu Khai thuế và đặt timer tự ẩn sau 30 phút
-  const showTaxMenu = () => {
-    setTaxMenuVisible(true)
-    // Xóa timer cũ nếu có
-    if (taxMenuTimerRef.current) {
-      clearTimeout(taxMenuTimerRef.current)
-    }
-    // Đặt timer tự ẩn sau 30 phút (1800000ms)
-    taxMenuTimerRef.current = setTimeout(
-      () => {
-        setTaxMenuVisible(false)
-      },
-      30 * 60 * 1000,
-    )
-  }
-
-  // Hook nhận diện giọng nói để kích hoạt menu Khai thuế
-  const { isListening, startListening, stopListening } = useVoiceSearch({
-    lang: "vi-VN",
-    continuous: false,
-    onTranscript: (text) => {
-      // Nếu SUPER_ADMIN nói "mở khai thuế" hoặc "khai thuế" → hiện menu
-      const normalized = text.toLowerCase().trim()
-      if (
-        isSuperAdmin &&
-        (normalized.includes("khai thuế") ||
-          normalized.includes("mở khai thuế"))
-      ) {
-        showTaxMenu()
-      }
-    },
-  })
-
-  // Cleanup timer khi component unmount
-  useEffect(() => {
-    return () => {
-      if (taxMenuTimerRef.current) {
-        clearTimeout(taxMenuTimerRef.current)
-      }
-    }
-  }, [])
 
   // Tự động set activeTab và mở submenu dựa trên URL hiện tại
   useEffect(() => {
@@ -772,35 +715,7 @@ const Sidebar: React.FC = () => {
                 </li>
               )}
 
-              {/* Nút Mic - chỉ SUPER_ADMIN mới thấy, dùng để kích hoạt menu Khai thuế bằng giọng nói */}
-              {isSuperAdmin && (
-                <li>
-                  <Button
-                    className={`w-full !justify-start !text-left ${isListening ? "active" : ""}`}
-                    onClick={() =>
-                      isListening ? stopListening() : startListening()
-                    }
-                    title={
-                      isListening
-                        ? "Đang nghe... (nhấn để dừng)"
-                        : 'Nói "mở khai thuế" để hiện menu'
-                    }
-                  >
-                    <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
-                      <AudioOutlined
-                        className={
-                          isListening
-                            ? "text-red-400 animate-pulse"
-                            : "text-yellow-300"
-                        }
-                      />
-                    </span>
-                    {isListening ? "Đang nghe..." : "Kích hoạt khai thuế"}
-                  </Button>
-                </li>
-              )}
-
-              {/* Menu Khai thuế - chỉ SUPER_ADMIN sau khi nói "mở khai thuế", tự ẩn sau 30 phút */}
+              {/* Menu Khai thuế - chỉ SUPER_ADMIN sau khi nói "mở khai thuế" trên header, tự ẩn sau 30 phút */}
               {isSuperAdmin && taxMenuVisible && (
                 <li>
                   <Link to='/reports/tax-revenue'>

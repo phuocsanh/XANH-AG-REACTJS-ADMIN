@@ -19,11 +19,13 @@ type Store = {
   refreshToken: string | undefined
   userInfo?: UserResponse | null
   lastLocation?: SavedLocation | null // Vị trí GPS cuối cùng
+  taxMenuVisible: boolean // Trạng thái hiển thị menu Khai thuế (không persist)
   setIsLogin: (isLogin: boolean) => void
   setAccessToken: (accessToken: string | undefined) => void
   setRefreshToken: (refreshToken: string | undefined) => void
   setUserInfo: (userInfo: UserResponse | null | undefined) => void
   setLastLocation: (location: SavedLocation | null) => void
+  setTaxMenuVisible: (visible: boolean) => void // Cập nhật trạng thái menu Khai thuế
   logout: () => void
 }
 
@@ -35,11 +37,13 @@ export const useAppStore = create<Store>()(
       refreshToken: undefined,
       userInfo: undefined,
       lastLocation: null,
+      taxMenuVisible: false, // Mặc định ẩn menu Khai thuế
       setIsLogin: (isLogin) => set({ isLogin }),
       setAccessToken: (accessToken) => set({ accessToken }),
       setRefreshToken: (refreshToken) => set({ refreshToken }),
       setUserInfo: (userInfo) => set({ userInfo }),
       setLastLocation: (lastLocation) => set({ lastLocation }),
+      setTaxMenuVisible: (visible) => set({ taxMenuVisible: visible }), // Cập nhật trạng thái menu Khai thuế
       logout: () =>
         set({
           isLogin: false,
@@ -60,6 +64,6 @@ export const useAppStore = create<Store>()(
         userInfo: state.userInfo,
         lastLocation: state.lastLocation, // Lưu vị trí cuối cùng
       }),
-    }
-  )
+    },
+  ),
 )

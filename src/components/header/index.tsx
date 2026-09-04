@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react"
+import React, { useState, useContext, useRef } from "react"
 import Button from "@mui/material/Button"
 import { FaRegBell } from "react-icons/fa"
 import { MdOutlineEmail } from "react-icons/md"
@@ -17,8 +17,13 @@ import Settings from "@mui/icons-material/Settings"
 import Logout from "@mui/icons-material/Logout"
 import Login from "@mui/icons-material/Login"
 import VpnKey from "@mui/icons-material/VpnKey"
+import { AudioOutlined } from "@ant-design/icons"
 import { useAppStore } from "../../stores"
 import { MyContext } from "../../App"
+// Import hook nhận diện giọng nói
+import { useVoiceSearch } from "../../hooks/useVoiceSearch"
+// Import RoleCode để kiểm tra SUPER_ADMIN
+import { RoleCode } from "../../constant/role"
 
 export const Header: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -26,6 +31,43 @@ export const Header: React.FC = () => {
   const { setIsSidebarOpen } = useContext(MyContext)
   const navigate = useNavigate()
   const isLogin = useAppStore((state) => state.isLogin)
+  const userInfo = useAppStore((state) => state.userInfo)
+  const setTaxMenuVisible = useAppStore((state) => state.setTaxMenuVisible)
+  const taxMenuVisible = useAppStore((state) => state.taxMenuVisible)
+
+  // Kiểm tra người dùng có phải SUPER_ADMIN không
+  const isSuperAdmin = userInfo?.role?.code === RoleCode.SUPER_ADMIN
+
+  // Timer tự ẩn menu Khai thuế sau 30 phút
+  const taxMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Hàm hiện menu Khai thuế và reset timer 30 phút
+  const showTaxMenu = () => {
+    setTaxMenuVisible(true)
+    if (taxMenuTimerRef.current) clearTimeout(taxMenuTimerRef.current)
+    taxMenuTimerRef.current = setTimeout(
+      () => {
+        setTaxMenuVisible(false)
+      },
+      30 * 60 * 1000,
+    )
+  }
+
+  // Hook nhận diện giọng nói - khi nghe "khai thuế" hoặc "mở khai thuế" → hiện menu
+  const { isListening, startListening, stopListening } = useVoiceSearch({
+    lang: "vi-VN",
+    continuous: false,
+    onTranscript: (text) => {
+      const normalized = text.toLowerCase().trim()
+      if (
+        isSuperAdmin &&
+        (normalized.includes("khai thuế") ||
+          normalized.includes("mở khai thuế"))
+      ) {
+        showTaxMenu()
+      }
+    },
+  })
 
   const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
     setAnchorEl(event.currentTarget)
@@ -36,12 +78,12 @@ export const Header: React.FC = () => {
 
   const handleLogin = (): void => {
     handleClose()
-    navigate('/sign-in')
+    navigate("/sign-in")
   }
 
   const handleChangePassword = (): void => {
     handleClose()
-    navigate('/change-password')
+    navigate("/change-password")
   }
 
   const handleLogout = (): void => {
@@ -62,7 +104,12 @@ export const Header: React.FC = () => {
   }
 
   return (
-    <header className='w-full h-full py-3 z-[100] flex items-center justify-between px-4 shadow-sm' style={{background: 'linear-gradient(180deg, #059669 0%, #047857 100%)'}}>
+    <header
+      className='w-full h-full py-3 z-[100] flex items-center justify-between px-4 shadow-sm'
+      style={{
+        background: "linear-gradient(180deg, #059669 0%, #047857 100%)",
+      }}
+    >
       {/* Mobile menu button */}
       <div className='md:hidden'>
         <Button onClick={toggleMobileSidebar}>
@@ -79,17 +126,36 @@ export const Header: React.FC = () => {
 
       <div className='ml-auto part2'>
         <ul className='flex items-center gap-3'>
+          {/* Nút Mic kích hoạt menu Khai thuế - chỉ hiển thị với SUPER_ADMIN (chỉ icon mic, không kèm chữ) */}
+          {isSuperAdmin && (
+            <li>
+              <Button
+                style={{ background: isListening ? "#ef4444" : "white" }}
+                className='!border-2 !border-white !rounded-full'
+                onClick={() =>
+                  isListening ? stopListening() : startListening()
+                }
+              >
+                <AudioOutlined
+                  className={
+                    isListening ? "text-white animate-pulse" : "text-green-700"
+                  }
+                />
+              </Button>
+            </li>
+          )}
+
           <li>
-            <Button 
-              style={{background: 'white'}}
+            <Button
+              style={{ background: "white" }}
               className='!border-2 !border-white !rounded-full'
             >
               <FaRegBell className='text-green-700' />
             </Button>
           </li>
           <li>
-            <Button 
-              style={{background: 'white'}}
+            <Button
+              style={{ background: "white" }}
               className='!border-2 !border-white !rounded-full'
             >
               <MdOutlineEmail className='text-green-700' />
@@ -138,28 +204,28 @@ export const Header: React.FC = () => {
             >
               {/* Chỉ hiển thị khi đã đăng nhập */}
               {isLogin && [
-                <MenuItem key="account" onClick={handleClose}>
+                <MenuItem key='account' onClick={handleClose}>
                   <Avatar /> Tài khoản của tôi
                 </MenuItem>,
-                <Divider key="divider" />,
-                <MenuItem key="change-password" onClick={handleChangePassword}>
+                <Divider key='divider' />,
+                <MenuItem key='change-password' onClick={handleChangePassword}>
                   <ListItemIcon>
                     <VpnKey fontSize='small' />
                   </ListItemIcon>
                   Đổi mật khẩu
                 </MenuItem>,
-                <MenuItem key="settings" onClick={handleClose}>
+                <MenuItem key='settings' onClick={handleClose}>
                   <ListItemIcon>
                     <Settings fontSize='small' />
                   </ListItemIcon>
                   Cài đặt
                 </MenuItem>,
-                <MenuItem key="logout" onClick={handleLogout}>
+                <MenuItem key='logout' onClick={handleLogout}>
                   <ListItemIcon>
                     <Logout fontSize='small' />
                   </ListItemIcon>
                   Đăng xuất
-                </MenuItem>
+                </MenuItem>,
               ]}
 
               {/* Chỉ hiển thị khi chưa đăng nhập */}
