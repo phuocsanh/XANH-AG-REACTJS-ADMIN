@@ -11,6 +11,7 @@ import type {
   CustomerProfitReport,
   RiceCropProfit,
   PeriodReport,
+  ProductSeasonSales,
 } from '@/models/store-profit';
 
 // ==================== QUERY KEYS ====================
@@ -78,6 +79,19 @@ export const useSeasonStoreProfit = (seasonId: number) => {
       return response as SeasonStoreProfit;
     },
     enabled: !!seasonId && seasonId > 0,
+  });
+};
+
+export const useProductSeasonSales = (productId: number, seasonId: number) => {
+  return useQuery({
+    queryKey: [...storeProfitReportKeys.all, 'product-season', productId, seasonId],
+    queryFn: async () => {
+      const response = await api.get<ProductSeasonSales>(
+        `/store-profit-report/season/${seasonId}/product/${productId}`,
+      );
+      return response;
+    },
+    enabled: productId > 0 && seasonId > 0,
   });
 };
 

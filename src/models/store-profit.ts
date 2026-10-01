@@ -89,6 +89,18 @@ export interface TopProductProfit {
   margin: number;
 }
 
+export interface ProductSeasonSales {
+  product_id: number;
+  product_name: string;
+  season_id: number;
+  season_name: string;
+  quantity_invoiced: number;
+  quantity_returned: number;
+  quantity_sold: number;
+  unit_name?: string;
+  invoice_count: number;
+}
+
 /**
  * Tổng hợp lợi nhuận
  */

@@ -213,6 +213,10 @@ const Sidebar: React.FC = () => {
       setActiveTab(36)
       setIsToggleSubmenu(false)
     }
+    else if (path.startsWith("/reports/product-season-sales")) {
+      setActiveTab(37)
+      setIsToggleSubmenu(false)
+    }
     // Cảnh báo Bệnh/Sâu hại
     else if (path.startsWith("/disease-warning")) {
       setActiveTab(23)
@@ -727,6 +731,22 @@ const Sidebar: React.FC = () => {
                         <ThunderboltOutlined className='text-blue-300' />
                       </span>
                       Khai thuế
+                    </Button>
+                  </Link>
+                </li>
+              )}
+
+              {isSuperAdmin && (
+                <li>
+                  <Link to='/reports/product-season-sales'>
+                    <Button
+                      className={`w-full !justify-start !text-left ${activeTab === 37 ? "active" : ""}`}
+                      onClick={() => isOpenSubmenu(37)}
+                    >
+                      <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                        <RiFileListLine className='text-cyan-200' />
+                      </span>
+                      Bán theo mùa vụ
                     </Button>
                   </Link>
                 </li>
