@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Card, Col, Row, Select, Spin, Statistic, Typography } from 'antd';
 import { ShoppingCartOutlined, RollbackOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useAppStore } from '@/stores';
@@ -16,7 +16,13 @@ const ProductSeasonSalesPage: React.FC = () => {
   const [productId, setProductId] = useState<number>();
 
   const { data: seasonsData, isLoading: seasonsLoading } = useSeasonsQuery({ page: 1, limit: 100 });
-  const { data: productsData, isLoading: productsLoading } = useProductSearch('', 100, isSuperAdmin);
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useProductSearch('', 100, isSuperAdmin);
   const { data: report, isLoading: reportLoading, isError } = useProductSeasonSales(productId || 0, seasonId || 0);
 
   const seasons = seasonsData?.data?.items || [];
@@ -24,6 +30,13 @@ const ProductSeasonSalesPage: React.FC = () => {
     () => productsData?.pages.flatMap((page) => page.data || []) || [],
     [productsData],
   );
+
+  // Tải tiếp các trang cho đến khi đủ toàn bộ sản phẩm trong dropdown.
+  useEffect(() => {
+    if (isSuperAdmin && hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isSuperAdmin, productsData?.pages.length]);
   const unit = report?.unit_name || 'đơn vị';
   const formatQuantity = (value?: number) => `${Number(value || 0).toLocaleString('vi-VN')} ${unit}`;
 
@@ -58,7 +71,7 @@ const ProductSeasonSalesPage: React.FC = () => {
               style={{ width: '100%', marginTop: 8 }}
               placeholder="Chọn sản phẩm"
               value={productId}
-              loading={productsLoading}
+              loading={productsLoading || isFetchingNextPage || hasNextPage}
               onChange={setProductId}
               options={products.map((product: any) => ({
                 label: `${product.trade_name || product.name || `Sản phẩm #${product.id}`}${product.code ? ` (${product.code})` : ''}`,
