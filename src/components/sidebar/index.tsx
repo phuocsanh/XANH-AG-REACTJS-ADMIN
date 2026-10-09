@@ -71,7 +71,7 @@ const Sidebar: React.FC = () => {
       setActiveTab(29)
       setIsToggleSubmenu(false)
     }
-    // Tính phối phân
+    // Phối trộn phân
     else if (path.startsWith("/fertilizer-calculator")) {
       setActiveTab(47)
       setIsToggleSubmenu(false)
@@ -466,7 +466,7 @@ const Sidebar: React.FC = () => {
                 <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                   <MdCalculate className='text-lime-300' />
                 </span>
-                Tính phối phân
+                Phối trộn phân
               </Button>
             </Link>
           </li>
@@ -746,7 +746,7 @@ const Sidebar: React.FC = () => {
                       <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                         <RiFileListLine className='text-cyan-200' />
                       </span>
-                      Bán theo mùa vụ
+                      Số lượng sản phẩm đã bán
                     </Button>
                   </Link>
                 </li>

@@ -116,7 +116,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose }) => {
                   <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
                     <MdCalculate />
                   </span>
-                  Tính phối phân
+                  Phối trộn phân
                 </Button>
               </Link>
             </li>

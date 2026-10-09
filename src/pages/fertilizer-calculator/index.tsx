@@ -431,7 +431,7 @@ const FertilizerCalculator: React.FC = () => {
       <Space align="center" className="mb-4">
         <ExperimentOutlined className="text-emerald-600 text-2xl" />
         <Title level={4} className="!mb-0">
-          Tính phối phân
+          Phối trộn phân
         </Title>
       </Space>
 
