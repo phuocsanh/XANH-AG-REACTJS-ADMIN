@@ -27,6 +27,10 @@ export interface DebtNote {
   reward_count?: number;
   closed_at?: Date | string;
   can_reverse_close?: boolean;
+  calculated_due_date?: Date | string;
+  calculated_overdue?: boolean;
+  effective_status?: DebtNoteStatus;
+  overdue_after_months?: number;
 }
 
 /**
@@ -95,4 +99,5 @@ export interface DebtNoteStatistics {
   overdue_count: number;
   active_count: number;
   paid_count: number;
+  overdue_after_months?: number;
 }

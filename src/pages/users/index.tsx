@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Tabs, Table, Button, Tag, Card, Form, Input, Select, Space, Popconfirm, Dropdown } from 'antd';
+import { Tabs, Table, Button, Tag, Card, Form, Input, Select, Space, Popconfirm, Dropdown, Modal } from 'antd';
 import { UserOutlined, CheckOutlined, UserAddOutlined, MoreOutlined, CheckCircleOutlined, StopOutlined, DeleteOutlined, KeyOutlined } from '@ant-design/icons';
-import { useRolesQuery, usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCreateUserByAdminMutation, CreateUserByAdminDto, useActivateUserMutation, useDeactivateUserMutation, useDeleteUserMutation, useResetPasswordMutation } from '@/queries/user';
+import { useRolesQuery, usePendingUsersQuery, useAllUsersQuery, useApproveUserMutation, useCreateUserByAdminMutation, CreateUserByAdminDto, useActivateUserMutation, useDeactivateUserMutation, useDeleteUserMutation, useResetPasswordMutation, useUpdateUserMutation, UpdateUserDto } from '@/queries/user';
 import { UserResponse } from '@/models/auth.model';
 import { useAppStore } from '@/stores';
 import { canManageUser } from '@/utils/permission';
@@ -182,6 +182,9 @@ const AllUsersTab: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const { data: usersResponse, isLoading } = useAllUsersQuery(filters);
   const { data: roles } = useRolesQuery();
+  const [roleDialogVisible, setRoleDialogVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<number>();
   
   const users = usersResponse?.data?.items || [];
   
@@ -200,6 +203,7 @@ const AllUsersTab: React.FC = () => {
   const deactivateMutation = useDeactivateUserMutation();
   const deleteMutation = useDeleteUserMutation();
   const resetPasswordMutation = useResetPasswordMutation();
+  const updateMutation = useUpdateUserMutation();
   const currentUser = useAppStore((state) => state.userInfo);
 
   const columns = [
@@ -333,6 +337,12 @@ const AllUsersTab: React.FC = () => {
             icon: <KeyOutlined />,
             onClick: () => {},
           }] : []),
+          ...(canManage && currentUser?.role?.code === RoleCode.SUPER_ADMIN ? [{
+            key: 'change-role',
+            label: 'Đổi vai trò',
+            icon: <UserOutlined />,
+            onClick: () => {},
+          }] : []),
           ...(canManage ? [{
             key: 'delete',
             label: 'Xóa tài khoản',
@@ -368,6 +378,10 @@ const AllUsersTab: React.FC = () => {
                         password: newPassword 
                       });
                     }
+                  } else if (e.key === 'change-role') {
+                    setSelectedUser(record);
+                    setSelectedRoleId(record.role?.id);
+                    setRoleDialogVisible(true);
                   }
                 },
               }}
@@ -381,17 +395,54 @@ const AllUsersTab: React.FC = () => {
   ];
 
   return (
-    <DataTable
-      data={users as any}
-      columns={columns as any}
-      rowKey={(record: any) => record.id || record.user_id}
-      loading={isLoading}
-      showSTT={false} // AllUsersTab đã có cột ID riêng
-      paginationConfig={{
-        pageSize: 10,
-      }}
-      scroll={{ x: 1000 }}
-    />
+    <>
+      <DataTable
+        data={users as any}
+        columns={columns as any}
+        rowKey={(record: any) => record.id || record.user_id}
+        loading={isLoading}
+        showSTT={false}
+        paginationConfig={{
+          pageSize: 10,
+        }}
+        scroll={{ x: 1000 }}
+      />
+
+      <Modal
+        title="Đổi vai trò người dùng"
+        open={roleDialogVisible}
+        onCancel={() => setRoleDialogVisible(false)}
+        onOk={async () => {
+          if (!selectedUser || !selectedRoleId) return;
+          await updateMutation.mutateAsync({
+            userId: selectedUser.id || selectedUser.user_id,
+            data: { role_id: selectedRoleId } as UpdateUserDto,
+          });
+          setRoleDialogVisible(false);
+        }}
+        okText="Lưu"
+        okButtonProps={{ loading: updateMutation.isPending }}
+        destroyOnClose
+      >
+        <p>Người dùng: <strong>{selectedUser?.account}</strong></p>
+        <Form layout="vertical">
+          <Form.Item label="Vai trò">
+            <Select
+              style={{ width: '100%' }}
+              value={selectedRoleId}
+              onChange={setSelectedRoleId}
+              placeholder="Chọn vai trò"
+            >
+              {roles?.map((role) => (
+                <Option key={role.id} value={role.id}>
+                  {role.name} ({role.code})
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
   );
 };
 

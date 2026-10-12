@@ -6,7 +6,12 @@
 import * as React from "react"
 import { DebtNote } from "@/models/debt-note"
 import { CustomerDebtor } from "@/models/customer"
-import { useDebtNotesQuery, useReverseCloseDebtNoteMutation } from "@/queries/debt-note"
+import {
+  useDebtNotesQuery,
+  useDebtOverdueSettingQuery,
+  useReverseCloseDebtNoteMutation,
+  useUpdateDebtOverdueSettingMutation,
+} from "@/queries/debt-note"
 import { useSeasonsQuery, useActiveSeasonQuery } from "@/queries/season"
 import {
   Tag,
@@ -18,10 +23,11 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   Alert,
 } from "antd"
 import { RangePicker } from '@/components/common'
-import { DollarOutlined, SearchOutlined, GiftOutlined, RollbackOutlined } from "@ant-design/icons"
+import { DollarOutlined, SearchOutlined, GiftOutlined, RollbackOutlined, SettingOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -59,6 +65,10 @@ const DebtNotesList: React.FC = () => {
   const [isReverseModalVisible, setIsReverseModalVisible] = React.useState(false)
   const [selectedReverseDebtNote, setSelectedReverseDebtNote] = React.useState<ExtendedDebtNote | null>(null)
   const reverseCloseMutation = useReverseCloseDebtNoteMutation()
+  const [settingForm] = Form.useForm()
+  const [isSettingModalVisible, setIsSettingModalVisible] = React.useState(false)
+  const { data: overdueSetting } = useDebtOverdueSettingQuery()
+  const updateOverdueSettingMutation = useUpdateDebtOverdueSettingMutation()
 
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState('')
@@ -255,6 +265,22 @@ const DebtNotesList: React.FC = () => {
     handleCloseReverseModal()
   }
 
+  const handleOpenSettingModal = () => {
+    settingForm.setFieldsValue({ months: overdueSetting?.value || 4 })
+    setIsSettingModalVisible(true)
+  }
+
+  const handleCloseSettingModal = () => {
+    setIsSettingModalVisible(false)
+    settingForm.resetFields()
+  }
+
+  const handleSaveOverdueSetting = async () => {
+    const values = await settingForm.validateFields()
+    await updateOverdueSettingMutation.mutateAsync(Number(values.months))
+    handleCloseSettingModal()
+  }
+
   // Sử dụng query hooks
   const { data: debtNotesData, isLoading } = useDebtNotesQuery({
     page: currentPage,
@@ -293,6 +319,7 @@ const DebtNotesList: React.FC = () => {
   const overdueCount = summary?.overdue_count || 0
   const activeCount = summary?.active_count || 0
   const paidCount = summary?.paid_count || 0
+  const overdueAfterMonths = summary?.overdue_after_months || overdueSetting?.value || 4
 
   // Cấu hình columns cho DataTable
   const columns: import("antd/es/table").ColumnType<ExtendedDebtNote>[] = [
@@ -377,15 +404,15 @@ const DebtNotesList: React.FC = () => {
     },
     {
       key: "due_date",
-      title: "Hạn trả",
+      title: "Ngày quá hạn",
       dataIndex: "due_date",
       width: 120,
       ...getDateColumnSearchProps('due_date'),
       filteredValue: (filters.due_date_start && filters.due_date_end) ? [filters.due_date_start as string, filters.due_date_end as string] : undefined,
-      render: (value : string) => (
+      render: (value : string, record: ExtendedDebtNote) => (
         <div>
-          {value
-            ? new Date(value).toLocaleDateString("vi-VN")
+          {record.calculated_due_date || value
+            ? new Date((record.calculated_due_date || value) as string).toLocaleDateString("vi-VN")
             : "-"}
         </div>
       ),
@@ -415,7 +442,7 @@ const DebtNotesList: React.FC = () => {
       filteredValue: filters.status ? [filters.status as string] : undefined,
       filterMultiple: false,
       render: (record: ExtendedDebtNote) => {
-        const status = record.status as keyof typeof debtStatusLabels
+        const status = (record.effective_status || record.status) as keyof typeof debtStatusLabels
         return (
           <Tag color={debtStatusColors[status] || "default"}>
             {debtStatusLabels[status] || record.status}
@@ -472,6 +499,9 @@ const DebtNotesList: React.FC = () => {
     <div className='p-2 md:p-6'>
       <div className='flex justify-between items-center mb-4'>
         <h1 className='text-2xl font-bold'>Quản lý Công nợ</h1>
+        <Button icon={<SettingOutlined />} onClick={handleOpenSettingModal}>
+          Cài đặt quá hạn
+        </Button>
       </div>
 
       {/* Season Filter */}
@@ -550,12 +580,15 @@ const DebtNotesList: React.FC = () => {
               suffix='phiếu'
               valueStyle={{ color: "#cf1322", fontSize: '18px' }}
             />
+            <div className="text-xs text-gray-500 mt-1">
+              Sau {overdueAfterMonths} tháng từ ngày tạo phiếu
+            </div>
           </Card>
         </Col>
         <Col xs={12} sm={12} md={4}>
           <Card bodyStyle={{ padding: '12px' }}>
             <Statistic
-              title='Đang nợ'
+              title='Chưa quá hạn'
               value={activeCount}
               suffix='phiếu'
               valueStyle={{ color: "#1890ff", fontSize: '18px' }}
@@ -604,6 +637,38 @@ const DebtNotesList: React.FC = () => {
         debtNoteId={selectedDebtNoteId}
         onClose={handleCloseSeasonModal}
       />
+
+      <Modal
+        title="Cài đặt quá hạn công nợ"
+        open={isSettingModalVisible}
+        onCancel={handleCloseSettingModal}
+        onOk={handleSaveOverdueSetting}
+        okText="Lưu"
+        cancelText="Hủy"
+        confirmLoading={updateOverdueSettingMutation.isPending}
+      >
+        <Form form={settingForm} layout="vertical" initialValues={{ months: overdueSetting?.value || 4 }}>
+          <Form.Item
+            label="Số tháng tính quá hạn"
+            name="months"
+            rules={[
+              { required: true, message: "Vui lòng nhập số tháng" },
+              {
+                validator: (_, value) => {
+                  const months = Number(value)
+                  if (Number.isInteger(months) && months >= 1 && months <= 60) {
+                    return Promise.resolve()
+                  }
+                  return Promise.reject(new Error("Số tháng phải là số nguyên từ 1 đến 60"))
+                },
+              },
+            ]}
+            extra="Phiếu công nợ còn nợ sẽ được tính là quá hạn khi vượt quá số tháng này kể từ ngày tạo phiếu."
+          >
+            <InputNumber min={1} max={60} precision={0} addonAfter="tháng" style={{ width: "100%" }} />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title="Hoàn tác chốt sổ công nợ"

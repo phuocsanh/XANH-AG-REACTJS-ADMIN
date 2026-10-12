@@ -184,3 +184,26 @@ export const useResetPasswordMutation = () => {
     },
   });
 };
+
+export interface UpdateUserDto {
+  account?: string;
+  role_id?: number;
+  [key: string]: any;
+}
+
+export const useUpdateUserMutation = () => {
+  return useMutation({
+    mutationFn: async ({ userId, data }: { userId: number; data: UpdateUserDto }) => {
+      const response = await api.putRaw(`/users/${userId}`, data);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all() });
+      queryClient.invalidateQueries({ queryKey: userKeys.pending() });
+      toast.success("Cập nhật người dùng thành công!");
+    },
+    onError: (error) => {
+      handleApiError(error, "Có lỗi khi cập nhật người dùng");
+    },
+  });
+};

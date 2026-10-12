@@ -11,6 +11,8 @@ import { Header } from "./components/header"
 import Sidebar from "./components/sidebar"
 import { App as AntApp } from "antd"
 import { Dashboard } from "./pages/dashboard"
+import SalesDashboard from "./pages/dashboard/sales-dashboard"
+import InventoryDashboard from "./pages/dashboard/inventory-dashboard"
 import Products from "./pages/products"
 import ProductsList from "./pages/products/products-list"
 import ProductSearch from "./pages/products/product-search"
@@ -287,11 +289,37 @@ function AppContent({
                     shouldShowLayout && !isWeatherForecastPage && !isLunarCalendarPage ? "p-2 md:p-6" : ""
                   }
                 >
-                  <Routes>
+                <Routes>
                     {/* Các trang yêu cầu đăng nhập */}
                     <Route
                       path='/'
-                      element={<Navigate to="/products/search" replace />}
+                      element={<Navigate to="/dashboard" replace />}
+                    />
+
+                    {/* Dashboard Routes */}
+                    <Route
+                      path='/dashboard'
+                      element={
+                        <ProtectedRoute>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/dashboard/sales'
+                      element={
+                        <ProtectedRoute requiredPermission="sales:read">
+                          <SalesDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/dashboard/inventory'
+                      element={
+                        <ProtectedRoute requiredPermission="inventory:read">
+                          <InventoryDashboard />
+                        </ProtectedRoute>
+                      }
                     />
                     
                     <Route

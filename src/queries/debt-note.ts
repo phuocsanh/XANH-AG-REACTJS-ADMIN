@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { DebtNote, CreateDebtNoteDto } from "@/models/debt-note"
@@ -14,6 +14,7 @@ export const debtNoteKeys = {
     [...debtNoteKeys.lists(), params] as const,
   details: () => [...debtNoteKeys.all, "detail"] as const,
   detail: (id: number) => [...debtNoteKeys.details(), id] as const,
+  overdueSetting: () => [...debtNoteKeys.all, "overdue-setting"] as const,
 } as const
 
 // ========== DEBT NOTE HOOKS ==========
@@ -82,6 +83,36 @@ export const useDebtNoteQuery = (id: number) => {
       return response
     },
     enabled: !!id,
+  })
+}
+
+export const useDebtOverdueSettingQuery = () => {
+  return useQuery({
+    queryKey: debtNoteKeys.overdueSetting(),
+    queryFn: async () => {
+      return api.get<{ key: string; value: number; description: string }>("/debt-notes/settings/overdue")
+    },
+  })
+}
+
+export const useUpdateDebtOverdueSettingMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (months: number) => {
+      return api.patchRaw<{ key: string; value: number; description: string }>(
+        "/debt-notes/settings/overdue",
+        { months },
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: debtNoteKeys.all })
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      toast.success("Đã cập nhật cấu hình quá hạn công nợ")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi cập nhật cấu hình quá hạn")
+    },
   })
 }
 
