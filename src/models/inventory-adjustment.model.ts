@@ -3,6 +3,15 @@
 export interface AdjustmentItem {
   product_id: number
   quantity_change: number // Dương: tăng, Âm: giảm
+  source_batch_id?: number
+  taxable_quantity?: number
+  stock_allocations?: Array<{
+    batchId: number
+    quantity: number
+    taxableQuantity: number
+    sourceBatchId?: number
+    pending?: boolean
+  }>
   reason?: string
   notes?: string
 }

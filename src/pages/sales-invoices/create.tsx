@@ -1671,8 +1671,6 @@ ${productInfo}`;
                 finalAmount={finalAmount}
                 partialPaymentAmount={partialPaymentAmount}
                 formatCurrency={formatCurrency}
-                customerId={customerId}
-                seasonId={seasonId}
               />
             </Grid>
 

@@ -7,7 +7,9 @@ import {
   InputNumber,
   Modal,
   Popover,
+  Popconfirm,
   Progress,
+  Select,
   Space,
   Table,
   Tag,
@@ -43,6 +45,7 @@ import { useProductsByIdsQuery, useProductSearch } from "@/queries/product"
 import {
   useCreatePromotionCampaignMutation,
   useIssuePromotionReservationMutation,
+  useCancelIssuePromotionReservationMutation,
   usePromotionCampaignParticipantsQuery,
   usePromotionCampaignQuery,
   usePromotionCampaignReservationsQuery,
@@ -83,6 +86,7 @@ const defaultValues: CampaignFormValues = {
 
 const defaultReward = (): PromotionRewardPoolItem => ({
   reward_name: "",
+  reward_product_quantity: 1,
   reward_value: 0,
   total_quantity: 1,
   reward_image_url: null,
@@ -161,6 +165,14 @@ const PromotionCampaignsPage: React.FC = () => {
   })
 
   const selectedProductIds = watch("product_ids") || []
+  const rewardProductIds = React.useMemo(
+    () => rewards.map((reward) => Number(reward.reward_product_id || 0)).filter((id) => id > 0),
+    [rewards],
+  )
+  const productIdsForOptions = React.useMemo(
+    () => Array.from(new Set([...selectedProductIds, ...rewardProductIds])),
+    [selectedProductIds, rewardProductIds],
+  )
   const startAt = watch("start_at")
   const endAt = watch("end_at")
   const campaignMonthCount = React.useMemo(
@@ -201,12 +213,13 @@ const PromotionCampaignsPage: React.FC = () => {
     isLoading: isProductSearchLoading,
     isFetching: isProductSearching,
   } = useProductSearch(productSearchTerm, 20, isModalOpen)
-  const { data: selectedProducts } = useProductsByIdsQuery(selectedProductIds)
+  const { data: selectedProducts } = useProductsByIdsQuery(productIdsForOptions)
 
   const createMutation = useCreatePromotionCampaignMutation()
   const updateMutation = useUpdatePromotionCampaignMutation()
   const updateStatusMutation = useUpdatePromotionCampaignStatusMutation()
   const issueReservationMutation = useIssuePromotionReservationMutation()
+  const cancelIssueReservationMutation = useCancelIssuePromotionReservationMutation()
   const forceWinMutation = useSetPromotionParticipantForceWinMutation()
 
   const productOptions = React.useMemo(() => {
@@ -264,6 +277,8 @@ const PromotionCampaignsPage: React.FC = () => {
       campaignDetail.reward_pools?.length
         ? campaignDetail.reward_pools.map((reward) => ({
             reward_name: reward.reward_name,
+            reward_product_id: reward.reward_product_id || undefined,
+            reward_product_quantity: Number(reward.reward_product_quantity || 1),
             reward_value: Number(reward.reward_value || 0),
             total_quantity: Number(reward.total_quantity || 0),
             reward_image_url: reward.reward_image_url || null,
@@ -317,6 +332,8 @@ const PromotionCampaignsPage: React.FC = () => {
       record.reward_pools?.length
         ? record.reward_pools.map((reward) => ({
             reward_name: reward.reward_name,
+            reward_product_id: reward.reward_product_id || undefined,
+            reward_product_quantity: Number(reward.reward_product_quantity || 1),
             reward_value: Number(reward.reward_value || 0),
             total_quantity: Number(reward.total_quantity || 0),
             reward_image_url: reward.reward_image_url || null,
@@ -396,6 +413,9 @@ const PromotionCampaignsPage: React.FC = () => {
       if (Number(reward.total_quantity || 0) < 1) {
         throw new Error(`Số lượng quà "${reward.reward_name || "..."}" phải lớn hơn 0`)
       }
+      if (reward.reward_product_id && Number(reward.reward_product_quantity || 0) <= 0) {
+        throw new Error(`Lượng kho mỗi phần quà "${reward.reward_name || "..."}" phải lớn hơn 0`)
+      }
       const totalRelease = reward.monthly_release.reduce(
         (sum, release) => sum + Number(release.release_quantity || 0),
         0,
@@ -426,6 +446,10 @@ const PromotionCampaignsPage: React.FC = () => {
       product_ids: values.product_ids.map(Number),
       rewards: rewards.map((reward, index) => ({
         reward_name: reward.reward_name.trim(),
+        reward_product_id: reward.reward_product_id || undefined,
+        reward_product_quantity: reward.reward_product_id
+          ? Number(reward.reward_product_quantity || 1)
+          : undefined,
         reward_value: Number(reward.reward_value || 0),
         total_quantity: Number(reward.total_quantity || 0),
         reward_image_url: reward.reward_image_url || null,
@@ -822,13 +846,66 @@ const PromotionCampaignsPage: React.FC = () => {
           <div className="space-y-4">
             {rewards.map((reward, rewardIndex) => (
               <Card key={rewardIndex} size="small">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
                   <div>
                     <Text strong>Tên quà</Text>
                     <Input
                       value={reward.reward_name}
                       onChange={(e) => updateReward(rewardIndex, { reward_name: e.target.value })}
                     />
+                  </div>
+                  <div>
+                    <Text strong>Sản phẩm kho (không bắt buộc)</Text>
+                    <Select
+                      className="w-full"
+                      showSearch
+                      allowClear
+                      value={reward.reward_product_id || undefined}
+                      options={productOptions}
+                      loading={isProductSearchLoading || isProductSearching}
+                      filterOption={false}
+                      placeholder="Chọn quà là sản phẩm trong kho"
+                      onSearch={setProductSearchTerm}
+                      onPopupScroll={(event) => {
+                        const target = event.currentTarget
+                        if (
+                          target.scrollTop + target.clientHeight >= target.scrollHeight - 24 &&
+                          hasNextPage &&
+                          !isFetchingNextPage
+                        ) {
+                          void fetchNextPage()
+                        }
+                      }}
+                      onChange={(value) => {
+                        const selected = productOptions.find((option) => option.value === value)
+                        updateReward(rewardIndex, {
+                          reward_product_id: value || undefined,
+                          reward_product_quantity: value
+                            ? Number(reward.reward_product_quantity || 1)
+                            : undefined,
+                          ...(!reward.reward_name.trim() && selected
+                            ? { reward_name: selected.label }
+                            : {}),
+                        })
+                      }}
+                    />
+                    {reward.reward_product_id && (
+                      <div className="mt-2">
+                        <Text strong>Lượng kho mỗi phần (đơn vị tồn kho)</Text>
+                        <InputNumber
+                          className="!w-full"
+                          min={0.0001}
+                          step={0.1}
+                          precision={4}
+                          value={reward.reward_product_quantity || 1}
+                          onChange={(value) =>
+                            updateReward(rewardIndex, {
+                              reward_product_quantity: Number(value || 0),
+                            })
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Text strong>Giá trị</Text>
@@ -1340,7 +1417,11 @@ const PromotionCampaignsPage: React.FC = () => {
               <Table<PromotionRewardReservation>
                 rowKey="id"
                 size="small"
-                loading={isReservationsLoading || issueReservationMutation.isPending}
+                loading={
+                  isReservationsLoading ||
+                  issueReservationMutation.isPending ||
+                  cancelIssueReservationMutation.isPending
+                }
                 dataSource={reservationsData?.items || []}
                 pagination={{ pageSize: 8, size: "small" }}
                 columns={[
@@ -1358,6 +1439,11 @@ const PromotionCampaignsPage: React.FC = () => {
                     render: (_, record) => (
                       <Space direction="vertical" size={0}>
                         <Text>{record.reward_name}</Text>
+                        {record.reward_product_id && (
+                          <Text type="secondary">
+                            Xuất kho: {Number(record.reward_product_quantity || 1)} đơn vị
+                          </Text>
+                        )}
                         <Text type="secondary">{formatCurrency(record.reward_value)}</Text>
                       </Space>
                     ),
@@ -1381,7 +1467,25 @@ const PromotionCampaignsPage: React.FC = () => {
                     title: "Thao tác",
                     width: 130,
                     render: (_, record) =>
-                      record.status === "issued" ? null : (
+                      record.status === "issued" ? (
+                        <Popconfirm
+                          title="Hoàn tác trao quà?"
+                          description="Nếu quà là sản phẩm, hệ thống sẽ hoàn lại đúng lô và số lượng thuế đã xuất."
+                          okText="Hoàn tác"
+                          cancelText="Giữ nguyên"
+                          onConfirm={() =>
+                            selectedCampaign &&
+                            cancelIssueReservationMutation.mutateAsync({
+                              id: selectedCampaign.id,
+                              reservationId: record.id,
+                            })
+                          }
+                        >
+                          <Button size="small" danger>
+                            Hủy trao
+                          </Button>
+                        </Popconfirm>
+                      ) : (
                         <Button
                           size="small"
                           onClick={() =>

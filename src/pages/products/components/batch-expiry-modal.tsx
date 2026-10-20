@@ -1,9 +1,11 @@
 import React from "react"
 import { Modal, Table, Tag, Button, Typography } from "antd"
+import type { ColumnsType } from "antd/es/table"
 
 import { useExpiryBatchesQuery } from "@/queries/inventory"
 import dayjs from "dayjs"
 import { Product } from "@/models/product.model"
+import { ExpiryBatch } from "@/models/inventory.model"
 
 const { Text } = Typography
 
@@ -33,18 +35,21 @@ const BatchExpiryModal: React.FC<BatchExpiryModalProps> = ({
     return { text: "Ổn định", color: "green" }
   }
 
-  const columns = [
+  const columns: ColumnsType<ExpiryBatch> = [
     {
       title: "Mã lô",
-      dataIndex: "batch_number",
-      key: "batch_number",
-      render: (text: string) => <Text strong>{text || "N/A"}</Text>,
+      dataIndex: "code",
+      key: "code",
+      render: (text: string | null | undefined, record) => (
+        <Text strong>{text || `#${record.id}`}</Text>
+      ),
     },
     {
       title: "Ngày nhập",
-      dataIndex: "received_at",
-      key: "received_at",
-      render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
+      dataIndex: "created_at",
+      key: "created_at",
+      render: (date: string) =>
+        date ? dayjs(date).format("DD/MM/YYYY") : "---",
     },
     {
       title: "Hạn dùng",
@@ -53,28 +58,31 @@ const BatchExpiryModal: React.FC<BatchExpiryModalProps> = ({
       render: (date?: string) => date ? dayjs(date).format("DD/MM/YYYY") : "---",
     },
     {
-        title: "SL ban đầu",
-        dataIndex: "quantity",
-        key: "quantity",
-        align: "right" as const,
-        render: (val: number) => val.toLocaleString("vi-VN"),
+      title: "SL ban đầu",
+      dataIndex: "original_quantity",
+      key: "original_quantity",
+      align: "right" as const,
+      render: (val: number) => Number(val ?? 0).toLocaleString("vi-VN"),
     },
     {
       title: "Còn lại",
       dataIndex: "remaining_quantity",
       key: "remaining_quantity",
       align: "right" as const,
-      render: (val: number) => (
-        <Text type={val === 0 ? "secondary" : undefined} strong={val > 0}>
-          {val.toLocaleString("vi-VN")}
-        </Text>
-      ),
+      render: (value: number) => {
+        const val = Number(value ?? 0)
+        return (
+          <Text type={val === 0 ? "secondary" : undefined} strong={val > 0}>
+            {val.toLocaleString("vi-VN")}
+          </Text>
+        )
+      },
     },
     {
       title: "Trạng thái",
       key: "status",
-      render: (_: unknown, record: unknown) => {
-        const { text, color } = getExpiryStatus((record as any).expiry_date)
+      render: (_, record) => {
+        const { text, color } = getExpiryStatus(record.expiry_date ?? undefined)
         return <Tag color={color}>{text}</Tag>
       },
     },
@@ -93,7 +101,7 @@ const BatchExpiryModal: React.FC<BatchExpiryModalProps> = ({
       width={800}
     >
       <Table
-        dataSource={batches}
+        dataSource={batches ?? []}
         columns={columns}
         loading={isLoading}
         rowKey='id'

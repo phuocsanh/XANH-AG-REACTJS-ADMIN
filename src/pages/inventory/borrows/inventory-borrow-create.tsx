@@ -20,6 +20,7 @@ import { useSupplierSearch } from "@/queries/supplier"
 import { useProductSearch } from "@/queries/product"
 import { useBatchesByProductQuery } from "@/queries/inventory"
 import { useCreateInventoryBorrowMutation } from "@/queries/inventory-borrow"
+import { useDebounceState } from "@/hooks/use-debounce-state"
 
 const { Title, Text } = Typography
 
@@ -37,7 +38,7 @@ const InventoryBorrowCreate: React.FC = () => {
   const [supplierSearch, setSupplierSearch] = React.useState("")
   const [selectedSupplierId, setSelectedSupplierId] = React.useState<number | undefined>()
   const selectedSupplierRef = React.useRef<{ id: number; name: string } | null>(null)
-  const [productSearch, setProductSearch] = React.useState("")
+  const [productSearch, setProductSearch] = useDebounceState("", 350)
   const [items, setItems] = React.useState<BorrowItemForm[]>([{ key: crypto.randomUUID() }])
   const createMutation = useCreateInventoryBorrowMutation()
 

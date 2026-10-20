@@ -1,3 +1,4 @@
+import { invalidateCustomerRewardQueries } from "@/utils/query-helpers"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
@@ -107,6 +108,7 @@ export const useCreateSalesReturnMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       // Invalidate sales returns list
       queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
       
@@ -148,6 +150,7 @@ export const useCancelSalesReturnMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       // Invalidate sales returns list
       queryClient.invalidateQueries({ queryKey: salesReturnKeys.lists() })
       

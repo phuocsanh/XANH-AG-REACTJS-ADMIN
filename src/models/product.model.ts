@@ -73,6 +73,7 @@ export interface Product {
   credit_price?: string // Giá bán nợ
   notes?: string // Ghi chú về sản phẩm
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  exclude_from_reward?: boolean // Không tính quà tích lũy
   tax_selling_price: string // Giá bán khai thuế
   average_vat_input_cost?: string
   unit_name?: string // Tên đơn vị tính (được map thêm)
@@ -119,6 +120,7 @@ export interface ProductFormValues
   credit_cost_price?: string
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
+  exclude_from_reward?: boolean // Không tính quà tích lũy
   tax_selling_price: string // Giá bán khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
@@ -151,6 +153,7 @@ export interface CreateProductRequest extends AnyObject {
   credit_cost_price?: string
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
+  exclude_from_reward?: boolean // Không tính quà tích lũy
   tax_selling_price: string // Giá bán khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean
@@ -224,6 +227,7 @@ export interface ConvertedProductValues {
   credit_cost_price?: string
   notes?: string // Ghi chú
   has_input_invoice?: boolean // Trạng thái hóa đơn đầu vào
+  exclude_from_reward?: boolean // Không tính quà tích lũy
   tax_selling_price: string // Giá bán khai thuế
   is_sold_on_web?: boolean
   show_price_on_web?: boolean

@@ -4,10 +4,10 @@ import { Box, Card, CardContent, Typography, Grid } from '@mui/material';
 import { Control, Controller, UseFormSetValue, useWatch } from 'react-hook-form';
 import { FormFieldNumber, FormField, FormComboBox } from '@/components/form';
 import { SalesInvoiceFormData } from '../../form-config';
-import { useRewardPreviewBySeasonQuery } from '@/queries/debt-note';
 import { Divider, Space, Select, Form } from 'antd';
 import { GiftOutlined } from '@ant-design/icons';
 import { useProductSearch } from '@/queries/product';
+import { useDebounceState } from '@/hooks/use-debounce-state';
 import type { Product } from '@/models/product.model';
 
 interface PaymentSummarySectionProps {
@@ -17,8 +17,6 @@ interface PaymentSummarySectionProps {
   finalAmount: number;
   partialPaymentAmount: number;
   formatCurrency: (value: number) => string;
-  customerId?: number;
-  seasonId?: number;
 }
 
 export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
@@ -28,11 +26,9 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
   finalAmount,
   partialPaymentAmount,
   formatCurrency,
-  customerId,
-  seasonId,
 }) => {
   const remainingAmount = finalAmount - partialPaymentAmount;
-  const [giftProductSearch, setGiftProductSearch] = React.useState('');
+  const [giftProductSearch, setGiftProductSearch] = useDebounceState('', 500);
   const watchedGiftProductId = useWatch({ control, name: 'gift_product_id' });
   const watchedGiftQuantity = useWatch({ control, name: 'gift_quantity' });
   const watchedGiftUnitPrice = useWatch({ control, name: 'gift_unit_price' });
@@ -58,13 +54,6 @@ export const PaymentSummarySection = React.memo<PaymentSummarySectionProps>(({
       { shouldValidate: true, shouldDirty: true },
     );
   }, [watchedGiftProductId, watchedGiftQuantity, watchedGiftUnitPrice, setValue]);
-
-  // Query xem trước phần thưởng
-  const { data: rewardPreview, isLoading: isLoadingReward } = useRewardPreviewBySeasonQuery(
-    customerId || 0,
-    seasonId || 0,
-    finalAmount // Doanh số cộng thêm chính là tổng tiền hóa đơn này
-  );
 
   return (
     <Card>

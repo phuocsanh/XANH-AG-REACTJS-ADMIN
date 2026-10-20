@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react"
+import { useQueries } from "@tanstack/react-query"
 import {
   Box,
   Button,
@@ -15,6 +16,8 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TextField,
+  MenuItem,
 } from "@mui/material"
 import {
   FormField,
@@ -43,6 +46,7 @@ import {
 } from "@/queries/inventory-adjustment"
 import { useUploadFileMutation } from "@/queries/inventory"
 import { useProductsQuery } from "@/queries/product"
+import apiClient from "@/utils/api"
 import { useAppStore } from "@/stores"
 import {
   adjustmentFormSchema,
@@ -102,6 +106,19 @@ const AdjustmentCreate = () => {
   const { confirmExit } = useFormGuard(isDirty)
 
   const productList = productsData?.data?.items || []
+  const adjustmentType = watch("adjustment_type")
+  const batchQueries = useQueries({
+    queries: fields.map((field) => ({
+      queryKey: ["adjustment-source-batches", field.product_id],
+      queryFn: async () => {
+        const response = await apiClient.get<any[]>(
+          `/inventory/batches/product/${field.product_id}`,
+        )
+        return Array.isArray(response) ? response : []
+      },
+      enabled: adjustmentType === "IN",
+    })),
+  })
 
   // Kiểm tra phiếu có phải draft không (chỉ draft mới sửa được)
   const isDraft =
@@ -138,6 +155,8 @@ const AdjustmentCreate = () => {
                 (item as any).product_name ||
                 `Sản phẩm #${item.product_id}`,
               quantity_change: item.quantity_change,
+              source_batch_id: item.stock_allocations?.find((allocation) => allocation.pending)?.sourceBatchId,
+              taxable_quantity: item.stock_allocations?.find((allocation) => allocation.pending)?.taxableQuantity ?? 0,
               reason: item.reason || "",
               notes: item.notes || "",
             }
@@ -163,6 +182,7 @@ const AdjustmentCreate = () => {
       product_id: product.id,
       product_name: product.trade_name || product.name,
       quantity_change: 0,
+      taxable_quantity: 0,
       reason: "",
       notes: "",
     })
@@ -179,7 +199,13 @@ const AdjustmentCreate = () => {
       // Sanitize items
       const processedItems = data.items.map((item) => ({
         product_id: item.product_id,
-        quantity_change: item.quantity_change,
+        quantity_change: data.adjustment_type === "IN"
+          ? Math.abs(item.quantity_change)
+          : -Math.abs(item.quantity_change),
+        ...(data.adjustment_type === "IN" && item.quantity_change > 0 && {
+          source_batch_id: item.source_batch_id,
+          taxable_quantity: item.taxable_quantity || 0,
+        }),
         reason: item.reason,
         notes: item.notes,
       }))
@@ -252,9 +278,11 @@ const AdjustmentCreate = () => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant='h4' fontWeight='bold'>
-          {isEditMode
-            ? "Chỉnh sửa phiếu điều chỉnh kho"
-            : "Tạo phiếu điều chỉnh kho"}
+          {isReadOnly
+            ? "Chi tiết phiếu điều chỉnh kho"
+            : isEditMode
+              ? "Chỉnh sửa phiếu điều chỉnh kho"
+              : "Tạo phiếu điều chỉnh kho"}
         </Typography>
       </Box>
 
@@ -310,20 +338,29 @@ const AdjustmentCreate = () => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <FormComboBox
-                      name='status'
-                      control={control}
-                      label='Trạng thái phiếu'
-                      placeholder='Chọn trạng thái'
-                      options={[
-                        { value: "draft", label: "Nháp" },
-                        {
-                          value: "approved",
-                          label: "Duyệt (Cập nhật tồn kho)",
-                        },
-                      ]}
-                      disabled={isReadOnly}
-                    />
+                    {isReadOnly && existingAdjustment?.status === "Đã hủy" ? (
+                      <Box>
+                        <Typography variant='caption' color='text.secondary'>
+                          Trạng thái phiếu
+                        </Typography>
+                        <Typography>Đã hủy</Typography>
+                      </Box>
+                    ) : (
+                      <FormComboBox
+                        name='status'
+                        control={control}
+                        label='Trạng thái phiếu'
+                        placeholder='Chọn trạng thái'
+                        options={[
+                          { value: "draft", label: "Nháp" },
+                          {
+                            value: "approved",
+                            label: "Duyệt (Cập nhật tồn kho)",
+                          },
+                        ]}
+                        disabled={isReadOnly}
+                      />
+                    )}
                   </Grid>
                 </Grid>
 
@@ -384,6 +421,7 @@ const AdjustmentCreate = () => {
                       value: p.id,
                       label: p.trade_name || p.name,
                     }))}
+                    disabled={isReadOnly}
                     value={tempProductSelect}
                     onChange={(value) => {
                       if (value) {
@@ -401,8 +439,9 @@ const AdjustmentCreate = () => {
                 </Box>
                 <Box mt={2}>
                   <Alert severity='info'>
-                    Tìm và chọn sản phẩm để thêm vào danh sách điều chỉnh bên
-                    dưới.
+                    {adjustmentType === "IN"
+                      ? "Điều chỉnh tăng: chọn lô nhập nguồn để giữ đúng GBKT; nhập SL thuế theo chứng từ."
+                      : "Điều chỉnh giảm tự trừ FIFO theo từng lô và tự lưu SL thuế đã trừ; không cần nhập SL thuế."}
                   </Alert>
                 </Box>
               </CardContent>
@@ -430,6 +469,8 @@ const AdjustmentCreate = () => {
                         <TableRow>
                           <TableCell>Sản phẩm</TableCell>
                           <TableCell align='right'>Số lượng thay đổi</TableCell>
+                          {adjustmentType === "IN" && <TableCell>Lô nhập nguồn</TableCell>}
+                          {adjustmentType === "IN" && <TableCell align='right'>SL thuế tăng</TableCell>}
                           <TableCell>Lý do (tuỳ chọn)</TableCell>
                           <TableCell align='center'>Xóa</TableCell>
                         </TableRow>
@@ -439,6 +480,9 @@ const AdjustmentCreate = () => {
                           // Access error for this specific item
                           const itemErrors = (errors.items as any)?.[index]
                           const qtyError = itemErrors?.quantity_change?.message
+                          const sourceError = itemErrors?.source_batch_id?.message
+                          const taxError = itemErrors?.taxable_quantity?.message
+                          const sourceBatches = batchQueries[index]?.data || []
 
                           return (
                             <TableRow key={field.id}>
@@ -473,6 +517,7 @@ const AdjustmentCreate = () => {
                                               size='small'
                                               variant='contained'
                                               color='success'
+                                              disabled={isReadOnly}
                                               sx={{
                                                 minWidth: 60,
                                                 fontSize: "12px",
@@ -486,6 +531,7 @@ const AdjustmentCreate = () => {
                                               size='small'
                                               variant='contained'
                                               color='error'
+                                              disabled={isReadOnly}
                                               sx={{
                                                 minWidth: 60,
                                                 fontSize: "12px",
@@ -512,6 +558,7 @@ const AdjustmentCreate = () => {
                                               }
                                             }}
                                             min={0}
+                                            disabled={isReadOnly}
                                             size='small'
                                             style={{
                                               width: 100,
@@ -538,6 +585,61 @@ const AdjustmentCreate = () => {
                                   }}
                                 />
                               </TableCell>
+                              {adjustmentType === "IN" && (
+                                <TableCell sx={{ minWidth: 250 }}>
+                                  <Controller
+                                    name={`items.${index}.source_batch_id`}
+                                    control={control}
+                                    render={({ field: sourceField }) => (
+                                      <TextField
+                                        {...sourceField}
+                                        select
+                                        size='small'
+                                        fullWidth
+                                        value={sourceField.value ?? ""}
+                                        onChange={(event) => sourceField.onChange(event.target.value ? Number(event.target.value) : undefined)}
+                                        disabled={isReadOnly}
+                                        label='Lô nhập (không bắt buộc nếu SL thuế = 0)'
+                                        error={Boolean(sourceError)}
+                                        helperText={sourceError}
+                                      >
+                                        <MenuItem value=''>Không gắn lô nhập</MenuItem>
+                                        {sourceBatches.filter((batch: any) => batch.receipt_item_id && batch.receipt_item?.receipt?.status === "approved").map((batch: any) => (
+                                          <MenuItem key={batch.id} value={batch.id}>
+                                            {(batch.code || `Lô #${batch.id}`) +
+                                              ` · ${batch.receipt_item?.receipt?.code || `Phiếu nhập #${batch.receipt_item_id}`}` +
+                                              ` · Tồn ${Number(batch.remaining_quantity || 0)}`}
+                                          </MenuItem>
+                                        ))}
+                                      </TextField>
+                                    )}
+                                  />
+                                </TableCell>
+                              )}
+                              {adjustmentType === "IN" && (
+                                <TableCell align='right' sx={{ minWidth: 130 }}>
+                                  <Controller
+                                    name={`items.${index}.taxable_quantity`}
+                                    control={control}
+                                    render={({ field: taxField }) => (
+                                      <NumberInput
+                                        value={taxField.value || null}
+                                        onChange={(value) => taxField.onChange(value || 0)}
+                                        min={0}
+                                        max={Math.max(0, Number(watch(`items.${index}.quantity_change`) || 0))}
+                                        size='small'
+                                        style={{ width: 110 }}
+                                        placeholder='SL thuế'
+                                      />
+                                    )}
+                                  />
+                                  {taxError && (
+                                    <Typography variant='caption' color='error' display='block'>
+                                      {taxError}
+                                    </Typography>
+                                  )}
+                                </TableCell>
+                              )}
                               <TableCell>
                                 <Controller
                                   name={`items.${index}.reason`}
@@ -545,6 +647,7 @@ const AdjustmentCreate = () => {
                                   render={({ field }) => (
                                     <input
                                       {...field}
+                                      disabled={isReadOnly}
                                       placeholder='Lý do chi tiết...'
                                       style={{
                                         width: "100%",
@@ -561,6 +664,7 @@ const AdjustmentCreate = () => {
                                 <IconButton
                                   size='small'
                                   color='error'
+                                  disabled={isReadOnly}
                                   onClick={() => remove(index)}
                                 >
                                   <DeleteIcon />

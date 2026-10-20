@@ -310,9 +310,10 @@ const SalesInvoicesList: React.FC = () => {
   React.useEffect(() => {
     const items = seasonsData?.data?.items
     const seasonIdInUrl = searchParams.get("season_id")
+    const invoiceCodeInUrl = searchParams.get("code")
 
-    // Nếu đã có season_id (từ filter hoặc URL) hoặc đã thiết lập mùa vụ rồi thì không ghi đè
-    if (filters.season_id || seasonIdInUrl || hasSetDefaultSeason) {
+    // Tra cứu bằng mã hóa đơn phải tìm xuyên mùa vụ, tránh ẩn hóa đơn từ link liên kết.
+    if (filters.season_id || seasonIdInUrl || invoiceCodeInUrl || hasSetDefaultSeason) {
       if (!hasSetDefaultSeason) {
         setHasSetDefaultSeason(true)
       }
@@ -1246,6 +1247,54 @@ const SalesInvoicesList: React.FC = () => {
                   </div>
                 </div>
               )}
+
+            {(viewingInvoice.gift_product_name ||
+              viewingInvoice.gift_product_id ||
+              viewingInvoice.gift_description ||
+              Number(viewingInvoice.gift_value || 0) > 0) && (
+              <Card size='small' className='mb-4 border-green-200 bg-green-50'>
+                <div className='flex flex-wrap items-start justify-between gap-3'>
+                  <div>
+                    <div className='font-semibold text-green-800 mb-1'>
+                      Quà tặng trên hóa đơn
+                    </div>
+                    {(viewingInvoice.gift_product_name ||
+                      viewingInvoice.gift_product_id) && (
+                      <div className='text-gray-800'>
+                        {viewingInvoice.gift_product_name ||
+                          `Sản phẩm #${viewingInvoice.gift_product_id}`}
+                        {Number(viewingInvoice.gift_quantity || 0) > 0 && (
+                          <span>
+                            {" "}
+                            · SL {Number(viewingInvoice.gift_quantity)}
+                          </span>
+                        )}
+                        {Number(viewingInvoice.gift_unit_price || 0) > 0 && (
+                          <span>
+                            {" "}
+                            · {formatCurrency(Number(viewingInvoice.gift_unit_price))}/đơn vị
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {viewingInvoice.gift_description &&
+                      viewingInvoice.gift_description !==
+                        viewingInvoice.gift_product_name && (
+                      <div className='text-sm text-gray-600 mt-1'>
+                        {viewingInvoice.gift_description}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {Number(viewingInvoice.gift_value || 0) > 0 && (
+                      <span className='text-sm text-green-800'>
+                        Giá trị: {formatCurrency(Number(viewingInvoice.gift_value))}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
 
             <div className='mt-4'>
               <div className='font-medium text-lg mb-3'>Danh sách sản phẩm</div>

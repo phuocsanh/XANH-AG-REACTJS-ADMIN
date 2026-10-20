@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { DebtNote, CreateDebtNoteDto } from "@/models/debt-note"
-import { invalidateResourceQueries } from "@/utils/query-helpers"
+import { invalidateResourceQueries, invalidateCustomerRewardQueries } from "@/utils/query-helpers"
 import { handleApiError } from "@/utils/error-handler"
 // import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
@@ -183,20 +183,6 @@ export const useRewardPreviewQuery = (debtNoteId: number, additionalAmount: numb
 }
 
 /**
- * Hook xem preview thông tin tích lũy dựa trên Customer và Season
- */
-export const useRewardPreviewBySeasonQuery = (customerId: number, seasonId: number, additionalAmount: number = 0) => {
-  return useQuery({
-    queryKey: ['customer-reward-preview-season', customerId, seasonId, additionalAmount],
-    queryFn: async () => {
-      const response = await api.get<any>(`/customer-rewards/preview-by-season?customer_id=${customerId}&season_id=${seasonId}&additional_amount=${additionalAmount}`)
-      return response
-    },
-    enabled: !!customerId && !!seasonId,
-  })
-}
-
-/**
  * Hook chốt sổ công nợ cuối vụ
  * Xử lý tích lũy và tặng quà nếu đủ điều kiện
  */
@@ -232,6 +218,7 @@ export const useCloseSeasonDebtNoteMutation = () => {
       return response
     },
     onSuccess: (response) => {
+      invalidateCustomerRewardQueries()
       invalidateResourceQueries("/debt-notes")
       toast.success(response.message || "Chốt sổ công nợ thành công!")
     },
@@ -259,6 +246,7 @@ export const useReverseCloseDebtNoteMutation = () => {
       return response
     },
     onSuccess: (response) => {
+      invalidateCustomerRewardQueries()
       invalidateResourceQueries("/debt-notes")
       invalidateResourceQueries("/customer-rewards")
       invalidateResourceQueries("/inventory")

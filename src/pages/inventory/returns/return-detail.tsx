@@ -309,7 +309,29 @@ const ReturnDetail: React.FC = () => {
             </Card>
 
             <Card title="Xử lý tiền với nhà cung cấp" style={{ marginBottom: "16px" }}>
-              {returnData.refund_status === 'not_required' ? (
+              {returnData.status === ReturnStatus.CANCELLED ? (
+                <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message="Phiếu trả hàng đã hủy"
+                    description="Không thể tiếp tục hoàn tiền hoặc cấn trừ trên phiếu này."
+                  />
+                  {Number(returnData.refund_amount || 0) > 0 && (
+                    <Space>
+                      <Text>
+                        Đã hoàn / cấn trừ: {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(Number(returnData.refund_amount))}
+                      </Text>
+                      <Button onClick={() => setShowRefundHistory(true)}>
+                        Xem lịch sử hoàn / cấn trừ
+                      </Button>
+                    </Space>
+                  )}
+                </Space>
+              ) : returnData.refund_status === 'not_required' ? (
                 <Alert
                   type="info"
                   showIcon

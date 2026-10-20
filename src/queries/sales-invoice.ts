@@ -1,3 +1,4 @@
+import { invalidateCustomerRewardQueries } from "@/utils/query-helpers"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
@@ -188,6 +189,7 @@ export const useCreateSalesInvoiceMutation = () => {
       return response
     },
     onSuccess: (_data, variables) => {
+      invalidateCustomerRewardQueries()
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: deliveryLogKeys.lists() })
       if (!variables.silent) {
@@ -216,6 +218,7 @@ export const useAddPaymentMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
       queryClient.invalidateQueries({ queryKey: ["payments"] })
       queryClient.invalidateQueries({ queryKey: ["merged-purchases"] })
@@ -244,6 +247,7 @@ export const useUpdateSalesInvoiceMutation = () => {
       return response
     },
     onSuccess: (_data, variables) => {
+      invalidateCustomerRewardQueries()
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
       if (!variables.silent) {
         toast.success("Cập nhật hóa đơn thành công!")
@@ -334,6 +338,7 @@ export const useCancelSalesInvoiceMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
       toast.success("Hủy hóa đơn thành công!")
     },
@@ -353,6 +358,7 @@ export const useRefundSalesInvoiceMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       queryClient.invalidateQueries({ queryKey: salesInvoiceKeys.lists() })
       toast.success("Hoàn tiền hóa đơn thành công!")
     },

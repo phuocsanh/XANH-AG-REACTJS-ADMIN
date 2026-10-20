@@ -9,6 +9,7 @@ import {
   Typography,
   Card,
   Popover,
+  Checkbox,
 } from "antd"
 import {
   SaveOutlined,
@@ -19,7 +20,7 @@ import {
 } from "@ant-design/icons"
 import { useFormGuard } from "@/hooks/use-form-guard"
 import { Sparkles } from "lucide-react"
-import { useForm, useFieldArray, useWatch, FormProvider } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, FormProvider, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   FormField,
@@ -616,6 +617,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             ? productItem.ingredient.join(", ")
             : productItem.ingredient || "", // Chuyển đổi mảng thành chuỗi
           notes: productItem.notes || "", // Ghi chú
+          exclude_from_reward: productItem.exclude_from_reward === true,
           has_input_invoice:
             productItem.has_input_invoice !== undefined
               ? productItem.has_input_invoice
@@ -888,6 +890,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         credit_cost_price: values.credit_cost_price || "",
         average_vat_input_cost: values.average_vat_input_cost || "", // Giá nhập trung bình VAT
         has_input_invoice: values.has_input_invoice,
+        exclude_from_reward: values.exclude_from_reward,
         is_sold_on_web: values.is_sold_on_web,
         show_price_on_web: values.show_price_on_web,
         web_name: values.web_name || "",
@@ -951,6 +954,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                 .map((item: string) => item.trim())
             : [],
         notes: notes || "", // Ghi chú (rich text HTML)
+        exclude_from_reward: convertedValues.exclude_from_reward,
         is_sold_on_web: convertedValues.is_sold_on_web,
         show_price_on_web: convertedValues.show_price_on_web,
         web_name: convertedValues.web_name,
@@ -1743,6 +1747,26 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           className='w-full'
                           disabled={true}
                         />
+                      </div>
+
+                      <div className='w-full md:col-span-2'>
+                        <Controller
+                          name='exclude_from_reward'
+                          control={control}
+                          render={({ field }) => (
+                            <Checkbox
+                              checked={field.value}
+                              onChange={(event) => field.onChange(event.target.checked)}
+                              onBlur={field.onBlur}
+                            >
+                              Không tính quà tích lũy
+                            </Checkbox>
+                          )}
+                        />
+                        <Typography.Paragraph type='secondary' className='!mb-0 !mt-1'>
+                          Tiền bán sản phẩm này không được cộng vào tích lũy quà
+                          của khách khi thanh toán hóa đơn hoặc công nợ.
+                        </Typography.Paragraph>
                       </div>
 
                       {/* Bán trên Web và Hiển thị giá trên Web - nằm cạnh nhau (2 cột) */}

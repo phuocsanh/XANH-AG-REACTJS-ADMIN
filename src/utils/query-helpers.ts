@@ -15,3 +15,14 @@ export const invalidateResourceQueries = (url: string) => {
     exact: false,
   })
 }
+
+/** Tải lại tích lũy và các bản xem trước sau khi tiền hóa đơn/công nợ thay đổi. */
+export const invalidateCustomerRewardQueries = () => {
+  for (const key of [
+    "reward-tracking",
+    "customer-reward-preview",
+    "/customer-rewards",
+  ]) {
+    queryClient.invalidateQueries({ queryKey: [key] })
+  }
+}

@@ -7,8 +7,26 @@ export const adjustmentItemSchema = z.object({
   quantity_change: z.number().refine((val) => val !== 0, {
     message: 'Số lượng thay đổi không được bằng 0',
   }),
+  source_batch_id: z.number().optional(),
+  taxable_quantity: z.number().min(0, 'Số lượng thuế không được âm').optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
+}).superRefine((item, context) => {
+  const taxableQuantity = item.taxable_quantity || 0
+  if (item.quantity_change > 0 && taxableQuantity > item.quantity_change) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['taxable_quantity'],
+      message: 'SL thuế không được vượt số lượng tăng',
+    })
+  }
+  if (item.quantity_change > 0 && taxableQuantity > 0 && !item.source_batch_id) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['source_batch_id'],
+      message: 'Chọn lô nhập nguồn để xác định GBKT',
+    })
+  }
 });
 
 // Schema cho form tạo phiếu điều chỉnh

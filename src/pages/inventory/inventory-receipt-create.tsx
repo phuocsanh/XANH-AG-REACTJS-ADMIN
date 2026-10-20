@@ -371,7 +371,7 @@ const InventoryReceiptCreate: React.FC = () => {
         supplierSettlementMode: receipt.supplier_settlement_mode || 'standard',
         paymentType: (receipt.payment_status === 'paid' ? 'full' : (receipt.payment_status === 'partial' ? 'partial' : 'debt')) as any,
         paidAmount: Number(receipt.paid_amount || 0),
-        paymentMethod: receipt.payment_method,
+        paymentMethod: receipt.payment_method ?? undefined,
         paymentDueDate: receipt.payment_due_date ? dayjs(receipt.payment_due_date) : undefined,
 
         discountMethod: hasItemDiscount ? 'per_item' : 'none',

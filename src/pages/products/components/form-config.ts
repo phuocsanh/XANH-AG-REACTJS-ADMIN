@@ -75,6 +75,7 @@ const productFormSchemaBase = z.object({
   cash_cost_price: z.string().optional(),
   credit_cost_price: z.string().optional(),
   average_vat_input_cost: z.string().optional(), // Giá nhập trung bình VAT (tự tính)
+  exclude_from_reward: z.boolean().default(false),
   has_input_invoice: z.boolean().default(true), // Bắt buộc nhập, mặc định là có hóa đơn
   taxable_quantity_stock: z.coerce.number().optional(), // Số lượng tồn khai thuế
   is_sold_on_web: z.boolean().default(false),
@@ -157,6 +158,7 @@ export interface ProductFormValues {
   credit_cost_price?: string
   average_vat_input_cost?: string
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  exclude_from_reward: boolean // Không tính quà tích lũy
   tax_selling_price: string // Giá bán khai thuế
   taxable_quantity_stock?: number // Số lượng tồn khai thuế
   is_sold_on_web?: boolean
@@ -205,6 +207,7 @@ export interface ConvertedProductValues {
   credit_cost_price?: string
   average_vat_input_cost?: string
   has_input_invoice: boolean // Trạng thái hóa đơn đầu vào
+  exclude_from_reward: boolean // Không tính quà tích lũy
   tax_selling_price: string // Giá bán khai thuế
   taxable_quantity_stock?: number // Số lượng tồn khai thuế
   web_name?: string
@@ -234,6 +237,7 @@ export const defaultProductFormValues: ProductFormValues = {
   cash_cost_price: "",
   credit_cost_price: "",
   average_vat_input_cost: "", // Giá nhập trung bình VAT
+  exclude_from_reward: false,
   has_input_invoice: true, // Mặc định là có hóa đơn
   tax_selling_price: "0", // Giá khai thuế mặc định là 0
   taxable_quantity_stock: 0, // Mặc định là 0

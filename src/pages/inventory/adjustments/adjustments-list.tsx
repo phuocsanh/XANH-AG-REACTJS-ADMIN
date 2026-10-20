@@ -113,7 +113,7 @@ const AdjustmentsList: React.FC = () => {
           <Button
             type='text'
             icon={<EyeOutlined />}
-            onClick={() => navigate(`/inventory/adjustments/${record.id}/edit`)}
+            onClick={() => navigate(`/inventory/adjustments/${record.id}`)}
           />
         </Tooltip>
       )

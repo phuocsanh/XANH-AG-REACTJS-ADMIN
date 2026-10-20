@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
-import { invalidateResourceQueries } from "@/utils/query-helpers"
+import { invalidateResourceQueries, invalidateCustomerRewardQueries } from "@/utils/query-helpers"
 import { Payment, CreatePaymentDto, SettlePaymentDto, PaymentAllocation } from "@/models/payment"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
@@ -149,6 +149,7 @@ export const useSettlePaymentMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       invalidateResourceQueries("/payments")
       invalidateResourceQueries("/debt-notes")
       invalidateResourceQueries("/customers")
@@ -181,6 +182,7 @@ export const useSettleAndRolloverMutation = () => {
       return response
     },
     onSuccess: () => {
+      invalidateCustomerRewardQueries()
       invalidateResourceQueries("/payments")
       invalidateResourceQueries("/debt-notes")
       invalidateResourceQueries("/customers")
@@ -239,6 +241,7 @@ export const useRollbackPaymentMutation = () => {
       return response
     },
     onSuccess: (response) => {
+      invalidateCustomerRewardQueries()
       console.log('✅ useRollbackPaymentMutation - onSuccess:', response)
       
       // Invalidate payments queries với đúng query key

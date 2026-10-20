@@ -211,9 +211,9 @@ const CloseSeasonModal: React.FC<CloseSeasonModalProps> = ({
                   </Descriptions.Item>
                   <Descriptions.Item label="Khách đã trả">{formatCurrency(currentSeason?.paid_amount || 0)}</Descriptions.Item>
                   <Descriptions.Item label="Còn nợ thực tế">{formatCurrency(currentSeason?.remaining_amount || 0)}</Descriptions.Item>
-                  <Descriptions.Item label="Đã tích lũy cũ">{formatCurrency(summary?.previous_pending || 0)}</Descriptions.Item>
+                  <Descriptions.Item label="Tích lũy đang có">{formatCurrency(summary?.previous_pending || 0)}</Descriptions.Item>
                   <Descriptions.Item label="Tổng tích lũy hiện tại">
-                    <strong style={{ fontSize: 16, color: '#1890ff' }}>{formatCurrency((summary?.previous_pending || 0) + (currentSeason?.debt_amount || 0))}</strong>
+                    <strong style={{ fontSize: 16, color: '#1890ff' }}>{formatCurrency(summary?.total_after_close || 0)}</strong>
                   </Descriptions.Item>
                 </Descriptions>
               )

@@ -707,6 +707,16 @@ export interface InventoryBatch {
   updated_at: string
 }
 
+/** Dữ liệu lô kho trả trực tiếp từ endpoint theo dõi hạn dùng. */
+export interface ExpiryBatch {
+  id: number
+  code?: string | null
+  original_quantity: number
+  remaining_quantity: number
+  expiry_date?: string | null
+  created_at: string
+}
+
 export interface InventoryTransaction {
   id: number
   product_id: number

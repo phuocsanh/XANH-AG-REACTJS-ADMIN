@@ -17,6 +17,7 @@ import {
   InventoryReceiptLog,
   // Thêm các interface mới từ backend NestJS
   InventoryBatch,
+  ExpiryBatch,
   InventoryTransaction,
   CreateInventoryBatchRequest,
   CreateInventoryTransactionRequest,
@@ -880,7 +881,7 @@ export const useExpiryBatchesQuery = (productId: number) => {
   return useQuery({
     queryKey: inventoryKeys.expiryBatches(productId),
     queryFn: async () => {
-      const response = await api.get<any[]>(
+      const response = await api.get<ExpiryBatch[]>(
         `/expiry-alert/product/${productId}/batches`
       )
       return response

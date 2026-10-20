@@ -161,6 +161,19 @@ const ReturnsList: React.FC = () => {
   }
 
   const renderRefundStatus = (record: InventoryReturn) => {
+    if (record.status === ReturnStatus.CANCELLED) {
+      return (
+        <Space direction="vertical" size={2}>
+          <Tag color="error">Phiếu đã hủy</Tag>
+          {Number(record.refund_amount || 0) > 0 && (
+            <Text type="secondary">
+              Đã xử lý {Number(record.refund_amount).toLocaleString('vi-VN')}đ
+            </Text>
+          )}
+        </Space>
+      )
+    }
+
     const status = record.refund_status || 'not_required'
     const statusConfig: Record<string, { color: string }> = {
       not_required: { color: 'default' },

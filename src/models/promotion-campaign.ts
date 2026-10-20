@@ -21,6 +21,8 @@ export interface PromotionRewardMonthlyRelease {
 export interface PromotionRewardPoolItem {
   id?: number
   reward_name: string
+  reward_product_id?: number | null
+  reward_product_quantity?: number
   reward_value: number
   total_quantity: number
   reward_image_url?: string | null
@@ -97,6 +99,8 @@ export interface PromotionRewardReservation {
     phone?: string
   }
   reward_name: string
+  reward_product_id?: number | null
+  reward_product_quantity?: number | null
   reward_value: number
   status: string
   reserved_at: string
