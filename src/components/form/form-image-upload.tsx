@@ -35,7 +35,7 @@ function FormImageUpload<T extends FieldValues>({
   control,
   label,
   required = false,
-  disabled: _disabled = false,
+  disabled = false,
   maxCount = 5,
   multiple = true,
   className,
@@ -95,6 +95,7 @@ function FormImageUpload<T extends FieldValues>({
                 }}
                 maxCount={maxCount}
                 multiple={multiple}
+                disabled={disabled}
                 uploadType={uploadType}
                 returnFullObjects={returnFullObjects}
               />

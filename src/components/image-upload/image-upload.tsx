@@ -10,6 +10,7 @@ interface ImageUploadProps {
   onChange?: (files: any[]) => void
   maxCount?: number
   multiple?: boolean
+  disabled?: boolean
   uploadType?: UploadType
   returnFullObjects?: boolean
 }
@@ -21,6 +22,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   maxCount = 5,
   multiple = true,
+  disabled = false,
   uploadType = UPLOAD_TYPES.COMMON,
   returnFullObjects = false,
 }) => {
@@ -56,6 +58,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
    * Xử lý khi paste ảnh từ clipboard
    */
   const handlePaste = async (e: React.ClipboardEvent) => {
+    if (disabled) return
+
     const items = e.clipboardData.items
     let hasImage = false
 
@@ -269,6 +273,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const handleRemove = (file: UploadFile) => {
+    if (disabled) return false
+
     const newFileList = fileList.filter((item) => item.uid !== file.uid)
     setFileList(newFileList)
 
@@ -309,7 +315,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         maxCount={maxCount}
         beforeUpload={() => false} // Prevent automatic upload
         listType='picture-card'
-        disabled={loading}
+        disabled={loading || disabled}
         accept="image/*,.heic,.heif"
       >
         <div className='flex flex-col items-center justify-center p-2'>

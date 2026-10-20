@@ -1,4 +1,11 @@
-# CLINE Rules - XANH-AG-REACTJS-ADMIN (React Admin Panel)
+# AI Agent Rules - XANH-AG-REACTJS-ADMIN (React Admin Panel)
+
+## Quy Tắc Kiểm Thử Môi Trường (BẮT BUỘC)
+
+- Mọi kiểm thử UI/API/E2E của admin chỉ được dùng admin local/dev và backend **dev**. Không đăng nhập hay thao tác test trên trang production.
+- Trước khi tạo/sửa/xóa dữ liệu, xác minh API base URL trong cấu hình runtime và request thực tế của trình duyệt đang đi tới backend dev. Không dựa riêng vào tên `.env`, tên biến, hostname UI hoặc việc giao diện mang nhãn dev.
+- Nếu admin đang gọi API production hoặc chưa xác định được backend đích, không tiếp tục thao tác; chỉ chạy kiểm tra cục bộ không gọi API.
+- Dữ liệu kiểm thử phải nhận diện được và có cách dọn dẹp đã định trước; không dùng dữ liệu khách hàng thật để thử.
 
 ## Project Overview
 
