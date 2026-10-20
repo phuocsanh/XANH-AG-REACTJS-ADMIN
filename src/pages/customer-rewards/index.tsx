@@ -11,6 +11,8 @@ import {
   Form,
   Select,
   InputNumber,
+  Input,
+  Alert,
 } from "antd"
 import {
   GiftOutlined,
@@ -20,6 +22,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   SettingOutlined,
+  UndoOutlined,
 } from "@ant-design/icons"
 import { Popconfirm, message } from "antd"
 import DataTable from "@/components/common/data-table"
@@ -30,8 +33,13 @@ import {
     useCreateManualRewardMutation,
     useUpdateRewardHistoryMutation,
     useDeleteRewardHistoryMutation,
-    useUpdateRewardThresholdMutation
+    useUpdateRewardThresholdMutation,
+    useResetCustomerRewardMutation,
+    useRewardResetHistoryQuery,
+    useRestoreCustomerRewardMutation
 } from "@/queries/debt-note"
+import { useAppStore } from "@/stores"
+import { hasPermission } from "@/utils/permission"
 import { useSeasonsQuery } from "@/queries/season"
 import { useRiceCrops } from "@/queries/rice-crop"
 import { useForm, Controller } from "react-hook-form";
@@ -61,6 +69,17 @@ const CustomerRewardsPage: React.FC = () => {
   const [isThresholdModalOpen, setIsThresholdModalOpen] = React.useState(false)
   const [thresholdCustomer, setThresholdCustomer] = React.useState<any>(null)
   const [thresholdValue, setThresholdValue] = React.useState<number | null>(null)
+
+  // State cho chức năng xóa tích lũy hiện tại (xóa theo từng khách hàng)
+  const [resetTarget, setResetTarget] = React.useState<any>(null)
+  const [isResetModalOpen, setIsResetModalOpen] = React.useState(false)
+  const [resetReason, setResetReason] = React.useState("")
+  const [resetHistoryFilters, setResetHistoryFilters] = React.useState<Record<string, any>>({})
+  const [resetHistoryPage, setResetHistoryPage] = React.useState(1)
+
+  // Quyền quản lý (xóa/khôi phục tích lũy)
+  const userInfo = useAppStore((state) => state.userInfo)
+  const canManageReward = hasPermission(userInfo, "sales:manage")
   
   // React Hook Form cho Modal tặng quà
   const { control, handleSubmit, reset, setValue, watch } = useForm({
@@ -98,6 +117,13 @@ const CustomerRewardsPage: React.FC = () => {
     limit: pageSize,
     reward_type: 'APPRECIATION_GIFT',
     ...historyFilters
+  })
+
+  // Lịch sử xóa tích lũy hiện tại
+  const { data: resetHistoryData, isLoading: isResetHistoryLoading, refetch: refetchResetHistory } = useRewardResetHistoryQuery({
+    page: resetHistoryPage,
+    limit: pageSize,
+    ...resetHistoryFilters
   })
 
   const { data: seasonsData } = useSeasonsQuery({ limit: 100 })
@@ -144,6 +170,8 @@ const CustomerRewardsPage: React.FC = () => {
   const updateRewardMutation = useUpdateRewardHistoryMutation()
   const deleteRewardMutation = useDeleteRewardHistoryMutation()
   const updateRewardThresholdMutation = useUpdateRewardThresholdMutation()
+  const resetRewardMutation = useResetCustomerRewardMutation()
+  const restoreRewardMutation = useRestoreCustomerRewardMutation()
 
   const defaultThreshold = trackingData?.reward_threshold || 70000000 // Fallback 70 Triệu
 
@@ -312,6 +340,43 @@ const CustomerRewardsPage: React.FC = () => {
     refetchTracking()
   }
 
+  /** Mở modal xác nhận xóa "Tích lũy hiện tại" của một khách hàng */
+  const handleOpenResetModal = (record: any) => {
+    if (Number(record?.pending_amount || 0) <= 0) {
+      message.warning("Khách hàng này không có tích lũy hiện tại để xóa")
+      return
+    }
+    setResetTarget(record)
+    setResetReason("")
+    setIsResetModalOpen(true)
+  }
+
+  /** Xác nhận xóa tích lũy hiện tại của khách đang chọn (bắt buộc nhập lý do) */
+  const handleConfirmReset = async () => {
+    const reason = resetReason.trim()
+    if (!reason) {
+      message.warning("Vui lòng nhập lý do xóa tích lũy")
+      return
+    }
+    if (!resetTarget?.customer_id) return
+    await resetRewardMutation.mutateAsync({
+      customer_ids: [Number(resetTarget.customer_id)],
+      reason,
+    })
+    setIsResetModalOpen(false)
+    setResetTarget(null)
+    setResetReason("")
+    refetchTracking()
+    refetchResetHistory()
+  }
+
+  /** Khôi phục lại phần tích lũy đã xóa */
+  const handleRestoreReset = async (id: number) => {
+    await restoreRewardMutation.mutateAsync(id)
+    refetchTracking()
+    refetchResetHistory()
+  }
+
   const handleMarkAsDelivered = async (record: any) => {
     try {
         await updateRewardMutation.mutateAsync({
@@ -422,18 +487,35 @@ const CustomerRewardsPage: React.FC = () => {
     {
       title: "Thao tác",
       key: "actions",
-      width: 120,
+      width: canManageReward ? 240 : 120,
       render: (record: any) => {
+        const pendingAmount = Number(record.pending_amount || 0)
         return (
-          <Button 
-              type="primary" 
-              size="small" 
-              icon={<GiftOutlined />}
-              onClick={() => handleOpenRewardModal(record)}
-              className="bg-amber-500 hover:bg-amber-600 border-none"
-          >
-              Tặng quà
-          </Button>
+          <Space size={4}>
+            <Button 
+                type="primary" 
+                size="small" 
+                icon={<GiftOutlined />}
+                onClick={() => handleOpenRewardModal(record)}
+                className="bg-amber-500 hover:bg-amber-600 border-none"
+            >
+                Tặng quà
+            </Button>
+            {/* Chỉ người có quyền quản lý mới được xóa tích lũy hiện tại */}
+            {canManageReward && (
+              <Tooltip title={pendingAmount > 0 ? "Xóa tích lũy hiện tại của khách này" : "Khách chưa có tích lũy hiện tại"}>
+                <Button
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  disabled={pendingAmount <= 0}
+                  onClick={() => handleOpenResetModal(record)}
+                >
+                  Xóa tích lũy
+                </Button>
+              </Tooltip>
+            )}
+          </Space>
         );
       }
     }
@@ -570,6 +652,148 @@ const CustomerRewardsPage: React.FC = () => {
     }
   ]
 
+  // Reset History Columns - lịch sử xóa tích lũy hiện tại
+  const resetHistoryColumns = [
+    {
+      title: (
+        <FilterHeader
+          title="Khách hàng"
+          dataIndex="customer_name"
+          value={resetHistoryFilters.customer_name}
+          onChange={(val) => {
+            setResetHistoryFilters(prev => ({ ...prev, customer_name: val }))
+            setResetHistoryPage(1)
+          }}
+          inputType="text"
+          placeholder="Tìm tên / SĐT..."
+        />
+      ),
+      key: "customer",
+      width: 240,
+      render: (record: any) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.customer_display_name || record.customer?.name || "-"}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {record.customer_display_phone || record.customer?.phone}
+          </Text>
+        </Space>
+      )
+    },
+    {
+      title: "Tích lũy đã xóa",
+      dataIndex: "pending_reset",
+      key: "pending_reset",
+      width: 160,
+      render: (val: number) => <Text strong type="danger">{formatCurrency(Number(val || 0))}</Text>
+    },
+    {
+      title: "Trước khi xóa",
+      dataIndex: "pending_before",
+      key: "pending_before",
+      width: 150,
+      render: (val: number) => formatCurrency(Number(val || 0))
+    },
+    {
+      title: "Tổng tích lũy (giữ nguyên)",
+      dataIndex: "total_accumulated_snapshot",
+      key: "total_accumulated_snapshot",
+      width: 180,
+      render: (val: number, record: any) => (
+        <Space direction="vertical" size={0}>
+          <Text>{formatCurrency(Number(val || 0))}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {Number(record.reward_count_snapshot || 0)} lần nhận quà
+          </Text>
+        </Space>
+      )
+    },
+    {
+      title: "Lý do",
+      dataIndex: "reason",
+      key: "reason",
+      width: 220,
+      render: (val: string) => (
+        <Text ellipsis={{ tooltip: val }} style={{ maxWidth: 200 }}>
+          {val}
+        </Text>
+      )
+    },
+    {
+      title: (
+        <FilterHeader
+          title="Trạng thái"
+          dataIndex="status"
+          value={resetHistoryFilters.status}
+          onChange={(val) => {
+            setResetHistoryFilters(prev => ({ ...prev, status: val }))
+            setResetHistoryPage(1)
+          }}
+          inputType="select"
+          options={[
+            { label: "Chưa khôi phục", value: "active" },
+            { label: "Đã khôi phục", value: "restored" },
+          ]}
+        />
+      ),
+      dataIndex: "status",
+      key: "status",
+      width: 160,
+      render: (status: string, record: any) => (
+        <Space direction="vertical" size={0}>
+          <Tag color={status === 'restored' ? 'green' : 'red'}>
+            {status === 'restored' ? 'Đã khôi phục' : 'Chưa khôi phục'}
+          </Tag>
+          {status === 'restored' && record.restored_at && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {new Date(record.restored_at).toLocaleString('vi-VN')}
+              {record.restored_by_name ? ` · ${record.restored_by_name}` : ''}
+            </Text>
+          )}
+        </Space>
+      )
+    },
+    {
+      title: "Người xóa",
+      key: "created_by",
+      width: 170,
+      render: (record: any) => (
+        <Space direction="vertical" size={0}>
+          <Text>{record.created_by_name || '-'}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {record.created_at ? new Date(record.created_at).toLocaleString('vi-VN') : ''}
+          </Text>
+        </Space>
+      )
+    },
+    {
+      title: "Hành động",
+      key: "actions",
+      width: 130,
+      render: (record: any) => {
+        if (record.status === 'restored') {
+          return (
+            <Tooltip title={`Đã khôi phục ${formatCurrency(Number(record.restored_pending_amount || 0))}`}>
+              <Tag color="green">Hoàn tất</Tag>
+            </Tooltip>
+          )
+        }
+        if (!canManageReward) return '-'
+        return (
+          <Popconfirm
+            title="Khôi phục tích lũy?"
+            description={`Cộng lại ${formatCurrency(Number(record.pending_reset || 0))} vào tích lũy hiện tại của khách.`}
+            onConfirm={() => handleRestoreReset(record.id)}
+            okText="Khôi phục"
+            cancelText="Hủy"
+            okButtonProps={{ loading: restoreRewardMutation.isPending }}
+          >
+            <Button size="small" icon={<UndoOutlined />}>Khôi phục</Button>
+          </Popconfirm>
+        )
+      }
+    }
+  ]
+
   return (
     <div className='p-2 md:p-6'>
       <div className='flex justify-start items-center mb-6'>
@@ -596,7 +820,7 @@ const CustomerRewardsPage: React.FC = () => {
                         </span>
                     ),
                     children: (
-                        <DataTable 
+                        <DataTable
                             data={trackingData?.items || []}
                             columns={trackingColumns}
                             loading={isTrackingLoading}
@@ -674,10 +898,84 @@ const CustomerRewardsPage: React.FC = () => {
                             />
                         </div>
                     )
+                },
+                {
+                    key: "reset_history",
+                    label: (
+                        <span>
+                            <UndoOutlined />
+                            Lịch sử xóa tích lũy
+                        </span>
+                    ),
+                    children: (
+                        <DataTable
+                            data={resetHistoryData?.items || []}
+                            columns={resetHistoryColumns}
+                            loading={isResetHistoryLoading}
+                            pagination={{
+                                current: resetHistoryPage,
+                                pageSize: pageSize,
+                                total: resetHistoryData?.total || 0,
+                                onChange: (page) => setResetHistoryPage(page)
+                            }}
+                            showSearch={false}
+                            showFilters={false}
+                            showActions={false}
+                        />
+                    )
                 }
             ]}
         />
       </div>
+
+      {/* Modal xác nhận xóa tích lũy hiện tại của 1 khách hàng */}
+      <Modal
+        title="Xóa tích lũy hiện tại"
+        open={isResetModalOpen}
+        onCancel={() => {
+          setIsResetModalOpen(false)
+          setResetTarget(null)
+          setResetReason("")
+        }}
+        onOk={handleConfirmReset}
+        okText="Xóa tích lũy"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true, disabled: !resetReason.trim() }}
+        confirmLoading={resetRewardMutation.isPending}
+        width={520}
+      >
+        <Space direction="vertical" className="w-full" size={12}>
+          <Alert
+            type="warning"
+            showIcon
+            message="Chỉ xóa Tích lũy hiện tại"
+            description="Tổng tích lũy, số lần nhận quà và lịch sử quà tặng KHÔNG bị thay đổi. Có thể khôi phục lại ở tab Lịch sử xóa tích lũy."
+          />
+          <div>
+            <Text type="secondary">Khách hàng: </Text>
+            <Text strong>{resetTarget?.customer?.name || resetTarget?.customer_name}</Text>
+            {resetTarget?.customer?.phone ? (
+              <Text type="secondary"> · {resetTarget.customer.phone}</Text>
+            ) : null}
+          </div>
+          <div>
+            <Text type="secondary">Tích lũy hiện tại sẽ xóa: </Text>
+            <Text strong type="danger">{formatCurrency(Number(resetTarget?.pending_amount || 0))}</Text>
+          </div>
+          <div>
+            <Text strong>Lý do xóa tích lũy <Text type="danger">*</Text></Text>
+            <Input.TextArea
+              value={resetReason}
+              onChange={(e) => setResetReason(e.target.value)}
+              placeholder="Ví dụ: Khách yêu cầu làm lại tích lũy do nhập sai hóa đơn..."
+              rows={3}
+              maxLength={1000}
+              showCount
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </Space>
+      </Modal>
 
       <Modal
         title="Cấu hình mốc tặng quà"

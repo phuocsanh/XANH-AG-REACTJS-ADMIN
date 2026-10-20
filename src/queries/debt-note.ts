@@ -399,3 +399,82 @@ export const useDeleteRewardHistoryMutation = () => {
     },
   });
 }
+
+/** Kết quả xóa "Tích lũy hiện tại" của nhiều khách hàng */
+export type ResetCustomerRewardResult = {
+  success: boolean
+  message: string
+  reset_count: number
+  skipped_count: number
+  total_reset_amount: number
+  skipped: Array<{ customer_id: number; reason: string }>
+}
+
+/**
+ * Hook xóa "Tích lũy hiện tại" (pending_amount) của nhiều khách hàng.
+ * Tổng tích lũy, số lần nhận quà và lịch sử quà tặng được giữ nguyên.
+ */
+export const useResetCustomerRewardMutation = () => {
+  return useMutation({
+    mutationFn: async (data: { customer_ids: number[]; reason: string }) => {
+      const response = await api.postRaw<ResetCustomerRewardResult>(
+        '/customer-rewards/tracking/reset',
+        data,
+      )
+      return response
+    },
+    onSuccess: () => {
+      invalidateResourceQueries('reward-tracking')
+      invalidateResourceQueries('reward-reset-history')
+      invalidateCustomerRewardQueries()
+      toast.success("Xóa tích lũy khách hàng thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi xóa tích lũy khách hàng")
+    },
+  })
+}
+
+/**
+ * Hook lấy danh sách lịch sử xóa tích lũy hiện tại
+ */
+export const useRewardResetHistoryQuery = (params?: Record<string, unknown>) => {
+  return useQuery({
+    queryKey: ['reward-reset-history', params],
+    queryFn: async () => {
+      const response = await api.postRaw<{
+        items: any[]
+        total: number
+        page: number
+        limit: number
+      }>('/customer-rewards/tracking/reset-history', params || {})
+      return response
+    },
+  })
+}
+
+/**
+ * Hook khôi phục lại phần tích lũy đã xóa
+ */
+export const useRestoreCustomerRewardMutation = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.postRaw<{
+        success: boolean
+        message: string
+        restored_amount: number
+      }>(`/customer-rewards/tracking/reset-history/${id}/restore`, {})
+      return response
+    },
+    onSuccess: () => {
+      invalidateResourceQueries('reward-tracking')
+      invalidateResourceQueries('reward-reset-history')
+      invalidateCustomerRewardQueries()
+      toast.success("Khôi phục tích lũy khách hàng thành công!")
+    },
+    onError: (error: unknown) => {
+      handleApiError(error, "Có lỗi xảy ra khi khôi phục tích lũy khách hàng")
+    },
+  })
+}
+
