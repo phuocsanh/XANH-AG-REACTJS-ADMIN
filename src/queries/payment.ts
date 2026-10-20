@@ -3,7 +3,7 @@ import { toast } from "react-toastify"
 import api from "@/utils/api"
 import { queryClient } from "@/provider/app-provider-tanstack"
 import { invalidateResourceQueries, invalidateCustomerRewardQueries } from "@/utils/query-helpers"
-import { Payment, CreatePaymentDto, SettlePaymentDto, PaymentAllocation } from "@/models/payment"
+import { Payment, CreatePaymentDto, SettlePaymentDto, PaymentAllocation, PaymentRollbackPreview, PaymentRollbackHistoryItem } from "@/models/payment"
 import { handleApiError } from "@/utils/error-handler"
 import { usePaginationQuery } from "@/hooks/use-pagination-query"
 
@@ -18,6 +18,10 @@ export const paymentKeys = {
   details: () => [...paymentKeys.all, "detail"] as const,
   detail: (id: number) => [...paymentKeys.details(), id] as const,
   allocations: (id: number) => [...paymentKeys.detail(id), "allocations"] as const,
+  rollbackPreview: (id: number) => [...paymentKeys.detail(id), "rollback-preview"] as const,
+  rollbackHistories: () => [...paymentKeys.all, "rollback-history"] as const,
+  rollbackHistory: (params?: Record<string, unknown>) =>
+    [...paymentKeys.rollbackHistories(), params] as const,
 } as const
 
 // ========== PAYMENT HOOKS ==========
@@ -201,56 +205,44 @@ export const useSettleAndRolloverMutation = () => {
 }
 
 /**
- * Hook xóa thanh toán
- */
-export const useDeletePaymentMutation = () => {
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await api.delete(`/payments/${id}`)
-      return response
-    },
-    onSuccess: () => {
-      invalidateResourceQueries("/payments")
-      toast.success("Xóa phiếu thu thành công!")
-    },
-    onError: (error: unknown) => {
-      handleApiError(error, "Có lỗi xảy ra khi xóa phiếu thu")
-    },
-  })
-}
-
-/**
  * Hook hoàn tác thanh toán (Rollback)
  * Hoàn trả tiền vào công nợ và xóa payment
  */
 export const useRollbackPaymentMutation = () => {
   return useMutation({
-    mutationFn: async (id: number) => {
-      console.log('🔥 useRollbackPaymentMutation - mutationFn được gọi với ID:', id)
-      console.log('🔥 Endpoint:', `/payments/${id}/rollback`)
-      
-      const response = await api.postRaw<{success: boolean;
+    mutationFn: async (input: { id: number; reason: string; preview_token: string }) => {
+      const response = await api.postRaw<{
+        success: boolean;
         message: string;
         payment: any;
+        payment_kind: string;
         affected_invoices: number;
-        affected_debt_note: any;
-        pagination?: any
-      }>(`/payments/${id}/rollback`, {})
-      
-      console.log('✅ useRollbackPaymentMutation - Response:', response)
+        affected_debt_notes: number;
+      }>(`/payments/${input.id}/rollback`, { reason: input.reason, preview_token: input.preview_token })
+
       return response
     },
     onSuccess: (response) => {
       invalidateCustomerRewardQueries()
-      console.log('✅ useRollbackPaymentMutation - onSuccess:', response)
       
-      // Invalidate payments queries với đúng query key
-      queryClient.invalidateQueries({ queryKey: paymentKeys.all })
+      // Invalidate payments queries: đánh dấu stale toàn bộ nhưng KHÔNG tự refetch để tránh
+      // gọi lại /payments/:id/rollback-preview của phiếu vừa xóa (404) khi modal còn đang mở.
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all, refetchType: "none" })
+      // Chỉ danh sách và lịch sử hoàn tác cần tải lại ngay.
+      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: paymentKeys.rollbackHistories() })
       
       // Invalidate các queries liên quan
       invalidateResourceQueries("/debt-notes")
       invalidateResourceQueries("/sales")
+      // Trang Công nợ/Hóa đơn dùng key dạng ["debt-notes", ...] và ["sales-invoices", ...]
+      // nên phải invalidate đúng prefix này, nếu không danh sách giữ số liệu cũ sau khi hoàn tác.
+      queryClient.invalidateQueries({ queryKey: ["debt-notes"] })
+      queryClient.invalidateQueries({ queryKey: ["sales-invoices"] })
       queryClient.invalidateQueries({ queryKey: ["customers"] })
+      // Phiếu trả vay mở lại khoản vay; dashboard và lịch sử hoàn tác cũng đổi số liệu.
+      queryClient.invalidateQueries({ queryKey: ["loans"] })
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] })
       
       toast.success(response.message || "Hoàn tác thanh toán thành công!")
     },
@@ -258,5 +250,44 @@ export const useRollbackPaymentMutation = () => {
       console.error('❌ useRollbackPaymentMutation - onError:', error)
       handleApiError(error, "Có lỗi xảy ra khi hoàn tác thanh toán")
     },
+  })
+}
+
+/**
+ * Hook xem trước ảnh hưởng của việc hoàn tác phiếu thu.
+ * Trả về danh sách hóa đơn/công nợ sẽ đổi, cảnh báo và lý do bị chặn.
+ */
+export const useRollbackPreviewQuery = (paymentId: number | null) => {
+  return useQuery({
+    queryKey: paymentKeys.rollbackPreview(paymentId || 0),
+    queryFn: async () => {
+      const response = await api.get<PaymentRollbackPreview>(
+        `/payments/${paymentId}/rollback-preview`
+      )
+      return response
+    },
+    enabled: !!paymentId,
+    staleTime: 0,
+    retry: false,
+  })
+}
+
+/**
+ * Hook tra cứu lịch sử hoàn tác phiếu thu (đối soát).
+ */
+export const usePaymentRollbackHistoryQuery = (params?: Record<string, unknown>, enabled = true) => {
+  return useQuery({
+    queryKey: paymentKeys.rollbackHistory(params),
+    queryFn: async () => {
+      const response = await api.get<{
+        data: PaymentRollbackHistoryItem[]
+        total: number
+        page: number
+        limit: number
+      }>("/payments/rollback-history", params)
+      return response
+    },
+    enabled,
+    staleTime: 0,
   })
 }

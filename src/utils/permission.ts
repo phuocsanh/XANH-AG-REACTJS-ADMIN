@@ -37,6 +37,14 @@ export const hasAnyPermission = (user: UserResponse | null | undefined, permissi
 };
 
 /**
+ * Kiểm tra user có phải là Super Admin (quyền cao nhất) hay không.
+ * Dùng để giới hạn các thao tác đặc biệt, ví dụ hoàn tác phiếu thu.
+ */
+export const isSuperAdmin = (user: UserResponse | null | undefined): boolean => {
+  return user?.role?.code === RoleCode.SUPER_ADMIN;
+};
+
+/**
  * Kiểm tra user có phải là Admin (SUPER_ADMIN hoặc ADMIN) hay không
  */
 export const isAdmin = (user: UserResponse | null | undefined): boolean => {

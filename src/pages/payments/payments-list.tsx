@@ -1,9 +1,11 @@
 import * as React from "react"
-import { Payment, PaymentAllocation } from "@/models/payment"
+import { Payment, PaymentAllocation, PaymentRollbackHistoryItem } from "@/models/payment"
 import {
   usePaymentsQuery,
   usePaymentAllocationsQuery,
   useRollbackPaymentMutation,
+  useRollbackPreviewQuery,
+  usePaymentRollbackHistoryQuery,
 } from "@/queries/payment"
 import {
   Button,
@@ -15,9 +17,13 @@ import {
   Divider,
   Input,
   DatePicker,
+  Alert,
+  Table,
+  Tooltip,
 } from "antd"
 import type { TableProps } from "antd"
 import dayjs from "dayjs"
+import { toast } from "react-toastify"
 import {
   EyeOutlined,
   DollarOutlined,
@@ -30,11 +36,21 @@ import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
 import { paymentMethodLabels } from "./form-config"
 import { SettleDebtModal } from "./components/settle-debt-modal"
+import PaymentRollbackPreviewPanel from "@/components/common/payment-rollback-preview"
+import { useAppStore } from "@/stores"
+import { isSuperAdmin } from "@/utils/permission"
 
 // Extend Payment interface
 interface ExtendedPayment extends Payment {
   key: string
   [key: string]: any
+}
+
+/** Nhãn tiếng Việt cho loại phiếu thu đã bị hoàn tác */
+const rollbackKindLabels: Record<string, string> = {
+  invoice: "Thu công nợ hóa đơn",
+  loan: "Trả vay",
+  unallocated: "Chưa phân bổ",
 }
 
 const PaymentsList: React.FC = () => {
@@ -49,12 +65,20 @@ const PaymentsList: React.FC = () => {
     null
   )
   const [rollbackingPayment, setRollbackingPayment] = React.useState<Payment | null>(null)
+  // Lý do hoàn tác là bắt buộc để lưu vết đối soát
+  const [rollbackReason, setRollbackReason] = React.useState<string>("")
+  // Modal lịch sử hoàn tác
+  const [isHistoryVisible, setIsHistoryVisible] = React.useState<boolean>(false)
+  const [historyPage, setHistoryPage] = React.useState<number>(1)
 
   const [currentPage, setCurrentPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(10)
   const [filters, setFilters] = React.useState<Record<string, any>>({})
   // State để track payment đang được rollback
   const [rollingBackPaymentId, setRollingBackPaymentId] = React.useState<number | null>(null)
+  // Chỉ Super Admin được hoàn tác phiếu thu (khớp kiểm tra phía backend)
+  const userInfo = useAppStore((state) => state.userInfo)
+  const allowRollbackPayment = isSuperAdmin(userInfo)
 
   // Queries
   const { data: paymentsData, isLoading } = usePaymentsQuery({
@@ -67,6 +91,24 @@ const PaymentsList: React.FC = () => {
   
   const { data: allocations } = usePaymentAllocationsQuery(
     viewingPayment?.id || 0
+  )
+
+  // Xem trước ảnh hưởng hoàn tác: hóa đơn/công nợ/tích lũy sẽ đổi và lý do bị chặn
+  const {
+    data: rollbackPreview, isFetching: isPreviewLoading, isError: isPreviewError,
+    isSuccess: isPreviewSuccess, refetch: refetchRollbackPreview,
+  } = useRollbackPreviewQuery(
+    // Chỉ gọi bản xem trước khi người dùng có quyền hoàn tác
+    allowRollbackPayment ? (rollbackingPayment?.id ?? null) : null
+  )
+
+  // Lịch sử hoàn tác phục vụ đối soát (chỉ tải khi mở modal)
+  const { data: rollbackHistory, isFetching: isHistoryLoading } = usePaymentRollbackHistoryQuery(
+    {
+      page: historyPage,
+      limit: 10,
+    },
+    isHistoryVisible
   )
 
   // Mutation rollback với callback để reset loading state
@@ -91,41 +133,57 @@ const PaymentsList: React.FC = () => {
     setViewingPayment(null)
   }
 
-  // Handler rollback payment
+  // Mở modal hoàn tác: xóa lý do cũ để tránh gửi nhầm (chỉ Super Admin)
   const handleRollback = (payment: Payment) => {
-    console.log('🔄 handleRollback được gọi với payment:', payment)
+    if (!allowRollbackPayment) {
+      toast.error("Chỉ Super Admin mới được hoàn tác phiếu thu")
+      return
+    }
+    setRollbackReason("")
     setRollbackingPayment(payment)
     setIsConfirmRollbackVisible(true)
   }
 
-  // Handler xác nhận rollback
+  // Xác nhận hoàn tác: bắt buộc lý do và chỉ gửi khi backend cho phép
   const handleConfirmRollback = () => {
-    if (!rollbackingPayment) return
-    
-    console.log('✅ User xác nhận rollback payment ID:', rollbackingPayment.id)
-    
-    // Set state để track payment đang được rollback
+    if (!rollbackingPayment || rollbackMutation.isPending) return
+    const reason = rollbackReason.trim()
+    if (!reason) {
+      toast.warning("Vui lòng nhập lý do hoàn tác")
+      return
+    }
+    if (!isPreviewSuccess || isPreviewLoading || isPreviewError ||
+      rollbackPreview?.payment_id !== rollbackingPayment.id || !rollbackPreview?.preview_token) {
+      toast.warning("Vui lòng tải lại bản xem trước trước khi xác nhận")
+      return
+    }
+    if (!rollbackPreview.can_rollback) {
+      toast.error(rollbackPreview.blockers[0]?.message || "Phiếu thu không thể hoàn tác")
+      return
+    }
+
     setRollingBackPaymentId(rollbackingPayment.id)
-    
-    console.log('🚀 Gọi rollbackMutation.mutate với ID:', rollbackingPayment.id)
-    rollbackMutation.mutate(rollbackingPayment.id, {
-      onSettled: () => {
-        console.log('✅ Mutation settled, reset rollingBackPaymentId')
-        // Reset state sau khi hoàn tất (thành công hoặc lỗi)
-        setRollingBackPaymentId(null)
+    rollbackMutation.mutate(
+      { id: rollbackingPayment.id, reason, preview_token: rollbackPreview.preview_token },
+      {
+        onSuccess: () => {
+          setIsConfirmRollbackVisible(false)
+          setRollbackingPayment(null)
+          setRollbackReason("")
+        },
+        onError: () => { void refetchRollbackPreview() },
+        onSettled: () => setRollingBackPaymentId(null),
       }
-    })
-    
-    // Đóng modal
-    setIsConfirmRollbackVisible(false)
-    setRollbackingPayment(null)
+    )
+
   }
 
-  // Handler hủy rollback
+  // Hủy hoàn tác
   const handleCancelRollback = () => {
-    console.log('❌ User hủy rollback')
+    if (rollbackMutation.isPending) return
     setIsConfirmRollbackVisible(false)
     setRollbackingPayment(null)
+    setRollbackReason("")
   }
 
   const formatCurrency = (value: number) => {
@@ -424,6 +482,8 @@ const PaymentsList: React.FC = () => {
       key: "action",
       title: "Hành động",
       width: 150,
+      // Ghim cột thao tác bên phải để nút Hoàn tác luôn trong khung nhìn khi bảng rộng
+      fixed: "right" as const,
       render: (record: ExtendedPayment) => (
         <Space size="small">
           <Button
@@ -433,25 +493,45 @@ const PaymentsList: React.FC = () => {
           >
             Xem
           </Button>
-          <Button
-            icon={<RollbackOutlined />}
-            onClick={() => handleRollback(record)}
-            size='small'
-            danger
-            loading={rollingBackPaymentId === record.id}
-          >
-            Hoàn tác
-          </Button>
+          {/* Chỉ Super Admin thấy nút hoàn tác phiếu thu */}
+          {allowRollbackPayment && (
+            <Tooltip
+              title={
+                record.can_rollback === false
+                  ? (record.rollback_block_reason || "Không thể hoàn tác phiếu thu này")
+                  : ""
+              }
+            >
+              <Button
+                icon={<RollbackOutlined />}
+                onClick={() => handleRollback(record)}
+                size='small'
+                danger
+                disabled={record.can_rollback === false}
+                loading={rollingBackPaymentId === record.id}
+              >
+                Hoàn tác
+              </Button>
+            </Tooltip>
+          )}
         </Space>
       ),
     },
-  ], [filters, paymentsData]) // Dependencies for useMemo
+  ], [filters, paymentsData, rollingBackPaymentId, allowRollbackPayment]) // Dependencies for useMemo
 
   return (
     <div className='p-2 md:p-6'>
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6'>
         <h1 className='text-2xl font-bold'>Lịch sử Thanh toán</h1>
         <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            onClick={() => {
+              setHistoryPage(1)
+              setIsHistoryVisible(true)
+            }}
+          >
+            Lịch sử hoàn tác
+          </Button>
           {Object.keys(filters).length > 0 && (
             <Button 
                 onClick={handleClearAllFilters}
@@ -585,35 +665,162 @@ const PaymentsList: React.FC = () => {
 
       {/* Confirm Rollback Modal */}
       <Modal
-        title="⚠️ Xác nhận hoàn tác thanh toán"
+        title="Xác nhận hoàn tác phiếu thu"
         open={isConfirmRollbackVisible}
         onOk={handleConfirmRollback}
         onCancel={handleCancelRollback}
         okText="Xác nhận hoàn tác"
         cancelText="Hủy"
-        okButtonProps={{ danger: true }}
+        okButtonProps={{
+          danger: true,
+          disabled:
+            isPreviewLoading ||
+            !isPreviewSuccess || isPreviewError ||
+            rollbackPreview?.payment_id !== rollbackingPayment?.id ||
+            !rollbackPreview?.preview_token ||
+            !rollbackReason.trim() ||
+            rollbackPreview?.can_rollback === false,
+        }}
+        confirmLoading={rollbackMutation.isPending}
+        cancelButtonProps={{ disabled: rollbackMutation.isPending }}
+        maskClosable={!rollbackMutation.isPending}
+        closable={!rollbackMutation.isPending}
+        width={760}
+        // Giới hạn chiều cao thân modal để bản xem trước dài không tràn khỏi màn hình
+        styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         {rollbackingPayment && (
           <div>
-            <p>Bạn sắp hoàn tác thanh toán:</p>
-            <ul style={{ marginTop: 12, paddingLeft: 20 }}>
-              <li><strong>Mã:</strong> {rollbackingPayment.code}</li>
-              <li><strong>Số tiền:</strong> {formatCurrency(rollbackingPayment.amount)}</li>
-              <li><strong>Khách hàng:</strong> {rollbackingPayment.customer?.name || rollbackingPayment.customer_name}</li>
-            </ul>
-            <p style={{ marginTop: 12, color: '#ff4d4f' }}>
-              <strong>Hành động này sẽ:</strong>
-            </p>
-            <ul style={{ paddingLeft: 20 }}>
-              <li>✓ Xóa phiếu thu và các phân bổ</li>
-              <li>✓ Hoàn trả tiền vào công nợ</li>
-              <li>✓ Cập nhật lại trạng thái hóa đơn</li>
-            </ul>
-            <p style={{ marginTop: 12 }}>
-              Bạn có chắc chắn muốn tiếp tục?
+            <Descriptions bordered size='small' column={1} className='mb-3'>
+              <Descriptions.Item label='Mã phiếu'>
+                {rollbackingPayment.code}
+              </Descriptions.Item>
+              <Descriptions.Item label='Số tiền'>
+                {formatCurrency(rollbackingPayment.amount)}
+              </Descriptions.Item>
+              <Descriptions.Item label='Khách hàng'>
+                {rollbackingPayment.customer?.name ||
+                  rollbackingPayment.customer_name ||
+                  "-"}
+              </Descriptions.Item>
+            </Descriptions>
+
+            {isPreviewLoading && (
+              <Alert
+                type='info'
+                showIcon
+                className='mb-3'
+                message='Đang kiểm tra điều kiện hoàn tác...'
+              />
+            )}
+
+            {isPreviewError && (
+              <Alert
+                type='error'
+                showIcon
+                className='mb-3'
+                message='Không tải được bản xem trước. Vui lòng thử lại.'
+                action={<Button onClick={() => void refetchRollbackPreview()}>Tải lại</Button>}
+              />
+            )}
+
+            {isPreviewSuccess && rollbackPreview && (
+              <PaymentRollbackPreviewPanel preview={rollbackPreview} />
+            )}
+
+
+            <div className='font-medium mb-1'>
+              Lý do hoàn tác <span style={{ color: "#ff4d4f" }}>*</span>
+            </div>
+            <Input.TextArea
+              rows={3}
+              maxLength={500}
+              showCount
+              value={rollbackReason}
+              onChange={(event) => setRollbackReason(event.target.value)}
+              placeholder='Ví dụ: nhập sai số tiền, thu trùng phiếu...'
+            />
+
+            <p className='mt-3 mb-0 text-gray-600'>
+              Hệ thống chỉ hoàn tác ghi nhận; tiền thực tế do người dùng tự xử
+              lý. Phiếu thu sẽ bị xóa và được lưu vết trong Lịch sử hoàn tác.
             </p>
           </div>
         )}
+      </Modal>
+
+      {/* Lịch sử hoàn tác phiếu thu */}
+      <Modal
+        title='Lịch sử hoàn tác phiếu thu'
+        open={isHistoryVisible}
+        onCancel={() => setIsHistoryVisible(false)}
+        footer={[
+          <Button key='close' onClick={() => setIsHistoryVisible(false)}>
+            Đóng
+          </Button>,
+        ]}
+        width={900}
+      >
+        <Table<PaymentRollbackHistoryItem>
+          size='small'
+          rowKey='id'
+          loading={isHistoryLoading}
+          dataSource={rollbackHistory?.data || []}
+          pagination={{
+            current: historyPage,
+            pageSize: 10,
+            total: rollbackHistory?.total || 0,
+            onChange: (page) => setHistoryPage(page),
+          }}
+          columns={[
+            {
+              title: "Thời điểm",
+              dataIndex: "rolled_back_at",
+              render: (value: string) =>
+                new Date(value).toLocaleString("vi-VN"),
+            },
+            { title: "Mã phiếu", dataIndex: "payment_code" },
+            {
+              title: "Khách hàng",
+              dataIndex: "customer_name",
+              render: (value: string | null) => value || "-",
+            },
+            {
+              title: "Số tiền",
+              dataIndex: "amount",
+              align: "right",
+              render: (value: number) => formatCurrency(Number(value)),
+            },
+            { title: "Lý do", dataIndex: "reason", ellipsis: true },
+            {
+              title: "Người hoàn tác",
+              dataIndex: "rollbacker",
+              render: (value: { account?: string } | null) =>
+                value?.account || "-",
+            },
+          ]}
+          expandable={{
+            expandedRowRender: (record) => (
+              <div className='text-sm'>
+                <div>
+                  Loại phiếu:{" "}
+                  {rollbackKindLabels[record.payment_kind] || record.payment_kind}
+                  {record.debt_note_code
+                    ? ` • Phiếu nợ: ${record.debt_note_code}`
+                    : ""}
+                  {record.loan_code ? ` • Khoản vay: ${record.loan_code}` : ""}
+                </div>
+                <div>
+                  Hóa đơn bị ảnh hưởng: {record.affected_invoices} • Phiếu nợ:{" "}
+                  {record.affected_debt_notes}
+                </div>
+                <div>
+                  Số phân bổ đã đảo: {record.allocations_snapshot?.length || 0}
+                </div>
+              </div>
+            ),
+          }}
+        />
       </Modal>
     </div>
   )

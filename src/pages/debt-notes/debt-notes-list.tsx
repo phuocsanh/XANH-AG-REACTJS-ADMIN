@@ -27,7 +27,7 @@ import {
   Alert,
 } from "antd"
 import { RangePicker } from '@/components/common'
-import { DollarOutlined, SearchOutlined, GiftOutlined, RollbackOutlined, SettingOutlined } from "@ant-design/icons"
+import { DollarOutlined, SearchOutlined, GiftOutlined, RollbackOutlined, SettingOutlined, UndoOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
 import FilterHeader from "@/components/common/filter-header"
@@ -38,8 +38,11 @@ import {
 } from "./form-config"
 import { SettleDebtModal } from "../payments/components/settle-debt-modal"
 import CloseSeasonModal from "./components/CloseSeasonModal"
+import RollbackDebtPaymentsModal from "./components/rollback-debt-payments-modal"
 import { Button, TableProps } from "antd"
 import type { FilterDropdownProps } from "antd/es/table/interface"
+import { useAppStore } from "@/stores"
+import { isSuperAdmin } from "@/utils/permission"
 
 // Extend DebtNote interface để tương thích với DataTable
 interface ExtendedDebtNote extends DebtNote {
@@ -64,6 +67,11 @@ const DebtNotesList: React.FC = () => {
   const [reverseForm] = Form.useForm()
   const [isReverseModalVisible, setIsReverseModalVisible] = React.useState(false)
   const [selectedReverseDebtNote, setSelectedReverseDebtNote] = React.useState<ExtendedDebtNote | null>(null)
+  // Phiếu công nợ đang mở modal hoàn tác phiếu thu (null = đóng)
+  const [rollbackDebtNote, setRollbackDebtNote] = React.useState<ExtendedDebtNote | null>(null)
+  // Chỉ Super Admin được phép hoàn tác phiếu thu (khớp với kiểm tra phía backend)
+  const userInfo = useAppStore((state) => state.userInfo)
+  const allowRollbackPayment = isSuperAdmin(userInfo)
   const reverseCloseMutation = useReverseCloseDebtNoteMutation()
   const [settingForm] = Form.useForm()
   const [isSettingModalVisible, setIsSettingModalVisible] = React.useState(false)
@@ -253,6 +261,15 @@ const DebtNotesList: React.FC = () => {
     setIsReverseModalVisible(false)
     setSelectedReverseDebtNote(null)
     reverseForm.resetFields()
+  }
+
+  // Mở modal hoàn tác phiếu thu của phiếu công nợ (chọn phiếu thu cụ thể bên trong)
+  const handleOpenRollbackModal = (record: ExtendedDebtNote) => {
+    setRollbackDebtNote(record)
+  }
+
+  const handleCloseRollbackModal = () => {
+    setRollbackDebtNote(null)
   }
 
   const handleReverseClose = async () => {
@@ -453,7 +470,9 @@ const DebtNotesList: React.FC = () => {
     {
       key: "action",
       title: "Hành động",
-      width: 260,
+      width: 340,
+      // Ghim cột thao tác bên phải để nút Hoàn tác thu không bị trôi khỏi khung nhìn khi bảng rộng
+      fixed: "right",
       render: (record: ExtendedDebtNote) => {
         const canReverseClose = Boolean(record.can_reverse_close)
 
@@ -477,6 +496,16 @@ const DebtNotesList: React.FC = () => {
                 onClick={() => handleOpenCloseSeasonModal(record)}
               >
                 Chi tiết quà
+              </Button>
+            )}
+            {Number(record.paid_amount) > 0 && allowRollbackPayment && (
+              <Button
+                danger
+                size="small"
+                icon={<UndoOutlined />}
+                onClick={() => handleOpenRollbackModal(record)}
+              >
+                Hoàn tác thu
               </Button>
             )}
             {canReverseClose && (
@@ -637,6 +666,16 @@ const DebtNotesList: React.FC = () => {
         debtNoteId={selectedDebtNoteId}
         onClose={handleCloseSeasonModal}
       />
+
+      {/* Hoàn tác phiếu thu của phiếu công nợ: chỉ mount khi mở để tránh gọi API thừa */}
+      {rollbackDebtNote && (
+        <RollbackDebtPaymentsModal
+          open
+          debtNoteCode={rollbackDebtNote.code}
+          customerName={rollbackDebtNote.customer?.name}
+          onClose={handleCloseRollbackModal}
+        />
+      )}
 
       <Modal
         title="Cài đặt quá hạn công nợ"

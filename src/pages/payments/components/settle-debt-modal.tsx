@@ -17,6 +17,7 @@ import {
   Table,
 } from "antd"
 import { format } from "date-fns"
+import { useNavigate } from "react-router-dom"
 import { GiftOutlined } from '@ant-design/icons';
 import NumberInput from '@/components/common/number-input'
 import { useRewardPreviewQuery, useDebtNoteQuery } from "@/queries/debt-note"
@@ -51,6 +52,7 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
   initialCustomer,
 }) => {
   const [form] = Form.useForm()
+  const navigate = useNavigate()
   
   // State
   // selectedCustomer lưu thông tin hiển thị trên Dropdown (bao gồm tổng nợ toàn cục)
@@ -565,7 +567,17 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
       open={showResult}
       onCancel={() => setShowResult(false)}
       footer={[
-        <Button key="close" type="primary" onClick={() => setShowResult(false)}>
+        <Button
+          key='history'
+          type='primary'
+          onClick={() => {
+            setShowResult(false)
+            navigate("/payments")
+          }}
+        >
+          Mở Lịch sử thanh toán
+        </Button>,
+        <Button key="close" onClick={() => setShowResult(false)}>
           Đóng
         </Button>
       ]}
@@ -575,6 +587,12 @@ export const SettleDebtModal: React.FC<SettleDebtModalProps> = ({
         <div>
           {/* Tổng quan */}
           <Card className='mb-4' style={{ background: '#f6ffed' }}>
+            {settleResult.payment?.code && (
+              <div style={{ marginBottom: 8 }}>
+                <strong>Mã phiếu thu:</strong>{" "}
+                <Tag color='blue'>{settleResult.payment.code}</Tag>
+              </div>
+            )}
             <div style={{ marginBottom: 8 }}>
               <strong>Tổng nợ:</strong> {formatCurrency(settleResult.total_debt)}
             </div>
