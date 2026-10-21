@@ -477,16 +477,17 @@ const ProductsList: React.FC = () => {
         sorter: true,
         render: (_: number, record: ExtendedProduct) => {
           const bao = getBaoConversion(record)
-          const qty = record.taxable_quantity_stock || 0
-          const roundedQty = Math.round(qty)
+          const qty = Number(record.taxable_quantity_stock || 0)
+          // Tồn thuế lưu numeric(15,4): hiển thị tối đa 4 số lẻ, bỏ số 0 thừa.
+          const displayQty = Number(qty.toFixed(4))
           const unitName = record.unit?.name || record.unit_name || ""
 
           if (bao && Math.abs(qty) >= bao.factor) {
             const baoQty = Math.floor(qty / bao.factor)
             return (
               <div className='flex flex-col items-center'>
-                <Tag color={roundedQty > 0 ? "blue" : "default"} className='m-0'>
-                  {new Intl.NumberFormat("vi-VN").format(roundedQty)} {unitName}
+                <Tag color={displayQty > 0 ? "blue" : "default"} className='m-0'>
+                  {new Intl.NumberFormat("vi-VN").format(displayQty)} {unitName}
                 </Tag>
                 <div className='text-[10px] font-bold text-blue-600 whitespace-nowrap mt-1'>
                   ≈ {new Intl.NumberFormat("vi-VN").format(baoQty)} {bao.unitName}
@@ -496,8 +497,8 @@ const ProductsList: React.FC = () => {
           }
 
           return (
-            <Tag color={roundedQty > 0 ? "blue" : "default"} className='m-0'>
-              {new Intl.NumberFormat("vi-VN").format(roundedQty)} {unitName}
+            <Tag color={displayQty > 0 ? "blue" : "default"} className='m-0'>
+              {new Intl.NumberFormat("vi-VN").format(displayQty)} {unitName}
             </Tag>
           )
         },
