@@ -12,6 +12,7 @@ import type {
   RiceCropProfit,
   PeriodReport,
   ProductSeasonSales,
+  CustomerSeasonSales,
 } from '@/models/store-profit';
 
 // ==================== QUERY KEYS ====================
@@ -92,6 +93,19 @@ export const useProductSeasonSales = (productId: number, seasonId: number) => {
       return response;
     },
     enabled: productId > 0 && seasonId > 0,
+  });
+};
+
+/** Lấy tổng tiền bán theo khách hàng trong một mùa vụ. */
+export const useCustomerSeasonSales = (customerId: number, seasonId: number) => {
+  return useQuery({
+    queryKey: [...storeProfitReportKeys.all, 'customer-season-sales', customerId, seasonId],
+    queryFn: async () => {
+      return api.get<CustomerSeasonSales>(
+        `/store-profit-report/season/${seasonId}/customer/${customerId}/sales`,
+      );
+    },
+    enabled: customerId > 0 && seasonId > 0,
   });
 };
 

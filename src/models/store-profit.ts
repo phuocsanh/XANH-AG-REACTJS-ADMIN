@@ -101,6 +101,17 @@ export interface ProductSeasonSales {
   invoice_count: number;
 }
 
+/** Tổng tiền bán theo khách hàng, mùa vụ và nhóm sản phẩm. */
+export interface CustomerSeasonSales {
+  customer_id: number;
+  customer_name: string;
+  season_id: number;
+  season_name: string;
+  base_fertilizer_amount: number;
+  other_products_amount: number;
+  total_amount: number;
+}
+
 /**
  * Tổng hợp lợi nhuận
  */

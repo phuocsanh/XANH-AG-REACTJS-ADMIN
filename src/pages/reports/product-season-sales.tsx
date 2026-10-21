@@ -5,7 +5,8 @@ import { useAppStore } from '@/stores';
 import { RoleCode } from '@/constant/role';
 import { useSeasonsQuery } from '@/queries/season';
 import { useProductSearch } from '@/queries/product';
-import { useProductSeasonSales } from '@/queries/store-profit-report';
+import { useCustomerSearchQuery } from '@/queries/customer';
+import { useCustomerSeasonSales, useProductSeasonSales } from '@/queries/store-profit-report';
 
 const { Title, Text } = Typography;
 
@@ -14,6 +15,9 @@ const ProductSeasonSalesPage: React.FC = () => {
   const isSuperAdmin = userInfo?.role?.code === RoleCode.SUPER_ADMIN;
   const [seasonId, setSeasonId] = useState<number>();
   const [productId, setProductId] = useState<number>();
+  const [customerId, setCustomerId] = useState<number>();
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<{ label: string; value: number }>();
 
   const { data: seasonsData, isLoading: seasonsLoading } = useSeasonsQuery({ page: 1, limit: 100 });
   const {
@@ -24,12 +28,28 @@ const ProductSeasonSalesPage: React.FC = () => {
     fetchNextPage,
   } = useProductSearch('', 100, isSuperAdmin);
   const { data: report, isLoading: reportLoading, isError } = useProductSeasonSales(productId || 0, seasonId || 0);
+  const { data: customerSearchResults = [], isFetching: customersLoading } = useCustomerSearchQuery(customerSearch);
+  const {
+    data: customerSales,
+    isLoading: customerSalesLoading,
+    isError: customerSalesError,
+  } = useCustomerSeasonSales(customerId || 0, seasonId || 0);
 
   const seasons = seasonsData?.data?.items || [];
   const products = useMemo(
     () => productsData?.pages.flatMap((page) => page.data || []) || [],
     [productsData],
   );
+  const customerOptions = useMemo(() => {
+    const matches = customerSearchResults.map((customer) => ({
+      label: `${customer.name}${customer.phone ? ` - ${customer.phone}` : ''}`,
+      value: customer.id,
+    }));
+    if (selectedCustomer && !matches.some((option) => option.value === selectedCustomer.value)) {
+      return [selectedCustomer, ...matches];
+    }
+    return matches;
+  }, [customerSearchResults, selectedCustomer]);
 
   // Tải tiếp các trang cho đến khi đủ toàn bộ sản phẩm trong dropdown.
   useEffect(() => {
@@ -105,6 +125,80 @@ const ProductSeasonSalesPage: React.FC = () => {
           </Card>
         </>
       ) : null}
+
+      <Card style={{ marginTop: 20 }}>
+        <Title level={4}>Tiền sản phẩm đã bán theo khách hàng</Title>
+        <Text type="secondary">Tổng tiền sau khi trừ hàng trả lại và chiết khấu hóa đơn. Danh mục Lúa giống được loại khỏi các nhóm và tổng tiền.</Text>
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} md={12}>
+            <Text strong>Khách hàng</Text>
+            <Select
+              showSearch
+              filterOption={false}
+              allowClear
+              style={{ width: '100%', marginTop: 8 }}
+              placeholder="Nhập tên hoặc số điện thoại khách hàng"
+              value={customerId}
+              loading={customersLoading}
+              options={customerOptions}
+              onSearch={setCustomerSearch}
+              onClear={() => setCustomerSearch('')}
+              onChange={(value: number | undefined) => {
+                setCustomerId(value);
+                setSelectedCustomer(customerOptions.find((option) => option.value === value));
+              }}
+              notFoundContent={customerSearch ? 'Không tìm thấy khách hàng' : 'Nhập tên hoặc số điện thoại để tìm'}
+            />
+          </Col>
+        </Row>
+
+        {!seasonId ? (
+          <Alert style={{ marginTop: 16 }} type="info" showIcon message="Vui lòng chọn mùa vụ ở bộ lọc phía trên" />
+        ) : !customerId ? (
+          <Alert style={{ marginTop: 16 }} type="info" showIcon message="Vui lòng chọn khách hàng để xem tiền đã bán" />
+        ) : customerSalesLoading ? (
+          <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        ) : customerSalesError ? (
+          <Alert style={{ marginTop: 16 }} type="error" showIcon message="Không tải được tổng tiền bán của khách hàng" />
+        ) : customerSales ? (
+          <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+            <Col xs={24} md={8}>
+              <Card>
+                <Statistic
+                  title="Phân bón gốc"
+                  value={customerSales.base_fertilizer_amount}
+                  precision={0}
+                  suffix="₫"
+                  formatter={(value) => Number(value || 0).toLocaleString('vi-VN')}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card>
+                <Statistic
+                  title="Các loại sản phẩm khác (trừ lúa giống)"
+                  value={customerSales.other_products_amount}
+                  precision={0}
+                  suffix="₫"
+                  formatter={(value) => Number(value || 0).toLocaleString('vi-VN')}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card>
+                <Statistic
+                  title="Tổng tiền"
+                  value={customerSales.total_amount}
+                  precision={0}
+                  suffix="₫"
+                  formatter={(value) => Number(value || 0).toLocaleString('vi-VN')}
+                  valueStyle={{ color: '#389e0d' }}
+                />
+              </Card>
+            </Col>
+          </Row>
+        ) : null}
+      </Card>
     </div>
   );
 };
