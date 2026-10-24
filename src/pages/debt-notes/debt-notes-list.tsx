@@ -30,6 +30,7 @@ import { RangePicker } from '@/components/common'
 import { DollarOutlined, SearchOutlined, GiftOutlined, RollbackOutlined, SettingOutlined, UndoOutlined } from "@ant-design/icons"
 import dayjs from 'dayjs';
 import DataTable from "@/components/common/data-table"
+import { useMobile } from "@/hooks/use-media-query"
 import FilterHeader from "@/components/common/filter-header"
 import ComboBox from "@/components/common/combo-box"
 import {
@@ -51,6 +52,8 @@ interface ExtendedDebtNote extends DebtNote {
 }
 
 const DebtNotesList: React.FC = () => {
+  const isMobile = useMobile()
+
   // State quản lý UI
   const [filters, setFilters] = React.useState<Record<string, unknown>>({})
   const [currentPage, setCurrentPage] = React.useState(1)
@@ -471,8 +474,8 @@ const DebtNotesList: React.FC = () => {
       key: "action",
       title: "Hành động",
       width: 340,
-      // Ghim cột thao tác bên phải để nút Hoàn tác thu không bị trôi khỏi khung nhìn khi bảng rộng
-      fixed: "right",
+      // Chỉ ghim cột thao tác trên desktop để bảng dễ cuộn ngang trên điện thoại
+      fixed: isMobile ? undefined : "right",
       render: (record: ExtendedDebtNote) => {
         const canReverseClose = Boolean(record.can_reverse_close)
 
