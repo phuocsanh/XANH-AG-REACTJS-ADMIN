@@ -101,6 +101,29 @@ export interface ProductSeasonSales {
   invoice_count: number;
 }
 
+/** Tổng hợp lợi nhuận gộp theo danh sách loại sản phẩm trong mùa vụ. */
+export interface ProductTypeSeasonProfitBreakdown {
+  product_type_id: number;
+  product_type_name: string;
+  revenue: number;
+  cost_of_goods_sold: number;
+  gross_profit: number;
+  gross_margin: number;
+  invoice_count: number;
+}
+
+export interface ProductTypesSeasonProfit {
+  season_id: number;
+  season_name: string;
+  product_type_ids: number[];
+  revenue: number;
+  cost_of_goods_sold: number;
+  gross_profit: number;
+  gross_margin: number;
+  invoice_count: number;
+  breakdown: ProductTypeSeasonProfitBreakdown[];
+}
+
 /** Tổng tiền bán theo khách hàng, mùa vụ và nhóm sản phẩm. */
 export interface CustomerSeasonSales {
   customer_id: number;

@@ -12,6 +12,7 @@ import type {
   RiceCropProfit,
   PeriodReport,
   ProductSeasonSales,
+  ProductTypesSeasonProfit,
   CustomerSeasonSales,
 } from '@/models/store-profit';
 
@@ -93,6 +94,19 @@ export const useProductSeasonSales = (productId: number, seasonId: number) => {
       return response;
     },
     enabled: productId > 0 && seasonId > 0,
+  });
+};
+
+/** Lấy lợi nhuận gộp của một hoặc nhiều loại sản phẩm trong mùa vụ. */
+export const useProductTypesSeasonProfit = (seasonId: number, productTypeIds: number[]) => {
+  const normalizedIds = [...new Set(productTypeIds)].sort((a, b) => a - b);
+
+  return useQuery({
+    queryKey: [...storeProfitReportKeys.all, 'season-product-types-profit', seasonId, normalizedIds],
+    queryFn: async () => api.get<ProductTypesSeasonProfit>(
+      `/store-profit-report/season/${seasonId}/product-types/profit?productTypeIds=${normalizedIds.join(',')}`,
+    ),
+    enabled: seasonId > 0 && normalizedIds.length > 0,
   });
 };
 

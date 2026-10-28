@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Card, Col, Row, Select, Spin, Statistic, Typography } from 'antd';
+import { Alert, Card, Col, Row, Select, Spin, Statistic, Table, Typography } from 'antd';
 import { ShoppingCartOutlined, RollbackOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useAppStore } from '@/stores';
 import { RoleCode } from '@/constant/role';
 import { useSeasonsQuery } from '@/queries/season';
 import { useProductSearch } from '@/queries/product';
 import { useCustomerSearchQuery } from '@/queries/customer';
-import { useCustomerSeasonSales, useProductSeasonSales } from '@/queries/store-profit-report';
+import { useCustomerSeasonSales, useProductSeasonSales, useProductTypesSeasonProfit } from '@/queries/store-profit-report';
+import { useProductTypesQuery } from '@/queries/product-type';
 
 const { Title, Text } = Typography;
 
@@ -16,6 +17,7 @@ const ProductSeasonSalesPage: React.FC = () => {
   const [seasonId, setSeasonId] = useState<number>();
   const [productId, setProductId] = useState<number>();
   const [customerId, setCustomerId] = useState<number>();
+  const [selectedProductTypeIds, setSelectedProductTypeIds] = useState<number[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<{ label: string; value: number }>();
 
@@ -29,6 +31,12 @@ const ProductSeasonSalesPage: React.FC = () => {
   } = useProductSearch('', 100, isSuperAdmin);
   const { data: report, isLoading: reportLoading, isError } = useProductSeasonSales(productId || 0, seasonId || 0);
   const { data: customerSearchResults = [], isFetching: customersLoading } = useCustomerSearchQuery(customerSearch);
+  const { data: productTypesData, isLoading: productTypesLoading } = useProductTypesQuery({ page: 1, limit: 100 });
+  const {
+    data: productTypeProfit,
+    isLoading: productTypeProfitLoading,
+    isError: productTypeProfitError,
+  } = useProductTypesSeasonProfit(seasonId || 0, selectedProductTypeIds);
   const {
     data: customerSales,
     isLoading: customerSalesLoading,
@@ -50,6 +58,10 @@ const ProductSeasonSalesPage: React.FC = () => {
     }
     return matches;
   }, [customerSearchResults, selectedCustomer]);
+  const productTypeOptions = useMemo(
+    () => (productTypesData?.data?.items || []).map((type) => ({ label: type.name, value: type.id })),
+    [productTypesData],
+  );
 
   // Tải tiếp các trang cho đến khi đủ toàn bộ sản phẩm trong dropdown.
   useEffect(() => {
@@ -101,6 +113,56 @@ const ProductSeasonSalesPage: React.FC = () => {
             />
           </Col>
         </Row>
+      </Card>
+
+      <Card title="Lợi nhuận theo danh mục sản phẩm" style={{ marginBottom: 20 }}>
+        <Typography.Paragraph type="secondary" style={{ marginBottom: 12 }}>
+          Lợi nhuận gộp = doanh thu sau chiết khấu và hàng trả lại trừ giá vốn tại thời điểm bán. Tỷ suất = lợi nhuận gộp / doanh thu thuần; chưa phân bổ chi phí giao hàng, quà tặng và vận hành.
+        </Typography.Paragraph>
+        <Select
+          mode="multiple"
+          showSearch
+          optionFilterProp="label"
+          style={{ width: '100%' }}
+          placeholder="Chọn một hoặc nhiều danh mục sản phẩm"
+          value={selectedProductTypeIds}
+          loading={productTypesLoading}
+          onChange={setSelectedProductTypeIds}
+          options={productTypeOptions}
+          maxTagCount="responsive"
+          allowClear
+        />
+        {!seasonId || selectedProductTypeIds.length === 0 ? (
+          <Alert style={{ marginTop: 16 }} type="info" showIcon message="Vui lòng chọn mùa vụ và ít nhất một danh mục sản phẩm" />
+        ) : productTypeProfitLoading ? (
+          <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>
+        ) : productTypeProfitError || !productTypeProfit ? (
+          <Alert style={{ marginTop: 16 }} type="error" showIcon message="Không tải được báo cáo lợi nhuận theo danh mục" />
+        ) : (
+          <>
+            <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+              <Col xs={24} sm={12} lg={6}><Card><Statistic title="Doanh thu thuần" value={productTypeProfit.revenue} precision={0} suffix="₫" formatter={(value) => Number(value || 0).toLocaleString('vi-VN')} /></Card></Col>
+              <Col xs={24} sm={12} lg={6}><Card><Statistic title="Giá vốn" value={productTypeProfit.cost_of_goods_sold} precision={0} suffix="₫" formatter={(value) => Number(value || 0).toLocaleString('vi-VN')} /></Card></Col>
+              <Col xs={24} sm={12} lg={6}><Card><Statistic title="Lợi nhuận gộp" value={productTypeProfit.gross_profit} precision={0} suffix="₫" formatter={(value) => Number(value || 0).toLocaleString('vi-VN')} valueStyle={{ color: productTypeProfit.gross_profit >= 0 ? '#389e0d' : '#cf1322' }} /></Card></Col>
+              <Col xs={24} sm={12} lg={6}><Card><Statistic title="Tỷ suất lợi nhuận gộp" value={productTypeProfit.gross_margin} precision={2} suffix="%" /></Card></Col>
+            </Row>
+            <Table
+              style={{ marginTop: 16 }}
+              rowKey="product_type_id"
+              size="small"
+              pagination={false}
+              dataSource={productTypeProfit.breakdown}
+              columns={[
+                { title: 'Danh mục', dataIndex: 'product_type_name', key: 'product_type_name' },
+                { title: 'Doanh thu thuần', dataIndex: 'revenue', key: 'revenue', align: 'right', render: (value: number) => `${Number(value).toLocaleString('vi-VN')} ₫` },
+                { title: 'Giá vốn', dataIndex: 'cost_of_goods_sold', key: 'cost_of_goods_sold', align: 'right', render: (value: number) => `${Number(value).toLocaleString('vi-VN')} ₫` },
+                { title: 'Lợi nhuận gộp', dataIndex: 'gross_profit', key: 'gross_profit', align: 'right', render: (value: number) => `${Number(value).toLocaleString('vi-VN')} ₫` },
+                { title: 'Tỷ suất', dataIndex: 'gross_margin', key: 'gross_margin', align: 'right', render: (value: number) => `${Number(value).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%` },
+                { title: 'Số hóa đơn', dataIndex: 'invoice_count', key: 'invoice_count', align: 'right' },
+              ]}
+            />
+          </>
+        )}
       </Card>
 
       {!seasonId || !productId ? (
