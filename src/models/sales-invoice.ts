@@ -20,7 +20,7 @@ export interface SalesInvoiceItem {
   total_price?: number;
   price_type?: 'cash' | 'credit';
   cost_price?: number;
-  costing_method_snapshot?: 'fixed' | 'by_price_type';
+  costing_method_snapshot?: 'fixed' | 'by_batch' | 'by_price_type';
   tax_selling_price?: string;
   sale_unit_id?: number;
   conversion_factor?: number;

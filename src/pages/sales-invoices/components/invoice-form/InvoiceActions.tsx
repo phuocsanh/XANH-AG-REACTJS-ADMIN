@@ -11,6 +11,7 @@ interface InvoiceActionsProps {
   onSaveConfirm: () => void
   isPending: boolean
   isProfitLoading: boolean
+  isProfitUnavailable: boolean
   calculatedProfit: {
     revenue: number
     cost: number
@@ -26,6 +27,7 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(
     onSaveConfirm,
     isPending,
     isProfitLoading,
+    isProfitUnavailable,
     calculatedProfit,
   }) => {
     // Trạng thái đóng/mở popover xem lợi nhuận (hỗ trợ chạm/click trên mobile)
@@ -77,9 +79,11 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(
                   >
                     <CircularProgress size={18} />
                     <div style={{ fontSize: 12, color: "#666" }}>
-                      Đang tính theo giá vốn lô...
+                      Đang tính giá vốn dự kiến...
                     </div>
                   </div>
+                ) : isProfitUnavailable ? (
+                  <div style={{ fontSize: 12, color: "#d46b08" }}>Không tính được giá vốn dự kiến. Vui lòng kiểm tra tồn kho.</div>
                 ) : (
                   <>
                     <div
@@ -135,13 +139,13 @@ export const InvoiceActions = React.memo<InvoiceActionsProps>(
             <IconButton
               size='small'
               sx={{
-                bgcolor: isProfitLoading
+                bgcolor: isProfitLoading || isProfitUnavailable
                   ? "warning.light"
                   : isPositiveProfit
                     ? "success.light"
                     : "error.light",
                 "&:hover": {
-                  bgcolor: isProfitLoading
+                  bgcolor: isProfitLoading || isProfitUnavailable
                     ? "warning.main"
                     : isPositiveProfit
                       ? "success.main"

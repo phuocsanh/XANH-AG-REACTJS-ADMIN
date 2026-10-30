@@ -211,7 +211,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               ? renderValueWithBao(Number(product.credit_price), product)
               : "Chưa thiết lập"}
           </Descriptions.Item>
-          <Descriptions.Item label='Giá vốn trung bình'>
+          <Descriptions.Item label='Giá vốn bình quân (tham khảo)'>
             {renderValueWithBao(
               Number(product.average_cost_price || 0),
               product,

@@ -77,7 +77,7 @@ export interface SalesInvoiceItem {
   /** Giá vốn snapshot tại thời điểm bán */
   cost_price?: number
   /** Cách tính giá vốn snapshot */
-  costing_method_snapshot?: 'fixed' | 'by_price_type'
+  costing_method_snapshot?: 'fixed' | 'by_batch' | 'by_price_type'
   /** Số lượng tính thuế */
   taxable_quantity: number
   /** Ghi chú */

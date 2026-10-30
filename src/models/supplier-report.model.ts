@@ -21,6 +21,7 @@ export interface SupplierStatsSummary {
   gross_margin: number;
   product_count: number;
   invoice_count: number;
+  total_purchase_value: number;
   period?: {
     start_date?: string;
     end_date?: string;

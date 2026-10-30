@@ -7,10 +7,14 @@ export function mapSearchResponse<T>(
   apiResponse: {
     success: boolean
     data: T[]
-    pagination: {
+    pagination?: {
       total: number
       totalPages: number | null
     }
+    total?: number
+    page?: number
+    limit?: number
+    totalPages?: number
   },
   page: number,
   limit: number

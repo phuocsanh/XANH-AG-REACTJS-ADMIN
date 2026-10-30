@@ -29,6 +29,7 @@ export interface InvoiceProfit {
   sale_date?: Date;
   total_amount: number;        // Tổng doanh thu
   cost_of_goods_sold: number;  // Tổng giá vốn hàng bán
+  supplier_rebate?: number;    // Chiết khấu NCC phân bổ cho hàng theo loại giá bán đã bán ròng
   gross_profit: number;        // Lợi nhuận gộp
   gross_margin: number;        // Tỷ suất lợi nhuận gộp (%)
   item_details: InvoiceItemProfit[];
@@ -143,6 +144,7 @@ export interface ProfitSummary {
   total_customers: number;
   total_revenue: number;
   cost_of_goods_sold: number;
+  supplier_rebate?: number;
   gross_profit: number;
   gross_margin: number;
   delivery_costs: number;     // Tổng chi phí giao hàng

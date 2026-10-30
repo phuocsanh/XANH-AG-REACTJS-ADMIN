@@ -3,7 +3,7 @@ import { UploadFile } from "antd/lib/upload/interface"
 
 const refineCostingMethod = (
   data: {
-    costing_method?: "fixed" | "by_price_type"
+    costing_method?: "fixed" | "by_batch" | "by_price_type"
     cash_cost_price?: string
     credit_cost_price?: string
   },
@@ -71,7 +71,7 @@ const productFormSchemaBase = z.object({
   // Thêm 2 trường mới từ server
   profit_margin_percent: z.string().optional(), // Không bắt buộc
   average_cost_price: z.string().optional(), // Không bắt buộc
-  costing_method: z.enum(["fixed", "by_price_type"]).default("fixed"),
+  costing_method: z.enum(["fixed", "by_batch", "by_price_type"]).default("fixed"),
   cash_cost_price: z.string().optional(),
   credit_cost_price: z.string().optional(),
   average_vat_input_cost: z.string().optional(), // Giá nhập trung bình VAT (tự tính)
@@ -153,7 +153,7 @@ export interface ProductFormValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
-  costing_method?: "fixed" | "by_price_type"
+  costing_method?: "fixed" | "by_batch" | "by_price_type"
   cash_cost_price?: string
   credit_cost_price?: string
   average_vat_input_cost?: string
@@ -202,7 +202,7 @@ export interface ConvertedProductValues {
   // Thêm 2 trường mới từ server
   profit_margin_percent: string
   average_cost_price: string
-  costing_method?: "fixed" | "by_price_type"
+  costing_method?: "fixed" | "by_batch" | "by_price_type"
   cash_cost_price?: string
   credit_cost_price?: string
   average_vat_input_cost?: string

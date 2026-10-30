@@ -29,7 +29,7 @@ export interface ProductComponent {
   unit?: { id: number; name: string }
 }
 
-export type ProductCostingMethod = "fixed" | "by_price_type"
+export type ProductCostingMethod = "fixed" | "by_batch" | "by_price_type"
 
 // Interface cho dữ liệu sản phẩm từ API
 export interface Product {

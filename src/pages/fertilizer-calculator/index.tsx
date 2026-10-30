@@ -110,12 +110,16 @@ const formatViDecimal = (value: string | number | null | undefined) => {
   return Number.isFinite(numberValue) ? VI_NUMBER_FORMATTER.format(numberValue) : ""
 }
 
-const parseViDecimal = (value: string | undefined) =>
-  value
+const parseViDecimal = (value: string | undefined): number => {
+  const normalizedValue = value
     ?.replace(/\s/g, "")
     .replace(/\./g, "")
     .replace(",", ".")
-    .replace(/[^\d.-]/g, "") || ""
+    .replace(/[^\d.-]/g, "")
+
+  const parsedValue = Number(normalizedValue)
+  return Number.isFinite(parsedValue) ? parsedValue : 0
+}
 
 const viNumberInputProps = {
   formatter: formatViDecimal,

@@ -13,7 +13,7 @@ export const salesInvoiceItemSchema = z.object({
   average_cost_price: z.number().min(0).optional(), // ✅ Giá vốn để tính lợi nhuận
   cash_cost_price: z.number().min(0).optional(),
   credit_cost_price: z.number().min(0).optional(),
-  costing_method: z.enum(['fixed', 'by_price_type']).optional(),
+  costing_method: z.enum(['fixed', 'by_batch', 'by_price_type']).optional(),
   stock_quantity: z.number().optional(), // ✅ Số lượng tồn kho hiện tại
   taxable_quantity_stock: z.number().optional(), // ✅ Số lượng tồn kho có hóa đơn
   tax_selling_price: z.string().optional(), // ✅ Giá bán khai thuế

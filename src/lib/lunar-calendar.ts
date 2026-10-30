@@ -118,7 +118,12 @@ function getLeapMonthOffset(a11: number, timeZone: number) {
   return i - 1;
 }
 
-export function convertSolar2Lunar(dd: number, mm: number, yy: number, timeZone: number = 7) {
+export function convertSolar2Lunar(
+  dd: number,
+  mm: number,
+  yy: number,
+  timeZone: number = 7,
+): [number, number, number, boolean] {
   let monthStart, a11, b11, lunarYear, lunarMonth, lunarLeap, leapMonthDiff;
   const dayNumber = jdFromDate(dd, mm, yy);
   const k = INT((dayNumber - 2415021.076998695) / 29.530588853);

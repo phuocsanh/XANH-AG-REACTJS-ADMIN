@@ -936,7 +936,7 @@ const ProfitReportsPage: React.FC = () => {
         },
       },
       {
-        title: 'Giá vốn/Kg',
+        title: 'Giá vốn/ĐVT',
         dataIndex: 'avg_cost',
         key: 'avg_cost',
         width: 140,

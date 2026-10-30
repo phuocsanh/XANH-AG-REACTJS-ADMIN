@@ -599,9 +599,9 @@ const AdjustmentCreate = () => {
                                         value={sourceField.value ?? ""}
                                         onChange={(event) => sourceField.onChange(event.target.value ? Number(event.target.value) : undefined)}
                                         disabled={isReadOnly}
-                                        label='Lô nhập (không bắt buộc nếu SL thuế = 0)'
+                                        label='Lô nhập nguồn'
+                                        helperText={sourceError || 'Chọn lô nguồn khi không còn lô tồn hoặc có SL thuế tăng.'}
                                         error={Boolean(sourceError)}
-                                        helperText={sourceError}
                                       >
                                         <MenuItem value=''>Không gắn lô nhập</MenuItem>
                                         {sourceBatches.filter((batch: any) => batch.receipt_item_id && batch.receipt_item?.receipt?.status === "approved").map((batch: any) => (

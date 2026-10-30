@@ -17,6 +17,7 @@ import {
   Badge,
   Tooltip,
   InputNumber,
+  Select,
   Avatar,
 } from "antd"
 import DataTable from "@/components/common/data-table"
@@ -57,6 +58,7 @@ import {
   useDeleteInventoryReceiptMutation,
   useInventoryReceiptHistoryQuery,
   useUpdateInventoryReceiptItemMutation,
+  useSetSupplierRebateMutation,
 } from "@/queries/inventory"
 import ReceiptImageUpload from "@/components/inventory/ReceiptImageUpload"
 import PaymentTab from "@/components/inventory/PaymentTab"
@@ -95,6 +97,42 @@ const InventoryReceiptDetail: React.FC = () => {
 
   // Items từ receipt
   const items = receipt?.items || []
+  const isBySaleTypeSettlement = receipt?.supplier_settlement_mode === 'by_sale_type'
+
+  /** Mức nhập có thể là đồng/kg hoặc đồng/bao 40 kg; API lưu đồng/kg. */
+  const SupplierRebateEditor = ({ record }: { record: InventoryReceiptItem }) => {
+    const mutation = useSetSupplierRebateMutation()
+    const [editing, setEditing] = useState(false)
+    const [unit, setUnit] = useState<'kg' | 'bag40'>('kg')
+    const [amount, setAmount] = useState<number>(Number(record.supplier_rebate_per_base_unit || 0))
+    const rate = Number(record.supplier_rebate_per_base_unit || 0)
+    const save = async () => {
+      if (!Number.isFinite(amount) || amount < 0) return
+      try {
+        await mutation.mutateAsync({ receiptId, itemId: record.id, amount, unit })
+        setEditing(false)
+        refetchReceipt()
+      } catch (error) {
+        toast.error('Không thể cập nhật chiết khấu NCC')
+      }
+    }
+    if (!editing) {
+      return <Space>
+        <Text>{rate.toLocaleString('vi-VN', { maximumFractionDigits: 4 })} ₫/kg</Text>
+        {normalizedStatus === InventoryReceiptStatus.APPROVED &&
+          <Button size='small' onClick={() => { setUnit('kg'); setAmount(rate); setEditing(true) }}>Sửa</Button>}
+      </Space>
+    }
+    return <Space.Compact>
+      <InputNumber min={0} value={amount} onChange={(value) => setAmount(Number(value || 0))} style={{ width: 130 }} />
+      <Select value={unit} style={{ width: 120 }} onChange={(value) => {
+        setUnit(value)
+        setAmount(value === 'bag40' ? rate * 40 : rate)
+      }} options={[{ value: 'kg', label: '₫/kg' }, { value: 'bag40', label: '₫/bao 40 kg' }]} />
+      <Button type='primary' loading={mutation.isPending} onClick={save}>Lưu</Button>
+      <Button onClick={() => setEditing(false)}>Hủy</Button>
+    </Space.Compact>
+  }
 
   const hasMissingTaxSellingPrice = (
     record: InventoryReceiptItem,
@@ -800,6 +838,12 @@ const InventoryReceiptDetail: React.FC = () => {
       align: "center",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY") : "-"),
     },
+    ...(isBySaleTypeSettlement ? [{
+      title: 'Chiết khấu NCC',
+      key: 'supplier_rebate_per_base_unit',
+      width: 300,
+      render: (_: unknown, record: InventoryReceiptItem) => <SupplierRebateEditor record={record} />,
+    }] : []),
   ]
 
   const historyColumns: ColumnsType<any> = [
@@ -1146,7 +1190,7 @@ const InventoryReceiptDetail: React.FC = () => {
                           labelStyle={{ whiteSpace: "nowrap" }}
                           contentStyle={{ whiteSpace: "nowrap" }}
                         >
-                          <Tooltip title='Tổng tiền hàng (đã trừ chiết khấu) phải trả cho nhà cung cấp. Tuyệt đối không bao gồm phí bốc vác/vận chuyển.'>
+                          <Tooltip title={isBySaleTypeSettlement ? 'Tiền quyết toán theo loại giá bán đã trừ chiết khấu NCC theo lượng nhập ròng; số âm là khoản NCC còn phải cấn trừ.' : 'Tổng tiền hàng phải trả nhà cung cấp, không bao gồm phí bốc vác/vận chuyển.'}>
                             <span className='font-bold text-orange-600'>
                               {(receipt.supplier_amount || 0).toLocaleString(
                                 "vi-VN",
@@ -1155,6 +1199,13 @@ const InventoryReceiptDetail: React.FC = () => {
                               <InfoCircleOutlined className='ml-1 text-[10px]' />
                             </span>
                           </Tooltip>
+                        </Descriptions.Item>
+                      )}
+                      {isBySaleTypeSettlement && (
+                        <Descriptions.Item label='Chiết khấu NCC được hưởng'>
+                          <Text strong className='text-green-600'>
+                            {Number(receipt.supplier_rebate_total || 0).toLocaleString('vi-VN')} ₫
+                          </Text>
                         </Descriptions.Item>
                       )}
                       <Descriptions.Item label='Ghi chú' span={2}>

@@ -1548,7 +1548,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           label={
                             <div className='flex justify-between items-center w-full'>
                               <span>
-                                Giá vốn trung bình (VNĐ){" "}
+                                Giá nhập trung bình tham khảo (VNĐ){" "}
                                 <Typography.Text
                                   type='secondary'
                                   style={{
@@ -1556,13 +1556,13 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                                     fontWeight: "normal",
                                   }}
                                 >
-                                  (Khóa: Tự tính từ nhập/xuất kho)
+                                  (Khóa: Tự tính từ phiếu nhập và trả nhập)
                                 </Typography.Text>
                               </span>
                               {renderConversionHint(watchedAvgCost)}
                             </div>
                           }
-                          placeholder='Tự động tính từ nhập/xuất kho'
+                          placeholder='Tự tính từ phiếu nhập và trả nhập'
                           className='w-full'
                           outputType='string'
                           disabled={isEdit}
@@ -1577,8 +1577,8 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           placeholder='Chọn cách tính giá vốn'
                           options={[
                             {
-                              label: 'Theo giá vốn trung bình',
-                              value: 'fixed',
+                              label: 'Theo giá vốn từng lô (FIFO)',
+                              value: watchedCostingMethod === 'by_batch' ? 'by_batch' : 'fixed',
                             },
                             {
                               label: 'Theo loại giá bán (lúa giống)',

@@ -19,6 +19,7 @@ interface FieldProps {
   allowClear?: boolean
   status?: "error" | "warning"
   help?: string // Thông báo lỗi hoặc hướng dẫn
+  style?: React.CSSProperties
 }
 
 /**
@@ -44,6 +45,7 @@ function Field({
   allowClear = true,
   status,
   help,
+  style,
 }: FieldProps) {
   // Xử lý change cho Input và TextArea
   const handleInputChange = React.useCallback(
@@ -71,6 +73,7 @@ function Field({
       disabled,
       size,
       status,
+      style,
     }
 
     switch (type) {

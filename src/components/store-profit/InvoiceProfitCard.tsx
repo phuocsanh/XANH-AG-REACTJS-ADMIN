@@ -58,7 +58,7 @@ const InvoiceProfitCard: React.FC<InvoiceProfitCardProps> = ({ invoiceId }) => {
       render: (value: number) => formatCurrency(value),
     },
     {
-      title: 'Giá vốn',
+      title: 'Giá vốn/đơn vị',
       dataIndex: 'avg_cost',
       key: 'avg_cost',
       align: 'right',
@@ -146,6 +146,9 @@ const InvoiceProfitCard: React.FC<InvoiceProfitCardProps> = ({ invoiceId }) => {
             formatter={(value) => formatCurrency(Number(value))}
             valueStyle={{ color: '#faad14' }}
           />
+          {Number(data.supplier_rebate || 0) > 0 && (
+            <div className="text-xs text-green-700">Đã trừ CK NCC: {formatCurrency(Number(data.supplier_rebate))}</div>
+          )}
         </Col>
         <Col span={6}>
           <Statistic

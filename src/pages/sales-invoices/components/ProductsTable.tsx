@@ -44,7 +44,7 @@ interface ProductField {
   average_cost_price?: number;
   cash_cost_price?: number;
   credit_cost_price?: number;
-  costing_method?: 'fixed' | 'by_price_type';
+  costing_method?: 'fixed' | 'by_batch' | 'by_price_type';
   stock_quantity?: number;
   taxable_quantity_stock?: number;
   sale_unit_id?: number;

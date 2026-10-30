@@ -9,6 +9,7 @@ export interface ConfirmModalProps {
   okText?: string
   cancelText?: string
   okType?: ButtonType
+  danger?: boolean
   confirmLoading?: boolean
   onOk: () => void
   onCancel: () => void
@@ -21,6 +22,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   okText = "Đồng ý",
   cancelText = "Hủy",
   okType = "primary",
+  danger = false,
   confirmLoading = false,
   onOk,
   onCancel,
@@ -34,6 +36,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
       okText={okText}
       cancelText={cancelText}
       okType={okType}
+      okButtonProps={{ danger }}
       confirmLoading={confirmLoading}
     >
       <p>{content}</p>

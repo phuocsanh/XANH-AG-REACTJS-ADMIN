@@ -98,20 +98,20 @@ export const receiptFormSchema = z.object({
 
   // Validate payment logic
   if (data.supplierSettlementMode === 'by_sale_type') {
-    if (data.discountType === 'percentage' && Number(data.discountValue || 0) > 0) {
+    if (Number(data.discountValue || 0) > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Phiếu lúa giống chỉ được nhập chiết khấu bằng số tiền cố định',
-        path: ['discountType'],
+        message: 'Chiết khấu NCC lúa giống được chốt theo kg sau khi duyệt phiếu',
+        path: ['discountValue'],
       });
     }
 
     data.items.forEach((item, index) => {
-      if (item.discountType === 'percentage' && Number(item.discountValue || 0) > 0) {
+      if (Number(item.discountValue || 0) > 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Phiếu lúa giống chỉ được nhập chiết khấu bằng số tiền cố định',
-          path: ['items', index, 'discountType'],
+          message: 'Chiết khấu NCC lúa giống được chốt theo kg sau khi duyệt phiếu',
+          path: ['items', index, 'discountValue'],
         });
       }
     });

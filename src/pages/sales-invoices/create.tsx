@@ -337,6 +337,7 @@ const CreateSalesInvoice = () => {
     margin: 0,
   });
   const [isProfitLoading, setIsProfitLoading] = useState(false);
+  const [isProfitUnavailable, setIsProfitUnavailable] = useState(false);
 
   const partialPaymentAmount = watch('partial_payment_amount');
   const seasonId = watch('season_id');
@@ -439,7 +440,9 @@ const CreateSalesInvoice = () => {
           notes: item.notes || '',
           price_type: (item.price_type || inferredPriceType) as 'cash' | 'credit',
           average_cost_price: Number(item.cost_price || 0),
-          costing_method: item.costing_method_snapshot || 'fixed',
+          costing_method: item.costing_method_snapshot === 'by_price_type'
+            ? 'by_price_type'
+            : 'fixed',
         })).reverse());
 
         // ✅ Mặc định chọn tất cả sản phẩm để phân tích khi load dữ liệu chỉnh sửa
@@ -522,6 +525,7 @@ const CreateSalesInvoice = () => {
     let isCancelled = false;
 
     if (!currentItems.length) {
+      setIsProfitUnavailable(false);
       setIsProfitLoading(false);
       setCalculatedProfit({
         revenue: 0,
@@ -540,11 +544,12 @@ const CreateSalesInvoice = () => {
             Number(item.quantity || 0) * Number(item.conversion_factor || 1),
         ),
         priceType:
-          item.price_type === 'credit' ? 'credit' : 'cash',
+          item.price_type === 'credit' ? 'credit' as const : 'cash' as const,
       }))
       .filter((item) => item.productId > 0 && item.quantity > 0);
 
     if (!previewItems.length) {
+      setIsProfitUnavailable(true);
       setIsProfitLoading(false);
       return;
     }
@@ -566,6 +571,7 @@ const CreateSalesInvoice = () => {
         const cost = Number(preview.totalCostValue || 0);
         const profit = revenue - cost;
         if (isCancelled) return;
+        setIsProfitUnavailable(false);
         setCalculatedProfit({
           revenue,
           cost,
@@ -576,6 +582,7 @@ const CreateSalesInvoice = () => {
       } catch (error) {
         console.error('Error previewing profit by batch:', error);
         if (isCancelled) return;
+        setIsProfitUnavailable(true);
         setIsProfitLoading(false);
       }
     }, 300);
@@ -937,7 +944,7 @@ Chỉ trả về nội dung cảnh báo hoặc "OK", không thêm giải thích.
     ).length;
     if (byPriceTypeCount > 0 && byPriceTypeCount < (data.items || []).length) {
       antMessage.error(
-        'Không được trộn lúa giống quyết toán theo loại bán với sản phẩm thường trong cùng một phiếu bán.',
+        'Không được trộn sản phẩm chốt giá vốn theo loại giá bán với sản phẩm thông thường trong cùng một phiếu bán.',
       );
       return;
     }
@@ -1688,6 +1695,7 @@ ${productInfo}`;
                 }, handleFormInvalid)}
                 isPending={createMutation.isPending}
                 isProfitLoading={isProfitLoading}
+                isProfitUnavailable={isProfitUnavailable}
                 calculatedProfit={calculatedProfit}
               />
             </Grid>

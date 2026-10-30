@@ -331,6 +331,7 @@ export const useCreateManualRewardMutation = () => {
     mutationFn: async (data: {
       customer_id: number;
       gift_description: string;
+      gift_status?: string;
       gift_value?: number;
       notes?: string;
       manual_deduct_amount?: number;

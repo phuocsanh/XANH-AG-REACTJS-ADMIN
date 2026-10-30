@@ -204,6 +204,23 @@ const InventoryReceiptCreate: React.FC = () => {
   const isBySaleTypeReceiptCandidate = hasReceiptItems && specialCostingCount === watchedItems.length
   const hasMixedCostingItems = specialCostingCount > 0 && specialCostingCount < watchedItems.length
   const isBySaleTypeSettlement = isBySaleTypeReceiptCandidate && watchedSupplierSettlementMode === 'by_sale_type'
+
+  // Chiết khấu NCC lúa giống được chốt theo kg trên phiếu đã duyệt.
+  useEffect(() => {
+    if (isBySaleTypeSettlement && watchedDiscountMethod !== 'none') {
+      setValue('discountMethod', 'none')
+    }
+  }, [isBySaleTypeSettlement, watchedDiscountMethod, setValue])
+
+  useEffect(() => {
+    if (!isBySaleTypeSettlement) return
+    setValue('hasSharedShipping', false)
+    setValue('sharedShippingCost', 0)
+    const currentItems = getValues('items') || []
+    currentItems.forEach((_, index) => {
+      setValue(`items.${index}.individual_shipping_cost`, 0)
+    })
+  }, [isBySaleTypeSettlement, setValue, getValues])
   
   // State và hooks tìm kiếm nhà cung cấp
   const {
@@ -577,6 +594,7 @@ const InventoryReceiptCreate: React.FC = () => {
     discountMethod: watchedDiscountMethod,
     isApproved,
     forceFixedDiscount: isBySaleTypeReceiptCandidate,
+    hideShipping: isBySaleTypeSettlement,
   })
 
   const onSubmit = async (data: ReceiptFormData) => {
@@ -607,7 +625,7 @@ const InventoryReceiptCreate: React.FC = () => {
       // 2B. PHIẾU NHÁP: gửi toàn bộ dữ liệu bình thường
       // ========================================================
       if (hasMixedCostingItems) {
-        toast.error('Không được trộn lúa giống quyết toán theo loại bán với sản phẩm thường trong cùng một phiếu nhập.')
+        toast.error('Không được trộn sản phẩm chốt giá vốn theo loại giá bán với sản phẩm thông thường trong cùng một phiếu nhập.')
         return
       }
 
@@ -640,7 +658,7 @@ const InventoryReceiptCreate: React.FC = () => {
         status: data.status || "draft",
 
         created_by: 1,
-        shared_shipping_cost: Number(data.sharedShippingCost || 0),
+        shared_shipping_cost: isSpecialSettlement ? 0 : Number(data.sharedShippingCost || 0),
         shipping_allocation_method: data.allocationMethod,
         supplier_settlement_mode: isBySaleTypeReceiptCandidate
           ? data.supplierSettlementMode
@@ -681,9 +699,9 @@ const InventoryReceiptCreate: React.FC = () => {
             total_price: Number(item.totalPriceRaw || 0),
             expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
             notes: item.notes || undefined,
-            individual_shipping_cost: Number(item.individual_shipping_cost || 0),
-            discount_amount: lineDiscount,
-            discount_value: isGlobalDiscount ? lineDiscount : Number(item.discountValue || 0),
+            individual_shipping_cost: isSpecialSettlement ? 0 : Number(item.individual_shipping_cost || 0),
+            discount_amount: isSpecialSettlement ? 0 : lineDiscount,
+            discount_value: isSpecialSettlement ? 0 : (isGlobalDiscount ? lineDiscount : Number(item.discountValue || 0)),
             discount_type: isGlobalDiscount ? 'fixed_amount' : item.discountType || 'fixed_amount',
           }
         }).reverse(),
@@ -824,7 +842,7 @@ const InventoryReceiptCreate: React.FC = () => {
               type='error'
               showIcon
               message='Phiếu nhập đang trộn lúa giống và sản phẩm thường'
-              description='Hãy tách riêng phiếu nhập lúa giống quyết toán theo loại bán với phiếu nhập sản phẩm thường để công nợ NCC không bị sai.'
+              description='Hãy tách riêng phiếu nhập quyết toán theo loại giá bán với phiếu nhập sản phẩm thông thường để công nợ NCC được tính đúng.'
             />
           )}
 
@@ -866,7 +884,7 @@ const InventoryReceiptCreate: React.FC = () => {
               <Text strong className='text-lg'>
                 Danh sách sản phẩm
               </Text>
-              <Controller
+              {!isBySaleTypeSettlement && <Controller
                 name="discountMethod"
                 control={control}
                 render={({ field }) => (
@@ -881,7 +899,7 @@ const InventoryReceiptCreate: React.FC = () => {
                     <Radio value="global">CK tổng đơn</Radio>
                   </Radio.Group>
                 )}
-              />
+              />}
             </div>
             <Button
               type='primary'
@@ -913,6 +931,7 @@ const InventoryReceiptCreate: React.FC = () => {
                   setValue={setValue}
                   getValues={getValues}
                   isApproved={isApproved}
+                  hideShipping={isBySaleTypeSettlement}
                 />
               ))}
             </div>
@@ -930,7 +949,7 @@ const InventoryReceiptCreate: React.FC = () => {
           )}
 
           {/* Phần chiết khấu */}
-          {watchedDiscountMethod === 'global' && (
+          {!isBySaleTypeSettlement && watchedDiscountMethod === 'global' && (
             <Card title="Chiết khấu (Tùy chọn)" className='mt-4'>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {!isBySaleTypeReceiptCandidate && (
@@ -983,7 +1002,9 @@ const InventoryReceiptCreate: React.FC = () => {
           )}
 
           {/* Phần phí vận chuyển/bốc vác */}
-          <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
+          {isBySaleTypeSettlement ? (
+            <Alert className='mt-4' type='info' showIcon message='Phí bốc vác lúa giống' description='Nếu có phí bốc vác, ghi vào chi phí giao hàng của mùa vụ để lợi nhuận ròng trừ đúng một lần.' />
+          ) : <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
             <Controller
               name="hasSharedShipping"
               control={control}
@@ -1041,7 +1062,7 @@ const InventoryReceiptCreate: React.FC = () => {
                 </div>
               </>
             )}
-          </Card>
+          </Card>}
 
           {/* Phần upload ảnh hóa đơn */}
           <Card title="Hình ảnh hóa đơn (Tùy chọn)" className='mt-4'>
@@ -1063,7 +1084,7 @@ const InventoryReceiptCreate: React.FC = () => {
                     <Alert
                       type='info'
                       showIcon
-                      message='Phiếu lúa giống đang ở chế độ quyết toán theo loại bán'
+                      message='Phiếu đang quyết toán theo loại giá bán'
                       description='Lúc nhập chỉ ghi nhận tạm ứng và ngày hẹn quyết toán. Phải trả NCC sẽ tăng dần theo hóa đơn bán tiền mặt / bán nợ thực tế.'
                     />
                     <FormFieldNumber

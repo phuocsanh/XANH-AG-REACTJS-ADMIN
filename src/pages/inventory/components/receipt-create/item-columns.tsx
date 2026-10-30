@@ -37,6 +37,7 @@ interface ItemColumnsProps {
   discountMethod: 'none' | 'per_item' | 'global'
   isApproved?: boolean
   forceFixedDiscount?: boolean
+  hideShipping?: boolean
 }
 
 /**
@@ -52,6 +53,7 @@ const useItemColumns = ({
   discountMethod,
   isApproved,
   forceFixedDiscount,
+  hideShipping,
 }: ItemColumnsProps): ColumnsType<any> => {
   const columns: ColumnsType<any> = [
     {
@@ -586,6 +588,7 @@ const useItemColumns = ({
   ]
 
   return columns.filter(col => {
+    if (hideShipping && col.key === 'individual_shipping_cost') return false;
     if (col.key === 'discountValue') {
       return discountMethod === 'per_item';
     }

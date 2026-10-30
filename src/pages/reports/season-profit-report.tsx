@@ -259,6 +259,9 @@ const SeasonProfitReportPage: React.FC = () => {
                   formatter={(value) => formatCurrency(Number(value))}
                   valueStyle={{ color: '#faad14' }}
                 />
+                <div className="mt-2 text-sm text-green-700">
+                  Đã trừ chiết khấu NCC theo loại giá bán: {formatCurrency(Number(reportData.summary.supplier_rebate || 0))}
+                </div>
               </Card>
             </Col>
             <Col span={6}>

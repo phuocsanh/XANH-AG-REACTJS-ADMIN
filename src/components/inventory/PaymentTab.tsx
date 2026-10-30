@@ -143,6 +143,7 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
     : rawSupplierAmount || grandTotal
   const paidAmount = Number(receipt.paid_amount) || 0
   const debtAmount = Number(receipt.debt_amount) || 0
+  const supplierCredit = isBySaleTypeSettlement ? Math.max(0, paidAmount - supplierAmount) : 0
   const cashSettlementAmount = Number(
     receipt.supplier_settlement_summary?.cash_amount || 0,
   )
@@ -292,6 +293,11 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
                     💰 Đã tạm ứng, chờ quyết toán
                   </Tag>
                 )}
+                {paymentStatus === "credit" && (
+                  <Tag color='cyan' className='px-3 py-1 text-sm'>
+                    NCC còn phải cấn trừ {formatCurrency(supplierCredit)}
+                  </Tag>
+                )}
                 {paymentStatus === "unpaid" && (
                   <Tag color='error' className='px-3 py-1 text-sm'>
                     {isBySaleTypeSettlement ? "Chưa trả NCC" : "Chưa thanh toán"}
@@ -319,8 +325,8 @@ const PaymentTab: React.FC<PaymentTabProps> = ({ receipt, onRefresh }) => {
       {/* 3. Cảnh báo nghiệp vụ */}
       {isBySaleTypeSettlement && (
         <Alert
-          message='Phiếu lúa giống đang quyết toán theo loại bán'
-          description='Các hóa đơn bán đã thanh toán là tiền khách trả cho cửa hàng. Mục Đã trả NCC / Chưa trả NCC ở đây là khoản cửa hàng đã ghi nhận trả lại cho nhà cung cấp lúa giống. Nếu thực tế đã trả A LÂM, bấm Ghi nhận trả NCC để phiếu hết nợ.'
+          message='Phiếu đang quyết toán theo loại giá bán'
+          description={`Chiết khấu NCC được hưởng trên kg nhập ròng: ${formatCurrency(Number(receipt.supplier_rebate_total || 0))}. Khoản này đã cấn trừ tiền phải trả NCC. Phần chưa bán chỉ được tính vào lợi nhuận khi bán.`}
           type='info'
           showIcon
           icon={<InfoCircleOutlined />}

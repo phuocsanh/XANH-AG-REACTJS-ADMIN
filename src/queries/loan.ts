@@ -35,7 +35,7 @@ export const useLoansQuery = (params?: Record<string, unknown>) => {
       }
 
       const response = await api.postRaw<any>("/loans/search", payload)
-      return mapSearchResponse(response, page, limit)
+      return mapSearchResponse<Loan>(response, page, limit)
     },
     refetchOnMount: true,
     staleTime: 0,

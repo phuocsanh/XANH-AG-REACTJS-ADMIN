@@ -30,6 +30,7 @@ interface MobileItemCardProps {
   setValue: any
   getValues: any
   isApproved?: boolean // Phếu đã duyệt - disable các trường không được phép sửa
+  hideShipping?: boolean
 }
 
 const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
@@ -40,6 +41,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
   setValue,
   getValues,
   isApproved,
+  hideShipping,
 }) => {
   const watchedProductName = useWatch({
     control,
@@ -355,7 +357,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
               )}
             />
           </div>
-          <div className="col-span-2">
+          {!hideShipping && <div className="col-span-2">
             <label className='block text-xs mb-1'>Phí vận chuyển riêng (nếu có)</label>
             <Controller
               name={`items.${index}.individual_shipping_cost`}
@@ -369,7 +371,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                 />
               )}
             />
-          </div>
+          </div>}
         </div>
 
         <div>

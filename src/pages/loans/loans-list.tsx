@@ -325,7 +325,7 @@ const LoansList: React.FC = () => {
             value={keywordInput}
             onChange={(e) => setKeywordInput(e.target.value)}
             onPressEnter={() => {
-              const next = { ...filters, keyword: keywordInput }
+              const next: Record<string, unknown> = { ...filters, keyword: keywordInput }
               if (!keywordInput) delete next.keyword
               if (statusFilter) next.status = statusFilter
               setFilters(next)

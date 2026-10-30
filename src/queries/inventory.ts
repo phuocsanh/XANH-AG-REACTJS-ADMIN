@@ -99,6 +99,7 @@ export interface InventoryReceiptsSearchResponse {
 }
 
 interface InventoryReceiptsSearchPayload {
+  [key: string]: string | number | undefined
   page: number
   limit: number
   sort: string
@@ -464,6 +465,26 @@ export const useUpdateInventoryReceiptItemMutation = () => {
         error,
         "Có lỗi xảy ra khi cập nhật chi tiết phiếu nhập hàng"
       )
+    },
+  })
+}
+
+/** Chốt chiết khấu NCC theo đơn vị kho hoặc bao 40 kg trên dòng phiếu nhập. */
+export const useSetSupplierRebateMutation = () => {
+  return useMutation({
+    mutationFn: async ({ receiptId, itemId, amount, unit }: {
+      receiptId: number
+      itemId: number
+      amount: number
+      unit: 'kg' | 'bag40'
+    }) => {
+      return api.patchRaw(`/inventory/receipts/${receiptId}/items/${itemId}/supplier-rebate`, { amount, unit })
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipt(variables.receiptId) })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receipts() })
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.receiptItems(variables.receiptId) })
+      toast.success('Đã chốt chiết khấu nhà cung cấp')
     },
   })
 }

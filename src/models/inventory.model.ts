@@ -65,7 +65,7 @@ export interface InventoryReceipt {
 
   // Payment fields
   paid_amount?: number
-  payment_status?: "unpaid" | "partial" | "paid" | "advance"
+  payment_status?: "unpaid" | "partial" | "paid" | "advance" | "credit"
   payment_method?: string
   payment_due_date?: string
   supplier_settlement_mode?: "standard" | "by_sale_type"
@@ -75,6 +75,7 @@ export interface InventoryReceipt {
   returned_amount?: number
   final_amount?: number
   supplier_amount?: number
+  supplier_rebate_total?: number
   debt_amount?: number
   supplier_settlement_summary?: {
     cash_amount: number
@@ -204,6 +205,7 @@ export interface InventoryReceiptItem {
   individual_shipping_cost?: number
   allocated_shipping_cost?: number
   final_unit_cost?: number
+  supplier_rebate_per_base_unit?: number
   taxable_quantity?: number
   unit_id?: number
   conversion_factor?: number
@@ -260,6 +262,7 @@ export interface InventoryReceiptApiResponse {
     credit_amount?: string | number
     total_amount?: string | number
   }
+  supplier_rebate_total?: string | number
   items?: InventoryReceiptItemApiResponse[]
 }
 
@@ -377,9 +380,10 @@ export function mapApiResponseToInventoryReceipt(
     final_amount: apiReceipt.final_amount
       ? parseFloat(apiReceipt.final_amount)
       : undefined,
-    supplier_amount: apiReceipt.supplier_amount
-      ? parseFloat(apiReceipt.supplier_amount)
+    supplier_amount: apiReceipt.supplier_amount !== null && apiReceipt.supplier_amount !== undefined
+      ? Number(apiReceipt.supplier_amount)
       : undefined,
+    supplier_rebate_total: Number(apiReceipt.supplier_rebate_total || 0),
     debt_amount: apiReceipt.debt_amount
       ? parseFloat(apiReceipt.debt_amount)
       : 0,
@@ -448,6 +452,7 @@ export function mapApiResponseToInventoryReceiptItem(
     discount_amount: parseFloat(String(apiItem.discount_amount || "0")),
     discount_value: parseFloat(String(apiItem.discount_value || "0")),
     discount_type: apiItem.discount_type || "fixed_amount",
+    supplier_rebate_per_base_unit: Number(apiItem.supplier_rebate_per_base_unit || 0),
     expiry_date: apiItem.expiry_date, // Thêm expiry_date
     batch_number: apiItem.batch_number ?? undefined, // Thêm batch_number
     individual_shipping_cost: apiItem.individual_shipping_cost
@@ -617,7 +622,7 @@ export interface CreateInventoryReceiptItemRequest extends AnyObject {
 
   // ===== TRƯỜNG MỚI - SỐ LƯỢNG KHAI THUẾ =====
   taxable_quantity?: number // Số lượng có hóa đơn đầu vào (để khai thuế)
-  costing_method?: "fixed" | "by_price_type"
+  costing_method?: "fixed" | "by_batch" | "by_price_type"
 }
 
 // Interface cho request cập nhật chi tiết phiếu nhập hàng
