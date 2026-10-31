@@ -195,6 +195,7 @@ const InventoryReceiptCreate: React.FC = () => {
   const watchedDiscountValue = watch("discountValue") || 0
   const watchedDiscountMethod = watch("discountMethod")
   const watchedSupplierSettlementMode = watch("supplierSettlementMode")
+  const watchedAllocationMethod = watch("allocationMethod")
   
   const isApproved = isEditMode && watchedStatus === 'approved'
   const specialCostingCount = watchedItems.filter(
@@ -205,7 +206,7 @@ const InventoryReceiptCreate: React.FC = () => {
   const hasMixedCostingItems = specialCostingCount > 0 && specialCostingCount < watchedItems.length
   const isBySaleTypeSettlement = isBySaleTypeReceiptCandidate && watchedSupplierSettlementMode === 'by_sale_type'
 
-  // Chiết khấu NCC lúa giống được chốt theo kg trên phiếu đã duyệt.
+  // Chiết khấu NCC theo lượng nhập là khoản riêng, không trừ vào đơn giá mua.
   useEffect(() => {
     if (isBySaleTypeSettlement && watchedDiscountMethod !== 'none') {
       setValue('discountMethod', 'none')
@@ -213,14 +214,11 @@ const InventoryReceiptCreate: React.FC = () => {
   }, [isBySaleTypeSettlement, watchedDiscountMethod, setValue])
 
   useEffect(() => {
-    if (!isBySaleTypeSettlement) return
-    setValue('hasSharedShipping', false)
-    setValue('sharedShippingCost', 0)
-    const currentItems = getValues('items') || []
-    currentItems.forEach((_, index) => {
-      setValue(`items.${index}.individual_shipping_cost`, 0)
-    })
-  }, [isBySaleTypeSettlement, setValue, getValues])
+    if (isBySaleTypeSettlement && watchedAllocationMethod !== 'by_quantity') {
+      setValue('allocationMethod', 'by_quantity')
+    }
+  }, [isBySaleTypeSettlement, watchedAllocationMethod, setValue])
+
   
   // State và hooks tìm kiếm nhà cung cấp
   const {
@@ -318,6 +316,8 @@ const InventoryReceiptCreate: React.FC = () => {
           discountType: item.discount_type || 'fixed_amount',
           discountValue: Number(item.discount_value || item.discount_amount || 0),
           discount_amount: Number(item.discount_amount || 0),
+          supplierRebateAmount: Number(item.supplier_rebate_per_base_unit || 0),
+          supplierRebateUnit: 'base' as const,
           expiry_date: item.expiry_date,
           notes: item.notes ?? '',
           taxable_quantity: item.taxable_quantity || 0,
@@ -326,6 +326,8 @@ const InventoryReceiptCreate: React.FC = () => {
           base_quantity: Number(item.base_quantity || item.quantity),
           conversions,
           costing_method: item.product?.costing_method || 'fixed',
+          cashCostPrice: Number(item.product?.cash_cost_price || 0),
+          creditCostPrice: Number(item.product?.credit_cost_price || 0),
         };
       }).reverse()
       const hasItemDiscount = mappedItems.some((item: any) => Number(item.discountValue || 0) > 0)
@@ -342,6 +344,8 @@ const InventoryReceiptCreate: React.FC = () => {
           unit_name: item.product?.unit?.name || item.unit_name || '',
           unit_conversions: item.product?.unit_conversions || [],
           costing_method: item.product?.costing_method || 'fixed',
+          cash_cost_price: item.product?.cash_cost_price,
+          credit_cost_price: item.product?.credit_cost_price,
           cost_price: item.unit_cost,
           average_vat_input_cost: item.vat_unit_cost,
         }))
@@ -569,6 +573,8 @@ const InventoryReceiptCreate: React.FC = () => {
       discountType: 'fixed_amount',
       discountValue: 0,
       discount_amount: 0,
+      supplierRebateAmount: 0,
+      supplierRebateUnit: 'base',
       taxable_quantity: 0,
       unit_id: undefined,
       conversion_factor: 1,
@@ -594,7 +600,8 @@ const InventoryReceiptCreate: React.FC = () => {
     discountMethod: watchedDiscountMethod,
     isApproved,
     forceFixedDiscount: isBySaleTypeReceiptCandidate,
-    hideShipping: isBySaleTypeSettlement,
+    hideShipping: false,
+    isBySaleTypeSettlement,
   })
 
   const onSubmit = async (data: ReceiptFormData) => {
@@ -658,7 +665,7 @@ const InventoryReceiptCreate: React.FC = () => {
         status: data.status || "draft",
 
         created_by: 1,
-        shared_shipping_cost: isSpecialSettlement ? 0 : Number(data.sharedShippingCost || 0),
+        shared_shipping_cost: data.hasSharedShipping ? Number(data.sharedShippingCost || 0) : 0,
         shipping_allocation_method: data.allocationMethod,
         supplier_settlement_mode: isBySaleTypeReceiptCandidate
           ? data.supplierSettlementMode
@@ -699,10 +706,13 @@ const InventoryReceiptCreate: React.FC = () => {
             total_price: Number(item.totalPriceRaw || 0),
             expiry_date: item.expiry_date ? dayjs(item.expiry_date).toISOString() : undefined,
             notes: item.notes || undefined,
-            individual_shipping_cost: isSpecialSettlement ? 0 : Number(item.individual_shipping_cost || 0),
+            individual_shipping_cost: Number(item.individual_shipping_cost || 0),
             discount_amount: isSpecialSettlement ? 0 : lineDiscount,
             discount_value: isSpecialSettlement ? 0 : (isGlobalDiscount ? lineDiscount : Number(item.discountValue || 0)),
             discount_type: isGlobalDiscount ? 'fixed_amount' : item.discountType || 'fixed_amount',
+            supplier_rebate_per_base_unit: isSpecialSettlement
+              ? Number(item.supplierRebateAmount || 0) / (item.supplierRebateUnit === 'bag40' ? 40 : 1)
+              : 0,
           }
         }).reverse(),
         discount_amount: 0,
@@ -860,8 +870,8 @@ const InventoryReceiptCreate: React.FC = () => {
               <Alert
                 type='info'
                 showIcon
-                message='Phiếu này chỉ gồm sản phẩm lúa giống'
-                description='Nếu chọn "Quyết toán theo loại bán", công nợ NCC sẽ phát sinh dần theo hóa đơn bán tiền mặt / bán nợ thực tế, thay vì chốt toàn bộ ngay lúc nhập.'
+                message='Phiếu chỉ gồm sản phẩm chốt giá vốn theo loại giá bán'
+                description='Công nợ NCC phát sinh theo lượng thực bán. Chiết khấu NCC nhập ở từng dòng sản phẩm bên dưới, tính trên lượng nhập trừ lượng trả NCC.'
               />
             </div>
           )}
@@ -931,7 +941,8 @@ const InventoryReceiptCreate: React.FC = () => {
                   setValue={setValue}
                   getValues={getValues}
                   isApproved={isApproved}
-                  hideShipping={isBySaleTypeSettlement}
+                  hideShipping={false}
+                  isBySaleTypeSettlement={isBySaleTypeSettlement}
                 />
               ))}
             </div>
@@ -1002,9 +1013,7 @@ const InventoryReceiptCreate: React.FC = () => {
           )}
 
           {/* Phần phí vận chuyển/bốc vác */}
-          {isBySaleTypeSettlement ? (
-            <Alert className='mt-4' type='info' showIcon message='Phí bốc vác lúa giống' description='Nếu có phí bốc vác, ghi vào chi phí giao hàng của mùa vụ để lợi nhuận ròng trừ đúng một lần.' />
-          ) : <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
+          <Card title="Phí Vận Chuyển/Bốc Vác (Tùy chọn)" className='mt-4'>
             <Controller
               name="hasSharedShipping"
               control={control}
@@ -1041,11 +1050,11 @@ const InventoryReceiptCreate: React.FC = () => {
                         onChange={(e) => field.onChange(e.target.value)}
                       >
                         <Space direction="vertical">
-                          <Radio value="by_value">
+                          <Radio value="by_value" disabled={isBySaleTypeSettlement}>
                             Theo giá trị (sản phẩm đắt chịu phí nhiều hơn)
                           </Radio>
                           <Radio value="by_quantity">
-                            Theo số lượng (chia đều)
+                            Theo số lượng {isBySaleTypeSettlement ? 'đơn vị kho cơ sở' : '(chia đều)'}
                           </Radio>
                         </Space>
                       </Radio.Group>
@@ -1062,7 +1071,28 @@ const InventoryReceiptCreate: React.FC = () => {
                 </div>
               </>
             )}
-          </Card>}
+          </Card>
+
+          {/* Luồng theo loại bán: giá gốc nằm trên sản phẩm/hóa đơn; phiếu nhập chỉ giữ phí theo lô. */}
+          {isBySaleTypeSettlement && watchedItems.length > 0 && (
+            <Card title="Giá vốn thực theo từng dòng nhập" className='mt-4'>
+              <Alert type='info' showIcon className='mb-3' message='Giá vốn tiền mặt/bán nợ dưới đây dùng giá đang cấu hình trên sản phẩm. Khi bán, hóa đơn giữ giá gốc tại thời điểm bán và cộng phí của đúng lô xuất. Phí không vào công nợ NCC.' />
+              {watchedItems.map((item, index) => {
+                const product = productOptions.find((option) => Number(option.value) === Number(item.product_id))
+                const baseQuantity = Number(item.base_quantity || Number(item.quantity || 0) * Number(item.conversion_factor || 1))
+                const totalBaseQuantity = watchedItems.reduce((sum, row) => sum + Number(row.base_quantity || Number(row.quantity || 0) * Number(row.conversion_factor || 1)), 0)
+                const sharedFee = watchedHasSharedShipping && totalBaseQuantity > 0
+                  ? Number(watchedSharedShippingCost || 0) * baseQuantity / totalBaseQuantity : 0
+                const feePerUnit = baseQuantity > 0
+                  ? (Number(item.individual_shipping_cost || 0) + sharedFee) / baseQuantity : 0
+                return <div key={index} className='py-2 border-b last:border-b-0 text-sm'>
+                  <strong>{item.product_name || product?.label || `Sản phẩm #${item.product_id}`}</strong>
+                  <div>Phí nhập: {feePerUnit.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ/đơn vị kho</div>
+                  <div>Giá vốn thực tiền mặt: {(Number(item.cashCostPrice || product?.cash_cost_price || 0) + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ · Bán nợ: {(Number(item.creditCostPrice || product?.credit_cost_price || 0) + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ</div>
+                </div>
+              })}
+            </Card>
+          )}
 
           {/* Phần upload ảnh hóa đơn */}
           <Card title="Hình ảnh hóa đơn (Tùy chọn)" className='mt-4'>

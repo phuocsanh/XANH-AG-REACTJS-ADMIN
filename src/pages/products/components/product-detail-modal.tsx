@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Modal, Button, Descriptions, Image, Tag } from "antd"
 import { Product } from "../../../models/product.model"
+import { useExpiryBatchesQuery } from "@/queries/inventory"
 
 interface ProductDetailModalProps {
   visible: boolean
@@ -13,6 +14,9 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onCancel,
   product,
 }) => {
+  const { data: costBatches, isLoading: costBatchesLoading } = useExpiryBatchesQuery(
+    product?.costing_method === 'by_price_type' ? product.id : 0,
+  )
   // Hàm tiện ích để xử lý đường dẫn ảnh 
   const getImageUrl = (url: string | undefined): string => {
     if (!url) return "https://via.placeholder.com/80?text=No+Image"
@@ -217,6 +221,26 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               product,
             )}
           </Descriptions.Item>
+          {product.costing_method === 'by_price_type' && (
+            <>
+              <Descriptions.Item label='Giá vốn gốc theo loại bán'>
+                Tiền mặt: {formatCurrency(Number(product.cash_cost_price || 0))} · Bán nợ: {formatCurrency(Number(product.credit_cost_price || 0))}
+              </Descriptions.Item>
+              <Descriptions.Item label='Giá vốn thực theo lô còn tồn'>
+                <div className='text-xs mb-2'>Giá bên dưới dùng giá gốc đang cấu hình; hóa đơn giữ giá gốc tại thời điểm bán và cộng phí của lô thực xuất.</div>
+                {costBatchesLoading ? 'Đang tải lô...' : (costBatches || []).filter((batch) => Number(batch.remaining_quantity) > 0).map((batch) => {
+                  const source = batch.receipt_item
+                  const baseQuantity = Number(source?.base_quantity || Number(source?.quantity || 0) * Number(source?.conversion_factor || 1))
+                  const fee = baseQuantity > 0
+                    ? (Number(source?.individual_shipping_cost || 0) + Number(source?.allocated_shipping_cost || 0)) / baseQuantity : 0
+                  return <div key={batch.id} className='py-1 border-b last:border-b-0'>
+                    <strong>{batch.code || `Lô #${batch.id}`}</strong> · Còn {Number(batch.remaining_quantity).toLocaleString('vi-VN')} · Phí {fee.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ/đơn vị kho<br />
+                    Tiền mặt {(Number(product.cash_cost_price || 0) + fee).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ · Bán nợ {(Number(product.credit_cost_price || 0) + fee).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ
+                  </div>
+                })}
+              </Descriptions.Item>
+            </>
+          )}
           <Descriptions.Item label='GBKT'>
             {product.tax_selling_price
               ? renderValueWithBao(Number(product.tax_selling_price), product)

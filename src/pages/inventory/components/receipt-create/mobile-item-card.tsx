@@ -1,5 +1,5 @@
 import React from "react"
-import { Card, Button, Typography, Popconfirm, Tooltip } from "antd"
+import { Card, Button, Typography, Popconfirm, Tooltip, Radio } from "antd"
 
 import { Controller, useWatch } from "react-hook-form"
 import {
@@ -31,6 +31,7 @@ interface MobileItemCardProps {
   getValues: any
   isApproved?: boolean // Phếu đã duyệt - disable các trường không được phép sửa
   hideShipping?: boolean
+  isBySaleTypeSettlement?: boolean
 }
 
 const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
@@ -42,6 +43,7 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
   getValues,
   isApproved,
   hideShipping,
+  isBySaleTypeSettlement,
 }) => {
   const watchedProductName = useWatch({
     control,
@@ -147,6 +149,8 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
                           setValue(`items.${index}.base_quantity`, qty * factor)
                           setValue(`items.${index}.conversions`, conversions)
                           setValue(`items.${index}.costing_method`, selectedOpt.costing_method || 'fixed')
+                          setValue(`items.${index}.cashCostPrice`, Number(selectedOpt.cash_cost_price || 0))
+                          setValue(`items.${index}.creditCostPrice`, Number(selectedOpt.credit_cost_price || 0))
 
                           if (selectedOpt.cost_price !== undefined) {
                             const cost = selectedOpt.cost_price
@@ -340,6 +344,37 @@ const MobileItemCard: React.FC<MobileItemCardProps> = React.memo(({
               )}
             />
           </div>
+          {isBySaleTypeSettlement && <div>
+            <label className='block text-xs mb-1'>Chiết khấu NCC theo lượng nhập</label>
+            <Controller
+              name={`items.${index}.supplierRebateUnit`}
+              control={control}
+              render={({ field }) => (
+                <Radio.Group
+                  size="small"
+                  value={field.value}
+                  disabled={isApproved}
+                  onChange={(event) => {
+                    const current = Number(getValues(`items.${index}.supplierRebateAmount`) || 0)
+                    const nextUnit = event.target.value as 'base' | 'bag40'
+                    // Đổi đơn vị nhập nhưng giữ nguyên mức chiết khấu thực tế.
+                    setValue(`items.${index}.supplierRebateAmount`, nextUnit === 'bag40' ? current * 40 : current / 40)
+                    field.onChange(nextUnit)
+                  }}
+                >
+                  <Radio.Button value="base">₫/ĐVT kho</Radio.Button>
+                  <Radio.Button value="bag40">₫/bao 40kg</Radio.Button>
+                </Radio.Group>
+              )}
+            />
+            <Controller
+              name={`items.${index}.supplierRebateAmount`}
+              control={control}
+              render={({ field }) => (
+                <NumberInput {...field} min={0} decimalScale={4} disabled={isApproved} placeholder='0' className='mt-1' />
+              )}
+            />
+          </div>}
           <div>
             <label className='block text-xs mb-1'>Thành tiền</label>
             <Controller

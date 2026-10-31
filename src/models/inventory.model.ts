@@ -720,6 +720,13 @@ export interface ExpiryBatch {
   remaining_quantity: number
   expiry_date?: string | null
   created_at: string
+  receipt_item?: {
+    base_quantity?: number
+    quantity: number
+    conversion_factor?: number
+    individual_shipping_cost?: number
+    allocated_shipping_cost?: number
+  }
 }
 
 export interface InventoryTransaction {

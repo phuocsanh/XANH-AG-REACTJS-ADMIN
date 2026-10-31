@@ -778,12 +778,25 @@ const InventoryReceiptDetail: React.FC = () => {
       },
     },
     {
-      title: "Giá vốn",
+      title: isBySaleTypeSettlement ? "Giá vốn tham khảo theo loại bán" : "Giá vốn",
       dataIndex: "final_unit_cost",
       key: "final_unit_cost",
       width: 180,
       align: "right",
       render: (value, record) => {
+        if (isBySaleTypeSettlement) {
+          const baseQuantity = Number(record.base_quantity || Number(record.quantity || 0) * Number(record.conversion_factor || 1))
+          const feePerUnit = baseQuantity > 0
+            ? (Number(record.individual_shipping_cost || 0) + Number(record.allocated_shipping_cost || 0)) / baseQuantity : 0
+          // Giá gốc hiện tại trên sản phẩm chỉ để tham khảo; hóa đơn giữ snapshot tại lúc bán.
+          const cashCost = Number(record.product?.cash_cost_price || 0)
+          const creditCost = Number(record.product?.credit_cost_price || 0)
+          return <div className='text-sm'>
+            <div>Phí nhập: {feePerUnit.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ₫/đơn vị kho</div>
+            <div>Tiền mặt: {(cashCost + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ₫</div>
+            <div>Bán nợ: {(creditCost + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ₫</div>
+          </div>
+        }
         const finalUnitCost = Number(value ?? record.unit_cost ?? 0)
         const hasShippingAdjustment =
           Number(record.individual_shipping_cost || 0) > 0 ||

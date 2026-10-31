@@ -26,9 +26,13 @@ export const receiptItemSchema = z.object({
   base_quantity: z.number().optional(), // Đã thêm
   conversions: z.array(z.any()).optional(), // Đã thêm
   costing_method: z.enum(['fixed', 'by_price_type']).optional(),
+  cashCostPrice: z.number().optional(),
+  creditCostPrice: z.number().optional(),
   discountType: z.enum(['percentage', 'fixed_amount']).default('fixed_amount'),
   discountValue: z.number().min(0).default(0),
   discount_amount: z.number().optional().default(0),
+  supplierRebateAmount: z.number().min(0, 'Chiết khấu NCC không được âm').default(0),
+  supplierRebateUnit: z.enum(['base', 'bag40']).default('base'),
   notes: nullableString,
 });
 
@@ -101,7 +105,7 @@ export const receiptFormSchema = z.object({
     if (Number(data.discountValue || 0) > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Chiết khấu NCC lúa giống được chốt theo kg sau khi duyệt phiếu',
+        message: 'Chiết khấu NCC theo đơn vị kho nhập ở từng dòng sản phẩm',
         path: ['discountValue'],
       });
     }
@@ -110,7 +114,7 @@ export const receiptFormSchema = z.object({
       if (Number(item.discountValue || 0) > 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Chiết khấu NCC lúa giống được chốt theo kg sau khi duyệt phiếu',
+          message: 'Chiết khấu NCC theo đơn vị kho nhập ở từng dòng sản phẩm',
           path: ['items', index, 'discountValue'],
         });
       }
