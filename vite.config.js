@@ -10,7 +10,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: [
         "favicon.ico",
-        "icons/apple-touch-icon.png",
+        "icons/apple-touch-icon-v6.png",
         "offline.html",
       ],
       workbox: {
@@ -69,30 +69,30 @@ export default defineConfig({
         orientation: "portrait",
         scope: "/?pwa=v5",
         start_url: "/?pwa=v5",
-        version: "5.0.0", // Tăng version để force update icon
+        version: "6.0.0", // Đánh dấu phiên bản icon PWA mới
         icons: [
           // Icon 'any' - hiển thị bình thường
           {
-            src: "/icons/pwa-icon-192-v5.png?v=20260106",
+            src: "/icons/pwa-icon-192-v6.png?v=20261103",
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icons/pwa-icon-512-v5.png?v=20260106",
+            src: "/icons/pwa-icon-512-v6.png?v=20261103",
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
           },
           // Icon 'maskable' - cho phép OS crop (có safe zone)
           {
-            src: "/icons/pwa-maskable-192-v5.png?v=20260106",
+            src: "/icons/pwa-maskable-192-v6.png?v=20261103",
             sizes: "192x192",
             type: "image/png",
             purpose: "maskable",
           },
           {
-            src: "/icons/pwa-maskable-512-v5.png?v=20260106",
+            src: "/icons/pwa-maskable-512-v6.png?v=20261103",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
