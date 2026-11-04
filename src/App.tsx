@@ -269,7 +269,13 @@ function AppContent({
       <div className='flex flex-col h-screen overflow-hidden'>
         {/* Header - luôn hiển thị trên cùng và trải dài toàn bộ chiều rộng */}
         {shouldShowLayout && (
-          <div className='w-full flex-shrink-0 h-[70px] z-[100]'>
+          <div
+            className='w-full flex-shrink-0 z-[100]'
+            style={{
+              height: 'calc(70px + env(safe-area-inset-top, 0px))',
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+            }}
+          >
             <Header />
           </div>
         )}
