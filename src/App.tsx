@@ -274,6 +274,7 @@ function AppContent({
             style={{
               height: 'calc(70px + env(safe-area-inset-top, 0px))',
               paddingTop: 'env(safe-area-inset-top, 0px)',
+              backgroundColor: '#059669',
             }}
           >
             <Header />
