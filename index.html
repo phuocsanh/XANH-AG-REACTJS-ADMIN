@@ -18,6 +18,8 @@
     <title>XANH AG</title>
   </head>
   <body>
+    <!-- Đặt lớp neo status bar trực tiếp dưới body để WebKit iOS nhận diện khi chạy PWA. -->
+    <div class="ios-pwa-status-bar-anchor" aria-hidden="true"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

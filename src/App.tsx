@@ -267,8 +267,6 @@ function AppContent({
   return (
     <MyContext.Provider value={values}>
       <div className='flex flex-col h-screen overflow-hidden'>
-        {/* Giữ nền thanh trạng thái ổn định khi PWA iOS hiển thị lớp mờ ở mép trên. */}
-        <div className='ios-pwa-status-bar-anchor' aria-hidden='true' />
         {/* Header - luôn hiển thị trên cùng và trải dài toàn bộ chiều rộng */}
         {shouldShowLayout && (
           <div
