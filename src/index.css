@@ -162,6 +162,11 @@ select {
   @apply h-full border-r border-gray-200;
 }
 
+/* Menu mobile cuộn trong phần màn hình còn lại bên dưới header. */
+.mobile-sidebar-overlay .sidebarTabs {
+  height: 100%;
+}
+
 .sidebar .sidebarTabs ul {
   @apply w-full mb-0;
 }

@@ -908,7 +908,8 @@ function AppContent({
             {/* Mobile sidebar overlay */}
             {isMobileSidebarOpen && (
               <div
-                className='fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden'
+                className='mobile-sidebar-overlay fixed inset-x-0 bottom-0 z-40 bg-black bg-opacity-50 md:hidden'
+                style={{ top: 'calc(70px + env(safe-area-inset-top, 0px))' }}
                 onClick={() => setIsMobileSidebarOpen(false)}
               >
                 <div
