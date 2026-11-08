@@ -62,7 +62,17 @@ const Sidebar: React.FC = () => {
     const path = location.pathname
 
     // Dashboard
-    if (path === "/" || path === "/products/search") {
+    if (path === "/dashboard") {
+      setActiveTab(isCustomer ? 0 : 40)
+      setIsToggleSubmenu(false)
+    }
+    // Trang gốc chuyển hướng tới Dashboard; giữ tab riêng cho CUSTOMER.
+    else if (path === "/") {
+      setActiveTab(isCustomer ? 0 : 40)
+      setIsToggleSubmenu(false)
+    }
+    // Tìm sản phẩm
+    else if (path === "/products/search") {
       setActiveTab(0)
       setIsToggleSubmenu(false)
     }
@@ -252,7 +262,7 @@ const Sidebar: React.FC = () => {
       setActiveTab(44)
       setIsToggleSubmenu(false)
     }
-  }, [location.pathname])
+  }, [location.pathname, isCustomer])
 
   const isOpenSubmenu = (index: number): void => {
     setActiveTab(index)
