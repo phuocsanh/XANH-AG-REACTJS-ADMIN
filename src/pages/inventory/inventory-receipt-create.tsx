@@ -1088,7 +1088,7 @@ const InventoryReceiptCreate: React.FC = () => {
                 return <div key={index} className='py-2 border-b last:border-b-0 text-sm'>
                   <strong>{item.product_name || product?.label || `Sản phẩm #${item.product_id}`}</strong>
                   <div>Phí nhập: {feePerUnit.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ/đơn vị kho</div>
-                  <div>Giá vốn thực tiền mặt: {(Number(item.cashCostPrice || product?.cash_cost_price || 0) + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ · Bán nợ: {(Number(item.creditCostPrice || product?.credit_cost_price || 0) + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ</div>
+                  <div>Giá vốn khi bán tiền mặt: {(Number(item.cashCostPrice || product?.cash_cost_price || 0) + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ · Giá vốn khi bán nợ: {(Number(item.creditCostPrice || product?.credit_cost_price || 0) + feePerUnit).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} đ</div>
                 </div>
               })}
             </Card>
