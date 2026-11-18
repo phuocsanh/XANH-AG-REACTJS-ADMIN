@@ -136,7 +136,7 @@ export default function AddRefundModal({
               <SelectTrigger>
                 <SelectValue placeholder="Chọn phương thức" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white text-gray-900">
                 <SelectItem value="cash">Tiền mặt</SelectItem>
                 <SelectItem value="transfer">Chuyển khoản</SelectItem>
                 <SelectItem value="debt_offset">Trừ công nợ</SelectItem>
