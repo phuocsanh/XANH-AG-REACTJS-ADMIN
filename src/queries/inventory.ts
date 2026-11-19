@@ -107,6 +107,7 @@ interface InventoryReceiptsSearchPayload {
   status?: string
   supplier_name?: string
   supplier_id?: number
+  product_id?: number
   start_date?: string
   end_date?: string
   payment_status?: string
@@ -128,6 +129,7 @@ export const buildInventoryReceiptsSearchPayload = (
     ...(params?.status && { status: params.status }),
     ...(params?.supplierName && { supplier_name: params.supplierName }),
     ...(params?.supplier_id && { supplier_id: params.supplier_id }),
+    ...(params?.product_id && { product_id: params.product_id }),
     ...(params?.startDate && { start_date: params.startDate }),
     ...(params?.endDate && { end_date: params.endDate }),
     ...(params?.payment_status && { payment_status: params.payment_status }),
