@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { Typography, Radio } from "antd"
 import { Control, useFieldArray, useWatch, Controller, useFormContext } from "react-hook-form"
 import NumberInput from "@/components/common/number-input"
 import { useUnitsQuery } from "@/queries/unit"
 import { ProductFormValues } from "./form-config"
+import { ProductUnitConversion } from "@/models/product.model"
 import { FormComboBox } from "@/components/form"
 
 interface ProductUnitConversionTableProps {
@@ -25,6 +26,20 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
 
   const mainUnitId = useWatch({ control, name: "unit_id" })
   const watchedConversions = useWatch({ control, name: "unit_conversions" })
+  const selectedConversion = watchedConversions?.[1] as ProductUnitConversion | undefined
+
+  // Đồng nhất kiểu ID giữa dữ liệu sản phẩm và danh sách đơn vị để Select hiện tên thay vì ID.
+  const conversionUnitOptions = useMemo(() => {
+    const options = units
+      .filter((unit) => Number(unit.id) !== Number(mainUnitId))
+      .map((unit) => ({ label: unit.name, value: Number(unit.id) }))
+    const selectedId = Number(selectedConversion?.unit_id)
+    const selectedName = selectedConversion?.unit?.name || selectedConversion?.unit_name
+    if (selectedId > 0 && selectedName && !options.some((option) => option.value === selectedId)) {
+      options.unshift({ label: selectedName, value: selectedId })
+    }
+    return options
+  }, [units, mainUnitId, selectedConversion?.unit_id, selectedConversion?.unit?.name, selectedConversion?.unit_name])
 
   const [hasInit, setHasInit] = useState(false);
   useEffect(() => {
@@ -93,7 +108,9 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
 
   const getUnitName = (id: number | string | undefined) => {
     if (id === undefined || id === null) return "..."
-    return units.find((u: any) => Number(u.id) === Number(id))?.name || "..."
+    return units.find((u) => Number(u.id) === Number(id))?.name
+      || (Number(selectedConversion?.unit_id) === Number(id) ? selectedConversion?.unit?.name || selectedConversion?.unit_name : undefined)
+      || "..."
   }
 
   const hasConversion = fields.length > 1;
@@ -165,7 +182,7 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
                                     name="unit_conversions.1.unit_id"
                                     control={control}
                                     placeholder="..."
-                                    options={units.filter((u) => Number(u.id) !== Number(mainUnitId)).map((u) => ({ label: u.name, value: u.id }))}
+                                    options={conversionUnitOptions}
                                     variant="borderless"
                                     className="font-bold text-blue-600 w-full text-sm mb-0"
                                     style={{ marginBottom: 0 }}
@@ -217,7 +234,7 @@ const ProductUnitConversionTable: React.FC<ProductUnitConversionTableProps> = ({
                                     name="unit_conversions.1.unit_id"
                                     control={control}
                                     placeholder="..."
-                                    options={units.filter((u) => Number(u.id) !== Number(mainUnitId)).map((u) => ({ label: u.name, value: u.id }))}
+                                    options={conversionUnitOptions}
                                     className="w-full mb-0"
                                     style={{ width: '100%', marginBottom: 0 }}
                                     inputStyle={{ height: '32px' }}
