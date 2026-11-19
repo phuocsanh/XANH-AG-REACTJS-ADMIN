@@ -403,7 +403,7 @@ const TaxRevenueReportPage: React.FC = () => {
                             size="small"
                             tableLayout="fixed"
                             columns={[
-                               { title: 'Sản phẩm', dataIndex: 'product_trade_name', key: 'name', width: '45%', ellipsis: true },
+                               { title: 'Sản phẩm', dataIndex: 'product_name', key: 'name', width: '45%', ellipsis: true },
                                { title: 'SL', dataIndex: 'quantity', key: 'qty', width: '8%', align: 'right' as const },
                                { title: 'ĐVT', dataIndex: 'unit_name', key: 'unit', width: '10%', align: 'center' as const },
                                { title: 'GBKT', dataIndex: 'tax_selling_price', key: 'tax_price', width: '17%', align: 'right' as const, render: (v: any) => formatMoney(Number(v)) },
