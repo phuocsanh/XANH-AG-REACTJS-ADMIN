@@ -46,7 +46,7 @@ import {
   InventoryReceiptsSearchResponse,
 } from "@/queries/inventory"
 import { useSupplierSearch, useSupplierQuery } from "@/queries/supplier"
-import { useProductSearch, useProductQuery } from "@/queries/product"
+import { useProductSearch, useProductsByIdsQuery } from "@/queries/product"
 import { LoadingSpinner, RangePicker, DatePicker, ComboBox } from "@/components/common"
 import DataTable from "@/components/common/data-table"
 import FilterHeader from '@/components/common/filter-header'
@@ -362,6 +362,14 @@ const InventoryReceiptsList: React.FC = () => {
     return f
   }, [searchParams])
 
+  const selectedProductIds = useMemo(() => {
+    const ids = String(filters.product_ids || filters.product_id || "")
+      .split(",")
+      .map(Number)
+      .filter((id) => Number.isInteger(id) && id > 0)
+    return Array.from(new Set(ids))
+  }, [filters.product_ids, filters.product_id])
+
   // Hàm cập nhật URL search params
   const updateUrlParams = React.useCallback((newParams: Record<string, any>, resetPage = false) => {
     const params = new URLSearchParams(searchParams)
@@ -418,17 +426,15 @@ const InventoryReceiptsList: React.FC = () => {
 
   const [searchTermProduct, setSearchTermProduct] = useState("")
   const { data: productsData, isLoading: isLoadingProducts } = useProductSearch(searchTermProduct, 20)
-  const { data: selectedProduct } = useProductQuery(Number(filters.product_id) || 0)
+  const { data: selectedProducts } = useProductsByIdsQuery(selectedProductIds)
 
   // Giữ nhãn sản phẩm đã chọn khi tải lại trang hoặc tìm kiếm từ khóa khác.
   const productOptions = useMemo(() => {
     const options = new Map<number, { value: number; label: string }>()
-    if (selectedProduct) {
-      options.set(selectedProduct.id, {
-        value: selectedProduct.id,
-        label: selectedProduct.trade_name || selectedProduct.name,
-      })
-    }
+    selectedProducts?.forEach((product) => options.set(product.id, {
+      value: product.id,
+      label: product.trade_name || product.name,
+    }))
     productsData?.pages.forEach((page) => page.data.forEach((product) => {
       options.set(product.id, {
         value: product.id,
@@ -436,7 +442,7 @@ const InventoryReceiptsList: React.FC = () => {
       })
     }))
     return Array.from(options.values())
-  }, [productsData, selectedProduct])
+  }, [productsData, selectedProducts])
 
   // Tạo params cho API call
   const queryParams = useMemo<InventoryReceiptListParams>(() => {
@@ -458,8 +464,8 @@ const InventoryReceiptsList: React.FC = () => {
        params.supplier_id = filters.supplier_id 
     }
 
-    if (filters.product_id) {
-      params.product_id = Number(filters.product_id)
+    if (selectedProductIds.length) {
+      params.product_ids = selectedProductIds
     }
 
     if (filters.payment_status) {
@@ -472,7 +478,7 @@ const InventoryReceiptsList: React.FC = () => {
     }
 
     return params
-  }, [filters, pageSize, currentPage])
+  }, [filters, selectedProductIds, pageSize, currentPage])
 
   // Queries
   const {
@@ -1009,8 +1015,9 @@ const InventoryReceiptsList: React.FC = () => {
                 <Space direction="vertical" size={2} style={{ width: '100%' }}>
                   <Text strong style={{ fontSize: '12px' }}>🔎 Lọc theo sản phẩm:</Text>
                   <ComboBox
-                    value={filters.product_id}
-                    onChange={(val) => handleFilterChange('product_id', val)}
+                    mode="multiple"
+                    value={selectedProductIds}
+                    onChange={(ids) => updateUrlParams({ product_ids: ids.length ? ids.join(",") : undefined, product_id: undefined }, true)}
                     options={productOptions}
                     onSearch={setSearchTermProduct}
                     placeholder="Tất cả sản phẩm"
@@ -1043,7 +1050,7 @@ const InventoryReceiptsList: React.FC = () => {
                   </Space.Compact>
                 </Space>
               </Col>
-              {(filters.code || filters.supplier_id || filters.product_id || filters.status || filters.payment_status || (filters.start_date && filters.end_date)) && (
+              {(filters.code || filters.supplier_id || selectedProductIds.length || filters.status || filters.payment_status || (filters.start_date && filters.end_date)) && (
                 <Col xs={24}>
                    <div className="mt-4 md:mt-0 text-right">
                      <Button 

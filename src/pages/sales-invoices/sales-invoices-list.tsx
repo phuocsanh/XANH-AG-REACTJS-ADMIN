@@ -11,6 +11,7 @@ import {
 import api from "@/utils/api"
 import { toast } from "react-toastify"
 import { useSeasonsQuery } from "@/queries/season"
+import { useProductSearch, useProductsByIdsQuery } from "@/queries/product"
 
 import {
   Button,
@@ -89,6 +90,7 @@ const SalesInvoicesList: React.FC = () => {
 
   // State cho season search
   const [seasonSearchText, setSeasonSearchText] = React.useState("")
+  const [productSearchText, setProductSearchText] = React.useState("")
 
   // State cho báo cáo tổng hợp lịch sử khách hàng
   const [isHistoryModalVisible, setIsHistoryModalVisible] =
@@ -120,6 +122,30 @@ const SalesInvoicesList: React.FC = () => {
   // State quản lý UI và filters khởi tạo trực tiếp từ URL
   const [filters, setFilters] =
     React.useState<Record<string, any>>(getInitialFilters)
+  const selectedProductIds = React.useMemo(() => {
+    const ids = String(filters.product_ids || "")
+      .split(",")
+      .map(Number)
+      .filter((id) => Number.isInteger(id) && id > 0)
+    return Array.from(new Set(ids))
+  }, [filters.product_ids])
+  const { data: productsData, isLoading: isLoadingProducts } = useProductSearch(productSearchText, 20)
+  const { data: selectedProducts } = useProductsByIdsQuery(selectedProductIds)
+  // Giữ tên những sản phẩm đã chọn khi tìm thêm sản phẩm khác.
+  const productOptions = React.useMemo(() => {
+    const options = new Map<number, { value: number; label: string }>()
+    selectedProducts?.forEach((product) => options.set(product.id, {
+      value: product.id,
+      label: product.trade_name || product.name,
+    }))
+    productsData?.pages.forEach((page) => page.data.forEach((product) => {
+      options.set(product.id, {
+        value: product.id,
+        label: product.trade_name || product.name,
+      })
+    }))
+    return Array.from(options.values())
+  }, [productsData, selectedProducts])
   const [currentPage, setCurrentPage] = React.useState<number>(
     () => Number(searchParams.get("page")) || 1,
   )
@@ -934,7 +960,7 @@ const SalesInvoicesList: React.FC = () => {
       </div>
 
       {/* Bộ lọc theo mùa vụ phía trên bảng (tương tự trang Công nợ) */}
-      <div className='mb-4'>
+      <div className='mb-4 flex flex-wrap gap-3'>
         <ComboBox
           placeholder='Lọc theo mùa vụ'
           value={filters.season_id}
@@ -951,6 +977,20 @@ const SalesInvoicesList: React.FC = () => {
           filterOption={false}
           style={{ width: 250 }}
           className='w-full sm:w-[250px]'
+        />
+        <ComboBox
+          mode='multiple'
+          placeholder='Lọc theo sản phẩm'
+          value={selectedProductIds}
+          onChange={(ids) => handleFilterChange("product_ids", ids.length ? ids.join(",") : undefined)}
+          onSearch={setProductSearchText}
+          options={productOptions}
+          loading={isLoadingProducts}
+          allowClear
+          showSearch
+          filterOption={false}
+          style={{ minWidth: 250, flex: '1 1 250px' }}
+          maxTagCount='responsive'
         />
       </div>
 

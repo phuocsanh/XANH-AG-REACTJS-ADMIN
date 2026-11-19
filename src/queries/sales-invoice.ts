@@ -92,6 +92,10 @@ export const useSalesInvoicesQuery = (params?: Record<string, unknown>) => {
       if (params?.customer_name) payload.customer_name = params.customer_name
       if (params?.customer_phone) payload.customer_phone = params.customer_phone
       if (params?.season_id) payload.season_id = params.season_id
+      if (params?.product_ids) {
+        const productIds = String(params.product_ids).split(",").map(Number).filter((id) => Number.isInteger(id) && id > 0)
+        if (productIds.length) payload.product_ids = Array.from(new Set(productIds))
+      }
       
       // Date range filter
       if (params?.start_date) payload.sale_date_start = params.start_date

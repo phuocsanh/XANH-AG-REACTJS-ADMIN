@@ -681,6 +681,7 @@ export interface InventoryReceiptListParams {
   supplierName?: string
   supplier_id?: number // Thêm supplier_id param
   product_id?: number
+  product_ids?: number[]
   startDate?: string
   endDate?: string
   payment_status?: string

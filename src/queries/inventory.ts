@@ -99,7 +99,7 @@ export interface InventoryReceiptsSearchResponse {
 }
 
 interface InventoryReceiptsSearchPayload {
-  [key: string]: string | number | undefined
+  [key: string]: string | number | number[] | undefined
   page: number
   limit: number
   sort: string
@@ -108,6 +108,7 @@ interface InventoryReceiptsSearchPayload {
   supplier_name?: string
   supplier_id?: number
   product_id?: number
+  product_ids?: number[]
   start_date?: string
   end_date?: string
   payment_status?: string
@@ -130,6 +131,7 @@ export const buildInventoryReceiptsSearchPayload = (
     ...(params?.supplierName && { supplier_name: params.supplierName }),
     ...(params?.supplier_id && { supplier_id: params.supplier_id }),
     ...(params?.product_id && { product_id: params.product_id }),
+    ...(params?.product_ids?.length && { product_ids: params.product_ids }),
     ...(params?.startDate && { start_date: params.startDate }),
     ...(params?.endDate && { end_date: params.endDate }),
     ...(params?.payment_status && { payment_status: params.payment_status }),
