@@ -1546,7 +1546,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           name='average_cost_price'
                           control={control}
                           label={
-                            <div className='flex justify-between items-center w-full'>
+                            <div className='flex min-h-[52px] justify-between items-end w-full'>
                               <span>
                                 Giá nhập trung bình tham khảo (VNĐ){" "}
                                 <Typography.Text
@@ -1573,7 +1573,11 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                         <FormComboBox
                           name='costing_method'
                           control={control}
-                          label='Cách chốt giá vốn khi bán'
+                          label={
+                            <div className='flex min-h-[52px] items-end'>
+                              Cách chốt giá vốn khi bán
+                            </div>
+                          }
                           placeholder='Chọn cách tính giá vốn'
                           options={[
                             {
@@ -1704,21 +1708,6 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                             value: status.value,
                           }))}
                           className='w-full'
-                        />
-                      </div>
-
-                      <div className='w-full'>
-                        <FormComboBox
-                          name='has_input_invoice'
-                          control={control}
-                          label='Hóa đơn đầu vào'
-                          placeholder='Chọn loại hóa đơn'
-                          options={[
-                            { label: "Có hóa đơn", value: true },
-                            { label: "Không có hóa đơn", value: false },
-                          ]}
-                          className='w-full'
-                          disabled={isEdit}
                         />
                       </div>
 
