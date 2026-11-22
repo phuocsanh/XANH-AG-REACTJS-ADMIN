@@ -165,7 +165,7 @@ const PendingUsersTab: React.FC = () => {
 
   return (
     <DataTable
-      data={users as any}
+      data={users ?? [] as UserResponse[]}
       columns={columns as any}
       rowKey={(record: any) => record.id || record.user_id}
       loading={isLoading}

@@ -36,14 +36,20 @@ export const usePendingUsersQuery = () => {
   return useQuery({
     queryKey: userKeys.pending(),
     queryFn: async () => {
-      const response = await api.postRaw<{data: UserResponse[]
-        pagination?: any
-      }>("/users/search", { 
+      const response = await api.postRaw<{
+        data:
+          | UserResponse[]
+          | { data?: UserResponse[]; items?: UserResponse[] }
+      }>("/users/search", {
         status: "pending",
         page: 1,
-        limit: 1000 
+        limit: 1000,
       });
-      return response.data;
+
+      if (Array.isArray(response.data)) return response.data;
+      if (Array.isArray(response.data?.items)) return response.data.items;
+      if (Array.isArray(response.data?.data)) return response.data.data;
+      return [];
     },
   });
 };
