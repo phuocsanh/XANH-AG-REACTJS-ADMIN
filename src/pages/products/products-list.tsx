@@ -179,7 +179,7 @@ const ProductsList: React.FC = () => {
   )
 
   const { data: productTypesData, isLoading: isLoadingTypes } =
-    useProductTypesQuery()
+    useProductTypesQuery({ page: 1, limit: 1000 })
   const productTypes: ProductType[] = productTypesData?.data?.items || []
 
   // Xóa bộ lọc

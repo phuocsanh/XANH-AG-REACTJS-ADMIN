@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { useNavigate, useLocation } from "react-router-dom"
 import {
   Button,
@@ -50,13 +51,10 @@ import {
   ConvertedProductValues,
   defaultProductFormValues,
 } from "./form-config"
-import { useProductTypesQuery as useProductTypes } from "@/queries/product-type"
-import { useProductSubtypesQuery } from "@/queries/product-subtype"
 import { useUnitsQuery } from "@/queries/unit"
 import { BASE_STATUS } from "@/constant/base-status"
 import { ProductType } from "@/models/product-type.model"
 // Thêm import cho symbol
-import { useSymbolsQuery } from "@/queries/symbol"
 import { Symbol } from "@/models/symbol.model"
 import { ProductSubtype } from "@/models/product-subtype.model"
 import ProductComparisonPanel from "@/pages/products/components/ProductComparisonPanel"
@@ -71,9 +69,17 @@ import {
 import ImageStudio from "@/components/image-studio/image-studio"
 import { useUploadImageMutation } from "@/queries/upload"
 import { UploadType } from "@/services/upload.service"
+import api from "@/utils/api"
 import ProductUnitConversionTable from "./ProductUnitConversionTable"
 import ProductBOMTable from "./ProductBOMTable"
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react"
+
+interface ProductFormPagedResponse<T> {
+  data: T[]
+  total: number
+  limit: number
+  pagination?: { total?: number; limit?: number }
+}
 import { imageAnalyzerService } from "@/services/image-analyzer.service"
 
 const { Title } = Typography
@@ -423,11 +429,41 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const updateProductMutation = useUpdateProductMutation()
   const createProductMutation = useCreateProductMutation()
 
-  const { data: productSubtypes } = useProductSubtypesQuery()
-  const { data: productTypes } = useProductTypes()
+  const productTypesQuery = useInfiniteQuery({
+    queryKey: ["productTypes", "product-form"],
+    queryFn: async ({ pageParam }) => api.postRaw<ProductFormPagedResponse<ProductType>>("/product-types/search", { page: pageParam, limit: 20 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) => {
+      const total = lastPage.pagination?.total ?? lastPage.total ?? 0
+      const limit = lastPage.pagination?.limit ?? lastPage.limit ?? 20
+      return pages.length * limit < total ? pages.length + 1 : undefined
+    },
+  })
+  const productSubtypesQuery = useInfiniteQuery({
+    queryKey: ["productSubtypes", "product-form"],
+    queryFn: async ({ pageParam }) => api.postRaw<ProductFormPagedResponse<ProductSubtype>>("/product-subtype/search", { page: pageParam, limit: 20 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) => {
+      const total = lastPage.pagination?.total ?? lastPage.total ?? 0
+      const limit = lastPage.pagination?.limit ?? lastPage.limit ?? 20
+      return pages.length * limit < total ? pages.length + 1 : undefined
+    },
+  })
+  const symbolsQuery = useInfiniteQuery({
+    queryKey: ["symbols", "product-form"],
+    queryFn: async ({ pageParam }) => api.postRaw<ProductFormPagedResponse<Symbol>>("/symbols/search", { page: pageParam, limit: 20 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) => {
+      const total = lastPage.pagination?.total ?? lastPage.total ?? 0
+      const limit = lastPage.pagination?.limit ?? lastPage.limit ?? 20
+      return pages.length * limit < total ? pages.length + 1 : undefined
+    },
+  })
+  const productTypes = { data: { items: productTypesQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [] } }
+  const productSubtypes = { data: { items: productSubtypesQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [] } }
+  const symbols = { data: { items: symbolsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [] } }
   const { data: units } = useUnitsQuery()
   // Thêm query cho symbols
-  const { data: symbols } = useSymbolsQuery()
   // Thêm query cho danh sách sản phẩm
   const { data: allProducts } = useProductsQuery({ offset: 0, limit: 1000 })
 
@@ -1403,7 +1439,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           placeholder='Chọn loại sản phẩm'
                           required
                           rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                          options={
+                          data={
                             productTypes?.data?.items?.map(
                               (type: ProductType) => ({
                                 label: type.name,
@@ -1411,6 +1447,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                               }),
                             ) || []
                           }
+                          isLoading={productTypesQuery.isLoading}
+                          isFetchingNextPage={productTypesQuery.isFetchingNextPage}
+                          hasNextPage={productTypesQuery.hasNextPage}
+                          fetchNextPage={() => void productTypesQuery.fetchNextPage()}
                           className='w-full'
                         />
                       </div>
@@ -1653,12 +1693,16 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           control={control}
                           label='Ký hiệu'
                           placeholder='Chọn ký hiệu'
-                          options={
+                          data={
                             symbols?.data?.items?.map((symbol: Symbol) => ({
                               label: `${symbol.name}`,
                               value: symbol.id,
                             })) || []
                           }
+                          isLoading={symbolsQuery.isLoading}
+                          isFetchingNextPage={symbolsQuery.isFetchingNextPage}
+                          hasNextPage={symbolsQuery.hasNextPage}
+                          fetchNextPage={() => void symbolsQuery.fetchNextPage()}
                           className='w-full'
                         />
                       </div>
@@ -1670,7 +1714,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           label='Loại phụ sản phẩm'
                           placeholder='Chọn loại phụ sản phẩm'
                           mode='multiple'
-                          options={
+                          data={
                             productSubtypes?.data?.items?.map(
                               (subtype: ProductSubtype) => ({
                                 label: (subtype.subtypeName ||
@@ -1680,6 +1724,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                               }),
                             ) || []
                           }
+                          isLoading={productSubtypesQuery.isLoading}
+                          isFetchingNextPage={productSubtypesQuery.isFetchingNextPage}
+                          hasNextPage={productSubtypesQuery.hasNextPage}
+                          fetchNextPage={() => void productSubtypesQuery.fetchNextPage()}
                           className='w-full'
                         />
                       </div>
