@@ -747,14 +747,10 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
 
     // Debounce: Chỉ kiểm tra sau khi người dùng ngừng gõ 2 giây
     const timer = setTimeout(async () => {
-      const productName = watchedName?.trim()
       const tradeName = watchedTradeName?.trim()
 
-      // Chỉ kiểm tra nếu có ít nhất tên sản phẩm hoặc hiệu thuốc (ít nhất 2 ký tự)
-      if (
-        (!productName || productName.length < 2) &&
-        (!tradeName || tradeName.length < 2)
-      ) {
+      // Chỉ kiểm tra khi tên thương mại có ít nhất 2 ký tự.
+      if (!tradeName || tradeName.length < 2) {
         setDuplicateProducts([])
         return
       }
@@ -765,7 +761,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
         // Import api từ utils
         const api = (await import("@/utils/api")).default
 
-        // Gọi API search để tìm sản phẩm có tên hoặc hiệu thuốc tương tự
+        // Tìm theo tên thương mại để cảnh báo trùng hiệu thuốc.
         const response = await api.postRaw<{
           success: boolean
           data: Product[]
@@ -774,40 +770,30 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
             totalPages: number | null
           }
         }>("/products/search", {
-          keyword: productName || tradeName, // Tìm theo tên hoặc hiệu thuốc
+          keyword: tradeName,
           limit: 10, // Tăng limit để tìm nhiều hơn
           page: 1,
         })
 
-        // Lọc các sản phẩm có tên hoặc hiệu thuốc giống/tương tự
+        // Lọc các sản phẩm có tên thương mại giống hoặc gần giống.
         const duplicates =
           response?.data?.filter((product: Product) => {
-            const normalizedProductName = product.name?.toLowerCase().trim()
             const normalizedProductTradeName = (
               product as Product & { trade_name?: string }
             ).trade_name
               ?.toLowerCase()
               .trim()
-            const normalizedInputName = productName?.toLowerCase().trim()
             const normalizedInputTradeName = tradeName?.toLowerCase().trim()
 
-            // Kiểm tra trùng tên sản phẩm
-            const nameMatch =
-              normalizedInputName &&
-              (normalizedProductName === normalizedInputName ||
-                normalizedProductName?.includes(normalizedInputName))
-
-            // Kiểm tra trùng hiệu thuốc
+            // Chỉ cảnh báo trùng hiệu thuốc / tên thương mại.
             const tradeNameMatch =
               normalizedInputTradeName &&
               (normalizedProductTradeName === normalizedInputTradeName ||
                 normalizedProductTradeName?.includes(
                   normalizedInputTradeName,
-                ) ||
-                normalizedProductName === normalizedInputTradeName || // Tên sản phẩm trùng với hiệu thuốc đang nhập
-                normalizedProductName?.includes(normalizedInputTradeName))
+                ))
 
-            return nameMatch || tradeNameMatch
+            return tradeNameMatch
           }) || []
 
         setDuplicateProducts(duplicates)
@@ -1367,7 +1353,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           />
                         )}
 
-                        {/* Hiển thị cảnh báo nếu có sản phẩm trùng tên */}
+                        {/* Hiển thị cảnh báo nếu trùng hiệu thuốc / tên thương mại */}
                         {!isCheckingDuplicate &&
                           duplicateProducts.length > 0 && (
                             <Alert
@@ -1375,7 +1361,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                                 <div>
                                   <div className='font-semibold mb-2'>
                                     ⚠️ Phát hiện {duplicateProducts.length} sản
-                                    phẩm có tên hoặc hiệu thuốc tương tự:
+                                    phẩm có hiệu thuốc / tên thương mại tương tự:
                                   </div>
                                   {/* Danh sách sản phẩm với scroll nếu quá nhiều */}
                                   <div
