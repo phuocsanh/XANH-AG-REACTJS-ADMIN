@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useNavigate, useLocation } from "react-router-dom"
 import {
   Button,
@@ -462,6 +462,22 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
   const productTypes = { data: { items: productTypesQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [] } }
   const productSubtypes = { data: { items: productSubtypesQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [] } }
   const symbols = { data: { items: symbolsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [] } }
+  const selectedTypeId = watch("type")
+  const selectedProductTypeQuery = useQuery({
+    queryKey: ["productTypes", "detail", selectedTypeId],
+    queryFn: async () => api.get<ProductType>(`/product-types/${selectedTypeId}`),
+    enabled: Boolean(selectedTypeId) && !productTypes.data.items.some((type) => Number(type.id) === Number(selectedTypeId)),
+  })
+  const productTypeOptions = productTypes.data.items.map((type) => ({
+    label: type.name,
+    value: type.id,
+  }))
+  if (selectedProductTypeQuery.data && !productTypes.data.items.some((type) => Number(type.id) === Number(selectedTypeId))) {
+    productTypeOptions.push({
+      label: selectedProductTypeQuery.data.name,
+      value: selectedProductTypeQuery.data.id,
+    })
+  }
   const { data: units } = useUnitsQuery()
   // Thêm query cho symbols
   // Thêm query cho danh sách sản phẩm
@@ -1439,14 +1455,7 @@ const ProductForm: React.FC<ProductFormProps> = (props) => {
                           placeholder='Chọn loại sản phẩm'
                           required
                           rules={{ required: "Vui lòng chọn loại sản phẩm" }}
-                          data={
-                            productTypes?.data?.items?.map(
-                              (type: ProductType) => ({
-                                label: type.name,
-                                value: type.id,
-                              }),
-                            ) || []
-                          }
+                          data={productTypeOptions}
                           isLoading={productTypesQuery.isLoading}
                           isFetchingNextPage={productTypesQuery.isFetchingNextPage}
                           hasNextPage={productTypesQuery.hasNextPage}
