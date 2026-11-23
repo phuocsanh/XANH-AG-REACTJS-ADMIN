@@ -87,6 +87,8 @@ export interface TokenResponse {
 export interface Permission {
   code: string
   name?: string
+  group?: string
+  description?: string
 }
 
 export interface Role {
@@ -94,6 +96,41 @@ export interface Role {
   code: string
   name: string
   permissions: Permission[]
+}
+
+export interface ManagedRole {
+  id: number
+  code: string
+  name: string
+  permissionCodes: string[]
+  isReadOnly: boolean
+}
+
+export interface UserPermissionDetails {
+  user: { id: number; account: string; name?: string; roleCode?: string }
+  role: { id: number; code: string; name: string } | null
+  inheritedPermissionCodes: string[]
+  directPermissionCodes: string[]
+  effectivePermissionCodes: string[]
+}
+
+export interface RolePermissionUserOption {
+  id: number;
+  account: string;
+  role?: { id: number; code: string; name: string };
+  user_profile?: { nickname?: string; mobile?: string };
+}
+
+export interface RolePermissionAuditEntry {
+  id: number
+  action: "ROLE_PERMISSIONS_UPDATED" | "USER_PERMISSIONS_UPDATED"
+  target_role_code: string | null
+  target_user_id: number | null
+  actor_snapshot: { id: number; account: string; name?: string; roleCode?: string }
+  target_snapshot: { id?: number; account?: string; name?: string; roleCode?: string }
+  before_permission_codes: string[]
+  after_permission_codes: string[]
+  created_at: string
 }
 
 // Response user từ server NestJS
@@ -104,6 +141,8 @@ export interface UserResponse {
   account?: string // New field from RBAC spec
   nickname?: string;
   role?: Role;
+  direct_permissions?: Permission[];
+  effective_permissions?: string[];
   user_profile?: {
     nickname?: string;
     avatar?: string;

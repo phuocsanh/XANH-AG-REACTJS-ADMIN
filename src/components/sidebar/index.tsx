@@ -8,7 +8,7 @@ import { IoSettingsOutline } from "react-icons/io5"
 import { FiUser } from "react-icons/fi"
 import { HiOutlineShoppingCart } from "react-icons/hi"
 import { TbBrandProducthunt } from "react-icons/tb"
-import { RiLockPasswordLine } from "react-icons/ri"
+import { RiLockPasswordLine, RiShieldUserLine } from "react-icons/ri"
 import { MdInventory } from "react-icons/md"
 import { useAppStore } from "../../stores"
 import { BiCategory } from "react-icons/bi"
@@ -1279,6 +1279,22 @@ const Sidebar: React.FC = () => {
                     <FaUsers className='text-violet-200' />
                   </span>
                   Quản lý người dùng
+                </Button>
+              </Link>
+            </li>
+          )}
+
+          {isSuperAdmin && (
+            <li>
+              <Link to='/roles-permissions'>
+                <Button
+                  className={`w-full !justify-start !text-left ${activeTab === 45 ? "active" : ""}`}
+                  onClick={() => isOpenSubmenu(45)}
+                >
+                  <span className='icon w-[30px] h-[30px] flex items-center justify-center rounded-md'>
+                    <RiShieldUserLine className='text-amber-200' />
+                  </span>
+                  Phân quyền hệ thống
                 </Button>
               </Link>
             </li>

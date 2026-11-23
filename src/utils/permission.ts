@@ -14,10 +14,7 @@ export const hasPermission = (user: UserResponse | null | undefined, requiredPer
   // Super Admin luôn có quyền
   if (user.role?.code === RoleCode.SUPER_ADMIN) return true;
 
-  // Nếu không có role hoặc permissions, return false
-  if (!user.role || !user.role.permissions) return false;
-
-  return user.role.permissions.some(p => p.code === requiredPermission);
+  return getEffectivePermissionCodes(user).includes(requiredPermission);
 };
 
 /**
@@ -31,9 +28,17 @@ export const hasAnyPermission = (user: UserResponse | null | undefined, permissi
   
   if (user.role.code === RoleCode.SUPER_ADMIN) return true;
   
-  if (!user.role.permissions) return false;
+  const effectivePermissions = getEffectivePermissionCodes(user);
+  return permissionsArray.some((permission) => effectivePermissions.includes(permission));
+};
 
-  return user.role.permissions.some(p => permissionsArray.includes(p.code));
+/** Lấy tập quyền hiệu lực, tương thích response cũ chỉ có role permissions. */
+export const getEffectivePermissionCodes = (user: UserResponse): string[] => {
+  if (user.effective_permissions) return user.effective_permissions;
+  return [...new Set([
+    ...(user.role?.permissions ?? []).map((permission) => permission.code),
+    ...(user.direct_permissions ?? []).map((permission) => permission.code),
+  ])];
 };
 
 /**

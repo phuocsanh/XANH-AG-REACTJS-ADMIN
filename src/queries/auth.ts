@@ -9,6 +9,7 @@ import {
 import { handleApiError } from "@/utils/error-handler"
 import { useAppStore } from "@/stores"
 import { API_ENDPOINTS } from "@/config/api.config"
+import api from "@/utils/api"
 
 // ========== AUTH HOOKS ==========
 
@@ -26,9 +27,14 @@ export const useAuthStatus = () => {
   useEffect(() => {
     // Chỉ kiểm tra khi có accessToken
     if (accessToken) {
-      // Trong trường hợp này, chúng ta giả định rằng nếu có accessToken thì người dùng đã đăng nhập
-      // Bạn có thể thêm logic kiểm tra token ở đây nếu cần
       setIsLogin(true)
+      let active = true
+      api.get<UserResponse>("/users/me").then((userInfo) => {
+        if (active) setUserInfo(userInfo)
+      }).catch(() => {
+        // Interceptor xử lý token hết hạn; giữ cache hiện tại nếu API tạm thời lỗi.
+      })
+      return () => { active = false }
     } else {
       setIsLogin(false)
       setUserInfo(null)
@@ -179,6 +185,10 @@ export const useLoginMutation = () => {
         account: userAccount,
         nickname: data.user.nickname,
         role: data.user.role,
+        direct_permissions: data.user.direct_permissions ?? [],
+        effective_permissions: data.user.effective_permissions ?? [],
+        user_profile: data.user.user_profile,
+        status: data.user.status,
       } as UserResponse)
       setIsLogin(true)
 

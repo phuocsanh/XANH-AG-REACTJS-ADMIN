@@ -17,6 +17,7 @@ import Products from "./pages/products"
 import ProductsList from "./pages/products/products-list"
 import ProductSearch from "./pages/products/product-search"
 import Users from "./pages/users"
+import RolesPermissionsPage from "./pages/roles-permissions"
 import ListCategory from "./pages/categories/list-category"
 import ListSubCategory from "./pages/sub-categories/list-sub-category"
 import { SignIn } from "./pages/sign-in"
@@ -418,6 +419,14 @@ function AppContent({
                       element={
                         <ProtectedRoute requiredPermission="user:read">
                           <Users />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path='/roles-permissions'
+                      element={
+                        <ProtectedRoute requiredRole="SUPER_ADMIN">
+                          <RolesPermissionsPage />
                         </ProtectedRoute>
                       }
                     />

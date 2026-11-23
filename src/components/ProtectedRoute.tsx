@@ -7,9 +7,10 @@ import { Result, Button } from 'antd';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredPermission?: string;
+  requiredRole?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPermission }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPermission, requiredRole }) => {
   const isLogin = useAppStore((state) => state.isLogin);
   const userInfo = useAppStore((state) => state.userInfo);
   const location = useLocation();
@@ -18,7 +19,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPermi
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
   }
 
-  if (requiredPermission && !hasPermission(userInfo, requiredPermission)) {
+  if (
+    (requiredRole && userInfo?.role?.code !== requiredRole) ||
+    (requiredPermission && !hasPermission(userInfo, requiredPermission))
+  ) {
     return (
       <div style={{ 
         height: '100vh', 

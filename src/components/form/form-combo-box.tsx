@@ -34,7 +34,7 @@ interface FormComboBoxProps<T extends FieldValues>
   onSearch?: (value: string) => void
 
   // Props tùy chọn
-  label?: string
+  label?: React.ReactNode
   required?: boolean
   placeholder?: string
   allowClear?: boolean
@@ -121,7 +121,7 @@ function FormComboBox<T extends FieldValues>({
     required: required
       ? typeof required === "string"
         ? required
-        : `${label || "Trường này"} là bắt buộc`
+        : `${typeof label === "string" ? label : "Trường này"} là bắt buộc`
       : false,
     ...rules,
   }
