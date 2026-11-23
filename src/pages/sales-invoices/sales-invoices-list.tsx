@@ -1024,54 +1024,64 @@ const SalesInvoicesList: React.FC = () => {
         title={`Chi tiết hóa đơn: ${viewingInvoice?.code || ""}`}
         open={isDetailModalVisible}
         onCancel={handleCloseDetailModal}
-        footer={[
-          <Button key='close' onClick={handleCloseDetailModal}>
-            Đóng
-          </Button>,
-          viewingInvoice &&
-            ["confirmed", "paid"].includes(viewingInvoice.status) && (
+        footer={
+          <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end'>
+            <Button
+              key='close'
+              className='w-full sm:w-auto'
+              onClick={handleCloseDetailModal}
+            >
+              Đóng
+            </Button>
+            {viewingInvoice &&
+              ["confirmed", "paid"].includes(viewingInvoice.status) && (
+                <Button
+                  key='create-sales-return'
+                  className='w-full sm:w-auto'
+                  icon={<UndoOutlined />}
+                  onClick={() => handleCreateSalesReturn(viewingInvoice)}
+                >
+                  Tạo phiếu trả hàng
+                </Button>
+              )}
+            {viewingInvoice?.status === "confirmed" && (
               <Button
-                key='create-sales-return'
-                icon={<UndoOutlined />}
-                onClick={() => handleCreateSalesReturn(viewingInvoice)}
+                key='cancel'
+                className='w-full sm:w-auto'
+                danger
+                icon={<CloseCircleOutlined />}
+                onClick={() => handleCancelInvoice(viewingInvoice)}
+                loading={cancelInvoiceMutation.isPending}
               >
-                Tạo phiếu trả hàng
+                Hủy hóa đơn
               </Button>
-            ),
-          viewingInvoice?.status === "confirmed" && (
-            <Button
-              key='cancel'
-              danger
-              icon={<CloseCircleOutlined />}
-              onClick={() => handleCancelInvoice(viewingInvoice)}
-              loading={cancelInvoiceMutation.isPending}
-            >
-              Hủy hóa đơn
-            </Button>
-          ),
-          viewingInvoice?.status === "paid" && (
-            <Button
-              key='refund'
-              danger
-              icon={<UndoOutlined />}
-              onClick={() => handleRefundInvoice(viewingInvoice)}
-              loading={refundInvoiceMutation.isPending}
-            >
-              Hoàn trả / Hoàn tiền
-            </Button>
-          ),
-          viewingInvoice?.status === "draft" && (
-            <Button
-              key='delete'
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteInvoice(viewingInvoice)}
-              loading={deleteInvoiceMutation.isPending}
-            >
-              Xóa nháp
-            </Button>
-          ),
-        ]}
+            )}
+            {viewingInvoice?.status === "paid" && (
+              <Button
+                key='refund'
+                className='w-full sm:w-auto'
+                danger
+                icon={<UndoOutlined />}
+                onClick={() => handleRefundInvoice(viewingInvoice)}
+                loading={refundInvoiceMutation.isPending}
+              >
+                Hoàn trả / Hoàn tiền
+              </Button>
+            )}
+            {viewingInvoice?.status === "draft" && (
+              <Button
+                key='delete'
+                className='w-full sm:w-auto'
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteInvoice(viewingInvoice)}
+                loading={deleteInvoiceMutation.isPending}
+              >
+                Xóa nháp
+              </Button>
+            )}
+          </div>
+        }
         width={800}
       >
         {viewingInvoice && (
@@ -1246,6 +1256,7 @@ const SalesInvoicesList: React.FC = () => {
               </div>
               <Typography.Paragraph
                 editable={{
+                  autoSize: { minRows: 4, maxRows: 8 },
                   onChange: (val) =>
                     handleUpdateInvoiceField(
                       { notes: val },
